@@ -99,7 +99,7 @@ export default function StudentExamsPage() {
 
       const upcomingWithSubject = upcoming.map((e) => ({
         ...e,
-        subject: mockSubjects.find((s) => s.id === e.courseId),
+        subject: mockSubjects.find((s) => s.id === e.subjectId),
       }));
 
       const pastWithResults = past.map((e) => {
@@ -108,7 +108,7 @@ export default function StudentExamsPage() {
         );
         return {
           ...e,
-          subject: mockSubjects.find((s) => s.id === e.courseId),
+          subject: mockSubjects.find((s) => s.id === e.subjectId),
           correction: correction ?? null,
           percentage: correction ? Math.round((correction.totalMarks / e.questions.reduce((s, q) => s + q.points, 0)) * 100) : null,
         };

@@ -220,7 +220,7 @@ export default function TeacherDashboardPage() {
       .slice(0, 3)
       .map((e) => ({
         ...e,
-        subject: mockSubjects.find((s) => s.id === e.courseId),
+        subject: mockSubjects.find((s) => s.id === e.subjectId),
       }));
   }, []);
 
@@ -335,7 +335,7 @@ export default function TeacherDashboardPage() {
                     className="space-y-1"
                   >
                     {pendingCorrections.map((exam) => {
-                      const subject = mockSubjects.find((s) => s.id === exam.courseId);
+                      const subject = mockSubjects.find((s) => s.id === exam.subjectId);
                       return (
                         <motion.div key={exam.id} variants={listItem}>
                           <Link

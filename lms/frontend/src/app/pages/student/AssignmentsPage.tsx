@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
-import { mockAssignments, mockSubjects } from '@/lib/mockData';
+import { mockAssignments, mockTextbooks } from '@/lib/mockData';
 
 const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
 
@@ -57,7 +57,7 @@ export default function AssignmentsPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{a.title}</p>
-                          <p className="text-xs text-muted-foreground">Course: {mockSubjects.find((s) => s.id === a.courseId)?.name ?? a.courseId}</p>
+                          <p className="text-xs text-muted-foreground">{mockTextbooks.find((tb) => tb.id === a.textbookId)?.title ?? a.textbookId}</p>
                           <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{due.toLocaleDateString()}</span>
                             <span>{a.maxPoints} pts</span>

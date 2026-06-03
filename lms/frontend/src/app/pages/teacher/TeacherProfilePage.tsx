@@ -66,7 +66,7 @@ export default function TeacherProfilePage() {
     ];
 
     const allGrades = mockGrades.filter((g) =>
-      mockSubjects.some((s) => s.id === g.courseId),
+      mockSubjects.some((s) => s.id === g.subjectId),
     );
     const avgPerformance =
       allGrades.length > 0

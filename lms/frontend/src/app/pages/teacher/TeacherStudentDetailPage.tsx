@@ -80,7 +80,7 @@ export default function TeacherStudentDetailPage() {
       .filter((g) => g.studentId === id)
       .map((g) => ({
         ...g,
-        subject: mockSubjects.find((s) => s.id === g.courseId),
+        subject: mockSubjects.find((s) => s.id === g.subjectId),
       }))
       .sort(
         (a, b) => new Date(b.gradedAt).getTime() - new Date(a.gradedAt).getTime(),
@@ -93,10 +93,10 @@ export default function TeacherStudentDetailPage() {
     mockGrades
       .filter((g) => g.studentId === id)
       .forEach((g) => {
-        const existing = bySubject.get(g.courseId) ?? { scores: [], maxScores: [] };
+        const existing = bySubject.get(g.subjectId) ?? { scores: [], maxScores: [] };
         existing.scores.push(g.score);
         existing.maxScores.push(g.maxScore);
-        bySubject.set(g.courseId, existing);
+        bySubject.set(g.subjectId, existing);
       });
     return mockSubjects
       .map((sub) => {

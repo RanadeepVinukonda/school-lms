@@ -31,6 +31,8 @@ export const ROUTES = {
   STUDENT_DASHBOARD: '/student/dashboard',
   STUDENT_SUBJECTS: '/student/subjects',
   STUDENT_SUBJECT: (id: string) => `/student/subjects/${id}`,
+  STUDENT_TEXTBOOK: (id: string) => `/student/textbooks/${id}`,
+  STUDENT_LESSON: (id: string) => `/student/lessons/${id}`,
   STUDENT_EXAMS: '/student/exams',
   STUDENT_EXAM_CORRECTION: (id: string) => `/student/exams/${id}/correction`,
   STUDENT_TIMETABLE: '/student/timetable',

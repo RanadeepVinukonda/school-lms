@@ -189,10 +189,10 @@ export default function TeacherExamsPage() {
 
   const examsData = useMemo(() => {
     return mockExams.map((exam) => {
-      const subject = mockSubjects.find((s) => s.id === exam.courseId);
+      const subject = mockSubjects.find((s) => s.id === exam.subjectId);
       const corrections = mockCorrections.filter((c) => c.examId === exam.id);
       const studentIds = mockEnrollments
-        .filter((e) => e.subjectId === exam.courseId && e.status === 'active')
+        .filter((e) => e.subjectId === exam.subjectId && e.status === 'active')
         .map((e) => e.studentId);
       const gradedCount = corrections.filter((c) => c.status === 'published').length;
       const submittedCount = corrections.length;

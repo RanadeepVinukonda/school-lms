@@ -86,7 +86,7 @@ export default function StudentProfilePage() {
       const grades = mockGrades.filter((g) => g.studentId === student.id);
       const gradesWithSubject = grades.map((g) => ({
         ...g,
-        subject: mockSubjects.find((s) => s.id === g.courseId)?.name ?? 'Unknown',
+        subject: mockSubjects.find((s) => s.id === g.subjectId)?.name ?? 'Unknown',
       }));
 
       return { student, enrolledSubjects, studentClass, grades: gradesWithSubject };

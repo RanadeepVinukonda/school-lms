@@ -22,6 +22,8 @@ import AdminLoginPage from '@/app/pages/auth/AdminLoginPage';
 import StudentDashboardPage from '@/app/pages/student/StudentDashboardPage';
 import SubjectsPage from '@/app/pages/student/SubjectsPage';
 import SubjectDetailPage from '@/app/pages/student/SubjectDetailPage';
+import TextbookDetailPage from '@/app/pages/student/TextbookDetailPage';
+import LessonViewPage from '@/app/pages/student/LessonViewPage';
 import StudentExamsPage from '@/app/pages/student/StudentExamsPage';
 import StudentTimetablePage from '@/app/pages/student/StudentTimetablePage';
 import StudentProfilePage from '@/app/pages/student/StudentProfilePage';
@@ -44,7 +46,6 @@ import AdminSettingsPage from '@/app/pages/admin/AdminSettingsPage';
 
 import CoursesPage from '@/app/pages/student/CoursesPage';
 import CourseDetailPage from '@/app/pages/student/CourseDetailPage';
-import LessonViewPage from '@/app/pages/student/LessonViewPage';
 import AssignmentsPage from '@/app/pages/student/AssignmentsPage';
 import AssignmentDetailPage from '@/app/pages/student/AssignmentDetailPage';
 import QuizzesPage from '@/app/pages/student/QuizzesPage';
@@ -96,6 +97,8 @@ export const router = createBrowserRouter([
       { path: ROUTES.STUDENT_DASHBOARD, element: <StudentDashboardPage /> },
       { path: ROUTES.STUDENT_SUBJECTS, element: <SubjectsPage /> },
       { path: ROUTES.STUDENT_SUBJECT(':id'), element: <SubjectDetailPage /> },
+      { path: ROUTES.STUDENT_TEXTBOOK(':id'), element: <TextbookDetailPage /> },
+      { path: ROUTES.STUDENT_LESSON(':id'), element: <LessonViewPage /> },
       { path: ROUTES.STUDENT_EXAMS, element: <StudentExamsPage /> },
       { path: ROUTES.STUDENT_TIMETABLE, element: <StudentTimetablePage /> },
       { path: ROUTES.STUDENT_PROFILE, element: <StudentProfilePage /> },

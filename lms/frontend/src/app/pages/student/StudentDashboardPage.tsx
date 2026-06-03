@@ -22,6 +22,7 @@ import {
   mockQuizzes,
   mockExams,
   mockGrades,
+  mockTextbooks,
 } from '@/lib/mockData';
 
 function AnimatedCount({ value }: { value: number }) {
@@ -122,7 +123,8 @@ export default function StudentDashboardPage() {
       const subjectIds = enrollments.map((e) => e.subjectId);
       const enrolledSubjects = mockSubjects.filter((s) => subjectIds.includes(s.id));
       const notifications = mockNotifications.filter((n) => n.recipientId === student.id);
-      const pendingAssignments = mockAssignments.filter((a) => subjectIds.includes(a.courseId));
+      const subjectTextbookIds = mockTextbooks.filter((tb) => subjectIds.includes(tb.subjectId)).map((tb) => tb.id);
+      const pendingAssignments = mockAssignments.filter((a) => subjectTextbookIds.includes(a.textbookId));
       const upcomingExams = mockExams.filter((e) => new Date(e.startDate) > new Date());
       const grades = mockGrades.filter((g) => g.studentId === student.id);
 
@@ -361,7 +363,7 @@ export default function StudentDashboardPage() {
                   </div>
                 ) : (
                   pendingAssignments.map((assignment) => {
-                    const subject = mockSubjects.find((s) => s.id === assignment.courseId);
+                    const subject = mockSubjects.find((s) => s.id === (mockTextbooks.find((tb) => tb.id === assignment.textbookId)?.subjectId ?? ''));
                     const urgency = getDueUrgency(assignment.dueDate);
                     return (
                       <Link

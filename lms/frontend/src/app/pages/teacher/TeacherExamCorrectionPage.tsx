@@ -81,7 +81,7 @@ export default function TeacherExamCorrectionPage() {
   );
 
   const subject = useMemo(
-    () => mockSubjects.find((s) => s.id === exam?.courseId) ?? null,
+    () => mockSubjects.find((s) => s.id === exam?.subjectId) ?? null,
     [exam],
   );
 
@@ -89,7 +89,7 @@ export default function TeacherExamCorrectionPage() {
     if (!exam) return [];
     const studentIds = mockEnrollments
       .filter(
-        (e) => e.subjectId === exam.courseId && e.status === 'active',
+        (e) => e.subjectId === exam.subjectId && e.status === 'active',
       )
       .map((e) => e.studentId);
     return studentIds
