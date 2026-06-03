@@ -1,5 +1,5 @@
-const CLOUD_NAME = 'dinanit0d';
-const UPLOAD_PRESET = 'genesis_uploads';
+const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dinanit0d';
+const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'genesis_uploads';
 const BASE_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}`;
 
 export const cloudinaryService = {
