@@ -3,6 +3,28 @@ import { collections } from '../firebase/firestore';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
+import { parsePagination } from '../utils/pagination';
+
+export async function listAllQuizzes(query: { page?: string; limit?: string; courseId?: string }) {
+  const { page, limit } = parsePagination(query);
+  let baseQuery: FirebaseFirestore.Query = collections.quizzes()
+    .orderBy('createdAt', 'desc');
+
+  if (query.courseId) {
+    baseQuery = baseQuery.where('courseId', '==', query.courseId);
+  }
+
+  const countSnapshot = await baseQuery.count().get();
+  const total = countSnapshot.data().count;
+
+  const offset = (page - 1) * limit;
+  const snapshot = await baseQuery.offset(offset).limit(limit).get();
+
+  const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+
+  return { items, total, page, limit };
+}
+
 export async function createQuiz(data: {
   title: string;
   description?: string;

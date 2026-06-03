@@ -74,6 +74,26 @@ export async function getAssignmentById(assignmentId: string) {
   return { ...doc.data() };
 }
 
+export async function listAllAssignments(query: { page?: string; limit?: string; courseId?: string }) {
+  const { page, limit } = parsePagination(query);
+  let baseQuery: FirebaseFirestore.Query = collections.assignments()
+    .orderBy('createdAt', 'desc');
+
+  if (query.courseId) {
+    baseQuery = baseQuery.where('courseId', '==', query.courseId);
+  }
+
+  const countSnapshot = await baseQuery.count().get();
+  const total = countSnapshot.data().count;
+
+  const offset = (page - 1) * limit;
+  const snapshot = await baseQuery.offset(offset).limit(limit).get();
+
+  const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+
+  return { items, total, page, limit };
+}
+
 export async function listAssignmentsByCourse(courseId: string, query: { page?: string; limit?: string }) {
   const { page, limit } = parsePagination(query);
   let baseQuery: FirebaseFirestore.Query = collections.assignments()

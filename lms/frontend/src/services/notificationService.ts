@@ -1,10 +1,17 @@
 import api from './api';
 import type { ApiResponse, Notification, NotificationPreferences } from '@/types';
 
+interface PaginatedNotifications {
+  items: Notification[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export const notificationService = {
   async getAll() {
-    const response = await api.get<ApiResponse<Notification[]>>('/notifications');
-    return response.data;
+    const response = await api.get<ApiResponse<PaginatedNotifications>>('/notifications');
+    return response.data.data;
   },
 
   async getUnreadCount() {

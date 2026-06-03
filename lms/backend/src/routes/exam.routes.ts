@@ -8,6 +8,7 @@ import { asyncHandler } from '../middlewares/asyncHandler';
 
 const router = Router();
 
+router.get('/', authenticate, asyncHandler(examController.listAllExams));
 router.post('/', authenticate, requireRole('teacher', 'admin'), validate(createExamSchema), asyncHandler(examController.createExam));
 router.put('/:examId', authenticate, requireRole('teacher', 'admin'), validate(updateExamSchema), asyncHandler(examController.updateExam));
 router.delete('/:examId', authenticate, requireRole('teacher', 'admin'), asyncHandler(examController.deleteExam));

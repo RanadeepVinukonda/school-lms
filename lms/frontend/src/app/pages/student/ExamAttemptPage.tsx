@@ -16,6 +16,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
+import { examService } from '@/services/examService';
+import type { Exam } from '@/types';
 
 function ExamSkeleton() {
   return (
@@ -33,34 +35,17 @@ export default function ExamAttemptPage() {
   const [understood, setUnderstood] = useState(false);
   const [currentQ, setCurrentQ] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [timeLeft, setTimeLeft] = useState(1800);
+  const [timeLeft, setTimeLeft] = useState(0);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const { isLoading } = useQuery({
+  const { data: exam, isLoading, isError } = useQuery({
     queryKey: ['exam', examId],
     queryFn: async () => {
-      await new Promise(r => setTimeout(r, 500));
-      return null;
+      const result = await examService.getById(examId!);
+      return result.data as Exam;
     },
+    enabled: !!examId,
   });
-
-  const exam = {
-    id: examId,
-    title: 'Midterm Exam',
-    description: 'Covers all topics from Chapters 1-3.',
-    timeLimit: 30,
-    questionsCount: 10,
-    totalPoints: 100,
-    passingScore: 50,
-    instructions: 'This exam will be taken in full-screen mode. Do not navigate away.',
-    questions: [
-      { id: 'e1', type: 'mcq' as const, text: 'What is the slope of y = 3x + 2?', options: ['2', '3', '-2', '-3'], points: 10, correctAnswer: '3' },
-      { id: 'e2', type: 'true_false' as const, text: 'A linear equation has degree 1.', options: ['True', 'False'], points: 10, correctAnswer: 'True' },
-      { id: 'e3', type: 'fill_blank' as const, text: 'The x-intercept of y = 2x - 6 is ___', points: 10, correctAnswer: '3' },
-      { id: 'e4', type: 'mcq' as const, text: 'Which graph represents a function?', options: ['Vertical line', 'Horizontal line', 'Circle', 'Parabola (opening sideways)'], points: 10, correctAnswer: 'Horizontal line' },
-      { id: 'e5', type: 'short_answer' as const, text: 'Simplify: 3(2x - 1) + 4', points: 10, correctAnswer: '6x + 1' },
-    ],
-  };
 
   useEffect(() => {
     if (phase === 'taking' && timeLeft > 0) {
@@ -81,6 +66,26 @@ export default function ExamAttemptPage() {
 
   if (isLoading) return <ExamSkeleton />;
 
+  if (isError || !exam) {
+    return (
+      <div className="p-4">
+        <Card><CardContent className="flex flex-col items-center gap-4 py-12">
+          <AlertCircle className="h-8 w-8 text-destructive" />
+          <p className="font-medium">Failed to load exam</p>
+          <Button variant="outline" onClick={() => window.history.back()}>Go Back</Button>
+        </CardContent></Card>
+      </div>
+    );
+  }
+
+  const totalQuestions = exam!.questions?.length || 0;
+  const totalPoints = exam.questions?.reduce((s, q) => s + q.points, 0) || 0;
+
+  function handleStart() {
+    setTimeLeft((exam!.timeLimit || 30) * 60);
+    setPhase('taking');
+  }
+
   if (phase === 'intro') {
     return (
       <>
@@ -94,20 +99,20 @@ export default function ExamAttemptPage() {
             <CardTitle className="text-xl">{exam.title}</CardTitle>
             <CardDescription>{exam.description}</CardDescription>
             <div className="grid grid-cols-3 gap-3 text-sm">
-              <div className="bg-muted rounded-lg p-3"><p className="font-bold text-lg">{exam.questionsCount}</p><p className="text-xs text-muted-foreground">Questions</p></div>
+              <div className="bg-muted rounded-lg p-3"><p className="font-bold text-lg">{totalQuestions}</p><p className="text-xs text-muted-foreground">Questions</p></div>
               <div className="bg-muted rounded-lg p-3"><p className="font-bold text-lg">{exam.timeLimit}m</p><p className="text-xs text-muted-foreground">Time Limit</p></div>
-              <div className="bg-muted rounded-lg p-3"><p className="font-bold text-lg">{exam.totalPoints}</p><p className="text-xs text-muted-foreground">Points</p></div>
+              <div className="bg-muted rounded-lg p-3"><p className="font-bold text-lg">{totalPoints}</p><p className="text-xs text-muted-foreground">Points</p></div>
             </div>
             <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-3 text-left text-sm">
               <div className="flex items-center gap-2 mb-1"><AlertTriangle className="h-4 w-4 text-amber-500" /><span className="font-medium">Important</span></div>
-              <p className="text-muted-foreground text-xs">{exam.instructions}</p>
+              <p className="text-muted-foreground text-xs">{(exam as any).instructions || exam.description}</p>
               <p className="text-muted-foreground text-xs mt-1">Auto-submitted when time expires.</p>
             </div>
             <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
               <Checkbox id="understood" checked={understood} onCheckedChange={c => setUnderstood(c as boolean)} />
               <Label htmlFor="understood" className="text-sm">I understand and agree to the exam rules</Label>
             </div>
-            <Button className="w-full" disabled={!understood} onClick={() => setPhase('taking')}>
+            <Button className="w-full" disabled={!understood} onClick={handleStart}>
               <Play className="h-4 w-4 mr-2" />Start Exam
             </Button>
           </CardContent>
@@ -117,9 +122,9 @@ export default function ExamAttemptPage() {
     );
   }
 
-  const totalCorrect = exam.questions.filter(q => answers[q.id] === q.correctAnswer).length;
-  const totalScore = totalCorrect * (exam.totalPoints / exam.questions.length);
-  const examPercentage = Math.round((totalScore / exam.totalPoints) * 100);
+  const totalCorrect = exam.questions?.filter(q => answers[q.id] === q.correctAnswer).length || 0;
+  const totalScore = totalQuestions > 0 ? totalCorrect * (totalPoints / totalQuestions) : 0;
+  const examPercentage = totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0;
   const examPassed = examPercentage >= exam.passingScore;
 
   if (phase === 'results') {
@@ -133,11 +138,11 @@ export default function ExamAttemptPage() {
               {examPassed ? <CheckCircle className="h-10 w-10 text-emerald-500" /> : <XCircle className="h-10 w-10 text-destructive" />}
             </div>
             <CardTitle className="text-xl">{examPassed ? 'You Passed!' : 'Better Luck Next Time'}</CardTitle>
-            <p className="text-4xl font-bold">{totalScore}/{exam.totalPoints}</p>
-            <p className="text-sm text-muted-foreground">{examPercentage}% &middot; {totalCorrect}/{exam.questionsCount} correct</p>
+            <p className="text-4xl font-bold">{totalScore}/{totalPoints}</p>
+            <p className="text-sm text-muted-foreground">{examPercentage}% &middot; {totalCorrect}/{totalQuestions} correct</p>
             <Badge variant={examPassed ? 'success' : 'destructive'} className="mx-auto">{examPassed ? 'Passed' : 'Failed'}</Badge>
             <div className="text-left space-y-2 mt-4">
-              {exam.questions.map((q, i) => (
+              {exam.questions?.map((q, i) => (
                 <div key={q.id} className={cn('p-3 rounded-lg text-sm', answers[q.id] === q.correctAnswer ? 'bg-emerald-500/5 border border-emerald-500/20' : 'bg-destructive/5 border border-destructive/20')}>
                   <p className="font-medium mb-1">Q{i + 1}. {q.text}</p>
                   <p className="text-xs text-muted-foreground">Your answer: {answers[q.id] || 'Not answered'}</p>
@@ -155,9 +160,9 @@ export default function ExamAttemptPage() {
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
-  const q = exam.questions[currentQ];
+  const q = exam.questions?.[currentQ];
   const answeredCount = Object.keys(answers).length;
-  const progress = (answeredCount / exam.questions.length) * 100;
+  const progress = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
 
   return (
     <>
@@ -177,14 +182,14 @@ export default function ExamAttemptPage() {
       <div className="flex-1 overflow-y-auto">
         <div className="p-4 max-w-2xl mx-auto">
           <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
-            {exam.questions.map((_, i) => (
+            {exam.questions?.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setCurrentQ(i)}
                 className={cn(
                   'h-8 w-8 rounded-full text-xs font-medium flex-shrink-0 transition-colors',
                   currentQ === i ? 'bg-primary text-primary-foreground' :
-                  answers[exam.questions[i].id] ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground',
+                  answers[exam.questions![i].id] ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground',
                 )}
               >
                 {i + 1}
@@ -197,16 +202,16 @@ export default function ExamAttemptPage() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <Badge variant="outline">Question {currentQ + 1} of {exam.questions.length}</Badge>
-                <span className="text-xs text-muted-foreground">{q.points} pts</span>
+                <Badge variant="outline">Question {currentQ + 1} of {totalQuestions}</Badge>
+                <span className="text-xs text-muted-foreground">{q?.points || 0} pts</span>
               </div>
-              <p className="font-medium mb-4">{q.text}</p>
+              <p className="font-medium mb-4">{q?.text}</p>
 
               <div className="space-y-2">
-                {q.options?.map(opt => (
+                {q?.options?.map(opt => (
                   <button
                     key={opt}
-                    onClick={() => setAnswers(prev => ({ ...prev, [q.id]: opt }))}
+                    onClick={() => q && setAnswers(prev => ({ ...prev, [q.id]: opt }))}
                     className={cn(
                       'w-full text-left p-3 rounded-lg border transition-colors text-sm',
                       answers[q.id] === opt ? 'border-primary bg-primary/5' : 'border-input hover:bg-accent',
@@ -221,7 +226,7 @@ export default function ExamAttemptPage() {
 
           <div className="flex justify-between mt-4">
             <Button variant="outline" onClick={() => setCurrentQ(i => Math.max(0, i - 1))} disabled={currentQ === 0}>Previous</Button>
-            {currentQ < exam.questions.length - 1 ? (
+            {totalQuestions > 0 && currentQ < totalQuestions - 1 ? (
               <Button onClick={() => setCurrentQ(i => i + 1)}>Next</Button>
             ) : (
               <Button onClick={() => setShowConfirm(true)}><Send className="h-4 w-4 mr-1" />Submit</Button>
@@ -233,7 +238,7 @@ export default function ExamAttemptPage() {
       {showConfirm && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
           <Card className="w-full max-w-sm">
-            <CardHeader><CardTitle>Submit Exam</CardTitle><CardDescription>You answered {answeredCount} of {exam.questions.length} questions. This action cannot be undone.</CardDescription></CardHeader>
+            <CardHeader><CardTitle>Submit Exam</CardTitle><CardDescription>You answered {answeredCount} of {totalQuestions} questions. This action cannot be undone.</CardDescription></CardHeader>
             <CardContent className="flex gap-3">
               <Button variant="outline" className="flex-1" onClick={() => setShowConfirm(false)}>Review</Button>
               <Button className="flex-1" onClick={handleSubmit}>Submit</Button>

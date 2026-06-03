@@ -22,6 +22,11 @@ export async function getAssignment(req: Request, res: Response) {
   sendSuccess(res, result);
 }
 
+export async function listAllAssignments(req: Request, res: Response) {
+  const result = await assignmentService.listAllAssignments(req.query as any);
+  sendSuccess(res, result);
+}
+
 export async function listAssignmentsByCourse(req: Request, res: Response) {
   const result = await assignmentService.listAssignmentsByCourse(req.params.courseId, req.query as any);
   sendSuccess(res, result);

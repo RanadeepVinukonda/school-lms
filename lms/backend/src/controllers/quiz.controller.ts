@@ -2,6 +2,11 @@ import { Request, Response } from 'express';
 import * as quizService from '../services/quiz.service';
 import { sendSuccess, sendCreated } from '../utils/response';
 
+export async function listAllQuizzes(req: Request, res: Response) {
+  const result = await quizService.listAllQuizzes(req.query as any);
+  sendSuccess(res, result);
+}
+
 export async function createQuiz(req: Request, res: Response) {
   const result = await quizService.createQuiz(req.body);
   sendCreated(res, result, 'Quiz created');

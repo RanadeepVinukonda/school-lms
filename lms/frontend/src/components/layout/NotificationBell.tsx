@@ -19,10 +19,7 @@ export function NotificationBell() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['notifications'],
-    queryFn: async () => {
-      const result = await notificationService.getAll();
-      return result.data;
-    },
+    queryFn: () => notificationService.getAll(),
     enabled: open,
   });
 
@@ -71,13 +68,13 @@ export function NotificationBell() {
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
-          ) : !data || data.length === 0 ? (
+          ) : !data || !data.items || data.items.length === 0 ? (
             <div className="flex flex-col items-center py-8 text-center text-muted-foreground">
               <Bell className="h-8 w-8 mb-2 opacity-50" />
               <p className="text-sm">No notifications yet</p>
             </div>
           ) : (
-            data.slice(0, 10).map((notification: { id: string; title: string; body: string; link?: string; read: boolean }) => (
+            data.items.slice(0, 10).map((notification: { id: string; title: string; body: string; link?: string; read: boolean }) => (
               <Link
                 key={notification.id}
                 to={notification.link || '#'}

@@ -2,6 +2,11 @@ import { Request, Response } from 'express';
 import * as examService from '../services/exam.service';
 import { sendSuccess, sendCreated } from '../utils/response';
 
+export async function listAllExams(req: Request, res: Response) {
+  const result = await examService.listAllExams(req.query as any);
+  sendSuccess(res, result);
+}
+
 export async function createExam(req: Request, res: Response) {
   const result = await examService.createExam(req.body);
   sendCreated(res, result, 'Exam created');

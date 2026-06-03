@@ -8,6 +8,7 @@ import { asyncHandler } from '../middlewares/asyncHandler';
 
 const router = Router();
 
+router.get('/', authenticate, asyncHandler(assignmentController.listAllAssignments));
 router.get('/course/:courseId', authenticate, asyncHandler(assignmentController.listAssignmentsByCourse));
 router.get('/:assignmentId', authenticate, asyncHandler(assignmentController.getAssignment));
 router.post('/', authenticate, requireRole('teacher', 'admin'), validate(createAssignmentSchema), asyncHandler(assignmentController.createAssignment));

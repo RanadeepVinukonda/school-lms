@@ -8,6 +8,7 @@ import { asyncHandler } from '../middlewares/asyncHandler';
 
 const router = Router();
 
+router.get('/', authenticate, asyncHandler(quizController.listAllQuizzes));
 router.post('/', authenticate, requireRole('teacher', 'admin'), validate(createQuizSchema), asyncHandler(quizController.createQuiz));
 router.put('/:quizId', authenticate, requireRole('teacher', 'admin'), validate(updateQuizSchema), asyncHandler(quizController.updateQuiz));
 router.delete('/:quizId', authenticate, requireRole('teacher', 'admin'), asyncHandler(quizController.deleteQuiz));
