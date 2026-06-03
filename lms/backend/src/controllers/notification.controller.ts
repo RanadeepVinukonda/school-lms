@@ -17,6 +17,16 @@ export async function markAllNotificationsRead(req: Request, res: Response) {
   sendSuccess(res, null, 'All notifications marked as read');
 }
 
+export async function getUnreadCount(req: Request, res: Response) {
+  const result = await notificationService.getUnreadCount(req.user!.uid);
+  sendSuccess(res, result);
+}
+
+export async function deleteNotification(req: Request, res: Response) {
+  await notificationService.deleteNotification(req.params.notificationId, req.user!.uid);
+  sendSuccess(res, null, 'Notification deleted');
+}
+
 export async function getNotificationPreferences(req: Request, res: Response) {
   const result = await notificationService.getNotificationPreferences(req.user!.uid);
   sendSuccess(res, result);

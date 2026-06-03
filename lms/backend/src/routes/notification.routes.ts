@@ -8,8 +8,10 @@ import { asyncHandler } from '../middlewares/asyncHandler';
 const router = Router();
 
 router.get('/', authenticate, asyncHandler(notificationController.getNotifications));
+router.get('/unread-count', authenticate, asyncHandler(notificationController.getUnreadCount));
 router.put('/read-all', authenticate, asyncHandler(notificationController.markAllNotificationsRead));
 router.put('/:notificationId/read', authenticate, asyncHandler(notificationController.markNotificationRead));
+router.delete('/:notificationId', authenticate, asyncHandler(notificationController.deleteNotification));
 router.get('/preferences', authenticate, asyncHandler(notificationController.getNotificationPreferences));
 router.put('/preferences', authenticate, validate(notificationPreferencesSchema), asyncHandler(notificationController.updateNotificationPreferences));
 

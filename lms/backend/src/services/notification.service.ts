@@ -99,6 +99,33 @@ export async function markAllNotificationsRead(userId: string) {
   logger.info('All notifications marked as read', { userId, count: snapshot.docs.length });
 }
 
+export async function getUnreadCount(userId: string) {
+  const snapshot = await collections.notifications()
+    .where('userId', '==', userId)
+    .where('read', '==', false)
+    .count()
+    .get();
+
+  return { count: snapshot.data().count };
+}
+
+export async function deleteNotification(notificationId: string, userId: string) {
+  const ref = collections.notifications().doc(notificationId);
+  const doc = await ref.get();
+
+  if (!doc.exists) {
+    throw new NotFoundError('Notification not found');
+  }
+
+  const data = doc.data()!;
+  if (data.userId !== userId) {
+    throw new NotFoundError('Notification not found');
+  }
+
+  await ref.delete();
+  logger.info('Notification deleted', { notificationId });
+}
+
 export async function getNotificationPreferences(userId: string) {
   const ref = collections.users().doc(userId);
   const doc = await ref.get();
