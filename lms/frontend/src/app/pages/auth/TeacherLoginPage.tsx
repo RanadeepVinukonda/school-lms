@@ -13,6 +13,7 @@ import { Icon } from '@/components/ui/Icon';
 import { pageTransition } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
+import { mockUsers } from '@/lib/mockData';
 
 const teacherLoginSchema = z.object({
   email: z
@@ -25,6 +26,8 @@ const teacherLoginSchema = z.object({
 });
 
 type TeacherLoginFormData = z.infer<typeof teacherLoginSchema>;
+
+const teachers = [mockUsers.teacher1, mockUsers.teacher2];
 
 export default function TeacherLoginPage() {
   const navigate = useNavigate();
@@ -45,13 +48,14 @@ export default function TeacherLoginPage() {
   });
 
   function onSubmit(data: TeacherLoginFormData) {
-    // Mock auth — sets store and navigates
+    const profile = teachers.find(
+      (t) => t.email === data.email && t.teacherId === data.teacherId
+    );
+    if (!profile) return;
     setUser({
-      id: 'teacher-1',
-      email: data.email,
-      displayName: 'Teacher User',
-      firstName: 'Teacher',
-      lastName: 'User',
+      id: profile.id,
+      email: profile.email,
+      displayName: profile.displayName,
       role: 'teacher',
       isActive: true,
       createdAt: new Date().toISOString(),

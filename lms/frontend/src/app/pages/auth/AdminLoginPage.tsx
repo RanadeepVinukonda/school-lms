@@ -13,6 +13,7 @@ import { Icon } from '@/components/ui/Icon';
 import { pageTransition } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
+import { mockUsers } from '@/lib/mockData';
 
 const adminLoginSchema = z.object({
   email: z
@@ -43,13 +44,11 @@ export default function AdminLoginPage() {
   });
 
   function onSubmit(data: AdminLoginFormData) {
-    // Mock auth — sets store and navigates
+    if (data.email !== mockUsers.admin.email) return;
     setUser({
-      id: 'admin-1',
-      email: data.email,
-      displayName: 'Admin User',
-      firstName: 'Admin',
-      lastName: 'User',
+      id: mockUsers.admin.id,
+      email: mockUsers.admin.email,
+      displayName: mockUsers.admin.displayName,
       role: 'admin',
       isActive: true,
       createdAt: new Date().toISOString(),
