@@ -20,7 +20,7 @@ export const useAuthStore = create<AuthStore>()(
       user: null,
       token: null,
       isAuthenticated: false,
-      isLoading: true,
+      isLoading: false,
       setUser: (user) =>
         set({ user, isAuthenticated: !!user, isLoading: false }),
       setToken: (token) => set({ token }),
