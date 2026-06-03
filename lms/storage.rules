@@ -1,0 +1,43 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAuth() { return request.auth != null; }
+    function role() { return request.auth.token.role; }
+    function uid() { return request.auth.uid; }
+    function isAtLeastTeacher() { return isAuth() && (role() in ['teacher', 'admin', 'super_admin']); }
+    function isAtLeastAdmin() { return isAuth() && (role() in ['admin', 'super_admin']); }
+    function isValidImageType() { return request.resource.contentType.startsWith('image/'); }
+    function fileSizeLimit(maxMB) { return request.resource.size < maxMB * 1024 * 1024; }
+
+    match /users/{userId}/{fileName} {
+      allow read: if isAuth();
+      allow write: if isAuth() && uid() == userId && isValidImageType() && fileSizeLimit(5);
+      allow delete: if isAuth() && (uid() == userId || isAtLeastAdmin());
+    }
+
+    match /courses/{courseId}/{materialType}/{fileName} {
+      allow read: if isAuth();
+      allow write: if isAtLeastTeacher() && fileSizeLimit(50);
+      allow delete: if isAtLeastAdmin();
+    }
+
+    match /assignments/{assignmentId}/{fileName} {
+      allow read: if isAuth();
+      allow write: if isAtLeastTeacher() && fileSizeLimit(50);
+      allow delete: if isAtLeastAdmin();
+    }
+
+    match /submissions/{assignmentId}/{studentId}/{fileName} {
+      allow read: if isAuth() && (uid() == studentId || isAtLeastTeacher());
+      allow write: if isAuth() && fileSizeLimit(50) && (
+        (request.resource.contentType.matches('^(image/|application/pdf|text/|application/zip)') && uid() == studentId) ||
+        isAtLeastTeacher()
+      );
+      allow delete: if isAtLeastAdmin();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
