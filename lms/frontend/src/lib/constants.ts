@@ -18,15 +18,46 @@ export const ROLE_HIERARCHY: Record<UserRole, number> = {
 
 export const ROUTES = {
   HOME: '/',
+  WELCOME: '/welcome',
   LOGIN: '/login',
+  LOGIN_STUDENT: '/login/student',
+  LOGIN_TEACHER: '/login/teacher',
+  LOGIN_ADMIN: '/login/admin',
   REGISTER: '/register',
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
   DASHBOARD: '/dashboard',
+
+  STUDENT_DASHBOARD: '/student/dashboard',
+  STUDENT_SUBJECTS: '/student/subjects',
+  STUDENT_SUBJECT: (id: string) => `/student/subjects/${id}`,
+  STUDENT_EXAMS: '/student/exams',
+  STUDENT_EXAM_CORRECTION: (id: string) => `/student/exams/${id}/correction`,
+  STUDENT_TIMETABLE: '/student/timetable',
+  STUDENT_PROFILE: '/student/profile',
+
+  TEACHER_DASHBOARD: '/teacher/dashboard',
+  TEACHER_STUDENTS: '/teacher/students',
+  TEACHER_STUDENT: (id: string) => `/teacher/students/${id}`,
+  TEACHER_EXAMS: '/teacher/exams',
+  TEACHER_EXAM_CORRECT: (id: string) => `/teacher/exams/${id}/correct`,
+  TEACHER_CLASSES: '/teacher/classes',
+  TEACHER_TEXTBOOKS: '/teacher/textbooks',
+  TEACHER_TEXTBOOK_CREATE: '/teacher/textbooks/create',
+  TEACHER_TEXTBOOK: (id: string) => `/teacher/textbooks/${id}`,
+  TEACHER_PROFILE: '/teacher/profile',
+
+  ADMIN_DASHBOARD: '/admin/dashboard',
+  ADMIN_STUDENTS: '/admin/students',
+  ADMIN_TEACHERS: '/admin/teachers',
+  ADMIN_CLASSES: '/admin/classes',
+  ADMIN_CLASS_TIMETABLE: (id: string) => `/admin/classes/${id}/timetable`,
+  ADMIN_SUBJECTS: '/admin/subjects',
+  ADMIN_SETTINGS: '/admin/settings',
+
   COURSES: '/courses',
   COURSE_DETAIL: (id: string) => `/courses/${id}`,
-  COURSE_LESSON: (courseId: string, lessonId: string) =>
-    `/courses/${courseId}/lessons/${lessonId}`,
+  COURSE_LESSON: (courseId: string, lessonId: string) => `/courses/${courseId}/lessons/${lessonId}`,
   MODULES: (courseId: string) => `/courses/${courseId}/modules`,
   ASSIGNMENTS: '/assignments',
   ASSIGNMENT_DETAIL: (id: string) => `/assignments/${id}`,
@@ -55,7 +86,6 @@ export const ROUTES = {
   GRADEBOOK: (courseId: string) => `/courses/${courseId}/gradebook`,
   ADMIN: '/admin',
   ADMIN_USERS: '/admin/users',
-  ADMIN_SETTINGS: '/admin/settings',
 } as const;
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';

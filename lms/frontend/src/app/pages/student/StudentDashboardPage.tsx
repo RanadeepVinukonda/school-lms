@@ -1,275 +1,446 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import {
-  BookOpen, CheckCircle, Clock, GraduationCap, MessageCircle,
-  TrendingUp, Trophy, Sparkles, ArrowRight, Play, AlertCircle,
-  FileText, BookMarked, Search, Calendar
-} from 'lucide-react';
 import { SEOHead } from '@/components/common/SEOHead';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { cn, formatDate, getTimeGreeting } from '@/lib/utils';
+import { Icon } from '@/components/ui/Icon';
+import { cn } from '@/lib/utils';
+import { getDueUrgency } from '@/lib/utils';
+import { formatRelativeTime } from '@/lib/format';
+import { pageTransition, listContainer, listItem, springTransition } from '@/lib/motion';
 import { useQuery } from '@tanstack/react-query';
+import {
+  mockUsers,
+  mockEnrollments,
+  mockNotifications,
+  mockAssignments,
+  mockSubjects,
+  mockQuizzes,
+  mockExams,
+  mockGrades,
+} from '@/lib/mockData';
 
-function getDueBadge(date: string) {
-  const d = new Date(date);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const due = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const diff = due.getTime() - today.getTime();
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  if (days < 0) return { label: 'Overdue', variant: 'destructive' as const };
-  if (days === 0) return { label: 'Due Today', variant: 'warning' as const };
-  if (days === 1) return { label: 'Due Tomorrow', variant: 'secondary' as const };
-  return { label: formatDate(date), variant: 'outline' as const };
+function AnimatedCount({ value }: { value: number }) {
+  const [displayed, setDisplayed] = useState(0);
+  const hasAnimated = useRef(false);
+
+  useEffect(() => {
+    if (hasAnimated.current) return;
+    hasAnimated.current = true;
+    const duration = 800;
+    const steps = 30;
+    const increment = value / steps;
+    let current = 0;
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= value) {
+        setDisplayed(value);
+        clearInterval(timer);
+      } else {
+        setDisplayed(Math.round(current));
+      }
+    }, duration / steps);
+    return () => clearInterval(timer);
+  }, [value]);
+
+  return <>{displayed}</>;
 }
-
-const container = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
-const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
 
 function DashboardSkeleton() {
   return (
-    <div className="p-4 space-y-6">
-      <Skeleton className="h-8 w-64" />
-      <div className="grid grid-cols-2 gap-3">
-        {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
+    <div className="p-4 max-w-5xl mx-auto space-y-6 pb-20">
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-56" />
+        <Skeleton className="h-4 w-40" />
       </div>
-      <Skeleton className="h-40 rounded-xl" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[1, 2, 3, 4].map((i) => (
+          <Skeleton key={i} className="h-24 rounded-xl" />
+        ))}
+      </div>
       <Skeleton className="h-32 rounded-xl" />
+      <Skeleton className="h-48 rounded-xl" />
     </div>
   );
 }
 
-function EmptyState({ name }: { name: string }) {
+function ErrorDisplay({ onRetry }: { onRetry: () => void }) {
   return (
-    <Card className="col-span-full">
-      <CardContent className="flex flex-col items-center gap-4 py-12">
-        <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-          <Sparkles className="h-8 w-8 text-primary" />
-        </div>
-        <p className="text-lg font-medium">Welcome, {name}!</p>
-        <p className="text-sm text-muted-foreground text-center max-w-sm">
-          You're all set to start learning. Browse courses to get started on your educational journey.
-        </p>
-        <Button asChild><Link to="/student/courses"><BookOpen className="h-4 w-4 mr-2" />Browse Courses</Link></Button>
-      </CardContent>
-    </Card>
+    <div className="p-4 max-w-5xl mx-auto pb-20">
+      <Card>
+        <CardContent className="flex flex-col items-center gap-4 py-16">
+          <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
+            <Icon name="error" size={32} className="text-destructive" />
+          </div>
+          <p className="text-lg font-semibold">Something went wrong</p>
+          <p className="text-sm text-muted-foreground">Failed to load dashboard data. Please try again.</p>
+          <Button variant="outline" onClick={onRetry} className="gap-2">
+            <Icon name="refresh" size={16} />
+            Try again
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
-function ErrorState({ onRetry }: { onRetry: () => void }) {
+function EmptyDashboard({ displayName }: { displayName: string }) {
   return (
-    <Card className="col-span-full">
-      <CardContent className="flex flex-col items-center gap-4 py-12">
-        <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
-          <AlertCircle className="h-8 w-8 text-destructive" />
-        </div>
-        <p className="text-lg font-medium">Something went wrong</p>
-        <p className="text-sm text-muted-foreground">Failed to load dashboard data</p>
-        <Button variant="outline" onClick={onRetry}>Try Again</Button>
-      </CardContent>
-    </Card>
+    <div className="p-4 max-w-5xl mx-auto pb-20">
+      <Card>
+        <CardContent className="flex flex-col items-center gap-4 py-16">
+          <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
+            <Icon name="auto_awesome" size={40} className="text-primary" />
+          </div>
+          <p className="text-xl font-bold">Welcome, {displayName}!</p>
+          <p className="text-sm text-muted-foreground text-center max-w-md">
+            You are not enrolled in any subjects yet. Browse the course catalog to get started on your learning journey.
+          </p>
+          <Button asChild>
+            <Link to="/student/subjects">
+              <Icon name="menu_book" size={16} className="mr-2" />
+              Browse Subjects
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
 export default function StudentDashboardPage() {
-  const [selectedTab, setSelectedTab] = useState('all');
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['student-dashboard'],
     queryFn: async () => {
-      await new Promise(r => setTimeout(r, 1000));
-      return null;
+      await new Promise((r) => setTimeout(r, 400));
+      const student = mockUsers.student1;
+      const enrollments = mockEnrollments.filter((e) => e.studentId === student.id);
+      const subjectIds = enrollments.map((e) => e.subjectId);
+      const enrolledSubjects = mockSubjects.filter((s) => subjectIds.includes(s.id));
+      const notifications = mockNotifications.filter((n) => n.recipientId === student.id);
+      const pendingAssignments = mockAssignments.filter((a) => subjectIds.includes(a.courseId));
+      const upcomingExams = mockExams.filter((e) => new Date(e.startDate) > new Date());
+      const grades = mockGrades.filter((g) => g.studentId === student.id);
+
+      return { student, enrollments, enrolledSubjects, notifications, pendingAssignments, upcomingExams, grades };
     },
   });
 
-  const isNewUser = false;
-  const userName = 'Alex';
-
   if (isLoading) return <DashboardSkeleton />;
-  if (isError) return <div className="p-4"><ErrorState onRetry={() => refetch()} /></div>;
-  if (isNewUser) return <div className="p-4"><EmptyState name={userName} /></div>;
+  if (isError) return <ErrorDisplay onRetry={() => refetch()} />;
+  if (!data || data.enrolledSubjects.length === 0) {
+    return <EmptyDashboard displayName={mockUsers.student1.displayName} />;
+  }
 
-  const courses = [
-    { id: '1', title: 'Algebra II', teacher: 'Mrs. Johnson', progress: 65, color: 'from-violet-500 to-purple-600' },
-    { id: '2', title: 'World History', teacher: 'Mr. Chen', progress: 30, color: 'from-blue-500 to-cyan-600' },
-    { id: '3', title: 'Biology 101', teacher: 'Dr. Patel', progress: 80, color: 'from-emerald-500 to-teal-600' },
-  ];
-
-  const lessons = [
-    { id: '1', title: 'Quadratic Equations', course: 'Algebra II', time: '9:00 AM', live: true },
-    { id: '2', title: 'World War II Overview', course: 'World History', time: '10:30 AM', live: false },
-    { id: '3', title: 'Cell Division', course: 'Biology 101', time: '1:00 PM', live: false },
-  ];
-
-  const assignments = [
-    { id: '1', title: 'Homework Set 5', course: 'Algebra II', due: new Date(Date.now() + 86400000).toISOString(), points: 50 },
-    { id: '2', title: 'History Essay', course: 'World History', due: new Date(Date.now() - 86400000).toISOString(), points: 100 },
-    { id: '3', title: 'Lab Report', course: 'Biology 101', due: new Date(Date.now() + 2 * 86400000).toISOString(), points: 75 },
-  ];
-
-  const grades = [
-    { course: 'Algebra II', grade: 'A-', score: 90, color: 'text-emerald-500' },
-    { course: 'World History', grade: 'B+', score: 87, color: 'text-emerald-500' },
-    { course: 'Biology 101', grade: 'C+', score: 78, color: 'text-amber-500' },
-  ];
-
-  const announcements = [
-    { id: '1', title: 'Final Exam Schedule', body: 'The final exam schedule has been posted.', time: new Date(Date.now() - 3600000).toISOString() },
-    { id: '2', title: 'School Assembly', body: 'Friday assembly at 2 PM in the auditorium.', time: new Date(Date.now() - 86400000 * 2).toISOString() },
-  ];
-
-  const activities = [
-    { id: '1', type: 'completed', desc: 'Completed "Quadratic Equations"', time: '2h ago' },
-    { id: '2', type: 'grade', desc: 'Grade posted: Algebra Quiz - 92%', time: '5h ago' },
-    { id: '3', type: 'submitted', desc: 'Submitted History Essay', time: '1d ago' },
-  ];
+  const { student, enrollments, enrolledSubjects, notifications, pendingAssignments, upcomingExams, grades } = data;
+  const avgGrade = grades.length > 0 ? Math.round(grades.reduce((sum, g) => sum + g.percentage, 0) / grades.length) : 0;
 
   return (
     <>
-      <SEOHead title="Dashboard" description="Your learning dashboard" canonical="/dashboard/student" />
-      <motion.div variants={container} initial="hidden" animate="show" className="p-4 max-w-5xl mx-auto space-y-6 pb-20">
-      <motion.div variants={item}>
-        <h1 className="text-2xl font-bold">{getTimeGreeting()}, {userName}</h1>
-        <p className="text-sm text-muted-foreground">Here's your learning summary</p>
-      </motion.div>
+      <SEOHead title="Dashboard" description="Your student learning dashboard" />
+      <motion.div
+        variants={pageTransition}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        className="p-4 max-w-5xl mx-auto space-y-6 pb-20"
+      >
+        {/* Greeting */}
+        <motion.div variants={listItem} initial="hidden" animate="show">
+          <h1 className="text-2xl font-bold">
+            Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'},{' '}
+            {student.displayName.split(' ')[0]}
+          </h1>
+          <p className="text-sm text-muted-foreground">Here is your learning summary</p>
+        </motion.div>
 
-      <motion.div variants={item} className="grid grid-cols-2 gap-3">
-        <Card><CardContent className="p-4 flex items-center gap-3"><div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center"><BookOpen className="h-5 w-5 text-primary" /></div><div><p className="text-2xl font-bold">{courses.length}</p><p className="text-xs text-muted-foreground">Active Courses</p></div></CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3"><div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center"><CheckCircle className="h-5 w-5 text-emerald-500" /></div><div><p className="text-2xl font-bold">12</p><p className="text-xs text-muted-foreground">Completed</p></div></CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3"><div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center"><Clock className="h-5 w-5 text-amber-500" /></div><div><p className="text-2xl font-bold">3</p><p className="text-xs text-muted-foreground">Pending</p></div></CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3"><div className="h-10 w-10 rounded-lg bg-violet-500/10 flex items-center justify-center"><Trophy className="h-5 w-5 text-violet-500" /></div><div><p className="text-2xl font-bold">88%</p><p className="text-xs text-muted-foreground">Avg Grade</p></div></CardContent></Card>
-      </motion.div>
-
-      <motion.div variants={item}>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold">Continue Learning</h2>
-          <Link to="/student/courses" className="text-sm text-primary hover:underline">View all</Link>
-        </div>
-        <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-none">
-          {courses.map(c => (
-            <Link key={c.id} to={`/student/courses/${c.id}`} className="flex-shrink-0 w-64">
-              <Card className="overflow-hidden hover:shadow-md transition-shadow">
-                <div className={`h-24 bg-gradient-to-br ${c.color} flex items-end p-3`}>
-                  <p className="text-white font-semibold text-sm">{c.title}</p>
+        {/* Quick Stats */}
+        <motion.div
+          variants={listContainer}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-2 lg:grid-cols-4 gap-3"
+        >
+          <motion.div variants={listItem}>
+            <Card>
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                  <Icon name="menu_book" size={20} className="text-blue-600" />
                 </div>
-                <CardContent className="p-3 space-y-2">
-                  <p className="text-xs text-muted-foreground">{c.teacher}</p>
-                  <div className="flex items-center gap-2">
-                    <Progress value={c.progress} className="flex-1 h-1.5" />
-                    <span className="text-xs font-medium">{c.progress}%</span>
-                  </div>
-                  <Button size="sm" variant="secondary" className="w-full text-xs">
-                    <Play className="h-3 w-3 mr-1" />Continue
-                  </Button>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      </motion.div>
+                <div className="min-w-0">
+                  <p className="text-2xl font-bold">
+                    <AnimatedCount value={enrolledSubjects.length} />
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">Enrolled Subjects</p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+          <motion.div variants={listItem}>
+            <Card>
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                  <Icon name="assignment" size={20} className="text-amber-600" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-2xl font-bold">
+                    <AnimatedCount value={pendingAssignments.length} />
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">Pending Assignments</p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+          <motion.div variants={listItem}>
+            <Card>
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                  <Icon name="fact_check" size={20} className="text-red-600" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-2xl font-bold">
+                    <AnimatedCount value={upcomingExams.length} />
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">Upcoming Exams</p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+          <motion.div variants={listItem}>
+            <Card>
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                  <Icon name="trending_up" size={20} className="text-emerald-600" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-2xl font-bold">
+                    <AnimatedCount value={avgGrade} />
+                    <span className="text-sm">%</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">Average Grade</p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <motion.div variants={item}>
+        {/* Latest Updates */}
+        <motion.div variants={listItem} initial="hidden" animate="show">
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-base">Today's Lessons</CardTitle></CardHeader>
-            <CardContent className="space-y-2">
-              {lessons.map(l => (
-                <div key={l.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors">
-                  <div className={cn('h-2 w-2 rounded-full', l.live ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground/30')} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{l.title}</p>
-                    <p className="text-xs text-muted-foreground">{l.course}</p>
-                  </div>
-                  <span className="text-xs text-muted-foreground">{l.time}</span>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Icon name="notifications" size={18} />
+                  Latest Updates
+                </CardTitle>
+                <Link to="/notifications" className="text-sm text-primary hover:underline">
+                  View all
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {notifications.length === 0 ? (
+                <div className="flex flex-col items-center py-6 text-center">
+                  <Icon name="notifications_off" size={32} className="text-muted-foreground/50 mb-2" />
+                  <p className="text-sm text-muted-foreground">No new notifications</p>
                 </div>
-              ))}
+              ) : (
+                <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-none">
+                  {notifications.map((n, idx) => (
+                    <motion.div
+                      key={n.id}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ ...springTransition, delay: idx * 0.05 }}
+                      whileHover={{ y: -4, scale: 1.02 }}
+                    >
+                      <Link
+                        to={n.link || '#'}
+                        className="flex-shrink-0 w-64 block"
+                      >
+                        <Card className="border-l-4 border-l-primary h-full">
+                          <CardContent className="p-4 space-y-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="text-sm font-semibold leading-tight">{n.title}</p>
+                              {!n.read && <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0 mt-1" />}
+                            </div>
+                            <p className="text-xs text-muted-foreground line-clamp-2">{n.message}</p>
+                            <p className="text-xs text-muted-foreground/60">{formatRelativeTime(n.createdAt)}</p>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
 
-        <motion.div variants={item}>
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-base">Upcoming Assignments</CardTitle></CardHeader>
-            <CardContent className="space-y-2">
-              {assignments.map(a => {
-                const badge = getDueBadge(a.due);
-                return (
-                  <Link key={a.id} to={`/student/assignments/${a.id}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors">
-                    <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{a.title}</p>
-                      <p className="text-xs text-muted-foreground">{a.course} &middot; {a.points} pts</p>
-                    </div>
-                    <Badge variant={badge.variant}>{badge.label}</Badge>
+        {/* Continue Watching + Pending Work */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Continue Watching */}
+          <motion.div variants={listItem} initial="hidden" animate="show">
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Icon name="play_circle" size={18} />
+                    Continue Watching
+                  </CardTitle>
+                  <Link to="/student/subjects" className="text-sm text-primary hover:underline">
+                    View all
                   </Link>
-                );
-              })}
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-
-        <motion.div variants={item}>
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-base">Recent Grades</CardTitle></CardHeader>
-            <CardContent className="space-y-2">
-              {grades.map(g => (
-                <div key={g.course} className="flex items-center justify-between p-2 rounded-lg hover:bg-accent">
-                  <span className="text-sm font-medium">{g.course}</span>
-                  <div className="flex items-center gap-2">
-                    <Progress value={g.score} className="w-24 h-1.5" />
-                    <span className={cn('text-sm font-bold', g.color)}>{g.grade}</span>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {enrolledSubjects.length === 0 ? (
+                  <div className="flex flex-col items-center py-6 text-center">
+                    <Icon name="play_disabled" size={32} className="text-muted-foreground/50 mb-2" />
+                    <p className="text-sm text-muted-foreground">No subjects enrolled yet</p>
                   </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </motion.div>
+                ) : (
+                  enrolledSubjects.map((subject) => {
+                    const enrollment = enrollments.find((e) => e.subjectId === subject.id);
+                    const progress = enrollment?.progress ?? 0;
+                    return (
+                      <Link
+                        key={subject.id}
+                        to={`/student/subjects/${subject.id}`}
+                        className="block"
+                      >
+                        <motion.div whileHover={{ x: 4 }} transition={springTransition}>
+                          <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
+                            <div
+                              className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                              style={{ backgroundColor: `${subject.color}15` }}
+                            >
+                              <Icon name={subject.icon} size={20} style={{ color: subject.color }} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{subject.name}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Progress value={progress} className="flex-1 h-1.5" />
+                                <span className="text-xs font-medium tabular-nums">{progress}%</span>
+                              </div>
+                            </div>
+                            <Icon name="chevron_right" size={18} className="text-muted-foreground flex-shrink-0" />
+                          </div>
+                        </motion.div>
+                      </Link>
+                    );
+                  })
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <motion.div variants={item}><Card><CardHeader className="pb-2"><CardTitle className="text-base">Recent Activity</CardTitle></CardHeader>
-            <CardContent className="space-y-2">
-              {activities.map(a => (
-                <div key={a.id} className="flex items-center gap-3 p-2">
-                  <div className={cn('h-2 w-2 rounded-full', a.type === 'completed' ? 'bg-emerald-500' : a.type === 'grade' ? 'bg-primary' : 'bg-amber-500')} />
-                  <div className="flex-1"><p className="text-sm">{a.desc}</p></div>
-                  <span className="text-xs text-muted-foreground">{a.time}</span>
+          {/* Pending Work */}
+          <motion.div variants={listItem} initial="hidden" animate="show">
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Icon name="assignment" size={18} />
+                    Pending Work
+                  </CardTitle>
+                  <Link to="/assignments" className="text-sm text-primary hover:underline">
+                    View all
+                  </Link>
                 </div>
-              ))}
-            </CardContent>
-          </Card>
-        </motion.div>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {pendingAssignments.length === 0 ? (
+                  <div className="flex flex-col items-center py-6 text-center">
+                    <Icon name="task_alt" size={32} className="text-muted-foreground/50 mb-2" />
+                    <p className="text-sm text-muted-foreground">All caught up! No pending assignments.</p>
+                  </div>
+                ) : (
+                  pendingAssignments.map((assignment) => {
+                    const subject = mockSubjects.find((s) => s.id === assignment.courseId);
+                    const urgency = getDueUrgency(assignment.dueDate);
+                    return (
+                      <Link
+                        key={assignment.id}
+                        to={`/assignments/${assignment.id}`}
+                        className="block"
+                      >
+                        <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
+                          <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                            <Icon name="description" size={18} className="text-muted-foreground" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{assignment.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {subject?.name ?? 'Unknown'} &middot; {assignment.maxPoints} pts
+                            </p>
+                          </div>
+                          <Badge
+                            variant={
+                              urgency.variant === 'warning'
+                                ? 'warning'
+                                : urgency.variant === 'destructive'
+                                  ? 'destructive'
+                                  : urgency.variant === 'secondary'
+                                    ? 'secondary'
+                                    : 'outline'
+                            }
+                            className="flex-shrink-0 text-[10px]"
+                          >
+                            {urgency.label}
+                          </Badge>
+                        </div>
+                      </Link>
+                    );
+                  })
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
 
-        <motion.div variants={item}>
+        {/* Quick Actions */}
+        <motion.div variants={listItem} initial="hidden" animate="show">
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-base">Announcements</CardTitle></CardHeader>
-            <CardContent className="space-y-2">
-              {announcements.map(a => (
-                <div key={a.id} className="p-2 rounded-lg hover:bg-accent transition-colors">
-                  <p className="text-sm font-medium">{a.title}</p>
-                  <p className="text-xs text-muted-foreground">{a.body}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{formatDate(a.time)}</p>
-                </div>
-              ))}
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Icon name="rocket_launch" size={18} />
+                Quick Actions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <Button variant="outline" className="justify-start h-auto py-3 gap-2" asChild>
+                <Link to="/student/subjects">
+                  <Icon name="menu_book" size={16} />
+                  Subjects
+                </Link>
+              </Button>
+              <Button variant="outline" className="justify-start h-auto py-3 gap-2" asChild>
+                <Link to="/assignments">
+                  <Icon name="assignment" size={16} />
+                  Assignments
+                </Link>
+              </Button>
+              <Button variant="outline" className="justify-start h-auto py-3 gap-2" asChild>
+                <Link to="/student/exams">
+                  <Icon name="fact_check" size={16} />
+                  Exams
+                </Link>
+              </Button>
+              <Button variant="outline" className="justify-start h-auto py-3 gap-2" asChild>
+                <Link to="/student/timetable">
+                  <Icon name="calendar_month" size={16} />
+                  Timetable
+                </Link>
+              </Button>
             </CardContent>
-          </Card></motion.div>
-      </div>
-
-      <motion.div variants={item}><Card><CardHeader className="pb-2"><CardTitle className="text-base">Quick Actions</CardTitle></CardHeader>
-          <CardContent className="grid grid-cols-2 gap-2">
-            <Button variant="outline" className="justify-start h-auto py-3" asChild><Link to="/student/courses"><BookOpen className="h-4 w-4 mr-2" />Browse Courses</Link></Button>
-            <Button variant="outline" className="justify-start h-auto py-3" asChild><Link to="/student/messages"><MessageCircle className="h-4 w-4 mr-2" />Messages</Link></Button>
-            <Button variant="outline" className="justify-start h-auto py-3" asChild><Link to="/student/grades"><TrendingUp className="h-4 w-4 mr-2" />Grades</Link></Button>
-            <Button variant="outline" className="justify-start h-auto py-3" asChild><Link to="/student/courses"><Play className="h-4 w-4 mr-2" />Start Learning</Link></Button>
-          </CardContent>
-        </Card>
+          </Card>
+        </motion.div>
       </motion.div>
-      </motion.div>
-      </>
+    </>
   );
 }

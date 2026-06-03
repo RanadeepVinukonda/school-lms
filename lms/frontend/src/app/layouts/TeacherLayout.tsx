@@ -1,14 +1,13 @@
-import { NavLink, Outlet, Navigate } from 'react-router-dom';
+import { NavLink, Outlet } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
-import { ROUTES } from '@/lib/constants';
-import { isAdmin } from '@/utils/permissions';
-import { Icon } from '@/components/ui/Icon';
-import { Button } from '@/components/ui/button';
 import { NotificationBell } from '@/components/layout/NotificationBell';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { UserAvatar } from '@/components/layout/UserAvatar';
+import { Icon } from '@/components/ui/Icon';
+import { Button } from '@/components/ui/button';
+import { ROUTES } from '@/lib/constants';
 
 interface NavItem {
   label: string;
@@ -16,22 +15,25 @@ interface NavItem {
   icon: string;
 }
 
-const navItems: NavItem[] = [
-  { label: 'Dashboard', href: ROUTES.ADMIN_DASHBOARD, icon: 'dashboard' },
-  { label: 'Students', href: ROUTES.ADMIN_STUDENTS, icon: 'school' },
-  { label: 'Teachers', href: ROUTES.ADMIN_TEACHERS, icon: 'badge' },
-  { label: 'Classes', href: ROUTES.ADMIN_CLASSES, icon: 'meeting_room' },
-  { label: 'Subjects', href: ROUTES.ADMIN_SUBJECTS, icon: 'book' },
-  { label: 'Settings', href: ROUTES.ADMIN_SETTINGS, icon: 'settings' },
+const sidebarNavItems: NavItem[] = [
+  { label: 'Home', href: ROUTES.TEACHER_DASHBOARD, icon: 'home' },
+  { label: 'Students', href: ROUTES.TEACHER_STUDENTS, icon: 'group' },
+  { label: 'Exams', href: ROUTES.TEACHER_EXAMS, icon: 'assignment' },
+  { label: 'Textbooks', href: ROUTES.TEACHER_TEXTBOOKS, icon: 'menu_book' },
+  { label: 'Profile', href: ROUTES.TEACHER_PROFILE, icon: 'person' },
 ];
 
-export function AdminLayout() {
-  const { sidebarCollapsed, sidebarOpen, setSidebarOpen, setSidebarCollapsed } = useUIStore();
-  const user = useAuthStore((s) => s.user);
+const bottomNavItems: NavItem[] = [
+  { label: 'Home', href: ROUTES.TEACHER_DASHBOARD, icon: 'home' },
+  { label: 'Students', href: ROUTES.TEACHER_STUDENTS, icon: 'group' },
+  { label: 'Exams', href: ROUTES.TEACHER_EXAMS, icon: 'assignment' },
+  { label: 'Textbooks', href: ROUTES.TEACHER_TEXTBOOKS, icon: 'menu_book' },
+  { label: 'Profile', href: ROUTES.TEACHER_PROFILE, icon: 'person' },
+];
 
-  if (!user || !isAdmin(user.role)) {
-    return <Navigate to={ROUTES.DASHBOARD} replace />;
-  }
+export default function TeacherLayout() {
+  const user = useAuthStore((s) => s.user);
+  const { sidebarCollapsed, sidebarOpen, setSidebarOpen, setSidebarCollapsed } = useUIStore();
 
   return (
     <div className="min-h-screen bg-background">
@@ -43,7 +45,7 @@ export function AdminLayout() {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Left sidebar */}
       <aside
         className={cn(
           'fixed top-0 left-0 z-50 h-full border-r bg-card transition-all duration-300 ease-in-out flex flex-col',
@@ -89,12 +91,9 @@ export function AdminLayout() {
           </Button>
         </div>
 
-        {/* Navigation */}
+        {/* Navigation links */}
         <nav className="flex-1 overflow-y-auto p-3 space-y-1">
-          <p className={cn('mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground', sidebarCollapsed && 'sr-only')}>
-            Main Menu
-          </p>
-          {navItems.map((item) => (
+          {sidebarNavItems.map((item) => (
             <NavLink
               key={item.href}
               to={item.href}
@@ -115,7 +114,7 @@ export function AdminLayout() {
           ))}
         </nav>
 
-        {/* User info */}
+        {/* User info at bottom */}
         {!sidebarCollapsed && user && (
           <div className="border-t p-4">
             <div className="flex items-center gap-3">
@@ -131,16 +130,14 @@ export function AdminLayout() {
               </div>
               <div className="flex-1 truncate">
                 <p className="text-sm font-medium">{user.displayName}</p>
-                <p className="text-xs text-muted-foreground capitalize">
-                  {user.role.replace(/_/g, ' ')}
-                </p>
+                <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
               </div>
             </div>
           </div>
         )}
       </aside>
 
-      {/* Main content */}
+      {/* Main content area */}
       <div
         className={cn(
           'transition-all duration-300 ease-in-out',
@@ -174,9 +171,33 @@ export function AdminLayout() {
           </div>
         </header>
 
+        {/* Page content */}
         <main className="p-4 md:p-6 lg:p-8">
           <Outlet />
         </main>
+
+        {/* Bottom navigation (mobile) */}
+        <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background lg:hidden">
+          <div className="flex items-center justify-around h-16 px-2">
+            {bottomNavItems.map((item) => (
+              <NavLink
+                key={item.href}
+                to={item.href}
+                className={({ isActive }) =>
+                  cn(
+                    'flex flex-col items-center gap-1 px-3 py-2 text-xs font-medium transition-colors rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    isActive
+                      ? 'text-primary'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )
+                }
+              >
+                <Icon name={item.icon} size={22} />
+                <span>{item.label}</span>
+              </NavLink>
+            ))}
+          </div>
+        </nav>
       </div>
     </div>
   );

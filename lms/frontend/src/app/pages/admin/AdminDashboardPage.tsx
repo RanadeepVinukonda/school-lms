@@ -1,26 +1,52 @@
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import {
-  Users, BookOpen, GraduationCap, TrendingUp, Activity,
-  BarChart3, AlertCircle, ArrowRight, UserPlus, Settings
-} from 'lucide-react';
+import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
-import { useQuery } from '@tanstack/react-query';
-import { SEOHead } from '@/components/common/SEOHead';
+import { listContainer, listItem } from '@/lib/motion';
+import { mockUsers, mockClasses, mockSubjects, mockNotifications } from '@/lib/mockData';
 
-const container = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } };
-const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
+interface KpiItem {
+  icon: string;
+  label: string;
+  value: string;
+  change: string;
+  color: string;
+  bg: string;
+}
 
-function AdminSkeleton() {
+const kpis: KpiItem[] = [
+  { icon: 'school', label: 'Total Students', value: '3', change: '+3', color: 'text-primary', bg: 'bg-primary/10' },
+  { icon: 'badge', label: 'Total Teachers', value: '2', change: '+2', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  { icon: 'class', label: 'Total Classes', value: '2', change: '+2', color: 'text-violet-500', bg: 'bg-violet-500/10' },
+  { icon: 'menu_book', label: 'Total Subjects', value: '4', change: '+4', color: 'text-amber-500', bg: 'bg-amber-500/10' },
+  { icon: 'trending_up', label: 'Avg Performance', value: '76%', change: '+5%', color: 'text-rose-500', bg: 'bg-rose-500/10' },
+  { icon: 'group', label: 'Active Users', value: '5', change: '100%', color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
+];
+
+const quickLinks = [
+  { icon: 'person', label: 'Manage Students', href: '/admin/students', color: 'text-blue-500' },
+  { icon: 'badge', label: 'Manage Teachers', href: '/admin/teachers', color: 'text-emerald-500' },
+  { icon: 'class', label: 'Manage Classes', href: '/admin/classes', color: 'text-violet-500' },
+  { icon: 'menu_book', label: 'Manage Subjects', href: '/admin/subjects', color: 'text-amber-500' },
+];
+
+function DashboardSkeleton() {
   return (
-    <div className="p-4 space-y-4">
+    <div className="space-y-6">
       <Skeleton className="h-8 w-48" />
-      <div className="grid grid-cols-2 gap-3">{[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
-      <Skeleton className="h-48 rounded-xl" />
+      <Skeleton className="h-4 w-64" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-28 rounded-xl" />
+        ))}
+      </div>
+      <Skeleton className="h-56 rounded-xl" />
     </div>
   );
 }
@@ -28,101 +54,133 @@ function AdminSkeleton() {
 export default function AdminDashboardPage() {
   const { isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-dashboard'],
-    queryFn: async () => { await new Promise(r => setTimeout(r, 600)); return null; },
+    queryFn: async () => {
+      await new Promise((r) => setTimeout(r, 500));
+      return null;
+    },
   });
 
-  if (isLoading) return <AdminSkeleton />;
+  if (isLoading) return <DashboardSkeleton />;
 
   if (isError) {
     return (
       <>
-        <SEOHead title="Admin Dashboard" description="System administration dashboard" canonical="/dashboard/admin" />
-        <div className="p-4">
-          <Card><CardContent className="flex flex-col items-center gap-4 py-12">
-            <AlertCircle className="h-8 w-8 text-destructive" />
+        <SEOHead title="Admin Dashboard" description="System administration overview" canonical="/admin/dashboard" />
+        <Card>
+          <CardContent className="flex flex-col items-center gap-4 py-16">
+            <div className="rounded-full bg-destructive/10 p-4">
+              <Icon name="error" size={32} className="text-destructive" />
+            </div>
             <p className="font-medium">Failed to load dashboard</p>
-            <Button variant="outline" onClick={() => refetch()}>Try Again</Button>
-          </CardContent></Card>
-        </div>
+            <Button variant="outline" onClick={() => refetch()}>
+              <Icon name="refresh" size={16} className="mr-2" />
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
       </>
     );
   }
 
-  const kpis = [
-    { icon: Users, label: 'Total Users', value: '1,284', change: '+12%', color: 'text-primary', bg: 'bg-primary/10' },
-    { icon: BookOpen, label: 'Total Courses', value: '68', change: '+4%', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-    { icon: GraduationCap, label: 'Active Students', value: '892', change: '+8%', color: 'text-violet-500', bg: 'bg-violet-500/10' },
-    { icon: TrendingUp, label: 'Teachers', value: '45', change: '+2%', color: 'text-amber-500', bg: 'bg-amber-500/10' },
-  ];
-
-  const recentActivity = [
-    { id: '1', action: 'New user registered', detail: 'Sarah K. (Student)', time: '5m ago' },
-    { id: '2', action: 'Course published', detail: 'Calculus Preview by Mrs. Johnson', time: '1h ago' },
-    { id: '3', action: 'System backup', detail: 'Daily backup completed', time: '3h ago' },
-    { id: '4', action: 'User role changed', detail: 'James W. promoted to Teacher', time: '1d ago' },
-  ];
+  const students = Object.values(mockUsers).filter((u) => u.role === 'student');
+  const teachers = Object.values(mockUsers).filter((u) => u.role === 'teacher');
+  const recentActivity = mockNotifications
+    .slice()
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 6);
 
   return (
     <>
-      <SEOHead title="Admin Dashboard" description="System administration dashboard" canonical="/dashboard/admin" />
-      <motion.div variants={container} initial="hidden" animate="show" className="p-4 max-w-5xl mx-auto pb-20">
-        <motion.div variants={item}>
-          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-          <p className="text-sm text-muted-foreground mb-4">System overview and management</p>
+      <SEOHead title="Admin Dashboard" description="System administration overview" canonical="/admin/dashboard" />
+      <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
+        <motion.div variants={listItem}>
+          <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
+          <p className="text-sm text-muted-foreground">
+            System overview — {students.length} students, {teachers.length} teachers, {mockClasses.length} classes
+          </p>
         </motion.div>
 
-        <motion.div variants={item} className="grid grid-cols-2 gap-3 mb-6">
-          {kpis.map(k => (
-            <Card key={k.label}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className={cn('h-10 w-10 rounded-lg flex items-center justify-center', k.bg)}>
-                    <k.icon className={cn('h-5 w-5', k.color)} />
+        <motion.div
+          variants={listItem}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        >
+          {kpis.map((kpi) => (
+            <Card key={kpi.label}>
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className={cn('h-11 w-11 rounded-xl flex items-center justify-center', kpi.bg)}>
+                    <Icon name={kpi.icon} size={22} className={kpi.color} />
                   </div>
-                  <Badge variant="success" className="text-[10px]">{k.change}</Badge>
+                  <Badge variant={kpi.change.startsWith('+') ? 'success' : 'warning'} className="text-[10px]">
+                    {kpi.change}
+                  </Badge>
                 </div>
-                <p className="text-2xl font-bold">{k.value}</p>
-                <p className="text-xs text-muted-foreground">{k.label}</p>
+                <p className="text-2xl font-bold tracking-tight">{kpi.value}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{kpi.label}</p>
               </CardContent>
             </Card>
           ))}
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <motion.div variants={item}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <motion.div variants={listItem}>
             <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-base">Recent Activity</CardTitle></CardHeader>
-              <CardContent className="space-y-2">
-                {recentActivity.map(a => (
-                  <div key={a.id} className="flex items-start gap-3 p-2 rounded-lg">
-                    <div className="h-2 w-2 rounded-full bg-primary mt-1.5" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{a.action}</p>
-                      <p className="text-xs text-muted-foreground">{a.detail}</p>
-                    </div>
-                    <span className="text-xs text-muted-foreground flex-shrink-0">{a.time}</span>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Icon name="notifications" size={18} className="text-muted-foreground" />
+                  Recent Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1">
+                {recentActivity.length === 0 ? (
+                  <div className="flex flex-col items-center py-8 text-muted-foreground">
+                    <Icon name="notifications_none" size={36} />
+                    <p className="text-sm mt-2">No recent activity</p>
                   </div>
-                ))}
+                ) : (
+                  recentActivity.map((a) => (
+                    <div
+                      key={a.id}
+                      className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="h-2 w-2 rounded-full bg-primary mt-2 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{a.title}</p>
+                        <p className="text-xs text-muted-foreground truncate">{a.message}</p>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground shrink-0 mt-0.5">
+                        {new Date(a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+                  ))
+                )}
               </CardContent>
             </Card>
           </motion.div>
 
-          <motion.div variants={item}>
+          <motion.div variants={listItem}>
             <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-base">Quick Links</CardTitle></CardHeader>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Icon name="quickreply" size={18} className="text-muted-foreground" />
+                  Quick Links
+                </CardTitle>
+              </CardHeader>
               <CardContent className="space-y-2">
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <Link to="/admin/users"><Users className="h-4 w-4 mr-2" />User Management</Link>
-                </Button>
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <Link to="/admin/classes"><BookOpen className="h-4 w-4 mr-2" />Class Management</Link>
-                </Button>
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <Link to="/admin/subjects"><BarChart3 className="h-4 w-4 mr-2" />Subject Management</Link>
-                </Button>
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <Link to="/admin/settings"><Settings className="h-4 w-4 mr-2" />System Settings</Link>
-                </Button>
+                {quickLinks.map((link) => (
+                  <Button
+                    key={link.href}
+                    variant="outline"
+                    className="w-full justify-start gap-3 h-11"
+                    asChild
+                  >
+                    <Link to={link.href}>
+                      <Icon name={link.icon} size={18} className={link.color} />
+                      <span>{link.label}</span>
+                      <Icon name="chevron_right" size={16} className="ml-auto text-muted-foreground" />
+                    </Link>
+                  </Button>
+                ))}
               </CardContent>
             </Card>
           </motion.div>

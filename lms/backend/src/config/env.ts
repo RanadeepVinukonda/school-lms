@@ -12,6 +12,9 @@ const envSchema = z.object({
   FIREBASE_PRIVATE_KEY: z.string().min(1).transform((key) => key.replace(/\\n/g, '\n')),
   OPENROUTER_API_KEY: z.string().min(1),
   AI_MODEL: z.string().default('nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free'),
+  CLOUDINARY_CLOUD_NAME: z.string().min(1),
+  CLOUDINARY_API_KEY: z.string().min(1),
+  CLOUDINARY_API_SECRET: z.string().min(1),
 });
 
 const parsed = envSchema.safeParse(process.env);

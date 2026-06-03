@@ -5,6 +5,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from 'sonner';
 import App from './app/App';
 import './index.css';
+import './lib/motion.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {

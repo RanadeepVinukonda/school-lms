@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
+    "@material/web": "^2.4.1",
     "@radix-ui/react-avatar": "^1.1.0",
     "@radix-ui/react-checkbox": "^1.1.0",
     "@radix-ui/react-dialog": "^1.1.0",
@@ -33,6 +34,7 @@
     "firebase": "^11.0.1",
     "framer-motion": "^11.11.17",
     "lucide-react": "^0.460.0",
+    "material-expressive-react": "^0.2.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-dropzone": "^14.3.5",

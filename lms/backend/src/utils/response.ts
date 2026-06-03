@@ -34,6 +34,13 @@ export function sendCreated<T>(res: Response, data: T, message?: string) {
   return sendSuccess(res, data, message, 201);
 }
 
+export function sendError(res: Response, message: string, statusCode = 500) {
+  return res.status(statusCode).json({
+    success: false,
+    error: { message },
+  });
+}
+
 export function sendNoContent(res: Response) {
   return res.status(204).send();
 }
