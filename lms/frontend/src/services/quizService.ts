@@ -1,10 +1,17 @@
 import api from './api';
-import type { ApiResponse, PaginatedResponse, PaginationParams, Quiz, QuizAttempt } from '@/types';
+import type { ApiResponse, PaginationParams, Quiz, QuizAttempt } from '@/types';
+
+interface PaginatedItems<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
 
 export const quizService = {
   async getAll(params?: PaginationParams) {
-    const response = await api.get<PaginatedResponse<Quiz>>('/quizzes', { params });
-    return response.data;
+    const response = await api.get<ApiResponse<PaginatedItems<Quiz>>>('/quizzes', { params });
+    return response.data.data!.items;
   },
 
   async getById(id: string) {

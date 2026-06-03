@@ -1,10 +1,17 @@
 import api from './api';
-import type { ApiResponse, Exam, ExamAttempt, PaginatedResponse, PaginationParams } from '@/types';
+import type { ApiResponse, Exam, ExamAttempt, PaginationParams } from '@/types';
+
+interface PaginatedItems<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
 
 export const examService = {
   async getAll(params?: PaginationParams) {
-    const response = await api.get<PaginatedResponse<Exam>>('/exams', { params });
-    return response.data;
+    const response = await api.get<ApiResponse<PaginatedItems<Exam>>>('/exams', { params });
+    return response.data.data!.items;
   },
 
   async getById(id: string) {

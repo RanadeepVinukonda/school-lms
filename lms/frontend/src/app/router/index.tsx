@@ -14,8 +14,11 @@ import { ResetPasswordForm } from '@/features/auth/components/ResetPasswordForm'
 import CoursesPage from '@/app/pages/student/CoursesPage';
 import CourseDetailPage from '@/app/pages/student/CourseDetailPage';
 import LessonViewPage from '@/app/pages/student/LessonViewPage';
+import AssignmentsPage from '@/app/pages/student/AssignmentsPage';
 import AssignmentDetailPage from '@/app/pages/student/AssignmentDetailPage';
+import QuizzesPage from '@/app/pages/student/QuizzesPage';
 import QuizAttemptPage from '@/app/pages/student/QuizAttemptPage';
+import ExamsPage from '@/app/pages/student/ExamsPage';
 import ExamAttemptPage from '@/app/pages/student/ExamAttemptPage';
 import GradesPage from '@/app/pages/student/GradesPage';
 import MessagesPage from '@/app/pages/student/MessagesPage';
@@ -108,7 +111,7 @@ export const router = createBrowserRouter([
       },
       {
         path: ROUTES.ASSIGNMENTS,
-        element: <Navigate to={ROUTES.DASHBOARD} replace />,
+        element: <AssignmentsPage />,
       },
       {
         path: ROUTES.ASSIGNMENT_DETAIL(':id'),
@@ -116,7 +119,7 @@ export const router = createBrowserRouter([
       },
       {
         path: ROUTES.QUIZZES,
-        element: <Navigate to={ROUTES.DASHBOARD} replace />,
+        element: <QuizzesPage />,
       },
       {
         path: ROUTES.QUIZ_ATTEMPT(':id'),
@@ -124,7 +127,7 @@ export const router = createBrowserRouter([
       },
       {
         path: ROUTES.EXAMS,
-        element: <Navigate to={ROUTES.DASHBOARD} replace />,
+        element: <ExamsPage />,
       },
       {
         path: ROUTES.EXAM_DETAIL(':id'),
