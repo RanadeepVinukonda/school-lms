@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { assignmentService } from '@/services/assignmentService';
+import { mockAssignments } from '@/lib/mockData';
 import type { Assignment } from '@/types';
 
 const submitSchema = z.object({
@@ -45,23 +45,23 @@ export default function AssignmentDetailPage() {
 
   const content = watch('content');
 
-  const { data: assignment, isLoading, isError, refetch } = useQuery({
+  const { data: assignment, isLoading, isError } = useQuery({
     queryKey: ['assignment', assignmentId],
     queryFn: async () => {
-      const result = await assignmentService.getById(assignmentId!);
-      return result.data as Assignment;
+      await new Promise((r) => setTimeout(r, 300));
+      return mockAssignments.find((a) => a.id === assignmentId) as Assignment | undefined;
     },
     enabled: !!assignmentId,
   });
 
   const submitMutation = useMutation({
-    mutationFn: async (content: string) => {
-      await assignmentService.submit(assignmentId!, { content } as any);
+    mutationFn: async (_content: string) => {
+      await new Promise((r) => setTimeout(r, 500));
+      return;
     },
     onSuccess: () => {
       toast.success('Assignment submitted successfully!');
       setShowConfirm(false);
-      refetch();
     },
     onError: () => {
       toast.error('Failed to submit assignment');

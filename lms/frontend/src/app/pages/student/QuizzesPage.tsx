@@ -7,14 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
-import { quizService } from '@/services/quizService';
+import { mockQuizzes } from '@/lib/mockData';
 
 const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
 
 export default function QuizzesPage() {
   const { data: quizzes, isLoading, isError, refetch } = useQuery({
     queryKey: ['quizzes'],
-    queryFn: () => quizService.getAll(),
+    queryFn: async () => { await new Promise((r) => setTimeout(r, 300)); return mockQuizzes; },
   });
 
   return (

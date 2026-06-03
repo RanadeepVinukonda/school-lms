@@ -18,7 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
-import { quizService } from '@/services/quizService';
+import { mockQuizzes } from '@/lib/mockData';
 import type { Quiz, Question } from '@/types';
 
 function QuizSkeleton() {
@@ -42,8 +42,8 @@ export default function QuizAttemptPage() {
   const { data: quiz, isLoading, isError } = useQuery({
     queryKey: ['quiz', quizId],
     queryFn: async () => {
-      const result = await quizService.getById(quizId!);
-      return result.data as Quiz;
+      await new Promise((r) => setTimeout(r, 300));
+      return mockQuizzes.find((q) => q.id === quizId) as Quiz | undefined;
     },
     enabled: !!quizId,
   });

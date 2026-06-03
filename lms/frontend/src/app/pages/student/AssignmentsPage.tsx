@@ -1,21 +1,23 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FileText, AlertCircle, Calendar, Clock, Loader2 } from 'lucide-react';
+import { FileText, AlertCircle, Calendar } from 'lucide-react';
 import { SEOHead } from '@/components/common/SEOHead';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
-import { assignmentService } from '@/services/assignmentService';
-import { cn } from '@/lib/utils';
+import { mockAssignments, mockSubjects } from '@/lib/mockData';
 
 const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
 
 export default function AssignmentsPage() {
   const { data: assignments, isLoading, isError, refetch } = useQuery({
     queryKey: ['assignments'],
-    queryFn: () => assignmentService.getAll(),
+    queryFn: async () => {
+      await new Promise((r) => setTimeout(r, 300));
+      return mockAssignments;
+    },
   });
 
   return (
@@ -55,7 +57,7 @@ export default function AssignmentsPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{a.title}</p>
-                          <p className="text-xs text-muted-foreground">Course: {a.courseId}</p>
+                          <p className="text-xs text-muted-foreground">Course: {mockSubjects.find((s) => s.id === a.courseId)?.name ?? a.courseId}</p>
                           <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{due.toLocaleDateString()}</span>
                             <span>{a.maxPoints} pts</span>

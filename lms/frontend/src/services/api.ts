@@ -25,10 +25,6 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ApiError>) => {
-    if (error.response?.status === 401) {
-      useAuthStore.getState().logout();
-      window.location.href = '/login';
-    }
     const apiError: ApiError = {
       message: error.response?.data?.message || error.message || 'An unexpected error occurred',
       code: error.response?.data?.code,

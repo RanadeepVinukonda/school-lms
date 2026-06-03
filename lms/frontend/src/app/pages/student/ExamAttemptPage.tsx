@@ -16,7 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
-import { examService } from '@/services/examService';
+import { mockExams } from '@/lib/mockData';
 import type { Exam } from '@/types';
 
 function ExamSkeleton() {
@@ -41,8 +41,8 @@ export default function ExamAttemptPage() {
   const { data: exam, isLoading, isError } = useQuery({
     queryKey: ['exam', examId],
     queryFn: async () => {
-      const result = await examService.getById(examId!);
-      return result.data as Exam;
+      await new Promise((r) => setTimeout(r, 300));
+      return mockExams.find((e) => e.id === examId) as Exam | undefined;
     },
     enabled: !!examId,
   });

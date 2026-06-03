@@ -7,14 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
-import { examService } from '@/services/examService';
+import { mockExams } from '@/lib/mockData';
 
 const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
 
 export default function ExamsPage() {
   const { data: exams, isLoading, isError, refetch } = useQuery({
     queryKey: ['exams'],
-    queryFn: () => examService.getAll(),
+    queryFn: async () => { await new Promise((r) => setTimeout(r, 300)); return mockExams; },
   });
 
   return (
