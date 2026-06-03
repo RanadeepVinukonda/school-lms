@@ -1,3 +1,7 @@
-import app from '../backend/dist/app';
+import { IncomingMessage, ServerResponse } from 'http';
 
-export default app;
+export default function handler(req: IncomingMessage, res: ServerResponse) {
+  res.statusCode = 200;
+  res.setHeader('content-type', 'application/json');
+  res.end(JSON.stringify({ hello: 'world', path: req.url }));
+}
