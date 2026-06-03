@@ -3,17 +3,35 @@ import { AuthLayout } from '@/app/layouts/AuthLayout';
 import { DashboardLayout } from '@/app/layouts/DashboardLayout';
 import { AdminLayout } from '@/app/layouts/AdminLayout';
 import { ProtectedRoute } from '@/app/router/ProtectedRoute';
+import RoleAwareDashboard from '@/app/router/RoleAwareDashboard';
+import { ROUTES } from '@/lib/constants';
+
 import { LoginForm } from '@/features/auth/components/LoginForm';
 import { RegisterForm } from '@/features/auth/components/RegisterForm';
 import { ForgotPasswordForm } from '@/features/auth/components/ForgotPasswordForm';
 import { ResetPasswordForm } from '@/features/auth/components/ResetPasswordForm';
-import { ROUTES } from '@/lib/constants';
 
-const DashboardPage = () => (
-  <div className="flex items-center justify-center h-[50vh] text-muted-foreground">
-    Dashboard content coming soon
-  </div>
-);
+import CoursesPage from '@/app/pages/student/CoursesPage';
+import CourseDetailPage from '@/app/pages/student/CourseDetailPage';
+import LessonViewPage from '@/app/pages/student/LessonViewPage';
+import AssignmentDetailPage from '@/app/pages/student/AssignmentDetailPage';
+import QuizAttemptPage from '@/app/pages/student/QuizAttemptPage';
+import ExamAttemptPage from '@/app/pages/student/ExamAttemptPage';
+import GradesPage from '@/app/pages/student/GradesPage';
+import MessagesPage from '@/app/pages/student/MessagesPage';
+import NotificationsPage from '@/app/pages/student/NotificationsPage';
+import MyCoursesPage from '@/app/pages/teacher/MyCoursesPage';
+import CourseManagePage from '@/app/pages/teacher/CourseManagePage';
+import LessonBuilderPage from '@/app/pages/teacher/LessonBuilderPage';
+import AssignmentBuilderPage from '@/app/pages/teacher/AssignmentBuilderPage';
+import QuizBuilderPage from '@/app/pages/teacher/QuizBuilderPage';
+import GradebookPage from '@/app/pages/teacher/GradebookPage';
+import UserManagementPage from '@/app/pages/admin/UserManagementPage';
+import ClassManagementPage from '@/app/pages/admin/ClassManagementPage';
+import SubjectManagementPage from '@/app/pages/admin/SubjectManagementPage';
+import SettingsPage from '@/app/pages/admin/SettingsPage';
+import ProfilePage from '@/app/pages/shared/ProfilePage';
+import ForbiddenPage from '@/app/pages/shared/ForbiddenPage';
 
 export const router = createBrowserRouter([
   {
@@ -50,59 +68,111 @@ export const router = createBrowserRouter([
     children: [
       {
         path: ROUTES.DASHBOARD,
-        element: <DashboardPage />,
+        element: <RoleAwareDashboard />,
       },
       {
         path: ROUTES.COURSES,
-        element: <DashboardPage />,
+        element: <CoursesPage />,
+      },
+      {
+        path: ROUTES.COURSE_DETAIL(':id'),
+        element: <CourseDetailPage />,
+      },
+      {
+        path: ROUTES.COURSE_LESSON(':courseId', ':lessonId'),
+        element: <LessonViewPage />,
+      },
+      {
+        path: ROUTES.MY_COURSES,
+        element: <MyCoursesPage />,
+      },
+      {
+        path: ROUTES.COURSE_MANAGE(':id'),
+        element: <CourseManagePage />,
+      },
+      {
+        path: ROUTES.LESSON_BUILDER(':courseId'),
+        element: <LessonBuilderPage />,
+      },
+      {
+        path: ROUTES.ASSIGNMENT_BUILDER(':courseId'),
+        element: <AssignmentBuilderPage />,
+      },
+      {
+        path: ROUTES.QUIZ_BUILDER(':courseId'),
+        element: <QuizBuilderPage />,
+      },
+      {
+        path: ROUTES.GRADEBOOK(':courseId'),
+        element: <GradebookPage />,
       },
       {
         path: ROUTES.ASSIGNMENTS,
-        element: <DashboardPage />,
+        element: <Navigate to={ROUTES.DASHBOARD} replace />,
+      },
+      {
+        path: ROUTES.ASSIGNMENT_DETAIL(':id'),
+        element: <AssignmentDetailPage />,
       },
       {
         path: ROUTES.QUIZZES,
-        element: <DashboardPage />,
+        element: <Navigate to={ROUTES.DASHBOARD} replace />,
+      },
+      {
+        path: ROUTES.QUIZ_ATTEMPT(':id'),
+        element: <QuizAttemptPage />,
       },
       {
         path: ROUTES.EXAMS,
-        element: <DashboardPage />,
+        element: <Navigate to={ROUTES.DASHBOARD} replace />,
+      },
+      {
+        path: ROUTES.EXAM_DETAIL(':id'),
+        element: <ExamAttemptPage />,
       },
       {
         path: ROUTES.GRADES,
-        element: <DashboardPage />,
+        element: <GradesPage />,
       },
       {
         path: ROUTES.MESSAGES,
-        element: <DashboardPage />,
+        element: <MessagesPage />,
+      },
+      {
+        path: ROUTES.CONVERSATION(':id'),
+        element: <MessagesPage />,
       },
       {
         path: ROUTES.NOTIFICATIONS,
-        element: <DashboardPage />,
+        element: <NotificationsPage />,
       },
       {
         path: ROUTES.SETTINGS,
-        element: <DashboardPage />,
+        element: <SettingsPage />,
       },
       {
         path: ROUTES.PROFILE,
-        element: <DashboardPage />,
+        element: <ProfilePage />,
       },
       {
         path: ROUTES.USERS,
-        element: <DashboardPage />,
+        element: <UserManagementPage />,
       },
       {
         path: ROUTES.CLASSES,
-        element: <DashboardPage />,
+        element: <ClassManagementPage />,
       },
       {
         path: ROUTES.SUBJECTS,
-        element: <DashboardPage />,
+        element: <SubjectManagementPage />,
       },
       {
         path: ROUTES.ANALYTICS,
-        element: <DashboardPage />,
+        element: <Navigate to={ROUTES.ADMIN} replace />,
+      },
+      {
+        path: '/forbidden',
+        element: <ForbiddenPage />,
       },
     ],
   },
@@ -115,15 +185,15 @@ export const router = createBrowserRouter([
     children: [
       {
         path: ROUTES.ADMIN,
-        element: <DashboardPage />,
+        element: <RoleAwareDashboard />,
       },
       {
         path: ROUTES.ADMIN_USERS,
-        element: <DashboardPage />,
+        element: <UserManagementPage />,
       },
       {
         path: ROUTES.ADMIN_SETTINGS,
-        element: <DashboardPage />,
+        element: <SettingsPage />,
       },
     ],
   },
