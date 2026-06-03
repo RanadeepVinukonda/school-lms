@@ -22,6 +22,8 @@ service cloud.firestore {
         /databases/$(database)/documents/enrollments/$(courseId + '_' + uid())
       );
     }
+    function isValidString(v) { return v is string && v.size() <= 5000; }
+    function isValidEmail(v) { return v is string && v.matches('^[^@]+@[^@]+\\.[^@]+$'); }
 
     match /schools/{schoolId} {
       allow read: if isAuth();
@@ -65,7 +67,7 @@ service cloud.firestore {
     }
 
     match /lessons/{lessonId} {
-      allow read: if isAuth() && (isAtLeastTeacher() || isEnrolledIn(getCourseData(resource.data.courseId).teacherId));
+      allow read: if isAuth() && (isAtLeastTeacher() || isEnrolledIn(resource.data.courseId));
       allow create: if isAtLeastTeacher();
       allow update: if isAtLeastTeacher();
       allow delete: if isAtLeastAdmin();
@@ -134,10 +136,23 @@ service cloud.firestore {
       allow delete: if isAtLeastAdmin();
     }
 
-    match /messages/{messageId} {
-      allow read: if isAuth() && (resource.data.senderId == uid() || resource.data.recipientIds.hasAny([uid()]));
+    match /conversations/{conversationId}/messages/{messageId} {
+      allow read: if isAuth() && (
+        request.auth.uid == resource.data.senderId ||
+        isAtLeastTeacher()
+      );
       allow create: if isAuth() && request.resource.data.senderId == uid();
-      allow update: if isAuth() && resource.data.senderId == uid();
+      allow update: if request.auth.uid == resource.data.senderId;
+      allow delete: if isAtLeastAdmin();
+    }
+
+    match /messages/{messageId} {
+      allow read: if isAuth() && (
+        request.auth.uid == resource.data.senderId ||
+        isAtLeastTeacher()
+      );
+      allow create: if isAuth() && request.resource.data.senderId == uid();
+      allow update: if request.auth.uid == resource.data.senderId;
       allow delete: if isAtLeastAdmin();
     }
 
@@ -168,6 +183,26 @@ service cloud.firestore {
     match /activityLogs/{logId} {
       allow read: if isAuth() && (resource.data.userId == uid() || isAtLeastAdmin());
       allow write: if false;
+    }
+
+    match /textbooks/{textbookId} {
+      allow read: if isAuth();
+      allow create, update: if isAtLeastTeacher();
+      allow delete: if isAtLeastAdmin();
+    }
+
+    match /corrections/{correctionId} {
+      allow read: if isAuth() && (resource.data.teacherId == uid() || isAtLeastAdmin());
+      allow create: if isAtLeastTeacher();
+      allow update: if isAtLeastTeacher();
+      allow delete: if isAtLeastAdmin();
+    }
+
+    match /timetable/{entryId} {
+      allow read: if isAuth();
+      allow create: if isAtLeastAdmin();
+      allow update: if isAtLeastAdmin();
+      allow delete: if isAtLeastAdmin();
     }
 
     match /{document=**} {

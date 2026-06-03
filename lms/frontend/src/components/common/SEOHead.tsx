@@ -9,9 +9,9 @@ interface SEOHeadProps {
   canonical?: string;
 }
 
-const SITE_NAME = 'School LMS';
-const DEFAULT_OG_IMAGE = 'https://school-ca94b.firebasestorage.app/og-image.png';
-const BASE_URL = 'https://school-ca94b.web.app';
+const SITE_NAME = 'Genesis';
+const DEFAULT_OG_IMAGE = '/og-image.png';
+const BASE_URL = import.meta.env.VITE_BASE_URL || 'https://genesis.app';
 
 export function SEOHead({ title, description, ogTitle, ogDescription, ogImage = DEFAULT_OG_IMAGE, canonical }: SEOHeadProps) {
   const fullTitle = `${title} | ${SITE_NAME}`;
