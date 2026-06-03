@@ -85,7 +85,7 @@ export default function GradesPage() {
           <BarChart3 className="h-8 w-8 text-muted-foreground" />
           <p className="font-medium">No grades yet</p>
           <p className="text-sm text-muted-foreground">Grades will appear here once your teacher posts them.</p>
-          <Button variant="outline" asChild>Stay tuned</Button>
+          <Button variant="outline">Stay tuned</Button>
         </CardContent></Card>
       </div>
     );
