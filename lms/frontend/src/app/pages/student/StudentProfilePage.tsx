@@ -137,10 +137,10 @@ export default function StudentProfilePage() {
                     </div>
                   </div>
                   <Button variant="outline" size="sm" className="gap-2" asChild>
-                    <Link to="/profile">
-                      <Icon name="settings" size={14} />
-                      Edit
-                    </Link>
+                <Link to="/student/profile">
+                  <Icon name="settings" size={14} />
+                  Edit
+                </Link>
                   </Button>
                 </CardContent>
               </Card>

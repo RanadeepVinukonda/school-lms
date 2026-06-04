@@ -70,8 +70,8 @@ export function NotificationBell() {
           )}
         </div>
         <div className="p-2 border-t">
-          <Button variant="ghost" size="sm" className="w-full text-xs" asChild>
-            <Link to={ROUTES.NOTIFICATIONS}>View all notifications</Link>
+          <Button variant="ghost" size="sm" className="w-full text-xs" disabled>
+            View all notifications
           </Button>
         </div>
       </PopoverContent>

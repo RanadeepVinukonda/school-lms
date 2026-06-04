@@ -350,9 +350,9 @@ export default function StudentDashboardPage() {
                     <Icon name="assignment" size={18} />
                     Pending Work
                   </CardTitle>
-                  <Link to="/assignments" className="text-sm text-primary hover:underline">
-                    View all
-                  </Link>
+                  <span className="text-sm text-muted-foreground">
+                    Due soon
+                  </span>
                 </div>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -422,9 +422,9 @@ export default function StudentDashboardPage() {
                 </Link>
               </Button>
               <Button variant="outline" className="justify-start h-auto py-3 gap-2" asChild>
-                <Link to="/assignments">
-                  <Icon name="assignment" size={16} />
-                  Assignments
+                <Link to="/student/exams">
+                  <Icon name="fact_check" size={16} />
+                  Exams
                 </Link>
               </Button>
               <Button variant="outline" className="justify-start h-auto py-3 gap-2" asChild>

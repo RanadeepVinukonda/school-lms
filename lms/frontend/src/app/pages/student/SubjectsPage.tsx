@@ -61,9 +61,9 @@ function EmptyDisplay() {
           You are not currently enrolled in any subjects. Subjects will appear here once assigned.
         </p>
         <Button asChild>
-          <Link to="/courses">
+          <Link to="/student/subjects">
             <Icon name="add" size={16} className="mr-2" />
-            Browse Courses
+            Browse Subjects
           </Link>
         </Button>
       </CardContent>

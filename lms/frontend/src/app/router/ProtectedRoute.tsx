@@ -5,6 +5,19 @@ import { LoadingSkeleton } from '@/components/common/LoadingSkeleton';
 import { checkPermission } from '@/utils/permissions';
 import type { UserRole } from '@/types';
 
+function roleDashboard(role: UserRole): string {
+  switch (role) {
+    case 'admin':
+    case 'super_admin':
+      return ROUTES.ADMIN_DASHBOARD;
+    case 'teacher':
+      return ROUTES.TEACHER_DASHBOARD;
+    case 'student':
+    default:
+      return ROUTES.STUDENT_DASHBOARD;
+  }
+}
+
 interface ProtectedRouteProps {
   children: React.ReactNode;
   roles?: UserRole[];
@@ -28,11 +41,11 @@ export function ProtectedRoute({ children, roles, permission }: ProtectedRoutePr
   }
 
   if (roles && !roles.includes(user.role)) {
-    return <Navigate to={ROUTES.DASHBOARD} replace />;
+    return <Navigate to={roleDashboard(user.role)} replace />;
   }
 
   if (permission && !checkPermission(user.role, permission)) {
-    return <Navigate to={ROUTES.DASHBOARD} replace />;
+    return <Navigate to={roleDashboard(user.role)} replace />;
   }
 
   return <>{children}</>;

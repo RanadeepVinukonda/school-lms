@@ -30,7 +30,7 @@ export function AdminLayout() {
   const user = useAuthStore((s) => s.user);
 
   if (!user || !isAdmin(user.role)) {
-    return <Navigate to={ROUTES.DASHBOARD} replace />;
+    return <Navigate to={ROUTES.ADMIN_DASHBOARD} replace />;
   }
 
   return (

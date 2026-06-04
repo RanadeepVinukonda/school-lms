@@ -15,7 +15,7 @@ interface BreadcrumbsProps {
 export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
   return (
     <nav className={cn('flex items-center gap-1 text-sm text-muted-foreground', className)} aria-label="Breadcrumb">
-      <Link to="/dashboard" className="hover:text-foreground transition-colors">
+      <Link to="/student/dashboard" className="hover:text-foreground transition-colors">
         <Home className="h-4 w-4" />
         <span className="sr-only">Dashboard</span>
       </Link>

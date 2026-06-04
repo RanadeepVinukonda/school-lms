@@ -12,6 +12,20 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
+import type { UserRole } from '@/types';
+
+function roleProfileRoute(role: UserRole): string {
+  switch (role) {
+    case 'admin':
+    case 'super_admin':
+      return ROUTES.ADMIN_SETTINGS;
+    case 'teacher':
+      return ROUTES.TEACHER_PROFILE;
+    case 'student':
+    default:
+      return ROUTES.STUDENT_PROFILE;
+  }
+}
 
 export function UserAvatar() {
   const { user, logout } = useAuthStore();
@@ -45,18 +59,20 @@ export function UserAvatar() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => navigate(ROUTES.PROFILE)} className="gap-2">
+          <DropdownMenuItem onClick={() => navigate(roleProfileRoute(user.role))} className="gap-2">
             <User className="h-4 w-4" />
             Profile
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate(ROUTES.SETTINGS)} className="gap-2">
-            <Settings className="h-4 w-4" />
-            Settings
-          </DropdownMenuItem>
           {(user.role === 'admin' || user.role === 'super_admin') && (
-            <DropdownMenuItem onClick={() => navigate(ROUTES.ADMIN)} className="gap-2">
-              <Shield className="h-4 w-4" />
-              Admin Panel
+            <DropdownMenuItem onClick={() => navigate(ROUTES.ADMIN_SETTINGS)} className="gap-2">
+              <Settings className="h-4 w-4" />
+              Settings
+            </DropdownMenuItem>
+          )}
+          {user.role === 'teacher' && (
+            <DropdownMenuItem onClick={() => navigate(ROUTES.TEACHER_PROFILE)} className="gap-2">
+              <Settings className="h-4 w-4" />
+              Settings
             </DropdownMenuItem>
           )}
         </DropdownMenuGroup>

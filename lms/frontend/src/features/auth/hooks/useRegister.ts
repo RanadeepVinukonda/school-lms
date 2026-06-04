@@ -4,7 +4,20 @@ import { toast } from 'sonner';
 import { registerUser } from '@/firebase/auth';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
-import type { RegisterInput, ApiError } from '@/types';
+import type { RegisterInput, ApiError, UserRole } from '@/types';
+
+function roleDashboard(role: UserRole): string {
+  switch (role) {
+    case 'admin':
+    case 'super_admin':
+      return ROUTES.ADMIN_DASHBOARD;
+    case 'teacher':
+      return ROUTES.TEACHER_DASHBOARD;
+    case 'student':
+    default:
+      return ROUTES.STUDENT_DASHBOARD;
+  }
+}
 
 export function useRegister() {
   const navigate = useNavigate();
@@ -28,7 +41,7 @@ export function useRegister() {
         updatedAt: new Date().toISOString(),
       });
       toast.success('Account created successfully!');
-      navigate(ROUTES.DASHBOARD, { replace: true });
+      navigate(roleDashboard(role), { replace: true });
     },
     onError: (error: ApiError) => {
       const errorMessages: Record<string, string> = {
