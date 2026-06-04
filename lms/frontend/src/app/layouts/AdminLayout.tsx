@@ -156,7 +156,7 @@ export function AdminLayout() {
         {/* Top app bar */}
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-outline-variant bg-surface/80 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-surface/60">
           <span className="text-title-md font-bold text-primary hidden sm:block">Genesis</span>
-          <img src="/genesis_icon.png" alt="Genesis" className="h-11 w-auto object-contain sm:hidden" />
+          <img src="/genesis_icon.png" alt="Genesis" className="h-14 w-auto object-contain sm:hidden" />
           <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
             <Button variant="ghost" size="icon" onClick={() => setSearchOpen(true)} aria-label="Search">
