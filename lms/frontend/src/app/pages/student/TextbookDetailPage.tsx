@@ -211,6 +211,12 @@ export default function TextbookDetailPage() {
                             </p>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
+                            <Link to={ROUTES.STUDENT_CHAPTER(d.textbook.id, ch.id)} onClick={(e) => e.stopPropagation()}>
+                              <Button variant="outline" size="sm" className="gap-1">
+                                <Icon name="menu_book" size={13} />
+                                Study
+                              </Button>
+                            </Link>
                             <Badge variant="secondary" className="text-[10px]">
                               {ch.chapterLessons.length}{' '}
                               {ch.chapterLessons.length === 1 ? 'lesson' : 'lessons'}

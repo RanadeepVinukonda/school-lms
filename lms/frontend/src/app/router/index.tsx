@@ -22,6 +22,9 @@ import StudentDashboardPage from '@/app/pages/student/StudentDashboardPage';
 import SubjectsPage from '@/app/pages/student/SubjectsPage';
 import SubjectDetailPage from '@/app/pages/student/SubjectDetailPage';
 import TextbookDetailPage from '@/app/pages/student/TextbookDetailPage';
+import StudentChapterPage from '@/app/pages/student/StudentChapterPage';
+import StudentConceptPage from '@/app/pages/student/StudentConceptPage';
+import AdaptiveQuizPage from '@/app/pages/student/AdaptiveQuizPage';
 import LessonViewPage from '@/app/pages/student/LessonViewPage';
 import StudentExamsPage from '@/app/pages/student/StudentExamsPage';
 import StudentTimetablePage from '@/app/pages/student/StudentTimetablePage';
@@ -37,6 +40,7 @@ import TeacherStudentDetailPage from '@/app/pages/teacher/TeacherStudentDetailPa
 import TeacherExamsPage from '@/app/pages/teacher/TeacherExamsPage';
 import TeacherExamCorrectionPage from '@/app/pages/teacher/TeacherExamCorrectionPage';
 import TeacherTextbooksPage from '@/app/pages/teacher/TeacherTextbooksPage';
+import TeacherTextbookUploadPage from '@/app/pages/teacher/TeacherTextbookUploadPage';
 import TeacherProfilePage from '@/app/pages/teacher/TeacherProfilePage';
 
 import AdminDashboardPage from '@/app/pages/admin/AdminDashboardPage';
@@ -82,6 +86,9 @@ export const router = createBrowserRouter([
       { path: ROUTES.STUDENT_SUBJECTS, element: <SubjectsPage /> },
       { path: ROUTES.STUDENT_SUBJECT(':id'), element: <SubjectDetailPage /> },
       { path: ROUTES.STUDENT_TEXTBOOK(':id'), element: <TextbookDetailPage /> },
+      { path: ROUTES.STUDENT_CHAPTER(':textbookId', ':chapterId'), element: <StudentChapterPage /> },
+      { path: ROUTES.STUDENT_CONCEPT(':conceptId'), element: <StudentConceptPage /> },
+      { path: ROUTES.STUDENT_CONCEPT_QUIZ(':conceptId'), element: <AdaptiveQuizPage /> },
       { path: ROUTES.STUDENT_LESSON(':id'), element: <LessonViewPage /> },
       { path: ROUTES.STUDENT_EXAMS, element: <StudentExamsPage /> },
       { path: ROUTES.STUDENT_TASKS, element: <StudentTasksPage /> },
@@ -106,6 +113,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.TEACHER_EXAMS, element: <TeacherExamsPage /> },
       { path: ROUTES.TEACHER_EXAM_CORRECT(':id'), element: <TeacherExamCorrectionPage /> },
       { path: ROUTES.TEACHER_TEXTBOOKS, element: <TeacherTextbooksPage /> },
+      { path: ROUTES.TEACHER_TEXTBOOK_UPLOAD, element: <TeacherTextbookUploadPage /> },
       { path: ROUTES.TEACHER_PROFILE, element: <TeacherProfilePage /> },
     ],
   },

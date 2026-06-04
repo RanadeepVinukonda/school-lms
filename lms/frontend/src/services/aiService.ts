@@ -1,0 +1,150 @@
+const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+
+function getApiKey() {
+  return import.meta.env.VITE_OPENROUTER_API_KEY;
+}
+
+function getModel() {
+  return import.meta.env.VITE_AI_MODEL || 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free';
+}
+
+async function callOpenRouter(prompt: string, schema?: Record<string, unknown>) {
+  const messages = [
+    {
+      role: 'system',
+      content: 'You are an AI textbook analysis engine. Extract educational content from textbook text and return it as structured JSON. Be thorough and accurate.',
+    },
+    { role: 'user', content: prompt },
+  ];
+
+  const body: Record<string, unknown> = {
+    model: getModel(),
+    messages,
+    temperature: 0.3,
+    max_tokens: 16000,
+  };
+
+  if (schema) {
+    body.response_format = { type: 'json_object' };
+  }
+
+  const res = await fetch(OPENROUTER_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${getApiKey()}`,
+      'HTTP-Referer': window.location.origin,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`OpenRouter API error ${res.status}: ${err}`);
+  }
+
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+
+export async function extractChapters(text: string, subject: string): Promise<{ title: string; chapters: { title: string; description: string; concepts: { title: string; description: string }[] }[] }> {
+  const prompt = `Analyze this "${subject}" textbook text and extract its structure.
+
+Return valid JSON in this exact format:
+{
+  "title": "Subject Title",
+  "chapters": [
+    {
+      "title": "Chapter Title",
+      "description": "Brief description",
+      "concepts": [
+        { "title": "Concept Title", "description": "Brief description" }
+      ]
+    }
+  ]
+}
+
+Textbook content:
+${text.slice(0, 30000)}`;
+
+  const result = await callOpenRouter(prompt);
+  try {
+    return JSON.parse(result);
+  } catch {
+    throw new Error('Failed to parse AI response as JSON');
+  }
+}
+
+export async function generateConceptContent(
+  conceptTitle: string,
+  chapterTitle: string,
+  subject: string,
+  textbookContext: string,
+): Promise<{
+  summary: string;
+  notes: string;
+  learningObjectives: string[];
+  keywords: string[];
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  prerequisites: string[];
+  estimatedMinutes: number;
+}> {
+  const prompt = `Generate detailed learning content for the concept "${conceptTitle}" in the chapter "${chapterTitle}" of "${subject}".
+
+Textbook context:
+${textbookContext.slice(0, 5000)}
+
+Return valid JSON in this exact format:
+{
+  "summary": "2-3 sentence summary",
+  "notes": "Detailed study notes covering all important points",
+  "learningObjectives": ["Objective 1", "Objective 2", "Objective 3"],
+  "keywords": ["keyword1", "keyword2"],
+  "difficulty": "beginner|intermediate|advanced",
+  "prerequisites": ["prerequisite1"],
+  "estimatedMinutes": 15
+}`;
+
+  const result = await callOpenRouter(prompt);
+  try {
+    return JSON.parse(result);
+  } catch {
+    throw new Error('Failed to parse AI response');
+  }
+}
+
+export async function generateQuestionBank(
+  conceptTitle: string,
+  chapterTitle: string,
+  subject: string,
+): Promise<{
+  easy: Array<{ type: string; text: string; options?: string[]; correctAnswer: string | string[]; explanation: string }>;
+  medium: Array<{ type: string; text: string; options?: string[]; correctAnswer: string | string[]; explanation: string }>;
+  hard: Array<{ type: string; text: string; options?: string[]; correctAnswer: string | string[]; explanation: string }>;
+  application: Array<{ type: string; text: string; options?: string[]; correctAnswer: string | string[]; explanation: string }>;
+}> {
+  const prompt = `Generate questions for the concept "${conceptTitle}" in "${chapterTitle}" (${subject}).
+
+Generate:
+- 8 Easy questions (simple recall)
+- 6 Medium questions (application)
+- 4 Hard questions (complex problems)
+- 2 Critical thinking questions
+
+Mix of MCQ, true/false, short answer, and numerical problems.
+
+Return valid JSON in this exact format:
+{
+  "easy": [{ "type": "mcq|true_false|short_answer|numerical", "text": "question text", "options": ["A", "B", "C", "D"], "correctAnswer": "answer", "explanation": "why this is correct" }],
+  "medium": [...],
+  "hard": [...],
+  "application": [...]
+}`;
+
+  const result = await callOpenRouter(prompt);
+  try {
+    return JSON.parse(result);
+  } catch {
+    throw new Error('Failed to parse AI response');
+  }
+}

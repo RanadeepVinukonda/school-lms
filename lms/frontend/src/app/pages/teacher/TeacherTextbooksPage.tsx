@@ -49,12 +49,20 @@ export default function TeacherTextbooksPage() {
               {textbooksWithSubjects.length} textbook{textbooksWithSubjects.length !== 1 ? 's' : ''}
             </p>
           </div>
-          <Button asChild>
-            <Link to="/teacher/textbooks/create" className="gap-1">
-              <Icon name="add" size={16} />
-              Create Textbook
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline">
+              <Link to="/teacher/textbooks/upload" className="gap-1">
+                <Icon name="upload" size={16} />
+                Upload
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link to="/teacher/textbooks/create" className="gap-1">
+                <Icon name="add" size={16} />
+                Create Textbook
+              </Link>
+            </Button>
+          </div>
         </motion.div>
 
         <DataFetchWrapper

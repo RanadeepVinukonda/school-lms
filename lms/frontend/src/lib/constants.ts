@@ -22,6 +22,9 @@ export const ROUTES = {
   STUDENT_SUBJECTS: '/student/subjects',
   STUDENT_SUBJECT: (id: string) => `/student/subjects/${id}`,
   STUDENT_TEXTBOOK: (id: string) => `/student/textbooks/${id}`,
+  STUDENT_CHAPTER: (textbookId: string, chapterId: string) => `/student/chapters/${textbookId}/${chapterId}`,
+  STUDENT_CONCEPT: (conceptId: string) => `/student/concepts/${conceptId}`,
+  STUDENT_CONCEPT_QUIZ: (conceptId: string) => `/student/concepts/${conceptId}/quiz`,
   STUDENT_LESSON: (id: string) => `/student/lessons/${id}`,
   STUDENT_EXAMS: '/student/exams',
   STUDENT_TASKS: '/student/tasks',
@@ -35,6 +38,7 @@ export const ROUTES = {
   TEACHER_EXAM_CORRECT: (id: string) => `/teacher/exams/${id}/correct`,
   TEACHER_TEXTBOOKS: '/teacher/textbooks',
   TEACHER_TEXTBOOK: (id: string) => `/teacher/textbooks/${id}`,
+  TEACHER_TEXTBOOK_UPLOAD: '/teacher/textbooks/upload',
   TEACHER_PROFILE: '/teacher/profile',
 
   ADMIN_DASHBOARD: '/admin/dashboard',

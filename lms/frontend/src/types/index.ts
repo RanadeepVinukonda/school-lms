@@ -13,6 +13,7 @@ export type { Message, Conversation } from './message';
 export type { Notification, NotificationPreferences, NotificationType } from './notification';
 export type { ApiResponse, PaginatedResponse, PaginationParams, ApiError } from './api';
 export type { DashboardStats, PerformanceData, ChartData } from './analytics';
+export type { Textbook, Chapter, Concept, CachedVideo, GeneratedQuestion, GeneratedAssignment, ConceptProgress } from './textbook';
 
 export interface Activity {
   id: string;

@@ -1,0 +1,92 @@
+export interface Textbook {
+  id: string;
+  subjectId: string;
+  title: string;
+  author?: string;
+  coverUrl?: string;
+  description?: string;
+  fileUrl?: string;
+  chapters: Chapter[];
+  status: 'processing' | 'ready' | 'error';
+  processingProgress: number;
+  processingStage: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Chapter {
+  id: string;
+  textbookId: string;
+  title: string;
+  order: number;
+  description?: string;
+  concepts: Concept[];
+}
+
+export interface Concept {
+  id: string;
+  chapterId: string;
+  textbookId: string;
+  title: string;
+  summary: string;
+  notes: string;
+  learningObjectives: string[];
+  keywords: string[];
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  prerequisites: string[];
+  estimatedMinutes: number;
+  videos: CachedVideo[];
+  questionBank: GeneratedQuestion[];
+  assignments: GeneratedAssignment[];
+  order: number;
+}
+
+export interface CachedVideo {
+  id: string;
+  youtubeId: string;
+  title: string;
+  thumbnail: string;
+  duration: string;
+  channelName: string;
+  description: string;
+  embedUrl: string;
+  relevance: number;
+}
+
+export interface GeneratedQuestion {
+  id: string;
+  type: 'mcq' | 'true_false' | 'fill_blank' | 'short_answer' | 'long_answer' | 'numerical' | 'scenario';
+  difficulty: 'easy' | 'medium' | 'hard';
+  category: 'recall' | 'application' | 'critical_thinking';
+  text: string;
+  options?: string[];
+  correctAnswer: string | string[];
+  explanation: string;
+  points: number;
+}
+
+export interface GeneratedAssignment {
+  id: string;
+  title: string;
+  instructions: string;
+  marks: number;
+  estimatedMinutes: number;
+  answerKey: string;
+  rubric: string;
+  type: 'homework' | 'worksheet' | 'challenge' | 'project';
+}
+
+export interface ConceptProgress {
+  userId: string;
+  conceptId: string;
+  quizScores: number[];
+  quizAttempts: number;
+  timeSpentMinutes: number;
+  lessonCompleted: boolean;
+  videoCompleted: boolean;
+  questionAccuracy: number;
+  assignmentScores: number[];
+  masteryPercentage: number;
+  skillLevel: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  lastAccessed: string;
+}
