@@ -24,6 +24,7 @@ import TextbookDetailPage from '@/app/pages/student/TextbookDetailPage';
 import LessonViewPage from '@/app/pages/student/LessonViewPage';
 import StudentExamsPage from '@/app/pages/student/StudentExamsPage';
 import StudentTimetablePage from '@/app/pages/student/StudentTimetablePage';
+import StudentTasksPage from '@/app/pages/student/StudentTasksPage';
 import StudentProfilePage from '@/app/pages/student/StudentProfilePage';
 import AssignmentDetailPage from '@/app/pages/student/AssignmentDetailPage';
 import QuizAttemptPage from '@/app/pages/student/QuizAttemptPage';
@@ -78,6 +79,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.STUDENT_TEXTBOOK(':id'), element: <TextbookDetailPage /> },
       { path: ROUTES.STUDENT_LESSON(':id'), element: <LessonViewPage /> },
       { path: ROUTES.STUDENT_EXAMS, element: <StudentExamsPage /> },
+      { path: ROUTES.STUDENT_TASKS, element: <StudentTasksPage /> },
       { path: ROUTES.STUDENT_TIMETABLE, element: <StudentTimetablePage /> },
       { path: ROUTES.STUDENT_PROFILE, element: <StudentProfilePage /> },
       { path: ROUTES.ASSIGNMENT_DETAIL(':id'), element: <AssignmentDetailPage /> },

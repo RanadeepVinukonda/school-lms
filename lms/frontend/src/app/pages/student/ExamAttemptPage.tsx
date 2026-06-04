@@ -1,253 +1,311 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import {
-  Clock, AlertCircle, CheckCircle, XCircle, Loader2,
-  Send, Play, Shield, AlertTriangle
-} from 'lucide-react';
+import { Clock, AlertCircle, CheckCircle, XCircle, Send, Play, ChevronLeft, ChevronRight, FileText, CheckCheck, TrendingUp, TrendingDown, BookOpen, Lightbulb, MessageSquareText, AlertTriangle } from 'lucide-react';
 import { pageTransition } from '@/lib/motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Progress } from '@/components/ui/progress';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
-import { mockExams } from '@/lib/mockData';
-import type { Exam } from '@/types';
+import { mockExams, mockCorrections } from '@/lib/mockData';
+import type { Exam, ExamQuestion } from '@/types';
+
+function qText(q: ExamQuestion): string { return ((q as unknown) as { question?: string }).question ?? q.text ?? ''; }
+function fmt(s: number): string { return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; }
 
 function ExamSkeleton() {
   return (
-    <div className="p-4 space-y-4">
-      <Skeleton className="h-8 w-48" />
-      <Skeleton className="h-64 rounded-xl" />
+    <div className="flex items-center justify-center min-h-screen p-4">
+      <div className="w-full max-w-md space-y-4">
+        <Skeleton className="h-8 w-48 mx-auto" /><Skeleton className="h-64 rounded-xl" /><Skeleton className="h-12 w-full rounded-xl" />
+      </div>
     </div>
   );
 }
+
+const typeLbl: Record<string, string> = { multiple_choice: 'Multiple Choice', true_false: 'True / False', essay: 'Essays', short_answer: 'Short Answer', problem_solving: 'Problem Solving' };
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 export default function ExamAttemptPage() {
   const { examId } = useParams();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<'intro' | 'taking' | 'results'>('intro');
-  const [understood, setUnderstood] = useState(false);
-  const [currentQ, setCurrentQ] = useState(0);
+  const [cur, setCur] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [timeLeft, setTimeLeft] = useState(0);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [confirm, setConfirm] = useState(false);
+  const [saveSt, setSaveSt] = useState<'saved' | 'unsaved'>('saved');
+  const st = useRef<ReturnType<typeof setTimeout>>();
 
   const { data: exam, isLoading, isError } = useQuery({
     queryKey: ['exam', examId],
-    queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 300));
-      return mockExams.find((e) => e.id === examId) as Exam | undefined;
-    },
+    queryFn: async () => { await sleep(300); return mockExams.find(e => e.id === examId) as Exam | undefined; },
     enabled: !!examId,
   });
 
+  const timerOn = phase === 'taking' && timeLeft > 0;
+  useEffect(() => { if (!timerOn) return; const id = setInterval(() => setTimeLeft(t => t - 1), 1000); return () => clearInterval(id); }, [timerOn]);
+  useEffect(() => { if (timeLeft === 0 && phase === 'taking') { toast.error('Time is up! Auto-submitting...'); setPhase('results'); } }, [timeLeft, phase]);
   useEffect(() => {
-    if (phase === 'taking' && timeLeft > 0) {
-      const timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
-      return () => clearInterval(timer);
-    }
-    if (timeLeft === 0 && phase === 'taking') {
-      toast.error('Time is up! Auto-submitting...');
-      setPhase('results');
-    }
-  }, [phase, timeLeft]);
+    if (saveSt === 'unsaved') { clearTimeout(st.current); st.current = setTimeout(() => setSaveSt('saved'), 1500); }
+    return () => clearTimeout(st.current);
+  }, [answers, saveSt]);
 
-  const handleSubmit = useCallback(() => {
-    setPhase('results');
-    setShowConfirm(false);
-    toast.success('Exam submitted!');
-  }, []);
+  const onAnswer = useCallback((v: string) => { if (!exam?.questions?.[cur]) return; setAnswers(p => ({ ...p, [exam.questions[cur].id]: v })); setSaveSt('unsaved'); }, [cur, exam]);
+  const onSubmit = useCallback(() => { setPhase('results'); setConfirm(false); toast.success('Exam submitted successfully!'); }, []);
+  const goTo = useCallback((i: number) => setCur(i), []);
 
   if (isLoading) return <ExamSkeleton />;
+  if (isError || !exam) return (
+    <div className="flex items-center justify-center min-h-screen p-4">
+      <Card className="w-full max-w-md">
+        <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
+          <AlertCircle className="h-10 w-10 text-destructive" />
+          <p className="font-semibold text-lg">Failed to load exam</p>
+          <p className="text-sm text-muted-foreground">The exam you are looking for does not exist or has been removed.</p>
+          <Button variant="outline" onClick={() => navigate('/student/exams')}>Back to Exams</Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
 
-  if (isError || !exam) {
-    return (
-      <div className="p-4">
-        <Card><CardContent className="flex flex-col items-center gap-4 py-12">
-          <AlertCircle className="h-8 w-8 text-destructive" />
-          <p className="font-medium">Failed to load exam</p>
-          <Button variant="outline" onClick={() => window.history.back()}>Go Back</Button>
-        </CardContent></Card>
-      </div>
-    );
-  }
+  const qs = exam.questions?.length ?? 0;
+  const totalPts = exam.questions?.reduce((s, q) => s + q.points, 0) ?? 0;
+  const passAt = exam.passingScore ?? 50;
 
-  const totalQuestions = exam!.questions?.length || 0;
-  const totalPoints = exam.questions?.reduce((s, q) => s + q.points, 0) || 0;
-
-  function handleStart() {
-    setTimeLeft((exam!.duration || 30) * 60);
-    setPhase('taking');
-  }
-
-  if (phase === 'intro') {
-    return (
-      <>
-        <SEOHead title={exam.title} description={`Exam: ${exam.title}`} canonical={`/exams/${examId}`} />
-        <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-lg mx-auto">
-        <Card>
-          <CardContent className="p-6 text-center space-y-4">
-            <div className="h-16 w-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto">
-              <Shield className="h-8 w-8 text-amber-500" />
+  // INTRO PHASE
+  if (phase === 'intro') return (
+    <>
+      <SEOHead title={exam.title} description={exam.description} canonical={`/exams/${examId}`} />
+      <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="flex items-center justify-center min-h-[80vh] p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-6 text-center space-y-6">
+            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto"><FileText className="h-8 w-8 text-primary" /></div>
+            <div><CardTitle className="text-2xl">{exam.title}</CardTitle><CardDescription className="text-base">{exam.description}</CardDescription></div>
+            <div className="grid grid-cols-3 gap-3">
+              {[{ l: 'Questions', v: qs }, { l: 'Duration', v: `${exam.duration}m` }, { l: 'Points', v: totalPts }].map(s => (
+                <div key={s.l} className="bg-muted rounded-xl p-3"><p className="text-2xl font-bold">{s.v}</p><p className="text-xs text-muted-foreground">{s.l}</p></div>
+              ))}
             </div>
-            <CardTitle className="text-xl">{exam.title}</CardTitle>
-            <CardDescription>{exam.description}</CardDescription>
-            <div className="grid grid-cols-3 gap-3 text-sm">
-              <div className="bg-muted rounded-lg p-3"><p className="font-bold text-lg">{totalQuestions}</p><p className="text-xs text-muted-foreground">Questions</p></div>
-              <div className="bg-muted rounded-lg p-3"><p className="font-bold text-lg">{exam.duration}m</p><p className="text-xs text-muted-foreground">Time Limit</p></div>
-              <div className="bg-muted rounded-lg p-3"><p className="font-bold text-lg">{totalPoints}</p><p className="text-xs text-muted-foreground">Points</p></div>
+            <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 text-left text-sm space-y-2">
+              <div className="flex items-center gap-2 font-semibold text-amber-600 dark:text-amber-400"><AlertTriangle className="h-4 w-4" /><span>Important</span></div>
+              <p className="text-muted-foreground">{exam.instructions || 'Read each question carefully. You can navigate between questions freely.'}</p>
+              <p className="text-muted-foreground">Your exam will be auto-submitted when time expires.</p>
             </div>
-            <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-3 text-left text-sm">
-              <div className="flex items-center gap-2 mb-1"><AlertTriangle className="h-4 w-4 text-amber-500" /><span className="font-medium">Important</span></div>
-              <p className="text-muted-foreground text-xs">{(exam as any).instructions || exam.description}</p>
-              <p className="text-muted-foreground text-xs mt-1">Auto-submitted when time expires.</p>
-            </div>
-            <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-              <Checkbox id="understood" checked={understood} onCheckedChange={c => setUnderstood(c as boolean)} />
-              <Label htmlFor="understood" className="text-sm">I understand and agree to the exam rules</Label>
-            </div>
-            <Button className="w-full" disabled={!understood} onClick={handleStart}>
-              <Play className="h-4 w-4 mr-2" />Start Exam
+            <Button size="lg" className="w-full text-base" onClick={() => { setTimeLeft((exam.duration || 30) * 60); setPhase('taking'); }}>
+              <Play className="h-5 w-5 mr-2" /> Start Exam
             </Button>
           </CardContent>
         </Card>
       </motion.div>
-      </>
-    );
-  }
+    </>
+  );
 
-  const totalCorrect = exam.questions?.filter(q => answers[q.id] === q.correctAnswer).length || 0;
-  const totalScore = totalQuestions > 0 ? totalCorrect * (totalPoints / totalQuestions) : 0;
-  const examPercentage = totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0;
-  const examPassed = examPercentage >= exam.passingScore;
+  const correct = exam.questions?.filter(q => answers[q.id] === q.correctAnswer).length ?? 0;
+  const ppq = qs > 0 ? totalPts / qs : 0;
+  const score = correct * ppq;
+  const pct = totalPts > 0 ? Math.round((score / totalPts) * 100) : 0;
+  const passed = pct >= passAt;
 
+  // RESULTS PHASE
   if (phase === 'results') {
+    const grp: Record<string, { t: number; c: number }> = {};
+    exam.questions?.forEach(q => { const k = q.type; if (!grp[k]) grp[k] = { t: 0, c: 0 }; grp[k].t++; if (answers[q.id] === q.correctAnswer) grp[k].c++; });
+    const str = Object.entries(grp).filter(([, v]) => v.t > 0 && v.c / v.t >= 0.7).map(([k]) => typeLbl[k] ?? k);
+    const wk = Object.entries(grp).filter(([, v]) => v.t > 0 && v.c / v.t < 0.7).map(([k]) => typeLbl[k] ?? k);
+    if (!str.length && !wk.length) str.push('No significant strengths identified');
+
+    const cr = mockCorrections.find(c => c.examId === examId);
+    const fb = cr?.overallFeedback ?? (passed
+      ? 'Excellent work! You have demonstrated a strong understanding of the material. Keep up the great effort!'
+      : 'You are making progress but there are areas that need attention. Focus on reviewing the topics listed below and practice with additional exercises.');
+    const sug = [`${exam.title} \u2013 Core Concepts Review`, `Practice Problems for ${exam.title}`, `${exam.title} Study Guide & Tips`];
+
     return (
       <>
         <SEOHead title={`${exam.title} - Results`} description="Exam results" />
-        <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-lg mx-auto">
-        <Card>
-          <CardContent className="p-6 text-center space-y-4">
-            <div className={cn('h-20 w-20 rounded-full mx-auto flex items-center justify-center', examPassed ? 'bg-emerald-500/10' : 'bg-destructive/10')}>
-              {examPassed ? <CheckCircle className="h-10 w-10 text-emerald-500" /> : <XCircle className="h-10 w-10 text-destructive" />}
-            </div>
-            <CardTitle className="text-xl">{examPassed ? 'You Passed!' : 'Better Luck Next Time'}</CardTitle>
-            <p className="text-4xl font-bold">{totalScore}/{totalPoints}</p>
-            <p className="text-sm text-muted-foreground">{examPercentage}% &middot; {totalCorrect}/{totalQuestions} correct</p>
-            <Badge variant={examPassed ? 'success' : 'destructive'} className="mx-auto">{examPassed ? 'Passed' : 'Failed'}</Badge>
-            <div className="text-left space-y-2 mt-4">
-              {exam.questions?.map((q, i) => (
-                <div key={q.id} className={cn('p-3 rounded-lg text-sm', answers[q.id] === q.correctAnswer ? 'bg-emerald-500/5 border border-emerald-500/20' : 'bg-destructive/5 border border-destructive/20')}>
-                  <p className="font-medium mb-1">Q{i + 1}. {q.text}</p>
-                  <p className="text-xs text-muted-foreground">Your answer: {answers[q.id] || 'Not answered'}</p>
-                  {answers[q.id] !== q.correctAnswer && <p className="text-xs text-emerald-500">Correct: {q.correctAnswer}</p>}
+        <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="max-w-2xl mx-auto p-4 space-y-6">
+          <Card>
+            <CardContent className="p-6 text-center space-y-4">
+              <div className={cn('h-20 w-20 rounded-full mx-auto flex items-center justify-center', passed ? 'bg-success-container' : 'bg-error-container')}>
+                {passed ? <CheckCircle className="h-10 w-10 text-success" /> : <XCircle className="h-10 w-10 text-error" />}
+              </div>
+              <div><CardTitle className="text-2xl">{passed ? 'Congratulations!' : 'Keep Practicing'}</CardTitle><p className="text-muted-foreground mt-1">{exam.title}</p></div>
+              <div className="flex items-center justify-center gap-4 flex-wrap">
+                <div className="text-center"><p className="text-4xl font-bold">{score}/{totalPts}</p><p className="text-sm text-muted-foreground">Final Score</p></div>
+                <Separator orientation="vertical" className="h-12 hidden sm:block" />
+                <div className="text-center"><p className={cn('text-4xl font-bold', passed ? 'text-success' : 'text-error')}>{pct}%</p><p className="text-sm text-muted-foreground">Percentage</p></div>
+                <Separator orientation="vertical" className="h-12 hidden sm:block" />
+                <div className="text-center"><Badge variant={passed ? 'success' : 'destructive'} className="text-sm px-4 py-1">{passed ? 'PASSED' : 'FAILED'}</Badge><p className="text-sm text-muted-foreground mt-1">Status</p></div>
+              </div>
+            </CardContent>
+          </Card>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Card><CardContent className="p-4 space-y-2">
+              <div className="flex items-center gap-2 text-success"><TrendingUp className="h-5 w-5" /><h3 className="font-semibold">Strengths</h3></div>
+              {str.length ? <ul className="space-y-1">{str.map(s => <li key={s} className="text-sm text-muted-foreground flex items-center gap-2"><CheckCircle className="h-3.5 w-3.5 text-success flex-shrink-0" />{s}</li>)}</ul> : <p className="text-sm text-muted-foreground">No strengths yet.</p>}
+            </CardContent></Card>
+            <Card><CardContent className="p-4 space-y-2">
+              <div className="flex items-center gap-2 text-error"><TrendingDown className="h-5 w-5" /><h3 className="font-semibold">Areas to Improve</h3></div>
+              {wk.length ? <ul className="space-y-1">{wk.map(w => <li key={w} className="text-sm text-muted-foreground flex items-center gap-2"><AlertCircle className="h-3.5 w-3.5 text-error flex-shrink-0" />{w}</li>)}</ul> : <p className="text-sm text-muted-foreground">Great job — keep maintaining your skills!</p>}
+            </CardContent></Card>
+          </div>
+          <Card>
+            <CardHeader><CardTitle className="text-lg">Question Review</CardTitle><CardDescription>Review your answers with the correct solutions</CardDescription></CardHeader>
+            <CardContent className="space-y-3">
+              {exam.questions?.map((q, i) => { const u = answers[q.id]; const ok = u === q.correctAnswer; return (
+                <div key={q.id} className={cn('p-4 rounded-xl border text-sm space-y-2', ok ? 'bg-success-container/30 border-success/30' : 'bg-error-container/30 border-error/30')}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 font-medium">
+                      {ok ? <CheckCircle className="h-4 w-4 text-success flex-shrink-0" /> : <XCircle className="h-4 w-4 text-error flex-shrink-0" />}
+                      <span>Q{i + 1}. {qText(q)}</span>
+                    </div>
+                    <Badge variant="outline" className="flex-shrink-0">{q.points} pts</Badge>
+                  </div>
+                  <div className="pl-6 space-y-1">
+                    <p className="text-muted-foreground">Your answer: <span className={cn('font-medium', ok ? 'text-success' : 'text-error')}>{u || 'Not answered'}</span></p>
+                    {!ok && q.correctAnswer && <p className="text-success font-medium">Correct answer: {q.correctAnswer}</p>}
+                  </div>
                 </div>
-              ))}
-            </div>
-            <Button className="w-full" onClick={() => navigate('/student/dashboard')}>Back to Dashboard</Button>
-          </CardContent>
-        </Card>
-      </motion.div>
+              );})}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader><CardTitle className="text-lg flex items-center gap-2"><MessageSquareText className="h-5 w-5" /> Teacher Feedback</CardTitle></CardHeader>
+            <CardContent><p className="text-sm text-muted-foreground leading-relaxed">{fb}</p></CardContent>
+          </Card>
+          <Card>
+            <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Lightbulb className="h-5 w-5" /> Suggested Topics to Study</CardTitle><CardDescription>Based on your performance, focus on these areas</CardDescription></CardHeader>
+            <CardContent className="space-y-2">{sug.map((t, i) => (
+              <div key={i} className="flex items-center gap-3 p-3 bg-muted rounded-xl">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0"><BookOpen className="h-4 w-4 text-primary" /></div>
+                <span className="text-sm font-medium">{t}</span>
+              </div>
+            ))}</CardContent>
+          </Card>
+          <Button className="w-full" size="lg" onClick={() => navigate('/student/exams')}>Back to Exams</Button>
+        </motion.div>
       </>
     );
   }
 
-  const minutes = Math.floor(timeLeft / 60);
-  const seconds = timeLeft % 60;
-  const q = exam.questions?.[currentQ];
-  const answeredCount = Object.keys(answers).length;
-  const progress = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
+  // TAKING PHASE (FOCUS MODE)
+  const warn = timeLeft > 0 && timeLeft <= 300;
+  const q = exam.questions?.[cur];
+  const ans = Object.keys(answers).length;
 
   return (
     <>
       <SEOHead title={`${exam.title} - In Progress`} description="Exam in progress" />
       <div className="fixed inset-0 bg-background z-50 flex flex-col">
-      <div className="bg-destructive/5 border-b border-destructive/20 px-4 py-2 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Shield className="h-4 w-4 text-destructive" />
-          <span className="text-sm font-medium">Exam in progress</span>
-        </div>
-        <div className={cn('flex items-center gap-1 text-sm font-mono font-bold', timeLeft < 120 ? 'text-destructive animate-pulse' : '')}>
-          <Clock className="h-4 w-4" />
-          {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-4 max-w-2xl mx-auto">
-          <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
-            {exam.questions?.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentQ(i)}
-                className={cn(
-                  'h-8 w-8 rounded-full text-xs font-medium flex-shrink-0 transition-colors',
-                  currentQ === i ? 'bg-primary text-primary-foreground' :
-                  answers[exam.questions![i].id] ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground',
-                )}
-              >
-                {i + 1}
-              </button>
-            ))}
+        <div className={cn('px-4 py-3 flex items-center justify-between border-b transition-colors', warn ? 'bg-error-container text-on-error-container' : 'bg-card')}>
+          <div className="flex items-center gap-3">
+            <div className={cn('flex items-center gap-2 font-mono text-xl font-bold', warn && 'animate-pulse')}>
+              <Clock className="h-5 w-5" />{fmt(timeLeft)}
+            </div>
+            {warn && <Badge variant="destructive" className="animate-pulse text-xs"><AlertTriangle className="h-3 w-3 mr-1" />Time running out</Badge>}
           </div>
-
-          <Progress value={progress} className="h-1 mb-4" />
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <Badge variant="outline">Question {currentQ + 1} of {totalQuestions}</Badge>
-                <span className="text-xs text-muted-foreground">{q?.points || 0} pts</span>
-              </div>
-              <p className="font-medium mb-4">{q?.text}</p>
-
-              <div className="space-y-2">
-                {q?.options?.map(opt => (
-                  <button
-                    key={opt}
-                    onClick={() => q && setAnswers(prev => ({ ...prev, [q.id]: opt }))}
-                    className={cn(
-                      'w-full text-left p-3 rounded-lg border transition-colors text-sm',
-                      answers[q.id] === opt ? 'border-primary bg-primary/5' : 'border-input hover:bg-accent',
-                    )}
-                  >
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="flex justify-between mt-4">
-            <Button variant="outline" onClick={() => setCurrentQ(i => Math.max(0, i - 1))} disabled={currentQ === 0}>Previous</Button>
-            {totalQuestions > 0 && currentQ < totalQuestions - 1 ? (
-              <Button onClick={() => setCurrentQ(i => i + 1)}>Next</Button>
-            ) : (
-              <Button onClick={() => setShowConfirm(true)}><Send className="h-4 w-4 mr-1" />Submit</Button>
-            )}
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium"><span className="text-base">{cur + 1}</span>/{qs}</span>
+            <div className="text-xs font-medium">{saveSt === 'saved'
+              ? <span className="flex items-center gap-1 text-success"><CheckCheck className="h-3.5 w-3.5" /> Saved</span>
+              : <span className="flex items-center gap-1 text-warning"><Clock className="h-3.5 w-3.5" /> Unsaved</span>}</div>
           </div>
         </div>
+        {qs === 0 ? (
+          <div className="flex-1 flex items-center justify-center p-4">
+            <div className="text-center space-y-3">
+              <AlertCircle className="h-10 w-10 text-muted-foreground mx-auto" />
+              <p className="font-medium text-lg">No questions available</p>
+              <p className="text-sm text-muted-foreground">This exam has no questions yet. Please contact your teacher.</p>
+              <Button variant="outline" onClick={() => navigate('/student/exams')}>Back to Exams</Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex-1 overflow-y-auto">
+              <div className="max-w-2xl mx-auto p-4 md:p-8">
+                <AnimatePresence mode="wait">
+                  <motion.div key={cur} initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}>
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="text-sm px-3 py-1">Question {cur + 1} of {qs}</Badge>
+                        <span className="text-sm text-muted-foreground font-medium">{q?.points} pts</span>
+                      </div>
+                      <p className="text-xl md:text-2xl font-semibold leading-relaxed">{q ? qText(q) : ''}</p>
+                      {q?.type === 'essay' || q?.type === 'short_answer' || q?.type === 'problem_solving' ? (
+                        <Textarea placeholder="Type your answer here..." className="min-h-[220px] text-base leading-relaxed" value={answers[q.id] ?? ''} onChange={e => onAnswer(e.target.value)} />
+                      ) : (
+                        <RadioGroup value={answers[q?.id ?? ''] ?? ''} onValueChange={onAnswer} className="space-y-3">
+                          {q?.options?.map(opt => (
+                            <div key={opt}>
+                              <RadioGroupItem value={opt} id={`${q.id}-${opt}`} className="peer sr-only" />
+                              <Label htmlFor={`${q.id}-${opt}`}
+                                className={cn('flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all text-base', 'hover:bg-accent hover:border-primary/50',
+                                  'peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 peer-data-[state=checked]:ring-2 peer-data-[state=checked]:ring-primary/20')}>
+                                <div className={cn('h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0', answers[q.id] === opt ? 'border-primary bg-primary' : 'border-muted-foreground/30')}>
+                                  {answers[q.id] === opt && <div className="h-2 w-2 rounded-full bg-white" />}
+                                </div>
+                                <span>{opt}</span>
+                              </Label>
+                            </div>
+                          ))}
+                        </RadioGroup>
+                      )}
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </div>
+            <div className="border-t bg-card px-4 py-3">
+              <div className="max-w-2xl mx-auto space-y-3">
+                <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                  {exam.questions?.map((question, i) => (
+                    <button key={question.id} onClick={() => goTo(i)}
+                      className={cn('h-8 w-8 rounded-full text-xs font-medium transition-all flex items-center justify-center',
+                        cur === i ? 'bg-primary text-primary-foreground ring-2 ring-primary/30 scale-110'
+                          : answers[question.id] ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground hover:bg-accent')}>
+                      {i + 1}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <Button variant="outline" onClick={() => goTo(Math.max(0, cur - 1))} disabled={cur === 0} className="gap-1">
+                    <ChevronLeft className="h-4 w-4" /> Previous
+                  </Button>
+                  {cur < qs - 1 ? (
+                    <Button onClick={() => goTo(cur + 1)} className="gap-1">Next <ChevronRight className="h-4 w-4" /></Button>
+                  ) : (
+                    <Button onClick={() => setConfirm(true)} className="gap-1"><Send className="h-4 w-4" /> Submit</Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
-
-      {showConfirm && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-sm">
-            <CardHeader><CardTitle>Submit Exam</CardTitle><CardDescription>You answered {answeredCount} of {totalQuestions} questions. This action cannot be undone.</CardDescription></CardHeader>
-            <CardContent className="flex gap-3">
-              <Button variant="outline" className="flex-1" onClick={() => setShowConfirm(false)}>Review</Button>
-              <Button className="flex-1" onClick={handleSubmit}>Submit</Button>
-            </CardContent>
-          </Card>
+      {confirm && (
+        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 30 }}>
+            <Card className="w-full max-w-sm">
+              <CardHeader><CardTitle>Submit Exam</CardTitle><CardDescription>You answered {ans} of {qs} questions.{ans < qs && ` ${qs - ans} unanswered.`} This action cannot be undone.</CardDescription></CardHeader>
+              <CardContent className="flex gap-3">
+                <Button variant="outline" className="flex-1" onClick={() => setConfirm(false)}>Review</Button>
+                <Button className="flex-1" onClick={onSubmit}><Send className="h-4 w-4 mr-1" /> Submit</Button>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
       )}
-    </div>
     </>
   );
 }

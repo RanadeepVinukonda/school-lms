@@ -1,8 +1,10 @@
+import { useState, useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
-import { NotificationBell } from '@/components/layout/NotificationBell';
+import NotificationDropdown from '@/components/common/NotificationDropdown';
+import GlobalSearchDialog from '@/components/common/GlobalSearchDialog';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { UserAvatar } from '@/components/layout/UserAvatar';
 import { Icon } from '@/components/ui/Icon';
@@ -18,14 +20,26 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Home', href: ROUTES.STUDENT_DASHBOARD, icon: 'home' },
   { label: 'Subjects', href: ROUTES.STUDENT_SUBJECTS, icon: 'book' },
+  { label: 'Tasks', href: ROUTES.STUDENT_TASKS, icon: 'checklist' },
   { label: 'Exams', href: ROUTES.STUDENT_EXAMS, icon: 'assignment' },
-  { label: 'Timetable', href: ROUTES.STUDENT_TIMETABLE, icon: 'calendar_month' },
   { label: 'Profile', href: ROUTES.STUDENT_PROFILE, icon: 'person' },
 ];
 
 export default function StudentLayout() {
   const user = useAuthStore((s) => s.user);
   const { sidebarCollapsed, setSidebarCollapsed } = useUIStore();
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -124,7 +138,10 @@ export default function StudentLayout() {
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-outline-variant bg-surface/80 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-surface/60">
           <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
-            {user && <NotificationBell />}
+            <Button variant="ghost" size="icon" onClick={() => setSearchOpen(true)} aria-label="Search">
+              <Icon name="search" size={20} />
+            </Button>
+            {user && <NotificationDropdown />}
             {user && <UserAvatar />}
           </div>
         </header>
@@ -164,6 +181,7 @@ export default function StudentLayout() {
           </div>
         </nav>
       </div>
+      <GlobalSearchDialog isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
 }

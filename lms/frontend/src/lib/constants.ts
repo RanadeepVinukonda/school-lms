@@ -24,6 +24,7 @@ export const ROUTES = {
   STUDENT_TEXTBOOK: (id: string) => `/student/textbooks/${id}`,
   STUDENT_LESSON: (id: string) => `/student/lessons/${id}`,
   STUDENT_EXAMS: '/student/exams',
+  STUDENT_TASKS: '/student/tasks',
   STUDENT_TIMETABLE: '/student/timetable',
   STUDENT_PROFILE: '/student/profile',
 

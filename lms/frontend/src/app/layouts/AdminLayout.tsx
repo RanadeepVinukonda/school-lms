@@ -1,12 +1,14 @@
+import { useState, useEffect } from 'react';
 import { NavLink, Outlet, Navigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/lib/constants';
 import { isAdmin } from '@/utils/permissions';
+import NotificationDropdown from '@/components/common/NotificationDropdown';
+import GlobalSearchDialog from '@/components/common/GlobalSearchDialog';
 import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/button';
-import { NotificationBell } from '@/components/layout/NotificationBell';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { UserAvatar } from '@/components/layout/UserAvatar';
 
@@ -28,6 +30,18 @@ const navItems: NavItem[] = [
 export function AdminLayout() {
   const { sidebarCollapsed, setSidebarCollapsed } = useUIStore();
   const user = useAuthStore((s) => s.user);
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   if (!user || !isAdmin(user.role)) {
     return <Navigate to={ROUTES.ADMIN_DASHBOARD} replace />;
@@ -132,7 +146,10 @@ export function AdminLayout() {
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-outline-variant bg-surface/80 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-surface/60">
           <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
-            {user && <NotificationBell />}
+            <Button variant="ghost" size="icon" onClick={() => setSearchOpen(true)} aria-label="Search">
+              <Icon name="search" size={20} />
+            </Button>
+            {user && <NotificationDropdown />}
             {user && <UserAvatar />}
           </div>
         </header>
@@ -171,6 +188,7 @@ export function AdminLayout() {
           </div>
         </nav>
       </div>
+      <GlobalSearchDialog isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
 }
