@@ -90,7 +90,7 @@ export default function StudentProfilePage() {
                 <Card variant="elevated" className="rounded-2xl">
                   <CardContent className="p-6">
                     <div className="flex items-start gap-5">
-                      <img src="/genesis-icon.jpg" alt="Genesis School Crest" className="h-20 w-auto object-contain shrink-0" />
+                      <img src="/genesis_icon.png" alt="Genesis School Crest" className="h-20 w-auto object-contain shrink-0" />
                       <div className="flex-1 min-w-0">
                         <h2 className="text-xl font-bold">Genesis International Montessori &amp; STEM School</h2>
                         <p className="text-warning uppercase text-xs tracking-wider font-semibold mt-0.5">Learn &middot; Lead &middot; Achieve</p>

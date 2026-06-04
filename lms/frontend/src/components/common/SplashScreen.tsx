@@ -45,7 +45,7 @@ export default function SplashScreen({
           transition={{ duration: 0.3, ease: 'easeInOut' }}
         >
           <motion.img
-            src="/genesis-icon.jpg"
+            src="/genesis_icon.png"
             alt="Genesis LMS"
             className="h-36 w-auto object-contain"
             initial={{ opacity: 0, scale: 0.9 }}

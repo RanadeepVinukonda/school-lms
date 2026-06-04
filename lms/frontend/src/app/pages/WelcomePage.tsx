@@ -78,7 +78,7 @@ export default function WelcomePage() {
               className="mb-8 inline-flex flex-col items-center"
             >
               <img
-                src="/genesis-icon.jpg"
+                src="/genesis_icon.png"
                 alt="Genesis School Crest"
                 className="h-32 w-auto object-contain sm:h-40"
               />
@@ -185,7 +185,7 @@ export default function WelcomePage() {
           <div className="mx-auto max-w-6xl px-4 py-8">
             <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
               <div className="flex items-center gap-3">
-                <img src="/genesis-icon.jpg" alt="" className="h-8 w-auto object-contain" />
+                <img src="/genesis_icon.png" alt="" className="h-8 w-auto object-contain" />
                 <div>
                   <p className="text-sm font-bold text-primary">Genesis</p>
                   <p className="text-label-sm text-on-surface-variant">Learn &bull; Lead &bull; Achieve</p>

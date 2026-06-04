@@ -105,7 +105,7 @@ export default function AboutSchoolPage() {
               className="mb-8 inline-flex flex-col items-center"
             >
               <img
-                src="/genesis-icon.jpg"
+                src="/genesis_icon.png"
                 alt="Genesis School Crest"
                 className="h-48 w-auto object-contain"
               />
