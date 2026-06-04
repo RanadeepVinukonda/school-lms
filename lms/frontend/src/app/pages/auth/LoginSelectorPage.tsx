@@ -71,7 +71,7 @@ export default function LoginSelectorPage() {
           >
             <div className="mb-6 inline-flex items-center justify-center">
               <img
-                src="/genesis_icon.svg"
+                src="/genesis_icon.png"
                 alt="Genesis School Crest"
                 className="h-28 w-auto object-contain sm:h-36"
               />
