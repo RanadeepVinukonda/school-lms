@@ -30,6 +30,7 @@ export const ROUTES = {
   STUDENT_TASKS: '/student/tasks',
   STUDENT_TIMETABLE: '/student/timetable',
   STUDENT_PROFILE: '/student/profile',
+  STUDENT_PROFILE_EDIT: '/student/profile/edit',
 
   TEACHER_DASHBOARD: '/teacher/dashboard',
   TEACHER_STUDENTS: '/teacher/students',
@@ -40,6 +41,7 @@ export const ROUTES = {
   TEACHER_TEXTBOOK: (id: string) => `/teacher/textbooks/${id}`,
   TEACHER_TEXTBOOK_UPLOAD: '/teacher/textbooks/upload',
   TEACHER_PROFILE: '/teacher/profile',
+  TEACHER_PROFILE_EDIT: '/teacher/profile/edit',
 
   ADMIN_DASHBOARD: '/admin/dashboard',
   ADMIN_STUDENTS: '/admin/students',
@@ -53,6 +55,7 @@ export const ROUTES = {
   ASSIGNMENT_DETAIL: (id: string) => `/assignments/${id}`,
   QUIZ_ATTEMPT: (id: string) => `/quizzes/${id}/attempt`,
   EXAM_DETAIL: (id: string) => `/exams/${id}`,
+  NOTIFICATIONS: '/notifications',
   ABOUT: '/about',
 } as const;
 

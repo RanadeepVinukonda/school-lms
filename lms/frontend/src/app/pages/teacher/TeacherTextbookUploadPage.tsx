@@ -15,7 +15,7 @@ import { pageTransition } from '@/lib/motion';
 import { extractTextFromPDF } from '@/lib/pdfUtils';
 import { extractChapters, generateConceptContent, generateQuestionBank } from '@/services/aiService';
 import { searchVideosForConcept } from '@/services/youtubeService';
-import { uploadTextbookFile, createTextbook, saveChapters } from '@/services/textbookService';
+import { createTextbook, saveChapters } from '@/services/textbookService';
 import { mockSubjects } from '@/lib/mockData';
 import type { Chapter, Concept, CachedVideo, GeneratedQuestion, GeneratedAssignment } from '@/types/textbook';
 
@@ -96,9 +96,6 @@ export default function TeacherTextbookUploadPage() {
       const id = await createTextbook(initialTextbook);
       setTextbookId(id);
       addLog(`Textbook created with ID: ${id}`);
-
-      const fileUrl = await uploadTextbookFile(file, id);
-      addLog('PDF uploaded to storage');
 
       setStage('extracting');
       setProgress(15);

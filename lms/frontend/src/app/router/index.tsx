@@ -30,6 +30,7 @@ import StudentExamsPage from '@/app/pages/student/StudentExamsPage';
 import StudentTimetablePage from '@/app/pages/student/StudentTimetablePage';
 import StudentTasksPage from '@/app/pages/student/StudentTasksPage';
 import StudentProfilePage from '@/app/pages/student/StudentProfilePage';
+import StudentProfileEditPage from '@/app/pages/student/StudentProfileEditPage';
 import AssignmentDetailPage from '@/app/pages/student/AssignmentDetailPage';
 import QuizAttemptPage from '@/app/pages/student/QuizAttemptPage';
 import ExamAttemptPage from '@/app/pages/student/ExamAttemptPage';
@@ -42,6 +43,7 @@ import TeacherExamCorrectionPage from '@/app/pages/teacher/TeacherExamCorrection
 import TeacherTextbooksPage from '@/app/pages/teacher/TeacherTextbooksPage';
 import TeacherTextbookUploadPage from '@/app/pages/teacher/TeacherTextbookUploadPage';
 import TeacherProfilePage from '@/app/pages/teacher/TeacherProfilePage';
+import TeacherProfileEditPage from '@/app/pages/teacher/TeacherProfileEditPage';
 
 import AdminDashboardPage from '@/app/pages/admin/AdminDashboardPage';
 import AdminStudentsPage from '@/app/pages/admin/AdminStudentsPage';
@@ -50,7 +52,10 @@ import AdminClassesPage from '@/app/pages/admin/AdminClassesPage';
 import AdminTimetablePage from '@/app/pages/admin/AdminTimetablePage';
 import AdminSubjectsPage from '@/app/pages/admin/AdminSubjectsPage';
 import AdminSettingsPage from '@/app/pages/admin/AdminSettingsPage';
+import AdminProfileEditPage from '@/app/pages/admin/AdminProfileEditPage';
 import UserManagementPage from '@/app/pages/admin/UserManagementPage';
+
+import NotificationsPage from '@/app/pages/NotificationsPage';
 
 export const router = createBrowserRouter([
   {
@@ -94,6 +99,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.STUDENT_TASKS, element: <StudentTasksPage /> },
       { path: ROUTES.STUDENT_TIMETABLE, element: <StudentTimetablePage /> },
       { path: ROUTES.STUDENT_PROFILE, element: <StudentProfilePage /> },
+      { path: ROUTES.STUDENT_PROFILE_EDIT, element: <StudentProfileEditPage /> },
       { path: ROUTES.ASSIGNMENT_DETAIL(':id'), element: <AssignmentDetailPage /> },
       { path: ROUTES.QUIZ_ATTEMPT(':id'), element: <QuizAttemptPage /> },
       { path: ROUTES.EXAM_DETAIL(':id'), element: <ExamAttemptPage /> },
@@ -115,6 +121,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.TEACHER_TEXTBOOKS, element: <TeacherTextbooksPage /> },
       { path: ROUTES.TEACHER_TEXTBOOK_UPLOAD, element: <TeacherTextbookUploadPage /> },
       { path: ROUTES.TEACHER_PROFILE, element: <TeacherProfilePage /> },
+      { path: ROUTES.TEACHER_PROFILE_EDIT, element: <TeacherProfileEditPage /> },
     ],
   },
 
@@ -133,9 +140,14 @@ export const router = createBrowserRouter([
       { path: ROUTES.ADMIN_SUBJECTS, element: <AdminSubjectsPage /> },
       { path: ROUTES.ADMIN_SETTINGS, element: <AdminSettingsPage /> },
       { path: ROUTES.ADMIN_USERS, element: <UserManagementPage /> },
+      { path: '/admin/profile/edit', element: <AdminProfileEditPage /> },
     ],
   },
 
+  {
+    path: ROUTES.NOTIFICATIONS,
+    element: <NotificationsPage />,
+  },
   {
     path: ROUTES.HOME,
     element: <Navigate to={ROUTES.WELCOME} replace />,

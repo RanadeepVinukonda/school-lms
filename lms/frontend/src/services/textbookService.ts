@@ -1,16 +1,9 @@
 import { collection, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, query, where, deleteDoc, Timestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '@/firebase/config';
+import { db } from '@/firebase/config';
 import type { Textbook, Chapter, Concept, GeneratedQuestion, GeneratedAssignment, CachedVideo, ConceptProgress } from '@/types/textbook';
 
 const TEXTBOOKS_COLLECTION = 'textbooks';
 const CONCEPT_PROGRESS_COLLECTION = 'conceptProgress';
-
-export async function uploadTextbookFile(file: File, textbookId: string): Promise<string> {
-  const storageRef = ref(storage, `textbooks/${textbookId}/${file.name}`);
-  const snapshot = await uploadBytes(storageRef, file);
-  return getDownloadURL(snapshot.ref);
-}
 
 export async function createTextbook(data: Omit<Textbook, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
   const docRef = await addDoc(collection(db, TEXTBOOKS_COLLECTION), {

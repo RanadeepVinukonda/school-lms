@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Icon } from '@/components/ui/Icon';
+import { Link } from 'react-router-dom';
 import { getInitials } from '@/lib/utils';
+import { ROUTES } from '@/lib/constants';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
 import { mockUsers, mockClasses, mockSubjects, mockEnrollments, mockGrades } from '@/lib/mockData';
 
@@ -113,9 +115,8 @@ export default function TeacherProfilePage() {
                           )}
                         </div>
                       </div>
-                      <Button variant="outline" size="sm" className="gap-1">
-                        <Icon name="edit" size={15} />
-                        Edit Profile
+                      <Button variant="outline" size="sm" className="gap-1" asChild>
+                        <Link to={ROUTES.TEACHER_PROFILE_EDIT}><Icon name="edit" size={15} />Edit Profile</Link>
                       </Button>
                     </div>
                   </CardContent>

@@ -1,62 +1,57 @@
-const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dinanit0d';
-const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'genesis_uploads';
-const BASE_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}`;
+const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || '';
+const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || '';
 
-export const cloudinaryService = {
-  async upload(file: File, folder = 'genesis', onProgress?: (pct: number) => void) {
-    const form = new FormData();
-    form.append('file', file);
-    form.append('upload_preset', UPLOAD_PRESET);
-    form.append('folder', folder);
+export async function uploadImage(
+  file: File,
+  folder?: string,
+  onProgress?: (pct: number) => void,
+): Promise<string> {
+  if (!CLOUD_NAME || !UPLOAD_PRESET) {
+    throw new Error('Cloudinary not configured. Set VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET in .env');
+  }
 
-    return new Promise<{ url: string; publicId: string }>((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', `${BASE_URL}/image/upload`);
+  const form = new FormData();
+  form.append('file', file);
+  form.append('upload_preset', UPLOAD_PRESET);
+  if (folder) form.append('folder', folder);
 
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          onProgress?.(Math.round((e.loaded / e.total) * 100));
-        }
-      };
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`);
 
-      xhr.onload = () => {
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress(Math.round((e.loaded / e.total) * 100));
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const data = JSON.parse(xhr.responseText);
+        resolve(data.secure_url);
+      } else {
         try {
-          const data = JSON.parse(xhr.responseText);
-          if (xhr.status === 200) {
-            resolve({ url: data.secure_url, publicId: data.public_id });
-          } else {
-            reject(new Error(data.error?.message || 'Upload failed'));
-          }
+          const err = JSON.parse(xhr.responseText);
+          reject(new Error(err.error?.message || 'Upload failed'));
         } catch {
-          reject(new Error('Invalid response from Cloudinary'));
+          reject(new Error(`Upload failed with status ${xhr.status}`));
         }
-      };
+      }
+    };
 
-      xhr.onerror = () => reject(new Error('Network error during upload'));
-      xhr.send(form);
-    });
-  },
+    xhr.onerror = () => reject(new Error('Network error during upload'));
+    xhr.send(form);
+  });
+}
 
-  url(publicId: string, options?: { width?: number; height?: number; crop?: string; quality?: number }) {
-    let base = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload`;
-    if (options) {
-      const params: string[] = [];
-      if (options.width) params.push(`w_${options.width}`);
-      if (options.height) params.push(`h_${options.height}`);
-      if (options.crop) params.push(`c_${options.crop}`);
-      if (options.quality) params.push(`q_${options.quality}`);
-      if (params.length) base += `/${params.join(',')}`;
-    }
-    return `${base}/v1/${publicId}`;
-  },
+export async function uploadProfileImage(
+  userId: string,
+  file: File,
+  onProgress?: (pct: number) => void,
+): Promise<string> {
+  return uploadImage(file, `profiles/${userId}`, onProgress);
+}
 
-  async delete(publicId: string) {
-    const response = await fetch('/api/upload/delete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ publicId }),
-    });
-    if (!response.ok) throw new Error('Delete failed');
-    return response.json();
-  },
-};
+export function getCloudinaryConfig() {
+  return { cloudName: CLOUD_NAME, uploadPreset: UPLOAD_PRESET, isConfigured: !!(CLOUD_NAME && UPLOAD_PRESET) };
+}

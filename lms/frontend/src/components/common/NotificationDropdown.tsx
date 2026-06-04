@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { ROUTES } from '@/lib/constants';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { mockNotifications } from '@/lib/mockData';
@@ -191,7 +192,7 @@ export default function NotificationDropdown() {
         <Button variant="ghost" size="icon" className="relative" aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}>
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+            <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-destructive px-1 text-[11px] font-bold text-destructive-foreground shadow-sm ring-2 ring-background">
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}
@@ -224,7 +225,7 @@ export default function NotificationDropdown() {
         <Separator />
         <div className="p-2">
           <Button variant="ghost" size="sm" className="w-full text-xs" asChild>
-            <Link to="/notifications" onClick={() => setOpen(false)}>
+            <Link to={ROUTES.NOTIFICATIONS} onClick={() => setOpen(false)}>
               View all notifications
               <ChevronRight className="ml-1 h-3 w-3" />
             </Link>
