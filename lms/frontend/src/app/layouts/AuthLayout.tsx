@@ -8,13 +8,13 @@ export function AuthLayout() {
         <div className="rounded-xl bg-primary p-2">
           <GraduationCap className="h-8 w-8 text-primary-foreground" />
         </div>
-        <h1 className="text-2xl font-bold">School LMS</h1>
+        <h1 className="text-2xl font-bold">Genesis</h1>
       </div>
       <div className="w-full max-w-md">
         <Outlet />
       </div>
       <p className="mt-8 text-sm text-muted-foreground">
-        &copy; {new Date().getFullYear()} School LMS. All rights reserved.
+        &copy; {new Date().getFullYear()} Genesis. All rights reserved.
       </p>
     </div>
   );

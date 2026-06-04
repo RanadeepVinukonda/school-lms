@@ -44,7 +44,7 @@ export default function LoginPage() {
 
   return (
     <>
-      <SEOHead title="Sign In" description="Sign in to your School LMS account" canonical="/auth/login" />
+      <SEOHead title="Sign In" description="Sign in to your Genesis account" canonical="/auth/login" />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

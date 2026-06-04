@@ -91,7 +91,7 @@ export function Sidebar() {
           {!sidebarCollapsed && (
             <Link to="/dashboard" className="flex items-center gap-2 font-bold text-xl">
               <GraduationCap className="h-6 w-6 text-primary" />
-              <span>School LMS</span>
+              <span>Genesis</span>
             </Link>
           )}
           {sidebarCollapsed && (

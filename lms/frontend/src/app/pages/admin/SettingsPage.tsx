@@ -64,7 +64,7 @@ export default function SettingsPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>App Name</Label>
-                <Input defaultValue="School LMS" />
+                <Input defaultValue="Genesis" />
               </div>
               <div className="space-y-2">
                 <Label>Logo URL</Label>

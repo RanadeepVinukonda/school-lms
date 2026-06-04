@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 
 const studentNav = [
   { icon: Home, label: 'Dashboard', path: '/student/dashboard' },
-  { icon: BookOpen, label: 'Courses', path: '/student/courses' },
+  { icon: BookOpen, label: 'Subjects', path: '/student/subjects' },
   { icon: BarChart3, label: 'Grades', path: '/student/grades' },
   { icon: MessageCircle, label: 'Messages', path: '/student/messages' },
   { icon: Bell, label: 'Notifications', path: '/student/notifications' },
@@ -52,7 +52,7 @@ export function AppLayout() {
             <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
               <GraduationCap className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-bold text-lg">School LMS</span>
+            <span className="font-bold text-lg">Genesis</span>
           </Link>
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setSidebarOpen(false)} aria-label="Close sidebar">
             <X className="h-5 w-5" />

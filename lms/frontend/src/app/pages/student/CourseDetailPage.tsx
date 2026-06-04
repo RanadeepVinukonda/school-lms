@@ -104,7 +104,7 @@ export default function CourseDetailPage() {
           <CardContent className="flex flex-col items-center gap-4 py-12">
             <BookOpen className="h-8 w-8 text-muted-foreground" />
             <p className="font-medium">Course not found</p>
-            <Button asChild><Link to="/student/courses">Browse Courses</Link></Button>
+            <Button asChild><Link to="/student/subjects">Browse Subjects</Link></Button>
           </CardContent>
         </Card>
       </div>
@@ -125,7 +125,7 @@ export default function CourseDetailPage() {
       <SEOHead title={course.title} description={`${course.title} course page`} canonical={`/courses/${courseId}`} />
       <div className="p-4 max-w-4xl mx-auto pb-20">
       <Button variant="ghost" size="sm" asChild className="mb-3">
-        <Link to="/student/courses"><ArrowLeft className="h-4 w-4 mr-1" />Back to Courses</Link>
+        <Link to="/student/subjects"><ArrowLeft className="h-4 w-4 mr-1" />Back to Subjects</Link>
       </Button>
 
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>

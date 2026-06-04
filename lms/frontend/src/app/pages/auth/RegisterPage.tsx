@@ -81,7 +81,7 @@ export default function RegisterPage() {
 
   return (
     <>
-      <SEOHead title="Create Account" description="Create your School LMS account" canonical="/auth/register" />
+      <SEOHead title="Create Account" description="Create your Genesis account" canonical="/auth/register" />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

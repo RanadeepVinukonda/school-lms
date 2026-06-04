@@ -40,7 +40,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <>
-      <SEOHead title="Forgot Password" description="Reset your School LMS password" canonical="/auth/forgot-password" />
+      <SEOHead title="Forgot Password" description="Reset your Genesis password" canonical="/auth/forgot-password" />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
