@@ -4,27 +4,30 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]',
+  'inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.97] select-none ripple',
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground hover:bg-primary/90',
-        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
-        outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
-        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-        ghost: 'hover:bg-accent hover:text-accent-foreground',
+        default: 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-elevation-1',
+        destructive: 'bg-error text-error-foreground hover:bg-error/90',
+        outline: 'border border-outline bg-transparent text-primary hover:bg-primary/8',
+        secondary: 'bg-secondary-container text-on-secondary-container hover:bg-secondary-container/90',
+        ghost: 'bg-transparent text-primary hover:bg-primary/8',
         link: 'text-primary underline-offset-4 hover:underline',
-        success: 'bg-green-600 text-white hover:bg-green-700',
-        warning: 'bg-amber-500 text-white hover:bg-amber-600',
+        tonal: 'bg-secondary-container text-on-secondary-container hover:bg-secondary-container/90',
+        elevated: 'bg-surface text-primary shadow-elevation-2 hover:shadow-elevation-3',
+        text: 'bg-transparent text-primary hover:bg-primary/8',
+        success: 'bg-success text-success-foreground hover:bg-success/90',
+        warning: 'bg-warning text-warning-foreground hover:bg-warning/90',
       },
       size: {
-        default: 'h-10 px-4 py-2',
-        sm: 'h-9 rounded-md px-3',
-        lg: 'h-11 rounded-md px-8',
-        xl: 'h-14 rounded-lg px-10 text-base',
-        icon: 'h-10 w-10',
-        'icon-sm': 'h-8 w-8',
-        'icon-lg': 'h-12 w-12',
+        default: 'h-10 px-6 py-2 rounded-lg',
+        sm: 'h-9 px-4 rounded-md',
+        lg: 'h-12 px-8 rounded-xl text-base',
+        xl: 'h-14 px-10 rounded-xl text-lg',
+        icon: 'h-10 w-10 rounded-lg',
+        'icon-sm': 'h-9 w-9 rounded-md',
+        'icon-lg': 'h-12 w-12 rounded-xl',
       },
     },
     defaultVariants: {

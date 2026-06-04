@@ -82,7 +82,7 @@ export default function ExamAttemptPage() {
   const totalPoints = exam.questions?.reduce((s, q) => s + q.points, 0) || 0;
 
   function handleStart() {
-    setTimeLeft((exam!.timeLimit || 30) * 60);
+    setTimeLeft((exam!.duration || 30) * 60);
     setPhase('taking');
   }
 
@@ -100,7 +100,7 @@ export default function ExamAttemptPage() {
             <CardDescription>{exam.description}</CardDescription>
             <div className="grid grid-cols-3 gap-3 text-sm">
               <div className="bg-muted rounded-lg p-3"><p className="font-bold text-lg">{totalQuestions}</p><p className="text-xs text-muted-foreground">Questions</p></div>
-              <div className="bg-muted rounded-lg p-3"><p className="font-bold text-lg">{exam.timeLimit}m</p><p className="text-xs text-muted-foreground">Time Limit</p></div>
+              <div className="bg-muted rounded-lg p-3"><p className="font-bold text-lg">{exam.duration}m</p><p className="text-xs text-muted-foreground">Time Limit</p></div>
               <div className="bg-muted rounded-lg p-3"><p className="font-bold text-lg">{totalPoints}</p><p className="text-xs text-muted-foreground">Points</p></div>
             </div>
             <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-3 text-left text-sm">

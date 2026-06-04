@@ -4,54 +4,255 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
-    --success: 142.1 76.2% 36.3%;
-    --warning: 38 92% 50%;
-    --error: 0 84.2% 60.2%;
+    --primary-h: 217;
+    --primary-s: 82%;
+    --primary-l: 51%;
+    --secondary-h: 217;
+    --secondary-s: 20%;
+    --secondary-l: 35%;
+    --tertiary-h: 30;
+    --tertiary-s: 25%;
+    --tertiary-l: 36%;
+    --error-h: 0;
+    --error-s: 73%;
+    --error-l: 42%;
+    --surface-h: 0;
+    --surface-s: 0%;
+    --surface-l: 99%;
+    --surface-variant-h: 220;
+    --surface-variant-s: 16%;
+    --surface-variant-l: 92%;
+    --success-h: 142;
+    --success-s: 71%;
+    --success-l: 35%;
+    --warning-h: 38;
+    --warning-s: 92%;
+    --warning-l: 50%;
+
+    --primary: var(--primary-h) var(--primary-s) var(--primary-l);
+    --on-primary: 0 0% 100%;
+    --primary-container: 214 89% 91%;
+    --on-primary-container: 217 91% 14%;
+    --secondary: var(--secondary-h) var(--secondary-s) var(--secondary-l);
+    --on-secondary: 0 0% 100%;
+    --secondary-container: 217 35% 90%;
+    --on-secondary-container: 217 31% 12%;
+    --tertiary: var(--tertiary-h) var(--tertiary-s) var(--tertiary-l);
+    --on-tertiary: 0 0% 100%;
+    --tertiary-container: 30 57% 86%;
+    --on-tertiary-container: 30 41% 12%;
+    --error: var(--error-h) var(--error-s) var(--error-l);
+    --on-error: 0 0% 100%;
+    --error-container: 0 80% 92%;
+    --on-error-container: 0 70% 22%;
+    --surface: var(--surface-h) var(--surface-s) var(--surface-l);
+    --on-surface: 0 0% 11%;
+    --surface-variant: var(--surface-variant-h) var(--surface-variant-s) var(--surface-variant-l);
+    --on-surface-variant: 220 5% 40%;
+    --outline: 218 8% 59%;
+    --outline-variant: 220 16% 83%;
+    --shadow: 0 0% 0%;
+    --scrim: 0 0% 0%;
+    --inverse-surface: 0 0% 11%;
+    --inverse-on-surface: 0 0% 96%;
+    --inverse-primary: 214 82% 80%;
+    --success: var(--success-h) var(--success-s) var(--success-l);
+    --on-success: 0 0% 100%;
+    --success-container: 142 71% 91%;
+    --on-success-container: 142 100% 9%;
+    --warning: var(--warning-h) var(--warning-s) var(--warning-l);
+    --on-warning: 0 0% 100%;
+    --warning-container: 38 100% 88%;
+    --on-warning-container: 30 100% 10%;
+
+    --surface-tint-1: color-mix(in srgb, hsl(var(--primary)) 5%, hsl(var(--surface)));
+    --surface-tint-2: color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--surface)));
+    --surface-tint-3: color-mix(in srgb, hsl(var(--primary)) 11%, hsl(var(--surface)));
+    --surface-tint-4: color-mix(in srgb, hsl(var(--primary)) 12%, hsl(var(--surface)));
+    --surface-tint-5: color-mix(in srgb, hsl(var(--primary)) 14%, hsl(var(--surface)));
+
+    --shape-xs: 4px;
+    --shape-sm: 8px;
+    --shape-md: 12px;
+    --shape-lg: 16px;
+    --shape-xl: 28px;
+    --shape-full: 9999px;
+
+    --elevation-1: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --elevation-2: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --elevation-3: 0 4px 8px 0 rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06);
+    --elevation-4: 0 8px 16px 0 rgb(0 0 0 / 0.1), 0 4px 8px -2px rgb(0 0 0 / 0.05);
+    --elevation-5: 0 12px 24px 0 rgb(0 0 0 / 0.1), 0 6px 12px -3px rgb(0 0 0 / 0.05);
+
+    --display-lg: 57px;
+    --display-md: 45px;
+    --display-sm: 36px;
+    --headline-lg: 32px;
+    --headline-md: 28px;
+    --headline-sm: 24px;
+    --title-lg: 22px;
+    --title-md: 16px;
+    --title-sm: 14px;
+    --body-lg: 16px;
+    --body-md: 14px;
+    --body-sm: 12px;
+    --label-lg: 14px;
+    --label-md: 12px;
+    --label-sm: 11px;
+
+    --display-lg-leading: 64px;
+    --display-md-leading: 52px;
+    --display-sm-leading: 44px;
+    --headline-lg-leading: 40px;
+    --headline-md-leading: 36px;
+    --headline-sm-leading: 32px;
+    --title-lg-leading: 28px;
+    --title-md-leading: 24px;
+    --title-sm-leading: 20px;
+    --body-lg-leading: 24px;
+    --body-md-leading: 20px;
+    --body-sm-leading: 16px;
+    --label-lg-leading: 20px;
+    --label-md-leading: 16px;
+    --label-sm-leading: 16px;
+
+    --display-lg-tracking: -0.25px;
+    --display-md-tracking: 0px;
+    --display-sm-tracking: 0px;
+    --headline-lg-tracking: 0px;
+    --headline-md-tracking: 0px;
+    --headline-sm-tracking: 0px;
+    --title-lg-tracking: 0px;
+    --title-md-tracking: 0.15px;
+    --title-sm-tracking: 0.1px;
+    --body-lg-tracking: 0.5px;
+    --body-md-tracking: 0.25px;
+    --body-sm-tracking: 0.4px;
+    --label-lg-tracking: 0.1px;
+    --label-md-tracking: 0.5px;
+    --label-sm-tracking: 0.5px;
+
+    --display-lg-weight: 400;
+    --display-md-weight: 400;
+    --display-sm-weight: 400;
+    --headline-lg-weight: 400;
+    --headline-md-weight: 400;
+    --headline-sm-weight: 400;
+    --title-lg-weight: 700;
+    --title-md-weight: 700;
+    --title-sm-weight: 700;
+    --body-lg-weight: 400;
+    --body-md-weight: 400;
+    --body-sm-weight: 400;
+    --label-lg-weight: 700;
+    --label-md-weight: 700;
+    --label-sm-weight: 700;
+
+    --background: var(--surface);
+    --foreground: var(--on-surface);
+    --card: var(--surface);
+    --card-foreground: var(--on-surface);
+    --popover: var(--surface);
+    --popover-foreground: var(--on-surface);
+    --primary-foreground: var(--on-primary);
+    --secondary-foreground: var(--on-secondary);
+    --muted: var(--surface-variant);
+    --muted-foreground: var(--on-surface-variant);
+    --accent: var(--secondary-container);
+    --accent-foreground: var(--on-secondary-container);
+    --destructive: var(--error);
+    --destructive-foreground: var(--on-error);
+    --border: var(--outline-variant);
+    --input: var(--outline-variant);
+    --ring: var(--primary);
+    --radius: var(--shape-sm);
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
-    --success: 142.1 70.6% 45.3%;
-    --warning: 38 92% 50%;
-    --error: 0 84.2% 60.2%;
+    --primary-h: 214;
+    --primary-s: 82%;
+    --primary-l: 80%;
+    --secondary-h: 217;
+    --secondary-s: 18%;
+    --secondary-l: 76%;
+    --tertiary-h: 30;
+    --tertiary-s: 38%;
+    --tertiary-l: 74%;
+    --error-h: 0;
+    --error-s: 60%;
+    --error-l: 78%;
+    --surface-h: 220;
+    --surface-s: 12%;
+    --surface-l: 7%;
+    --surface-variant-h: 218;
+    --surface-variant-s: 8%;
+    --surface-variant-l: 18%;
+    --success-h: 142;
+    --success-s: 60%;
+    --success-l: 52%;
+    --warning-h: 38;
+    --warning-s: 100%;
+    --warning-l: 60%;
+
+    --primary: var(--primary-h) var(--primary-s) var(--primary-l);
+    --on-primary: 217 91% 14%;
+    --primary-container: 217 62% 40%;
+    --on-primary-container: 214 89% 91%;
+    --secondary: var(--secondary-h) var(--secondary-s) var(--secondary-l);
+    --on-secondary: 217 31% 12%;
+    --secondary-container: 217 16% 27%;
+    --on-secondary-container: 217 35% 90%;
+    --tertiary: var(--tertiary-h) var(--tertiary-s) var(--tertiary-l);
+    --on-tertiary: 30 41% 12%;
+    --tertiary-container: 30 21% 28%;
+    --on-tertiary-container: 30 57% 86%;
+    --error: var(--error-h) var(--error-s) var(--error-l);
+    --on-error: 0 70% 22%;
+    --error-container: 0 58% 30%;
+    --on-error-container: 0 80% 92%;
+    --surface: var(--surface-h) var(--surface-s) var(--surface-l);
+    --on-surface: 220 8% 92%;
+    --surface-variant: var(--surface-variant-h) var(--surface-variant-s) var(--surface-variant-l);
+    --on-surface-variant: 218 9% 58%;
+    --outline: 218 8% 37%;
+    --outline-variant: 218 8% 18%;
+    --shadow: 0 0% 0%;
+    --scrim: 0 0% 0%;
+    --inverse-surface: 220 8% 92%;
+    --inverse-on-surface: 220 12% 7%;
+    --inverse-primary: 217 82% 51%;
+    --success: var(--success-h) var(--success-s) var(--success-l);
+    --on-success: 142 100% 9%;
+    --success-container: 142 40% 22%;
+    --on-success-container: 142 71% 91%;
+    --warning: var(--warning-h) var(--warning-s) var(--warning-l);
+    --on-warning: 30 100% 10%;
+    --warning-container: 38 40% 22%;
+    --on-warning-container: 38 100% 88%;
+
+    --surface-tint-1: color-mix(in srgb, hsl(var(--primary)) 5%, hsl(var(--surface)));
+    --surface-tint-2: color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--surface)));
+    --surface-tint-3: color-mix(in srgb, hsl(var(--primary)) 11%, hsl(var(--surface)));
+    --surface-tint-4: color-mix(in srgb, hsl(var(--primary)) 12%, hsl(var(--surface)));
+    --surface-tint-5: color-mix(in srgb, hsl(var(--primary)) 14%, hsl(var(--surface)));
+
+    --background: var(--surface);
+    --foreground: var(--on-surface);
+    --card: var(--surface);
+    --card-foreground: var(--on-surface);
+    --popover: var(--surface);
+    --popover-foreground: var(--on-surface);
+    --primary-foreground: var(--on-primary);
+    --secondary-foreground: var(--on-secondary);
+    --muted: var(--surface-variant);
+    --muted-foreground: var(--on-surface-variant);
+    --accent: var(--secondary-container);
+    --accent-foreground: var(--on-secondary-container);
+    --destructive: var(--error);
+    --destructive-foreground: var(--on-error);
+    --border: var(--outline-variant);
+    --input: var(--outline-variant);
+    --ring: var(--primary);
   }
 }
 
@@ -61,7 +262,7 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
@@ -70,22 +271,65 @@
   .shimmer {
     background: linear-gradient(
       90deg,
-      hsl(var(--muted)) 25%,
-      hsl(var(--muted-foreground) / 0.1) 50%,
-      hsl(var(--muted)) 75%
+      hsl(var(--surface-variant)) 25%,
+      hsl(var(--primary) / 0.08) 50%,
+      hsl(var(--surface-variant)) 75%
     );
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
   }
 
   @keyframes shimmer {
-    0% {
-      background-position: -200% 0;
-    }
-    100% {
-      background-position: 200% 0;
-    }
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
   }
+
+  .ripple {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ripple::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: hsl(var(--on-surface) / 0.12);
+    border-radius: inherit;
+    opacity: 0;
+    transform: scale(0);
+  }
+
+  .ripple:focus-visible::after,
+  .ripple:active::after {
+    animation: ripple-ani 300ms cubic-bezier(0.2, 0, 0, 1) forwards;
+  }
+
+  @keyframes ripple-ani {
+    to { transform: scale(2); opacity: 1; }
+  }
+
+  .elevation-0 { box-shadow: none; }
+  .elevation-1 { box-shadow: var(--elevation-1); background: var(--surface-tint-1); }
+  .elevation-2 { box-shadow: var(--elevation-2); background: var(--surface-tint-2); }
+  .elevation-3 { box-shadow: var(--elevation-3); background: var(--surface-tint-3); }
+  .elevation-4 { box-shadow: var(--elevation-4); background: var(--surface-tint-4); }
+  .elevation-5 { box-shadow: var(--elevation-5); background: var(--surface-tint-5); }
+
+  .display-lg { font-size: var(--display-lg); line-height: var(--display-lg-leading); letter-spacing: var(--display-lg-tracking); font-weight: var(--display-lg-weight); }
+  .display-md { font-size: var(--display-md); line-height: var(--display-md-leading); letter-spacing: var(--display-md-tracking); font-weight: var(--display-md-weight); }
+  .display-sm { font-size: var(--display-sm); line-height: var(--display-sm-leading); letter-spacing: var(--display-sm-tracking); font-weight: var(--display-sm-weight); }
+  .headline-lg { font-size: var(--headline-lg); line-height: var(--headline-lg-leading); letter-spacing: var(--headline-lg-tracking); font-weight: var(--headline-lg-weight); }
+  .headline-md { font-size: var(--headline-md); line-height: var(--headline-md-leading); letter-spacing: var(--headline-md-tracking); font-weight: var(--headline-md-weight); }
+  .headline-sm { font-size: var(--headline-sm); line-height: var(--headline-sm-leading); letter-spacing: var(--headline-sm-tracking); font-weight: var(--headline-sm-weight); }
+  .title-lg { font-size: var(--title-lg); line-height: var(--title-lg-leading); letter-spacing: var(--title-lg-tracking); font-weight: var(--title-lg-weight); }
+  .title-md { font-size: var(--title-md); line-height: var(--title-md-leading); letter-spacing: var(--title-md-tracking); font-weight: var(--title-md-weight); }
+  .title-sm { font-size: var(--title-sm); line-height: var(--title-sm-leading); letter-spacing: var(--title-sm-tracking); font-weight: var(--title-sm-weight); }
+  .body-lg { font-size: var(--body-lg); line-height: var(--body-lg-leading); letter-spacing: var(--body-lg-tracking); font-weight: var(--body-lg-weight); }
+  .body-md { font-size: var(--body-md); line-height: var(--body-md-leading); letter-spacing: var(--body-md-tracking); font-weight: var(--body-md-weight); }
+  .body-sm { font-size: var(--body-sm); line-height: var(--body-sm-leading); letter-spacing: var(--body-sm-tracking); font-weight: var(--body-sm-weight); }
+  .label-lg { font-size: var(--label-lg); line-height: var(--label-lg-leading); letter-spacing: var(--label-lg-tracking); font-weight: var(--label-lg-weight); }
+  .label-md { font-size: var(--label-md); line-height: var(--label-md-leading); letter-spacing: var(--label-md-tracking); font-weight: var(--label-md-weight); }
+  .label-sm { font-size: var(--label-sm); line-height: var(--label-sm-leading); letter-spacing: var(--label-sm-tracking); font-weight: var(--label-sm-weight); }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,10 +1,20 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
+  shape?: 'default' | 'circular' | 'pill';
+}
+
+function Skeleton({ className, shape = 'default', ...props }: SkeletonProps) {
   return (
     <div
-      className={cn('animate-pulse rounded-md bg-muted', className)}
+      className={cn(
+        'shimmer',
+        shape === 'circular' && 'rounded-full',
+        shape === 'pill' && 'rounded-full',
+        shape === 'default' && 'rounded-lg',
+        className,
+      )}
       {...props}
     />
   );

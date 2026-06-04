@@ -1,4 +1,4 @@
-import { Inbox } from 'lucide-react';
+import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
 
 interface EmptyStateProps {
@@ -17,11 +17,11 @@ export function EmptyState({ icon, title, message, action, className }: EmptySta
         className,
       )}
     >
-      <div className="mb-4 text-muted-foreground/50">
-        {icon || <Inbox className="h-16 w-16" />}
+      <div className="mb-5 text-on-surface-variant/40">
+        {icon || <Icon name="inbox" size={64} />}
       </div>
-      {title && <h3 className="text-lg font-semibold mb-1">{title}</h3>}
-      <p className="text-muted-foreground max-w-sm mb-6">{message}</p>
+      {title && <h3 className="text-headline-sm mb-1">{title}</h3>}
+      <p className="text-body-md text-on-surface-variant max-w-sm mb-6">{message}</p>
       {action && <div>{action}</div>}
     </div>
   );

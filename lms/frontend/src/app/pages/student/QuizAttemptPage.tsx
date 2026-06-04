@@ -209,7 +209,7 @@ export default function QuizAttemptPage() {
           </div>
           <p className="font-medium mb-4">{q.text}</p>
 
-          {q.type === 'mcq' && (
+          {q.type === 'multiple_choice' && (
             <RadioGroup value={answers[q.id] || ''} onValueChange={v => setAnswers(prev => ({ ...prev, [q.id]: v }))}>
               {q.options?.map(opt => (
                 <div key={opt} className="flex items-center gap-2 p-2 rounded-lg hover:bg-accent">
@@ -229,14 +229,6 @@ export default function QuizAttemptPage() {
                 </div>
               ))}
             </RadioGroup>
-          )}
-
-          {q.type === 'fill_blank' && (
-            <Input
-              placeholder="Type your answer..."
-              value={answers[q.id] || ''}
-              onChange={e => setAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
-            />
           )}
 
           {q.type === 'short_answer' && (

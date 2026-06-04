@@ -1,4 +1,4 @@
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -18,17 +18,17 @@ export function ErrorState({ title, message, onRetry, className, details }: Erro
         className,
       )}
     >
-      <div className="mb-4 rounded-full bg-destructive/10 p-4">
-        <AlertTriangle className="h-8 w-8 text-destructive" />
+      <div className="mb-5 rounded-full bg-error-container p-4">
+        <Icon name="error_outline" size={32} className="text-on-error-container" />
       </div>
-      <h3 className="text-lg font-semibold mb-1">{title || 'Something went wrong'}</h3>
-      <p className="text-muted-foreground max-w-sm mb-2">{message}</p>
+      <h3 className="text-headline-sm mb-1">{title || 'Something went wrong'}</h3>
+      <p className="text-body-md text-on-surface-variant max-w-sm mb-2">{message}</p>
       {details && (
-        <p className="text-xs text-muted-foreground/70 max-w-sm mb-4 font-mono bg-muted/50 p-2 rounded">{details}</p>
+        <p className="text-body-sm text-on-surface-variant/70 max-w-sm mb-4 font-mono bg-surface-variant/50 p-3 rounded-lg">{details}</p>
       )}
       {onRetry && (
-        <Button variant="outline" onClick={onRetry} className="gap-2">
-          <RefreshCw className="h-4 w-4" />
+        <Button variant="tonal" onClick={onRetry} className="gap-2">
+          <Icon name="refresh" size={18} />
           Try again
         </Button>
       )}

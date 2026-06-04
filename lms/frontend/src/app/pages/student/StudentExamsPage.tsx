@@ -2,12 +2,10 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/common/SEOHead';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Icon } from '@/components/ui/Icon';
-import { cn } from '@/lib/utils';
 import { formatDate } from '@/lib/utils';
 import { getLetterGrade } from '@/lib/format';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
@@ -49,47 +47,8 @@ function Countdown({ endDate }: { endDate: string }) {
   return <span className="text-xs font-medium">{remaining}</span>;
 }
 
-function SkeletonList() {
-  return (
-    <div className="space-y-3">
-      {[1, 2].map((i) => (
-        <Skeleton key={i} className="h-28 rounded-xl" />
-      ))}
-    </div>
-  );
-}
-
-function ErrorDisplay({ onRetry }: { onRetry: () => void }) {
-  return (
-    <Card>
-      <CardContent className="flex flex-col items-center gap-4 py-12">
-        <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
-          <Icon name="error" size={32} className="text-destructive" />
-        </div>
-        <p className="text-lg font-semibold">Failed to load exams</p>
-        <p className="text-sm text-muted-foreground">Please check your connection and try again</p>
-        <Button variant="outline" onClick={onRetry} className="gap-2">
-          <Icon name="refresh" size={16} />
-          Try again
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
-function EmptyDisplay({ message }: { message: string }) {
-  return (
-    <Card>
-      <CardContent className="flex flex-col items-center gap-3 py-10">
-        <Icon name="fact_check" size={40} className="text-muted-foreground/50" />
-        <p className="text-sm text-muted-foreground">{message}</p>
-      </CardContent>
-    </Card>
-  );
-}
-
 export default function StudentExamsPage() {
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-exams'],
     queryFn: async () => {
       await new Promise((r) => setTimeout(r, 400));
@@ -129,145 +88,78 @@ export default function StudentExamsPage() {
         className="p-4 max-w-4xl mx-auto space-y-6 pb-20"
       >
         <div>
-          <h1 className="text-2xl font-bold">Exams</h1>
-          <p className="text-sm text-muted-foreground">Track upcoming exams and past results</p>
+          <h1 className="text-headline-sm font-bold">Exams</h1>
+          <p className="text-body-md text-muted-foreground">Track upcoming exams and past results</p>
         </div>
 
-        {isLoading ? (
-          <div className="space-y-6">
-            <SkeletonList />
-            <SkeletonList />
-          </div>
-        ) : isError ? (
-          <ErrorDisplay onRetry={() => refetch()} />
-        ) : (
-          <>
-            {/* Upcoming Exams */}
-            <motion.section variants={listItem} initial="hidden" animate="show">
-              <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                <Icon name="calendar_month" size={20} className="text-primary" />
-                Upcoming Exams
-              </h2>
-              {!data || data.upcoming.length === 0 ? (
-                <EmptyDisplay message="No upcoming exams scheduled" />
-              ) : (
-                <motion.div
-                  variants={listContainer}
-                  initial="hidden"
-                  animate="show"
-                  className="space-y-3"
-                >
-                  {data.upcoming.map((exam) => (
-                    <motion.div key={exam.id} variants={listItem}>
-                      <Link to={`/exams/${exam.id}`}>
-                        <Card className="hover:shadow-md transition-all duration-300 group">
-                          <CardContent className="p-4">
-                            <div className="flex items-start gap-4">
-                              <div className="h-12 w-12 rounded-xl bg-red-500/10 flex items-center justify-center flex-shrink-0">
-                                <Icon name="fact_check" size={24} className="text-red-600" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between gap-2">
-                                  <p className="font-semibold truncate">{exam.title}</p>
-                                  <Badge
-                                    variant="info"
-                                    className="text-[10px] flex-shrink-0 animate-pulse"
-                                  >
-                                    <Icon name="schedule" size={12} className="mr-1" />
-                                    <Countdown endDate={exam.startDate} />
-                                  </Badge>
+        <DataFetchWrapper
+          data={data}
+          isLoading={isLoading}
+          error={isError ? error ?? new Error('Failed to load exams') : null}
+          loadingType="list"
+          onRetry={() => refetch()}
+          errorTitle="Failed to load exams"
+        >
+          {(d) => (
+            <>
+              <motion.section variants={listItem} initial="hidden" animate="show">
+                <h2 className="text-title-sm font-semibold mb-3 flex items-center gap-2">
+                  <Icon name="calendar_month" size={20} className="text-primary" />
+                  Upcoming Exams
+                </h2>
+                {d.upcoming.length === 0 ? (
+                  <Card variant="elevated">
+                    <CardContent className="flex flex-col items-center gap-3 py-10">
+                      <Icon name="fact_check" size={40} className="text-muted-foreground/50" />
+                      <p className="text-body-md text-muted-foreground">No upcoming exams scheduled</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <motion.div
+                    variants={listContainer}
+                    initial="hidden"
+                    animate="show"
+                    className="space-y-3"
+                  >
+                    {d.upcoming.map((exam) => (
+                      <motion.div key={exam.id} variants={listItem}>
+                        <Link to={`/exams/${exam.id}`}>
+                          <Card variant="elevated" className="transition-all duration-300 group">
+                            <CardContent className="p-4">
+                              <div className="flex items-start gap-4">
+                                <div className="h-12 w-12 rounded-xl bg-error-container flex items-center justify-center flex-shrink-0">
+                                  <Icon name="fact_check" size={24} className="text-error" />
                                 </div>
-                                <p className="text-xs text-muted-foreground mt-0.5">
-                                  {exam.subject?.name ?? 'Unknown Subject'}
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                                  {exam.description}
-                                </p>
-                                <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                                  <span className="flex items-center gap-1">
-                                    <Icon name="schedule" size={14} />
-                                    {exam.timeLimit} min
-                                  </span>
-                                  <span className="flex items-center gap-1">
-                                    <Icon name="quiz" size={14} />
-                                    {exam.questions.length} questions
-                                  </span>
-                                  <span className="flex items-center gap-1">
-                                    <Icon name="calendar_today" size={14} />
-                                    {formatDate(exam.startDate)}
-                                  </span>
-                                </div>
-                              </div>
-                              <Icon
-                                name="chevron_right"
-                                size={20}
-                                className="text-muted-foreground flex-shrink-0 mt-2 group-hover:translate-x-0.5 transition-transform"
-                              />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </Link>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-            </motion.section>
-
-            {/* Past Results */}
-            <motion.section variants={listItem} initial="hidden" animate="show">
-              <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                <Icon name="history" size={20} className="text-muted-foreground" />
-                Past Results
-              </h2>
-              {!data || data.past.length === 0 ? (
-                <EmptyDisplay message="No past exam results yet" />
-              ) : (
-                <motion.div
-                  variants={listContainer}
-                  initial="hidden"
-                  animate="show"
-                  className="space-y-3"
-                >
-                  {data.past.map((exam) => (
-                    <motion.div key={exam.id} variants={listItem}>
-                      {exam.correction ? (
-                        <Card className="hover:shadow-md transition-all duration-300 group">
-                          <CardContent className="p-4">
-                            <div className="flex items-start gap-4">
-                              <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
-                                <Icon name="check_circle" size={24} className="text-emerald-600" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between gap-2">
-                                  <p className="font-semibold truncate">{exam.title}</p>
-                                  <Badge
-                                      variant={
-                                        (exam.percentage ?? 0) >= 80
-                                          ? 'success'
-                                          : (exam.percentage ?? 0) >= 60
-                                            ? 'warning'
-                                            : 'destructive'
-                                      }
-                                      className="text-xs flex-shrink-0"
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <p className="font-semibold truncate">{exam.title}</p>
+                                    <Badge
+                                      variant="info"
+                                      className="text-[10px] flex-shrink-0"
                                     >
-                                      {exam.percentage}% - {getLetterGrade(exam.percentage ?? 0)}
+                                      <Icon name="schedule" size={12} className="mr-1" />
+                                      <Countdown endDate={exam.startDate} />
                                     </Badge>
                                   </div>
-                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                  <p className="text-body-sm text-muted-foreground mt-0.5">
                                     {exam.subject?.name ?? 'Unknown Subject'}
                                   </p>
-                                  <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                                  <p className="text-body-sm text-muted-foreground mt-1 line-clamp-1">
+                                    {exam.description}
+                                  </p>
+                                  <div className="flex items-center gap-4 mt-2 text-body-sm text-muted-foreground">
                                     <span className="flex items-center gap-1">
-                                      <Icon name="grade" size={14} />
-                                      {exam.correction.totalMarks}/{exam.questions.reduce((s, q) => s + q.points, 0)}
+                                      <Icon name="schedule" size={14} />
+                                      {exam.duration} min
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <Icon name="quiz" size={14} />
+                                      {exam.questions.length} questions
                                     </span>
                                     <span className="flex items-center gap-1">
                                       <Icon name="calendar_today" size={14} />
-                                      {formatDate(exam.correction.correctedAt)}
+                                      {formatDate(exam.startDate)}
                                     </span>
-                                    <Badge variant="outline" className="text-[10px]">
-                                      {exam.correction.status}
-                                    </Badge>
                                   </div>
                                 </div>
                                 <Icon
@@ -278,36 +170,113 @@ export default function StudentExamsPage() {
                               </div>
                             </CardContent>
                           </Card>
-                      ) : (
-                        <Card className="opacity-70">
-                          <CardContent className="p-4">
-                            <div className="flex items-start gap-4">
-                              <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
-                                <Icon name="fact_check" size={24} className="text-muted-foreground" />
+                        </Link>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
+              </motion.section>
+
+              <motion.section variants={listItem} initial="hidden" animate="show">
+                <h2 className="text-title-sm font-semibold mb-3 flex items-center gap-2">
+                  <Icon name="history" size={20} className="text-muted-foreground" />
+                  Past Results
+                </h2>
+                {d.past.length === 0 ? (
+                  <Card variant="elevated">
+                    <CardContent className="flex flex-col items-center gap-3 py-10">
+                      <Icon name="fact_check" size={40} className="text-muted-foreground/50" />
+                      <p className="text-body-md text-muted-foreground">No past exam results yet</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <motion.div
+                    variants={listContainer}
+                    initial="hidden"
+                    animate="show"
+                    className="space-y-3"
+                  >
+                    {d.past.map((exam) => (
+                      <motion.div key={exam.id} variants={listItem}>
+                        {exam.correction ? (
+                          <Card variant="elevated" className="transition-all duration-300 group">
+                            <CardContent className="p-4">
+                              <div className="flex items-start gap-4">
+                                <div className="h-12 w-12 rounded-xl bg-success-container flex items-center justify-center flex-shrink-0">
+                                  <Icon name="check_circle" size={24} className="text-success" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <p className="font-semibold truncate">{exam.title}</p>
+                                    <Badge
+                                        variant={
+                                          (exam.percentage ?? 0) >= 80
+                                            ? 'success'
+                                            : (exam.percentage ?? 0) >= 60
+                                              ? 'warning'
+                                              : 'destructive'
+                                        }
+                                        className="text-xs flex-shrink-0"
+                                      >
+                                        {exam.percentage}% - {getLetterGrade(exam.percentage ?? 0)}
+                                      </Badge>
+                                    </div>
+                                    <p className="text-body-sm text-muted-foreground mt-0.5">
+                                      {exam.subject?.name ?? 'Unknown Subject'}
+                                    </p>
+                                    <div className="flex items-center gap-4 mt-2 text-body-sm text-muted-foreground">
+                                      <span className="flex items-center gap-1">
+                                        <Icon name="grade" size={14} />
+                                        {exam.correction.totalMarks}/{exam.questions.reduce((s, q) => s + q.points, 0)}
+                                      </span>
+                                      <span className="flex items-center gap-1">
+                                        <Icon name="calendar_today" size={14} />
+                                        {formatDate(exam.correction.correctedAt)}
+                                      </span>
+                                      <Badge variant="outline" className="text-[10px]">
+                                        {exam.correction.status}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                  <Icon
+                                    name="chevron_right"
+                                    size={20}
+                                    className="text-muted-foreground flex-shrink-0 mt-2 group-hover:translate-x-0.5 transition-transform"
+                                  />
+                                </div>
+                              </CardContent>
+                            </Card>
+                        ) : (
+                          <Card variant="elevated" className="opacity-70">
+                            <CardContent className="p-4">
+                              <div className="flex items-start gap-4">
+                                <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                                  <Icon name="fact_check" size={24} className="text-muted-foreground" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold truncate">{exam.title}</p>
+                                  <p className="text-body-sm text-muted-foreground mt-0.5">
+                                    {exam.subject?.name ?? 'Unknown Subject'}
+                                  </p>
+                                  <p className="text-body-sm text-muted-foreground mt-1">
+                                    Taken on {formatDate(exam.endDate)} &middot; Results pending
+                                  </p>
+                                </div>
+                                <Badge variant="secondary" className="text-[10px] flex-shrink-0">
+                                  Pending
+                                </Badge>
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-semibold truncate">{exam.title}</p>
-                                <p className="text-xs text-muted-foreground mt-0.5">
-                                  {exam.subject?.name ?? 'Unknown Subject'}
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  Taken on {formatDate(exam.endDate)} &middot; Results pending
-                                </p>
-                              </div>
-                              <Badge variant="secondary" className="text-[10px] flex-shrink-0">
-                                Pending
-                              </Badge>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-            </motion.section>
-          </>
-        )}
+                            </CardContent>
+                          </Card>
+                        )}
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
+              </motion.section>
+            </>
+          )}
+        </DataFetchWrapper>
       </motion.div>
     </>
   );

@@ -1,8 +1,8 @@
-export type NotificationType = 'assignment' | 'grade' | 'message' | 'announcement' | 'reminder' | 'system' | 'course';
+export type NotificationType = 'assignment' | 'grade' | 'message' | 'announcement' | 'reminder' | 'system' | 'course' | 'exam' | 'submission';
 
 export interface Notification {
   id: string;
-  userId: string;
+  recipientId: string;
   type: NotificationType;
   title: string;
   message: string;

@@ -4,8 +4,8 @@ export interface UserProfile {
   id: string;
   email: string;
   displayName: string;
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
   role: UserRole;
   avatar?: string;
   phone?: string;

@@ -12,7 +12,7 @@ interface DataFetchWrapperProps<T> {
   emptyAction?: React.ReactNode;
   onRetry?: () => void;
   errorTitle?: string;
-  children: (data: T) => React.ReactNode;
+  children: (data: NonNullable<T>) => React.ReactNode;
 }
 
 export function DataFetchWrapper<T>({

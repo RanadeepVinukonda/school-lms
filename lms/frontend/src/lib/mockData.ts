@@ -16,10 +16,10 @@ export const mockClasses = [
 ];
 
 export const mockSubjects = [
-  { id: 'sub1', name: 'Mathematics', code: 'MATH10', icon: 'calculate', color: '#3B82F6', category: 'STEM' },
-  { id: 'sub2', name: 'Physics', code: 'PHY10', icon: 'science', color: '#8B5CF6', category: 'STEM' },
-  { id: 'sub3', name: 'English Literature', code: 'ENG10', icon: 'menu_book', color: '#EC4899', category: 'Humanities' },
-  { id: 'sub4', name: 'World History', code: 'HIS10', icon: 'history', color: '#F59E0B', category: 'Humanities' },
+  { id: 'sub1', name: 'Mathematics', code: 'MATH10', icon: 'calculate', color: '#3B82F6', category: 'STEM', isActive: true, createdAt: now.toISOString(), updatedAt: now.toISOString() },
+  { id: 'sub2', name: 'Physics', code: 'PHY10', icon: 'science', color: '#8B5CF6', category: 'STEM', isActive: true, createdAt: now.toISOString(), updatedAt: now.toISOString() },
+  { id: 'sub3', name: 'English Literature', code: 'ENG10', icon: 'menu_book', color: '#EC4899', category: 'Humanities', isActive: true, createdAt: now.toISOString(), updatedAt: now.toISOString() },
+  { id: 'sub4', name: 'World History', code: 'HIS10', icon: 'history', color: '#F59E0B', category: 'Humanities', isActive: true, createdAt: now.toISOString(), updatedAt: now.toISOString() },
 ];
 
 export const mockTextbooks = [
@@ -84,14 +84,14 @@ export const mockEnrollments = [
 ];
 
 export const mockAssignments = [
-  { id: 'a1', title: 'Linear Equations Worksheet', lessonId: 'l1', chapterId: 'ch1', textbookId: 'tb1', description: 'Solve 20 linear equations', dueDate: day(7), maxPoints: 100, status: 'published' as const, submissionCount: 0 },
-  { id: 'a2', title: 'Systems of Equations Practice', lessonId: 'l3', chapterId: 'ch1', textbookId: 'tb1', description: 'Solve 5 systems of equations', dueDate: day(10), maxPoints: 50, status: 'published' as const, submissionCount: 0 },
-  { id: 'a3', title: 'Triangle Proofs Homework', lessonId: 'l8', chapterId: 'ch8', textbookId: 'tb2', description: 'Prove 3 triangle theorems', dueDate: day(14), maxPoints: 75, status: 'published' as const, submissionCount: 0 },
-  { id: 'a4', title: 'Newton\'s Law Lab Report', lessonId: 'l14', chapterId: 'ch4', textbookId: 'tb3', description: 'Write lab report on inertia experiments', dueDate: day(10), maxPoints: 100, status: 'published' as const, submissionCount: 0 },
-  { id: 'a5', title: 'Essay Draft', lessonId: 'l18', chapterId: 'ch6', textbookId: 'tb4', description: 'Submit first draft of your essay', dueDate: day(-2), maxPoints: 50, status: 'published' as const, submissionCount: 0 },
-  { id: 'a6', title: 'Polynomial Operations Set', lessonId: 'l6', chapterId: 'ch3', textbookId: 'tb1', description: 'Complete polynomial operations', dueDate: day(21), maxPoints: 80, status: 'published' as const, submissionCount: 0 },
-  { id: 'a7', title: 'Trig Ratios Worksheet', lessonId: 'l11', chapterId: 'ch9', textbookId: 'tb2', description: 'Calculate sine, cosine, and tangent', dueDate: day(28), maxPoints: 60, status: 'published' as const, submissionCount: 0 },
-  { id: 'a8', title: 'Poetry Analysis Paper', lessonId: 'l21', chapterId: 'ch7', textbookId: 'tb4', description: 'Write a 2-page analysis of a poem', dueDate: day(35), maxPoints: 100, status: 'published' as const, submissionCount: 0 },
+  { id: 'a1', title: 'Linear Equations Worksheet', lessonId: 'l1', chapterId: 'ch1', textbookId: 'tb1', description: 'Solve 20 linear equations', dueDate: day(7), points: 100, status: 'published' as const, submissionCount: 0 },
+  { id: 'a2', title: 'Systems of Equations Practice', lessonId: 'l3', chapterId: 'ch1', textbookId: 'tb1', description: 'Solve 5 systems of equations', dueDate: day(10), points: 50, status: 'published' as const, submissionCount: 0 },
+  { id: 'a3', title: 'Triangle Proofs Homework', lessonId: 'l8', chapterId: 'ch8', textbookId: 'tb2', description: 'Prove 3 triangle theorems', dueDate: day(14), points: 75, status: 'published' as const, submissionCount: 0 },
+  { id: 'a4', title: 'Newton\'s Law Lab Report', lessonId: 'l14', chapterId: 'ch4', textbookId: 'tb3', description: 'Write lab report on inertia experiments', dueDate: day(10), points: 100, status: 'published' as const, submissionCount: 0 },
+  { id: 'a5', title: 'Essay Draft', lessonId: 'l18', chapterId: 'ch6', textbookId: 'tb4', description: 'Submit first draft of your essay', dueDate: day(-2), points: 50, status: 'published' as const, submissionCount: 0 },
+  { id: 'a6', title: 'Polynomial Operations Set', lessonId: 'l6', chapterId: 'ch3', textbookId: 'tb1', description: 'Complete polynomial operations', dueDate: day(21), points: 80, status: 'published' as const, submissionCount: 0 },
+  { id: 'a7', title: 'Trig Ratios Worksheet', lessonId: 'l11', chapterId: 'ch9', textbookId: 'tb2', description: 'Calculate sine, cosine, and tangent', dueDate: day(28), points: 60, status: 'published' as const, submissionCount: 0 },
+  { id: 'a8', title: 'Poetry Analysis Paper', lessonId: 'l21', chapterId: 'ch7', textbookId: 'tb4', description: 'Write a 2-page analysis of a poem', dueDate: day(35), points: 100, status: 'published' as const, submissionCount: 0 },
 ];
 
 export const mockQuizzes = [
@@ -120,11 +120,11 @@ export const mockQuizzes = [
 ];
 
 export const mockExams = [
-  { id: 'e1', title: 'Midterm Examination', subjectId: 'sub1', description: 'Covers chapters 1-3', timeLimit: 120, questions: [
+  { id: 'e1', title: 'Midterm Examination', subjectId: 'sub1', description: 'Covers chapters 1-3', duration: 120, questions: [
     { id: 'eq1', type: 'multiple_choice', question: 'What is the quadratic formula?', options: ['x = (-b ± √(b²-4ac))/2a', 'x = b²-4ac', 'x = -b/2a', 'None'], correctAnswer: 'x = (-b ± √(b²-4ac))/2a', points: 20 },
     { id: 'eq2', type: 'essay', question: 'Explain how to complete the square.', points: 30 },
   ], status: 'published' as const, startDate: day(30), endDate: day(31) },
-  { id: 'e2', title: 'Physics Final', subjectId: 'sub2', description: 'Comprehensive physics exam', timeLimit: 180, questions: [
+  { id: 'e2', title: 'Physics Final', subjectId: 'sub2', description: 'Comprehensive physics exam', duration: 180, questions: [
     { id: 'eq3', type: 'multiple_choice', question: 'What is the unit of force?', options: ['Newton', 'Joule', 'Watt', 'Pascal'], correctAnswer: 'Newton', points: 10 },
     { id: 'eq4', type: 'essay', question: 'Describe the law of conservation of energy.', points: 40 },
   ], status: 'published' as const, startDate: day(60), endDate: day(61) },

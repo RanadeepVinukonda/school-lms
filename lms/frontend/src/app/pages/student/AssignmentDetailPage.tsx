@@ -108,12 +108,12 @@ export default function AssignmentDetailPage() {
         <CardContent className="space-y-3">
           <div className="flex items-center gap-4 text-sm">
             <span className="flex items-center gap-1"><Calendar className="h-4 w-4 text-muted-foreground" />Due {new Date(assignment.dueDate).toLocaleDateString()}</span>
-            <span className="flex items-center gap-1"><FileText className="h-4 w-4 text-muted-foreground" />{assignment.maxPoints} pts</span>
+            <span className="flex items-center gap-1"><FileText className="h-4 w-4 text-muted-foreground" />{assignment.points} pts</span>
           </div>
           <div className="text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(assignment.instructions || '') }} />
-          {assignment.attachments?.map(a => (
-            <div key={a.id} className="flex items-center justify-between p-2 rounded-lg bg-muted">
-              <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /><span className="text-sm">{a.name}</span><span className="text-xs text-muted-foreground">({(a.size / 1024).toFixed(0)} KB)</span></div>
+          {assignment.attachments?.map((a, i) => (
+            <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted">
+              <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /><span className="text-sm">{a}</span></div>
               <Button variant="ghost" size="icon"><Download className="h-4 w-4" /></Button>
             </div>
           ))}
