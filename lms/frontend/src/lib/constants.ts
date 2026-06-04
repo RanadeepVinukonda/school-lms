@@ -49,6 +49,7 @@ export const ROUTES = {
   ASSIGNMENT_DETAIL: (id: string) => `/assignments/${id}`,
   QUIZ_ATTEMPT: (id: string) => `/quizzes/${id}/attempt`,
   EXAM_DETAIL: (id: string) => `/exams/${id}`,
+  ABOUT: '/about',
 } as const;
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';

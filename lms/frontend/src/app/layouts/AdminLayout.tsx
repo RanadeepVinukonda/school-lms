@@ -59,27 +59,42 @@ export function AdminLayout() {
         {/* Brand */}
         <div
           className={cn(
-            'flex items-center h-16 border-b border-outline-variant shrink-0',
-            sidebarCollapsed ? 'justify-center' : 'justify-between px-4',
+            'flex items-center border-b border-outline-variant shrink-0',
+            sidebarCollapsed ? 'h-16 justify-center' : 'h-28 flex-col justify-center px-6',
           )}
         >
-          {!sidebarCollapsed && (
-            <div className="flex items-center gap-3">
-              <img src="/genesis-icon.jpg" alt="Genesis" className="h-10 w-10 rounded-xl object-cover ring-2 ring-primary/30" />
-              <span className="text-title-sm">Genesis</span>
+          {sidebarCollapsed ? (
+            <Button
+              variant="text"
+              size="icon-sm"
+              onClick={() => setSidebarCollapsed(false)}
+              className="text-on-surface-variant"
+            >
+              <Icon name="chevron_right" size={18} />
+            </Button>
+          ) : (
+            <div className="w-full flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <img
+                  src="/genesis-icon.jpg"
+                  alt="Genesis"
+                  className="h-14 w-auto object-contain"
+                />
+                <div>
+                  <p className="text-label-lg font-bold text-primary">Genesis</p>
+                  <p className="text-label-sm text-on-surface-variant tracking-wider">LMS</p>
+                </div>
+              </div>
+              <Button
+                variant="text"
+                size="icon-sm"
+                onClick={() => setSidebarCollapsed(true)}
+                className="text-on-surface-variant"
+              >
+                <Icon name="chevron_left" size={18} />
+              </Button>
             </div>
           )}
-          {sidebarCollapsed && (
-            <img src="/genesis-icon.jpg" alt="Genesis" className="h-10 w-10 rounded-xl object-cover ring-2 ring-primary/30" />
-          )}
-          <Button
-            variant="text"
-            size="icon-sm"
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="text-on-surface-variant"
-          >
-            <Icon name={sidebarCollapsed ? 'chevron_right' : 'chevron_left'} size={18} />
-          </Button>
         </div>
 
         {/* Nav items */}
@@ -140,6 +155,8 @@ export function AdminLayout() {
       >
         {/* Top app bar */}
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-outline-variant bg-surface/80 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-surface/60">
+          <span className="text-title-md font-bold text-primary hidden sm:block">Genesis</span>
+          <span className="text-title-md font-bold text-primary sm:hidden">G</span>
           <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
             <Button variant="ghost" size="icon" onClick={() => setSearchOpen(true)} aria-label="Search">

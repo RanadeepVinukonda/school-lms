@@ -4,22 +4,22 @@
 
 @layer base {
   :root {
-    --primary-h: 217;
-    --primary-s: 82%;
-    --primary-l: 51%;
-    --secondary-h: 217;
+    --primary-h: 222;
+    --primary-s: 47%;
+    --primary-l: 26%;
+    --secondary-h: 222;
     --secondary-s: 20%;
-    --secondary-l: 35%;
-    --tertiary-h: 30;
-    --tertiary-s: 25%;
-    --tertiary-l: 36%;
+    --secondary-l: 38%;
+    --tertiary-h: 42;
+    --tertiary-s: 65%;
+    --tertiary-l: 58%;
     --error-h: 0;
     --error-s: 73%;
     --error-l: 42%;
-    --surface-h: 0;
-    --surface-s: 0%;
-    --surface-l: 99%;
-    --surface-variant-h: 220;
+    --surface-h: 40;
+    --surface-s: 20%;
+    --surface-l: 98%;
+    --surface-variant-h: 40;
     --surface-variant-s: 16%;
     --surface-variant-l: 92%;
     --success-h: 142;
@@ -31,16 +31,16 @@
 
     --primary: var(--primary-h) var(--primary-s) var(--primary-l);
     --on-primary: 0 0% 100%;
-    --primary-container: 214 89% 91%;
-    --on-primary-container: 217 91% 14%;
+    --primary-container: 222 38% 90%;
+    --on-primary-container: 222 65% 12%;
     --secondary: var(--secondary-h) var(--secondary-s) var(--secondary-l);
     --on-secondary: 0 0% 100%;
-    --secondary-container: 217 35% 90%;
-    --on-secondary-container: 217 31% 12%;
+    --secondary-container: 222 35% 90%;
+    --on-secondary-container: 222 31% 12%;
     --tertiary: var(--tertiary-h) var(--tertiary-s) var(--tertiary-l);
-    --on-tertiary: 0 0% 100%;
-    --tertiary-container: 30 57% 86%;
-    --on-tertiary-container: 30 41% 12%;
+    --on-tertiary: 42 40% 12%;
+    --tertiary-container: 42 70% 88%;
+    --on-tertiary-container: 42 50% 14%;
     --error: var(--error-h) var(--error-s) var(--error-l);
     --on-error: 0 0% 100%;
     --error-container: 0 80% 92%;
@@ -75,7 +75,7 @@
     --shape-sm: 8px;
     --shape-md: 12px;
     --shape-lg: 16px;
-    --shape-xl: 28px;
+    --shape-xl: 24px;
     --shape-full: 9999px;
 
     --elevation-1: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -169,23 +169,23 @@
   }
 
   .dark {
-    --primary-h: 214;
-    --primary-s: 82%;
-    --primary-l: 80%;
-    --secondary-h: 217;
+    --primary-h: 222;
+    --primary-s: 60%;
+    --primary-l: 72%;
+    --secondary-h: 222;
     --secondary-s: 18%;
-    --secondary-l: 76%;
-    --tertiary-h: 30;
-    --tertiary-s: 38%;
-    --tertiary-l: 74%;
+    --secondary-l: 70%;
+    --tertiary-h: 42;
+    --tertiary-s: 55%;
+    --tertiary-l: 68%;
     --error-h: 0;
     --error-s: 60%;
     --error-l: 78%;
-    --surface-h: 220;
-    --surface-s: 12%;
-    --surface-l: 7%;
-    --surface-variant-h: 218;
-    --surface-variant-s: 8%;
+    --surface-h: 222;
+    --surface-s: 15%;
+    --surface-l: 8%;
+    --surface-variant-h: 222;
+    --surface-variant-s: 10%;
     --surface-variant-l: 18%;
     --success-h: 142;
     --success-s: 60%;
@@ -195,17 +195,17 @@
     --warning-l: 60%;
 
     --primary: var(--primary-h) var(--primary-s) var(--primary-l);
-    --on-primary: 217 91% 14%;
-    --primary-container: 217 62% 40%;
-    --on-primary-container: 214 89% 91%;
+    --on-primary: 222 65% 12%;
+    --primary-container: 222 40% 35%;
+    --on-primary-container: 222 38% 90%;
     --secondary: var(--secondary-h) var(--secondary-s) var(--secondary-l);
-    --on-secondary: 217 31% 12%;
-    --secondary-container: 217 16% 27%;
-    --on-secondary-container: 217 35% 90%;
+    --on-secondary: 222 31% 12%;
+    --secondary-container: 222 16% 27%;
+    --on-secondary-container: 222 35% 90%;
     --tertiary: var(--tertiary-h) var(--tertiary-s) var(--tertiary-l);
-    --on-tertiary: 30 41% 12%;
-    --tertiary-container: 30 21% 28%;
-    --on-tertiary-container: 30 57% 86%;
+    --on-tertiary: 42 50% 14%;
+    --tertiary-container: 42 30% 28%;
+    --on-tertiary-container: 42 70% 88%;
     --error: var(--error-h) var(--error-s) var(--error-l);
     --on-error: 0 70% 22%;
     --error-container: 0 58% 30%;

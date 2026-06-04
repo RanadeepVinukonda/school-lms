@@ -85,6 +85,36 @@ export default function StudentProfilePage() {
         <DataFetchWrapper data={data} isLoading={isLoading} error={isError ? error ?? new Error('Failed to load profile') : null} loadingType="profile" emptyMessage="Could not load profile information" onRetry={() => refetch()} errorTitle="Failed to load profile">
           {(d) => (
             <div className="space-y-6">
+              {/* School Information */}
+              <motion.div variants={listItem} initial="hidden" animate="show">
+                <Card variant="elevated" className="rounded-2xl">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-5">
+                      <img src="/genesis-icon.jpg" alt="Genesis School Crest" className="h-20 w-auto object-contain shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <h2 className="text-xl font-bold">Genesis International Montessori &amp; STEM School</h2>
+                        <p className="text-warning uppercase text-xs tracking-wider font-semibold mt-0.5">Learn &middot; Lead &middot; Achieve</p>
+                        <p className="text-body-sm text-muted-foreground mt-2">A premier institution dedicated to academic excellence, leadership development, and holistic student growth.</p>
+                        <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-border">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Academic Year</p>
+                            <p className="text-sm font-semibold">2025&ndash;2026</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Campus</p>
+                            <p className="text-sm font-semibold">Main Campus</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">School Motto</p>
+                            <p className="text-sm font-semibold">Learn &middot; Lead &middot; Achieve</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
               {/* Personal Information */}
               <motion.div variants={listItem} initial="hidden" animate="show">
                 <Card variant="elevated">

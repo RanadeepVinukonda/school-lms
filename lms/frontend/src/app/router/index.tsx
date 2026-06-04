@@ -12,6 +12,7 @@ import { ForgotPasswordForm } from '@/features/auth/components/ForgotPasswordFor
 import { ResetPasswordForm } from '@/features/auth/components/ResetPasswordForm';
 
 import WelcomePage from '@/app/pages/WelcomePage';
+import AboutSchoolPage from '@/app/pages/AboutSchoolPage';
 import LoginSelectorPage from '@/app/pages/auth/LoginSelectorPage';
 import StudentLoginPage from '@/app/pages/auth/StudentLoginPage';
 import TeacherLoginPage from '@/app/pages/auth/TeacherLoginPage';
@@ -51,6 +52,10 @@ export const router = createBrowserRouter([
   {
     path: ROUTES.WELCOME,
     element: <WelcomePage />,
+  },
+  {
+    path: ROUTES.ABOUT,
+    element: <AboutSchoolPage />,
   },
 
   {

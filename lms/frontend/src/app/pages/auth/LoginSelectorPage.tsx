@@ -51,69 +51,93 @@ export default function LoginSelectorPage() {
         description="Choose your role to sign in to Genesis."
       />
 
-      <motion.div
-        className="flex flex-col items-center justify-center min-h-[80vh] px-4 py-12"
-        initial="initial"
-        animate="animate"
-        variants={pageTransition}
-      >
-        <motion.div
-          className="text-center mb-12"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="mb-4 inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 overflow-hidden">
-            <img src="/genesis-icon.jpg" alt="" className="h-14 w-14 rounded-xl object-cover" />
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Welcome to Genesis
-          </h1>
-          <p className="mt-3 text-muted-foreground text-lg max-w-md mx-auto">
-            Choose your role to sign in to your account.
-          </p>
-        </motion.div>
+      <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-background via-primary/5 to-background">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+          <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
+          <div className="absolute -bottom-32 -left-32 h-80 w-80 rounded-full bg-tertiary/10 blur-3xl" />
+        </div>
 
         <motion.div
-          className="grid w-full max-w-2xl gap-5 sm:grid-cols-3"
-          variants={listContainer}
-          initial="hidden"
-          animate="show"
+          className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-16"
+          initial="initial"
+          animate="animate"
+          variants={pageTransition}
         >
-          {roles.map((role) => (
-            <motion.div key={role.id} variants={listItem} className="cursor-pointer">
-              <Card
-                className={`relative overflow-hidden border-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${role.borderColor} h-full`}
-                onClick={() => navigate(role.href)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    navigate(role.href);
-                  }
-                }}
-                tabIndex={0}
-                role="button"
-                aria-label={`Sign in as ${role.title}`}
-              >
-                <div
-                  className={`absolute inset-0 rounded-lg bg-gradient-to-br opacity-0 transition-opacity duration-300 group-hover:opacity-100 ${role.gradient}`}
-                />
-                <CardContent className="relative z-10 flex flex-col items-center text-center p-6">
+          <motion.div
+            className="text-center mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.05, 0, 0.133333, 0.06] }}
+          >
+            <div className="mb-6 inline-flex items-center justify-center">
+              <img
+                src="/genesis-icon.jpg"
+                alt="Genesis School Crest"
+                className="h-28 w-auto object-contain sm:h-36"
+              />
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">
+              Welcome Back
+            </h1>
+            <p className="mt-2 text-sm font-medium tracking-widest text-tertiary uppercase">
+              Learn &bull; Lead &bull; Achieve
+            </p>
+            <p className="mt-4 text-muted-foreground text-base max-w-md mx-auto">
+              Sign in to your account to continue your learning journey.
+            </p>
+          </motion.div>
+
+          <motion.div
+            className="grid w-full max-w-2xl gap-5 sm:grid-cols-3"
+            variants={listContainer}
+            initial="hidden"
+            animate="show"
+          >
+            {roles.map((role) => (
+              <motion.div key={role.id} variants={listItem} className="cursor-pointer">
+                <Card
+                  className={`relative overflow-hidden border-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${role.borderColor} h-full`}
+                  onClick={() => navigate(role.href)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      navigate(role.href);
+                    }
+                  }}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`Sign in as ${role.title}`}
+                >
                   <div
-                    className={`mb-4 inline-flex h-16 w-16 items-center justify-center rounded-xl ${role.iconBg}`}
-                  >
-                    <Icon name={role.icon} size={32} className={role.iconColor} />
-                  </div>
-                  <h3 className="text-lg font-bold mb-2">{role.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {role.description}
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
+                    className={`absolute inset-0 rounded-lg bg-gradient-to-br opacity-0 transition-opacity duration-300 hover:opacity-100 ${role.gradient}`}
+                  />
+                  <CardContent className="relative z-10 flex flex-col items-center text-center p-6">
+                    <div
+                      className={`mb-4 inline-flex h-16 w-16 items-center justify-center rounded-xl ${role.iconBg}`}
+                    >
+                      <Icon name={role.icon} size={32} className={role.iconColor} />
+                    </div>
+                    <h3 className="text-lg font-bold mb-2">{role.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {role.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          <p className="mt-10 text-sm text-muted-foreground">
+            Forgot your password?{' '}
+            <button
+              onClick={() => navigate('/forgot-password')}
+              className="text-primary font-semibold hover:underline"
+            >
+              Reset it here
+            </button>
+          </p>
         </motion.div>
-      </motion.div>
+      </div>
     </>
   );
 }

@@ -57,36 +57,13 @@ export default function WelcomePage() {
       />
 
       <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-background via-primary/5 to-background">
-        {/* Geometric CSS shapes */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
           <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
-          <div className="absolute -bottom-32 -left-32 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl" />
-          <div className="absolute top-1/3 left-1/4 h-64 w-64 rounded-full bg-purple-500/8 blur-3xl" />
-          <div className="absolute top-1/2 right-1/4 h-48 w-48 rounded-full bg-cyan-500/8 blur-3xl" />
-
-          <img
-            src="/genesis-icon.jpg"
-            alt=""
-            className="absolute top-1/2 left-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rotate-12 scale-150 opacity-[0.04] object-contain sm:opacity-[0.06]"
-          />
-
-          <svg
-            className="absolute top-20 left-10 h-32 w-32 text-primary/5"
-            viewBox="0 0 100 100"
-            fill="currentColor"
-          >
-            <polygon points="50,5 95,50 50,95 5,50" />
-          </svg>
-          <svg
-            className="absolute bottom-40 right-16 h-24 w-24 text-emerald-500/5"
-            viewBox="0 0 100 100"
-            fill="currentColor"
-          >
-            <circle cx="50" cy="50" r="45" />
-          </svg>
+          <div className="absolute -bottom-32 -left-32 h-80 w-80 rounded-full bg-tertiary/10 blur-3xl" />
+          <div className="absolute top-1/3 left-1/4 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
+          <div className="absolute top-1/2 right-1/4 h-48 w-48 rounded-full bg-tertiary/5 blur-3xl" />
         </div>
 
-        {/* Hero Section */}
         <section className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-20">
           <motion.div
             className="mx-auto max-w-4xl text-center"
@@ -95,19 +72,20 @@ export default function WelcomePage() {
             variants={pageTransition}
           >
             <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, ease: [0.05, 0, 0.133333, 0.06] }}
-              className="mb-6 inline-flex items-center gap-3 rounded-2xl bg-primary/10 px-6 py-3"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: [0.05, 0, 0.133333, 0.06] }}
+              className="mb-8 inline-flex flex-col items-center"
             >
-              <img src="/genesis-icon.jpg" alt="" className="h-7 w-7 rounded-lg object-cover" />
-              <span className="text-sm font-semibold text-primary">
-                Learning Management System
-              </span>
+              <img
+                src="/genesis-icon.jpg"
+                alt="Genesis School Crest"
+                className="h-32 w-auto object-contain sm:h-40"
+              />
             </motion.div>
 
             <motion.h1
-              className="mb-6 bg-gradient-to-r from-foreground via-foreground to-foreground/70 bg-clip-text text-5xl font-extrabold tracking-tight sm:text-6xl md:text-7xl lg:text-8xl"
+              className="mb-3 text-5xl font-extrabold tracking-tight sm:text-6xl md:text-7xl lg:text-8xl text-primary"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
@@ -116,16 +94,26 @@ export default function WelcomePage() {
             </motion.h1>
 
             <motion.p
-              className="mx-auto mb-10 max-w-2xl text-lg text-muted-foreground sm:text-xl"
+              className="mb-2 text-lg font-medium tracking-widest text-tertiary uppercase sm:text-xl"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              Learn &bull; Lead &bull; Achieve
+            </motion.p>
+
+            <motion.p
+              className="mx-auto mb-10 max-w-2xl text-lg text-muted-foreground sm:text-xl"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.25 }}
             >
               Empowering educators, inspiring students, and streamlining administration.
               The all-in-one platform for modern education.
             </motion.p>
 
             <motion.div
+              className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
@@ -135,17 +123,19 @@ export default function WelcomePage() {
                 onClick={() => navigate('/login')}
                 className="group relative overflow-hidden px-12 text-base font-semibold shadow-lg shadow-primary/25 transition-shadow hover:shadow-xl hover:shadow-primary/30"
               >
-                <span className="relative z-10">Get Started</span>
-                <motion.span
-                  className="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary"
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ type: 'spring', stiffness: 700, damping: 0.9 }}
-                />
+                Get Started
+              </Button>
+              <Button
+                variant="outline"
+                size="xl"
+                onClick={() => navigate('/about')}
+                className="px-10 text-base font-semibold"
+              >
+                About Our School
               </Button>
             </motion.div>
           </motion.div>
 
-          {/* Value Proposition Cards */}
           <motion.div
             className="mx-auto mt-24 grid max-w-6xl gap-6 px-4 sm:grid-cols-2 lg:grid-cols-3"
             variants={listContainer}
@@ -165,7 +155,6 @@ export default function WelcomePage() {
                     card.borderColor,
                   )}
                 >
-                  {/* Gradient overlay */}
                   <div
                     className={cn(
                       'absolute inset-0 rounded-lg bg-gradient-to-br opacity-0 transition-opacity duration-300 group-hover:opacity-100',
@@ -192,13 +181,15 @@ export default function WelcomePage() {
           </motion.div>
         </section>
 
-        {/* Footer */}
         <footer className="relative z-10 border-t bg-background/80 backdrop-blur-sm">
           <div className="mx-auto max-w-6xl px-4 py-8">
             <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
-              <div className="flex items-center gap-2">
-                <img src="/genesis-icon.jpg" alt="" className="h-6 w-6 rounded-md object-cover" />
-                <span className="text-lg font-bold">Genesis</span>
+              <div className="flex items-center gap-3">
+                <img src="/genesis-icon.jpg" alt="" className="h-8 w-auto object-contain" />
+                <div>
+                  <p className="text-sm font-bold text-primary">Genesis</p>
+                  <p className="text-label-sm text-on-surface-variant">Learn &bull; Lead &bull; Achieve</p>
+                </div>
               </div>
 
               <nav className="flex flex-wrap items-center justify-center gap-4" aria-label="Role login links">
