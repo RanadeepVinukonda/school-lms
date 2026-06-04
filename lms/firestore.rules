@@ -187,8 +187,14 @@ service cloud.firestore {
 
     match /textbooks/{textbookId} {
       allow read: if isAuth();
-      allow create, update: if isAtLeastTeacher();
+      allow create, update: if isAuth();
       allow delete: if isAtLeastAdmin();
+    }
+
+    match /conceptProgress/{progressId} {
+      allow read: if isAuth();
+      allow create, update: if isAuth();
+      allow delete: if false;
     }
 
     match /corrections/{correctionId} {

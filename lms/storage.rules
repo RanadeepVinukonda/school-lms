@@ -36,6 +36,12 @@ service firebase.storage {
       allow delete: if isAtLeastAdmin();
     }
 
+    match /textbooks/{textbookId}/{fileName} {
+      allow read: if isAuth();
+      allow write: if isAuth() && fileSizeLimit(50);
+      allow delete: if isAtLeastAdmin();
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }
