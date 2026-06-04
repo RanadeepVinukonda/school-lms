@@ -70,7 +70,7 @@ export default function StudentLayout() {
             <div className="w-full flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <img
-                  src="/genesis_icon.png"
+                  src="/genesis_icon.svg"
                   alt="Genesis"
                   className="h-14 w-auto object-contain"
                 />
