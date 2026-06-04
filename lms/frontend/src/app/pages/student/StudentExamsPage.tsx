@@ -231,17 +231,16 @@ export default function StudentExamsPage() {
                   {data.past.map((exam) => (
                     <motion.div key={exam.id} variants={listItem}>
                       {exam.correction ? (
-                        <Link to={`/student/exams/${exam.id}/correction`}>
-                          <Card className="hover:shadow-md transition-all duration-300 group">
-                            <CardContent className="p-4">
-                              <div className="flex items-start gap-4">
-                                <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
-                                  <Icon name="check_circle" size={24} className="text-emerald-600" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center justify-between gap-2">
-                                    <p className="font-semibold truncate">{exam.title}</p>
-                                    <Badge
+                        <Card className="hover:shadow-md transition-all duration-300 group">
+                          <CardContent className="p-4">
+                            <div className="flex items-start gap-4">
+                              <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                                <Icon name="check_circle" size={24} className="text-emerald-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="font-semibold truncate">{exam.title}</p>
+                                  <Badge
                                       variant={
                                         (exam.percentage ?? 0) >= 80
                                           ? 'success'
@@ -279,7 +278,6 @@ export default function StudentExamsPage() {
                               </div>
                             </CardContent>
                           </Card>
-                        </Link>
                       ) : (
                         <Card className="opacity-70">
                           <CardContent className="p-4">

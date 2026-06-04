@@ -239,9 +239,9 @@ export default function StudentDashboardPage() {
                   <Icon name="notifications" size={18} />
                   Latest Updates
                 </CardTitle>
-                <Link to="/notifications" className="text-sm text-primary hover:underline">
-                  View all
-                </Link>
+                <span className="text-sm text-muted-foreground">
+                  Recent
+                </span>
               </div>
             </CardHeader>
             <CardContent>
