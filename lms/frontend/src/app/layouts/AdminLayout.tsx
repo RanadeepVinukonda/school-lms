@@ -65,12 +65,12 @@ export function AdminLayout() {
         >
           {!sidebarCollapsed && (
             <div className="flex items-center gap-3">
-              <img src="/genesis-icon.jpg" alt="Genesis" className="h-9 w-9 rounded-xl object-cover" />
+              <img src="/genesis-icon.jpg" alt="Genesis" className="h-10 w-10 rounded-xl object-cover ring-2 ring-primary/30" />
               <span className="text-title-sm">Genesis</span>
             </div>
           )}
           {sidebarCollapsed && (
-            <img src="/genesis-icon.jpg" alt="Genesis" className="h-9 w-9 rounded-xl object-cover" />
+            <img src="/genesis-icon.jpg" alt="Genesis" className="h-10 w-10 rounded-xl object-cover ring-2 ring-primary/30" />
           )}
           <Button
             variant="text"

@@ -64,6 +64,12 @@ export default function WelcomePage() {
           <div className="absolute top-1/3 left-1/4 h-64 w-64 rounded-full bg-purple-500/8 blur-3xl" />
           <div className="absolute top-1/2 right-1/4 h-48 w-48 rounded-full bg-cyan-500/8 blur-3xl" />
 
+          <img
+            src="/genesis-icon.jpg"
+            alt=""
+            className="absolute top-1/2 left-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rotate-12 scale-150 opacity-[0.04] object-contain sm:opacity-[0.06]"
+          />
+
           <svg
             className="absolute top-20 left-10 h-32 w-32 text-primary/5"
             viewBox="0 0 100 100"
@@ -77,27 +83,6 @@ export default function WelcomePage() {
             fill="currentColor"
           >
             <circle cx="50" cy="50" r="45" />
-          </svg>
-          <svg
-            className="absolute top-1/3 right-1/3 h-20 w-20 rotate-45 text-purple-500/5"
-            viewBox="0 0 100 100"
-            fill="currentColor"
-          >
-            <rect x="10" y="10" width="80" height="80" rx="8" />
-          </svg>
-          <svg
-            className="absolute bottom-1/4 left-1/6 h-16 w-16 text-cyan-500/5"
-            viewBox="0 0 100 100"
-            fill="currentColor"
-          >
-            <polygon points="50,5 61,35 95,35 68,57 79,91 50,70 21,91 32,57 5,35 39,35" />
-          </svg>
-          <svg
-            className="absolute top-1/2 left-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 text-primary/3"
-            viewBox="0 0 100 100"
-            fill="currentColor"
-          >
-            <polygon points="50,5 61,35 95,35 68,57 79,91 50,70 21,91 32,57 5,35 39,35" />
           </svg>
         </div>
 
