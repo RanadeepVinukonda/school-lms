@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
-import { listContainer, listItem } from '@/lib/motion';
+import { pageTransition, listContainer, listItem } from '@/lib/motion';
 import { mockUsers, mockClasses, mockNotifications } from '@/lib/mockData';
 
 interface KpiItem {
@@ -66,7 +66,8 @@ export default function AdminDashboardPage() {
         loadingType="card"
       >
         {(data) => (
-          <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
+          <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit">
+            <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
             <motion.div variants={listItem}>
               <h1 className="text-headline-sm">Admin Dashboard</h1>
               <p className="text-sm text-on-surface-variant">
@@ -159,6 +160,7 @@ export default function AdminDashboardPage() {
                 </Card>
               </motion.div>
             </div>
+            </motion.div>
           </motion.div>
         )}
       </DataFetchWrapper>

@@ -16,6 +16,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { pageTransition } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { mockQuizzes } from '@/lib/mockData';
@@ -105,7 +106,7 @@ export default function QuizAttemptPage() {
     return (
       <>
         <SEOHead title={quiz.title} description={`Quiz: ${quiz.title}`} canonical={`/quizzes/${quizId}`} />
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="p-4 max-w-lg mx-auto">
+        <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-lg mx-auto">
         <Card>
           <CardContent className="p-6 text-center space-y-4">
             <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
@@ -141,7 +142,7 @@ export default function QuizAttemptPage() {
     return (
       <>
         <SEOHead title={`${quiz.title} - Results`} description="Quiz results" />
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="p-4 max-w-lg mx-auto">
+        <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-lg mx-auto">
         <Card>
           <CardContent className="p-6 text-center space-y-4">
             <div className={cn('h-20 w-20 rounded-full mx-auto flex items-center justify-center', quizPassed ? 'bg-emerald-500/10' : 'bg-destructive/10')}>

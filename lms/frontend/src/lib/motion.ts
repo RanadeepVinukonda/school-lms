@@ -21,8 +21,12 @@ export const springSlow: Transition = {
 
 export const pageTransition: Variants = {
   initial: { opacity: 0, y: 12 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.3, ease: emphasizedEasing } },
-  exit: { opacity: 0, y: -12, transition: { duration: 0.2, ease: accelerateEasing } },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring', stiffness: 400, damping: 28, mass: 0.8 },
+  },
+  exit: { opacity: 0, y: -12, transition: { duration: 0.15, ease: accelerateEasing } },
 };
 
 export const listContainer: Variants = {
@@ -32,7 +36,11 @@ export const listContainer: Variants = {
 
 export const listItem: Variants = {
   hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: standardEasing } },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring', stiffness: 300, damping: 25, mass: 0.8 },
+  },
 };
 
 export const cardHover = {

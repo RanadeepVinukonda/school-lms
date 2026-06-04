@@ -121,7 +121,7 @@ export default function StudentLayout() {
         )}
       >
         {/* Top app bar */}
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-outline-variant bg-surface/80 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-surface/60 lg:px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-outline-variant bg-surface/80 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-surface/60">
           <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
             {user && <NotificationBell />}
@@ -130,7 +130,7 @@ export default function StudentLayout() {
         </header>
 
         {/* Page content */}
-        <main className="min-h-[calc(100vh-8rem)] p-4 md:p-6 lg:p-8">
+        <main className="min-h-[calc(100vh-8rem)]">
           <Outlet />
         </main>
 

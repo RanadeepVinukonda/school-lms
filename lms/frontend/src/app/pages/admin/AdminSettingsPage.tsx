@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
-import { listContainer, listItem } from '@/lib/motion';
+import { pageTransition, listContainer, listItem } from '@/lib/motion';
 
 const schoolInfo = {
   name: 'Genesis Academy',
@@ -63,7 +63,8 @@ export default function AdminSettingsPage() {
         loadingType="card"
       >
         {() => (
-          <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
+          <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit">
+            <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
             <motion.div variants={listItem}>
               <h1 className="text-headline-sm">Settings</h1>
               <p className="text-sm text-on-surface-variant">School configuration and system information</p>
@@ -156,6 +157,7 @@ export default function AdminSettingsPage() {
                   </>
                 )}
               </Button>
+            </motion.div>
             </motion.div>
           </motion.div>
         )}

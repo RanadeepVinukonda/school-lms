@@ -16,6 +16,7 @@ import { getInitials } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
+import { pageTransition, listContainer, listItem } from '@/lib/motion';
 
 interface UserItem {
   id: string;
@@ -78,6 +79,7 @@ export default function UserManagementPage() {
         loadingType="table"
       >
         {() => (
+          <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit">
           <div className="p-4 max-w-5xl mx-auto pb-20">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -122,11 +124,11 @@ export default function UserManagementPage() {
                 </CardContent>
               </Card>
             ) : (
-              <>
+              <motion.div variants={listContainer} initial="hidden" animate="show">
                 <Card>
                   <CardContent className="p-0 divide-y-outline-variant divide-y">
                     {paged.map(u => (
-                      <div key={u.id} className="flex items-center gap-3 p-3 hover:bg-surface-variant/40 transition-colors">
+                      <motion.div key={u.id} variants={listItem} className="flex items-center gap-3 p-3 hover:bg-surface-variant/40 transition-colors">
                         <Avatar className="h-9 w-9"><AvatarFallback className="text-xs">{getInitials(u.name)}</AvatarFallback></Avatar>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
@@ -143,7 +145,7 @@ export default function UserManagementPage() {
                         <Button variant="ghost" size="icon" className="h-8 w-8">
                           <Icon name="edit" size={14} />
                         </Button>
-                      </div>
+                      </motion.div>
                     ))}
                   </CardContent>
                 </Card>
@@ -163,7 +165,7 @@ export default function UserManagementPage() {
                     </Button>
                   </div>
                 )}
-              </>
+              </motion.div>
             )}
 
             <Dialog open={showCreate} onOpenChange={setShowCreate}>
@@ -193,6 +195,7 @@ export default function UserManagementPage() {
               </DialogContent>
             </Dialog>
           </div>
+          </motion.div>
         )}
       </DataFetchWrapper>
     </>

@@ -10,6 +10,7 @@ import {
   ArrowLeft, FileText, Clock, AlertCircle, CheckCircle,
   Upload, Download, Calendar, Loader2
 } from 'lucide-react';
+import { pageTransition } from '@/lib/motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -88,7 +89,7 @@ export default function AssignmentDetailPage() {
   return (
     <>
       <SEOHead title={assignment.title} description={`Assignment: ${assignment.title}`} canonical={`/assignments/${assignmentId}`} />
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="p-4 max-w-3xl mx-auto pb-20">
+      <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-3xl mx-auto pb-20">
       <Button variant="ghost" size="sm" asChild className="mb-3">
         <Link to="/student/dashboard"><ArrowLeft className="h-4 w-4 mr-1" />Back</Link>
       </Button>

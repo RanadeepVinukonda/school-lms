@@ -18,7 +18,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { listContainer, listItem } from '@/lib/motion';
+import { pageTransition, listContainer, listItem } from '@/lib/motion';
 import { mockUsers, mockSubjects, mockClasses } from '@/lib/mockData';
 
 interface TeacherForm {
@@ -106,7 +106,8 @@ export default function AdminTeachersPage() {
         loadingType="table"
       >
         {() => (
-          <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
+          <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit">
+            <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
             <motion.div variants={listItem} className="flex items-center justify-between flex-wrap gap-3">
               <div>
                 <h1 className="text-headline-sm">Teachers</h1>
@@ -229,6 +230,7 @@ export default function AdminTeachersPage() {
                 </div>
               </motion.div>
             )}
+            </motion.div>
           </motion.div>
         )}
       </DataFetchWrapper>

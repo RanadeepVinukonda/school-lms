@@ -6,6 +6,7 @@ import {
   Clock, AlertCircle, CheckCircle, XCircle, Loader2,
   Send, Play, Shield, AlertTriangle
 } from 'lucide-react';
+import { pageTransition } from '@/lib/motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -90,7 +91,7 @@ export default function ExamAttemptPage() {
     return (
       <>
         <SEOHead title={exam.title} description={`Exam: ${exam.title}`} canonical={`/exams/${examId}`} />
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="p-4 max-w-lg mx-auto">
+        <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-lg mx-auto">
         <Card>
           <CardContent className="p-6 text-center space-y-4">
             <div className="h-16 w-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto">
@@ -131,7 +132,7 @@ export default function ExamAttemptPage() {
     return (
       <>
         <SEOHead title={`${exam.title} - Results`} description="Exam results" />
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="p-4 max-w-lg mx-auto">
+        <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-lg mx-auto">
         <Card>
           <CardContent className="p-6 text-center space-y-4">
             <div className={cn('h-20 w-20 rounded-full mx-auto flex items-center justify-center', examPassed ? 'bg-emerald-500/10' : 'bg-destructive/10')}>

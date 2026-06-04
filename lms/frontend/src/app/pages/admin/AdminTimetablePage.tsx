@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
-import { listContainer, listItem } from '@/lib/motion';
+import { pageTransition, listContainer, listItem } from '@/lib/motion';
 import { mockTimetable, mockSubjects, mockUsers, mockClasses, days, periods } from '@/lib/mockData';
 
 const dayLabels: Record<string, string> = {
@@ -62,26 +62,29 @@ export default function AdminTimetablePage() {
         loadingType="card"
       >
         {() => {
-          if (!classData) {
-            return (
-              <Card>
-                <CardContent className="flex flex-col items-center gap-4 py-16">
-                  <Icon name="error" size={48} className="text-on-surface-variant/50" />
-                  <p className="font-medium">Class not found</p>
-                  <p className="text-sm text-on-surface-variant">The class you are looking for does not exist.</p>
-                  <Button variant="outline" onClick={() => navigate('/admin/classes')}>
-                    <Icon name="arrow_back" size={16} className="mr-2" />
-                    Back to Classes
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          }
+            if (!classData) {
+              return (
+                <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit">
+                  <Card>
+                    <CardContent className="flex flex-col items-center gap-4 py-16">
+                      <Icon name="error" size={48} className="text-on-surface-variant/50" />
+                      <p className="font-medium">Class not found</p>
+                      <p className="text-sm text-on-surface-variant">The class you are looking for does not exist.</p>
+                      <Button variant="outline" onClick={() => navigate('/admin/classes')}>
+                        <Icon name="arrow_back" size={16} className="mr-2" />
+                        Back to Classes
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            }
 
           const hasSlots = Array.from(timetableMap.values()).length > 0;
 
           return (
-            <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
+            <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit">
+              <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
               <motion.div variants={listItem} className="flex items-center gap-3 flex-wrap">
                 <Button variant="ghost" size="sm" onClick={() => navigate('/admin/classes')}>
                   <Icon name="arrow_back" size={18} className="mr-1" />
@@ -191,6 +194,7 @@ export default function AdminTimetablePage() {
                   </div>
                 </motion.div>
               )}
+              </motion.div>
             </motion.div>
           );
         }}
