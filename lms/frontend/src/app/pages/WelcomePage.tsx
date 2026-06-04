@@ -115,7 +115,7 @@ export default function WelcomePage() {
               transition={{ duration: 0.6, ease: [0.05, 0, 0.133333, 0.06] }}
               className="mb-6 inline-flex items-center gap-3 rounded-2xl bg-primary/10 px-6 py-3"
             >
-              <Icon name="auto_stories" size={28} className="text-primary" />
+              <img src="/genesis-icon.jpg" alt="" className="h-7 w-7 rounded-lg object-cover" />
               <span className="text-sm font-semibold text-primary">
                 Learning Management System
               </span>
@@ -212,7 +212,7 @@ export default function WelcomePage() {
           <div className="mx-auto max-w-6xl px-4 py-8">
             <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
               <div className="flex items-center gap-2">
-                <Icon name="auto_stories" size={24} className="text-primary" />
+                <img src="/genesis-icon.jpg" alt="" className="h-6 w-6 rounded-md object-cover" />
                 <span className="text-lg font-bold">Genesis</span>
               </div>
 

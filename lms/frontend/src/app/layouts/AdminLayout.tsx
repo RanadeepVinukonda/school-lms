@@ -65,16 +65,12 @@ export function AdminLayout() {
         >
           {!sidebarCollapsed && (
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary">
-                <Icon name="auto_stories" size={20} className="text-primary-foreground" />
-              </div>
+              <img src="/genesis-icon.jpg" alt="Genesis" className="h-9 w-9 rounded-xl object-cover" />
               <span className="text-title-sm">Genesis</span>
             </div>
           )}
           {sidebarCollapsed && (
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary">
-              <Icon name="auto_stories" size={20} className="text-primary-foreground" />
-            </div>
+            <img src="/genesis-icon.jpg" alt="Genesis" className="h-9 w-9 rounded-xl object-cover" />
           )}
           <Button
             variant="text"

@@ -63,8 +63,8 @@ export default function LoginSelectorPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="mb-4 inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10">
-            <Icon name="auto_stories" size={36} className="text-primary" />
+          <div className="mb-4 inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 overflow-hidden">
+            <img src="/genesis-icon.jpg" alt="" className="h-14 w-14 rounded-xl object-cover" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
             Welcome to Genesis
