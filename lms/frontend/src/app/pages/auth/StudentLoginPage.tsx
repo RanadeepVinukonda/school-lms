@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { z } from 'zod';
+import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +14,8 @@ import { Icon } from '@/components/ui/Icon';
 import { pageTransition } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
-import { mockUsers } from '@/lib/mockData';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/firebase/config';
 
 const studentLoginSchema = z.object({
   email: z
@@ -21,17 +23,15 @@ const studentLoginSchema = z.object({
     .min(1, 'Email is required')
     .email('Invalid email address')
     .transform((email) => email.toLowerCase().trim()),
-  studentId: z.string().min(1, 'Student ID is required'),
   password: z.string().min(1, 'Password is required'),
 });
 
 type StudentLoginFormData = z.infer<typeof studentLoginSchema>;
 
-const students = [mockUsers.student1, mockUsers.student2, mockUsers.student3];
-
 export default function StudentLoginPage() {
   const navigate = useNavigate();
   const setUser = useAuthStore((s) => s.setUser);
+  const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -42,26 +42,44 @@ export default function StudentLoginPage() {
     resolver: zodResolver(studentLoginSchema),
     defaultValues: {
       email: '',
-      studentId: '',
       password: '',
     },
   });
 
-  function onSubmit(data: StudentLoginFormData) {
-    const profile = students.find(
-      (s) => s.email === data.email && s.studentId === data.studentId
-    );
-    if (!profile) return;
-    setUser({
-      id: profile.id,
-      email: profile.email,
-      displayName: profile.displayName,
-      role: 'student',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-    navigate(ROUTES.STUDENT_DASHBOARD);
+  async function onSubmit(data: StudentLoginFormData) {
+    setError('');
+    try {
+      const cred = await signInWithEmailAndPassword(auth, data.email, data.password);
+      const idTokenResult = await cred.user.getIdTokenResult();
+      const role = (idTokenResult.claims.role as string) || 'student';
+      if (role !== 'student') {
+        setError('This account is not a student account');
+        return;
+      }
+      setUser({
+        id: cred.user.uid,
+        email: cred.user.email || data.email,
+        displayName: cred.user.displayName || cred.user.email?.split('@')[0] || 'Student',
+        role: 'student',
+        isActive: true,
+        avatar: cred.user.photoURL || undefined,
+        createdAt: cred.user.metadata.creationTime || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      toast.success('Welcome back!');
+      navigate(ROUTES.STUDENT_DASHBOARD);
+    } catch (err: unknown) {
+      const firebaseErr = err as { code?: string; message?: string };
+      const errorMessages: Record<string, string> = {
+        'auth/user-not-found': 'No account found with this email',
+        'auth/wrong-password': 'Invalid email or password',
+        'auth/invalid-credential': 'Invalid email or password',
+        'auth/invalid-email': 'Invalid email address',
+        'auth/user-disabled': 'This account has been disabled',
+        'auth/too-many-requests': 'Too many attempts. Please try again later',
+      };
+      setError(errorMessages[firebaseErr.code || ''] || firebaseErr.message || 'Login failed');
+    }
   }
 
   return (
@@ -91,6 +109,11 @@ export default function StudentLoginPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              {error && (
+                <div className="rounded-lg bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-600 dark:text-red-400">
+                  {error}
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -101,18 +124,6 @@ export default function StudentLoginPage() {
                   error={errors.email?.message}
                   disabled={isSubmitting}
                   autoComplete="email"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="studentId">Student ID</Label>
-                <Input
-                  id="studentId"
-                  type="text"
-                  placeholder="e.g. STU-2024-001"
-                  {...register('studentId')}
-                  error={errors.studentId?.message}
-                  disabled={isSubmitting}
-                  autoComplete="username"
                 />
               </div>
               <div className="space-y-2">

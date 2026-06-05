@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { z } from 'zod';
+import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +14,8 @@ import { Icon } from '@/components/ui/Icon';
 import { pageTransition } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
-import { mockUsers } from '@/lib/mockData';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/firebase/config';
 
 const teacherLoginSchema = z.object({
   email: z
@@ -21,17 +23,15 @@ const teacherLoginSchema = z.object({
     .min(1, 'Email is required')
     .email('Invalid email address')
     .transform((email) => email.toLowerCase().trim()),
-  teacherId: z.string().min(1, 'Teacher ID is required'),
   password: z.string().min(1, 'Password is required'),
 });
 
 type TeacherLoginFormData = z.infer<typeof teacherLoginSchema>;
 
-const teachers = [mockUsers.teacher1, mockUsers.teacher2];
-
 export default function TeacherLoginPage() {
   const navigate = useNavigate();
   const setUser = useAuthStore((s) => s.setUser);
+  const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -42,26 +42,44 @@ export default function TeacherLoginPage() {
     resolver: zodResolver(teacherLoginSchema),
     defaultValues: {
       email: '',
-      teacherId: '',
       password: '',
     },
   });
 
-  function onSubmit(data: TeacherLoginFormData) {
-    const profile = teachers.find(
-      (t) => t.email === data.email && t.teacherId === data.teacherId
-    );
-    if (!profile) return;
-    setUser({
-      id: profile.id,
-      email: profile.email,
-      displayName: profile.displayName,
-      role: 'teacher',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-    navigate(ROUTES.TEACHER_DASHBOARD);
+  async function onSubmit(data: TeacherLoginFormData) {
+    setError('');
+    try {
+      const cred = await signInWithEmailAndPassword(auth, data.email, data.password);
+      const idTokenResult = await cred.user.getIdTokenResult();
+      const role = (idTokenResult.claims.role as string) || 'teacher';
+      if (role !== 'teacher' && role !== 'admin') {
+        setError('This account is not a teacher account');
+        return;
+      }
+      setUser({
+        id: cred.user.uid,
+        email: cred.user.email || data.email,
+        displayName: cred.user.displayName || cred.user.email?.split('@')[0] || 'Teacher',
+        role: role as 'teacher' | 'admin',
+        isActive: true,
+        avatar: cred.user.photoURL || undefined,
+        createdAt: cred.user.metadata.creationTime || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      toast.success('Welcome back!');
+      navigate(ROUTES.TEACHER_DASHBOARD);
+    } catch (err: unknown) {
+      const firebaseErr = err as { code?: string; message?: string };
+      const errorMessages: Record<string, string> = {
+        'auth/user-not-found': 'No account found with this email',
+        'auth/wrong-password': 'Invalid email or password',
+        'auth/invalid-credential': 'Invalid email or password',
+        'auth/invalid-email': 'Invalid email address',
+        'auth/user-disabled': 'This account has been disabled',
+        'auth/too-many-requests': 'Too many attempts. Please try again later',
+      };
+      setError(errorMessages[firebaseErr.code || ''] || firebaseErr.message || 'Login failed');
+    }
   }
 
   return (
@@ -91,6 +109,11 @@ export default function TeacherLoginPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              {error && (
+                <div className="rounded-lg bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-600 dark:text-red-400">
+                  {error}
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -101,18 +124,6 @@ export default function TeacherLoginPage() {
                   error={errors.email?.message}
                   disabled={isSubmitting}
                   autoComplete="email"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="teacherId">Teacher ID</Label>
-                <Input
-                  id="teacherId"
-                  type="text"
-                  placeholder="e.g. TCH-2024-001"
-                  {...register('teacherId')}
-                  error={errors.teacherId?.message}
-                  disabled={isSubmitting}
-                  autoComplete="username"
                 />
               </div>
               <div className="space-y-2">
