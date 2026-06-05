@@ -18,7 +18,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { useQuery } from '@tanstack/react-query';
 import { changePassword } from '@/firebase/auth';
-import { getAllSubjects, getEnrollmentsByStudent, getGradesByStudent } from '@/services/dataService';
+import { getAllSubjects, getEnrollmentsByStudent, getGradesByStudent, getUser } from '@/services/dataService';
 
 const achievements = [
   { name: 'Quick Learner', icon: 'bolt', desc: 'Completed first 5 lessons in a week', date: new Date(Date.now() - 30 * 86400000).toISOString() },
@@ -43,9 +43,10 @@ export default function StudentProfilePage() {
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-profile', authUser?.id],
     queryFn: async () => {
-      const rawUser = useAuthStore.getState().user;
-      if (!rawUser) throw new Error('User not found');
-      const user = rawUser as typeof rawUser & { studentId?: string; classId?: string };
+      if (!authUser?.id) throw new Error('User not found');
+      const firestoreUser = await getUser(authUser.id);
+      if (!firestoreUser) throw new Error('User not found in Firestore');
+      const user = firestoreUser as typeof firestoreUser & { studentId?: string; classId?: string };
       const studentId = user.studentId ?? user.id;
 
       const [allSubjects, enrollments, grades] = await Promise.all([

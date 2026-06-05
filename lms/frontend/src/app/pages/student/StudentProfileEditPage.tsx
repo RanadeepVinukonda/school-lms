@@ -14,6 +14,7 @@ import { pageTransition } from '@/lib/motion';
 import { getInitials } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import { uploadProfileImage } from '@/services/cloudinaryService';
+import { updateUser } from '@/services/dataService';
 import { ROUTES } from '@/lib/constants';
 
 export default function StudentProfileEditPage() {
@@ -57,15 +58,20 @@ export default function StudentProfileEditPage() {
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 600));
-    setUser({
-      ...user,
-      ...form,
-      avatar: avatarPreview || user.avatar,
-    });
-    setSaving(false);
-    toast.success('Profile updated');
-    navigate(ROUTES.STUDENT_PROFILE);
+    try {
+      const data: Record<string, unknown> = {
+        ...form,
+        avatar: avatarPreview || user.avatar,
+      };
+      await updateUser(user.id, data);
+      setUser({ ...user, ...data } as typeof user);
+      toast.success('Profile updated');
+      navigate(ROUTES.STUDENT_PROFILE);
+    } catch {
+      toast.error('Failed to update profile');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

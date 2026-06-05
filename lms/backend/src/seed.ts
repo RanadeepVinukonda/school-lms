@@ -103,17 +103,6 @@ async function seed() {
     batch.set(db.collection('grades').doc(g.id), g);
   }
 
-  // Notifications
-  const notificationsData = [
-    { id: 'n1', userId: 's1', type: 'assignment', title: 'New Assignment Posted', body: 'Linear Equations Worksheet is due in 7 days', link: '/assignments/a1', read: false, createdAt: now },
-    { id: 'n2', userId: 's1', type: 'grade', title: 'Grade Published', body: 'Your essay draft has been graded: 42/50', link: '/assignments/a4', read: false, createdAt: now },
-    { id: 'n3', userId: 's1', type: 'exam', title: 'Upcoming Exam', body: 'Midterm Examination starts in 30 days', link: '/exams/e1', read: true, createdAt: now },
-    { id: 'n4', userId: 't1', type: 'submission', title: 'New Submission', body: 'Alice submitted her Linear Equations Worksheet', link: '/assignments/a1', read: false, createdAt: now },
-  ];
-  for (const n of notificationsData) {
-    batch.set(db.collection('notifications').doc(n.id), n);
-  }
-
   await batch.commit();
   console.log('  ✓ All Firestore documents created');
   console.log('\nSeed complete! Login credentials:');
