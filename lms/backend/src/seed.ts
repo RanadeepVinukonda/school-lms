@@ -82,12 +82,12 @@ async function seed() {
 
   // Enrollments
   const enrollmentData = [
-    { studentId: 's1', courseId: 'sub1', status: 'active', progress: 65, enrolledAt: now },
-    { studentId: 's1', courseId: 'sub2', status: 'active', progress: 40, enrolledAt: now },
-    { studentId: 's1', courseId: 'sub3', status: 'active', progress: 80, enrolledAt: now },
-    { studentId: 's2', courseId: 'sub1', status: 'active', progress: 45, enrolledAt: now },
-    { studentId: 's2', courseId: 'sub2', status: 'active', progress: 70, enrolledAt: now },
-    { studentId: 's3', courseId: 'sub1', status: 'active', progress: 90, enrolledAt: now },
+    { studentId: 's1', courseId: 'sub1', status: 'active', progress: 0, enrolledAt: now },
+    { studentId: 's1', courseId: 'sub2', status: 'active', progress: 0, enrolledAt: now },
+    { studentId: 's1', courseId: 'sub3', status: 'active', progress: 0, enrolledAt: now },
+    { studentId: 's2', courseId: 'sub1', status: 'active', progress: 0, enrolledAt: now },
+    { studentId: 's2', courseId: 'sub2', status: 'active', progress: 0, enrolledAt: now },
+    { studentId: 's3', courseId: 'sub1', status: 'active', progress: 0, enrolledAt: now },
   ];
   for (const e of enrollmentData) {
     const eid = `${e.courseId}_${e.studentId}`;

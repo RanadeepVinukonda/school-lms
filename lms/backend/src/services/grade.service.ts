@@ -3,6 +3,7 @@ import { collections } from '../firebase/firestore';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
+import { createNotification, createBulkNotifications } from './notification.service';
 
 export async function getStudentGrades(studentId: string, academicYear?: string) {
   let query: FirebaseFirestore.Query = collections.grades()
@@ -74,6 +75,20 @@ export async function updateGrade(gradeId: string, data: {
 
   await ref.update(updateData);
 
+  // Notify student of grade
+  try {
+    const gradeData = doc.data()!;
+    await createNotification({
+      userId: gradeData.studentId as string,
+      type: 'grade',
+      title: 'Grade Updated',
+      body: `Your grade has been updated: ${data.score}/${data.totalPoints} (${percentage}%)`,
+      data: { gradeId, courseId: gradeData.courseId as string, link: `/student/subjects/${gradeData.courseId}` },
+    });
+  } catch (err) {
+    logger.warn('Failed to send grade notification', { error: err });
+  }
+
   const updated = await ref.get();
   logger.info('Grade updated', { gradeId, gradedBy: data.gradedBy });
 
@@ -120,6 +135,20 @@ export async function bulkUpdate(grades: Array<{
     }
 
     results.push({ id: gradeId, studentId: grade.studentId, score: grade.score, percentage });
+  }
+
+  // Notify all graded students
+  try {
+    const notifications = results.map((r) => ({
+      userId: r.studentId,
+      type: 'grade',
+      title: 'Grades Published',
+      body: `Your grade for ${courseId}: ${r.score}/${grades.find(g => g.studentId === r.studentId)?.totalPoints || 100}`,
+      data: { courseId, link: `/student/subjects/${courseId}` },
+    }));
+    if (notifications.length > 0) await createBulkNotifications(notifications);
+  } catch (err) {
+    logger.warn('Failed to send bulk grade notifications', { error: err });
   }
 
   logger.info('Bulk grades updated', { courseId, count: grades.length, gradedBy });

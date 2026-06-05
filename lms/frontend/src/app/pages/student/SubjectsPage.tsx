@@ -5,7 +5,6 @@ import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Icon } from '@/components/ui/Icon';
 import { useQuery } from '@tanstack/react-query';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
@@ -26,7 +25,7 @@ export default function SubjectsPage() {
         .map((enrollment) => {
           const subject = allSubjects.find((s) => s.id === enrollment.courseId);
           if (!subject) return null;
-          return { ...subject, progress: enrollment.progress, status: enrollment.status };
+          return { ...subject, status: enrollment.status };
         })
         .filter((s): s is NonNullable<typeof s> => s !== null);
       return subjects;
@@ -108,9 +107,7 @@ export default function SubjectsPage() {
                           <Badge variant="secondary" className="text-[10px]">
                             {subject.category}
                           </Badge>
-                          <span className="text-xs font-medium tabular-nums">{subject.progress}%</span>
                         </div>
-                        <Progress value={subject.progress} className="h-2" />
                         <Button
                           size="sm"
                           className="w-full gap-2 group-hover:gap-3 transition-all"

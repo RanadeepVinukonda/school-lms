@@ -3,6 +3,8 @@ import { collections } from '../firebase/firestore';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
+import { getEnrollments } from './course.service';
+import { createBulkNotifications, createNotification } from './notification.service';
 
 export async function createAssignment(data: {
   title: string;
@@ -28,6 +30,21 @@ export async function createAssignment(data: {
   };
 
   await collections.assignments().doc(assignmentId).set(assignmentData);
+
+  // Notify enrolled students
+  try {
+    const enrollments = await getEnrollments(data.courseId);
+    const notifications = enrollments.map((e: any) => ({
+      userId: e.studentId,
+      type: 'assignment',
+      title: 'New Assignment Posted',
+      body: `${data.title} has been posted. Due: ${new Date(data.dueDate).toLocaleDateString()}`,
+      data: { assignmentId, courseId: data.courseId, link: `/assignments/${assignmentId}` },
+    }));
+    if (notifications.length > 0) await createBulkNotifications(notifications);
+  } catch (err) {
+    logger.warn('Failed to send assignment notifications', { error: err });
+  }
 
   logger.info('Assignment created', { assignmentId, courseId: data.courseId, title: data.title });
 
@@ -188,6 +205,20 @@ export async function gradeSubmission(submissionId: string, graderId: string, da
   };
 
   await submissionRef.update(gradeData);
+
+  // Notify student of grade
+  try {
+    const subData = submission.data()!;
+    await createNotification({
+      userId: subData.studentId as string,
+      type: 'grade',
+      title: 'Assignment Graded',
+      body: `Your submission has been graded: ${data.score}/${data.totalPoints}${data.feedback ? ' - ' + data.feedback : ''}`,
+      data: { submissionId, assignmentId: subData.assignmentId as string, link: `/assignments/${subData.assignmentId}` },
+    });
+  } catch (err) {
+    logger.warn('Failed to send grade notification', { error: err });
+  }
 
   const updated = await submissionRef.get();
   logger.info('Submission graded', { submissionId, graderId });
