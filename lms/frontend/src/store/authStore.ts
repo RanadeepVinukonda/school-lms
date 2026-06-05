@@ -71,7 +71,7 @@ export const useAuthStore = create<AuthStore>()(
               } else {
                 set({ user: null, isAuthenticated: false, isLoading: false });
               }
-            } catch {
+            } catch (err) {
               set({ user: null, isAuthenticated: false, isLoading: false });
             }
           } else {
@@ -81,7 +81,7 @@ export const useAuthStore = create<AuthStore>()(
       },
     }),
     {
-      name: 'lms-auth',
+      name: 'lms-auth-v2',
       partialize: (state) => ({
         token: state.token,
       }),
