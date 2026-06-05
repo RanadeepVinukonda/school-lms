@@ -13,50 +13,55 @@ import { getInitials } from '@/lib/utils';
 import { ROUTES } from '@/lib/constants';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
-import { getAllSubjects, getAllClasses, getAllEnrollments, getAllGrades } from '@/services/dataService';
+import { getAllSubjects, getAllClasses, getAllEnrollments, getAllGrades, getUser } from '@/services/dataService';
 import type { Subject, ClassEntry, GradeEntry, Enrollment } from '@/services/dataService';
 
 interface ProfileData {
+  user: import('@/services/dataService').UserDoc;
   stats: { totalStudents: number; totalClasses: number; totalSubjects: number; avgPerformance: number };
   assignedClasses: ClassEntry[];
   taughtSubjects: Subject[];
 }
 
 export default function TeacherProfilePage() {
-  const user = useAuthStore((s) => s.user);
+  const authUser = useAuthStore((s) => s.user);
 
   const { data: raw, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['teacher-profile', user?.id],
+    queryKey: ['teacher-profile', authUser?.id],
     queryFn: async () => {
-      const [subjects, classes, enrollments, grades] = await Promise.all([
+      if (!authUser?.id) throw new Error('Not authenticated');
+      const [firestoreUser, subjects, classes, enrollments, grades] = await Promise.all([
+        getUser(authUser.id),
         getAllSubjects(),
         getAllClasses(),
         getAllEnrollments(),
         getAllGrades(),
       ]);
-      return { subjects, classes, enrollments, grades };
+      if (!firestoreUser) throw new Error('User not found in Firestore');
+      return { firestoreUser, subjects, classes, enrollments, grades };
     },
-    enabled: !!user,
+    enabled: !!authUser,
   });
 
   const data: ProfileData = useMemo(() => {
     if (!raw) {
-      return { stats: { totalStudents: 0, totalClasses: 0, totalSubjects: 0, avgPerformance: 0 }, assignedClasses: [], taughtSubjects: [] };
+      return { stats: { totalStudents: 0, totalClasses: 0, totalSubjects: 0, avgPerformance: 0 }, assignedClasses: [], taughtSubjects: [], user: null! };
     }
-    const { subjects, classes, enrollments, grades } = raw;
+    const { firestoreUser, subjects, classes, enrollments, grades } = raw;
     const enrolledStudentIds = [...new Set(enrollments.map((e) => e.studentId))];
     const avgPerformance = grades.length > 0 ? Math.round(grades.reduce((sum, g) => sum + g.percentage, 0) / grades.length) : 0;
     return {
+      user: firestoreUser,
       stats: {
         totalStudents: enrolledStudentIds.length,
-        totalClasses: classes.filter((c) => c.teacherIds?.includes(user!.id)).length,
+        totalClasses: classes.filter((c) => c.teacherIds?.includes(authUser!.id)).length,
         totalSubjects: subjects.length,
         avgPerformance,
       },
-      assignedClasses: classes.filter((c) => c.teacherIds?.includes(user!.id)),
+      assignedClasses: classes.filter((c) => c.teacherIds?.includes(authUser!.id)),
       taughtSubjects: subjects,
     };
-  }, [raw, user]);
+  }, [raw, authUser]);
 
   const statCards = [
     { icon: 'group', label: 'Students', value: data.stats.totalStudents, bg: 'bg-primary-container', color: 'text-on-primary-container' },
@@ -86,17 +91,17 @@ export default function TeacherProfilePage() {
                   <CardContent className="p-6 -mt-12">
                     <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4">
                       <Avatar className="h-24 w-24 border-4 border-background ring-2 ring-primary/20">
-                        <AvatarFallback className="text-2xl">{getInitials(user?.displayName ?? 'T')}</AvatarFallback>
+                        <AvatarFallback className="text-2xl">{getInitials(profileData.user.displayName ?? 'T')}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 text-center sm:text-left">
-                        <h1 className="text-headline-sm">{user?.displayName ?? 'Teacher'}</h1>
-                        <p className="text-muted-foreground">{user?.email ?? ''}</p>
+                        <h1 className="text-headline-sm">{profileData.user.displayName ?? 'Teacher'}</h1>
+                        <p className="text-muted-foreground">{profileData.user.email ?? ''}</p>
                         <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
                           <Badge variant="info" className="text-[10px]">
                             <Icon name="school" size={11} className="mr-1" />Teacher
                           </Badge>
-                          {user?.id && (
-                            <Badge variant="secondary" className="text-[10px]">{user.id}</Badge>
+                          {profileData.user.id && (
+                            <Badge variant="secondary" className="text-[10px]">{profileData.user.id}</Badge>
                           )}
                         </div>
                       </div>
@@ -205,15 +210,15 @@ export default function TeacherProfilePage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="text-muted-foreground">Email</p>
-                        <p className="font-medium">{user?.email ?? ''}</p>
+                        <p className="font-medium">{profileData.user.email ?? ''}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Role</p>
-                        <p className="font-medium capitalize">{user?.role ?? 'teacher'}</p>
+                        <p className="font-medium capitalize">{profileData.user.role ?? 'teacher'}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">User ID</p>
-                        <p className="font-medium">{user?.id ?? 'N/A'}</p>
+                        <p className="font-medium">{profileData.user.id ?? 'N/A'}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Account Status</p>

@@ -18,15 +18,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { useQuery } from '@tanstack/react-query';
 import { changePassword } from '@/firebase/auth';
-import { getAllSubjects, getEnrollmentsByStudent, getGradesByStudent } from '@/services/dataService';
-
-const achievements = [
-  { name: 'Quick Learner', icon: 'bolt', desc: 'Completed first 5 lessons in a week', date: new Date(Date.now() - 30 * 86400000).toISOString() },
-  { name: 'Perfect Score', icon: 'stars', desc: 'Scored 100% on a quiz', date: new Date(Date.now() - 20 * 86400000).toISOString() },
-  { name: 'Consistent', icon: 'trending_up', desc: '7-day study streak', date: new Date(Date.now() - 15 * 86400000).toISOString() },
-  { name: 'Top Performer', icon: 'military_tech', desc: 'Top 10% of the class', date: new Date(Date.now() - 10 * 86400000).toISOString() },
-  { name: 'Early Bird', icon: 'wb_sunny', desc: 'Submitted 3 assignments before deadline', date: new Date(Date.now() - 5 * 86400000).toISOString() },
-];
+import { getAllSubjects, getEnrollmentsByStudent, getGradesByStudent, getUser } from '@/services/dataService';
 
 function EmptySection({ icon, message }: { icon: string; message: string }) {
   return (
@@ -43,9 +35,10 @@ export default function StudentProfilePage() {
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-profile', authUser?.id],
     queryFn: async () => {
-      const rawUser = useAuthStore.getState().user;
-      if (!rawUser) throw new Error('User not found');
-      const user = rawUser as typeof rawUser & { studentId?: string; classId?: string };
+      if (!authUser?.id) throw new Error('User not found');
+      const firestoreUser = await getUser(authUser.id);
+      if (!firestoreUser) throw new Error('User not found in Firestore');
+      const user = firestoreUser as typeof firestoreUser & { studentId?: string; classId?: string };
       const studentId = user.studentId ?? user.id;
 
       const [allSubjects, enrollments, grades] = await Promise.all([
@@ -59,7 +52,7 @@ export default function StudentProfilePage() {
         .map((e) => {
           const s = subjectMap.get(e.courseId);
           if (!s) return null;
-          return { ...s, progress: e.progress, icon: s.icon || 'school', color: s.color || '#6366f1' };
+          return { ...s, icon: s.icon || 'school', color: s.color || '#6366f1' };
         })
         .filter((s): s is NonNullable<typeof s> => s !== null);
 
@@ -158,34 +151,7 @@ export default function StudentProfilePage() {
                 </div>
               </motion.div>
 
-              {/* Subject Progress */}
-              <motion.div variants={listItem} initial="hidden" animate="show">
-                <Card variant="elevated">
-                  <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Icon name="school" size={18} />Subject Progress</CardTitle></CardHeader>
-                  <CardContent>
-                    {d.enrolledSubjects.length === 0 ? <EmptySection icon="school" message="Not enrolled in any subjects" /> : (
-                      <div className="space-y-4">
-                        {d.enrolledSubjects.map((subject) => (
-                          <motion.div key={subject.id} variants={listItem} initial="hidden" animate="show" className="space-y-1.5">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 min-w-0">
-                                <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${subject.color}20` }}>
-                                  <Icon name={subject.icon} size={16} style={{ color: subject.color }} />
-                                </div>
-                                <span className="text-sm font-medium truncate">{subject.name}</span>
-                              </div>
-                              <span className="text-xs font-medium tabular-nums shrink-0 ml-3">{subject.progress}%</span>
-                            </div>
-                            <div className="w-full h-2 rounded-full bg-surface-variant overflow-hidden">
-                              <div className="h-full rounded-full transition-all duration-500 ease-out" style={{ width: `${subject.progress}%`, backgroundColor: subject.color }} />
-                            </div>
-                          </motion.div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </motion.div>
+
 
               {/* Assignment History */}
               <motion.div variants={listItem} initial="hidden" animate="show">
@@ -216,23 +182,7 @@ export default function StudentProfilePage() {
                 </Card>
               </motion.div>
 
-              {/* Achievements */}
-              <motion.div variants={listItem} initial="hidden" animate="show">
-                <Card variant="elevated">
-                  <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Icon name="emoji_events" size={18} />Achievements</CardTitle></CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-5 gap-2">
-                      {achievements.map((a) => (
-                        <motion.div key={a.name} variants={listItem} initial="hidden" animate="show" className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-accent transition-colors group cursor-default" title={a.desc}>
-                          <div className="h-12 w-12 rounded-full bg-warning-container flex items-center justify-center group-hover:scale-110 transition-transform"><Icon name={a.icon} size={22} className="text-warning" /></div>
-                          <span className="text-[10px] font-semibold text-center leading-tight">{a.name}</span>
-                          <span className="text-[9px] text-muted-foreground text-center">{formatDate(a.date)}</span>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
+
 
               {/* Settings */}
               <motion.div variants={listItem} initial="hidden" animate="show">

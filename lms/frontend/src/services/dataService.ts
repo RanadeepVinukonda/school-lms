@@ -306,6 +306,11 @@ export interface UserDoc {
   studentId?: string;
   classId?: string;
   teacherId?: string;
+  avatar?: string;
+  phone?: string;
+  bio?: string;
+  address?: string;
+  dateOfBirth?: string;
   isActive?: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -326,6 +331,13 @@ export async function getUser(id: string): Promise<UserDoc | null> {
 export async function getAllUsers(): Promise<UserDoc[]> {
   const snap = await getDocs(collection(db, 'users'));
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserDoc));
+}
+
+export async function updateUser(id: string, data: Partial<UserDoc>): Promise<void> {
+  await updateDoc(doc(db, 'users', id), {
+    ...data,
+    updatedAt: new Date().toISOString(),
+  });
 }
 
 // ── Lessons ──

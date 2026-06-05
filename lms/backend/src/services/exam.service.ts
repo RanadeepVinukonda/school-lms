@@ -2,8 +2,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { collections } from '../firebase/firestore';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
-
 import { parsePagination } from '../utils/pagination';
+import { getEnrollments } from './course.service';
+import { createBulkNotifications, createNotification } from './notification.service';
 
 export async function listAllExams(query: { page?: string; limit?: string; courseId?: string }) {
   const { page, limit } = parsePagination(query);
@@ -63,6 +64,21 @@ export async function createExam(data: {
   };
 
   await collections.exams().doc(examId).set(examData);
+
+  // Notify enrolled students
+  try {
+    const enrollments = await getEnrollments(data.courseId);
+    const notifications = enrollments.map((e: any) => ({
+      userId: e.studentId,
+      type: 'exam',
+      title: 'New Exam Created',
+      body: `${data.title} has been created (${data.timeLimit} min, ${totalPoints} pts)`,
+      data: { examId, courseId: data.courseId, link: `/exams/${examId}` },
+    }));
+    if (notifications.length > 0) await createBulkNotifications(notifications);
+  } catch (err) {
+    logger.warn('Failed to send exam notifications', { error: err });
+  }
 
   logger.info('Exam created', { examId, courseId: data.courseId, title: data.title });
 
@@ -132,6 +148,28 @@ export async function scheduleExam(examId: string, data: {
   };
 
   await ref.update(updateData);
+
+  // Notify students in scheduled classes
+  try {
+    const examData = doc.data()!;
+    for (const classId of data.classIds) {
+      const classDoc = await collections.classes().doc(classId).get();
+      if (classDoc.exists) {
+        const classData = classDoc.data()!;
+        const studentIds = (classData.studentIds as string[]) || [];
+        const notifications = studentIds.map((studentId: string) => ({
+          userId: studentId,
+          type: 'exam',
+          title: 'Exam Scheduled',
+          body: `${examData.title} is scheduled from ${new Date(data.startDate).toLocaleDateString()} to ${new Date(data.endDate).toLocaleDateString()}`,
+          data: { examId, link: `/exams/${examId}` },
+        }));
+        if (notifications.length > 0) await createBulkNotifications(notifications);
+      }
+    }
+  } catch (err) {
+    logger.warn('Failed to send exam schedule notifications', { error: err });
+  }
 
   logger.info('Exam scheduled', { examId, classIds: data.classIds });
 
@@ -286,6 +324,20 @@ export async function gradeExamAttempt(attemptId: string, graderId: string, data
   };
 
   await attemptRef.update(updateData);
+
+  // Notify student of exam grade
+  try {
+    const attemptData = attempt.data()!;
+    await createNotification({
+      userId: attemptData.studentId as string,
+      type: 'grade',
+      title: 'Exam Graded',
+      body: `Your exam has been graded: ${data.score} points${data.feedback ? ' - ' + data.feedback : ''}`,
+      data: { attemptId, examId: attemptData.examId as string, link: `/exams/${attemptData.examId}` },
+    });
+  } catch (err) {
+    logger.warn('Failed to send exam grade notification', { error: err });
+  }
 
   logger.info('Exam attempt graded', { attemptId, graderId });
 
