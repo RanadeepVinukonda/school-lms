@@ -8,7 +8,19 @@ function getModel() {
   return import.meta.env.VITE_AI_MODEL || 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free';
 }
 
+function getOpenRouterApiKey(): string {
+  const key = import.meta.env.VITE_OPENROUTER_API_KEY;
+  if (!key) {
+    throw new Error(
+      'OpenRouter API key is not configured. Set VITE_OPENROUTER_API_KEY in your .env file and restart the dev server.',
+    );
+  }
+  return key;
+}
+
 async function callOpenRouter(prompt: string, schema?: Record<string, unknown>) {
+  const apiKey = getOpenRouterApiKey();
+
   const messages = [
     {
       role: 'system',
@@ -32,7 +44,7 @@ async function callOpenRouter(prompt: string, schema?: Record<string, unknown>) 
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${getApiKey()}`,
+      Authorization: `Bearer ${apiKey}`,
       'HTTP-Referer': window.location.origin,
     },
     body: JSON.stringify(body),
@@ -40,6 +52,11 @@ async function callOpenRouter(prompt: string, schema?: Record<string, unknown>) 
 
   if (!res.ok) {
     const err = await res.text();
+    if (res.status === 401) {
+      throw new Error(
+        'OpenRouter rejected the API key. Check that VITE_OPENROUTER_API_KEY in your .env file is correct and restart the dev server.',
+      );
+    }
     throw new Error(`OpenRouter API error ${res.status}: ${err}`);
   }
 

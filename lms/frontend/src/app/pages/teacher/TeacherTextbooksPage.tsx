@@ -9,24 +9,27 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
-import { mockTextbooks, mockSubjects } from '@/lib/mockData';
+import { mockSubjects } from '@/lib/mockData';
+import { getAllTextbooks } from '@/services/textbookService';
 
 export default function TeacherTextbooksPage() {
-  const { isLoading, error, refetch } = useQuery({
+  const { data: textbooks, isLoading, error, refetch } = useQuery({
     queryKey: ['teacher-textbooks'],
     queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 400));
-      return null;
+      const result = await getAllTextbooks();
+      return result.filter((tb) => tb.status !== 'processing');
     },
   });
 
   const textbooksWithSubjects = useMemo(
     () =>
-      mockTextbooks.map((tb) => ({
+      (textbooks ?? []).map((tb) => ({
         ...tb,
         subject: mockSubjects.find((s) => s.id === tb.subjectId) ?? null,
+        chapterCount: tb.chapters?.length ?? 0,
+        lessonCount: tb.chapters?.reduce((s, ch) => s + (ch.concepts?.length ?? 0), 0) ?? 0,
       })),
-    [],
+    [textbooks],
   );
 
   return (
@@ -124,15 +127,15 @@ export default function TeacherTextbooksPage() {
                           <div className="flex items-center gap-3 mt-3">
                             <Badge variant="secondary" className="text-[10px]">
                               <Icon name="chapter" size={11} className="mr-1" />
-                              {tb.chapters.length} chapter{tb.chapters.length !== 1 ? 's' : ''}
+                              {tb.chapterCount} chapter{tb.chapterCount !== 1 ? 's' : ''}
                             </Badge>
                             <Badge variant="secondary" className="text-[10px]">
                               <Icon name="play_lesson" size={11} className="mr-1" />
-                              {tb.chapters.reduce((s, ch) => s + ch.lessonCount, 0)} lessons
+                              {tb.lessonCount} lesson{tb.lessonCount !== 1 ? 's' : ''}
                             </Badge>
                           </div>
 
-                          {tb.chapters.length > 0 && (
+                          {tb.chapters && tb.chapters.length > 0 && (
                             <div className="mt-3 pt-3 border-t space-y-1.5">
                               <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
                                 Chapters
@@ -144,7 +147,7 @@ export default function TeacherTextbooksPage() {
                                     {ch.order}. {ch.title}
                                   </span>
                                   <span className="text-xs text-muted-foreground/50 ml-auto">
-                                    {ch.lessonCount} lesson{ch.lessonCount !== 1 ? 's' : ''}
+                                    {ch.concepts?.length ?? 0} concept{(ch.concepts?.length ?? 0) !== 1 ? 's' : ''}
                                   </span>
                                 </div>
                               ))}
