@@ -78,11 +78,9 @@ export default function TeacherLoginPage() {
         variants={pageTransition}
       >
         <Card className="w-full max-w-md">
-          <CardHeader className="space-y-1 text-center">
-            <div className="mb-2 flex justify-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-emerald-500/10">
-                <Icon name="badge" size={28} className="text-emerald-500" />
-              </div>
+          <CardHeader className="space-y-4 text-center">
+            <div className="flex justify-center">
+              <img src="/genesis_icon.png" alt="Genesis LMS" className="h-16 w-auto object-contain" />
             </div>
             <CardTitle className="text-2xl">Teacher Sign In</CardTitle>
             <CardDescription>

@@ -1,17 +1,16 @@
 import { useEffect, useRef } from 'react';
+import { signInAnonymously } from 'firebase/auth';
+import { auth } from '@/firebase/config';
 import { useAuthStore } from '@/store/authStore';
 import { onAuthChange } from '@/firebase/auth';
 
 export function useAuth() {
   const setUser = useAuthStore((s) => s.setUser);
   const setLoading = useAuthStore((s) => s.setLoading);
-  const initialCheckDone = useRef(false);
+  const hasTriggeredAnon = useRef(false);
 
   useEffect(() => {
     const unsubscribe = onAuthChange(async (firebaseUser) => {
-      if (initialCheckDone.current) return;
-      initialCheckDone.current = true;
-
       if (firebaseUser) {
         let role = 'student';
         try {
@@ -32,6 +31,14 @@ export function useAuth() {
             createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           });
+        }
+      } else if (!hasTriggeredAnon.current) {
+        hasTriggeredAnon.current = true;
+        try {
+          await signInAnonymously(auth);
+        } catch {
+          // Anonymous auth disabled in Firebase Console — Firestore writes
+          // that require auth will fail until real auth is set up
         }
       }
       setLoading(false);
