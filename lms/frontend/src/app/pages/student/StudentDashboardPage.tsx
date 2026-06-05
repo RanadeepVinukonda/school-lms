@@ -13,9 +13,10 @@ import { cn, getTimeGreeting } from '@/lib/utils';
 import { formatRelativeTime, formatTime } from '@/lib/format';
 import { pageTransition, listItem } from '@/lib/motion';
 import {
-  mockUsers, mockEnrollments, mockSubjects, mockLessons,
-  mockTextbooks, mockAssignments, mockExams, mockTimetable, mockGrades,
+  mockUsers, mockEnrollments, mockSubjects,
+  mockAssignments, mockExams, mockTimetable, mockGrades,
 } from '@/lib/mockData';
+import { getAllTextbooks } from '@/services/textbookService';
 
 const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
 
@@ -72,7 +73,6 @@ export default function StudentDashboardPage() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['student-dashboard', studentId],
     queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 400));
       const now = new Date();
       const greeting = getTimeGreeting();
       const streakCount = 7;
@@ -80,32 +80,46 @@ export default function StudentDashboardPage() {
       const subjectIds = enrollments.map((e) => e.subjectId);
       const bestEnrollment = enrollments.length > 0 ? enrollments.reduce((best, e) => (e.progress > best.progress ? e : best)) : null;
 
+      const allTextbooks = await getAllTextbooks();
+      const readyTextbooks = allTextbooks.filter((tb) => tb.status !== 'processing');
+      const tbSubjectMap = new Map(readyTextbooks.map((tb) => [tb.id, tb.subjectId]));
+
       let continueLearning: ContinueLearning | null = null;
       if (bestEnrollment) {
         const subject = mockSubjects.find((s) => s.id === bestEnrollment.subjectId);
         if (subject) {
-          const textbook = mockTextbooks.find((tb) => tb.subjectId === subject.id);
-          if (textbook) {
-            const lesson = mockLessons.find((l) => l.textbookId === textbook.id);
-            if (lesson) {
-              const chapter = textbook.chapters.find((ch) => ch.id === lesson.chapterId);
-              continueLearning = { subjectName: subject.name, subjectColor: subject.color ?? '#6366f1', subjectIcon: subject.icon ?? 'menu_book', textbookTitle: textbook.title, chapterTitle: chapter?.title ?? 'Unknown Chapter', lessonTitle: lesson.title, lessonId: lesson.id, progress: bestEnrollment.progress, duration: lesson.duration };
+          const textbook = readyTextbooks.find((tb) => tb.subjectId === subject.id);
+          if (textbook && textbook.chapters?.length) {
+            const firstCh = textbook.chapters[0];
+            const firstConcept = firstCh.concepts?.[0];
+            if (firstConcept) {
+              continueLearning = {
+                subjectName: subject.name,
+                subjectColor: subject.color ?? '#6366f1',
+                subjectIcon: subject.icon ?? 'menu_book',
+                textbookTitle: textbook.title,
+                chapterTitle: firstCh.title,
+                lessonTitle: firstConcept.title,
+                lessonId: firstConcept.id,
+                progress: bestEnrollment.progress,
+                duration: firstConcept.estimatedMinutes ?? 10,
+              };
             }
           }
         }
       }
 
       const todayFocus: FocusItem[] = [];
-      const subjectTextbookIds = mockTextbooks.filter((tb) => subjectIds.includes(tb.subjectId)).map((tb) => tb.id);
       const nowMs = now.getTime();
 
       for (const assignment of mockAssignments) {
         if ((assignment.status as string) === 'graded' || (assignment.status as string) === 'closed') continue;
-        if (!subjectTextbookIds.includes(assignment.textbookId)) continue;
+        const assnSubjectId = tbSubjectMap.get(assignment.textbookId);
+        if (!assnSubjectId || !subjectIds.includes(assnSubjectId)) continue;
         const diffDays = Math.ceil((new Date(assignment.dueDate).getTime() - nowMs) / 86400000);
         if (diffDays > 7) continue;
         const { label, urgency } = getFocusUrgency(assignment.dueDate);
-        const subject = mockSubjects.find((s) => mockTextbooks.some((tb) => tb.id === assignment.textbookId && tb.subjectId === s.id));
+        const subject = mockSubjects.find((s) => s.id === assnSubjectId);
         todayFocus.push({ id: assignment.id, type: 'assignment', title: assignment.title, subjectName: subject?.name ?? '', dueDate: assignment.dueDate, urgency, label, link: `/assignments/${assignment.id}` });
       }
 

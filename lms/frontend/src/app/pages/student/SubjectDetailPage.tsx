@@ -9,19 +9,21 @@ import { Progress } from '@/components/ui/progress';
 import { Icon } from '@/components/ui/Icon';
 import { pageTransition, listItem } from '@/lib/motion';
 import { useQuery } from '@tanstack/react-query';
-import { mockUsers, mockEnrollments, mockSubjects, mockTextbooks, mockLessons, mockAssignments, mockExams, mockGrades, mockTimetable } from '@/lib/mockData';
+import { mockUsers, mockEnrollments, mockSubjects, mockLessons, mockAssignments, mockExams, mockGrades, mockTimetable } from '@/lib/mockData';
+import { getTextbooksBySubject } from '@/services/textbookService';
 import { ROUTES } from '@/lib/constants';
+import type { Textbook } from '@/types/textbook';
 
 interface DashboardData {
   subject: (typeof mockSubjects)[number];
   teacher: (typeof mockUsers)[keyof typeof mockUsers] | null;
   enrollment: (typeof mockEnrollments)[number] | null;
-  currentChapter: { textbookId: string; textbookTitle: string; id: string; title: string; order: number; lessonCount: number } | null;
+  currentChapter: { textbookId: string; textbookTitle: string; id: string; title: string; order: number; conceptCount: number } | null;
   nextLesson: (typeof mockLessons)[number] | null;
   upcomingAssignment: (typeof mockAssignments)[number] | null;
   upcomingExam: (typeof mockExams)[number] | null;
   recentGrade: (typeof mockGrades)[number] | null;
-  textbooks: Array<(typeof mockTextbooks)[number] & { chapterCount: number }>;
+  textbooks: Array<Textbook & { chapterCount: number }>;
 }
 
 export default function SubjectDetailPage() {
@@ -29,7 +31,6 @@ export default function SubjectDetailPage() {
   const { data, isLoading, isError, error, refetch } = useQuery<DashboardData | null>({
     queryKey: ['subject-detail', id],
     queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 300));
       if (!id) return null;
       const subject = mockSubjects.find((s) => s.id === id);
       if (!subject) return null;
@@ -37,15 +38,16 @@ export default function SubjectDetailPage() {
       const timetableSlot = mockTimetable.find((tt) => tt.classId === student.classId && tt.subjectId === id);
       const teacher = timetableSlot ? Object.values(mockUsers).find((u) => u.id === timetableSlot.teacherId) ?? null : null;
       const enrollment = mockEnrollments.find((e) => e.studentId === student.id && e.subjectId === id) ?? null;
-      const textbooks = mockTextbooks.filter((tb) => tb.subjectId === id).map((tb) => ({ ...tb, chapterCount: tb.chapters.length }));
+      const firestoreTextbooks = await getTextbooksBySubject(id);
+      const textbooks = firestoreTextbooks.filter((tb) => tb.status !== 'processing').map((tb) => ({ ...tb, chapterCount: tb.chapters?.length ?? 0 }));
       const firstTb = textbooks[0];
-      const currentChapter = firstTb?.chapters[0]
-        ? { textbookId: firstTb.id, textbookTitle: firstTb.title, ...firstTb.chapters[0] }
+      const currentChapter = firstTb?.chapters?.[0]
+        ? { textbookId: firstTb.id, textbookTitle: firstTb.title, id: firstTb.chapters[0].id ?? '', title: firstTb.chapters[0].title, order: firstTb.chapters[0].order, conceptCount: firstTb.chapters[0].concepts?.length ?? 0 }
         : null;
       const nextLesson = currentChapter
         ? mockLessons.find((l) => l.textbookId === currentChapter.textbookId && l.chapterId === currentChapter.id) ?? null
         : null;
-      const subjectTextbookIds = mockTextbooks.filter((tb) => tb.subjectId === id).map((tb) => tb.id);
+      const subjectTextbookIds = textbooks.map((tb) => tb.id);
       const upcomingAssignment = mockAssignments
         .filter((a) => subjectTextbookIds.includes(a.textbookId) && new Date(a.dueDate) > new Date())
         .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0] ?? null;
@@ -113,7 +115,7 @@ export default function SubjectDetailPage() {
                     {d.currentChapter ? (
                       <Link to={ROUTES.STUDENT_TEXTBOOK(d.currentChapter.textbookId)} className="block group">
                         <p className="font-semibold group-hover:underline truncate">{d.currentChapter.title}</p>
-                        <p className="text-body-sm text-muted-foreground">{d.currentChapter.textbookTitle} &middot; {d.currentChapter.lessonCount} lessons</p>
+                        <p className="text-body-sm text-muted-foreground">{d.currentChapter.textbookTitle} &middot; {d.currentChapter.conceptCount} concepts</p>
                       </Link>
                     ) : <p className="text-body-sm text-muted-foreground">No chapters yet</p>}
                   </CardContent>

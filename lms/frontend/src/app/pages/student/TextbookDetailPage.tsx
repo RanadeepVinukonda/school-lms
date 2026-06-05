@@ -11,42 +11,49 @@ import { Icon } from '@/components/ui/Icon';
 import { pageTransition, listItem } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
-import { mockSubjects, mockTextbooks, mockLessons, mockEnrollments } from '@/lib/mockData';
+import { mockSubjects } from '@/lib/mockData';
+import { getTextbook, getAllConceptProgress } from '@/services/textbookService';
+import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
 
 export default function TextbookDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [expandedChapter, setExpandedChapter] = useState<string | null>(null);
+  const authUser = useAuthStore((state) => state.user);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['textbook-roadmap', id],
     queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 300));
       if (!id) return null;
-      const textbook = mockTextbooks.find((tb) => tb.id === id);
+      const textbook = await getTextbook(id);
       if (!textbook) return null;
       const subject = mockSubjects.find((s) => s.id === textbook.subjectId);
-      const lessons = mockLessons.filter((l) => l.textbookId === id);
-      const enrollment = mockEnrollments.find(
-        (e) => e.subjectId === textbook.subjectId,
-      );
+      const conceptProgress = authUser?.id ? await getAllConceptProgress(authUser.id) : [];
 
-      const allLessons = textbook.chapters
+      const chapters = (textbook.chapters ?? [])
         .sort((a, b) => a.order - b.order)
         .map((ch) => ({
           ...ch,
-          chapterLessons: lessons
-            .filter((l) => l.chapterId === ch.id)
-            .sort((a, b) => a.order - b.order),
+          chapterLessons: (ch.concepts ?? []).sort((a, b) => a.order - b.order).map((c) => ({
+            id: c.id,
+            title: c.title,
+            duration: c.estimatedMinutes ?? 10,
+            contentType: 'article' as 'article' | 'video',
+            type: 'concept' as const,
+            order: c.order,
+            chapterId: ch.id ?? '',
+            textbookId: textbook.id ?? '',
+          })),
         }));
 
-      const totalChapters = allLessons.length;
-      const progressPct = enrollment?.progress ?? 0;
-      const completedCount = totalChapters > 0
-        ? Math.min(Math.floor((totalChapters * progressPct) / 100), totalChapters - 1)
-        : 0;
+      const totalChapters = chapters.length;
+      const completedConceptIds = conceptProgress.filter((p) => p.lessonCompleted).map((p) => p.conceptId);
+      const completedCount = chapters.filter((ch) =>
+        ch.concepts?.length && ch.concepts.every((c) => completedConceptIds.includes(c.id)),
+      ).length;
+      const progressPct = totalChapters > 0 ? Math.round((completedCount / totalChapters) * 100) : 0;
 
-      const chapters = allLessons.map((ch, idx) => ({
+      const roadmapChapters = chapters.map((ch, idx) => ({
         ...ch,
         status: idx < completedCount ? 'completed' as const
           : idx === completedCount ? 'current' as const
@@ -54,7 +61,7 @@ export default function TextbookDetailPage() {
       }));
 
       return {
-        textbook, subject, chapters,
+        textbook, subject, chapters: roadmapChapters,
         totalChapters, completedCount, progressPct,
       };
     },
