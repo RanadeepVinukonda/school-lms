@@ -10,7 +10,9 @@ import { formatDate } from '@/lib/utils';
 import { getLetterGrade } from '@/lib/format';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
 import { useQuery } from '@tanstack/react-query';
-import { mockExams, mockCorrections, mockSubjects, mockUsers } from '@/lib/mockData';
+import { getAllSubjects, getExamsBySubject, getCorrectionsByStudent } from '@/services/dataService';
+import { useAuthStore } from '@/store/authStore';
+import type { ExamItem, CorrectionItem } from '@/services/dataService';
 
 function Countdown({ endDate }: { endDate: string }) {
   const [remaining, setRemaining] = useState('');
@@ -47,34 +49,63 @@ function Countdown({ endDate }: { endDate: string }) {
   return <span className="text-xs font-medium">{remaining}</span>;
 }
 
+interface ExamWithSubject extends ExamItem {
+  subject: { id: string; name: string; code?: string; icon?: string; color?: string; category?: string } | null;
+}
+
+interface PastExamResult extends ExamWithSubject {
+  correction: CorrectionItem | null;
+  percentage: number | null;
+}
+
 export default function StudentExamsPage() {
+  const studentId = useAuthStore((s) => s.user?.id);
+
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['student-exams'],
+    queryKey: ['student-exams', studentId],
     queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 400));
+      const [allSubjects, corrections] = await Promise.all([
+        getAllSubjects(),
+        studentId ? getCorrectionsByStudent(studentId) : Promise.resolve([]),
+      ]);
+
+      // Get all exams by subject
+      const subjectIds = allSubjects.map((s) => s.id);
+      const examPromises = subjectIds.map((sid) => getExamsBySubject(sid));
+      const examResults = await Promise.all(examPromises);
+      const allExams = examResults.flat();
+
       const now = new Date();
-      const upcoming = mockExams.filter((e) => new Date(e.startDate) > now);
-      const past = mockExams.filter((e) => new Date(e.endDate) < now);
+      const upcoming: ExamWithSubject[] = [];
+      const past: PastExamResult[] = [];
 
-      const upcomingWithSubject = upcoming.map((e) => ({
-        ...e,
-        subject: mockSubjects.find((s) => s.id === e.subjectId),
-      }));
+      for (const exam of allExams) {
+        const subject = allSubjects.find((s) => s.id === exam.subjectId) ?? null;
+        const subjectData = subject
+          ? { id: subject.id, name: subject.name, code: subject.code, icon: subject.icon, color: subject.color, category: subject.category }
+          : null;
 
-      const pastWithResults = past.map((e) => {
-        const correction = mockCorrections.find(
-          (c) => c.examId === e.id && c.studentId === mockUsers.student1.id,
-        );
-        return {
-          ...e,
-          subject: mockSubjects.find((s) => s.id === e.subjectId),
-          correction: correction ?? null,
-          percentage: correction ? Math.round((correction.totalMarks / e.questions.reduce((s, q) => s + q.points, 0)) * 100) : null,
-        };
-      });
+        const examEnd = exam.endDate ? new Date(exam.endDate) : null;
+        const examStart = exam.startDate ? new Date(exam.startDate) : null;
 
-      return { upcoming: upcomingWithSubject, past: pastWithResults };
+        if (examEnd && examEnd < now) {
+          const correction = corrections.find((c) => c.examId === exam.id) ?? null;
+          const maxPoints = Array.isArray(exam.questions)
+            ? (exam.questions as Array<{ points?: number }>).reduce((s, q) => s + (q.points ?? 0), 0)
+            : 0;
+          const percentage = correction && maxPoints > 0
+            ? Math.round((correction.totalMarks ?? 0) / maxPoints * 100)
+            : null;
+
+          past.push({ ...exam, subject: subjectData, correction, percentage });
+        } else if (examStart && examStart > now) {
+          upcoming.push({ ...exam, subject: subjectData });
+        }
+      }
+
+      return { upcoming, past };
     },
+    enabled: !!studentId,
   });
 
   return (
@@ -138,7 +169,7 @@ export default function StudentExamsPage() {
                                       className="text-[10px] flex-shrink-0"
                                     >
                                       <Icon name="schedule" size={12} className="mr-1" />
-                                      <Countdown endDate={exam.startDate} />
+                                      {exam.startDate && <Countdown endDate={exam.startDate} />}
                                     </Badge>
                                   </div>
                                   <p className="text-body-sm text-muted-foreground mt-0.5">
@@ -154,11 +185,11 @@ export default function StudentExamsPage() {
                                     </span>
                                     <span className="flex items-center gap-1">
                                       <Icon name="quiz" size={14} />
-                                      {exam.questions.length} questions
+                                      {Array.isArray(exam.questions) ? exam.questions.length : 0} questions
                                     </span>
                                     <span className="flex items-center gap-1">
                                       <Icon name="calendar_today" size={14} />
-                                      {formatDate(exam.startDate)}
+                                      {exam.startDate ? formatDate(exam.startDate) : 'N/A'}
                                     </span>
                                   </div>
                                 </div>
@@ -227,11 +258,13 @@ export default function StudentExamsPage() {
                                     <div className="flex items-center gap-4 mt-2 text-body-sm text-muted-foreground">
                                       <span className="flex items-center gap-1">
                                         <Icon name="grade" size={14} />
-                                        {exam.correction.totalMarks}/{exam.questions.reduce((s, q) => s + q.points, 0)}
+                                        {exam.correction.totalMarks}/{Array.isArray(exam.questions)
+                                          ? (exam.questions as Array<{ points?: number }>).reduce((s, q) => s + (q.points ?? 0), 0)
+                                          : 0}
                                       </span>
                                       <span className="flex items-center gap-1">
                                         <Icon name="calendar_today" size={14} />
-                                        {formatDate(exam.correction.correctedAt)}
+                                        {exam.correction.correctedAt ? formatDate(exam.correction.correctedAt) : 'N/A'}
                                       </span>
                                       <Badge variant="outline" className="text-[10px]">
                                         {exam.correction.status}
@@ -259,7 +292,7 @@ export default function StudentExamsPage() {
                                     {exam.subject?.name ?? 'Unknown Subject'}
                                   </p>
                                   <p className="text-body-sm text-muted-foreground mt-1">
-                                    Taken on {formatDate(exam.endDate)} &middot; Results pending
+                                    Taken on {exam.endDate ? formatDate(exam.endDate) : 'N/A'} &middot; Results pending
                                   </p>
                                 </div>
                                 <Badge variant="secondary" className="text-[10px] flex-shrink-0">

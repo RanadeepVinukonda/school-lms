@@ -15,7 +15,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
-import { mockExams, mockCorrections } from '@/lib/mockData';
+import { getExam, getCorrectionsByExam } from '@/services/dataService';
+import { useAuthStore } from '@/store/authStore';
 import type { Exam, ExamQuestion } from '@/types';
 
 function qText(q: ExamQuestion): string { return ((q as unknown) as { question?: string }).question ?? q.text ?? ''; }
@@ -32,11 +33,11 @@ function ExamSkeleton() {
 }
 
 const typeLbl: Record<string, string> = { multiple_choice: 'Multiple Choice', true_false: 'True / False', essay: 'Essays', short_answer: 'Short Answer', problem_solving: 'Problem Solving' };
-const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 export default function ExamAttemptPage() {
   const { examId } = useParams();
   const navigate = useNavigate();
+  const userId = useAuthStore((s) => s.user?.id);
   const [phase, setPhase] = useState<'intro' | 'taking' | 'results'>('intro');
   const [cur, setCur] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -47,7 +48,39 @@ export default function ExamAttemptPage() {
 
   const { data: exam, isLoading, isError } = useQuery({
     queryKey: ['exam', examId],
-    queryFn: async () => { await sleep(300); return mockExams.find(e => e.id === examId) as Exam | undefined; },
+    queryFn: async () => {
+      if (!examId) return null;
+      const item = await getExam(examId);
+      if (!item) return null;
+      return {
+        id: item.id,
+        courseId: '',
+        title: item.title,
+        description: item.description ?? '',
+        instructions: '',
+        duration: item.duration ?? 30,
+        totalPoints: 0,
+        passingScore: 50,
+        questions: (item.questions ?? []) as ExamQuestion[],
+        status: (item.status as Exam['status']) ?? 'published',
+        startDate: item.startDate ?? '',
+        endDate: item.endDate ?? '',
+        isProctored: false,
+        shuffleQuestions: false,
+        showResults: true,
+        createdAt: item.createdAt ?? '',
+        updatedAt: '',
+      } satisfies Exam;
+    },
+    enabled: !!examId,
+  });
+
+  const { data: corrections } = useQuery({
+    queryKey: ['corrections', examId],
+    queryFn: async () => {
+      if (!examId) return [];
+      return getCorrectionsByExam(examId);
+    },
     enabled: !!examId,
   });
 
@@ -123,7 +156,7 @@ export default function ExamAttemptPage() {
     const wk = Object.entries(grp).filter(([, v]) => v.t > 0 && v.c / v.t < 0.7).map(([k]) => typeLbl[k] ?? k);
     if (!str.length && !wk.length) str.push('No significant strengths identified');
 
-    const cr = mockCorrections.find(c => c.examId === examId);
+    const cr = corrections?.[0];
     const fb = cr?.overallFeedback ?? (passed
       ? 'Excellent work! You have demonstrated a strong understanding of the material. Keep up the great effort!'
       : 'You are making progress but there are areas that need attention. Focus on reviewing the topics listed below and practice with additional exercises.');

@@ -12,19 +12,28 @@ import { Icon } from '@/components/ui/Icon';
 import { formatDate } from '@/lib/format';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
 import {
-  mockExams,
-  mockSubjects,
-  mockCorrections,
-  mockEnrollments,
-} from '@/lib/mockData';
+  getAllSubjects,
+  getAllEnrollments,
+  getExamsBySubject,
+  getCorrectionsByExam,
+} from '@/services/dataService';
 
 const NOW = new Date();
+
+interface ExamQuestion {
+  id: string;
+  type: string;
+  question: string;
+  points: number;
+  options?: string[];
+  correctAnswer?: string;
+}
 
 interface ExamData {
   id: string;
   title: string;
   description: string;
-  questions: (typeof mockExams)[0]['questions'];
+  questions: ExamQuestion[];
   duration: number;
   startDate: string;
   subjectName: string;
@@ -144,44 +153,69 @@ function ExamCard({
 }
 
 export default function TeacherExamsPage() {
-  const { isLoading, error, refetch } = useQuery({
+  const { isLoading, error, refetch, data } = useQuery({
     queryKey: ['teacher-exams'],
     queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 500));
-      return null;
+      const [allSubjects, allEnrollments] = await Promise.all([
+        getAllSubjects(),
+        getAllEnrollments(),
+      ]);
+
+      const examsArrays = await Promise.all(
+        allSubjects.map((s) => getExamsBySubject(s.id)),
+      );
+      const allExams = examsArrays.flat();
+
+      const correctionsArrays = await Promise.all(
+        allExams.map((e) => getCorrectionsByExam(e.id)),
+      );
+      const allCorrections = correctionsArrays.flat();
+
+      const now = new Date();
+
+      const mapped: ExamData[] = allExams.map((exam) => {
+        const subject = allSubjects.find((s) => s.id === exam.subjectId);
+        const corrections = allCorrections.filter((c) => c.examId === exam.id);
+        const studentIds = allEnrollments
+          .filter(
+            (enr) =>
+              (enr as unknown as { subjectId: string }).subjectId === exam.subjectId &&
+              enr.status === 'active',
+          )
+          .map((e) => e.studentId);
+        const gradedCount = corrections.filter((c) => c.status === 'published').length;
+        const submittedCount = corrections.length;
+        const pendingCount = studentIds.length - submittedCount;
+
+        const isFuture = exam.startDate ? new Date(exam.startDate) > now : false;
+        const hasGraded = gradedCount > 0;
+        const hasSubmissions = submittedCount > 0;
+
+        let status: 'graded' | 'pending' | 'upcoming' = 'upcoming';
+        if (isFuture) status = 'upcoming';
+        else if (hasGraded) status = 'graded';
+        else if (hasSubmissions || !isFuture) status = 'pending';
+
+        return {
+          id: exam.id,
+          title: exam.title,
+          description: exam.description ?? '',
+          questions: (exam.questions ?? []) as ExamQuestion[],
+          duration: exam.duration ?? 0,
+          startDate: exam.startDate ?? '',
+          subjectName: subject?.name ?? 'Unknown',
+          submittedCount,
+          pendingCount: Math.max(0, pendingCount),
+          status,
+        };
+      });
+
+      return { allExams: mapped, allSubjects };
     },
   });
 
-  const examsData = useMemo((): ExamData[] => {
-    return mockExams.map((exam) => {
-      const subject = mockSubjects.find((s) => s.id === exam.subjectId);
-      const corrections = mockCorrections.filter((c) => c.examId === exam.id);
-      const studentIds = mockEnrollments
-        .filter((e) => e.subjectId === exam.subjectId && e.status === 'active')
-        .map((e) => e.studentId);
-      const gradedCount = corrections.filter((c) => c.status === 'published').length;
-      const submittedCount = corrections.length;
-      const pendingCount = studentIds.length - submittedCount;
-
-      const isFuture = new Date(exam.startDate) > NOW;
-      const hasGraded = gradedCount > 0;
-      const hasSubmissions = submittedCount > 0;
-
-      let status: 'graded' | 'pending' | 'upcoming' = 'upcoming';
-      if (isFuture) status = 'upcoming';
-      else if (hasGraded) status = 'graded';
-      else if (hasSubmissions || !isFuture) status = 'pending';
-
-      return {
-        ...exam,
-        subjectName: subject?.name ?? 'Unknown',
-        submittedCount,
-        pendingCount,
-        gradedCount,
-        status,
-      };
-    });
-  }, []);
+  const examsData = data?.allExams ?? [];
+  const subjects = data?.allSubjects ?? [];
 
   const toCorrect = useMemo(
     () => examsData.filter((e) => e.status === 'pending' && e.submittedCount > 0),
@@ -205,6 +239,14 @@ export default function TeacherExamsPage() {
           onRetry={() => refetch()}
           loadingType="list"
           emptyMessage="No exams have been created yet"
+          emptyAction={
+            subjects.length > 0 ? undefined : (
+              <Link to="/teacher/subjects" className="gap-1 inline-flex items-center">
+                <Icon name="menu_book" size={16} />
+                Manage Subjects
+              </Link>
+            )
+          }
         >
           {() => (
             <>

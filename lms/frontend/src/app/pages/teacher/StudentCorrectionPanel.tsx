@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Icon } from '@/components/ui/Icon';
 import { getInitials } from '@/lib/utils';
 import { listItem } from '@/lib/motion';
-import { mockUsers, mockExams, mockCorrections } from '@/lib/mockData';
+import type { UserDoc, CorrectionItem, ExamItem } from '@/services/dataService';
 
 interface MarkEntry {
   questionId: string;
@@ -17,16 +17,16 @@ interface MarkEntry {
 }
 
 interface StudentStatus {
-  student: typeof mockUsers.student1;
+  student: UserDoc;
   submitted: boolean;
-  correction: (typeof mockCorrections)[0] | null;
+  correction: CorrectionItem | null;
   totalMarks: number | null;
   maxMarks: number;
 }
 
 interface StudentCorrectionPanelProps {
   student: StudentStatus;
-  exam: typeof mockExams[0];
+  exam: ExamItem;
   expandedStudent: string | null;
   marks: Record<string, MarkEntry[]>;
   overallFeedback: Record<string, string>;
@@ -54,6 +54,8 @@ export function StudentCorrectionPanel({
 }: StudentCorrectionPanelProps) {
   const isExpanded = expandedStudent === student.id;
 
+  const examQuestions = (exam.questions as { id: string; type: string; question: string; points: number; options?: string[]; correctAnswer?: string }[]) ?? [];
+
   return (
     <motion.div variants={listItem}>
       <div className="border-b last:border-b-0">
@@ -70,7 +72,7 @@ export function StudentCorrectionPanel({
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">{student.displayName}</p>
             <p className="text-xs text-muted-foreground">
-              {(student as typeof mockUsers.student1).studentId ?? student.id}
+              {student.studentId ?? student.id}
             </p>
           </div>
           <div className="text-right flex items-center gap-3">
@@ -81,7 +83,7 @@ export function StudentCorrectionPanel({
                 </Badge>
                 <span className="text-sm font-semibold tabular-nums">
                   {correction.totalMarks}/
-                  {exam.questions.reduce((s, q) => s + q.points, 0)}
+                  {examQuestions.reduce((s, q) => s + q.points, 0)}
                 </span>
               </>
             ) : (
@@ -105,7 +107,7 @@ export function StudentCorrectionPanel({
             className="overflow-hidden border-t bg-muted/20"
           >
             <div className="p-4 space-y-4">
-              {exam.questions.map((question, qi) => (
+              {examQuestions.map((question, qi) => (
                 <div key={question.id} className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
@@ -136,7 +138,7 @@ export function StudentCorrectionPanel({
                     </p>
                     <p className="text-sm italic">
                       {correction
-                        ? correction.questionMarks.find(
+                        ? (correction.questionMarks as { questionId: string; marks: number; feedback: string }[])?.find(
                             (qm) => qm.questionId === question.id,
                           )?.feedback ?? 'Answer provided'
                         : 'No submission yet'}
@@ -176,7 +178,7 @@ export function StudentCorrectionPanel({
                       />
                     </div>
                   </div>
-                  {qi < exam.questions.length - 1 && <Separator />}
+                  {qi < examQuestions.length - 1 && <Separator />}
                 </div>
               ))}
 

@@ -10,9 +10,17 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { useAuthStore } from '@/store/authStore';
 import {
-  mockUsers, mockClasses, mockSubjects, mockExams, mockGrades,
-  mockSubmissions, mockAssignments, mockCorrections, mockTimetable,
-} from '@/lib/mockData';
+  getAllSubjects,
+  getAllClasses,
+  getAllEnrollments,
+  getAllGrades,
+  getExamsBySubject,
+  getAssignmentsBySubject,
+  getCorrectionsByExam,
+  getSubmissionsByAssignment,
+  getTimetableByClass,
+  getNotificationsByUser,
+} from '@/services/dataService';
 import { pageTransition, listItem, listContainer } from '@/lib/motion';
 
 interface NeedsAttentionItem {
@@ -60,48 +68,78 @@ export default function TeacherDashboardPage() {
   const todayKey = todayDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
   const todayLabel = todayDate.toLocaleDateString('en-US', { weekday: 'long' });
 
-  const { isLoading, error, refetch } = useQuery({
-    queryKey: ['teacher-dashboard'],
-    queryFn: async () => { await new Promise((r) => setTimeout(r, 600)); return null; },
+  const { isLoading, error, refetch, data } = useQuery({
+    queryKey: ['teacher-dashboard', user?.id],
+    queryFn: async (): Promise<DashboardData> => {
+      const [allSubjects, allClasses, allEnrollments, allGrades] = await Promise.all([
+        getAllSubjects(),
+        getAllClasses(),
+        getAllEnrollments(),
+        getAllGrades(),
+      ]);
+
+      const myClass = allClasses.find((c) => c.teacherIds?.includes(user?.id ?? ''));
+      const classId = myClass?.id;
+      const subjectIds = myClass?.subjectIds ?? [];
+
+      const [examArrays, assignmentArrays, timetable] = await Promise.all([
+        Promise.all(subjectIds.map((sid) => getExamsBySubject(sid))),
+        Promise.all(subjectIds.map((sid) => getAssignmentsBySubject(sid))),
+        classId ? getTimetableByClass(classId) : Promise.resolve([]),
+      ]);
+
+      const allExams = examArrays.flat();
+      const allAssignments = assignmentArrays.flat();
+
+      const correctionArrays = await Promise.all(
+        allExams.map((exam) => getCorrectionsByExam(exam.id)),
+      );
+      const allCorrections = correctionArrays.flat();
+
+      const submissionArrays = await Promise.all(
+        allAssignments.map((ass) => getSubmissionsByAssignment(ass.id)),
+      );
+      const allSubmissions = submissionArrays.flat();
+      if (user?.id) await getNotificationsByUser(user.id);
+
+      const correctedExamIds = new Set(allCorrections.map((c) => c.examId));
+      const awaitingGradingCount = allSubmissions.filter((s) => s.status === 'submitted').length;
+      const awaitingCorrectionCount = allExams.filter((e) => !correctedExamIds.has(e.id)).length;
+      const lateAssignmentsCount = allAssignments.filter(
+        (a) => a.dueDate && new Date(a.dueDate) < todayDate,
+      ).length;
+
+      const todaySlots = timetable
+        .filter((t) => t.day === todayKey)
+        .sort((a, b) => (a.period ?? 0) - (b.period ?? 0))
+        .map((t) => ({
+          period: t.period ?? 0,
+          subjectName: allSubjects.find((s) => s.id === t.subjectId)?.name ?? 'Unknown',
+          room: t.room ?? '',
+        }));
+
+      const gradedEntries = allGrades.filter((g) => g.percentage != null);
+      const avgScore = gradedEntries.length > 0
+        ? Math.round(gradedEntries.reduce((sum, g) => sum + g.percentage, 0) / gradedEntries.length)
+        : 0;
+
+      const totalStudents = new Set(allGrades.map((g) => g.studentId)).size;
+
+      return {
+        needsAttention: [
+          { icon: 'rate_review', label: 'Awaiting Grading', count: awaitingGradingCount, color: 'text-warning', bg: 'bg-warning-container/60', link: '/teacher/assignments', description: 'Assignments to review' },
+          { icon: 'fact_check', label: 'Need Correction', count: awaitingCorrectionCount, color: 'text-error', bg: 'bg-error-container/60', link: '/teacher/exams', description: 'Exams to mark' },
+          { icon: 'warning', label: 'Late Submissions', count: lateAssignmentsCount, color: 'text-destructive', bg: 'bg-destructive/10', link: '/teacher/assignments?filter=late', description: 'Past due date' },
+        ],
+        todaySchedule: todaySlots,
+        stats: [
+          { icon: 'trending_up', label: 'Avg Score', value: `${avgScore}%`, color: 'text-success', bg: 'bg-success-container/60' },
+          { icon: 'school', label: 'Total Students', value: totalStudents, color: 'text-primary', bg: 'bg-primary-container/60' },
+          { icon: 'assignment', label: 'Exams Created', value: allExams.length, color: 'text-secondary', bg: 'bg-secondary-container/60' },
+        ],
+      };
+    },
   });
-
-  const data = useMemo((): DashboardData => {
-    const teacherMock = Object.values(mockUsers).find((u) => u.id === user?.id);
-    const classId = mockClasses.find((c) => c.classTeacherId === teacherMock?.id)?.id;
-
-    const correctedExamIds = new Set(mockCorrections.map((c) => c.examId));
-    const awaitingGradingCount = mockSubmissions.filter((s) => (s.status as string) === 'submitted').length;
-    const awaitingCorrectionCount = mockExams.filter((e) => !correctedExamIds.has(e.id)).length;
-    const lateAssignmentsCount = mockAssignments.filter((a) => new Date(a.dueDate) < todayDate).length;
-
-    const todaySlots = mockTimetable
-      .filter((t) => t.classId === classId && t.day === todayKey)
-      .sort((a, b) => a.period - b.period)
-      .map((t) => ({
-        period: t.period,
-        subjectName: mockSubjects.find((s) => s.id === t.subjectId)?.name ?? 'Unknown',
-        room: t.room,
-      }));
-
-    const gradedEntries = mockGrades.filter((g) => g.percentage != null);
-    const avgScore = gradedEntries.length > 0
-      ? Math.round(gradedEntries.reduce((sum, g) => sum + g.percentage, 0) / gradedEntries.length)
-      : 0;
-
-    return {
-      needsAttention: [
-        { icon: 'rate_review', label: 'Awaiting Grading', count: awaitingGradingCount, color: 'text-warning', bg: 'bg-warning-container/60', link: '/teacher/assignments', description: 'Assignments to review' },
-        { icon: 'fact_check', label: 'Need Correction', count: awaitingCorrectionCount, color: 'text-error', bg: 'bg-error-container/60', link: '/teacher/exams', description: 'Exams to mark' },
-        { icon: 'warning', label: 'Late Submissions', count: lateAssignmentsCount, color: 'text-destructive', bg: 'bg-destructive/10', link: '/teacher/assignments?filter=late', description: 'Past due date' },
-      ],
-      todaySchedule: todaySlots,
-      stats: [
-        { icon: 'trending_up', label: 'Avg Score', value: `${avgScore}%`, color: 'text-success', bg: 'bg-success-container/60' },
-        { icon: 'school', label: 'Total Students', value: new Set(mockGrades.map((g) => g.studentId)).size, color: 'text-primary', bg: 'bg-primary-container/60' },
-        { icon: 'assignment', label: 'Exams Created', value: mockExams.length, color: 'text-secondary', bg: 'bg-secondary-container/60' },
-      ],
-    };
-  }, [user, todayKey, todayDate]);
 
   const teacherName = user?.displayName?.split(' ')[0] ?? 'Teacher';
 
@@ -117,7 +155,6 @@ export default function TeacherDashboardPage() {
                 <p className="text-sm text-muted-foreground">Here&apos;s what needs your attention today</p>
               </motion.div>
 
-              {/* Section 1: Needs Attention */}
               <section>
                 <div className="flex items-center gap-2 mb-3">
                   <Icon name="notifications_active" size={20} className="text-destructive" aria-hidden />
@@ -128,7 +165,6 @@ export default function TeacherDashboardPage() {
                 </motion.div>
               </section>
 
-              {/* Section 2: Today's Schedule + Section 3: Class Performance */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <motion.div variants={listItem} initial="hidden" animate="show" className="lg:col-span-2">
                   <Card>
@@ -189,7 +225,6 @@ export default function TeacherDashboardPage() {
                 </motion.div>
               </div>
 
-              {/* Section 4: Quick Actions */}
               <motion.div variants={listItem} initial="hidden" animate="show">
                 <h2 className="text-title-md font-semibold mb-3">Quick Actions</h2>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

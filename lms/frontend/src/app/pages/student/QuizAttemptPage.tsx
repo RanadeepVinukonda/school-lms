@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input';
 import { pageTransition } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
-import { mockQuizzes } from '@/lib/mockData';
+import { getQuiz } from '@/services/dataService';
 import type { Quiz, Question } from '@/types';
 
 function QuizSkeleton() {
@@ -43,8 +43,25 @@ export default function QuizAttemptPage() {
   const { data: quiz, isLoading, isError } = useQuery({
     queryKey: ['quiz', quizId],
     queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 300));
-      return mockQuizzes.find((q) => q.id === quizId) as Quiz | undefined;
+      if (!quizId) return null;
+      const item = await getQuiz(quizId);
+      if (!item) return null;
+      return {
+        id: item.id,
+        courseId: '',
+        title: item.title,
+        description: item.description ?? '',
+        instructions: '',
+        timeLimit: item.timeLimit ?? 10,
+        passingScore: 50,
+        maxAttempts: 1,
+        shuffleQuestions: false,
+        showResults: true,
+        questions: (item.questions ?? []) as Question[],
+        status: 'published' as const,
+        createdAt: '',
+        updatedAt: '',
+      } satisfies Quiz;
     },
     enabled: !!quizId,
   });

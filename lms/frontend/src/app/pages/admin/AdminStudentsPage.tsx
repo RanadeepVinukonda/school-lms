@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -19,7 +19,8 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
-import { mockUsers, mockClasses } from '@/lib/mockData';
+import { getUserByRole, getAllClasses } from '@/services/dataService';
+import type { ClassEntry, UserDoc } from '@/services/dataService';
 
 interface StudentForm {
   name: string;
@@ -28,32 +29,43 @@ interface StudentForm {
   classId: string;
 }
 
-const emptyForm: StudentForm = { name: '', email: '', studentId: '', classId: '' };
+interface StudentDisplay extends UserDoc {
+  studentId: string;
+  classId: string;
+}
 
-const classOptions = mockClasses.map((c) => ({ value: c.id, label: c.name }));
+const emptyForm: StudentForm = { name: '', email: '', studentId: '', classId: '' };
 
 export default function AdminStudentsPage() {
   const [search, setSearch] = useState('');
   const [classFilter, setClassFilter] = useState('all');
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState<StudentForm>(emptyForm);
-  const [students, setStudents] = useState(
-    Object.values(mockUsers)
-      .filter((u) => u.role === 'student')
-      .map((u) => ({
-        ...u,
-        studentId: u.studentId || `STU${u.id.slice(1).toUpperCase()}`,
-        classId: u.classId || 'c1',
-      }))
-  );
+  const [students, setStudents] = useState<StudentDisplay[]>([]);
 
-  const { isLoading, isError, refetch } = useQuery({
+  const { data: fetchedStudents, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-students'],
-    queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 400));
-      return null;
-    },
+    queryFn: () => getUserByRole('student'),
   });
+
+  const { data: classes = [] } = useQuery({
+    queryKey: ['admin-classes-options'],
+    queryFn: getAllClasses,
+  });
+
+  useEffect(() => {
+    if (fetchedStudents) {
+      setStudents(
+        fetchedStudents.map((u) => ({
+          ...u,
+          studentId: u.studentId || `STU${u.id.slice(0, 4).toUpperCase()}`,
+          classId: u.classId || '',
+        }))
+      );
+    }
+  }, [fetchedStudents]);
+
+  const classOptions = classes.map((c: ClassEntry) => ({ value: c.id, label: c.name }));
 
   const filtered = useMemo(
     () =>
@@ -71,14 +83,16 @@ export default function AdminStudentsPage() {
       toast.error('Please fill in all fields');
       return;
     }
-    const newStudent = {
+    const newStudent: StudentDisplay = {
       id: `s${Date.now()}`,
       email: form.email,
       displayName: form.name,
-      role: 'student' as const,
+      role: 'student',
       studentId: form.studentId,
       classId: form.classId,
-      avatar: '',
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
     setStudents((prev) => [...prev, newStudent]);
     setForm(emptyForm);
@@ -95,7 +109,7 @@ export default function AdminStudentsPage() {
     <>
       <SEOHead title="Students" description="Manage students" canonical="/admin/students" />
       <DataFetchWrapper
-        data={isLoading || isError ? undefined : ({})}
+        data={students}
         isLoading={isLoading}
         error={isError ? new Error('Failed to load students') : null}
         onRetry={() => refetch()}
@@ -180,7 +194,7 @@ export default function AdminStudentsPage() {
                     </thead>
                     <tbody className="divide-y-outline-variant divide-y">
                       {filtered.map((student) => {
-                        const className = mockClasses.find((c) => c.id === student.classId)?.name || '\u2014';
+                        const className = classes.find((c: ClassEntry) => c.id === student.classId)?.name || '\u2014';
                         return (
                           <tr key={student.id} className="hover:bg-surface-variant/40 transition-colors">
                             <td className="px-4 py-3">

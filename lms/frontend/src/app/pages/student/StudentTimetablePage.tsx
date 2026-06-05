@@ -6,7 +6,14 @@ import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
 import { pageTransition } from '@/lib/motion';
 import { useQuery } from '@tanstack/react-query';
-import { mockTimetable, mockSubjects, mockUsers, days, periods } from '@/lib/mockData';
+import { getTimetableByClass, getSubject, getUser } from '@/services/dataService';
+import type { Subject as DataServiceSubject, UserDoc, TimetableEntry } from '@/services/dataService';
+import { useAuthStore } from '@/store/authStore';
+
+interface TimetableSlot extends TimetableEntry {
+  subject: DataServiceSubject | null;
+  teacher: UserDoc | null;
+}
 
 const DAY_LABELS: Record<string, string> = {
   monday: 'Mon',
@@ -24,28 +31,39 @@ const DAY_FULL: Record<string, string> = {
   friday: 'Friday',
 };
 
+const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'] as const;
+const periods = [1, 2, 3, 4, 5, 6, 7, 8];
+
 export default function StudentTimetablePage() {
+  const student = useAuthStore((s) => s.user);
+  const classId = (student as { classId?: string } | null)?.classId;
+
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['student-timetable'],
+    queryKey: ['student-timetable', classId],
     queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 300));
-      const student = mockUsers.student1;
-      const classId = student.classId;
       if (!classId) return null;
 
-      const slots = mockTimetable.filter((tt) => tt.classId === classId);
+      const slots = await getTimetableByClass(classId);
       if (slots.length === 0) return null;
 
-      return slots.map((slot) => {
-        const subject = mockSubjects.find((s) => s.id === slot.subjectId);
-        const teacher = Object.values(mockUsers).find((u) => u.id === slot.teacherId);
-        return {
-          ...slot,
-          subject: subject ?? null,
-          teacher: teacher ?? null,
-        };
-      });
+      const subjectIds = [...new Set(slots.map((s) => s.subjectId).filter(Boolean))] as string[];
+      const teacherIds = [...new Set(slots.map((s) => s.teacherId).filter(Boolean))] as string[];
+
+      const [subjects, teachers] = await Promise.all([
+        Promise.all(subjectIds.map((sid) => getSubject(sid))),
+        Promise.all(teacherIds.map((tid) => getUser(tid))),
+      ]);
+
+      const subjectMap = new Map(subjects.filter(Boolean).map((s) => [s!.id, s!]));
+      const teacherMap = new Map(teachers.filter(Boolean).map((t) => [t!.id, t!]));
+
+      return slots.map((slot) => ({
+        ...slot,
+        subject: slot.subjectId ? (subjectMap.get(slot.subjectId) ?? null) : null,
+        teacher: slot.teacherId ? (teacherMap.get(slot.teacherId) ?? null) : null,
+      }));
     },
+    enabled: !!classId,
   });
 
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
@@ -76,7 +94,7 @@ export default function StudentTimetablePage() {
           onRetry={() => refetch()}
           errorTitle="Failed to load timetable"
         >
-          {(slots) => (
+          {(slots: TimetableSlot[]) => (
             <div className="overflow-x-auto -mx-4 px-4 pb-4">
               <div className="grid grid-cols-6 gap-2 min-w-[640px]">
                 <div className="sticky left-0 bg-background z-10">
@@ -141,14 +159,14 @@ export default function StudentTimetablePage() {
                           )}
                           style={{
                             backgroundColor: slot.subject
-                              ? `${slot.subject.color}15`
+                              ? `${slot.subject.color || '#6366f1'}15`
                               : 'hsl(var(--surface-variant))',
                           }}
                         >
                           {slot.subject && (
                             <div
                               className="absolute top-0 left-0 w-1 h-full rounded-l"
-                              style={{ backgroundColor: slot.subject.color }}
+                              style={{ backgroundColor: slot.subject.color || '#6366f1' }}
                             />
                           )}
                           <div className="pl-2 min-w-0">

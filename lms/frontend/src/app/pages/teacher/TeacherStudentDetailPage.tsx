@@ -13,89 +13,109 @@ import { Icon } from '@/components/ui/Icon';
 import { getInitials } from '@/lib/utils';
 import { formatDate, getLetterGrade } from '@/lib/format';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
-import {
-  mockUsers,
-  mockClasses,
-  mockSubjects,
-  mockEnrollments,
-  mockGrades,
-} from '@/lib/mockData';
+import type { UserDoc, Subject, GradeEntry } from '@/services/dataService';
+import { getUser, getClass, getAllSubjects, getGradesByStudent } from '@/services/dataService';
+
+interface SubjectPerformance {
+  id: string;
+  name: string;
+  code: string;
+  color?: string;
+  icon?: string;
+  percentage: number;
+}
+
+interface GradeRow extends GradeEntry {
+  subject: Subject | undefined;
+  type: string;
+}
 
 interface StudentDetailData {
-  student: typeof mockUsers.student1;
-  studentClass: (typeof mockClasses)[0] | null;
-  subjectPerformance: ((typeof mockSubjects)[0] & { percentage: number })[];
-  grades: (typeof mockGrades[0] & { subject: (typeof mockSubjects)[0] | undefined })[];
-  performanceTrend: (typeof mockGrades[0] & { subject: (typeof mockSubjects)[0] | undefined })[];
+  student: UserDoc;
+  studentClass: { id: string; name: string } | null;
+  subjectPerformance: SubjectPerformance[];
+  grades: GradeRow[];
+  performanceTrend: GradeRow[];
+}
+
+function pctColor(pct: number) {
+  return pct >= 80 ? 'text-on-success-container' : pct >= 60 ? 'text-on-warning-container' : 'text-on-error-container';
 }
 
 export default function TeacherStudentDetailPage() {
   const { id } = useParams<{ id: string }>();
 
-  const { isLoading, error, refetch } = useQuery({
+  const { isLoading, error, refetch, data } = useQuery({
     queryKey: ['teacher-student-detail', id],
-    queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 400));
-      return null;
+    queryFn: async (): Promise<StudentDetailData | null> => {
+      if (!id) return null;
+
+      const [student, allSubjects, grades] = await Promise.all([
+        getUser(id),
+        getAllSubjects(),
+        getGradesByStudent(id),
+      ]);
+
+      if (!student) return null;
+
+      const studentClass = student.classId ? await getClass(student.classId) : null;
+
+      const gradesWithSubject: GradeRow[] = grades
+        .map((g) => ({
+          ...g,
+          subject: allSubjects.find((s) => s.id === g.subjectId),
+          type: (g as unknown as { type: string }).type ?? 'assignment',
+        }))
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        );
+
+      const bySubject = new Map<string, { scores: number[]; totalPoints: number[] }>();
+      grades.forEach((g) => {
+        const existing = bySubject.get(g.subjectId ?? '') ?? {
+          scores: [],
+          totalPoints: [],
+        };
+        existing.scores.push(g.score);
+        existing.totalPoints.push(g.totalPoints);
+        bySubject.set(g.subjectId ?? '', existing);
+      });
+
+      const subjectPerformance: SubjectPerformance[] = [];
+      for (const [subId, data] of bySubject) {
+        const sub = allSubjects.find((s) => s.id === subId);
+        if (!sub) continue;
+        const totalScore = data.scores.reduce((a, b) => a + b, 0);
+        const totalMax = data.totalPoints.reduce((a, b) => a + b, 0);
+        const percentage = totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : 0;
+        subjectPerformance.push({ id: sub.id, name: sub.name, code: sub.code, color: sub.color, icon: sub.icon, percentage });
+      }
+
+      const performanceTrend = [...gradesWithSubject]
+        .sort(
+          (a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        )
+        .slice(-10);
+
+      return {
+        student,
+        studentClass: studentClass ? { id: studentClass.id, name: studentClass.name } : null,
+        subjectPerformance,
+        grades: gradesWithSubject,
+        performanceTrend,
+      };
     },
   });
 
-  const student = useMemo(() => {
-    if (!id) return null;
-    const found = Object.values(mockUsers).find((u) => u.id === id && u.role === 'student');
-    return found ? (found as typeof mockUsers.student1) : null;
-  }, [id]);
-
-  const detailData = useMemo((): StudentDetailData | null => {
-    if (!student) return null;
-
-    const studentClass = mockClasses.find((c) => c.id === student.classId) ?? null;
-
-    const grades = mockGrades
-      .filter((g) => g.studentId === student.id)
-      .map((g) => ({
-        ...g,
-        subject: mockSubjects.find((s) => s.id === g.subjectId),
-      }))
-      .sort((a, b) => new Date(b.gradedAt).getTime() - new Date(a.gradedAt).getTime());
-
-    const bySubject = new Map<string, { scores: number[]; maxScores: number[] }>();
-    mockGrades
-      .filter((g) => g.studentId === student.id)
-      .forEach((g) => {
-        const existing = bySubject.get(g.subjectId) ?? { scores: [], maxScores: [] };
-        existing.scores.push(g.score);
-        existing.maxScores.push(g.maxScore);
-        bySubject.set(g.subjectId, existing);
-      });
-    const subjectPerformance = mockSubjects
-      .map((sub) => {
-        const data = bySubject.get(sub.id);
-        if (!data) return null;
-        const totalScore = data.scores.reduce((a, b) => a + b, 0);
-        const totalMax = data.maxScores.reduce((a, b) => a + b, 0);
-        const percentage = totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : 0;
-        return { ...sub, percentage };
-      })
-      .filter(Boolean) as (typeof mockSubjects[0] & { percentage: number })[];
-
-    const performanceTrend = [...grades]
-      .sort((a, b) => new Date(a.gradedAt).getTime() - new Date(b.gradedAt).getTime())
-      .slice(-10);
-
-    return { student, studentClass, subjectPerformance, grades, performanceTrend };
-  }, [student]);
-
-  const notFound = !isLoading && !error && !student;
-
-  const pctColor = (pct: number) =>
-    pct >= 80 ? 'text-on-success-container' : pct >= 60 ? 'text-on-warning-container' : 'text-on-error-container';
+  const notFound = !isLoading && !error && !data && !!id;
 
   return (
     <>
       <SEOHead
-        title={student ? `${student.displayName} - Student Details` : 'Student Details'}
-        description={student ? `Performance and grades for ${student.displayName}` : 'View student details'}
+        title={data ? `${data.student.displayName} - Student Details` : 'Student Details'}
+        description={data ? `Performance and grades for ${data.student.displayName}` : 'View student details'}
       />
       <motion.div
         variants={pageTransition}
@@ -122,13 +142,13 @@ export default function TeacherStudentDetailPage() {
           </Card>
         ) : (
           <DataFetchWrapper
-            data={detailData}
+            data={data}
             isLoading={isLoading}
             error={error}
             onRetry={() => refetch()}
             loadingType="detail"
           >
-            {(data) => (
+            {(d) => (
               <>
                 <motion.div variants={listItem}>
                   <Button variant="ghost" size="sm" asChild className="gap-1 -ml-2">
@@ -144,22 +164,22 @@ export default function TeacherStudentDetailPage() {
                     <CardContent className="p-6">
                       <div className="flex items-center gap-5">
                         <Avatar className="h-16 w-16">
-                          <AvatarFallback className="text-lg">{getInitials(data.student.displayName)}</AvatarFallback>
+                          <AvatarFallback className="text-lg">{getInitials(d.student.displayName)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <h1 className="text-headline-sm">{data.student.displayName}</h1>
+                          <h1 className="text-headline-sm">{d.student.displayName}</h1>
                           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Icon name="badge" size={15} />
-                              {data.student.studentId}
+                              {d.student.studentId}
                             </span>
                             <span className="flex items-center gap-1">
                               <Icon name="school" size={15} />
-                              {data.studentClass?.name ?? 'Unknown Class'}
+                              {d.studentClass?.name ?? 'Unknown Class'}
                             </span>
                             <span className="flex items-center gap-1">
                               <Icon name="email" size={15} />
-                              {data.student.email}
+                              {d.student.email}
                             </span>
                           </div>
                         </div>
@@ -177,14 +197,14 @@ export default function TeacherStudentDetailPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {data.subjectPerformance.length === 0 ? (
+                      {d.subjectPerformance.length === 0 ? (
                         <div className="flex flex-col items-center gap-2 py-6 text-center">
                           <Icon name="graded" size={32} className="text-muted-foreground/40" />
                           <p className="text-sm text-muted-foreground">No grades recorded yet</p>
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                          {data.subjectPerformance.map((sub) => (
+                          {d.subjectPerformance.map((sub) => (
                             <div key={sub.id} className="p-3 rounded-lg border bg-card space-y-2">
                               <div className="flex items-center gap-2">
                                 <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: sub.color }} />
@@ -217,7 +237,7 @@ export default function TeacherStudentDetailPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
-                      {data.grades.length === 0 ? (
+                      {d.grades.length === 0 ? (
                         <div className="flex flex-col items-center gap-2 py-8 text-center">
                           <Icon name="graded" size={32} className="text-muted-foreground/40" />
                           <p className="text-sm text-muted-foreground">No grades yet</p>
@@ -235,7 +255,7 @@ export default function TeacherStudentDetailPage() {
                               </tr>
                             </thead>
                             <tbody>
-                              {data.grades.map((grade) => (
+                              {d.grades.map((grade) => (
                                 <tr key={grade.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                                   <td className="px-4 py-3">
                                     <p className="font-medium">{grade.itemName}</p>
@@ -247,13 +267,13 @@ export default function TeacherStudentDetailPage() {
                                     {grade.subject?.name ?? 'Unknown'}
                                   </td>
                                   <td className="px-4 py-3 text-center tabular-nums">
-                                    {grade.score}/{grade.maxScore}
+                                    {grade.score}/{grade.totalPoints}
                                   </td>
                                   <td className={`px-4 py-3 text-center font-semibold tabular-nums ${pctColor(grade.percentage)}`}>
                                     {grade.percentage}%
                                   </td>
                                   <td className="px-4 py-3 text-right text-muted-foreground text-xs">
-                                    {formatDate(grade.gradedAt)}
+                                    {formatDate(grade.createdAt)}
                                   </td>
                                 </tr>
                               ))}
@@ -274,7 +294,7 @@ export default function TeacherStudentDetailPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {data.performanceTrend.length < 2 ? (
+                      {d.performanceTrend.length < 2 ? (
                         <div className="flex flex-col items-center gap-2 py-6 text-center">
                           <Icon name="show_chart" size={32} className="text-muted-foreground/40" />
                           <p className="text-sm text-muted-foreground">
@@ -283,8 +303,8 @@ export default function TeacherStudentDetailPage() {
                         </div>
                       ) : (
                         <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-2">
-                          {data.performanceTrend.map((grade, idx) => {
-                            const prevGrade = idx > 0 ? data.performanceTrend[idx - 1] : null;
+                          {d.performanceTrend.map((grade, idx) => {
+                            const prevGrade = idx > 0 ? d.performanceTrend[idx - 1] : null;
                             const diff = prevGrade != null ? grade.percentage - prevGrade.percentage : null;
                             return (
                               <motion.div
@@ -295,7 +315,7 @@ export default function TeacherStudentDetailPage() {
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium truncate">{grade.itemName}</p>
                                   <p className="text-xs text-muted-foreground">
-                                    {grade.subject?.name ?? 'Unknown'} &middot; {formatDate(grade.gradedAt)}
+                                    {grade.subject?.name ?? 'Unknown'} &middot; {formatDate(grade.createdAt)}
                                   </p>
                                 </div>
                                 <div className="text-right flex items-center gap-2">

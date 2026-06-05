@@ -4,16 +4,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
-import {
-  mockAssignments,
-  mockQuizzes,
-  mockExams,
-  mockSubjects,
-  mockTextbooks,
-} from '@/lib/mockData';
 import { formatDate, cn } from '@/lib/utils';
 import { listContainer, listItem } from '@/lib/motion';
 import { formatTime } from '@/lib/format';
+import type { AssignmentItem, ExamItem, QuizItem } from '@/services/dataService';
+import type { Subject } from '@/types';
+import type { Textbook } from '@/types/textbook';
 
 export type TaskType = 'assignment' | 'quiz' | 'exam';
 export type UrgencyLevel = 'overdue' | 'today' | 'tomorrow' | 'thisWeek' | 'later';
@@ -107,32 +103,43 @@ export function getUrgencyLevel(date: Date | null): UrgencyLevel {
   return 'later';
 }
 
-function findSubjectName(textbookId?: string, subjectId?: string): string {
+function findSubjectName(
+  subjects: Subject[],
+  textbooks: Textbook[],
+  textbookId?: string,
+  subjectId?: string,
+): string {
   if (subjectId) {
-    const subject = mockSubjects.find((s) => s.id === subjectId);
+    const subject = subjects.find((s) => s.id === subjectId);
     if (subject) return subject.name;
   }
   if (textbookId) {
-    const textbook = mockTextbooks.find((t) => t.id === textbookId);
+    const textbook = textbooks.find((t) => t.id === textbookId);
     if (textbook) {
-      const subject = mockSubjects.find((s) => s.id === textbook.subjectId);
+      const subject = subjects.find((s) => s.id === textbook.subjectId);
       if (subject) return subject.name;
     }
   }
   return 'Unknown Subject';
 }
 
-export function buildTasks(): TaskItem[] {
+export function buildTasks(
+  assignments: AssignmentItem[],
+  quizzes: QuizItem[],
+  exams: ExamItem[],
+  subjects: Subject[],
+  textbooks: Textbook[],
+): TaskItem[] {
   const tasks: TaskItem[] = [];
 
-  for (const a of mockAssignments) {
-    const dueDate = new Date(a.dueDate);
+  for (const a of assignments) {
+    const dueDate = a.dueDate ? new Date(a.dueDate) : null;
     tasks.push({
       id: a.id,
       type: 'assignment',
       title: a.title,
-      description: a.description,
-      subjectName: findSubjectName(a.textbookId),
+      description: a.description ?? '',
+      subjectName: findSubjectName(subjects, textbooks, a.textbookId),
       date: dueDate,
       urgency: getUrgencyLevel(dueDate),
       linkTo: `/assignments/${a.id}`,
@@ -141,34 +148,34 @@ export function buildTasks(): TaskItem[] {
     });
   }
 
-  for (const q of mockQuizzes) {
+  for (const q of quizzes) {
     tasks.push({
       id: q.id,
       type: 'quiz',
       title: q.title,
-      description: q.description,
-      subjectName: findSubjectName(q.textbookId),
+      description: q.description ?? '',
+      subjectName: findSubjectName(subjects, textbooks, q.textbookId),
       date: null,
       urgency: 'later',
       linkTo: `/quizzes/${q.id}/attempt`,
       timeLimit: q.timeLimit,
-      questionCount: q.questions.length,
+      questionCount: Array.isArray(q.questions) ? q.questions.length : 0,
     });
   }
 
-  for (const e of mockExams) {
-    const startDate = new Date(e.startDate);
+  for (const e of exams) {
+    const startDate = e.startDate ? new Date(e.startDate) : null;
     tasks.push({
       id: e.id,
       type: 'exam',
       title: e.title,
-      description: e.description,
-      subjectName: findSubjectName(undefined, e.subjectId),
+      description: e.description ?? '',
+      subjectName: findSubjectName(subjects, textbooks, undefined, e.subjectId),
       date: startDate,
       urgency: getUrgencyLevel(startDate),
       linkTo: `/exams/${e.id}`,
       duration: e.duration,
-      questionCount: e.questions.length,
+      questionCount: Array.isArray(e.questions) ? e.questions.length : 0,
     });
   }
 

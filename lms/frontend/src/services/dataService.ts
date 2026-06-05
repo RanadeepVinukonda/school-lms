@@ -163,3 +163,194 @@ export async function markAllNotificationsRead(userId: string): Promise<void> {
   }));
   await Promise.all(batch);
 }
+
+// ── Assignments ──
+export interface AssignmentItem {
+  id: string;
+  title: string;
+  description?: string;
+  subjectId?: string;
+  chapterId?: string;
+  textbookId?: string;
+  lessonId?: string;
+  dueDate?: string;
+  points?: number;
+  status?: string;
+  submissionCount?: number;
+  createdAt?: string;
+}
+
+export async function getAssignmentsBySubject(subjectId: string): Promise<AssignmentItem[]> {
+  const q = query(collection(db, 'assignments'), where('subjectId', '==', subjectId));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as AssignmentItem));
+}
+
+export async function getAssignment(id: string): Promise<AssignmentItem | null> {
+  const snap = await getDoc(doc(db, 'assignments', id));
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() } as AssignmentItem;
+}
+
+// ── Submissions ──
+export interface SubmissionItem {
+  id: string;
+  assignmentId: string;
+  studentId: string;
+  content?: string;
+  submittedAt?: string;
+  status?: string;
+  grade?: number;
+  feedback?: string;
+}
+
+export async function getSubmissionsByAssignment(assignmentId: string): Promise<SubmissionItem[]> {
+  const q = query(collection(db, 'submissions'), where('assignmentId', '==', assignmentId));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as SubmissionItem));
+}
+
+// ── Exams ──
+export interface ExamItem {
+  id: string;
+  title: string;
+  description?: string;
+  subjectId?: string;
+  duration?: number;
+  questions?: unknown[];
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+  createdAt?: string;
+}
+
+export async function getExamsBySubject(subjectId: string): Promise<ExamItem[]> {
+  const q = query(collection(db, 'exams'), where('subjectId', '==', subjectId));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as ExamItem));
+}
+
+export async function getExam(id: string): Promise<ExamItem | null> {
+  const snap = await getDoc(doc(db, 'exams', id));
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() } as ExamItem;
+}
+
+// ── Corrections ──
+export interface CorrectionItem {
+  id: string;
+  examId: string;
+  studentId: string;
+  teacherId: string;
+  questionMarks?: unknown[];
+  totalMarks?: number;
+  overallFeedback?: string;
+  status?: string;
+  correctedAt?: string;
+}
+
+export async function getCorrectionsByStudent(studentId: string): Promise<CorrectionItem[]> {
+  const q = query(collection(db, 'corrections'), where('studentId', '==', studentId));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as CorrectionItem));
+}
+
+export async function getCorrectionsByExam(examId: string): Promise<CorrectionItem[]> {
+  const q = query(collection(db, 'corrections'), where('examId', '==', examId));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as CorrectionItem));
+}
+
+// ── Quizzes ──
+export interface QuizItem {
+  id: string;
+  title: string;
+  description?: string;
+  lessonId?: string;
+  chapterId?: string;
+  textbookId?: string;
+  timeLimit?: number;
+  questions?: unknown[];
+  status?: string;
+}
+
+export async function getQuiz(id: string): Promise<QuizItem | null> {
+  const snap = await getDoc(doc(db, 'quizzes', id));
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() } as QuizItem;
+}
+
+// ── Timetable ──
+export interface TimetableEntry {
+  id: string;
+  classId?: string;
+  day?: string;
+  period?: number;
+  subjectId?: string;
+  teacherId?: string;
+  room?: string;
+}
+
+export async function getTimetableByClass(classId: string): Promise<TimetableEntry[]> {
+  const q = query(collection(db, 'timetable'), where('classId', '==', classId));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as TimetableEntry));
+}
+
+// ── Users ──
+export interface UserDoc {
+  id: string;
+  email: string;
+  displayName: string;
+  role: string;
+  studentId?: string;
+  classId?: string;
+  teacherId?: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export async function getUserByRole(role: string): Promise<UserDoc[]> {
+  const q = query(collection(db, 'users'), where('role', '==', role));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserDoc));
+}
+
+export async function getUser(id: string): Promise<UserDoc | null> {
+  const snap = await getDoc(doc(db, 'users', id));
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() } as UserDoc;
+}
+
+export async function getAllUsers(): Promise<UserDoc[]> {
+  const snap = await getDocs(collection(db, 'users'));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserDoc));
+}
+
+// ── Lessons ──
+export interface LessonItem {
+  id: string;
+  textbookId?: string;
+  chapterId?: string;
+  title: string;
+  contentType?: string;
+  videoUrl?: string;
+  content?: string;
+  duration?: number;
+  order?: number;
+  quizId?: string;
+  assignmentId?: string;
+}
+
+export async function getLessonsByChapter(chapterId: string): Promise<LessonItem[]> {
+  const q = query(collection(db, 'lessons'), where('chapterId', '==', chapterId));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as LessonItem));
+}
+
+export async function getLesson(id: string): Promise<LessonItem | null> {
+  const snap = await getDoc(doc(db, 'lessons', id));
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() } as LessonItem;
+}

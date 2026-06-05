@@ -12,7 +12,13 @@ import { OptionsSelect } from '@/components/ui/select';
 import { getInitials } from '@/lib/utils';
 import { getLetterGrade } from '@/lib/format';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
-import { mockUsers, mockClasses, mockSubjects, mockEnrollments, mockGrades } from '@/lib/mockData';
+import {
+  getUserByRole,
+  getAllClasses,
+  getAllSubjects,
+  getAllEnrollments,
+  getAllGrades,
+} from '@/services/dataService';
 
 interface StudentRow {
   id: string;
@@ -26,49 +32,66 @@ interface StudentRow {
 export default function TeacherStudentsPage() {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('all');
 
-  const { isLoading, error, refetch } = useQuery({
+  const { isLoading, error, refetch, data } = useQuery({
     queryKey: ['teacher-students'],
     queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 500));
-      return null;
+      const [students, classes, subjects, enrollments, grades] = await Promise.all([
+        getUserByRole('student'),
+        getAllClasses(),
+        getAllSubjects(),
+        getAllEnrollments(),
+        getAllGrades(),
+      ]);
+      return { students, classes, subjects, enrollments, grades };
     },
   });
+
+  const allStudents = data?.students ?? [];
+  const allClasses = data?.classes ?? [];
+  const allSubjects = data?.subjects ?? [];
+  const allEnrollments = data?.enrollments ?? [];
+  const allGrades = data?.grades ?? [];
 
   const subjectOptions = useMemo(
     () => [
       { value: 'all', label: 'All Subjects' },
-      ...mockSubjects.map((s) => ({ value: s.id, label: s.name })),
+      ...allSubjects.map((s) => ({ value: s.id, label: s.name })),
     ],
-    [],
+    [allSubjects],
   );
 
   const students = useMemo((): StudentRow[] => {
     const studentIds =
       selectedSubjectId === 'all'
-        ? [...new Set(mockEnrollments.map((e) => e.studentId))]
-        : mockEnrollments
-            .filter((e) => e.subjectId === selectedSubjectId)
+        ? [...new Set(allEnrollments.map((e) => e.studentId))]
+        : allEnrollments
+            .filter(
+              (e) =>
+                (e as unknown as { subjectId: string }).subjectId === selectedSubjectId,
+            )
             .map((e) => e.studentId);
 
     return studentIds
       .map((id) => {
-        const user = Object.values(mockUsers).find((u) => u.id === id && u.role === 'student');
+        const user = allStudents.find((u) => u.id === id && u.role === 'student');
         if (!user) return null;
 
-        const studentUser = user as typeof mockUsers.student1;
-        const studentClass = mockClasses.find((c) => c.id === studentUser.classId);
-        const studentGrades = mockGrades.filter((g) => g.studentId === id);
+        const studentClass = allClasses.find((c) => c.id === user.classId);
+        const studentGrades = allGrades.filter((g) => g.studentId === id);
         const overallPercentage =
           studentGrades.length > 0
-            ? Math.round(studentGrades.reduce((sum, g) => sum + g.percentage, 0) / studentGrades.length)
+            ? Math.round(
+                studentGrades.reduce((sum, g) => sum + g.percentage, 0) /
+                  studentGrades.length,
+              )
             : 0;
 
-        const enrolledSubjects = mockEnrollments.filter((e) => e.studentId === id);
+        const enrolledSubjects = allEnrollments.filter((e) => e.studentId === id);
 
         return {
-          id: studentUser.id,
-          displayName: studentUser.displayName,
-          studentId: studentUser.studentId ?? id,
+          id: user.id,
+          displayName: user.displayName,
+          studentId: user.studentId ?? id,
           className: studentClass?.name ?? 'Unknown',
           overallPercentage,
           subjectCount: enrolledSubjects.length,
@@ -76,7 +99,7 @@ export default function TeacherStudentsPage() {
       })
       .filter((s): s is StudentRow => s !== null)
       .sort((a, b) => b.overallPercentage - a.overallPercentage);
-  }, [selectedSubjectId]);
+  }, [selectedSubjectId, allStudents, allClasses, allEnrollments, allGrades]);
 
   return (
     <>
@@ -114,7 +137,11 @@ export default function TeacherStudentsPage() {
           error={error}
           onRetry={() => refetch()}
           loadingType="list"
-          emptyMessage={mockSubjects.length > 0 ? 'No students are enrolled in the selected subject yet.' : 'No subjects available. Contact your administrator.'}
+          emptyMessage={
+            allSubjects.length > 0
+              ? 'No students are enrolled in the selected subject yet.'
+              : 'No subjects available. Contact your administrator.'
+          }
           emptyAction={
             <Link to="/teacher/subjects" className="gap-1 inline-flex items-center">
               <Icon name="menu_book" size={16} />
