@@ -10,13 +10,14 @@ import { Progress } from '@/components/ui/progress';
 import { Icon } from '@/components/ui/Icon';
 import { useAuthStore } from '@/store/authStore';
 import { cn, getTimeGreeting } from '@/lib/utils';
-import { formatRelativeTime, formatTime } from '@/lib/format';
+import { formatRelativeTime } from '@/lib/format';
 import { pageTransition, listItem } from '@/lib/motion';
 import {
   mockUsers, mockEnrollments, mockSubjects,
   mockAssignments, mockExams, mockTimetable, mockGrades,
 } from '@/lib/mockData';
-import { getAllTextbooks } from '@/services/textbookService';
+import { getAllTextbooks, getAllConceptProgress } from '@/services/textbookService';
+import { ROUTES } from '@/lib/constants';
 
 const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
 
@@ -36,7 +37,7 @@ const mockAnnouncements = [
   { id: 'ann4', type: 'school' as const, title: 'Library Hours Updated', body: 'The school library will now be open until 6 PM on weekdays.', createdAt: new Date(Date.now() - 86400000 * 3).toISOString(), priority: 'normal' as const, icon: 'local_library' as const },
 ];
 
-interface ContinueLearning { subjectName: string; subjectColor: string; subjectIcon: string; textbookTitle: string; chapterTitle: string; lessonTitle: string; lessonId: string; progress: number; duration: number }
+interface ContinueLearning { subjectName: string; subjectColor: string; subjectIcon: string; textbookTitle: string; chapterTitle: string; lessonTitle: string; conceptId: string; textbookId: string; progress: number; duration: number; videoProgress: number }
 interface FocusItem { id: string; type: 'assignment' | 'exam'; title: string; subjectName: string; dueDate: string; urgency: 'overdue' | 'today' | 'tomorrow' | 'week'; label: string; link: string }
 interface ClassEntry { id: string; time: string; subjectName: string; subjectColor: string; room: string; period: number }
 interface ResultEntry { id: string; itemName: string; score: number; maxScore: number; percentage: number; gradedAt: string; feedback?: string }
@@ -84,8 +85,45 @@ export default function StudentDashboardPage() {
       const readyTextbooks = allTextbooks.filter((tb) => tb.status !== 'processing');
       const tbSubjectMap = new Map(readyTextbooks.map((tb) => [tb.id, tb.subjectId]));
 
+      const conceptProgressList = authUser?.id ? await getAllConceptProgress(authUser.id) : [];
+      const inProgressConcepts = conceptProgressList
+        .filter((p) => p.videoPosition > 0 || p.lessonCompleted)
+        .sort((a, b) => new Date(b.lastAccessed).getTime() - new Date(a.lastAccessed).getTime());
+
       let continueLearning: ContinueLearning | null = null;
-      if (bestEnrollment) {
+      if (inProgressConcepts.length > 0) {
+        const latest = inProgressConcepts[0];
+        const foundTextbook = readyTextbooks.find((tb) =>
+          tb.chapters?.some((ch) => ch.concepts?.some((c) => c.id === latest.conceptId)),
+        );
+        if (foundTextbook) {
+          for (const ch of foundTextbook.chapters) {
+            const foundConcept = ch.concepts?.find((c) => c.id === latest.conceptId);
+            if (foundConcept) {
+              const subject = mockSubjects.find((s) => s.id === foundTextbook.subjectId);
+              const vidDuration = parseFloat(foundConcept.videos?.[0]?.duration ?? '0');
+              const videoPct = vidDuration > 0
+                ? Math.round((latest.videoPosition / vidDuration) * 100)
+                : 0;
+              continueLearning = {
+                subjectName: subject?.name ?? '',
+                subjectColor: subject?.color ?? '#6366f1',
+                subjectIcon: subject?.icon ?? 'menu_book',
+                textbookTitle: foundTextbook.title,
+                chapterTitle: ch.title,
+                lessonTitle: foundConcept.title,
+                conceptId: latest.conceptId,
+                textbookId: foundTextbook.id,
+                progress: latest.lessonCompleted ? 100 : Math.min(videoPct, 99),
+                duration: foundConcept.estimatedMinutes ?? 10,
+                videoProgress: latest.videoPosition,
+              };
+              break;
+            }
+          }
+        }
+      }
+      if (!continueLearning && bestEnrollment) {
         const subject = mockSubjects.find((s) => s.id === bestEnrollment.subjectId);
         if (subject) {
           const textbook = readyTextbooks.find((tb) => tb.subjectId === subject.id);
@@ -100,9 +138,11 @@ export default function StudentDashboardPage() {
                 textbookTitle: textbook.title,
                 chapterTitle: firstCh.title,
                 lessonTitle: firstConcept.title,
-                lessonId: firstConcept.id,
-                progress: bestEnrollment.progress,
+                conceptId: firstConcept.id,
+                textbookId: textbook.id,
+                progress: 0,
                 duration: firstConcept.estimatedMinutes ?? 10,
+                videoProgress: 0,
               };
             }
           }
@@ -199,11 +239,11 @@ export default function StudentDashboardPage() {
                           </div>
                           <p className="text-label-sm text-on-surface-variant/70 mt-1">
                             <Icon name="schedule" size={14} className="inline align-text-bottom mr-0.5" />
-                            {formatTime(dash.continueLearning.duration)} remaining
+                            {dash.continueLearning.videoProgress > 0 ? `${Math.round((dash.continueLearning.progress))}% complete` : `${dash.continueLearning.duration} min`}
                           </p>
                         </div>
                         <Button asChild className="flex-shrink-0 w-full sm:w-auto">
-                          <Link to={`/student/lessons/${dash.continueLearning.lessonId}`}>
+                          <Link to={`${ROUTES.STUDENT_CONCEPT(dash.continueLearning.conceptId)}?textbookId=${dash.continueLearning.textbookId}`}>
                             <Icon name="play_arrow" size={16} className="mr-1.5" />Continue Learning
                           </Link>
                         </Button>

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent } from '@/components/ui/card';
@@ -28,6 +28,7 @@ function relativeTime(iso: string): string {
 
 export default function NotificationsPage() {
   const user = useAuthStore((s) => s.user);
+  const navigate = useNavigate();
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
 
   const items = useMemo(
@@ -41,7 +42,10 @@ export default function NotificationsPage() {
     <>
       <SEOHead title="Notifications" description="View all your notifications" />
       <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-3xl mx-auto space-y-6 pb-20">
-        <h1 className="text-headline-sm font-bold">Notifications</h1>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}><Icon name="arrow_back" size={20} /></Button>
+          <h1 className="text-headline-sm font-bold">Notifications</h1>
+        </div>
 
         <Tabs value={filter} onValueChange={(v) => setFilter(v as 'all' | 'unread')}>
           <TabsList>

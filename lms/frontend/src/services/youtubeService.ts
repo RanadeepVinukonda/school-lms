@@ -67,25 +67,22 @@ export async function searchVideos(query: string, maxResults = 5): Promise<YouTu
 }
 
 export async function searchVideosForConcept(subject: string, chapterTitle: string, conceptTitle: string): Promise<YouTubeVideo[]> {
-  const queries = [
-    `${subject} ${conceptTitle}`,
-    `${subject} ${chapterTitle} ${conceptTitle} tutorial`,
-    `${conceptTitle} explained`,
-  ];
+  const query = `${subject} ${conceptTitle} tutorial`;
 
-  const allVideos: YouTubeVideo[] = [];
-  const seen = new Set<string>();
+  const allVideos = await searchVideos(query, 3);
+  const scored = allVideos.map((v) => {
+    const title = v.title.toLowerCase();
+    const desc = v.description.toLowerCase();
+    const ct = conceptTitle.toLowerCase();
+    let score = 0;
+    if (title.includes(ct)) score += 3;
+    if (desc.includes(ct)) score += 1;
+    if (title.includes('tutorial') || title.includes('lesson')) score += 1;
+    if (title.includes('introduction') || title.includes('basics')) score += 1;
+    return { ...v, score };
+  });
 
-  for (const query of queries) {
-    if (allVideos.length >= 5) break;
-    const videos = await searchVideos(query, 3);
-    for (const v of videos) {
-      if (!seen.has(v.youtubeId)) {
-        seen.add(v.youtubeId);
-        allVideos.push(v);
-      }
-    }
-  }
+  scored.sort((a, b) => b.score - a.score);
 
-  return allVideos.slice(0, 5);
+  return scored.length > 0 ? [scored[0]] : [];
 }

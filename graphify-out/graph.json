@@ -1,0 +1,4291 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "handler",
+      "file_type": "code",
+      "source_file": "lms/api/[...slug].ts",
+      "source_location": "L3",
+      "id": "api_slug_handler",
+      "community": 6,
+      "norm_label": "handler"
+    },
+    {
+      "label": "initializeFirebase",
+      "file_type": "code",
+      "source_file": "lms/backend/src/config/firebase.ts",
+      "source_location": "L12",
+      "id": "config_firebase_initializefirebase",
+      "community": 17,
+      "norm_label": "initializefirebase"
+    },
+    {
+      "label": "getFirebaseApp",
+      "file_type": "code",
+      "source_file": "lms/backend/src/config/firebase.ts",
+      "source_location": "L22",
+      "id": "config_firebase_getfirebaseapp",
+      "community": 16,
+      "norm_label": "getfirebaseapp"
+    },
+    {
+      "label": "getStudentDashboard",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/analytics.controller.ts",
+      "source_location": "L5",
+      "id": "controllers_analytics_controller_getstudentdashboard",
+      "community": 20,
+      "norm_label": "getstudentdashboard"
+    },
+    {
+      "label": "getTeacherDashboard",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/analytics.controller.ts",
+      "source_location": "L10",
+      "id": "controllers_analytics_controller_getteacherdashboard",
+      "community": 21,
+      "norm_label": "getteacherdashboard"
+    },
+    {
+      "label": "getAdminDashboard",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/analytics.controller.ts",
+      "source_location": "L15",
+      "id": "controllers_analytics_controller_getadmindashboard",
+      "community": 18,
+      "norm_label": "getadmindashboard"
+    },
+    {
+      "label": "getCourseAnalytics",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/analytics.controller.ts",
+      "source_location": "L20",
+      "id": "controllers_analytics_controller_getcourseanalytics",
+      "community": 19,
+      "norm_label": "getcourseanalytics"
+    },
+    {
+      "label": "createAssignment",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/assignment.controller.ts",
+      "source_location": "L5",
+      "id": "controllers_assignment_controller_createassignment",
+      "community": 22,
+      "norm_label": "createassignment"
+    },
+    {
+      "label": "updateAssignment",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/assignment.controller.ts",
+      "source_location": "L10",
+      "id": "controllers_assignment_controller_updateassignment",
+      "community": 30,
+      "norm_label": "updateassignment"
+    },
+    {
+      "label": "deleteAssignment",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/assignment.controller.ts",
+      "source_location": "L15",
+      "id": "controllers_assignment_controller_deleteassignment",
+      "community": 23,
+      "norm_label": "deleteassignment"
+    },
+    {
+      "label": "getAssignment",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/assignment.controller.ts",
+      "source_location": "L20",
+      "id": "controllers_assignment_controller_getassignment",
+      "community": 24,
+      "norm_label": "getassignment"
+    },
+    {
+      "label": "listAllAssignments",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/assignment.controller.ts",
+      "source_location": "L25",
+      "id": "controllers_assignment_controller_listallassignments",
+      "community": 26,
+      "norm_label": "listallassignments"
+    },
+    {
+      "label": "listAssignmentsByCourse",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/assignment.controller.ts",
+      "source_location": "L30",
+      "id": "controllers_assignment_controller_listassignmentsbycourse",
+      "community": 27,
+      "norm_label": "listassignmentsbycourse"
+    },
+    {
+      "label": "submitAssignment",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/assignment.controller.ts",
+      "source_location": "L35",
+      "id": "controllers_assignment_controller_submitassignment",
+      "community": 29,
+      "norm_label": "submitassignment"
+    },
+    {
+      "label": "gradeSubmission",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/assignment.controller.ts",
+      "source_location": "L40",
+      "id": "controllers_assignment_controller_gradesubmission",
+      "community": 25,
+      "norm_label": "gradesubmission"
+    },
+    {
+      "label": "listSubmissions",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/assignment.controller.ts",
+      "source_location": "L45",
+      "id": "controllers_assignment_controller_listsubmissions",
+      "community": 28,
+      "norm_label": "listsubmissions"
+    },
+    {
+      "label": "register",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/auth.controller.ts",
+      "source_location": "L5",
+      "id": "controllers_auth_controller_register",
+      "community": 35,
+      "norm_label": "register"
+    },
+    {
+      "label": "login",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/auth.controller.ts",
+      "source_location": "L10",
+      "id": "controllers_auth_controller_login",
+      "community": 34,
+      "norm_label": "login"
+    },
+    {
+      "label": "getProfile",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/auth.controller.ts",
+      "source_location": "L16",
+      "id": "controllers_auth_controller_getprofile",
+      "community": 33,
+      "norm_label": "getprofile"
+    },
+    {
+      "label": "updateProfile",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/auth.controller.ts",
+      "source_location": "L21",
+      "id": "controllers_auth_controller_updateprofile",
+      "community": 37,
+      "norm_label": "updateprofile"
+    },
+    {
+      "label": "forgotPassword",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/auth.controller.ts",
+      "source_location": "L26",
+      "id": "controllers_auth_controller_forgotpassword",
+      "community": 32,
+      "norm_label": "forgotpassword"
+    },
+    {
+      "label": "resetPassword",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/auth.controller.ts",
+      "source_location": "L31",
+      "id": "controllers_auth_controller_resetpassword",
+      "community": 36,
+      "norm_label": "resetpassword"
+    },
+    {
+      "label": "changePassword",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/auth.controller.ts",
+      "source_location": "L36",
+      "id": "controllers_auth_controller_changepassword",
+      "community": 31,
+      "norm_label": "changepassword"
+    },
+    {
+      "label": "createClass",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/class.controller.ts",
+      "source_location": "L5",
+      "id": "controllers_class_controller_createclass",
+      "community": 39,
+      "norm_label": "createclass"
+    },
+    {
+      "label": "updateClass",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/class.controller.ts",
+      "source_location": "L10",
+      "id": "controllers_class_controller_updateclass",
+      "community": 45,
+      "norm_label": "updateclass"
+    },
+    {
+      "label": "deleteClass",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/class.controller.ts",
+      "source_location": "L15",
+      "id": "controllers_class_controller_deleteclass",
+      "community": 40,
+      "norm_label": "deleteclass"
+    },
+    {
+      "label": "listClasses",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/class.controller.ts",
+      "source_location": "L20",
+      "id": "controllers_class_controller_listclasses",
+      "community": 43,
+      "norm_label": "listclasses"
+    },
+    {
+      "label": "getClass",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/class.controller.ts",
+      "source_location": "L25",
+      "id": "controllers_class_controller_getclass",
+      "community": 41,
+      "norm_label": "getclass"
+    },
+    {
+      "label": "addStudents",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/class.controller.ts",
+      "source_location": "L30",
+      "id": "controllers_class_controller_addstudents",
+      "community": 38,
+      "norm_label": "addstudents"
+    },
+    {
+      "label": "removeStudents",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/class.controller.ts",
+      "source_location": "L35",
+      "id": "controllers_class_controller_removestudents",
+      "community": 44,
+      "norm_label": "removestudents"
+    },
+    {
+      "label": "getRoster",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/class.controller.ts",
+      "source_location": "L40",
+      "id": "controllers_class_controller_getroster",
+      "community": 42,
+      "norm_label": "getroster"
+    },
+    {
+      "label": "createCourse",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/course.controller.ts",
+      "source_location": "L5",
+      "id": "controllers_course_controller_createcourse",
+      "community": 46,
+      "norm_label": "createcourse"
+    },
+    {
+      "label": "updateCourse",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/course.controller.ts",
+      "source_location": "L10",
+      "id": "controllers_course_controller_updatecourse",
+      "community": 53,
+      "norm_label": "updatecourse"
+    },
+    {
+      "label": "deleteCourse",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/course.controller.ts",
+      "source_location": "L15",
+      "id": "controllers_course_controller_deletecourse",
+      "community": 47,
+      "norm_label": "deletecourse"
+    },
+    {
+      "label": "getCourse",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/course.controller.ts",
+      "source_location": "L20",
+      "id": "controllers_course_controller_getcourse",
+      "community": 49,
+      "norm_label": "getcourse"
+    },
+    {
+      "label": "listCourses",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/course.controller.ts",
+      "source_location": "L25",
+      "id": "controllers_course_controller_listcourses",
+      "community": 51,
+      "norm_label": "listcourses"
+    },
+    {
+      "label": "enrollStudent",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/course.controller.ts",
+      "source_location": "L30",
+      "id": "controllers_course_controller_enrollstudent",
+      "community": 48,
+      "norm_label": "enrollstudent"
+    },
+    {
+      "label": "unenrollStudent",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/course.controller.ts",
+      "source_location": "L35",
+      "id": "controllers_course_controller_unenrollstudent",
+      "community": 52,
+      "norm_label": "unenrollstudent"
+    },
+    {
+      "label": "getEnrollments",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/course.controller.ts",
+      "source_location": "L40",
+      "id": "controllers_course_controller_getenrollments",
+      "community": 50,
+      "norm_label": "getenrollments"
+    },
+    {
+      "label": "listAllExams",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/exam.controller.ts",
+      "source_location": "L5",
+      "id": "controllers_exam_controller_listallexams",
+      "community": 59,
+      "norm_label": "listallexams"
+    },
+    {
+      "label": "createExam",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/exam.controller.ts",
+      "source_location": "L10",
+      "id": "controllers_exam_controller_createexam",
+      "community": 54,
+      "norm_label": "createexam"
+    },
+    {
+      "label": "updateExam",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/exam.controller.ts",
+      "source_location": "L15",
+      "id": "controllers_exam_controller_updateexam",
+      "community": 63,
+      "norm_label": "updateexam"
+    },
+    {
+      "label": "deleteExam",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/exam.controller.ts",
+      "source_location": "L20",
+      "id": "controllers_exam_controller_deleteexam",
+      "community": 55,
+      "norm_label": "deleteexam"
+    },
+    {
+      "label": "getExam",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/exam.controller.ts",
+      "source_location": "L25",
+      "id": "controllers_exam_controller_getexam",
+      "community": 56,
+      "norm_label": "getexam"
+    },
+    {
+      "label": "scheduleExam",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/exam.controller.ts",
+      "source_location": "L30",
+      "id": "controllers_exam_controller_scheduleexam",
+      "community": 60,
+      "norm_label": "scheduleexam"
+    },
+    {
+      "label": "startExamAttempt",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/exam.controller.ts",
+      "source_location": "L35",
+      "id": "controllers_exam_controller_startexamattempt",
+      "community": 61,
+      "norm_label": "startexamattempt"
+    },
+    {
+      "label": "submitExamAttempt",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/exam.controller.ts",
+      "source_location": "L40",
+      "id": "controllers_exam_controller_submitexamattempt",
+      "community": 62,
+      "norm_label": "submitexamattempt"
+    },
+    {
+      "label": "gradeExamAttempt",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/exam.controller.ts",
+      "source_location": "L45",
+      "id": "controllers_exam_controller_gradeexamattempt",
+      "community": 58,
+      "norm_label": "gradeexamattempt"
+    },
+    {
+      "label": "getExamResults",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/exam.controller.ts",
+      "source_location": "L50",
+      "id": "controllers_exam_controller_getexamresults",
+      "community": 57,
+      "norm_label": "getexamresults"
+    },
+    {
+      "label": "getStudentGrades",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/grade.controller.ts",
+      "source_location": "L5",
+      "id": "controllers_grade_controller_getstudentgrades",
+      "community": 67,
+      "norm_label": "getstudentgrades"
+    },
+    {
+      "label": "getGradebook",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/grade.controller.ts",
+      "source_location": "L10",
+      "id": "controllers_grade_controller_getgradebook",
+      "community": 66,
+      "norm_label": "getgradebook"
+    },
+    {
+      "label": "updateGrade",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/grade.controller.ts",
+      "source_location": "L15",
+      "id": "controllers_grade_controller_updategrade",
+      "community": 68,
+      "norm_label": "updategrade"
+    },
+    {
+      "label": "bulkUpdateGrades",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/grade.controller.ts",
+      "source_location": "L20",
+      "id": "controllers_grade_controller_bulkupdategrades",
+      "community": 64,
+      "norm_label": "bulkupdategrades"
+    },
+    {
+      "label": "generateReport",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/grade.controller.ts",
+      "source_location": "L25",
+      "id": "controllers_grade_controller_generatereport",
+      "community": 65,
+      "norm_label": "generatereport"
+    },
+    {
+      "label": "createLesson",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/lesson.controller.ts",
+      "source_location": "L5",
+      "id": "controllers_lesson_controller_createlesson",
+      "community": 69,
+      "norm_label": "createlesson"
+    },
+    {
+      "label": "updateLesson",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/lesson.controller.ts",
+      "source_location": "L10",
+      "id": "controllers_lesson_controller_updatelesson",
+      "community": 75,
+      "norm_label": "updatelesson"
+    },
+    {
+      "label": "deleteLesson",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/lesson.controller.ts",
+      "source_location": "L15",
+      "id": "controllers_lesson_controller_deletelesson",
+      "community": 70,
+      "norm_label": "deletelesson"
+    },
+    {
+      "label": "getLesson",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/lesson.controller.ts",
+      "source_location": "L20",
+      "id": "controllers_lesson_controller_getlesson",
+      "community": 71,
+      "norm_label": "getlesson"
+    },
+    {
+      "label": "listLessonsByCourse",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/lesson.controller.ts",
+      "source_location": "L25",
+      "id": "controllers_lesson_controller_listlessonsbycourse",
+      "community": 72,
+      "norm_label": "listlessonsbycourse"
+    },
+    {
+      "label": "reorderLessons",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/lesson.controller.ts",
+      "source_location": "L30",
+      "id": "controllers_lesson_controller_reorderlessons",
+      "community": 74,
+      "norm_label": "reorderlessons"
+    },
+    {
+      "label": "markLessonComplete",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/lesson.controller.ts",
+      "source_location": "L35",
+      "id": "controllers_lesson_controller_marklessoncomplete",
+      "community": 73,
+      "norm_label": "marklessoncomplete"
+    },
+    {
+      "label": "createConversation",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/message.controller.ts",
+      "source_location": "L5",
+      "id": "controllers_message_controller_createconversation",
+      "community": 76,
+      "norm_label": "createconversation"
+    },
+    {
+      "label": "sendMessage",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/message.controller.ts",
+      "source_location": "L10",
+      "id": "controllers_message_controller_sendmessage",
+      "community": 80,
+      "norm_label": "sendmessage"
+    },
+    {
+      "label": "getConversations",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/message.controller.ts",
+      "source_location": "L15",
+      "id": "controllers_message_controller_getconversations",
+      "community": 77,
+      "norm_label": "getconversations"
+    },
+    {
+      "label": "getMessages",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/message.controller.ts",
+      "source_location": "L20",
+      "id": "controllers_message_controller_getmessages",
+      "community": 78,
+      "norm_label": "getmessages"
+    },
+    {
+      "label": "markConversationRead",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/message.controller.ts",
+      "source_location": "L25",
+      "id": "controllers_message_controller_markconversationread",
+      "community": 79,
+      "norm_label": "markconversationread"
+    },
+    {
+      "label": "getNotifications",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/notification.controller.ts",
+      "source_location": "L5",
+      "id": "controllers_notification_controller_getnotifications",
+      "community": 83,
+      "norm_label": "getnotifications"
+    },
+    {
+      "label": "markNotificationRead",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/notification.controller.ts",
+      "source_location": "L10",
+      "id": "controllers_notification_controller_marknotificationread",
+      "community": 86,
+      "norm_label": "marknotificationread"
+    },
+    {
+      "label": "markAllNotificationsRead",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/notification.controller.ts",
+      "source_location": "L15",
+      "id": "controllers_notification_controller_markallnotificationsread",
+      "community": 85,
+      "norm_label": "markallnotificationsread"
+    },
+    {
+      "label": "getUnreadCount",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/notification.controller.ts",
+      "source_location": "L20",
+      "id": "controllers_notification_controller_getunreadcount",
+      "community": 84,
+      "norm_label": "getunreadcount"
+    },
+    {
+      "label": "deleteNotification",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/notification.controller.ts",
+      "source_location": "L25",
+      "id": "controllers_notification_controller_deletenotification",
+      "community": 81,
+      "norm_label": "deletenotification"
+    },
+    {
+      "label": "getNotificationPreferences",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/notification.controller.ts",
+      "source_location": "L30",
+      "id": "controllers_notification_controller_getnotificationpreferences",
+      "community": 82,
+      "norm_label": "getnotificationpreferences"
+    },
+    {
+      "label": "updateNotificationPreferences",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/notification.controller.ts",
+      "source_location": "L35",
+      "id": "controllers_notification_controller_updatenotificationpreferences",
+      "community": 87,
+      "norm_label": "updatenotificationpreferences"
+    },
+    {
+      "label": "listAllQuizzes",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/quiz.controller.ts",
+      "source_location": "L5",
+      "id": "controllers_quiz_controller_listallquizzes",
+      "community": 92,
+      "norm_label": "listallquizzes"
+    },
+    {
+      "label": "createQuiz",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/quiz.controller.ts",
+      "source_location": "L10",
+      "id": "controllers_quiz_controller_createquiz",
+      "community": 88,
+      "norm_label": "createquiz"
+    },
+    {
+      "label": "updateQuiz",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/quiz.controller.ts",
+      "source_location": "L15",
+      "id": "controllers_quiz_controller_updatequiz",
+      "community": 95,
+      "norm_label": "updatequiz"
+    },
+    {
+      "label": "deleteQuiz",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/quiz.controller.ts",
+      "source_location": "L20",
+      "id": "controllers_quiz_controller_deletequiz",
+      "community": 89,
+      "norm_label": "deletequiz"
+    },
+    {
+      "label": "getQuiz",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/quiz.controller.ts",
+      "source_location": "L25",
+      "id": "controllers_quiz_controller_getquiz",
+      "community": 90,
+      "norm_label": "getquiz"
+    },
+    {
+      "label": "startAttempt",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/quiz.controller.ts",
+      "source_location": "L30",
+      "id": "controllers_quiz_controller_startattempt",
+      "community": 93,
+      "norm_label": "startattempt"
+    },
+    {
+      "label": "submitAttempt",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/quiz.controller.ts",
+      "source_location": "L35",
+      "id": "controllers_quiz_controller_submitattempt",
+      "community": 94,
+      "norm_label": "submitattempt"
+    },
+    {
+      "label": "getResults",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/quiz.controller.ts",
+      "source_location": "L40",
+      "id": "controllers_quiz_controller_getresults",
+      "community": 91,
+      "norm_label": "getresults"
+    },
+    {
+      "label": "getSettings",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/settings.controller.ts",
+      "source_location": "L5",
+      "id": "controllers_settings_controller_getsettings",
+      "community": 96,
+      "norm_label": "getsettings"
+    },
+    {
+      "label": "updateSettings",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/settings.controller.ts",
+      "source_location": "L10",
+      "id": "controllers_settings_controller_updatesettings",
+      "community": 98,
+      "norm_label": "updatesettings"
+    },
+    {
+      "label": "getSystemSettings",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/settings.controller.ts",
+      "source_location": "L15",
+      "id": "controllers_settings_controller_getsystemsettings",
+      "community": 97,
+      "norm_label": "getsystemsettings"
+    },
+    {
+      "label": "updateSystemSettings",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/settings.controller.ts",
+      "source_location": "L20",
+      "id": "controllers_settings_controller_updatesystemsettings",
+      "community": 99,
+      "norm_label": "updatesystemsettings"
+    },
+    {
+      "label": "createSubject",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/subject.controller.ts",
+      "source_location": "L5",
+      "id": "controllers_subject_controller_createsubject",
+      "community": 100,
+      "norm_label": "createsubject"
+    },
+    {
+      "label": "updateSubject",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/subject.controller.ts",
+      "source_location": "L10",
+      "id": "controllers_subject_controller_updatesubject",
+      "community": 104,
+      "norm_label": "updatesubject"
+    },
+    {
+      "label": "deleteSubject",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/subject.controller.ts",
+      "source_location": "L15",
+      "id": "controllers_subject_controller_deletesubject",
+      "community": 101,
+      "norm_label": "deletesubject"
+    },
+    {
+      "label": "listSubjects",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/subject.controller.ts",
+      "source_location": "L20",
+      "id": "controllers_subject_controller_listsubjects",
+      "community": 103,
+      "norm_label": "listsubjects"
+    },
+    {
+      "label": "getSubject",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/subject.controller.ts",
+      "source_location": "L25",
+      "id": "controllers_subject_controller_getsubject",
+      "community": 102,
+      "norm_label": "getsubject"
+    },
+    {
+      "label": "deleteUpload",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/upload.controller.ts",
+      "source_location": "L5",
+      "id": "controllers_upload_controller_deleteupload",
+      "community": 105,
+      "norm_label": "deleteupload"
+    },
+    {
+      "label": "listUsers",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/user.controller.ts",
+      "source_location": "L5",
+      "id": "controllers_user_controller_listusers",
+      "community": 110,
+      "norm_label": "listusers"
+    },
+    {
+      "label": "getUser",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/user.controller.ts",
+      "source_location": "L10",
+      "id": "controllers_user_controller_getuser",
+      "community": 109,
+      "norm_label": "getuser"
+    },
+    {
+      "label": "createUser",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/user.controller.ts",
+      "source_location": "L15",
+      "id": "controllers_user_controller_createuser",
+      "community": 107,
+      "norm_label": "createuser"
+    },
+    {
+      "label": "updateUser",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/user.controller.ts",
+      "source_location": "L20",
+      "id": "controllers_user_controller_updateuser",
+      "community": 112,
+      "norm_label": "updateuser"
+    },
+    {
+      "label": "deleteUser",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/user.controller.ts",
+      "source_location": "L25",
+      "id": "controllers_user_controller_deleteuser",
+      "community": 108,
+      "norm_label": "deleteuser"
+    },
+    {
+      "label": "assignRole",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/user.controller.ts",
+      "source_location": "L30",
+      "id": "controllers_user_controller_assignrole",
+      "community": 106,
+      "norm_label": "assignrole"
+    },
+    {
+      "label": "updateProfile",
+      "file_type": "code",
+      "source_file": "lms/backend/src/controllers/user.controller.ts",
+      "source_location": "L35",
+      "id": "controllers_user_controller_updateprofile",
+      "community": 111,
+      "norm_label": "updateprofile"
+    },
+    {
+      "label": "getAdminAuth",
+      "file_type": "code",
+      "source_file": "lms/backend/src/firebase/admin.ts",
+      "source_location": "L8",
+      "id": "firebase_admin_getadminauth",
+      "community": 113,
+      "norm_label": "getadminauth"
+    },
+    {
+      "label": "getAdminFirestore",
+      "file_type": "code",
+      "source_file": "lms/backend/src/firebase/admin.ts",
+      "source_location": "L15",
+      "id": "firebase_admin_getadminfirestore",
+      "community": 114,
+      "norm_label": "getadminfirestore"
+    },
+    {
+      "label": "getAdminStorage",
+      "file_type": "code",
+      "source_file": "lms/backend/src/firebase/admin.ts",
+      "source_location": "L22",
+      "id": "firebase_admin_getadminstorage",
+      "community": 115,
+      "norm_label": "getadminstorage"
+    },
+    {
+      "label": "verifyToken",
+      "file_type": "code",
+      "source_file": "lms/backend/src/firebase/auth.ts",
+      "source_location": "L3",
+      "id": "firebase_auth_verifytoken",
+      "community": 132,
+      "norm_label": "verifytoken"
+    },
+    {
+      "label": "createUser",
+      "file_type": "code",
+      "source_file": "lms/backend/src/firebase/auth.ts",
+      "source_location": "L9",
+      "id": "firebase_auth_createuser",
+      "community": 119,
+      "norm_label": "createuser"
+    },
+    {
+      "label": "updateUser",
+      "file_type": "code",
+      "source_file": "lms/backend/src/firebase/auth.ts",
+      "source_location": "L27",
+      "id": "firebase_auth_updateuser",
+      "community": 131,
+      "norm_label": "updateuser"
+    },
+    {
+      "label": "deleteUser",
+      "file_type": "code",
+      "source_file": "lms/backend/src/firebase/auth.ts",
+      "source_location": "L43",
+      "id": "firebase_auth_deleteuser",
+      "community": 120,
+      "norm_label": "deleteuser"
+    },
+    {
+      "label": "setCustomClaims",
+      "file_type": "code",
+      "source_file": "lms/backend/src/firebase/auth.ts",
+      "source_location": "L48",
+      "id": "firebase_auth_setcustomclaims",
+      "community": 130,
+      "norm_label": "setcustomclaims"
+    },
+    {
+      "label": "revokeTokens",
+      "file_type": "code",
+      "source_file": "lms/backend/src/firebase/auth.ts",
+      "source_location": "L56",
+      "id": "firebase_auth_revoketokens",
+      "community": 129,
+      "norm_label": "revoketokens"
+    },
+    {
+      "label": "getUserByEmail",
+      "file_type": "code",
+      "source_file": "lms/backend/src/firebase/auth.ts",
+      "source_location": "L61",
+      "id": "firebase_auth_getuserbyemail",
+      "community": 121,
+      "norm_label": "getuserbyemail"
+    },
+    {
+      "label": "getUserById",
+      "file_type": "code",
+      "source_file": "lms/backend/src/firebase/auth.ts",
+      "source_location": "L71",
+      "id": "firebase_auth_getuserbyid",
+      "community": 122,
+      "norm_label": "getuserbyid"
+    },
+    {
+      "label": "listUsers",
+      "file_type": "code",
+      "source_file": "lms/backend/src/firebase/auth.ts",
+      "source_location": "L81",
+      "id": "firebase_auth_listusers",
+      "community": 123,
+      "norm_label": "listusers"
+    },
+    {
+      "label": "getDb",
+      "file_type": "code",
+      "source_file": "lms/backend/src/firebase/firestore.ts",
+      "source_location": "L6",
+      "id": "firebase_firestore_getdb",
+      "community": 134,
+      "norm_label": "getdb"
+    },
+    {
+      "label": "getCollection",
+      "file_type": "code",
+      "source_file": "lms/backend/src/firebase/firestore.ts",
+      "source_location": "L10",
+      "id": "firebase_firestore_getcollection",
+      "community": 133,
+      "norm_label": "getcollection"
+    },
+    {
+      "label": "uploadFile",
+      "file_type": "code",
+      "source_file": "lms/backend/src/firebase/storage.ts",
+      "source_location": "L7",
+      "id": "firebase_storage_uploadfile",
+      "community": 141,
+      "norm_label": "uploadfile"
+    },
+    {
+      "label": "deleteFile",
+      "file_type": "code",
+      "source_file": "lms/backend/src/firebase/storage.ts",
+      "source_location": "L41",
+      "id": "firebase_storage_deletefile",
+      "community": 138,
+      "norm_label": "deletefile"
+    },
+    {
+      "label": "getFileUrl",
+      "file_type": "code",
+      "source_file": "lms/backend/src/firebase/storage.ts",
+      "source_location": "L49",
+      "id": "firebase_storage_getfileurl",
+      "community": 140,
+      "norm_label": "getfileurl"
+    },
+    {
+      "label": "getBucket",
+      "file_type": "code",
+      "source_file": "lms/backend/src/firebase/storage.ts",
+      "source_location": "L62",
+      "id": "firebase_storage_getbucket",
+      "community": 139,
+      "norm_label": "getbucket"
+    },
+    {
+      "label": "cleanupExpiredData",
+      "file_type": "code",
+      "source_file": "lms/backend/src/jobs/cleanupExpired.job.ts",
+      "source_location": "L4",
+      "id": "jobs_cleanupexpired_job_cleanupexpireddata",
+      "community": 153,
+      "norm_label": "cleanupexpireddata"
+    },
+    {
+      "label": "startScheduler",
+      "file_type": "code",
+      "source_file": "lms/backend/src/jobs/scheduler.ts",
+      "source_location": "L7",
+      "id": "jobs_scheduler_startscheduler",
+      "community": 154,
+      "norm_label": "startscheduler"
+    },
+    {
+      "label": "stopScheduler",
+      "file_type": "code",
+      "source_file": "lms/backend/src/jobs/scheduler.ts",
+      "source_location": "L33",
+      "id": "jobs_scheduler_stopscheduler",
+      "community": 155,
+      "norm_label": "stopscheduler"
+    },
+    {
+      "label": "checkUpcomingDeadlines",
+      "file_type": "code",
+      "source_file": "lms/backend/src/jobs/sendReminders.job.ts",
+      "source_location": "L4",
+      "id": "jobs_sendreminders_job_checkupcomingdeadlines",
+      "community": 156,
+      "norm_label": "checkupcomingdeadlines"
+    },
+    {
+      "label": "asyncHandler",
+      "file_type": "code",
+      "source_file": "lms/backend/src/middlewares/asyncHandler.ts",
+      "source_location": "L3",
+      "id": "middlewares_asynchandler_asynchandler",
+      "community": 176,
+      "norm_label": "asynchandler"
+    },
+    {
+      "label": "authenticate",
+      "file_type": "code",
+      "source_file": "lms/backend/src/middlewares/auth.middleware.ts",
+      "source_location": "L19",
+      "id": "middlewares_auth_middleware_authenticate",
+      "community": 177,
+      "norm_label": "authenticate"
+    },
+    {
+      "label": "optionalAuth",
+      "file_type": "code",
+      "source_file": "lms/backend/src/middlewares/auth.middleware.ts",
+      "source_location": "L51",
+      "id": "middlewares_auth_middleware_optionalauth",
+      "community": 178,
+      "norm_label": "optionalauth"
+    },
+    {
+      "label": "errorHandler",
+      "file_type": "code",
+      "source_file": "lms/backend/src/middlewares/error.middleware.ts",
+      "source_location": "L6",
+      "id": "middlewares_error_middleware_errorhandler",
+      "community": 179,
+      "norm_label": "errorhandler"
+    },
+    {
+      "label": "requireRole",
+      "file_type": "code",
+      "source_file": "lms/backend/src/middlewares/role.middleware.ts",
+      "source_location": "L4",
+      "id": "middlewares_role_middleware_requirerole",
+      "community": 181,
+      "norm_label": "requirerole"
+    },
+    {
+      "label": "requireOwnershipOrRole",
+      "file_type": "code",
+      "source_file": "lms/backend/src/middlewares/role.middleware.ts",
+      "source_location": "L20",
+      "id": "middlewares_role_middleware_requireownershiporrole",
+      "community": 180,
+      "norm_label": "requireownershiporrole"
+    },
+    {
+      "label": "validate",
+      "file_type": "code",
+      "source_file": "lms/backend/src/middlewares/validate.middleware.ts",
+      "source_location": "L7",
+      "id": "middlewares_validate_middleware_validate",
+      "community": 182,
+      "norm_label": "validate"
+    },
+    {
+      "label": "getStudentDashboard",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/analytics.service.ts",
+      "source_location": "L4",
+      "id": "services_analytics_service_getstudentdashboard",
+      "community": 195,
+      "norm_label": "getstudentdashboard"
+    },
+    {
+      "label": "getTeacherDashboard",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/analytics.service.ts",
+      "source_location": "L57",
+      "id": "services_analytics_service_getteacherdashboard",
+      "community": 196,
+      "norm_label": "getteacherdashboard"
+    },
+    {
+      "label": "getAdminDashboard",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/analytics.service.ts",
+      "source_location": "L94",
+      "id": "services_analytics_service_getadmindashboard",
+      "community": 193,
+      "norm_label": "getadmindashboard"
+    },
+    {
+      "label": "getCourseAnalytics",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/analytics.service.ts",
+      "source_location": "L138",
+      "id": "services_analytics_service_getcourseanalytics",
+      "community": 194,
+      "norm_label": "getcourseanalytics"
+    },
+    {
+      "label": "createAssignment",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/assignment.service.ts",
+      "source_location": "L7",
+      "id": "services_assignment_service_createassignment",
+      "community": 197,
+      "norm_label": "createassignment"
+    },
+    {
+      "label": "updateAssignment",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/assignment.service.ts",
+      "source_location": "L37",
+      "id": "services_assignment_service_updateassignment",
+      "community": 205,
+      "norm_label": "updateassignment"
+    },
+    {
+      "label": "deleteAssignment",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/assignment.service.ts",
+      "source_location": "L54",
+      "id": "services_assignment_service_deleteassignment",
+      "community": 198,
+      "norm_label": "deleteassignment"
+    },
+    {
+      "label": "getAssignmentById",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/assignment.service.ts",
+      "source_location": "L66",
+      "id": "services_assignment_service_getassignmentbyid",
+      "community": 199,
+      "norm_label": "getassignmentbyid"
+    },
+    {
+      "label": "listAllAssignments",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/assignment.service.ts",
+      "source_location": "L77",
+      "id": "services_assignment_service_listallassignments",
+      "community": 201,
+      "norm_label": "listallassignments"
+    },
+    {
+      "label": "listAssignmentsByCourse",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/assignment.service.ts",
+      "source_location": "L97",
+      "id": "services_assignment_service_listassignmentsbycourse",
+      "community": 202,
+      "norm_label": "listassignmentsbycourse"
+    },
+    {
+      "label": "submitAssignment",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/assignment.service.ts",
+      "source_location": "L114",
+      "id": "services_assignment_service_submitassignment",
+      "community": 204,
+      "norm_label": "submitassignment"
+    },
+    {
+      "label": "gradeSubmission",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/assignment.service.ts",
+      "source_location": "L169",
+      "id": "services_assignment_service_gradesubmission",
+      "community": 200,
+      "norm_label": "gradesubmission"
+    },
+    {
+      "label": "listSubmissions",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/assignment.service.ts",
+      "source_location": "L198",
+      "id": "services_assignment_service_listsubmissions",
+      "community": 203,
+      "norm_label": "listsubmissions"
+    },
+    {
+      "label": "register",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/auth.service.ts",
+      "source_location": "L8",
+      "id": "services_auth_service_register",
+      "community": 210,
+      "norm_label": "register"
+    },
+    {
+      "label": "login",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/auth.service.ts",
+      "source_location": "L54",
+      "id": "services_auth_service_login",
+      "community": 209,
+      "norm_label": "login"
+    },
+    {
+      "label": "verifyUserToken",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/auth.service.ts",
+      "source_location": "L78",
+      "id": "services_auth_service_verifyusertoken",
+      "community": 213,
+      "norm_label": "verifyusertoken"
+    },
+    {
+      "label": "forgotPassword",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/auth.service.ts",
+      "source_location": "L94",
+      "id": "services_auth_service_forgotpassword",
+      "community": 207,
+      "norm_label": "forgotpassword"
+    },
+    {
+      "label": "resetPassword",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/auth.service.ts",
+      "source_location": "L120",
+      "id": "services_auth_service_resetpassword",
+      "community": 211,
+      "norm_label": "resetpassword"
+    },
+    {
+      "label": "changePassword",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/auth.service.ts",
+      "source_location": "L159",
+      "id": "services_auth_service_changepassword",
+      "community": 206,
+      "norm_label": "changepassword"
+    },
+    {
+      "label": "getUserProfile",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/auth.service.ts",
+      "source_location": "L180",
+      "id": "services_auth_service_getuserprofile",
+      "community": 208,
+      "norm_label": "getuserprofile"
+    },
+    {
+      "label": "updateUserProfile",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/auth.service.ts",
+      "source_location": "L191",
+      "id": "services_auth_service_updateuserprofile",
+      "community": 212,
+      "norm_label": "updateuserprofile"
+    },
+    {
+      "label": "createClass",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/class.service.ts",
+      "source_location": "L7",
+      "id": "services_class_service_createclass",
+      "community": 215,
+      "norm_label": "createclass"
+    },
+    {
+      "label": "updateClass",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/class.service.ts",
+      "source_location": "L40",
+      "id": "services_class_service_updateclass",
+      "community": 221,
+      "norm_label": "updateclass"
+    },
+    {
+      "label": "deleteClass",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/class.service.ts",
+      "source_location": "L57",
+      "id": "services_class_service_deleteclass",
+      "community": 216,
+      "norm_label": "deleteclass"
+    },
+    {
+      "label": "listClasses",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/class.service.ts",
+      "source_location": "L69",
+      "id": "services_class_service_listclasses",
+      "community": 219,
+      "norm_label": "listclasses"
+    },
+    {
+      "label": "getClassById",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/class.service.ts",
+      "source_location": "L111",
+      "id": "services_class_service_getclassbyid",
+      "community": 217,
+      "norm_label": "getclassbyid"
+    },
+    {
+      "label": "addStudents",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/class.service.ts",
+      "source_location": "L122",
+      "id": "services_class_service_addstudents",
+      "community": 214,
+      "norm_label": "addstudents"
+    },
+    {
+      "label": "removeStudents",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/class.service.ts",
+      "source_location": "L154",
+      "id": "services_class_service_removestudents",
+      "community": 220,
+      "norm_label": "removestudents"
+    },
+    {
+      "label": "getRoster",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/class.service.ts",
+      "source_location": "L180",
+      "id": "services_class_service_getroster",
+      "community": 218,
+      "norm_label": "getroster"
+    },
+    {
+      "label": "deleteCloudinaryFile",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/cloudinary.service.ts",
+      "source_location": "L10",
+      "id": "services_cloudinary_service_deletecloudinaryfile",
+      "community": 222,
+      "norm_label": "deletecloudinaryfile"
+    },
+    {
+      "label": "uploadFromUrl",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/cloudinary.service.ts",
+      "source_location": "L15",
+      "id": "services_cloudinary_service_uploadfromurl",
+      "community": 223,
+      "norm_label": "uploadfromurl"
+    },
+    {
+      "label": "createCourse",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/course.service.ts",
+      "source_location": "L8",
+      "id": "services_course_service_createcourse",
+      "community": 227,
+      "norm_label": "createcourse"
+    },
+    {
+      "label": "updateCourse",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/course.service.ts",
+      "source_location": "L42",
+      "id": "services_course_service_updatecourse",
+      "community": 234,
+      "norm_label": "updatecourse"
+    },
+    {
+      "label": "deleteCourse",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/course.service.ts",
+      "source_location": "L63",
+      "id": "services_course_service_deletecourse",
+      "community": 228,
+      "norm_label": "deletecourse"
+    },
+    {
+      "label": "getCourseById",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/course.service.ts",
+      "source_location": "L75",
+      "id": "services_course_service_getcoursebyid",
+      "community": 230,
+      "norm_label": "getcoursebyid"
+    },
+    {
+      "label": "listCourses",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/course.service.ts",
+      "source_location": "L86",
+      "id": "services_course_service_listcourses",
+      "community": 232,
+      "norm_label": "listcourses"
+    },
+    {
+      "label": "enrollStudent",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/course.service.ts",
+      "source_location": "L128",
+      "id": "services_course_service_enrollstudent",
+      "community": 229,
+      "norm_label": "enrollstudent"
+    },
+    {
+      "label": "unenrollStudent",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/course.service.ts",
+      "source_location": "L164",
+      "id": "services_course_service_unenrollstudent",
+      "community": 233,
+      "norm_label": "unenrollstudent"
+    },
+    {
+      "label": "getEnrollments",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/course.service.ts",
+      "source_location": "L182",
+      "id": "services_course_service_getenrollments",
+      "community": 231,
+      "norm_label": "getenrollments"
+    },
+    {
+      "label": "listAllExams",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/exam.service.ts",
+      "source_location": "L8",
+      "id": "services_exam_service_listallexams",
+      "community": 240,
+      "norm_label": "listallexams"
+    },
+    {
+      "label": "createExam",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/exam.service.ts",
+      "source_location": "L28",
+      "id": "services_exam_service_createexam",
+      "community": 235,
+      "norm_label": "createexam"
+    },
+    {
+      "label": "updateExam",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/exam.service.ts",
+      "source_location": "L72",
+      "id": "services_exam_service_updateexam",
+      "community": 244,
+      "norm_label": "updateexam"
+    },
+    {
+      "label": "deleteExam",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/exam.service.ts",
+      "source_location": "L89",
+      "id": "services_exam_service_deleteexam",
+      "community": 236,
+      "norm_label": "deleteexam"
+    },
+    {
+      "label": "getExamById",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/exam.service.ts",
+      "source_location": "L101",
+      "id": "services_exam_service_getexambyid",
+      "community": 237,
+      "norm_label": "getexambyid"
+    },
+    {
+      "label": "scheduleExam",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/exam.service.ts",
+      "source_location": "L112",
+      "id": "services_exam_service_scheduleexam",
+      "community": 241,
+      "norm_label": "scheduleexam"
+    },
+    {
+      "label": "startExamAttempt",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/exam.service.ts",
+      "source_location": "L142",
+      "id": "services_exam_service_startexamattempt",
+      "community": 242,
+      "norm_label": "startexamattempt"
+    },
+    {
+      "label": "submitExamAttempt",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/exam.service.ts",
+      "source_location": "L187",
+      "id": "services_exam_service_submitexamattempt",
+      "community": 243,
+      "norm_label": "submitexamattempt"
+    },
+    {
+      "label": "gradeExamAttempt",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/exam.service.ts",
+      "source_location": "L269",
+      "id": "services_exam_service_gradeexamattempt",
+      "community": 239,
+      "norm_label": "gradeexamattempt"
+    },
+    {
+      "label": "getExamResults",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/exam.service.ts",
+      "source_location": "L296",
+      "id": "services_exam_service_getexamresults",
+      "community": 238,
+      "norm_label": "getexamresults"
+    },
+    {
+      "label": "getStudentGrades",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/grade.service.ts",
+      "source_location": "L7",
+      "id": "services_grade_service_getstudentgrades",
+      "community": 248,
+      "norm_label": "getstudentgrades"
+    },
+    {
+      "label": "getGradebook",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/grade.service.ts",
+      "source_location": "L20",
+      "id": "services_grade_service_getgradebook",
+      "community": 247,
+      "norm_label": "getgradebook"
+    },
+    {
+      "label": "updateGrade",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/grade.service.ts",
+      "source_location": "L51",
+      "id": "services_grade_service_updategrade",
+      "community": 249,
+      "norm_label": "updategrade"
+    },
+    {
+      "label": "bulkUpdate",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/grade.service.ts",
+      "source_location": "L83",
+      "id": "services_grade_service_bulkupdate",
+      "community": 245,
+      "norm_label": "bulkupdate"
+    },
+    {
+      "label": "generateReport",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/grade.service.ts",
+      "source_location": "L130",
+      "id": "services_grade_service_generatereport",
+      "community": 246,
+      "norm_label": "generatereport"
+    },
+    {
+      "label": "createLesson",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/lesson.service.ts",
+      "source_location": "L7",
+      "id": "services_lesson_service_createlesson",
+      "community": 250,
+      "norm_label": "createlesson"
+    },
+    {
+      "label": "updateLesson",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/lesson.service.ts",
+      "source_location": "L53",
+      "id": "services_lesson_service_updatelesson",
+      "community": 256,
+      "norm_label": "updatelesson"
+    },
+    {
+      "label": "deleteLesson",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/lesson.service.ts",
+      "source_location": "L70",
+      "id": "services_lesson_service_deletelesson",
+      "community": 251,
+      "norm_label": "deletelesson"
+    },
+    {
+      "label": "getLessonById",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/lesson.service.ts",
+      "source_location": "L91",
+      "id": "services_lesson_service_getlessonbyid",
+      "community": 252,
+      "norm_label": "getlessonbyid"
+    },
+    {
+      "label": "listLessonsByCourse",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/lesson.service.ts",
+      "source_location": "L102",
+      "id": "services_lesson_service_listlessonsbycourse",
+      "community": 253,
+      "norm_label": "listlessonsbycourse"
+    },
+    {
+      "label": "reorderLessons",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/lesson.service.ts",
+      "source_location": "L114",
+      "id": "services_lesson_service_reorderlessons",
+      "community": 255,
+      "norm_label": "reorderlessons"
+    },
+    {
+      "label": "markLessonComplete",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/lesson.service.ts",
+      "source_location": "L126",
+      "id": "services_lesson_service_marklessoncomplete",
+      "community": 254,
+      "norm_label": "marklessoncomplete"
+    },
+    {
+      "label": "createConversation",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/message.service.ts",
+      "source_location": "L7",
+      "id": "services_message_service_createconversation",
+      "community": 257,
+      "norm_label": "createconversation"
+    },
+    {
+      "label": "sendMessage",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/message.service.ts",
+      "source_location": "L36",
+      "id": "services_message_service_sendmessage",
+      "community": 261,
+      "norm_label": "sendmessage"
+    },
+    {
+      "label": "getConversations",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/message.service.ts",
+      "source_location": "L96",
+      "id": "services_message_service_getconversations",
+      "community": 258,
+      "norm_label": "getconversations"
+    },
+    {
+      "label": "getMessages",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/message.service.ts",
+      "source_location": "L118",
+      "id": "services_message_service_getmessages",
+      "community": 259,
+      "norm_label": "getmessages"
+    },
+    {
+      "label": "markConversationRead",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/message.service.ts",
+      "source_location": "L152",
+      "id": "services_message_service_markconversationread",
+      "community": 260,
+      "norm_label": "markconversationread"
+    },
+    {
+      "label": "createNotification",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/notification.service.ts",
+      "source_location": "L7",
+      "id": "services_notification_service_createnotification",
+      "community": 263,
+      "norm_label": "createnotification"
+    },
+    {
+      "label": "getNotificationsByUser",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/notification.service.ts",
+      "source_location": "L36",
+      "id": "services_notification_service_getnotificationsbyuser",
+      "community": 266,
+      "norm_label": "getnotificationsbyuser"
+    },
+    {
+      "label": "markNotificationRead",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/notification.service.ts",
+      "source_location": "L62",
+      "id": "services_notification_service_marknotificationread",
+      "community": 269,
+      "norm_label": "marknotificationread"
+    },
+    {
+      "label": "markAllNotificationsRead",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/notification.service.ts",
+      "source_location": "L83",
+      "id": "services_notification_service_markallnotificationsread",
+      "community": 268,
+      "norm_label": "markallnotificationsread"
+    },
+    {
+      "label": "getUnreadCount",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/notification.service.ts",
+      "source_location": "L102",
+      "id": "services_notification_service_getunreadcount",
+      "community": 267,
+      "norm_label": "getunreadcount"
+    },
+    {
+      "label": "deleteNotification",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/notification.service.ts",
+      "source_location": "L112",
+      "id": "services_notification_service_deletenotification",
+      "community": 264,
+      "norm_label": "deletenotification"
+    },
+    {
+      "label": "getNotificationPreferences",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/notification.service.ts",
+      "source_location": "L129",
+      "id": "services_notification_service_getnotificationpreferences",
+      "community": 265,
+      "norm_label": "getnotificationpreferences"
+    },
+    {
+      "label": "updateNotificationPreferences",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/notification.service.ts",
+      "source_location": "L148",
+      "id": "services_notification_service_updatenotificationpreferences",
+      "community": 270,
+      "norm_label": "updatenotificationpreferences"
+    },
+    {
+      "label": "createBulkNotifications",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/notification.service.ts",
+      "source_location": "L171",
+      "id": "services_notification_service_createbulknotifications",
+      "community": 262,
+      "norm_label": "createbulknotifications"
+    },
+    {
+      "label": "listAllQuizzes",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/quiz.service.ts",
+      "source_location": "L8",
+      "id": "services_quiz_service_listallquizzes",
+      "community": 275,
+      "norm_label": "listallquizzes"
+    },
+    {
+      "label": "createQuiz",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/quiz.service.ts",
+      "source_location": "L28",
+      "id": "services_quiz_service_createquiz",
+      "community": 271,
+      "norm_label": "createquiz"
+    },
+    {
+      "label": "updateQuiz",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/quiz.service.ts",
+      "source_location": "L71",
+      "id": "services_quiz_service_updatequiz",
+      "community": 278,
+      "norm_label": "updatequiz"
+    },
+    {
+      "label": "deleteQuiz",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/quiz.service.ts",
+      "source_location": "L88",
+      "id": "services_quiz_service_deletequiz",
+      "community": 272,
+      "norm_label": "deletequiz"
+    },
+    {
+      "label": "getQuizById",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/quiz.service.ts",
+      "source_location": "L100",
+      "id": "services_quiz_service_getquizbyid",
+      "community": 273,
+      "norm_label": "getquizbyid"
+    },
+    {
+      "label": "startAttempt",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/quiz.service.ts",
+      "source_location": "L111",
+      "id": "services_quiz_service_startattempt",
+      "community": 276,
+      "norm_label": "startattempt"
+    },
+    {
+      "label": "submitAttempt",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/quiz.service.ts",
+      "source_location": "L156",
+      "id": "services_quiz_service_submitattempt",
+      "community": 277,
+      "norm_label": "submitattempt"
+    },
+    {
+      "label": "getQuizResults",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/quiz.service.ts",
+      "source_location": "L238",
+      "id": "services_quiz_service_getquizresults",
+      "community": 274,
+      "norm_label": "getquizresults"
+    },
+    {
+      "label": "getSettings",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/settings.service.ts",
+      "source_location": "L40",
+      "id": "services_settings_service_getsettings",
+      "community": 279,
+      "norm_label": "getsettings"
+    },
+    {
+      "label": "updateSettings",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/settings.service.ts",
+      "source_location": "L51",
+      "id": "services_settings_service_updatesettings",
+      "community": 281,
+      "norm_label": "updatesettings"
+    },
+    {
+      "label": "getSystemSettings",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/settings.service.ts",
+      "source_location": "L67",
+      "id": "services_settings_service_getsystemsettings",
+      "community": 280,
+      "norm_label": "getsystemsettings"
+    },
+    {
+      "label": "updateSystemSettings",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/settings.service.ts",
+      "source_location": "L81",
+      "id": "services_settings_service_updatesystemsettings",
+      "community": 282,
+      "norm_label": "updatesystemsettings"
+    },
+    {
+      "label": "createSubject",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/subject.service.ts",
+      "source_location": "L7",
+      "id": "services_subject_service_createsubject",
+      "community": 283,
+      "norm_label": "createsubject"
+    },
+    {
+      "label": "updateSubject",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/subject.service.ts",
+      "source_location": "L38",
+      "id": "services_subject_service_updatesubject",
+      "community": 287,
+      "norm_label": "updatesubject"
+    },
+    {
+      "label": "deleteSubject",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/subject.service.ts",
+      "source_location": "L55",
+      "id": "services_subject_service_deletesubject",
+      "community": 284,
+      "norm_label": "deletesubject"
+    },
+    {
+      "label": "listSubjects",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/subject.service.ts",
+      "source_location": "L67",
+      "id": "services_subject_service_listsubjects",
+      "community": 286,
+      "norm_label": "listsubjects"
+    },
+    {
+      "label": "getSubjectById",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/subject.service.ts",
+      "source_location": "L104",
+      "id": "services_subject_service_getsubjectbyid",
+      "community": 285,
+      "norm_label": "getsubjectbyid"
+    },
+    {
+      "label": "uploadFileService",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/upload.service.ts",
+      "source_location": "L24",
+      "id": "services_upload_service_uploadfileservice",
+      "community": 301,
+      "norm_label": "uploadfileservice"
+    },
+    {
+      "label": "getFileUrlService",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/upload.service.ts",
+      "source_location": "L54",
+      "id": "services_upload_service_getfileurlservice",
+      "community": 300,
+      "norm_label": "getfileurlservice"
+    },
+    {
+      "label": "deleteFileService",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/upload.service.ts",
+      "source_location": "L66",
+      "id": "services_upload_service_deletefileservice",
+      "community": 298,
+      "norm_label": "deletefileservice"
+    },
+    {
+      "label": "validateFileType",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/upload.service.ts",
+      "source_location": "L79",
+      "id": "services_upload_service_validatefiletype",
+      "community": 303,
+      "norm_label": "validatefiletype"
+    },
+    {
+      "label": "validateFileSize",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/upload.service.ts",
+      "source_location": "L89",
+      "id": "services_upload_service_validatefilesize",
+      "community": 302,
+      "norm_label": "validatefilesize"
+    },
+    {
+      "label": "getAllowedMimeTypes",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/upload.service.ts",
+      "source_location": "L98",
+      "id": "services_upload_service_getallowedmimetypes",
+      "community": 299,
+      "norm_label": "getallowedmimetypes"
+    },
+    {
+      "label": "listUsers",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/user.service.ts",
+      "source_location": "L9",
+      "id": "services_user_service_listusers",
+      "community": 308,
+      "norm_label": "listusers"
+    },
+    {
+      "label": "getUserByIdService",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/user.service.ts",
+      "source_location": "L59",
+      "id": "services_user_service_getuserbyidservice",
+      "community": 307,
+      "norm_label": "getuserbyidservice"
+    },
+    {
+      "label": "createUser",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/user.service.ts",
+      "source_location": "L70",
+      "id": "services_user_service_createuser",
+      "community": 305,
+      "norm_label": "createuser"
+    },
+    {
+      "label": "updateUser",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/user.service.ts",
+      "source_location": "L112",
+      "id": "services_user_service_updateuser",
+      "community": 310,
+      "norm_label": "updateuser"
+    },
+    {
+      "label": "deleteUserService",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/user.service.ts",
+      "source_location": "L151",
+      "id": "services_user_service_deleteuserservice",
+      "community": 306,
+      "norm_label": "deleteuserservice"
+    },
+    {
+      "label": "assignRole",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/user.service.ts",
+      "source_location": "L165",
+      "id": "services_user_service_assignrole",
+      "community": 304,
+      "norm_label": "assignrole"
+    },
+    {
+      "label": "updateProfile",
+      "file_type": "code",
+      "source_file": "lms/backend/src/services/user.service.ts",
+      "source_location": "L184",
+      "id": "services_user_service_updateprofile",
+      "community": 309,
+      "norm_label": "updateprofile"
+    },
+    {
+      "label": "AppError",
+      "file_type": "code",
+      "source_file": "lms/backend/src/utils/errors.ts",
+      "source_location": "L1",
+      "id": "utils_errors_apperror",
+      "community": 0,
+      "norm_label": "apperror"
+    },
+    {
+      "label": "NotFoundError",
+      "file_type": "code",
+      "source_file": "lms/backend/src/utils/errors.ts",
+      "source_location": "L14",
+      "id": "utils_errors_notfounderror",
+      "community": 0,
+      "norm_label": "notfounderror"
+    },
+    {
+      "label": "ValidationError",
+      "file_type": "code",
+      "source_file": "lms/backend/src/utils/errors.ts",
+      "source_location": "L20",
+      "id": "utils_errors_validationerror",
+      "community": 0,
+      "norm_label": "validationerror"
+    },
+    {
+      "label": "UnauthorizedError",
+      "file_type": "code",
+      "source_file": "lms/backend/src/utils/errors.ts",
+      "source_location": "L26",
+      "id": "utils_errors_unauthorizederror",
+      "community": 0,
+      "norm_label": "unauthorizederror"
+    },
+    {
+      "label": "ForbiddenError",
+      "file_type": "code",
+      "source_file": "lms/backend/src/utils/errors.ts",
+      "source_location": "L32",
+      "id": "utils_errors_forbiddenerror",
+      "community": 0,
+      "norm_label": "forbiddenerror"
+    },
+    {
+      "label": "ConflictError",
+      "file_type": "code",
+      "source_file": "lms/backend/src/utils/errors.ts",
+      "source_location": "L38",
+      "id": "utils_errors_conflicterror",
+      "community": 0,
+      "norm_label": "conflicterror"
+    },
+    {
+      "label": "RateLimitError",
+      "file_type": "code",
+      "source_file": "lms/backend/src/utils/errors.ts",
+      "source_location": "L44",
+      "id": "utils_errors_ratelimiterror",
+      "community": 0,
+      "norm_label": "ratelimiterror"
+    },
+    {
+      "label": "PaginationParams",
+      "file_type": "code",
+      "source_file": "lms/backend/src/utils/pagination.ts",
+      "source_location": "L3",
+      "id": "utils_pagination_paginationparams",
+      "community": 401,
+      "norm_label": "paginationparams"
+    },
+    {
+      "label": "parsePagination",
+      "file_type": "code",
+      "source_file": "lms/backend/src/utils/pagination.ts",
+      "source_location": "L9",
+      "id": "utils_pagination_parsepagination",
+      "community": 402,
+      "norm_label": "parsepagination"
+    },
+    {
+      "label": "paginateQuery",
+      "file_type": "code",
+      "source_file": "lms/backend/src/utils/pagination.ts",
+      "source_location": "L20",
+      "id": "utils_pagination_paginatequery",
+      "community": 400,
+      "norm_label": "paginatequery"
+    },
+    {
+      "label": "getDocumentById",
+      "file_type": "code",
+      "source_file": "lms/backend/src/utils/pagination.ts",
+      "source_location": "L39",
+      "id": "utils_pagination_getdocumentbyid",
+      "community": 399,
+      "norm_label": "getdocumentbyid"
+    },
+    {
+      "label": "sendSuccess",
+      "file_type": "code",
+      "source_file": "lms/backend/src/utils/response.ts",
+      "source_location": "L12",
+      "id": "utils_response_sendsuccess",
+      "community": 421,
+      "norm_label": "sendsuccess"
+    },
+    {
+      "label": "sendPaginated",
+      "file_type": "code",
+      "source_file": "lms/backend/src/utils/response.ts",
+      "source_location": "L21",
+      "id": "utils_response_sendpaginated",
+      "community": 420,
+      "norm_label": "sendpaginated"
+    },
+    {
+      "label": "sendCreated",
+      "file_type": "code",
+      "source_file": "lms/backend/src/utils/response.ts",
+      "source_location": "L33",
+      "id": "utils_response_sendcreated",
+      "community": 417,
+      "norm_label": "sendcreated"
+    },
+    {
+      "label": "sendError",
+      "file_type": "code",
+      "source_file": "lms/backend/src/utils/response.ts",
+      "source_location": "L37",
+      "id": "utils_response_senderror",
+      "community": 418,
+      "norm_label": "senderror"
+    },
+    {
+      "label": "sendNoContent",
+      "file_type": "code",
+      "source_file": "lms/backend/src/utils/response.ts",
+      "source_location": "L44",
+      "id": "utils_response_sendnocontent",
+      "community": 419,
+      "norm_label": "sendnocontent"
+    },
+    {
+      "label": "buildPaginationMeta",
+      "file_type": "code",
+      "source_file": "lms/backend/src/utils/response.ts",
+      "source_location": "L48",
+      "id": "utils_response_buildpaginationmeta",
+      "community": 416,
+      "norm_label": "buildpaginationmeta"
+    },
+    {
+      "label": "App",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/app/App.tsx",
+      "source_location": "L6",
+      "id": "app_app_app",
+      "community": 7,
+      "norm_label": "app"
+    },
+    {
+      "label": "AuthLayout",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/app/layouts/AuthLayout.tsx",
+      "source_location": "L4",
+      "id": "layouts_authlayout_authlayout",
+      "community": 158,
+      "norm_label": "authlayout"
+    },
+    {
+      "label": "AdminProfileEditPage",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/app/pages/admin/AdminProfileEditPage.tsx",
+      "source_location": "L19",
+      "id": "admin_adminprofileeditpage_adminprofileeditpage",
+      "community": 5,
+      "norm_label": "adminprofileeditpage"
+    },
+    {
+      "label": "NotFoundPage",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/app/pages/shared/NotFoundPage.tsx",
+      "source_location": "L7",
+      "id": "shared_notfoundpage_notfoundpage",
+      "community": 314,
+      "norm_label": "notfoundpage"
+    },
+    {
+      "label": "StudentProfileEditPage",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/app/pages/student/StudentProfileEditPage.tsx",
+      "source_location": "L19",
+      "id": "student_studentprofileeditpage_studentprofileeditpage",
+      "community": 315,
+      "norm_label": "studentprofileeditpage"
+    },
+    {
+      "label": "TaskType",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/app/pages/student/StudentTaskComponents.tsx",
+      "source_location": "L18",
+      "id": "student_studenttaskcomponents_tasktype",
+      "community": 320,
+      "norm_label": "tasktype"
+    },
+    {
+      "label": "UrgencyLevel",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/app/pages/student/StudentTaskComponents.tsx",
+      "source_location": "L19",
+      "id": "student_studenttaskcomponents_urgencylevel",
+      "community": 321,
+      "norm_label": "urgencylevel"
+    },
+    {
+      "label": "FilterTab",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/app/pages/student/StudentTaskComponents.tsx",
+      "source_location": "L20",
+      "id": "student_studenttaskcomponents_filtertab",
+      "community": 317,
+      "norm_label": "filtertab"
+    },
+    {
+      "label": "TaskItem",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/app/pages/student/StudentTaskComponents.tsx",
+      "source_location": "L22",
+      "id": "student_studenttaskcomponents_taskitem",
+      "community": 319,
+      "norm_label": "taskitem"
+    },
+    {
+      "label": "getUrgencyLevel",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/app/pages/student/StudentTaskComponents.tsx",
+      "source_location": "L93",
+      "id": "student_studenttaskcomponents_geturgencylevel",
+      "community": 318,
+      "norm_label": "geturgencylevel"
+    },
+    {
+      "label": "buildTasks",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/app/pages/student/StudentTaskComponents.tsx",
+      "source_location": "L125",
+      "id": "student_studenttaskcomponents_buildtasks",
+      "community": 316,
+      "norm_label": "buildtasks"
+    },
+    {
+      "label": "TeacherProfileEditPage",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/app/pages/teacher/TeacherProfileEditPage.tsx",
+      "source_location": "L19",
+      "id": "teacher_teacherprofileeditpage_teacherprofileeditpage",
+      "community": 322,
+      "norm_label": "teacherprofileeditpage"
+    },
+    {
+      "label": "ProtectedRoute",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/app/router/ProtectedRoute.tsx",
+      "source_location": "L27",
+      "id": "router_protectedroute_protectedroute",
+      "community": 183,
+      "norm_label": "protectedroute"
+    },
+    {
+      "label": "RoleRoute",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/app/router/roleRoutes.ts",
+      "source_location": "L5",
+      "id": "router_roleroutes_roleroute",
+      "community": 185,
+      "norm_label": "roleroute"
+    },
+    {
+      "label": "filterRoutesByRole",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/app/router/roleRoutes.ts",
+      "source_location": "L10",
+      "id": "router_roleroutes_filterroutesbyrole",
+      "community": 184,
+      "norm_label": "filterroutesbyrole"
+    },
+    {
+      "label": "BreadcrumbItem",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/components/common/Breadcrumbs.tsx",
+      "source_location": "L5",
+      "id": "common_breadcrumbs_breadcrumbitem",
+      "community": 8,
+      "norm_label": "breadcrumbitem"
+    },
+    {
+      "label": "DataFetchWrapper",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/components/common/DataFetchWrapper.tsx",
+      "source_location": "L18",
+      "id": "common_datafetchwrapper_datafetchwrapper",
+      "community": 9,
+      "norm_label": "datafetchwrapper"
+    },
+    {
+      "label": "EmptyState",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/components/common/EmptyState.tsx",
+      "source_location": "L12",
+      "id": "common_emptystate_emptystate",
+      "community": 10,
+      "norm_label": "emptystate"
+    },
+    {
+      "label": "ErrorBoundary",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/components/common/ErrorBoundary.tsx",
+      "source_location": "L15",
+      "id": "common_errorboundary_errorboundary",
+      "community": 11,
+      "norm_label": "errorboundary"
+    },
+    {
+      "label": "useSearch",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/components/common/GlobalSearchDialog.tsx",
+      "source_location": "L40",
+      "id": "common_globalsearchdialog_usesearch",
+      "community": 12,
+      "norm_label": "usesearch"
+    },
+    {
+      "label": "SEOHead",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/components/common/SEOHead.tsx",
+      "source_location": "L16",
+      "id": "common_seohead_seohead",
+      "community": 13,
+      "norm_label": "seohead"
+    },
+    {
+      "label": "StatusBadge",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/components/common/StatusBadge.tsx",
+      "source_location": "L29",
+      "id": "common_statusbadge_statusbadge",
+      "community": 14,
+      "norm_label": "statusbadge"
+    },
+    {
+      "label": "ThemeToggle",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/components/layout/ThemeToggle.tsx",
+      "source_location": "L14",
+      "id": "layout_themetoggle_themetoggle",
+      "community": 157,
+      "norm_label": "themetoggle"
+    },
+    {
+      "label": "Icon",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/components/ui/Icon.tsx",
+      "source_location": "L14",
+      "id": "ui_icon_icon",
+      "community": 395,
+      "norm_label": "icon"
+    },
+    {
+      "label": "IconFilled",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/components/ui/Icon.tsx",
+      "source_location": "L26",
+      "id": "ui_icon_iconfilled",
+      "community": 396,
+      "norm_label": "iconfilled"
+    },
+    {
+      "label": "BadgeProps",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/components/ui/badge.tsx",
+      "source_location": "L25",
+      "id": "ui_badge_badgeprops",
+      "community": 393,
+      "norm_label": "badgeprops"
+    },
+    {
+      "label": "ButtonProps",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/components/ui/button.tsx",
+      "source_location": "L40",
+      "id": "ui_button_buttonprops",
+      "community": 394,
+      "norm_label": "buttonprops"
+    },
+    {
+      "label": "InputProps",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/components/ui/input.tsx",
+      "source_location": "L4",
+      "id": "ui_input_inputprops",
+      "community": 397,
+      "norm_label": "inputprops"
+    },
+    {
+      "label": "TextareaProps",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/components/ui/textarea.tsx",
+      "source_location": "L4",
+      "id": "ui_textarea_textareaprops",
+      "community": 398,
+      "norm_label": "textareaprops"
+    },
+    {
+      "label": "ResetPasswordForm",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/features/auth/components/ResetPasswordForm.tsx",
+      "source_location": "L26",
+      "id": "components_resetpasswordform_resetpasswordform",
+      "community": 15,
+      "norm_label": "resetpasswordform"
+    },
+    {
+      "label": "useAuth",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/features/auth/hooks/useAuth.ts",
+      "source_location": "L5",
+      "id": "hooks_useauth_useauth",
+      "community": 142,
+      "norm_label": "useauth"
+    },
+    {
+      "label": "useLogin",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/features/auth/hooks/useLogin.ts",
+      "source_location": "L22",
+      "id": "hooks_uselogin_uselogin",
+      "community": 146,
+      "norm_label": "uselogin"
+    },
+    {
+      "label": "useLogout",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/features/auth/hooks/useLogout.ts",
+      "source_location": "L8",
+      "id": "hooks_uselogout_uselogout",
+      "community": 147,
+      "norm_label": "uselogout"
+    },
+    {
+      "label": "useRegister",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/features/auth/hooks/useRegister.ts",
+      "source_location": "L22",
+      "id": "hooks_useregister_useregister",
+      "community": 152,
+      "norm_label": "useregister"
+    },
+    {
+      "label": "LoginFormData",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/features/auth/schemas/authSchemas.ts",
+      "source_location": "L42",
+      "id": "schemas_authschemas_loginformdata",
+      "community": 187,
+      "norm_label": "loginformdata"
+    },
+    {
+      "label": "RegisterFormData",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/features/auth/schemas/authSchemas.ts",
+      "source_location": "L43",
+      "id": "schemas_authschemas_registerformdata",
+      "community": 188,
+      "norm_label": "registerformdata"
+    },
+    {
+      "label": "ForgotPasswordFormData",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/features/auth/schemas/authSchemas.ts",
+      "source_location": "L44",
+      "id": "schemas_authschemas_forgotpasswordformdata",
+      "community": 186,
+      "norm_label": "forgotpasswordformdata"
+    },
+    {
+      "label": "ResetPasswordFormData",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/features/auth/schemas/authSchemas.ts",
+      "source_location": "L45",
+      "id": "schemas_authschemas_resetpasswordformdata",
+      "community": 189,
+      "norm_label": "resetpasswordformdata"
+    },
+    {
+      "label": "initAnalytics",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/firebase/analytics.ts",
+      "source_location": "L6",
+      "id": "firebase_analytics_initanalytics",
+      "community": 116,
+      "norm_label": "initanalytics"
+    },
+    {
+      "label": "trackEvent",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/firebase/analytics.ts",
+      "source_location": "L14",
+      "id": "firebase_analytics_trackevent",
+      "community": 117,
+      "norm_label": "trackevent"
+    },
+    {
+      "label": "onAuthChange",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/firebase/auth.ts",
+      "source_location": "L12",
+      "id": "firebase_auth_onauthchange",
+      "community": 126,
+      "norm_label": "onauthchange"
+    },
+    {
+      "label": "loginUser",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/firebase/auth.ts",
+      "source_location": "L16",
+      "id": "firebase_auth_loginuser",
+      "community": 124,
+      "norm_label": "loginuser"
+    },
+    {
+      "label": "registerUser",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/firebase/auth.ts",
+      "source_location": "L21",
+      "id": "firebase_auth_registeruser",
+      "community": 127,
+      "norm_label": "registeruser"
+    },
+    {
+      "label": "logoutUser",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/firebase/auth.ts",
+      "source_location": "L26",
+      "id": "firebase_auth_logoutuser",
+      "community": 125,
+      "norm_label": "logoutuser"
+    },
+    {
+      "label": "resetPassword",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/firebase/auth.ts",
+      "source_location": "L30",
+      "id": "firebase_auth_resetpassword",
+      "community": 128,
+      "norm_label": "resetpassword"
+    },
+    {
+      "label": "confirmReset",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/firebase/auth.ts",
+      "source_location": "L34",
+      "id": "firebase_auth_confirmreset",
+      "community": 118,
+      "norm_label": "confirmreset"
+    },
+    {
+      "label": "initMessaging",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/firebase/messaging.ts",
+      "source_location": "L6",
+      "id": "firebase_messaging_initmessaging",
+      "community": 135,
+      "norm_label": "initmessaging"
+    },
+    {
+      "label": "requestNotificationPermission",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/firebase/messaging.ts",
+      "source_location": "L14",
+      "id": "firebase_messaging_requestnotificationpermission",
+      "community": 137,
+      "norm_label": "requestnotificationpermission"
+    },
+    {
+      "label": "onForegroundMessage",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/firebase/messaging.ts",
+      "source_location": "L34",
+      "id": "firebase_messaging_onforegroundmessage",
+      "community": 136,
+      "norm_label": "onforegroundmessage"
+    },
+    {
+      "label": "useDebounce",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/hooks/useDebounce.ts",
+      "source_location": "L3",
+      "id": "hooks_usedebounce_usedebounce",
+      "community": 143,
+      "norm_label": "usedebounce"
+    },
+    {
+      "label": "useIntersectionObserver",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/hooks/useIntersectionObserver.ts",
+      "source_location": "L9",
+      "id": "hooks_useintersectionobserver_useintersectionobserver",
+      "community": 144,
+      "norm_label": "useintersectionobserver"
+    },
+    {
+      "label": "useLocalStorage",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/hooks/useLocalStorage.ts",
+      "source_location": "L3",
+      "id": "hooks_uselocalstorage_uselocalstorage",
+      "community": 145,
+      "norm_label": "uselocalstorage"
+    },
+    {
+      "label": "useMediaQuery",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/hooks/useMediaQuery.ts",
+      "source_location": "L3",
+      "id": "hooks_usemediaquery_usemediaquery",
+      "community": 151,
+      "norm_label": "usemediaquery"
+    },
+    {
+      "label": "useIsMobile",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/hooks/useMediaQuery.ts",
+      "source_location": "L21",
+      "id": "hooks_usemediaquery_useismobile",
+      "community": 149,
+      "norm_label": "useismobile"
+    },
+    {
+      "label": "useIsTablet",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/hooks/useMediaQuery.ts",
+      "source_location": "L25",
+      "id": "hooks_usemediaquery_useistablet",
+      "community": 150,
+      "norm_label": "useistablet"
+    },
+    {
+      "label": "useIsDesktop",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/hooks/useMediaQuery.ts",
+      "source_location": "L29",
+      "id": "hooks_usemediaquery_useisdesktop",
+      "community": 148,
+      "norm_label": "useisdesktop"
+    },
+    {
+      "label": "formatDate",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/lib/format.ts",
+      "source_location": "L3",
+      "id": "lib_format_formatdate",
+      "community": 159,
+      "norm_label": "formatdate"
+    },
+    {
+      "label": "formatDateTime",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/lib/format.ts",
+      "source_location": "L8",
+      "id": "lib_format_formatdatetime",
+      "community": 160,
+      "norm_label": "formatdatetime"
+    },
+    {
+      "label": "formatRelativeTime",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/lib/format.ts",
+      "source_location": "L13",
+      "id": "lib_format_formatrelativetime",
+      "community": 165,
+      "norm_label": "formatrelativetime"
+    },
+    {
+      "label": "formatTime",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/lib/format.ts",
+      "source_location": "L18",
+      "id": "lib_format_formattime",
+      "community": 166,
+      "norm_label": "formattime"
+    },
+    {
+      "label": "formatPercentage",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/lib/format.ts",
+      "source_location": "L25",
+      "id": "lib_format_formatpercentage",
+      "community": 164,
+      "norm_label": "formatpercentage"
+    },
+    {
+      "label": "formatGrade",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/lib/format.ts",
+      "source_location": "L29",
+      "id": "lib_format_formatgrade",
+      "community": 162,
+      "norm_label": "formatgrade"
+    },
+    {
+      "label": "getLetterGrade",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/lib/format.ts",
+      "source_location": "L35",
+      "id": "lib_format_getlettergrade",
+      "community": 167,
+      "norm_label": "getlettergrade"
+    },
+    {
+      "label": "formatFileSize",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/lib/format.ts",
+      "source_location": "L43",
+      "id": "lib_format_formatfilesize",
+      "community": 161,
+      "norm_label": "formatfilesize"
+    },
+    {
+      "label": "formatNumber",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/lib/format.ts",
+      "source_location": "L51",
+      "id": "lib_format_formatnumber",
+      "community": 163,
+      "norm_label": "formatnumber"
+    },
+    {
+      "label": "truncate",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/lib/format.ts",
+      "source_location": "L57",
+      "id": "lib_format_truncate",
+      "community": 168,
+      "norm_label": "truncate"
+    },
+    {
+      "label": "extractTextFromPDF",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/lib/pdfUtils.ts",
+      "source_location": "L8",
+      "id": "lib_pdfutils_extracttextfrompdf",
+      "community": 169,
+      "norm_label": "extracttextfrompdf"
+    },
+    {
+      "label": "sanitizeHtml",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/lib/sanitize.ts",
+      "source_location": "L32",
+      "id": "lib_sanitize_sanitizehtml",
+      "community": 170,
+      "norm_label": "sanitizehtml"
+    },
+    {
+      "label": "cn",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/lib/utils.ts",
+      "source_location": "L4",
+      "id": "lib_utils_cn",
+      "community": 171,
+      "norm_label": "cn"
+    },
+    {
+      "label": "getTimeGreeting",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/lib/utils.ts",
+      "source_location": "L8",
+      "id": "lib_utils_gettimegreeting",
+      "community": 175,
+      "norm_label": "gettimegreeting"
+    },
+    {
+      "label": "getInitials",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/lib/utils.ts",
+      "source_location": "L15",
+      "id": "lib_utils_getinitials",
+      "community": 174,
+      "norm_label": "getinitials"
+    },
+    {
+      "label": "formatDate",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/lib/utils.ts",
+      "source_location": "L20",
+      "id": "lib_utils_formatdate",
+      "community": 172,
+      "norm_label": "formatdate"
+    },
+    {
+      "label": "getDueUrgency",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/lib/utils.ts",
+      "source_location": "L26",
+      "id": "lib_utils_getdueurgency",
+      "community": 173,
+      "norm_label": "getdueurgency"
+    },
+    {
+      "label": "extractChapters",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/services/aiService.ts",
+      "source_location": "L67",
+      "id": "services_aiservice_extractchapters",
+      "community": 190,
+      "norm_label": "extractchapters"
+    },
+    {
+      "label": "generateConceptContent",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/services/aiService.ts",
+      "source_location": "L95",
+      "id": "services_aiservice_generateconceptcontent",
+      "community": 191,
+      "norm_label": "generateconceptcontent"
+    },
+    {
+      "label": "generateQuestionBank",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/services/aiService.ts",
+      "source_location": "L133",
+      "id": "services_aiservice_generatequestionbank",
+      "community": 192,
+      "norm_label": "generatequestionbank"
+    },
+    {
+      "label": "uploadImage",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/services/cloudinaryService.ts",
+      "source_location": "L4",
+      "id": "services_cloudinaryservice_uploadimage",
+      "community": 225,
+      "norm_label": "uploadimage"
+    },
+    {
+      "label": "uploadProfileImage",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/services/cloudinaryService.ts",
+      "source_location": "L47",
+      "id": "services_cloudinaryservice_uploadprofileimage",
+      "community": 226,
+      "norm_label": "uploadprofileimage"
+    },
+    {
+      "label": "getCloudinaryConfig",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/services/cloudinaryService.ts",
+      "source_location": "L55",
+      "id": "services_cloudinaryservice_getcloudinaryconfig",
+      "community": 224,
+      "norm_label": "getcloudinaryconfig"
+    },
+    {
+      "label": "createTextbook",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/services/textbookService.ts",
+      "source_location": "L8",
+      "id": "services_textbookservice_createtextbook",
+      "community": 288,
+      "norm_label": "createtextbook"
+    },
+    {
+      "label": "updateTextbook",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/services/textbookService.ts",
+      "source_location": "L17",
+      "id": "services_textbookservice_updatetextbook",
+      "community": 297,
+      "norm_label": "updatetextbook"
+    },
+    {
+      "label": "getTextbook",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/services/textbookService.ts",
+      "source_location": "L25",
+      "id": "services_textbookservice_gettextbook",
+      "community": 293,
+      "norm_label": "gettextbook"
+    },
+    {
+      "label": "getAllTextbooks",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/services/textbookService.ts",
+      "source_location": "L32",
+      "id": "services_textbookservice_getalltextbooks",
+      "community": 291,
+      "norm_label": "getalltextbooks"
+    },
+    {
+      "label": "getTextbooksBySubject",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/services/textbookService.ts",
+      "source_location": "L38",
+      "id": "services_textbookservice_gettextbooksbysubject",
+      "community": 294,
+      "norm_label": "gettextbooksbysubject"
+    },
+    {
+      "label": "deleteTextbook",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/services/textbookService.ts",
+      "source_location": "L44",
+      "id": "services_textbookservice_deletetextbook",
+      "community": 289,
+      "norm_label": "deletetextbook"
+    },
+    {
+      "label": "saveChapters",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/services/textbookService.ts",
+      "source_location": "L48",
+      "id": "services_textbookservice_savechapters",
+      "community": 295,
+      "norm_label": "savechapters"
+    },
+    {
+      "label": "saveConceptProgress",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/services/textbookService.ts",
+      "source_location": "L62",
+      "id": "services_textbookservice_saveconceptprogress",
+      "community": 296,
+      "norm_label": "saveconceptprogress"
+    },
+    {
+      "label": "getConceptProgress",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/services/textbookService.ts",
+      "source_location": "L86",
+      "id": "services_textbookservice_getconceptprogress",
+      "community": 292,
+      "norm_label": "getconceptprogress"
+    },
+    {
+      "label": "getAllConceptProgress",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/services/textbookService.ts",
+      "source_location": "L93",
+      "id": "services_textbookservice_getallconceptprogress",
+      "community": 290,
+      "norm_label": "getallconceptprogress"
+    },
+    {
+      "label": "YouTubeVideo",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/services/youtubeService.ts",
+      "source_location": "L4",
+      "id": "services_youtubeservice_youtubevideo",
+      "community": 313,
+      "norm_label": "youtubevideo"
+    },
+    {
+      "label": "searchVideos",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/services/youtubeService.ts",
+      "source_location": "L29",
+      "id": "services_youtubeservice_searchvideos",
+      "community": 311,
+      "norm_label": "searchvideos"
+    },
+    {
+      "label": "searchVideosForConcept",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/services/youtubeService.ts",
+      "source_location": "L69",
+      "id": "services_youtubeservice_searchvideosforconcept",
+      "community": 312,
+      "norm_label": "searchvideosforconcept"
+    },
+    {
+      "label": "DashboardStats",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/analytics.ts",
+      "source_location": "L1",
+      "id": "types_analytics_dashboardstats",
+      "community": 324,
+      "norm_label": "dashboardstats"
+    },
+    {
+      "label": "PerformanceData",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/analytics.ts",
+      "source_location": "L12",
+      "id": "types_analytics_performancedata",
+      "community": 325,
+      "norm_label": "performancedata"
+    },
+    {
+      "label": "ChartData",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/analytics.ts",
+      "source_location": "L21",
+      "id": "types_analytics_chartdata",
+      "community": 323,
+      "norm_label": "chartdata"
+    },
+    {
+      "label": "ApiResponse",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/api.ts",
+      "source_location": "L1",
+      "id": "types_api_apiresponse",
+      "community": 327,
+      "norm_label": "apiresponse"
+    },
+    {
+      "label": "PaginatedResponse",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/api.ts",
+      "source_location": "L8",
+      "id": "types_api_paginatedresponse",
+      "community": 328,
+      "norm_label": "paginatedresponse"
+    },
+    {
+      "label": "PaginationParams",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/api.ts",
+      "source_location": "L21",
+      "id": "types_api_paginationparams",
+      "community": 329,
+      "norm_label": "paginationparams"
+    },
+    {
+      "label": "ApiError",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/api.ts",
+      "source_location": "L29",
+      "id": "types_api_apierror",
+      "community": 326,
+      "norm_label": "apierror"
+    },
+    {
+      "label": "AssignmentStatus",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/assignment.ts",
+      "source_location": "L1",
+      "id": "types_assignment_assignmentstatus",
+      "community": 331,
+      "norm_label": "assignmentstatus"
+    },
+    {
+      "label": "SubmissionStatus",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/assignment.ts",
+      "source_location": "L2",
+      "id": "types_assignment_submissionstatus",
+      "community": 336,
+      "norm_label": "submissionstatus"
+    },
+    {
+      "label": "GradeLevel",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/assignment.ts",
+      "source_location": "L3",
+      "id": "types_assignment_gradelevel",
+      "community": 333,
+      "norm_label": "gradelevel"
+    },
+    {
+      "label": "Assignment",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/assignment.ts",
+      "source_location": "L5",
+      "id": "types_assignment_assignment",
+      "community": 330,
+      "norm_label": "assignment"
+    },
+    {
+      "label": "RubricCriteria",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/assignment.ts",
+      "source_location": "L24",
+      "id": "types_assignment_rubriccriteria",
+      "community": 334,
+      "norm_label": "rubriccriteria"
+    },
+    {
+      "label": "Submission",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/assignment.ts",
+      "source_location": "L31",
+      "id": "types_assignment_submission",
+      "community": 335,
+      "norm_label": "submission"
+    },
+    {
+      "label": "Grade",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/assignment.ts",
+      "source_location": "L47",
+      "id": "types_assignment_grade",
+      "community": 332,
+      "norm_label": "grade"
+    },
+    {
+      "label": "UserRole",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/auth.ts",
+      "source_location": "L1",
+      "id": "types_auth_userrole",
+      "community": 3,
+      "norm_label": "userrole"
+    },
+    {
+      "label": "User",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/auth.ts",
+      "source_location": "L3",
+      "id": "types_auth_user",
+      "community": 342,
+      "norm_label": "user"
+    },
+    {
+      "label": "AuthState",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/auth.ts",
+      "source_location": "L15",
+      "id": "types_auth_authstate",
+      "community": 337,
+      "norm_label": "authstate"
+    },
+    {
+      "label": "LoginInput",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/auth.ts",
+      "source_location": "L21",
+      "id": "types_auth_logininput",
+      "community": 339,
+      "norm_label": "logininput"
+    },
+    {
+      "label": "RegisterInput",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/auth.ts",
+      "source_location": "L27",
+      "id": "types_auth_registerinput",
+      "community": 340,
+      "norm_label": "registerinput"
+    },
+    {
+      "label": "ForgotPasswordInput",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/auth.ts",
+      "source_location": "L36",
+      "id": "types_auth_forgotpasswordinput",
+      "community": 338,
+      "norm_label": "forgotpasswordinput"
+    },
+    {
+      "label": "ResetPasswordInput",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/auth.ts",
+      "source_location": "L40",
+      "id": "types_auth_resetpasswordinput",
+      "community": 341,
+      "norm_label": "resetpasswordinput"
+    },
+    {
+      "label": "Class",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/class.ts",
+      "source_location": "L1",
+      "id": "types_class_class",
+      "community": 343,
+      "norm_label": "class"
+    },
+    {
+      "label": "Section",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/class.ts",
+      "source_location": "L16",
+      "id": "types_class_section",
+      "community": 345,
+      "norm_label": "section"
+    },
+    {
+      "label": "Schedule",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/class.ts",
+      "source_location": "L30",
+      "id": "types_class_schedule",
+      "community": 344,
+      "norm_label": "schedule"
+    },
+    {
+      "label": "CourseStatus",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/course.ts",
+      "source_location": "L1",
+      "id": "types_course_coursestatus",
+      "community": 349,
+      "norm_label": "coursestatus"
+    },
+    {
+      "label": "CourseLevel",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/course.ts",
+      "source_location": "L2",
+      "id": "types_course_courselevel",
+      "community": 348,
+      "norm_label": "courselevel"
+    },
+    {
+      "label": "EnrollmentStatus",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/course.ts",
+      "source_location": "L3",
+      "id": "types_course_enrollmentstatus",
+      "community": 351,
+      "norm_label": "enrollmentstatus"
+    },
+    {
+      "label": "Course",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/course.ts",
+      "source_location": "L5",
+      "id": "types_course_course",
+      "community": 346,
+      "norm_label": "course"
+    },
+    {
+      "label": "Module",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/course.ts",
+      "source_location": "L33",
+      "id": "types_course_module",
+      "community": 352,
+      "norm_label": "module"
+    },
+    {
+      "label": "Enrollment",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/course.ts",
+      "source_location": "L46",
+      "id": "types_course_enrollment",
+      "community": 350,
+      "norm_label": "enrollment"
+    },
+    {
+      "label": "CourseFilters",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/course.ts",
+      "source_location": "L60",
+      "id": "types_course_coursefilters",
+      "community": 347,
+      "norm_label": "coursefilters"
+    },
+    {
+      "label": "ExamStatus",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/exam.ts",
+      "source_location": "L1",
+      "id": "types_exam_examstatus",
+      "community": 357,
+      "norm_label": "examstatus"
+    },
+    {
+      "label": "ExamQuestionType",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/exam.ts",
+      "source_location": "L2",
+      "id": "types_exam_examquestiontype",
+      "community": 356,
+      "norm_label": "examquestiontype"
+    },
+    {
+      "label": "Exam",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/exam.ts",
+      "source_location": "L4",
+      "id": "types_exam_exam",
+      "community": 353,
+      "norm_label": "exam"
+    },
+    {
+      "label": "ExamQuestion",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/exam.ts",
+      "source_location": "L24",
+      "id": "types_exam_examquestion",
+      "community": 355,
+      "norm_label": "examquestion"
+    },
+    {
+      "label": "ExamAttempt",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/exam.ts",
+      "source_location": "L36",
+      "id": "types_exam_examattempt",
+      "community": 354,
+      "norm_label": "examattempt"
+    },
+    {
+      "label": "GradeSummary",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/grade.ts",
+      "source_location": "L1",
+      "id": "types_grade_gradesummary",
+      "community": 360,
+      "norm_label": "gradesummary"
+    },
+    {
+      "label": "GradeDetail",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/grade.ts",
+      "source_location": "L19",
+      "id": "types_grade_gradedetail",
+      "community": 358,
+      "norm_label": "gradedetail"
+    },
+    {
+      "label": "GradeItem",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/grade.ts",
+      "source_location": "L31",
+      "id": "types_grade_gradeitem",
+      "community": 359,
+      "norm_label": "gradeitem"
+    },
+    {
+      "label": "Activity",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/index.ts",
+      "source_location": "L18",
+      "id": "types_index_activity",
+      "community": 361,
+      "norm_label": "activity"
+    },
+    {
+      "label": "User",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/index.ts",
+      "source_location": "L27",
+      "id": "types_index_user",
+      "community": 3,
+      "norm_label": "user"
+    },
+    {
+      "label": "LoginInput",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/index.ts",
+      "source_location": "L40",
+      "id": "types_index_logininput",
+      "community": 365,
+      "norm_label": "logininput"
+    },
+    {
+      "label": "RegisterInput",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/index.ts",
+      "source_location": "L45",
+      "id": "types_index_registerinput",
+      "community": 3,
+      "norm_label": "registerinput"
+    },
+    {
+      "label": "Announcement",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/index.ts",
+      "source_location": "L52",
+      "id": "types_index_announcement",
+      "community": 362,
+      "norm_label": "announcement"
+    },
+    {
+      "label": "Bookmark",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/index.ts",
+      "source_location": "L61",
+      "id": "types_index_bookmark",
+      "community": 364,
+      "norm_label": "bookmark"
+    },
+    {
+      "label": "Attachment",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/index.ts",
+      "source_location": "L71",
+      "id": "types_index_attachment",
+      "community": 363,
+      "norm_label": "attachment"
+    },
+    {
+      "label": "LessonType",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/lesson.ts",
+      "source_location": "L1",
+      "id": "types_lesson_lessontype",
+      "community": 369,
+      "norm_label": "lessontype"
+    },
+    {
+      "label": "ResourceType",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/lesson.ts",
+      "source_location": "L2",
+      "id": "types_lesson_resourcetype",
+      "community": 370,
+      "norm_label": "resourcetype"
+    },
+    {
+      "label": "Lesson",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/lesson.ts",
+      "source_location": "L4",
+      "id": "types_lesson_lesson",
+      "community": 366,
+      "norm_label": "lesson"
+    },
+    {
+      "label": "LessonProgress",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/lesson.ts",
+      "source_location": "L22",
+      "id": "types_lesson_lessonprogress",
+      "community": 367,
+      "norm_label": "lessonprogress"
+    },
+    {
+      "label": "LessonResource",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/lesson.ts",
+      "source_location": "L34",
+      "id": "types_lesson_lessonresource",
+      "community": 368,
+      "norm_label": "lessonresource"
+    },
+    {
+      "label": "Conversation",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/message.ts",
+      "source_location": "L1",
+      "id": "types_message_conversation",
+      "community": 371,
+      "norm_label": "conversation"
+    },
+    {
+      "label": "ConversationParticipant",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/message.ts",
+      "source_location": "L12",
+      "id": "types_message_conversationparticipant",
+      "community": 372,
+      "norm_label": "conversationparticipant"
+    },
+    {
+      "label": "Message",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/message.ts",
+      "source_location": "L20",
+      "id": "types_message_message",
+      "community": 373,
+      "norm_label": "message"
+    },
+    {
+      "label": "MessageAttachment",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/message.ts",
+      "source_location": "L33",
+      "id": "types_message_messageattachment",
+      "community": 374,
+      "norm_label": "messageattachment"
+    },
+    {
+      "label": "NotificationType",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/notification.ts",
+      "source_location": "L1",
+      "id": "types_notification_notificationtype",
+      "community": 377,
+      "norm_label": "notificationtype"
+    },
+    {
+      "label": "Notification",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/notification.ts",
+      "source_location": "L3",
+      "id": "types_notification_notification",
+      "community": 375,
+      "norm_label": "notification"
+    },
+    {
+      "label": "NotificationPreferences",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/notification.ts",
+      "source_location": "L14",
+      "id": "types_notification_notificationpreferences",
+      "community": 376,
+      "norm_label": "notificationpreferences"
+    },
+    {
+      "label": "QuestionType",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/quiz.ts",
+      "source_location": "L1",
+      "id": "types_quiz_questiontype",
+      "community": 379,
+      "norm_label": "questiontype"
+    },
+    {
+      "label": "QuizStatus",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/quiz.ts",
+      "source_location": "L2",
+      "id": "types_quiz_quizstatus",
+      "community": 383,
+      "norm_label": "quizstatus"
+    },
+    {
+      "label": "Quiz",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/quiz.ts",
+      "source_location": "L4",
+      "id": "types_quiz_quiz",
+      "community": 380,
+      "norm_label": "quiz"
+    },
+    {
+      "label": "Question",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/quiz.ts",
+      "source_location": "L22",
+      "id": "types_quiz_question",
+      "community": 378,
+      "norm_label": "question"
+    },
+    {
+      "label": "QuizAttempt",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/quiz.ts",
+      "source_location": "L34",
+      "id": "types_quiz_quizattempt",
+      "community": 382,
+      "norm_label": "quizattempt"
+    },
+    {
+      "label": "QuizAnswer",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/quiz.ts",
+      "source_location": "L48",
+      "id": "types_quiz_quizanswer",
+      "community": 381,
+      "norm_label": "quizanswer"
+    },
+    {
+      "label": "Subject",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/subject.ts",
+      "source_location": "L1",
+      "id": "types_subject_subject",
+      "community": 384,
+      "norm_label": "subject"
+    },
+    {
+      "label": "Textbook",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/textbook.ts",
+      "source_location": "L1",
+      "id": "types_textbook_textbook",
+      "community": 391,
+      "norm_label": "textbook"
+    },
+    {
+      "label": "Chapter",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/textbook.ts",
+      "source_location": "L17",
+      "id": "types_textbook_chapter",
+      "community": 386,
+      "norm_label": "chapter"
+    },
+    {
+      "label": "Concept",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/textbook.ts",
+      "source_location": "L26",
+      "id": "types_textbook_concept",
+      "community": 387,
+      "norm_label": "concept"
+    },
+    {
+      "label": "CachedVideo",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/textbook.ts",
+      "source_location": "L44",
+      "id": "types_textbook_cachedvideo",
+      "community": 385,
+      "norm_label": "cachedvideo"
+    },
+    {
+      "label": "GeneratedQuestion",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/textbook.ts",
+      "source_location": "L56",
+      "id": "types_textbook_generatedquestion",
+      "community": 390,
+      "norm_label": "generatedquestion"
+    },
+    {
+      "label": "GeneratedAssignment",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/textbook.ts",
+      "source_location": "L68",
+      "id": "types_textbook_generatedassignment",
+      "community": 389,
+      "norm_label": "generatedassignment"
+    },
+    {
+      "label": "ConceptProgress",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/textbook.ts",
+      "source_location": "L79",
+      "id": "types_textbook_conceptprogress",
+      "community": 388,
+      "norm_label": "conceptprogress"
+    },
+    {
+      "label": "UserProfile",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/user.ts",
+      "source_location": "L3",
+      "id": "types_user_userprofile",
+      "community": 3,
+      "norm_label": "userprofile"
+    },
+    {
+      "label": "UserSettings",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/types/user.ts",
+      "source_location": "L20",
+      "id": "types_user_usersettings",
+      "community": 392,
+      "norm_label": "usersettings"
+    },
+    {
+      "label": "hasRole",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/utils/permissions.ts",
+      "source_location": "L4",
+      "id": "utils_permissions_hasrole",
+      "community": 411,
+      "norm_label": "hasrole"
+    },
+    {
+      "label": "hasMinimumRole",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/utils/permissions.ts",
+      "source_location": "L8",
+      "id": "utils_permissions_hasminimumrole",
+      "community": 410,
+      "norm_label": "hasminimumrole"
+    },
+    {
+      "label": "isAdmin",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/utils/permissions.ts",
+      "source_location": "L12",
+      "id": "utils_permissions_isadmin",
+      "community": 412,
+      "norm_label": "isadmin"
+    },
+    {
+      "label": "isTeacher",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/utils/permissions.ts",
+      "source_location": "L16",
+      "id": "utils_permissions_isteacher",
+      "community": 414,
+      "norm_label": "isteacher"
+    },
+    {
+      "label": "isStudent",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/utils/permissions.ts",
+      "source_location": "L20",
+      "id": "utils_permissions_isstudent",
+      "community": 413,
+      "norm_label": "isstudent"
+    },
+    {
+      "label": "canManageUsers",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/utils/permissions.ts",
+      "source_location": "L24",
+      "id": "utils_permissions_canmanageusers",
+      "community": 407,
+      "norm_label": "canmanageusers"
+    },
+    {
+      "label": "canManageCourses",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/utils/permissions.ts",
+      "source_location": "L28",
+      "id": "utils_permissions_canmanagecourses",
+      "community": 404,
+      "norm_label": "canmanagecourses"
+    },
+    {
+      "label": "canManageGrades",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/utils/permissions.ts",
+      "source_location": "L32",
+      "id": "utils_permissions_canmanagegrades",
+      "community": 405,
+      "norm_label": "canmanagegrades"
+    },
+    {
+      "label": "canViewAnalytics",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/utils/permissions.ts",
+      "source_location": "L36",
+      "id": "utils_permissions_canviewanalytics",
+      "community": 408,
+      "norm_label": "canviewanalytics"
+    },
+    {
+      "label": "canManageSystem",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/utils/permissions.ts",
+      "source_location": "L40",
+      "id": "utils_permissions_canmanagesystem",
+      "community": 406,
+      "norm_label": "canmanagesystem"
+    },
+    {
+      "label": "canCreateContent",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/utils/permissions.ts",
+      "source_location": "L44",
+      "id": "utils_permissions_cancreatecontent",
+      "community": 403,
+      "norm_label": "cancreatecontent"
+    },
+    {
+      "label": "Permission",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/utils/permissions.ts",
+      "source_location": "L65",
+      "id": "utils_permissions_permission",
+      "community": 415,
+      "norm_label": "permission"
+    },
+    {
+      "label": "checkPermission",
+      "file_type": "code",
+      "source_file": "lms/frontend/src/utils/permissions.ts",
+      "source_location": "L67",
+      "id": "utils_permissions_checkpermission",
+      "community": 409,
+      "norm_label": "checkpermission"
+    },
+    {
+      "label": "School LMS entry page",
+      "file_type": "code",
+      "source_file": "frontend/index.html",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "frontend_index_html",
+      "community": 1,
+      "norm_label": "school lms entry page"
+    },
+    {
+      "label": "Genesis entry page",
+      "file_type": "code",
+      "source_file": "lms/frontend/index.html",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "lms_frontend_index_html",
+      "community": 1,
+      "norm_label": "genesis entry page"
+    },
+    {
+      "label": "pnpm workspace config",
+      "file_type": "code",
+      "source_file": "lms/frontend/pnpm-workspace.yaml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "lms_frontend_pnpm_workspace_yaml",
+      "community": 4,
+      "norm_label": "pnpm workspace config"
+    },
+    {
+      "label": "Genesis robots.txt",
+      "file_type": "code",
+      "source_file": "lms/frontend/public/robots.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "lms_frontend_public_robots_txt",
+      "community": 4,
+      "norm_label": "genesis robots.txt"
+    },
+    {
+      "label": "Genesis brand logo",
+      "file_type": "image",
+      "source_file": "Genesis.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "genesis_png",
+      "community": 2,
+      "norm_label": "genesis brand logo"
+    },
+    {
+      "label": "Genesis graduation cap favicon SVG",
+      "file_type": "image",
+      "source_file": "lms/frontend/public/favicon.svg",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "lms_frontend_public_favicon_svg",
+      "community": 2,
+      "norm_label": "genesis graduation cap favicon svg"
+    },
+    {
+      "label": "Genesis platform icon PNG",
+      "file_type": "image",
+      "source_file": "lms/frontend/public/genesis_icon.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "lms_frontend_public_genesis_icon_png",
+      "community": 2,
+      "norm_label": "genesis platform icon png"
+    },
+    {
+      "label": "Vite build tool",
+      "file_type": "code",
+      "source_file": null,
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "vite",
+      "community": 1,
+      "norm_label": "vite build tool"
+    },
+    {
+      "label": "React UI framework",
+      "file_type": "code",
+      "source_file": null,
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "react",
+      "community": 1,
+      "norm_label": "react ui framework"
+    },
+    {
+      "label": "Material Symbols icon library",
+      "file_type": "code",
+      "source_file": null,
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "material_symbols",
+      "community": 1,
+      "norm_label": "material symbols icon library"
+    },
+    {
+      "label": "Firebase platform",
+      "file_type": "code",
+      "source_file": null,
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "firebase",
+      "community": 4,
+      "norm_label": "firebase platform"
+    },
+    {
+      "label": "School management project",
+      "file_type": "document",
+      "source_file": null,
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "school_project",
+      "community": 2,
+      "norm_label": "school management project"
+    },
+    {
+      "label": "Genesis school management platform",
+      "file_type": "document",
+      "source_file": null,
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "genesis_platform",
+      "community": 2,
+      "norm_label": "genesis school management platform"
+    }
+  ],
+  "links": [
+    {
+      "relation": "inherits",
+      "context": "type",
+      "confidence": "EXTRACTED",
+      "source_file": "lms/backend/src/utils/errors.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "utils_errors_conflicterror",
+      "target": "utils_errors_apperror",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "context": "type",
+      "confidence": "EXTRACTED",
+      "source_file": "lms/backend/src/utils/errors.ts",
+      "source_location": "L32",
+      "weight": 1.0,
+      "source": "utils_errors_forbiddenerror",
+      "target": "utils_errors_apperror",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "context": "type",
+      "confidence": "EXTRACTED",
+      "source_file": "lms/backend/src/utils/errors.ts",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "utils_errors_notfounderror",
+      "target": "utils_errors_apperror",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "context": "type",
+      "confidence": "EXTRACTED",
+      "source_file": "lms/backend/src/utils/errors.ts",
+      "source_location": "L44",
+      "weight": 1.0,
+      "source": "utils_errors_ratelimiterror",
+      "target": "utils_errors_apperror",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "context": "type",
+      "confidence": "EXTRACTED",
+      "source_file": "lms/backend/src/utils/errors.ts",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "utils_errors_unauthorizederror",
+      "target": "utils_errors_apperror",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "context": "type",
+      "confidence": "EXTRACTED",
+      "source_file": "lms/backend/src/utils/errors.ts",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "utils_errors_validationerror",
+      "target": "utils_errors_apperror",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "lms/frontend/src/types/index.ts",
+      "source_location": "L49",
+      "weight": 1.0,
+      "source": "types_index_registerinput",
+      "target": "types_auth_userrole",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "lms/frontend/src/types/index.ts",
+      "source_location": "L31",
+      "weight": 1.0,
+      "source": "types_index_user",
+      "target": "types_auth_userrole",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "field",
+      "confidence": "EXTRACTED",
+      "source_file": "lms/frontend/src/types/user.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "types_user_userprofile",
+      "target": "types_auth_userrole",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": null,
+      "source_location": null,
+      "weight": 1.0,
+      "source": "frontend_index_html",
+      "target": "lms_frontend_index_html"
+    },
+    {
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "frontend/index.html",
+      "source_location": 12,
+      "weight": 1.0,
+      "source": "frontend_index_html",
+      "target": "react"
+    },
+    {
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/index.html",
+      "source_location": 7,
+      "weight": 1.0,
+      "source": "frontend_index_html",
+      "target": "school_project"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/index.html",
+      "source_location": 5,
+      "weight": 1.0,
+      "source": "frontend_index_html",
+      "target": "vite"
+    },
+    {
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lms/frontend/index.html",
+      "source_location": 7,
+      "weight": 1.0,
+      "source": "lms_frontend_index_html",
+      "target": "genesis_platform"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lms/frontend/index.html",
+      "source_location": 5,
+      "weight": 1.0,
+      "source": "lms_frontend_index_html",
+      "target": "lms_frontend_public_genesis_icon_png"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lms/frontend/index.html",
+      "source_location": 12,
+      "weight": 1.0,
+      "source": "lms_frontend_index_html",
+      "target": "material_symbols"
+    },
+    {
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "lms/frontend/index.html",
+      "source_location": 17,
+      "weight": 1.0,
+      "source": "lms_frontend_index_html",
+      "target": "react"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lms/frontend/index.html",
+      "source_location": 17,
+      "weight": 1.0,
+      "source": "lms_frontend_index_html",
+      "target": "vite"
+    },
+    {
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": "lms/frontend/pnpm-workspace.yaml",
+      "source_location": 2,
+      "weight": 1.0,
+      "source": "lms_frontend_pnpm_workspace_yaml",
+      "target": "firebase"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lms/frontend/public/robots.txt",
+      "source_location": 4,
+      "weight": 1.0,
+      "source": "lms_frontend_public_robots_txt",
+      "target": "firebase"
+    },
+    {
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lms/frontend/public/robots.txt",
+      "source_location": 4,
+      "weight": 1.0,
+      "source": "lms_frontend_public_robots_txt",
+      "target": "genesis_platform"
+    },
+    {
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "Genesis.png",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "genesis_png",
+      "target": "genesis_platform"
+    },
+    {
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lms/frontend/public/favicon.svg",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "lms_frontend_public_favicon_svg",
+      "target": "genesis_platform"
+    },
+    {
+      "relation": "references",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.3,
+      "source_file": "lms/frontend/public/favicon.svg",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "lms_frontend_public_favicon_svg",
+      "target": "lms_frontend_public_genesis_icon_png"
+    },
+    {
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": null,
+      "source_location": null,
+      "weight": 1.0,
+      "source": "school_project",
+      "target": "genesis_platform"
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "e0dea1cbdbbfa83777a0bfe3a0bb054f75c077c7"
+}

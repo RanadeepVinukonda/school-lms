@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -8,11 +9,15 @@ import { Progress } from '@/components/ui/progress';
 import { Icon } from '@/components/ui/Icon';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { cn, getInitials, formatDate } from '@/lib/utils';
 import { getLetterGrade } from '@/lib/format';
 import { pageTransition, listItem } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
+import { useUIStore } from '@/store/uiStore';
 import { useQuery } from '@tanstack/react-query';
+import { changePassword } from '@/firebase/auth';
 import {
   mockEnrollments,
   mockSubjects,
@@ -270,9 +275,11 @@ export default function StudentProfilePage() {
                   <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Icon name="settings" size={18} />Settings</CardTitle></CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <Button variant="outline" className="justify-start gap-2" asChild><Link to="/student/settings"><Icon name="lock" size={16} />Change Password</Link></Button>
-                      <Button variant="outline" className="justify-start gap-2" asChild><Link to="/student/settings?tab=notifications"><Icon name="notifications" size={16} />Notifications</Link></Button>
-                      <Button variant="outline" className="justify-start gap-2" asChild><Link to="/student/settings?tab=theme"><Icon name="palette" size={16} />Theme</Link></Button>
+                      <PasswordChangeDialog />
+                      <Button variant="outline" className="justify-start gap-2" asChild>
+                        <Link to="/notifications"><Icon name="notifications" size={16} />Notifications</Link>
+                      </Button>
+                      <ThemeToggleButton />
                     </div>
                   </CardContent>
                 </Card>
@@ -282,5 +289,77 @@ export default function StudentProfilePage() {
         </DataFetchWrapper>
       </motion.div>
     </>
+  );
+}
+
+function PasswordChangeDialog() {
+  const [current, setCurrent] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    setError('');
+    setSuccess(false);
+    if (newPw !== confirm) { setError('Passwords do not match'); return; }
+    if (newPw.length < 6) { setError('Password must be at least 6 characters'); return; }
+    setLoading(true);
+    try {
+      await changePassword(current, newPw);
+      setSuccess(true);
+      setCurrent('');
+      setNewPw('');
+      setConfirm('');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to change password';
+      if (msg.includes('auth/invalid-credential')) setError('Current password is incorrect');
+      else if (msg.includes('auth/requires-recent-login')) setError('Please log out and log in again');
+      else setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="justify-start gap-2"><Icon name="lock" size={16} />Change Password</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Change Password</DialogTitle>
+          <DialogDescription>Enter your current password and a new password.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <Input type="password" placeholder="Current password" value={current} onChange={(e) => { setCurrent(e.target.value); setError(''); setSuccess(false); }} />
+          <Input type="password" placeholder="New password" value={newPw} onChange={(e) => { setNewPw(e.target.value); setError(''); setSuccess(false); }} />
+          <Input type="password" placeholder="Confirm new password" value={confirm} onChange={(e) => { setConfirm(e.target.value); setError(''); setSuccess(false); }} />
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          {success && <p className="text-sm text-success">Password changed successfully!</p>}
+          <div className="flex justify-end gap-2">
+            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+            <Button onClick={handleSubmit} disabled={loading}>{loading ? 'Changing...' : 'Change Password'}</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ThemeToggleButton() {
+  const { theme, setTheme } = useUIStore();
+  const cycleTheme = () => {
+    const next: Record<string, 'light' | 'dark' | 'system'> = { light: 'dark', dark: 'system', system: 'light' };
+    setTheme(next[theme]);
+  };
+  const icon = theme === 'dark' ? 'dark_mode' : theme === 'light' ? 'light_mode' : 'contrast';
+  const label = theme === 'dark' ? 'Dark Mode' : theme === 'light' ? 'Light Mode' : 'System Theme';
+  return (
+    <Button variant="outline" className="justify-start gap-2" onClick={cycleTheme}>
+      <Icon name={icon} size={16} />{label}
+    </Button>
   );
 }
