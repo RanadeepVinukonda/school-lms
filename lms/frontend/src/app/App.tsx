@@ -1,17 +1,37 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { RouterProvider } from 'react-router-dom';
 import { router } from '@/app/router';
 import SplashScreen from '@/components/common/SplashScreen';
 import UploadProgressBanner from '@/components/textbook/UploadProgressBanner';
+import { useAuthStore } from '@/store/authStore';
+
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const initialize = useAuthStore((s) => s.initialize);
+  const isLoading = useAuthStore((s) => s.isLoading);
+
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
 
   return (
-    <>
+    <AuthGate>
       <SplashScreen isLoading={showSplash} onFinish={() => setShowSplash(false)} />
       <UploadProgressBanner />
       <RouterProvider router={router} />
-    </>
+    </AuthGate>
   );
 }

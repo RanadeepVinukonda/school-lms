@@ -157,10 +157,10 @@ service cloud.firestore {
     }
 
     match /notifications/{notificationId} {
-      allow read: if isAuth() && resource.data.recipientId == uid();
+      allow read: if isAuth() && (resource.data.userId == uid() || resource.data.recipientId == uid());
       allow create: if false;
-      allow update: if isAuth() && resource.data.recipientId == uid();
-      allow delete: if isAuth() && resource.data.recipientId == uid();
+      allow update: if isAuth() && (resource.data.userId == uid() || resource.data.recipientId == uid());
+      allow delete: if isAuth() && (resource.data.userId == uid() || resource.data.recipientId == uid());
     }
 
     match /files/{fileId} {

@@ -11,7 +11,7 @@ import { Icon } from '@/components/ui/Icon';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import { getTextbook } from '@/services/textbookService';
-import { mockTextbooks, mockSubjects } from '@/lib/mockData';
+import { getSubject } from '@/services/dataService';
 
 export default function StudentChapterPage() {
   const { textbookId, chapterId } = useParams<{ textbookId: string; chapterId: string }>();
@@ -20,42 +20,23 @@ export default function StudentChapterPage() {
     queryKey: ['student-chapter', textbookId],
     queryFn: async () => {
       const fb = await getTextbook(textbookId!);
-      if (fb) return fb;
-      const mock = mockTextbooks.find((t) => t.id === textbookId);
-      if (mock) {
-        return {
-          ...mock,
-          status: 'ready' as const,
-          processingProgress: 100,
-          processingStage: 'Complete',
-          chapters: mock.chapters.map((ch) => ({
-            ...ch,
-            textbookId: textbookId!,
-            description: '',
-            concepts: [],
-          })),
-          createdAt: '',
-          updatedAt: '',
-        };
-      }
-      throw new Error('Textbook not found');
+      if (!fb) throw new Error('Textbook not found');
+      const subject = await getSubject(fb.subjectId);
+      return { textbook: fb, subject };
     },
     enabled: !!textbookId,
   });
 
-  const chapter = useMemo(() => {
+  const chapterData = useMemo(() => {
     if (!data) return null;
-    return data.chapters.find((ch) => ch.id === chapterId || ch.id === `ch_${textbookId}_${chapterId}`);
+    const ch = data.textbook.chapters.find((c) => c.id === chapterId || c.id === `ch_${textbookId}_${chapterId}`);
+    if (!ch) return null;
+    return { chapter: ch, subject: data.subject };
   }, [data, chapterId, textbookId]);
-
-  const subject = useMemo(() => {
-    if (!data) return null;
-    return mockSubjects.find((s) => s.id === data.subjectId) || null;
-  }, [data]);
 
   return (
     <>
-      <SEOHead title={chapter?.title || 'Chapter'} description={(chapter as any)?.description || `Study ${chapter?.title || 'chapter'}`} />
+      <SEOHead title={chapterData?.chapter?.title || 'Chapter'} description={chapterData?.chapter?.description || `Study ${chapterData?.chapter?.title || 'chapter'}`} />
       <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-4xl mx-auto space-y-6 pb-20">
         <Link to={ROUTES.STUDENT_TEXTBOOK(textbookId!)} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <Icon name="arrow_back" size={16} />
@@ -63,18 +44,18 @@ export default function StudentChapterPage() {
         </Link>
 
         <DataFetchWrapper
-          data={chapter}
+          data={chapterData}
           isLoading={isLoading}
           error={isError ? error ?? new Error('Failed to load chapter') : null}
           onRetry={() => refetch()}
           loadingType="detail"
           emptyMessage="Chapter not found"
         >
-          {(ch) => (
+          {(d) => { const ch = d.chapter; const subj = d.subject; return (
             <div className="space-y-6">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  {subject && <Badge variant="secondary" style={{ backgroundColor: `${subject.color}20`, color: subject.color }}>{subject.name}</Badge>}
+                  {subj && <Badge variant="secondary" style={{ backgroundColor: `${subj.color}20`, color: subj.color }}>{subj.name}</Badge>}
                   <span className="text-sm text-muted-foreground">Chapter {ch.order + 1}</span>
                 </div>
                 <h1 className="text-headline-sm font-bold">{ch.title}</h1>
@@ -135,7 +116,7 @@ export default function StudentChapterPage() {
                 </Card>
               )}
             </div>
-          )}
+          ); }}
         </DataFetchWrapper>
       </motion.div>
     </>

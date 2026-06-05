@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -8,19 +9,16 @@ import { Progress } from '@/components/ui/progress';
 import { Icon } from '@/components/ui/Icon';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { cn, getInitials, formatDate } from '@/lib/utils';
 import { getLetterGrade } from '@/lib/format';
 import { pageTransition, listItem } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
+import { useUIStore } from '@/store/uiStore';
 import { useQuery } from '@tanstack/react-query';
-import {
-  mockEnrollments,
-  mockSubjects,
-  mockGrades,
-  mockExams,
-  mockCorrections,
-  mockClasses,
-} from '@/lib/mockData';
+import { changePassword } from '@/firebase/auth';
+import { getAllSubjects, getEnrollmentsByStudent, getGradesByStudent } from '@/services/dataService';
 
 const achievements = [
   { name: 'Quick Learner', icon: 'bolt', desc: 'Completed first 5 lessons in a week', date: new Date(Date.now() - 30 * 86400000).toISOString() },
@@ -45,34 +43,35 @@ export default function StudentProfilePage() {
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-profile', authUser?.id],
     queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 300));
       const rawUser = useAuthStore.getState().user;
       if (!rawUser) throw new Error('User not found');
       const user = rawUser as typeof rawUser & { studentId?: string; classId?: string };
       const studentId = user.studentId ?? user.id;
-      const studentClass = mockClasses.find((c) => c.id === user.classId);
-      const enrollments = mockEnrollments.filter((e) => e.studentId === studentId);
+
+      const [allSubjects, enrollments, grades] = await Promise.all([
+        getAllSubjects(),
+        getEnrollmentsByStudent(studentId),
+        getGradesByStudent(studentId),
+      ]);
+
+      const subjectMap = new Map(allSubjects.map((s) => [s.id, s]));
       const enrolledSubjects = enrollments
         .map((e) => {
-          const s = mockSubjects.find((sub) => sub.id === e.subjectId);
+          const s = subjectMap.get(e.courseId);
           if (!s) return null;
           return { ...s, progress: e.progress, icon: s.icon || 'school', color: s.color || '#6366f1' };
         })
         .filter((s): s is NonNullable<typeof s> => s !== null);
-      const grades = mockGrades.filter((g) => g.studentId === studentId)
-        .map((g) => ({ ...g, subject: mockSubjects.find((s) => s.id === g.subjectId)?.name ?? 'Unknown' }));
-      const now = new Date();
-      const upcomingExams = mockExams
-        .map((e) => ({ ...e, subject: mockSubjects.find((s) => s.id === e.subjectId)?.name ?? 'Unknown' }))
-        .filter((e) => new Date(e.startDate) > now);
-      const corrections = mockCorrections.filter((c) => c.studentId === studentId).map((c) => {
-        const exam = mockExams.find((e) => e.id === c.examId);
-        const maxScore = exam?.questions.reduce((sum, q) => sum + q.points, 0) ?? 0;
-        return { ...c, examTitle: exam?.title ?? 'Unknown', subject: exam ? mockSubjects.find((s) => s.id === exam.subjectId)?.name ?? 'Unknown' : 'Unknown', maxScore };
-      });
-      const assignmentGrades = grades.filter((g) => g.type === 'assignment');
-      const avgPercentage = grades.length > 0 ? grades.reduce((sum, g) => sum + g.percentage, 0) / grades.length : 0;
-      return { user, studentClass, enrolledSubjects, grades, upcomingExams, corrections, assignmentGrades, avgPercentage, totalEnrolled: enrolledSubjects.length };
+
+      const enrichedGrades = grades
+        .map((g) => ({ ...g, subject: g.subjectId ? (subjectMap.get(g.subjectId)?.name ?? 'Unknown') : 'Unknown' }));
+
+      const assignmentGrades = enrichedGrades.filter((g) => !g.itemName?.toLowerCase().includes('exam'));
+      const avgPercentage = enrichedGrades.length > 0
+        ? enrichedGrades.reduce((sum, g) => sum + g.percentage, 0) / enrichedGrades.length
+        : 0;
+
+      return { user, enrolledSubjects, grades: enrichedGrades, assignmentGrades, avgPercentage, totalEnrolled: enrolledSubjects.length };
     },
     enabled: !!authUser,
   });
@@ -128,7 +127,6 @@ export default function StudentProfilePage() {
                       <p className="text-body-md text-muted-foreground">Student &middot; ID: {d.user.studentId ?? 'N/A'}</p>
                       <div className="flex items-center justify-center sm:justify-start gap-3 mt-2 flex-wrap">
                         <Badge variant="secondary" className="text-xs gap-1"><Icon name="mail" size={12} />{d.user.email}</Badge>
-                        {d.studentClass && <Badge variant="outline" className="text-xs gap-1"><Icon name="group" size={12} />{d.studentClass.name}</Badge>}
                       </div>
                     </div>
                     <Button variant="outline" size="sm" className="gap-2" asChild>
@@ -154,8 +152,8 @@ export default function StudentProfilePage() {
                     <div><p className="text-xs text-muted-foreground">Completed</p><p className="text-lg font-bold">{d.grades.length}</p></div>
                   </Card>
                   <Card variant="elevated" className="p-4 flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-error-container flex items-center justify-center shrink-0"><Icon name="calendar_today" size={20} className="text-error" /></div>
-                    <div><p className="text-xs text-muted-foreground">Upcoming Exams</p><p className="text-lg font-bold">{d.upcomingExams.length}</p></div>
+                    <div className="h-10 w-10 rounded-full bg-primary-container/50 flex items-center justify-center shrink-0"><Icon name="trending_up" size={20} className="text-primary" /></div>
+                    <div><p className="text-xs text-muted-foreground">Enrolled</p><p className="text-lg font-bold">{d.enrolledSubjects.length}</p></div>
                   </Card>
                 </div>
               </motion.div>
@@ -189,34 +187,6 @@ export default function StudentProfilePage() {
                 </Card>
               </motion.div>
 
-              {/* Exam History */}
-              <motion.div variants={listItem} initial="hidden" animate="show">
-                <Card variant="elevated">
-                  <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Icon name="quiz" size={18} />Exam History</CardTitle></CardHeader>
-                  <CardContent>
-                    {d.corrections.length === 0 ? <EmptySection icon="quiz" message="No exams completed yet" /> : (
-                      <div className="space-y-3">
-                        {d.corrections.map((c) => {
-                          const passed = c.totalMarks >= c.maxScore * 0.5;
-                          return (
-                            <div key={c.id} className="flex items-center justify-between p-3 rounded-lg bg-surface-variant/50">
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium truncate">{c.examTitle}</p>
-                                <p className="text-xs text-muted-foreground">{c.subject} &middot; {formatDate(c.correctedAt)}</p>
-                              </div>
-                              <div className="flex items-center gap-3 shrink-0 ml-3">
-                                <span className="text-sm font-bold tabular-nums">{c.totalMarks}/{c.maxScore}</span>
-                                <Badge variant={passed ? 'success' : 'destructive'}>{passed ? 'Pass' : 'Fail'}</Badge>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </motion.div>
-
               {/* Assignment History */}
               <motion.div variants={listItem} initial="hidden" animate="show">
                 <Card variant="elevated">
@@ -230,11 +200,11 @@ export default function StudentProfilePage() {
                           return (
                             <div key={g.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-accent transition-colors">
                               <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium truncate">{g.itemName}</p>
-                                <p className="text-xs text-muted-foreground">{g.subject} &middot; {formatDate(g.gradedAt)}</p>
+                                <p className="text-sm font-medium truncate">{g.itemName ?? 'Assessment'}</p>
+                                <p className="text-xs text-muted-foreground">{g.subject} &middot; {formatDate(g.createdAt)}</p>
                               </div>
                               <div className="flex items-center gap-3 shrink-0 ml-3">
-                                <span className="text-sm tabular-nums">{g.score}/{g.maxScore}</span>
+                                <span className="text-sm tabular-nums">{g.score}/{g.totalPoints}</span>
                                 <span className={cn('text-sm font-bold', grColor)}>{letter}</span>
                               </div>
                             </div>
@@ -270,9 +240,11 @@ export default function StudentProfilePage() {
                   <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Icon name="settings" size={18} />Settings</CardTitle></CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <Button variant="outline" className="justify-start gap-2" asChild><Link to="/student/settings"><Icon name="lock" size={16} />Change Password</Link></Button>
-                      <Button variant="outline" className="justify-start gap-2" asChild><Link to="/student/settings?tab=notifications"><Icon name="notifications" size={16} />Notifications</Link></Button>
-                      <Button variant="outline" className="justify-start gap-2" asChild><Link to="/student/settings?tab=theme"><Icon name="palette" size={16} />Theme</Link></Button>
+                      <PasswordChangeDialog />
+                      <Button variant="outline" className="justify-start gap-2" asChild>
+                        <Link to="/notifications"><Icon name="notifications" size={16} />Notifications</Link>
+                      </Button>
+                      <ThemeToggleButton />
                     </div>
                   </CardContent>
                 </Card>
@@ -282,5 +254,77 @@ export default function StudentProfilePage() {
         </DataFetchWrapper>
       </motion.div>
     </>
+  );
+}
+
+function PasswordChangeDialog() {
+  const [current, setCurrent] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    setError('');
+    setSuccess(false);
+    if (newPw !== confirm) { setError('Passwords do not match'); return; }
+    if (newPw.length < 6) { setError('Password must be at least 6 characters'); return; }
+    setLoading(true);
+    try {
+      await changePassword(current, newPw);
+      setSuccess(true);
+      setCurrent('');
+      setNewPw('');
+      setConfirm('');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to change password';
+      if (msg.includes('auth/invalid-credential')) setError('Current password is incorrect');
+      else if (msg.includes('auth/requires-recent-login')) setError('Please log out and log in again');
+      else setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="justify-start gap-2"><Icon name="lock" size={16} />Change Password</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Change Password</DialogTitle>
+          <DialogDescription>Enter your current password and a new password.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <Input type="password" placeholder="Current password" value={current} onChange={(e) => { setCurrent(e.target.value); setError(''); setSuccess(false); }} />
+          <Input type="password" placeholder="New password" value={newPw} onChange={(e) => { setNewPw(e.target.value); setError(''); setSuccess(false); }} />
+          <Input type="password" placeholder="Confirm new password" value={confirm} onChange={(e) => { setConfirm(e.target.value); setError(''); setSuccess(false); }} />
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          {success && <p className="text-sm text-success">Password changed successfully!</p>}
+          <div className="flex justify-end gap-2">
+            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+            <Button onClick={handleSubmit} disabled={loading}>{loading ? 'Changing...' : 'Change Password'}</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ThemeToggleButton() {
+  const { theme, setTheme } = useUIStore();
+  const cycleTheme = () => {
+    const next: Record<string, 'light' | 'dark' | 'system'> = { light: 'dark', dark: 'system', system: 'light' };
+    setTheme(next[theme]);
+  };
+  const icon = theme === 'dark' ? 'dark_mode' : theme === 'light' ? 'light_mode' : 'contrast';
+  const label = theme === 'dark' ? 'Dark Mode' : theme === 'light' ? 'Light Mode' : 'System Theme';
+  return (
+    <Button variant="outline" className="justify-start gap-2" onClick={cycleTheme}>
+      <Icon name={icon} size={16} />{label}
+    </Button>
   );
 }

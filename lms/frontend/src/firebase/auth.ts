@@ -4,6 +4,9 @@ import {
   signOut,
   sendPasswordResetEmail,
   confirmPasswordReset,
+  updatePassword as firebaseUpdatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
   onAuthStateChanged,
   User,
 } from 'firebase/auth';
@@ -33,4 +36,16 @@ export async function resetPassword(email: string) {
 
 export async function confirmReset(oobCode: string, newPassword: string) {
   await confirmPasswordReset(auth, oobCode, newPassword);
+}
+
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
+  const user = auth.currentUser;
+  if (!user || !user.email) throw new Error('No authenticated user');
+
+  const credential = EmailAuthProvider.credential(user.email, currentPassword);
+  await reauthenticateWithCredential(user, credential);
+  await firebaseUpdatePassword(user, newPassword);
 }

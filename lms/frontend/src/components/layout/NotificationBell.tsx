@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, CheckCheck } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -10,15 +10,21 @@ import {
 import { ROUTES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
-import { mockNotifications } from '@/lib/mockData';
-
-const empty: never[] = [];
+import { useQuery } from '@tanstack/react-query';
+import { getNotificationsByUser } from '@/services/dataService';
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
   const userId = user?.id ?? '';
-  const items = userId ? mockNotifications.filter((n) => n.recipientId === userId) : empty;
+
+  const { data: items = [] } = useQuery({
+    queryKey: ['notifications', userId],
+    queryFn: () => getNotificationsByUser(userId),
+    enabled: !!userId,
+    refetchInterval: 30000,
+  });
+
   const unreadItems = items.filter((n) => !n.read);
 
   return (
@@ -27,7 +33,7 @@ export function NotificationBell() {
         <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
           <Bell className="h-5 w-5" />
           {unreadItems.length > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+            <span className="absolute -top-1.5 -right-1.5 flex min-w-[18px] h-[18px] px-1 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground shadow-sm ring-2 ring-background">
               {unreadItems.length > 99 ? '99+' : unreadItems.length}
             </span>
           )}
@@ -59,7 +65,7 @@ export function NotificationBell() {
                     {notification.title}
                   </p>
                   <p className="text-xs text-muted-foreground truncate mt-0.5">
-                    {notification.message}
+                    {notification.body}
                   </p>
                 </div>
                 {!notification.read && (
@@ -70,8 +76,8 @@ export function NotificationBell() {
           )}
         </div>
         <div className="p-2 border-t">
-          <Button variant="ghost" size="sm" className="w-full text-xs" disabled>
-            View all notifications
+          <Button variant="ghost" size="sm" className="w-full text-xs" asChild>
+            <Link to="/notifications">View all notifications</Link>
           </Button>
         </div>
       </PopoverContent>

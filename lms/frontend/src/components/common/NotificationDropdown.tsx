@@ -13,11 +13,12 @@ import { cn } from '@/lib/utils';
 import { ROUTES } from '@/lib/constants';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
-import { mockNotifications } from '@/lib/mockData';
 import { toast } from 'sonner';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getNotificationsByUser, markNotificationRead, markAllNotificationsRead } from '@/services/dataService';
 
 type Priority = 'urgent' | 'high' | 'medium' | 'low';
-interface Item { id: string; type: string; title: string; message: string; link?: string; read: boolean; createdAt: string; priority: Priority }
+interface Item { id: string; type: string; title: string; message: string; body?: string; link?: string; read: boolean; createdAt: string; priority: Priority }
 
 const P_ORDER: Priority[] = ['urgent', 'high', 'medium', 'low'];
 const P_CFG: Record<Priority, { border: string; title: string; text: string; label: string }> = {
@@ -54,17 +55,21 @@ function relativeTime(iso: string): string {
 export default function NotificationDropdown() {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const user = useAuthStore((s) => s.user);
   const { unreadCount, setUnreadCount, decrementUnread, resetUnread } = useNotificationStore();
+  const queryClient = useQueryClient();
 
-  useEffect(() => { const t = setTimeout(() => setIsLoading(false), 400); return () => clearTimeout(t); }, []);
+  const { data: rawItems = [], isLoading, error } = useQuery({
+    queryKey: ['notifications-dropdown', user?.id],
+    queryFn: () => getNotificationsByUser(user!.id),
+    enabled: !!user && open,
+    refetchInterval: 30000,
+  });
 
   const items: Item[] = useMemo(
-    () => (user ? mockNotifications.filter((n) => n.recipientId === user.id).map((n) => ({ ...n, priority: derivePriority(n.type) })) : []),
-    [user],
+    () => rawItems.map((n) => ({ ...n, message: n.body || n.title, priority: derivePriority(n.type) })),
+    [rawItems],
   );
   const unreadItems = useMemo(() => items.filter((n) => !n.read), [items]);
 
@@ -79,13 +84,22 @@ export default function NotificationDropdown() {
 
   const flatItems = useMemo(() => P_ORDER.flatMap((p) => grouped.get(p) ?? []), [grouped]);
 
-  const handleSelect = useCallback((id: string) => {
+  const handleSelect = useCallback(async (id: string) => {
     const item = items.find((n) => n.id === id);
-    if (item && !item.read) decrementUnread();
-  }, [items, decrementUnread]);
+    if (item && !item.read) {
+      await markNotificationRead(id);
+      decrementUnread();
+      queryClient.invalidateQueries({ queryKey: ['notifications-dropdown', user?.id] });
+    }
+  }, [items, decrementUnread, queryClient, user?.id]);
 
-  const handleMarkAllRead = useCallback(() => { resetUnread(); toast.success('All notifications marked as read'); }, [resetUnread]);
-  const handleRetry = useCallback(() => { setError(null); setIsLoading(true); setTimeout(() => setIsLoading(false), 400); }, []);
+  const handleMarkAllRead = useCallback(async () => {
+    if (!user) return;
+    await markAllNotificationsRead(user.id);
+    resetUnread();
+    queryClient.invalidateQueries({ queryKey: ['notifications-dropdown', user?.id] });
+    toast.success('All notifications marked as read');
+  }, [resetUnread, queryClient, user]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (!open) return;
@@ -114,7 +128,7 @@ export default function NotificationDropdown() {
           <AlertTriangle className="h-10 w-10 text-destructive/60 mb-3" />
           <p className="text-sm font-medium">Failed to load notifications</p>
           <p className="text-xs text-muted-foreground mt-1 mb-4">Something went wrong. Please try again.</p>
-          <Button variant="outline" size="sm" onClick={handleRetry}>Try again</Button>
+          <Button variant="outline" size="sm" onClick={() => queryClient.invalidateQueries({ queryKey: ['notifications-dropdown', user?.id] })}>Try again</Button>
         </div>
       );
     }

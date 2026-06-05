@@ -84,6 +84,8 @@ export interface ConceptProgress {
   timeSpentMinutes: number;
   lessonCompleted: boolean;
   videoCompleted: boolean;
+  videoPosition: number;
+  practiceCompleted: boolean;
   questionAccuracy: number;
   assignmentScores: number[];
   masteryPercentage: number;
