@@ -9,59 +9,64 @@ import { Progress } from '@/components/ui/progress';
 import { Icon } from '@/components/ui/Icon';
 import { pageTransition, listItem } from '@/lib/motion';
 import { useQuery } from '@tanstack/react-query';
-import { mockUsers, mockEnrollments, mockSubjects, mockLessons, mockAssignments, mockExams, mockGrades, mockTimetable } from '@/lib/mockData';
 import { getTextbooksBySubject } from '@/services/textbookService';
+import { getSubject, getEnrollmentsByStudent, getGradesByStudent } from '@/services/dataService';
+import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
 import type { Textbook } from '@/types/textbook';
 
 interface DashboardData {
-  subject: (typeof mockSubjects)[number];
-  teacher: (typeof mockUsers)[keyof typeof mockUsers] | null;
-  enrollment: (typeof mockEnrollments)[number] | null;
+  subject: NonNullable<Awaited<ReturnType<typeof getSubject>>>;
+  enrollmentProgress: number;
   currentChapter: { textbookId: string; textbookTitle: string; id: string; title: string; order: number; conceptCount: number } | null;
-  nextLesson: (typeof mockLessons)[number] | null;
-  upcomingAssignment: (typeof mockAssignments)[number] | null;
-  upcomingExam: (typeof mockExams)[number] | null;
-  recentGrade: (typeof mockGrades)[number] | null;
+  recentGrade: { itemName: string; score: number; maxScore: number; percentage: number; gradedAt: string } | null;
   textbooks: Array<Textbook & { chapterCount: number }>;
 }
 
 export default function SubjectDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const authUser = useAuthStore((s) => s.user);
+
   const { data, isLoading, isError, error, refetch } = useQuery<DashboardData | null>({
-    queryKey: ['subject-detail', id],
+    queryKey: ['subject-detail', id, authUser?.id],
     queryFn: async () => {
       if (!id) return null;
-      const subject = mockSubjects.find((s) => s.id === id);
+      const studentId = authUser?.id;
+      if (!studentId) return null;
+
+      const [subject, firestoreTextbooks, enrollments, grades] = await Promise.all([
+        getSubject(id),
+        getTextbooksBySubject(id),
+        studentId ? getEnrollmentsByStudent(studentId) : Promise.resolve([]),
+        studentId ? getGradesByStudent(studentId) : Promise.resolve([]),
+      ]);
+
       if (!subject) return null;
-      const student = mockUsers.student1;
-      const timetableSlot = mockTimetable.find((tt) => tt.classId === student.classId && tt.subjectId === id);
-      const teacher = timetableSlot ? Object.values(mockUsers).find((u) => u.id === timetableSlot.teacherId) ?? null : null;
-      const enrollment = mockEnrollments.find((e) => e.studentId === student.id && e.subjectId === id) ?? null;
-      const firestoreTextbooks = await getTextbooksBySubject(id);
+
       const textbooks = firestoreTextbooks.filter((tb) => tb.status !== 'processing').map((tb) => ({ ...tb, chapterCount: tb.chapters?.length ?? 0 }));
+      const enrollment = enrollments.find((e) => e.courseId === id);
       const firstTb = textbooks[0];
       const currentChapter = firstTb?.chapters?.[0]
         ? { textbookId: firstTb.id, textbookTitle: firstTb.title, id: firstTb.chapters[0].id ?? '', title: firstTb.chapters[0].title, order: firstTb.chapters[0].order, conceptCount: firstTb.chapters[0].concepts?.length ?? 0 }
         : null;
-      const nextLesson = currentChapter
-        ? mockLessons.find((l) => l.textbookId === currentChapter.textbookId && l.chapterId === currentChapter.id) ?? null
-        : null;
-      const subjectTextbookIds = textbooks.map((tb) => tb.id);
-      const upcomingAssignment = mockAssignments
-        .filter((a) => subjectTextbookIds.includes(a.textbookId) && new Date(a.dueDate) > new Date())
-        .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0] ?? null;
-      const upcomingExam = mockExams.find((e) => e.subjectId === id) ?? null;
-      const recentGrade = mockGrades
-        .filter((g) => g.studentId === student.id && g.subjectId === id)
-        .sort((a, b) => new Date(b.gradedAt).getTime() - new Date(a.gradedAt).getTime())[0] ?? null;
-      return { subject, teacher, enrollment, currentChapter, nextLesson, upcomingAssignment, upcomingExam, recentGrade, textbooks };
+      const recentGrade = grades
+        .filter((g) => g.subjectId === id)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] ?? null;
+
+      return {
+        subject,
+        enrollmentProgress: enrollment?.progress ?? 0,
+        currentChapter,
+        recentGrade: recentGrade ? { itemName: recentGrade.itemName ?? 'Assessment', score: recentGrade.score, maxScore: recentGrade.totalPoints, percentage: recentGrade.percentage, gradedAt: recentGrade.createdAt } : null,
+        textbooks,
+      };
     },
+    enabled: !!id && !!authUser?.id,
   });
 
   return (
     <>
-      <SEOHead title={data?.subject?.name ?? 'Subject'} description={`${data?.subject?.name ?? 'Subject'} dashboard overview`} />
+      <SEOHead title={data?.subject?.name ?? 'Subject'} description={`${data?.subject?.name ?? 'Subject'} overview`} />
       <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-4xl mx-auto space-y-6 pb-20">
         <Button variant="ghost" size="sm" asChild className="mb-1">
           <Link to={ROUTES.STUDENT_SUBJECTS} className="gap-2">
@@ -82,24 +87,22 @@ export default function SubjectDetailPage() {
                     <div className="absolute inset-0" style={{ backgroundColor: d.subject.color, opacity: 0.06 }} />
                     <div className="relative z-10 flex items-start gap-5">
                       <div className="h-16 w-16 rounded-2xl flex items-center justify-center shadow-lg shrink-0" style={{ backgroundColor: d.subject.color }}>
-                        <Icon name={d.subject.icon} size={32} className="text-white" />
+                        <Icon name={d.subject.icon ?? 'school'} size={32} className="text-white" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <h1 className="text-2xl font-bold" style={{ color: d.subject.color }}>{d.subject.name}</h1>
                         <p className="text-body-md text-muted-foreground">{d.subject.code}</p>
-                        {d.teacher && <p className="text-body-sm text-muted-foreground mt-1 flex items-center gap-1.5"><Icon name="person" size={14} /> {d.teacher.displayName}</p>}
                         <div className="flex flex-wrap gap-2 mt-3">
-                          <Badge variant="secondary" className="text-[10px]">{d.subject.category}</Badge>
-                          {d.enrollment && <Badge variant="info" className="text-[10px]">{d.enrollment.status}</Badge>}
+                          {d.subject.category && <Badge variant="secondary" className="text-[10px]">{d.subject.category}</Badge>}
                         </div>
                       </div>
                     </div>
                   </div>
-                  {d.enrollment && (
+                  {d.enrollmentProgress > 0 && (
                     <CardContent className="px-6 pb-5 pt-0 -mt-5 relative z-10">
                       <div className="flex items-center gap-3 bg-background/80 backdrop-blur-sm rounded-lg p-3 shadow-sm border">
-                        <Progress value={d.enrollment.progress} className="flex-1 h-2.5" />
-                        <span className="text-sm font-medium tabular-nums shrink-0">{d.enrollment.progress}% complete</span>
+                        <Progress value={d.enrollmentProgress} className="flex-1 h-2.5" />
+                        <span className="text-sm font-medium tabular-nums shrink-0">{d.enrollmentProgress}% complete</span>
                       </div>
                     </CardContent>
                   )}
@@ -124,13 +127,9 @@ export default function SubjectDetailPage() {
                 <Card variant="elevated" className="overflow-hidden">
                   <div className="h-1.5" style={{ backgroundColor: d.subject.color }} />
                   <CardContent className="p-4">
-                    <p className="text-body-sm font-medium flex items-center gap-2 mb-2"><Icon name="play_circle" size={16} /> Next Lesson</p>
-                    {d.nextLesson ? (
-                      <Link to={ROUTES.STUDENT_LESSON(d.nextLesson.id)} className="block group">
-                        <p className="font-semibold group-hover:underline truncate">{d.nextLesson.title}</p>
-                        <p className="text-body-xs text-muted-foreground flex items-center gap-1"><Icon name="schedule" size={12} /> {d.nextLesson.duration} min &middot; {d.nextLesson.contentType}</p>
-                      </Link>
-                    ) : <p className="text-body-sm text-muted-foreground">No upcoming lessons</p>}
+                    <p className="text-body-sm font-medium flex items-center gap-2 mb-2"><Icon name="fact_check" size={16} /> Textbooks</p>
+                    <p className="font-semibold">{d.textbooks.length} available</p>
+                    <p className="text-body-sm text-muted-foreground">{d.textbooks.reduce((s, t) => s + t.chapterCount, 0)} total chapters</p>
                   </CardContent>
                 </Card>
 
@@ -138,12 +137,7 @@ export default function SubjectDetailPage() {
                   <div className="h-1.5" style={{ backgroundColor: d.subject.color }} />
                   <CardContent className="p-4">
                     <p className="text-body-sm font-medium flex items-center gap-2 mb-2"><Icon name="assignment" size={16} /> Upcoming Assignment</p>
-                    {d.upcomingAssignment ? (
-                      <div>
-                        <p className="font-semibold truncate">{d.upcomingAssignment.title}</p>
-                        <p className="text-body-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Icon name="calendar_today" size={12} /> Due {new Date(d.upcomingAssignment.dueDate).toLocaleDateString()} &middot; {d.upcomingAssignment.points} pts</p>
-                      </div>
-                    ) : <p className="text-body-sm text-muted-foreground">No pending assignments</p>}
+                    <p className="text-body-sm text-muted-foreground">No pending assignments</p>
                   </CardContent>
                 </Card>
 
@@ -151,12 +145,7 @@ export default function SubjectDetailPage() {
                   <div className="h-1.5" style={{ backgroundColor: d.subject.color }} />
                   <CardContent className="p-4">
                     <p className="text-body-sm font-medium flex items-center gap-2 mb-2"><Icon name="fact_check" size={16} /> Upcoming Exam</p>
-                    {d.upcomingExam ? (
-                      <div>
-                        <p className="font-semibold truncate">{d.upcomingExam.title}</p>
-                        <p className="text-body-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Icon name="calendar_today" size={12} /> {new Date(d.upcomingExam.startDate).toLocaleDateString()} &middot; {d.upcomingExam.duration} min &middot; {d.upcomingExam.questions.length} questions</p>
-                      </div>
-                    ) : <p className="text-body-sm text-muted-foreground">No exams scheduled</p>}
+                    <p className="text-body-sm text-muted-foreground">No exams scheduled</p>
                   </CardContent>
                 </Card>
 
@@ -168,7 +157,7 @@ export default function SubjectDetailPage() {
                       <div className="flex items-center justify-between">
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold truncate">{d.recentGrade.itemName}</p>
-                          <p className="text-body-xs text-muted-foreground">{d.recentGrade.type} &middot; {new Date(d.recentGrade.gradedAt).toLocaleDateString()}</p>
+                          <p className="text-body-xs text-muted-foreground">{new Date(d.recentGrade.gradedAt).toLocaleDateString()}</p>
                         </div>
                         <div className="text-right shrink-0 ml-4">
                           <p className="text-lg font-bold" style={{ color: d.recentGrade.percentage >= 70 ? '#16a34a' : '#dc2626' }}>
@@ -224,11 +213,6 @@ export default function SubjectDetailPage() {
 
               {/* Quick actions */}
               <motion.div variants={listItem} initial="hidden" animate="show" className="flex flex-wrap gap-3 pt-2">
-                {d.nextLesson && (
-                  <Button asChild className="gap-2">
-                    <Link to={ROUTES.STUDENT_LESSON(d.nextLesson.id)}><Icon name="play_arrow" size={18} /> Continue Learning</Link>
-                  </Button>
-                )}
                 {d.textbooks.length > 0 && (
                   <Button variant="outline" asChild className="gap-2">
                     <Link to={ROUTES.STUDENT_TEXTBOOK(d.textbooks[0].id)}><Icon name="menu_book" size={18} /> View Textbooks</Link>

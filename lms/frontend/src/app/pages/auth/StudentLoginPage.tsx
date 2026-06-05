@@ -13,7 +13,9 @@ import { Icon } from '@/components/ui/Icon';
 import { pageTransition } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
-import { mockUsers } from '@/lib/mockData';
+import { loginUser } from '@/firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/firebase/config';
 
 const studentLoginSchema = z.object({
   email: z
@@ -21,18 +23,16 @@ const studentLoginSchema = z.object({
     .min(1, 'Email is required')
     .email('Invalid email address')
     .transform((email) => email.toLowerCase().trim()),
-  studentId: z.string().min(1, 'Student ID is required'),
   password: z.string().min(1, 'Password is required'),
 });
 
 type StudentLoginFormData = z.infer<typeof studentLoginSchema>;
 
-const students = [mockUsers.student1, mockUsers.student2, mockUsers.student3];
-
 export default function StudentLoginPage() {
   const navigate = useNavigate();
   const setUser = useAuthStore((s) => s.setUser);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
 
   const {
     register,
@@ -40,89 +40,73 @@ export default function StudentLoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<StudentLoginFormData>({
     resolver: zodResolver(studentLoginSchema),
-    defaultValues: {
-      email: '',
-      studentId: '',
-      password: '',
-    },
+    defaultValues: { email: '', password: '' },
   });
 
-  function onSubmit(data: StudentLoginFormData) {
-    const profile = students.find(
-      (s) => s.email === data.email && s.studentId === data.studentId
-    );
-    if (!profile) return;
-    setUser({
-      id: profile.id,
-      email: profile.email,
-      displayName: profile.displayName,
-      role: 'student',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-    navigate(ROUTES.STUDENT_DASHBOARD);
+  async function onSubmit(data: StudentLoginFormData) {
+    setError('');
+    try {
+      const firebaseUser = await loginUser(data.email, data.password);
+      const docRef = doc(db, 'users', firebaseUser.uid);
+      const snap = await getDoc(docRef);
+      if (!snap.exists()) {
+        setError('User profile not found. Please contact your administrator.');
+        return;
+      }
+      const profileData = snap.data() as Record<string, unknown>;
+      if (profileData.role !== 'student') {
+        setError('This account is not a student account. Please use the correct login page.');
+        return;
+      }
+      setUser({
+        id: snap.id,
+        email: (profileData.email as string) || firebaseUser.email || '',
+        displayName: (profileData.displayName as string) || firebaseUser.displayName || '',
+        role: 'student',
+        isActive: profileData.isActive as boolean ?? true,
+        createdAt: (profileData.createdAt as string) || new Date().toISOString(),
+        updatedAt: (profileData.updatedAt as string) || new Date().toISOString(),
+      });
+      navigate(ROUTES.STUDENT_DASHBOARD);
+    } catch (err: any) {
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        setError('Invalid email or password.');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Invalid email format.');
+      } else if (err.code === 'auth/too-many-requests') {
+        setError('Too many attempts. Please try again later.');
+      } else {
+        setError(err.message || 'Login failed. Please try again.');
+      }
+    }
   }
 
   return (
     <>
-      <SEOHead
-        title="Student Sign In"
-        description="Sign in to your Genesis student account."
-      />
-
-      <motion.div
-        className="flex min-h-[80vh] items-center justify-center px-4 py-12"
-        initial="initial"
-        animate="animate"
-        variants={pageTransition}
-      >
+      <SEOHead title="Student Sign In" description="Sign in to your Genesis student account." />
+      <motion.div className="flex min-h-[80vh] items-center justify-center px-4 py-12" initial="initial" animate="animate" variants={pageTransition}>
         <Card className="w-full max-w-md">
-          <CardHeader className="space-y-4 text-center">
-            <div className="flex justify-center">
-              <img src="/genesis_icon.png" alt="Genesis LMS" className="h-16 w-auto object-contain" />
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+              <Icon name="school" size={32} className="text-primary" />
             </div>
             <CardTitle className="text-2xl">Student Sign In</CardTitle>
-            <CardDescription>
-              Enter your credentials to access your student portal
-            </CardDescription>
+            <CardDescription>Enter your credentials to access your student portal</CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <CardContent className="space-y-4">
+              {error && (
+                <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                  <Icon name="error" size={16} className="shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="student@example.com"
-                  {...register('email')}
-                  error={errors.email?.message}
-                  disabled={isSubmitting}
-                  autoComplete="email"
-                />
+                <Input id="email" type="email" placeholder="your@email.com" {...register('email')} error={errors.email?.message} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="studentId">Student ID</Label>
-                <Input
-                  id="studentId"
-                  type="text"
-                  placeholder="e.g. STU001"
-                  {...register('studentId')}
-                  error={errors.studentId?.message}
-                  disabled={isSubmitting}
-                  autoComplete="username"
-                />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                  <Link
-                    to={ROUTES.FORGOT_PASSWORD}
-                    className="text-sm text-primary hover:underline"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
+                <Label htmlFor="password">Password</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -130,8 +114,7 @@ export default function StudentLoginPage() {
                     placeholder="Enter your password"
                     {...register('password')}
                     error={errors.password?.message}
-                    disabled={isSubmitting}
-                    autoComplete="current-password"
+                    className="pr-10"
                   />
                   <button
                     type="button"
@@ -143,24 +126,17 @@ export default function StudentLoginPage() {
                   </button>
                 </div>
               </div>
-              <Button
-                type="submit"
-                className="w-full"
-                size="lg"
-                disabled={isSubmitting}
-                loading={isSubmitting}
-              >
+            </CardContent>
+            <CardFooter className="flex flex-col gap-3">
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? 'Signing in...' : 'Sign In'}
               </Button>
-            </form>
-          </CardContent>
-          <CardFooter className="justify-center">
-            <p className="text-sm text-muted-foreground">
-              <Link to={ROUTES.LOGIN} className="text-primary hover:underline font-medium">
-                Choose a different role
-              </Link>
-            </p>
-          </CardFooter>
+              <div className="flex items-center justify-between w-full text-sm">
+                <Link to={ROUTES.FORGOT_PASSWORD} className="text-primary hover:underline">Forgot password?</Link>
+                <Link to={ROUTES.REGISTER} className="text-primary hover:underline">Create account</Link>
+              </div>
+            </CardFooter>
+          </form>
         </Card>
       </motion.div>
     </>

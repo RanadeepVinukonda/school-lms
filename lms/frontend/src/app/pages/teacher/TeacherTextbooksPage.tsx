@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -9,28 +8,25 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
-import { mockSubjects } from '@/lib/mockData';
 import { getAllTextbooks } from '@/services/textbookService';
+import { getAllSubjects } from '@/services/dataService';
 
 export default function TeacherTextbooksPage() {
-  const { data: textbooks, isLoading, error, refetch } = useQuery({
+  const { data: textbooksWithSubjects, isLoading, error, refetch } = useQuery({
     queryKey: ['teacher-textbooks'],
     queryFn: async () => {
-      const result = await getAllTextbooks();
-      return result.filter((tb) => tb.status !== 'processing');
+      const [result, allSubjects] = await Promise.all([getAllTextbooks(), getAllSubjects()]);
+      const subjectMap = new Map(allSubjects.map((s) => [s.id, s]));
+      return (result.filter((tb) => tb.status !== 'processing')).map((tb) => ({
+        ...tb,
+        subject: subjectMap.get(tb.subjectId) ?? null,
+        chapterCount: tb.chapters?.length ?? 0,
+        lessonCount: tb.chapters?.reduce((s, ch) => s + (ch.concepts?.length ?? 0), 0) ?? 0,
+      }));
     },
   });
 
-  const textbooksWithSubjects = useMemo(
-    () =>
-      (textbooks ?? []).map((tb) => ({
-        ...tb,
-        subject: mockSubjects.find((s) => s.id === tb.subjectId) ?? null,
-        chapterCount: tb.chapters?.length ?? 0,
-        lessonCount: tb.chapters?.reduce((s, ch) => s + (ch.concepts?.length ?? 0), 0) ?? 0,
-      })),
-    [textbooks],
-  );
+  const list = textbooksWithSubjects ?? [];
 
   return (
     <>
@@ -49,7 +45,7 @@ export default function TeacherTextbooksPage() {
           <div>
             <h1 className="text-headline-sm">Textbooks</h1>
             <p className="text-sm text-muted-foreground">
-              {textbooksWithSubjects.length} textbook{textbooksWithSubjects.length !== 1 ? 's' : ''}
+              {list.length} textbook{list.length !== 1 ? 's' : ''}
             </p>
           </div>
           <div className="flex items-center gap-2">

@@ -12,7 +12,6 @@ import { Icon } from '@/components/ui/Icon';
 import { pageTransition } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import { getTextbook } from '@/services/textbookService';
-import { mockTextbooks } from '@/lib/mockData';
 import type { GeneratedQuestion } from '@/types/textbook';
 
 const DIFFICULTY_MAP: Record<string, 'easy' | 'medium' | 'hard'> = {
@@ -60,31 +59,6 @@ export default function AdaptiveQuizPage() {
           const c = ch.concepts.find((co) => co.id === conceptId);
           if (c) return { concept: c, chapter: ch, textbook: fb };
         }
-      }
-      const mock = mockTextbooks.find((t) => t.id === textbookId);
-      const ch = mock?.chapters[0];
-      if (mock && ch) {
-        return {
-          concept: {
-            id: conceptId,
-            chapterId: ch.id,
-            textbookId,
-            title: ch.title,
-            summary: '',
-            notes: '',
-            learningObjectives: [],
-            keywords: [],
-            difficulty: 'intermediate' as const,
-            prerequisites: [],
-            estimatedMinutes: 15,
-            videos: [],
-            questionBank: [],
-            assignments: [],
-            order: 0,
-          },
-          chapter: ch,
-          textbook: mock,
-        };
       }
       throw new Error('Concept not found');
     },

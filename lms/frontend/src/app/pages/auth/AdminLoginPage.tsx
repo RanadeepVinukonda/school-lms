@@ -13,7 +13,9 @@ import { Icon } from '@/components/ui/Icon';
 import { pageTransition } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
-import { mockUsers } from '@/lib/mockData';
+import { loginUser } from '@/firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/firebase/config';
 
 const adminLoginSchema = z.object({
   email: z
@@ -30,6 +32,7 @@ export default function AdminLoginPage() {
   const navigate = useNavigate();
   const setUser = useAuthStore((s) => s.setUser);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
 
   const {
     register,
@@ -37,39 +40,51 @@ export default function AdminLoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<AdminLoginFormData>({
     resolver: zodResolver(adminLoginSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
+    defaultValues: { email: '', password: '' },
   });
 
-  function onSubmit(data: AdminLoginFormData) {
-    if (data.email !== mockUsers.admin.email) return;
-    setUser({
-      id: mockUsers.admin.id,
-      email: mockUsers.admin.email,
-      displayName: mockUsers.admin.displayName,
-      role: 'admin',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-    navigate(ROUTES.ADMIN_DASHBOARD);
+  async function onSubmit(data: AdminLoginFormData) {
+    setError('');
+    try {
+      const firebaseUser = await loginUser(data.email, data.password);
+      const docRef = doc(db, 'users', firebaseUser.uid);
+      const snap = await getDoc(docRef);
+      if (!snap.exists()) {
+        setError('User profile not found. Please contact your administrator.');
+        return;
+      }
+      const profileData = snap.data() as Record<string, unknown>;
+      if (profileData.role !== 'admin' && profileData.role !== 'super_admin') {
+        setError('This account is not an admin account. Please use the correct login page.');
+        return;
+      }
+      setUser({
+        id: snap.id,
+        email: (profileData.email as string) || firebaseUser.email || '',
+        displayName: (profileData.displayName as string) || firebaseUser.displayName || '',
+        role: profileData.role as 'admin' | 'super_admin',
+        isActive: profileData.isActive as boolean ?? true,
+        createdAt: (profileData.createdAt as string) || new Date().toISOString(),
+        updatedAt: (profileData.updatedAt as string) || new Date().toISOString(),
+      });
+      navigate(ROUTES.ADMIN_DASHBOARD);
+    } catch (err: any) {
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        setError('Invalid email or password.');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Invalid email format.');
+      } else if (err.code === 'auth/too-many-requests') {
+        setError('Too many attempts. Please try again later.');
+      } else {
+        setError(err.message || 'Login failed. Please try again.');
+      }
+    }
   }
 
   return (
     <>
-      <SEOHead
-        title="Admin Sign In"
-        description="Sign in to your Genesis admin portal."
-      />
-
-      <motion.div
-        className="flex min-h-[80vh] items-center justify-center px-4 py-12"
-        initial="initial"
-        animate="animate"
-        variants={pageTransition}
-      >
+      <SEOHead title="Admin Sign In" description="Sign in to your Genesis admin portal." />
+      <motion.div className="flex min-h-[80vh] items-center justify-center px-4 py-12" initial="initial" animate="animate" variants={pageTransition}>
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1 text-center">
             <div className="mb-2 flex justify-center">
@@ -78,34 +93,22 @@ export default function AdminLoginPage() {
               </div>
             </div>
             <CardTitle className="text-2xl">Admin Sign In</CardTitle>
-            <CardDescription>
-              Enter your credentials to access the admin panel
-            </CardDescription>
+            <CardDescription>Authorized personnel only</CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <CardContent className="space-y-4">
+              {error && (
+                <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                  <Icon name="error" size={16} className="shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="admin@example.com"
-                  {...register('email')}
-                  error={errors.email?.message}
-                  disabled={isSubmitting}
-                  autoComplete="email"
-                />
+                <Input id="email" type="email" placeholder="admin@genesis.edu" {...register('email')} error={errors.email?.message} />
               </div>
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                  <Link
-                    to={ROUTES.FORGOT_PASSWORD}
-                    className="text-sm text-primary hover:underline"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
+                <Label htmlFor="password">Password</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -113,8 +116,7 @@ export default function AdminLoginPage() {
                     placeholder="Enter your password"
                     {...register('password')}
                     error={errors.password?.message}
-                    disabled={isSubmitting}
-                    autoComplete="current-password"
+                    className="pr-10"
                   />
                   <button
                     type="button"
@@ -126,24 +128,14 @@ export default function AdminLoginPage() {
                   </button>
                 </div>
               </div>
-              <Button
-                type="submit"
-                className="w-full"
-                size="lg"
-                disabled={isSubmitting}
-                loading={isSubmitting}
-              >
+            </CardContent>
+            <CardFooter className="flex flex-col gap-3">
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? 'Signing in...' : 'Sign In'}
               </Button>
-            </form>
-          </CardContent>
-          <CardFooter className="justify-center">
-            <p className="text-sm text-muted-foreground">
-              <Link to={ROUTES.LOGIN} className="text-primary hover:underline font-medium">
-                Choose a different role
-              </Link>
-            </p>
-          </CardFooter>
+              <Link to={ROUTES.FORGOT_PASSWORD} className="text-sm text-primary hover:underline">Forgot password?</Link>
+            </CardFooter>
+          </form>
         </Card>
       </motion.div>
     </>

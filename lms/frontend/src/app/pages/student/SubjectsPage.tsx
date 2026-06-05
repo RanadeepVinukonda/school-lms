@@ -8,25 +8,30 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Icon } from '@/components/ui/Icon';
 import { useQuery } from '@tanstack/react-query';
-import { mockUsers, mockEnrollments, mockSubjects } from '@/lib/mockData';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
+import { useAuthStore } from '@/store/authStore';
+import { getAllSubjects, getEnrollmentsByStudent } from '@/services/dataService';
 
 export default function SubjectsPage() {
+  const user = useAuthStore((s) => s.user);
+
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['student-subjects'],
+    queryKey: ['student-subjects', user?.id],
     queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 400));
-      const student = mockUsers.student1;
-      const enrollments = mockEnrollments.filter((e) => e.studentId === student.id);
+      const [allSubjects, enrollments] = await Promise.all([
+        getAllSubjects(),
+        getEnrollmentsByStudent(user!.id),
+      ]);
       const subjects = enrollments
         .map((enrollment) => {
-          const subject = mockSubjects.find((s) => s.id === enrollment.subjectId);
+          const subject = allSubjects.find((s) => s.id === enrollment.courseId);
           if (!subject) return null;
           return { ...subject, progress: enrollment.progress, status: enrollment.status };
         })
         .filter((s): s is NonNullable<typeof s> => s !== null);
       return subjects;
     },
+    enabled: !!user,
   });
 
   return (
@@ -88,7 +93,7 @@ export default function SubjectsPage() {
                             className="h-12 w-12 rounded-xl flex items-center justify-center"
                             style={{ backgroundColor: subject.color }}
                           >
-                            <Icon name={subject.icon} size={24} className="text-white" />
+                            <Icon name={subject.icon ?? 'menu_book'} size={24} className="text-white" />
                           </div>
                           <div>
                             <h3 className="text-lg font-bold" style={{ color: subject.color }}>

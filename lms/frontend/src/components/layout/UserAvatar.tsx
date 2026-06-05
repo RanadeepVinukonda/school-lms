@@ -37,8 +37,8 @@ export function UserAvatar() {
     ? user.displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
     : user.email[0].toUpperCase();
 
-  function handleLogout() {
-    logout();
+  async function handleLogout() {
+    await logout();
     navigate(ROUTES.LOGIN);
   }
 

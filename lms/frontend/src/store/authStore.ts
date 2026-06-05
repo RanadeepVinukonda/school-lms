@@ -1,5 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '@/firebase/config';
 import type { UserProfile, UserRole } from '@/types';
 
 interface AuthStore {
@@ -11,8 +14,11 @@ interface AuthStore {
   setToken: (token: string | null) => void;
   setLoading: (loading: boolean) => void;
   hasRole: (roles: UserRole[]) => boolean;
-  logout: () => void;
+  logout: () => Promise<void>;
+  initialize: () => Promise<void>;
 }
+
+let initialized = false;
 
 export const useAuthStore = create<AuthStore>()(
   persist(
@@ -20,7 +26,7 @@ export const useAuthStore = create<AuthStore>()(
       user: null,
       token: null,
       isAuthenticated: false,
-      isLoading: false,
+      isLoading: true,
       setUser: (user) =>
         set({ user, isAuthenticated: !!user, isLoading: false }),
       setToken: (token) => set({ token }),
@@ -30,20 +36,54 @@ export const useAuthStore = create<AuthStore>()(
         if (!user) return false;
         return roles.includes(user.role);
       },
-      logout: () =>
-        set({
-          user: null,
-          token: null,
-          isAuthenticated: false,
-          isLoading: false,
-        }),
+      logout: async () => {
+        await firebaseSignOut(auth);
+        set({ user: null, token: null, isAuthenticated: false, isLoading: false });
+      },
+      initialize: async () => {
+        if (initialized) return;
+        initialized = true;
+        set({ isLoading: true });
+        onAuthStateChanged(auth, async (firebaseUser) => {
+          if (firebaseUser) {
+            try {
+              const docRef = doc(db, 'users', firebaseUser.uid);
+              const snap = await getDoc(docRef);
+              if (snap.exists()) {
+                const data = snap.data() as Record<string, unknown>;
+                const profile: UserProfile = {
+                  id: snap.id,
+                  email: (data.email as string) || firebaseUser.email || '',
+                  displayName: (data.displayName as string) || firebaseUser.displayName || '',
+                  role: (data.role as UserRole) || 'student',
+                  isActive: data.isActive as boolean ?? true,
+                  avatar: data.avatar as string | undefined,
+                  firstName: data.firstName as string | undefined,
+                  lastName: data.lastName as string | undefined,
+                  phone: data.phone as string | undefined,
+                  dateOfBirth: data.dateOfBirth as string | undefined,
+                  bio: data.bio as string | undefined,
+                  address: data.address as string | undefined,
+                  createdAt: (data.createdAt as string) || new Date().toISOString(),
+                  updatedAt: (data.updatedAt as string) || new Date().toISOString(),
+                };
+                set({ user: profile, isAuthenticated: true, isLoading: false });
+              } else {
+                set({ user: null, isAuthenticated: false, isLoading: false });
+              }
+            } catch {
+              set({ user: null, isAuthenticated: false, isLoading: false });
+            }
+          } else {
+            set({ user: null, isAuthenticated: false, isLoading: false });
+          }
+        });
+      },
     }),
     {
       name: 'lms-auth',
       partialize: (state) => ({
-        user: state.user,
         token: state.token,
-        isAuthenticated: state.isAuthenticated,
       }),
     },
   ),

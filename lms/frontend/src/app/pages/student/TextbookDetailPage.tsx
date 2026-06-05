@@ -11,8 +11,8 @@ import { Icon } from '@/components/ui/Icon';
 import { pageTransition, listItem } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
-import { mockSubjects } from '@/lib/mockData';
 import { getTextbook, getAllConceptProgress } from '@/services/textbookService';
+import { getSubject } from '@/services/dataService';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
 
@@ -27,7 +27,7 @@ export default function TextbookDetailPage() {
       if (!id) return null;
       const textbook = await getTextbook(id);
       if (!textbook) return null;
-      const subject = mockSubjects.find((s) => s.id === textbook.subjectId);
+      const subject = await getSubject(textbook.subjectId);
       const conceptProgress = authUser?.id ? await getAllConceptProgress(authUser.id) : [];
 
       const chapters = (textbook.chapters ?? [])
