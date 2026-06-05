@@ -4,7 +4,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { z } from 'zod';
-import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,8 +13,6 @@ import { Icon } from '@/components/ui/Icon';
 import { pageTransition } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/firebase/config';
 import { mockUsers } from '@/lib/mockData';
 
 const studentLoginSchema = z.object({
@@ -35,7 +32,6 @@ const students = [mockUsers.student1, mockUsers.student2, mockUsers.student3];
 export default function StudentLoginPage() {
   const navigate = useNavigate();
   const setUser = useAuthStore((s) => s.setUser);
-  const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -51,48 +47,21 @@ export default function StudentLoginPage() {
     },
   });
 
-  async function onSubmit(data: StudentLoginFormData) {
-    setError('');
-    try {
-      const mockProfile = students.find(
-        (s) => s.email === data.email && s.studentId === data.studentId
-      );
-      if (!mockProfile) {
-        setError('Invalid email or Student ID');
-        return;
-      }
-
-      const cred = await signInWithEmailAndPassword(auth, data.email, data.password);
-      const idTokenResult = await cred.user.getIdTokenResult();
-      const role = (idTokenResult.claims.role as string) || 'student';
-      if (role !== 'student') {
-        setError('This account is not a student account');
-        return;
-      }
-      setUser({
-        id: cred.user.uid,
-        email: cred.user.email || data.email,
-        displayName: cred.user.displayName || mockProfile.displayName,
-        role: 'student',
-        isActive: true,
-        avatar: cred.user.photoURL || undefined,
-        createdAt: cred.user.metadata.creationTime || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
-      toast.success('Welcome back!');
-      navigate(ROUTES.STUDENT_DASHBOARD);
-    } catch (err: unknown) {
-      const firebaseErr = err as { code?: string; message?: string };
-      const errorMessages: Record<string, string> = {
-        'auth/user-not-found': 'No account found with this email',
-        'auth/wrong-password': 'Invalid email or password',
-        'auth/invalid-credential': 'Invalid email or password',
-        'auth/invalid-email': 'Invalid email address',
-        'auth/user-disabled': 'This account has been disabled',
-        'auth/too-many-requests': 'Too many attempts. Please try again later',
-      };
-      setError(errorMessages[firebaseErr.code || ''] || firebaseErr.message || 'Login failed');
-    }
+  function onSubmit(data: StudentLoginFormData) {
+    const profile = students.find(
+      (s) => s.email === data.email && s.studentId === data.studentId
+    );
+    if (!profile) return;
+    setUser({
+      id: profile.id,
+      email: profile.email,
+      displayName: profile.displayName,
+      role: 'student',
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+    navigate(ROUTES.STUDENT_DASHBOARD);
   }
 
   return (
@@ -122,11 +91,6 @@ export default function StudentLoginPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              {error && (
-                <div className="rounded-lg bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-600 dark:text-red-400">
-                  {error}
-                </div>
-              )}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
