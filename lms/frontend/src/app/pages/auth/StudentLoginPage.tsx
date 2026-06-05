@@ -16,6 +16,7 @@ import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/firebase/config';
+import { mockUsers } from '@/lib/mockData';
 
 const studentLoginSchema = z.object({
   email: z
@@ -23,10 +24,13 @@ const studentLoginSchema = z.object({
     .min(1, 'Email is required')
     .email('Invalid email address')
     .transform((email) => email.toLowerCase().trim()),
+  studentId: z.string().min(1, 'Student ID is required'),
   password: z.string().min(1, 'Password is required'),
 });
 
 type StudentLoginFormData = z.infer<typeof studentLoginSchema>;
+
+const students = [mockUsers.student1, mockUsers.student2, mockUsers.student3];
 
 export default function StudentLoginPage() {
   const navigate = useNavigate();
@@ -42,6 +46,7 @@ export default function StudentLoginPage() {
     resolver: zodResolver(studentLoginSchema),
     defaultValues: {
       email: '',
+      studentId: '',
       password: '',
     },
   });
@@ -49,6 +54,14 @@ export default function StudentLoginPage() {
   async function onSubmit(data: StudentLoginFormData) {
     setError('');
     try {
+      const mockProfile = students.find(
+        (s) => s.email === data.email && s.studentId === data.studentId
+      );
+      if (!mockProfile) {
+        setError('Invalid email or Student ID');
+        return;
+      }
+
       const cred = await signInWithEmailAndPassword(auth, data.email, data.password);
       const idTokenResult = await cred.user.getIdTokenResult();
       const role = (idTokenResult.claims.role as string) || 'student';
@@ -59,7 +72,7 @@ export default function StudentLoginPage() {
       setUser({
         id: cred.user.uid,
         email: cred.user.email || data.email,
-        displayName: cred.user.displayName || cred.user.email?.split('@')[0] || 'Student',
+        displayName: cred.user.displayName || mockProfile.displayName,
         role: 'student',
         isActive: true,
         avatar: cred.user.photoURL || undefined,
@@ -124,6 +137,18 @@ export default function StudentLoginPage() {
                   error={errors.email?.message}
                   disabled={isSubmitting}
                   autoComplete="email"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="studentId">Student ID</Label>
+                <Input
+                  id="studentId"
+                  type="text"
+                  placeholder="e.g. STU001"
+                  {...register('studentId')}
+                  error={errors.studentId?.message}
+                  disabled={isSubmitting}
+                  autoComplete="username"
                 />
               </div>
               <div className="space-y-2">

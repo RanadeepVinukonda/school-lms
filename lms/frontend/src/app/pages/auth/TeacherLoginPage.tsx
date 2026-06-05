@@ -16,6 +16,7 @@ import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/firebase/config';
+import { mockUsers } from '@/lib/mockData';
 
 const teacherLoginSchema = z.object({
   email: z
@@ -23,10 +24,13 @@ const teacherLoginSchema = z.object({
     .min(1, 'Email is required')
     .email('Invalid email address')
     .transform((email) => email.toLowerCase().trim()),
+  teacherId: z.string().min(1, 'Teacher ID is required'),
   password: z.string().min(1, 'Password is required'),
 });
 
 type TeacherLoginFormData = z.infer<typeof teacherLoginSchema>;
+
+const teachers = [mockUsers.teacher1, mockUsers.teacher2];
 
 export default function TeacherLoginPage() {
   const navigate = useNavigate();
@@ -42,6 +46,7 @@ export default function TeacherLoginPage() {
     resolver: zodResolver(teacherLoginSchema),
     defaultValues: {
       email: '',
+      teacherId: '',
       password: '',
     },
   });
@@ -49,6 +54,14 @@ export default function TeacherLoginPage() {
   async function onSubmit(data: TeacherLoginFormData) {
     setError('');
     try {
+      const mockProfile = teachers.find(
+        (t) => t.email === data.email && t.teacherId === data.teacherId
+      );
+      if (!mockProfile) {
+        setError('Invalid email or Teacher ID');
+        return;
+      }
+
       const cred = await signInWithEmailAndPassword(auth, data.email, data.password);
       const idTokenResult = await cred.user.getIdTokenResult();
       const role = (idTokenResult.claims.role as string) || 'teacher';
@@ -59,7 +72,7 @@ export default function TeacherLoginPage() {
       setUser({
         id: cred.user.uid,
         email: cred.user.email || data.email,
-        displayName: cred.user.displayName || cred.user.email?.split('@')[0] || 'Teacher',
+        displayName: cred.user.displayName || mockProfile.displayName,
         role: role as 'teacher' | 'admin',
         isActive: true,
         avatar: cred.user.photoURL || undefined,
@@ -124,6 +137,18 @@ export default function TeacherLoginPage() {
                   error={errors.email?.message}
                   disabled={isSubmitting}
                   autoComplete="email"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="teacherId">Teacher ID</Label>
+                <Input
+                  id="teacherId"
+                  type="text"
+                  placeholder="e.g. TCH001"
+                  {...register('teacherId')}
+                  error={errors.teacherId?.message}
+                  disabled={isSubmitting}
+                  autoComplete="username"
                 />
               </div>
               <div className="space-y-2">
