@@ -17,9 +17,10 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Icon } from '@/components/ui/Icon';
-import { mockAssignments, mockSubmissions, mockTextbooks, mockSubjects } from '@/lib/mockData';
+import { getAssignment, getSubmissionsByAssignment, getSubject } from '@/services/dataService';
+import { getTextbook } from '@/services/textbookService';
 import { formatDate, formatDateTime } from '@/lib/format';
-import type { Assignment, Submission } from '@/types';
+import type { Submission } from '@/types';
 
 const submitSchema = z.object({
   notes: z.string().max(500, 'Notes must be under 500 characters').optional(),
@@ -72,26 +73,60 @@ export default function AssignmentDetailPage() {
   const { data: assignment, isLoading, error, refetch } = useQuery({
     queryKey: ['assignment', assignmentId],
     queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 300));
-      return mockAssignments.find((a) => a.id === assignmentId) as Assignment | undefined;
+      if (!assignmentId) return null;
+      return getAssignment(assignmentId);
     },
     enabled: !!assignmentId,
   });
 
+  const { data: textbook } = useQuery({
+    queryKey: ['textbook', assignment?.textbookId],
+    queryFn: async () => {
+      if (!assignment?.textbookId) return null;
+      return getTextbook(assignment.textbookId);
+    },
+    enabled: !!assignment?.textbookId,
+  });
+
+  const { data: subject } = useQuery({
+    queryKey: ['subject', textbook?.subjectId],
+    queryFn: async () => {
+      if (!textbook?.subjectId) return null;
+      return getSubject(textbook.subjectId);
+    },
+    enabled: !!textbook?.subjectId,
+  });
+
   const { data: submissions } = useQuery({
     queryKey: ['submissions', assignmentId, user?.id],
-    queryFn: async (): Promise<Submission[] | null> => {
-      await new Promise((r) => setTimeout(r, 200));
-      const all = mockSubmissions.filter((s) => s.assignmentId === assignmentId && s.studentId === user?.id);
-      if (all.length === 0) return null;
-      return all.map((s) => ({
-        ...s, userId: s.studentId, studentName: user?.displayName || '', attachments: [] as string[], attemptNumber: 1,
-        submittedAt: s.submittedAt, feedback: s.feedback,
+    queryFn: async (): Promise<(Submission & { userId: string; studentName: string; attachments: string[]; attemptNumber: number })[] | null> => {
+      if (!assignmentId || !user?.id) return null;
+      const all = await getSubmissionsByAssignment(assignmentId);
+      const filtered = all.filter((s) => s.studentId === user.id);
+      if (filtered.length === 0) return null;
+      return filtered.map((s) => ({
+        id: s.id,
+        assignmentId: s.assignmentId,
+        userId: s.studentId,
+        studentName: user?.displayName || '',
+        content: s.content ?? '',
+        attachments: [] as string[],
+        status: (s.status as Submission['status']) ?? 'submitted',
+        attemptNumber: 1,
+        submittedAt: s.submittedAt ?? new Date().toISOString(),
+        feedback: s.feedback,
         grade: typeof s.grade === 'number' ? {
-          id: `g-${s.id}`, submissionId: s.id, score: s.grade, totalPoints: 0, percentage: 0,
-          letter: 'B' as const, feedback: s.feedback || '', gradedBy: '', gradedAt: s.submittedAt,
+          id: `g-${s.id}`,
+          submissionId: s.id,
+          score: s.grade,
+          totalPoints: assignment?.points ?? 0,
+          percentage: assignment?.points ? Math.round((s.grade / assignment.points) * 100) : 0,
+          letter: 'B' as const,
+          feedback: s.feedback || '',
+          gradedBy: '',
+          gradedAt: s.submittedAt ?? '',
         } : undefined,
-      })) as Submission[];
+      }));
     },
     enabled: !!assignmentId && !!user?.id,
   });
@@ -115,14 +150,21 @@ export default function AssignmentDetailPage() {
           <Link to="/student/dashboard"><Icon name="arrow_back" size={18} className="mr-1" />Back</Link>
         </Button>
 
-        <DataFetchWrapper data={assignment} isLoading={isLoading} error={error as Error} loadingType="detail" emptyMessage="Assignment not found" onRetry={() => refetch()}>
+        <DataFetchWrapper
+          data={assignment ?? null}
+          isLoading={isLoading}
+          error={error as Error}
+          loadingType="detail"
+          emptyMessage="Assignment not found"
+          onRetry={() => refetch()}
+        >
           {(asgn) => {
-            const a = asgn as Assignment & { textbookId?: string };
-            const tb = mockTextbooks.find((t) => t.id === a.textbookId);
-            const sbj = tb ? mockSubjects.find((s) => s.id === tb.subjectId) : null;
-            const late = new Date(a.dueDate).getTime() < Date.now();
-            const r = rem(a.dueDate);
-            const s = STATUS[a.status] || STATUS.published;
+            const a = asgn as NonNullable<typeof assignment>;
+            const tb = textbook ?? null;
+            const sbj = subject ?? null;
+            const late = a.dueDate ? new Date(a.dueDate).getTime() < Date.now() : false;
+            const r = a.dueDate ? rem(a.dueDate) : { label: 'No due date', variant: 'secondary' as const };
+            const s = STATUS[(a.status as keyof typeof STATUS) || 'published'] || STATUS.published;
             const si = subInfo(sub, late);
 
             return (
@@ -145,7 +187,7 @@ export default function AssignmentDetailPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center gap-4 text-sm flex-wrap">
-                      <span className="flex items-center gap-1"><Icon name="calendar_today" size={16} className="text-muted-foreground" />Due {formatDate(a.dueDate)}</span>
+                      <span className="flex items-center gap-1"><Icon name="calendar_today" size={16} className="text-muted-foreground" />Due {a.dueDate ? formatDate(a.dueDate) : 'N/A'}</span>
                       <span className="flex items-center gap-1"><Icon name="award_star" size={16} className="text-muted-foreground" />{a.points} pts</span>
                       <span className="flex items-center gap-1"><Icon name="schedule" size={16} className="text-muted-foreground" />{r.label}</span>
                     </div>

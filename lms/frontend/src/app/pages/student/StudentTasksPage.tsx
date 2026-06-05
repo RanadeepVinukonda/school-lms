@@ -5,7 +5,15 @@ import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { useQuery } from '@tanstack/react-query';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '@/firebase/config';
 import { pageTransition, listContainer } from '@/lib/motion';
+import { getAllSubjects, getExamsBySubject } from '@/services/dataService';
+import { getAllTextbooks } from '@/services/textbookService';
+import { getSubmissionsByAssignment } from '@/services/dataService';
+import type { AssignmentItem, ExamItem, QuizItem } from '@/services/dataService';
+import type { Subject } from '@/types';
+import type { Textbook } from '@/types/textbook';
 import {
   buildTasks,
   FilterBar,
@@ -21,8 +29,30 @@ export default function StudentTasksPage() {
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-tasks'],
     queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 400));
-      return buildTasks();
+      const [allSubjects, allTextbooks] = await Promise.all([
+        getAllSubjects(),
+        getAllTextbooks(),
+      ]);
+
+      // Fetch all assignments
+      const assignmentsSnap = await getDocs(collection(db, 'assignments'));
+      const allAssignments = assignmentsSnap.docs.map(
+        (d) => ({ id: d.id, ...d.data() }) as AssignmentItem,
+      );
+
+      // Fetch all quizzes
+      const quizzesSnap = await getDocs(collection(db, 'quizzes'));
+      const allQuizzes = quizzesSnap.docs.map(
+        (d) => ({ id: d.id, ...d.data() }) as QuizItem,
+      );
+
+      // Fetch all exams (by subject)
+      const subjectIds = allSubjects.map((s) => s.id);
+      const examPromises = subjectIds.map((sid) => getExamsBySubject(sid));
+      const examResults = await Promise.all(examPromises);
+      const allExams = examResults.flat();
+
+      return buildTasks(allAssignments, allQuizzes, allExams, allSubjects as Subject[], allTextbooks);
     },
   });
 

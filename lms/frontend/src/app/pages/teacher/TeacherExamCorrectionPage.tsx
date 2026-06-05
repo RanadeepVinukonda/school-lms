@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,9 +12,27 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Icon } from '@/components/ui/Icon';
 import { pageTransition, listItem } from '@/lib/motion';
-import { mockUsers, mockExams, mockSubjects, mockEnrollments, mockCorrections } from '@/lib/mockData';
+import {
+  getExam,
+  getSubject,
+  getCorrectionsByExam,
+  getAllEnrollments,
+  getAllUsers,
+} from '@/services/dataService';
+import type { ExamItem, CorrectionItem, UserDoc } from '@/services/dataService';
 
 type SaveStatus = 'saved' | 'saving' | 'unsaved';
+
+interface ExamQuestion {
+  id: string;
+  type: string;
+  question: string;
+  points: number;
+  options?: string[];
+  correctAnswer?: string;
+}
+
+type SaveHandler = ReturnType<typeof setTimeout>;
 
 const studentAnswers: Record<string, Record<string, string>> = {
   s1: { eq1: 'x = (-b ± √(b²-4ac))/2a', eq2: 'Take coefficient of x, halve it, square it, add to both sides. Factor perfect square trinomial and solve.' },
@@ -28,13 +47,20 @@ const shortcuts = [
   { k: 'Ctrl+S', a: 'Save all' },
 ];
 
-function getMark(marks: Record<string, number>, correction: typeof mockCorrections[0] | null, qId: string): number {
-  return marks[qId] ?? correction?.questionMarks.find((qm) => qm.questionId === qId)?.marks ?? 0;
+interface QuestionMark {
+  questionId: string;
+  marks: number;
+  feedback: string;
+}
+
+function getMark(marks: Record<string, number>, correction: CorrectionItem | null, qId: string): number {
+  const qm = correction?.questionMarks as QuestionMark[] | undefined;
+  return marks[qId] ?? qm?.find((q) => q.questionId === qId)?.marks ?? 0;
 }
 
 export default function TeacherExamCorrectionPage() {
   const { id } = useParams<{ id: string }>();
-  const saveTimer = useRef<ReturnType<typeof setTimeout>>();
+  const saveTimer = useRef<SaveHandler>();
   const [qIdx, setQIdx] = useState(0);
   const [studentId, setStudentId] = useState('');
   const [marks, setMarks] = useState<Record<string, number>>({});
@@ -42,16 +68,40 @@ export default function TeacherExamCorrectionPage() {
   const [overallFb, setOverallFb] = useState('');
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
 
-  const exam = useMemo(() => mockExams.find((e) => e.id === id) ?? null, [id]);
-  const subject = useMemo(() => mockSubjects.find((s) => s.id === exam?.subjectId) ?? null, [exam]);
-  const corrections = useMemo(() => (exam ? mockCorrections.filter((c) => c.examId === exam.id) : []), [exam]);
-  const questions = exam?.questions ?? [];
+  const { data: examData, isLoading: examLoading } = useQuery({
+    queryKey: ['teacher-exam-correction', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const [exam, allEnrollments, allUsers] = await Promise.all([
+        getExam(id),
+        getAllEnrollments(),
+        getAllUsers(),
+      ]);
+      if (!exam) return null;
 
-  const enrolled = useMemo(() => {
-    if (!exam) return [];
-    const ids = mockEnrollments.filter((e) => e.subjectId === exam.subjectId && e.status === 'active').map((e) => e.studentId);
-    return ids.map((sid) => Object.values(mockUsers).find((u) => u.id === sid && u.role === 'student')).filter(Boolean) as typeof mockUsers.student1[];
-  }, [exam]);
+      const subject = exam.subjectId ? await getSubject(exam.subjectId) : null;
+      const corrections = await getCorrectionsByExam(exam.id);
+
+      const enrolled = allEnrollments
+        .filter(
+          (e) =>
+            (e as unknown as { subjectId: string }).subjectId === exam.subjectId &&
+            e.status === 'active',
+        )
+        .map((e) => e.studentId)
+        .map((sid) => allUsers.find((u) => u.id === sid && u.role === 'student'))
+        .filter(Boolean) as UserDoc[];
+
+      return { exam, subject, corrections, enrolled };
+    },
+  });
+
+  const exam = examData?.exam ?? null;
+  const subject = examData?.subject ?? null;
+  const corrections = examData?.corrections ?? [];
+  const enrolled = examData?.enrolled ?? [];
+
+  const questions = (exam?.questions ?? []) as ExamQuestion[];
 
   const student = useMemo(() => enrolled.find((s) => s.id === studentId) ?? null, [enrolled, studentId]);
   const correction = useMemo(() => corrections.find((c) => c.studentId === studentId) ?? null, [corrections, studentId]);
@@ -66,14 +116,22 @@ export default function TeacherExamCorrectionPage() {
   useEffect(() => {
     if (!exam) return;
     if (correction) {
+      const qms = correction.questionMarks as QuestionMark[] | undefined;
       const m: Record<string, number> = {};
       const f: Record<string, string> = {};
-      for (const qm of correction.questionMarks) { m[qm.questionId] = qm.marks; f[qm.questionId] = qm.feedback; }
+      if (qms) {
+        for (const qm of qms) {
+          m[qm.questionId] = qm.marks;
+          f[qm.questionId] = qm.feedback;
+        }
+      }
       setMarks(m);
       setFeedback(f);
-      setOverallFb(correction.overallFeedback);
+      setOverallFb(correction.overallFeedback ?? '');
     } else {
-      setMarks({}); setFeedback({}); setOverallFb('');
+      setMarks({});
+      setFeedback({});
+      setOverallFb('');
     }
     setQIdx(0);
     setSaveStatus('saved');
@@ -152,7 +210,7 @@ export default function TeacherExamCorrectionPage() {
             <div className="flex items-center gap-2 mb-2">
               <Badge variant="outline" className="text-[10px]">Q{qIdx + 1}</Badge>
               <Badge variant={question.type === 'multiple_choice' ? 'info' : 'secondary'} className="text-[10px]">
-                {question.type === 'multiple_choice' ? 'Multiple Choice' : 'Essay'} · {question.points} pts
+                {question.type === 'multiple_choice' ? 'Multiple Choice' : 'Essay'} &middot; {question.points} pts
               </Badge>
             </div>
             <h3 className="text-lg font-semibold leading-relaxed">{question.question}</h3>
@@ -203,7 +261,7 @@ export default function TeacherExamCorrectionPage() {
           <label className="text-xs text-muted-foreground font-medium">Score (max {question.points})</label>
           <Input type="number" min={0} max={question.points}
             value={marks[question.id] ?? ''}
-            placeholder={`0 – ${question.points}`}
+            placeholder={`0 \u2013 ${question.points}`}
             onChange={(e) => {
               const v = e.target.value;
               const n = Number(v);
@@ -242,6 +300,19 @@ export default function TeacherExamCorrectionPage() {
   const saveLabel = saveStatus === 'saved' ? 'Saved' : saveStatus === 'saving' ? 'Saving...' : 'Unsaved';
   const saveVariant = saveStatus === 'saved' ? 'success' : saveStatus === 'saving' ? 'warning' : 'outline';
 
+  if (examLoading) {
+    return (
+      <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-5xl mx-auto">
+        <SEOHead title="Exam Correction" description="Grade student exam submissions" />
+        <Card>
+          <CardContent className="flex items-center justify-center py-12">
+            <p className="text-muted-foreground">Loading exam...</p>
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  }
+
   if (!exam) return (
     <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-5xl mx-auto">
       <SEOHead title="Exam Correction" description="Grade student exam submissions" />
@@ -277,7 +348,7 @@ export default function TeacherExamCorrectionPage() {
               <Separator orientation="vertical" className="h-6" />
               <div className="min-w-0">
                 <h1 className="text-sm font-semibold truncate">{exam.title}</h1>
-                <p className="text-[11px] text-muted-foreground">{subject?.name ?? 'Unknown'} · {questions.length} questions · {totalMax} pts</p>
+                <p className="text-[11px] text-muted-foreground">{subject?.name ?? 'Unknown'} &middot; {questions.length} questions &middot; {totalMax} pts</p>
               </div>
             </div>
             <select value={studentId} onChange={(e) => setStudentId(e.target.value)}
@@ -308,7 +379,7 @@ export default function TeacherExamCorrectionPage() {
             <div className="flex items-center gap-2 shrink-0">
               <Button variant="default" size="sm" onClick={() => {
                 if (!student) return toast.error('No student selected');
-                toast.success(`Published grades for ${student.displayName} — ${totalGiven}/${totalMax}`);
+                toast.success(`Published grades for ${student.displayName} \u2014 ${totalGiven}/${totalMax}`);
               }} className="gap-1"><Icon name="send" size={15} /> Publish</Button>
               <Button variant="outline" size="sm" onClick={() => toast.success(`Published grades for ${enrolled.length} students`)} className="gap-1"><Icon name="publish" size={15} /> All</Button>
             </div>

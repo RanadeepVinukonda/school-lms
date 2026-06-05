@@ -4,10 +4,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { mockSubjects, mockAssignments, mockExams, mockUsers, mockLessons } from '@/lib/mockData';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
-import type { UserRole } from '@/types';
+import { useQuery } from '@tanstack/react-query';
+import { getAllSubjects, getAllUsers } from '@/services/dataService';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '@/firebase/config';
+import type { UserRole, Subject } from '@/types';
+import type { AssignmentItem, ExamItem, UserDoc, LessonItem, QuizItem } from '@/services/dataService';
 
 type Cat = 'subjects' | 'assignments' | 'exams' | 'teachers' | 'students' | 'lessons';
 interface Item { id: string; title: string; subtitle: string; icon: string; url: string; category: Cat; }
@@ -37,38 +41,39 @@ function link(cat: Cat, id: string, role: UserRole): string {
   return m[cat](id);
 }
 
+interface SearchData {
+  subjects: Subject[];
+  assignments: AssignmentItem[];
+  exams: ExamItem[];
+  users: UserDoc[];
+  lessons: LessonItem[];
+}
+
 export function useSearch(
   query: string,
-  data?: {
-    subjects?: typeof mockSubjects;
-    assignments?: typeof mockAssignments;
-    exams?: typeof mockExams;
-    users?: typeof mockUsers;
-    lessons?: typeof mockLessons;
-  },
+  data?: SearchData,
 ): { results: Results; isLoading: boolean } {
   const [loading, setLoading] = useState(false);
-  const sb = data?.subjects ?? mockSubjects;
-  const as = data?.assignments ?? mockAssignments;
-  const ex = data?.exams ?? mockExams;
-  const us = data?.users ?? mockUsers;
-  const ls = data?.lessons ?? mockLessons;
+  const sb = data?.subjects ?? [];
+  const as = data?.assignments ?? [];
+  const ex = data?.exams ?? [];
+  const us = data?.users ?? [];
+  const ls = data?.lessons ?? [];
 
   const results = useMemo((): Results => {
     if (!query.trim()) return EMPTY;
     const q = query.toLowerCase();
-    const u = Object.values(us);
     return {
-      subjects: sb.filter((s) => [s.name, s.code, s.category].some((f) => f.toLowerCase().includes(q)))
+      subjects: (sb as Subject[]).filter((s) => [s.name, s.code, s.category].some((f) => f.toLowerCase().includes(q)))
         .map((s) => ({ id: s.id, title: s.name, subtitle: `${s.code} · ${s.category}`, icon: s.icon || 'school', url: '', category: 'subjects' as Cat })),
-      assignments: as.filter((a) => [a.title, a.description].some((f) => f.toLowerCase().includes(q)))
-        .map((a) => ({ id: a.id, title: a.title, subtitle: `Due ${new Date(a.dueDate).toLocaleDateString()}`, icon: 'assignment', url: '', category: 'assignments' as Cat })),
-      exams: ex.filter((e) => [e.title, e.description].some((f) => f.toLowerCase().includes(q)))
-        .map((e) => ({ id: e.id, title: e.title, subtitle: `${new Date(e.startDate).toLocaleDateString()} · ${e.duration}min`, icon: 'quiz', url: '', category: 'exams' as Cat })),
-      teachers: u.filter((t) => t.role === 'teacher' && t.displayName.toLowerCase().includes(q))
+      assignments: as.filter((a) => [a.title, a.description].some((f) => f?.toLowerCase().includes(q) ?? false))
+        .map((a) => ({ id: a.id, title: a.title, subtitle: `Due ${a.dueDate ? new Date(a.dueDate).toLocaleDateString() : 'N/A'}`, icon: 'assignment', url: '', category: 'assignments' as Cat })),
+      exams: ex.filter((e) => [e.title, e.description].some((f) => f?.toLowerCase().includes(q) ?? false))
+        .map((e) => ({ id: e.id, title: e.title, subtitle: `${e.startDate ? new Date(e.startDate).toLocaleDateString() : ''} · ${e.duration}min`, icon: 'quiz', url: '', category: 'exams' as Cat })),
+      teachers: us.filter((t) => t.role === 'teacher' && t.displayName.toLowerCase().includes(q))
         .map((t) => ({ id: t.id, title: t.displayName, subtitle: 'Teacher', icon: 'person', url: '', category: 'teachers' as Cat })),
-      students: u.filter((s) => s.role === 'student' && s.displayName.toLowerCase().includes(q))
-        .map((s) => ({ id: s.id, title: s.displayName, subtitle: (s as Record<string, string>).studentId || 'Student', icon: 'person', url: '', category: 'students' as Cat })),
+      students: us.filter((s) => s.role === 'student' && s.displayName.toLowerCase().includes(q))
+        .map((s) => ({ id: s.id, title: s.displayName, subtitle: s.studentId || 'Student', icon: 'person', url: '', category: 'students' as Cat })),
       lessons: ls.filter((l) => [l.title, l.content].some((f) => f?.toLowerCase().includes(q) ?? false))
         .map((l) => ({ id: l.id, title: l.title, subtitle: `Lesson · ${l.contentType}`, icon: 'book', url: '', category: 'lessons' as Cat })),
     };
@@ -93,7 +98,31 @@ export function GlobalSearchDialog({ isOpen, onClose }: Props) {
   const [query, setQuery] = useState('');
   const [sel, setSel] = useState(0);
   const role = useAuthStore((s) => s.user?.role ?? 'student');
-  const { results, isLoading } = useSearch(query);
+
+  const { data: searchData } = useQuery({
+    queryKey: ['global-search-data'],
+    queryFn: async (): Promise<SearchData> => {
+      const [subjects, users, assignmentsSnap, examsSnap, lessonsSnap] = await Promise.all([
+        getAllSubjects(),
+        getAllUsers(),
+        getDocs(collection(db, 'assignments')),
+        getDocs(collection(db, 'exams')),
+        getDocs(collection(db, 'lessons')),
+      ]);
+
+      return {
+        subjects: subjects as unknown as Subject[],
+        users,
+        assignments: assignmentsSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as AssignmentItem),
+        exams: examsSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as ExamItem),
+        lessons: lessonsSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as LessonItem),
+      };
+    },
+    enabled: isOpen,
+    staleTime: 60000,
+  });
+
+  const { results, isLoading } = useSearch(query, searchData);
 
   const flat = useMemo(() => {
     const items: (Item & { cl: string })[] = [];

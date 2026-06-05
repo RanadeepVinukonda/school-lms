@@ -10,7 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
-import { mockTimetable, mockSubjects, mockUsers, mockClasses, days, periods } from '@/lib/mockData';
+import { getTimetableByClass, getAllSubjects, getAllUsers, getAllClasses } from '@/services/dataService';
+import type { TimetableEntry, Subject, UserDoc, ClassEntry } from '@/services/dataService';
+
+const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'] as const;
+const periods = [1, 2, 3, 4, 5, 6, 7, 8];
 
 const dayLabels: Record<string, string> = {
   monday: 'Monday',
@@ -24,27 +28,41 @@ export default function AdminTimetablePage() {
   const { id: classId } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const { isLoading, isError, refetch } = useQuery({
+  const { data: classList = [] } = useQuery({
+    queryKey: ['admin-timetable-classes'],
+    queryFn: getAllClasses,
+  });
+
+  const { data: timetableSlots = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-timetable', classId],
-    queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 400));
-      return null;
-    },
+    queryFn: () => getTimetableByClass(classId!),
+    enabled: !!classId,
+  });
+
+  const { data: subjects = [] } = useQuery({
+    queryKey: ['admin-timetable-subjects'],
+    queryFn: getAllSubjects,
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['admin-timetable-users'],
+    queryFn: getAllUsers,
   });
 
   const classData = useMemo(
-    () => mockClasses.find((c) => c.id === classId),
-    [classId]
+    () => classList.find((c: ClassEntry) => c.id === classId) ?? null,
+    [classList, classId]
   );
 
   const timetableMap = useMemo(() => {
-    const map = new Map<string, typeof mockTimetable[number]>();
-    const classSlots = mockTimetable.filter((tt) => tt.classId === classId);
-    classSlots.forEach((slot) => {
-      map.set(`${slot.day}-${slot.period}`, slot);
-    });
+    const map = new Map<string, TimetableEntry>();
+    for (const slot of timetableSlots) {
+      if (slot.day && slot.period != null) {
+        map.set(`${slot.day}-${slot.period}`, slot);
+      }
+    }
     return map;
-  }, [classId]);
+  }, [timetableSlots]);
 
   const pageTitle = classData ? `${classData.name} Timetable` : 'Timetable';
 
@@ -55,7 +73,7 @@ export default function AdminTimetablePage() {
         description={`Weekly timetable for ${classData?.name || 'class'}`}
       />
       <DataFetchWrapper
-        data={isLoading || isError ? undefined : ({})}
+        data={(!isLoading && !isError) ? {} : undefined}
         isLoading={isLoading}
         error={isError ? new Error('Failed to load timetable') : null}
         onRetry={() => refetch()}
@@ -80,7 +98,7 @@ export default function AdminTimetablePage() {
               );
             }
 
-          const hasSlots = Array.from(timetableMap.values()).length > 0;
+          const hasSlots = timetableSlots.length > 0;
 
           return (
             <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit">
@@ -93,8 +111,8 @@ export default function AdminTimetablePage() {
                 <div>
                   <h1 className="text-headline-sm">{classData.name} Timetable</h1>
                   <p className="text-sm text-on-surface-variant">
-                    Code: {classData.code} &middot; Grade {classData.grade} &middot;{' '}
-                    {hasSlots ? `${timetableMap.size} scheduled slots` : 'No schedule yet'}
+                    Code: {classData.code} &middot; Grade {classData.grade || '\u2014'} &middot;{' '}
+                    {hasSlots ? `${timetableSlots.length} scheduled slots` : 'No schedule yet'}
                   </p>
                 </div>
               </motion.div>
@@ -141,10 +159,10 @@ export default function AdminTimetablePage() {
                           {days.map((day) => {
                             const slot = timetableMap.get(`${day}-${period}`);
                             const subject = slot
-                              ? mockSubjects.find((s) => s.id === slot.subjectId)
+                              ? subjects.find((s: Subject) => s.id === slot.subjectId)
                               : undefined;
                             const teacher = slot
-                              ? Object.values(mockUsers).find((u) => u.id === slot.teacherId)
+                              ? users.find((u: UserDoc) => u.id === slot.teacherId)
                               : undefined;
                             return (
                               <div

@@ -7,13 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
 import { pageTransition, listItem } from '@/lib/motion';
 import { useQuery } from '@tanstack/react-query';
-import {
-  mockLessons,
-  mockTextbooks,
-  mockSubjects,
-  mockQuizzes,
-  mockAssignments,
-} from '@/lib/mockData';
+import { getLesson } from '@/services/dataService';
+import { getQuiz, getSubject } from '@/services/dataService';
+import { getTextbook } from '@/services/textbookService';
+import { getAssignment } from '@/services/dataService';
 import { ROUTES } from '@/lib/constants';
 
 type Entry = { c: string[]; s: string; e: [string, string][]; q: [string, string][] };
@@ -49,15 +46,19 @@ export default function LessonViewPage() {
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['lesson', id],
     queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 300));
       if (!id) return null;
-      const lesson = mockLessons.find((l) => l.id === id);
+      const lesson = await getLesson(id);
       if (!lesson) return null;
-      const textbook = mockTextbooks.find((tb) => tb.id === lesson.textbookId);
-      const subject = textbook ? mockSubjects.find((s) => s.id === textbook.subjectId) : null;
-      const chapter = textbook?.chapters.find((ch) => ch.id === lesson.chapterId) ?? null;
-      const quiz = lesson.quizId ? mockQuizzes.find((q) => q.id === lesson.quizId) : null;
-      const assignment = lesson.assignmentId ? mockAssignments.find((a) => a.id === lesson.assignmentId) : null;
+
+      const [textbook, quiz, assignment] = await Promise.all([
+        lesson.textbookId ? getTextbook(lesson.textbookId) : Promise.resolve(null),
+        lesson.quizId ? getQuiz(lesson.quizId) : Promise.resolve(null),
+        lesson.assignmentId ? getAssignment(lesson.assignmentId) : Promise.resolve(null),
+      ]);
+
+      const subject = textbook?.subjectId ? await getSubject(textbook.subjectId) : null;
+      const chapter = textbook?.chapters?.find((ch) => ch.id === lesson.chapterId) ?? null;
+
       return { lesson, textbook, subject, chapter, quiz, assignment };
     },
   });
@@ -67,15 +68,7 @@ export default function LessonViewPage() {
   const examples = useMemo(() => (data?.lesson ? match(data.lesson.title, (e) => e.e) : []), [data]);
   const questions = useMemo(() => (data?.lesson ? match(data.lesson.title, (e) => e.q) : []), [data]);
 
-  const nextLesson = useMemo(() => {
-    if (!data) return null;
-    const { lesson } = data;
-    const chapterLessons = mockLessons
-      .filter((l) => l.textbookId === lesson.textbookId && l.chapterId === lesson.chapterId)
-      .sort((a, b) => a.order - b.order);
-    const idx = chapterLessons.findIndex((l) => l.id === lesson.id);
-    return idx < chapterLessons.length - 1 ? chapterLessons[idx + 1] : null;
-  }, [data]);
+  const nextLesson = null;
 
   const toggleAnswer = (i: number) => setAnswersVisible((p) => ({ ...p, [i]: !p[i] }));
 
@@ -273,7 +266,7 @@ export default function LessonViewPage() {
                       </div>
                       <div className="flex items-center gap-3 text-body-sm text-muted-foreground flex-shrink-0">
                         <span className="flex items-center gap-1"><Icon name="schedule" size={14} />{d.quiz.timeLimit} min</span>
-                        <span className="flex items-center gap-1"><Icon name="help" size={14} />{d.quiz.questions.length} Qs</span>
+                        <span className="flex items-center gap-1"><Icon name="help" size={14} />{Array.isArray(d.quiz.questions) ? d.quiz.questions.length : 0} Qs</span>
                       </div>
                     </div>
                     <Button asChild className="w-full gap-2" variant="success">
@@ -297,7 +290,7 @@ export default function LessonViewPage() {
                       <p className="text-body-sm text-muted-foreground mt-0.5">{d.assignment.description}</p>
                     </div>
                     <div className="flex items-center gap-4 text-body-sm text-muted-foreground">
-                      <span className="flex items-center gap-1"><Icon name="event" size={14} />Due {new Date(d.assignment.dueDate).toLocaleDateString()}</span>
+                      <span className="flex items-center gap-1"><Icon name="event" size={14} />Due {d.assignment.dueDate ? new Date(d.assignment.dueDate).toLocaleDateString() : 'N/A'}</span>
                       <span className="flex items-center gap-1"><Icon name="score" size={14} />{d.assignment.points} pts</span>
                     </div>
                     <Button asChild className="w-full gap-2" variant={d.assignment.status === 'published' ? 'default' : 'secondary'}>
@@ -310,22 +303,7 @@ export default function LessonViewPage() {
                 </section>
               )}
 
-              {/* 9. Next Lesson */}
-              {nextLesson && (
-                <section className="border-t border-outline-variant/30 pt-6">
-                  <Button asChild variant="default" size="lg" className="w-full gap-3 text-base h-14">
-                    <Link to={ROUTES.STUDENT_LESSON(nextLesson.id)}>
-                      Next Lesson: {nextLesson.title}
-                      <Icon name="arrow_forward" size={20} />
-                    </Link>
-                  </Button>
-                  {d.chapter && (
-                    <p className="text-center text-body-sm text-muted-foreground mt-2">
-                      {d.chapter.title} &middot; Lesson {nextLesson.order} of {d.chapter.lessonCount}
-                    </p>
-                  )}
-                </section>
-              )}
+              {/* 9. Next Lesson — requires fetching sibling lessons */}
             </motion.div>
           )}
         </DataFetchWrapper>

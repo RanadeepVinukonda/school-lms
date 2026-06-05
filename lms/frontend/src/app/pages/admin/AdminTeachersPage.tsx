@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -19,11 +19,17 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
-import { mockUsers, mockSubjects, mockClasses } from '@/lib/mockData';
+import { getUserByRole, getAllSubjects, getAllClasses } from '@/services/dataService';
+import type { Subject, ClassEntry, UserDoc } from '@/services/dataService';
 
 interface TeacherForm {
   name: string;
   email: string;
+  teacherId: string;
+  subjectIds: string[];
+}
+
+interface TeacherDisplay extends UserDoc {
   teacherId: string;
   subjectIds: string[];
 }
@@ -34,23 +40,34 @@ export default function AdminTeachersPage() {
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState<TeacherForm>(emptyForm);
-  const [teachers, setTeachers] = useState(
-    Object.values(mockUsers)
-      .filter((u) => u.role === 'teacher')
-      .map((u) => ({
-        ...u,
-        teacherId: u.teacherId || `TCH${u.id.slice(1).toUpperCase()}`,
-        subjectIds: ['sub1', 'sub2'] as string[],
-      }))
-  );
+  const [teachers, setTeachers] = useState<TeacherDisplay[]>([]);
 
-  const { isLoading, isError, refetch } = useQuery({
+  const { data: fetchedTeachers, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-teachers'],
-    queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 400));
-      return null;
-    },
+    queryFn: () => getUserByRole('teacher'),
   });
+
+  const { data: subjects = [] } = useQuery({
+    queryKey: ['admin-subjects-list'],
+    queryFn: getAllSubjects,
+  });
+
+  const { data: classes = [] } = useQuery({
+    queryKey: ['admin-classes-list'],
+    queryFn: getAllClasses,
+  });
+
+  useEffect(() => {
+    if (fetchedTeachers) {
+      setTeachers(
+        fetchedTeachers.map((u) => ({
+          ...u,
+          teacherId: u.teacherId || `TCH${u.id.slice(0, 4).toUpperCase()}`,
+          subjectIds: [] as string[],
+        }))
+      );
+    }
+  }, [fetchedTeachers]);
 
   const filtered = useMemo(
     () =>
@@ -75,14 +92,16 @@ export default function AdminTeachersPage() {
       toast.error('Please fill in all required fields');
       return;
     }
-    const newTeacher = {
+    const newTeacher: TeacherDisplay = {
       id: `t${Date.now()}`,
       email: form.email,
       displayName: form.name,
-      role: 'teacher' as const,
+      role: 'teacher',
       teacherId: form.teacherId,
       subjectIds: form.subjectIds,
-      avatar: '',
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
     setTeachers((prev) => [...prev, newTeacher]);
     setForm(emptyForm);
@@ -99,7 +118,7 @@ export default function AdminTeachersPage() {
     <>
       <SEOHead title="Teachers" description="Manage teachers" canonical="/admin/teachers" />
       <DataFetchWrapper
-        data={isLoading || isError ? undefined : ({})}
+        data={teachers}
         isLoading={isLoading}
         error={isError ? new Error('Failed to load teachers') : null}
         onRetry={() => refetch()}
@@ -177,9 +196,9 @@ export default function AdminTeachersPage() {
                     <tbody className="divide-y-outline-variant divide-y">
                       {filtered.map((teacher) => {
                         const subjectNames = teacher.subjectIds
-                          .map((sid) => mockSubjects.find((s) => s.id === sid)?.name)
+                          .map((sid) => subjects.find((s: Subject) => s.id === sid)?.name)
                           .filter(Boolean);
-                        const classTeacherOf = mockClasses.find((c) => c.classTeacherId === teacher.id);
+                        const classTeacherOf = classes.find((c: ClassEntry) => c.teacherIds?.includes(teacher.id));
                         return (
                           <tr key={teacher.id} className="hover:bg-surface-variant/40 transition-colors">
                             <td className="px-4 py-3">
@@ -270,7 +289,7 @@ export default function AdminTeachersPage() {
             <div className="space-y-2">
               <Label>Assigned Subjects</Label>
               <div className="grid grid-cols-2 gap-2 border-outline-variant rounded-lg border p-3">
-                {mockSubjects.map((subject) => (
+                {subjects.map((subject: Subject) => (
                   <label
                     key={subject.id}
                     className="flex items-center gap-2 text-sm cursor-pointer hover:bg-surface-variant/50 rounded px-2 py-1.5 transition-colors"

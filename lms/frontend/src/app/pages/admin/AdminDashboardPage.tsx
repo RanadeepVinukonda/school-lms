@@ -8,57 +8,85 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
-import { mockUsers, mockClasses, mockExams, mockAssignments, mockGrades } from '@/lib/mockData';
+import { getAllUsers, getAllClasses, getAllGrades } from '@/services/dataService';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '@/firebase/config';
 
-const findUser = (id: string) => Object.values(mockUsers).find((u) => u.id === id);
+interface ExamDoc {
+  id: string;
+  title: string;
+  startDate?: string;
+  endDate?: string;
+  createdAt?: string;
+}
+
+interface AssignmentDoc {
+  id: string;
+  title: string;
+  dueDate?: string;
+  createdAt?: string;
+}
 
 export default function AdminDashboardPage() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-dashboard'],
     queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 400));
-      const users = Object.values(mockUsers);
+      const [users, classes, grades, examsSnap, assignmentsSnap] = await Promise.all([
+        getAllUsers(),
+        getAllClasses(),
+        getAllGrades(),
+        getDocs(collection(db, 'exams')),
+        getDocs(collection(db, 'assignments')),
+      ]);
+
+      const exams: ExamDoc[] = examsSnap.docs.map((d) => ({ id: d.id, ...d.data() } as ExamDoc));
+      const assignments: AssignmentDoc[] = assignmentsSnap.docs.map((d) => ({ id: d.id, ...d.data() } as AssignmentDoc));
+
       const studentCount = users.filter((u) => u.role === 'student').length;
       const teacherCount = users.filter((u) => u.role === 'teacher').length;
-      const upcomingExamCount = mockExams.filter((e) => new Date(e.startDate) > new Date()).length;
+      const upcomingExamCount = exams.filter((e) => e.startDate && new Date(e.startDate) > new Date()).length;
 
-      const atRiskStudents = mockGrades
+      const atRiskStudents = grades
         .filter((g) => g.percentage < 70)
         .map((g) => ({
           id: g.id,
-          studentName: findUser(g.studentId)?.displayName ?? 'Unknown',
+          studentName: users.find((u) => u.id === g.studentId)?.displayName ?? 'Unknown',
           percentage: g.percentage,
-          subject: g.itemName,
+          subject: g.itemName ?? '',
         }));
 
       const workloadMap = new Map<string, number>();
-      for (const cls of mockClasses) {
-        workloadMap.set(cls.classTeacherId, (workloadMap.get(cls.classTeacherId) ?? 0) + 1);
+      for (const cls of classes) {
+        if (cls.teacherIds) {
+          for (const tid of cls.teacherIds) {
+            workloadMap.set(tid, (workloadMap.get(tid) ?? 0) + 1);
+          }
+        }
       }
       const teacherWorkload = Array.from(workloadMap.entries()).map(([id, count]) => ({
-        name: findUser(id)?.displayName ?? 'Unknown',
+        name: users.find((u) => u.id === id)?.displayName ?? 'Unknown',
         classCount: count,
       }));
 
       const feed: Array<{ id: string; title: string; desc: string; ts: string }> = [];
-      for (const exam of mockExams) {
-        feed.push({ id: `e-${exam.id}`, title: 'New Exam Created', desc: exam.title, ts: exam.endDate });
+      for (const exam of exams) {
+        feed.push({ id: `e-${exam.id}`, title: 'New Exam Created', desc: exam.title, ts: exam.endDate ?? exam.createdAt ?? '' });
       }
-      for (const a of mockAssignments) {
-        feed.push({ id: `a-${a.id}`, title: 'New Assignment Posted', desc: a.title, ts: a.dueDate });
+      for (const a of assignments) {
+        feed.push({ id: `a-${a.id}`, title: 'New Assignment Posted', desc: a.title, ts: a.dueDate ?? a.createdAt ?? '' });
       }
-      for (const g of mockGrades) {
-        const s = findUser(g.studentId);
+      for (const g of grades) {
+        const s = users.find((u) => u.id === g.studentId);
         feed.push({
           id: `g-${g.id}`,
           title: 'Grade Submitted',
-          desc: `${s?.displayName ?? 'Unknown'} \u2014 ${g.itemName}: ${g.score}/${g.maxScore}`,
-          ts: g.gradedAt,
+          desc: `${s?.displayName ?? 'Unknown'} \u2014 ${g.itemName ?? ''}: ${g.score}/${g.totalPoints}`,
+          ts: g.createdAt,
         });
       }
       feed.sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime());
 
-      return { studentCount, teacherCount, classCount: mockClasses.length, upcomingExamCount, atRiskStudents, teacherWorkload, activityFeed: feed.slice(0, 8) };
+      return { studentCount, teacherCount, classCount: classes.length, upcomingExamCount, atRiskStudents, teacherWorkload, activityFeed: feed.slice(0, 8) };
     },
   });
 

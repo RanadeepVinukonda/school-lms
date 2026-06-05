@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -19,7 +19,9 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
-import { mockSubjects, mockTextbooks } from '@/lib/mockData';
+import { getAllSubjects } from '@/services/dataService';
+import { getAllTextbooks } from '@/services/textbookService';
+import type { Subject } from '@/services/dataService';
 
 interface SubjectForm {
   name: string;
@@ -62,15 +64,24 @@ export default function AdminSubjectsPage() {
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState<SubjectForm>(emptyForm);
-  const [subjects, setSubjects] = useState(mockSubjects);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
 
-  const { isLoading, isError, refetch } = useQuery({
+  const { data: fetchedSubjects, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-subjects'],
-    queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 400));
-      return null;
-    },
+    queryFn: getAllSubjects,
   });
+
+  const { data: textbooks } = useQuery({
+    queryKey: ['admin-textbooks'],
+    queryFn: getAllTextbooks,
+  });
+
+  // Sync fetched subjects into local state on initial load
+  useEffect(() => {
+    if (fetchedSubjects) {
+      setSubjects(fetchedSubjects);
+    }
+  }, [fetchedSubjects]);
 
   const filtered = useMemo(
     () =>
@@ -86,7 +97,7 @@ export default function AdminSubjectsPage() {
       toast.error('Please fill in all required fields');
       return;
     }
-    const newSubject = {
+    const newSubject: Subject = {
       id: `sub${Date.now()}`,
       name: form.name,
       code: form.code.toUpperCase(),
@@ -109,13 +120,13 @@ export default function AdminSubjectsPage() {
   };
 
   const getTextbookCount = (subjectId: string) =>
-    mockTextbooks.filter((tb) => tb.subjectId === subjectId).length;
+    textbooks ? textbooks.filter((tb) => tb.subjectId === subjectId).length : 0;
 
   return (
     <>
       <SEOHead title="Subjects" description="Manage academic subjects" canonical="/admin/subjects" />
       <DataFetchWrapper
-        data={isLoading || isError ? undefined : ({})}
+        data={subjects}
         isLoading={isLoading}
         error={isError ? new Error('Failed to load subjects') : null}
         onRetry={() => refetch()}
@@ -219,8 +230,8 @@ export default function AdminSubjectsPage() {
                         </div>
                       </div>
                       <div className="flex items-center justify-between mt-3 pt-3 border-t-outline-variant border-t">
-                        <Badge className={`text-[10px] ${categoryColors[subject.category] || ''}`}>
-                          {subject.category}
+                        <Badge className={`text-[10px] ${categoryColors[subject.category || ''] || ''}`}>
+                          {subject.category || '\u2014'}
                         </Badge>
                         <span className="text-xs text-on-surface-variant">
                           {getTextbookCount(subject.id)} textbook{getTextbookCount(subject.id) !== 1 ? 's' : ''}

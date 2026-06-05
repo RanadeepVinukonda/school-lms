@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -19,7 +19,8 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
-import { mockClasses, mockUsers } from '@/lib/mockData';
+import { getAllClasses, getAllUsers } from '@/services/dataService';
+import type { ClassEntry, UserDoc } from '@/services/dataService';
 
 interface ClassForm {
   name: string;
@@ -33,15 +34,23 @@ export default function AdminClassesPage() {
   const [search, setSearch] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState<ClassForm>(emptyForm);
-  const [classes, setClasses] = useState(mockClasses);
+  const [classes, setClasses] = useState<ClassEntry[]>([]);
 
-  const { isLoading, isError, refetch } = useQuery({
+  const { data: fetchedClasses, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-classes'],
-    queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 400));
-      return null;
-    },
+    queryFn: getAllClasses,
   });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['admin-users-list'],
+    queryFn: getAllUsers,
+  });
+
+  useEffect(() => {
+    if (fetchedClasses) {
+      setClasses(fetchedClasses);
+    }
+  }, [fetchedClasses]);
 
   const filtered = useMemo(
     () =>
@@ -57,14 +66,14 @@ export default function AdminClassesPage() {
       toast.error('Please fill in all fields');
       return;
     }
-    const newClass = {
+    const newClass: ClassEntry = {
       id: `c${Date.now()}`,
       name: form.name,
       code: form.code,
       grade: form.grade,
-      classTeacherId: '',
+      teacherIds: [],
+      subjectIds: [],
       studentCount: 0,
-      subjectIds: [] as string[],
     };
     setClasses((prev) => [...prev, newClass]);
     setForm(emptyForm);
@@ -81,7 +90,7 @@ export default function AdminClassesPage() {
     <>
       <SEOHead title="Classes" description="Manage classes" canonical="/admin/classes" />
       <DataFetchWrapper
-        data={isLoading || isError ? undefined : ({})}
+        data={classes}
         isLoading={isLoading}
         error={isError ? new Error('Failed to load classes') : null}
         onRetry={() => refetch()}
@@ -147,10 +156,10 @@ export default function AdminClassesPage() {
                 className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
               >
                 {filtered.map((cls) => {
-                  const classTeacher = Object.values(mockUsers).find(
-                    (u) => u.id === cls.classTeacherId
+                  const classTeacher = users.find(
+                    (u: UserDoc) => cls.teacherIds?.includes(u.id)
                   );
-                  const subjectCount = cls.subjectIds.length;
+                  const subjectCount = cls.subjectIds?.length ?? 0;
                   return (
                     <Card key={cls.id} variant="elevated" className="hover:shadow-elevation-2 transition-shadow">
                       <CardHeader className="pb-3">
@@ -172,11 +181,11 @@ export default function AdminClassesPage() {
                         <div className="grid grid-cols-2 gap-3 text-body-md">
                           <div className="flex items-center gap-2 text-on-surface-variant">
                             <Icon name="school" size={16} />
-                            <span>Grade {cls.grade}</span>
+                            <span>Grade {cls.grade || '\u2014'}</span>
                           </div>
                           <div className="flex items-center gap-2 text-on-surface-variant">
                             <Icon name="people" size={16} />
-                            <span>{cls.studentCount} students</span>
+                            <span>{cls.studentCount ?? 0} students</span>
                           </div>
                           <div className="flex items-center gap-2 text-on-surface-variant">
                             <Icon name="badge" size={16} />
