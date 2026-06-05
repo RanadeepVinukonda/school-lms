@@ -4,8 +4,21 @@ function getApiKey() {
   return import.meta.env.VITE_OPENROUTER_API_KEY;
 }
 
-function getModel() {
-  return import.meta.env.VITE_AI_MODEL || 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free';
+function getModel(step: 'extract' | 'content' | 'question') {
+  // Choose a model based on the processing step. Fallback to a generic model if the specific env var is missing.
+  switch (step) {
+    case 'extract':
+      return (import.meta.env.VITE_OPENROUTER_MODEL_EXTRACT as string) ||
+        'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free';
+    case 'content':
+      return (import.meta.env.VITE_OPENROUTER_MODEL_CONTENT as string) ||
+        'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free';
+    case 'question':
+      return (import.meta.env.VITE_OPENROUTER_MODEL_QUESTION as string) ||
+        'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free';
+    default:
+      return 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free';
+  }
 }
 
 function getOpenRouterApiKey(): string {
@@ -18,7 +31,7 @@ function getOpenRouterApiKey(): string {
   return key;
 }
 
-async function callOpenRouter(prompt: string, schema?: Record<string, unknown>) {
+async function callOpenRouter(prompt: string, step: 'extract' | 'content' | 'question', schema?: Record<string, unknown>) {
   const apiKey = getOpenRouterApiKey();
 
   const messages = [
@@ -30,7 +43,7 @@ async function callOpenRouter(prompt: string, schema?: Record<string, unknown>) 
   ];
 
   const body: Record<string, unknown> = {
-    model: getModel(),
+    model: getModel(step),
     messages,
     temperature: 0.3,
     max_tokens: 16000,
@@ -84,7 +97,7 @@ Return valid JSON in this exact format:
 Textbook content:
 ${text.slice(0, 30000)}`;
 
-  const result = await callOpenRouter(prompt);
+  const result = await callOpenRouter(prompt, 'extract');
   try {
     return JSON.parse(result);
   } catch {
@@ -122,7 +135,7 @@ Return valid JSON in this exact format:
   "estimatedMinutes": 15
 }`;
 
-  const result = await callOpenRouter(prompt);
+  const result = await callOpenRouter(prompt, 'content');
   try {
     return JSON.parse(result);
   } catch {
@@ -158,7 +171,7 @@ Return valid JSON in this exact format:
   "application": [...]
 }`;
 
-  const result = await callOpenRouter(prompt);
+  const result = await callOpenRouter(prompt, 'question');
   try {
     return JSON.parse(result);
   } catch {
