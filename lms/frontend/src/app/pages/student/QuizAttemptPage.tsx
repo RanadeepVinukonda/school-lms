@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import {
   Clock, AlertCircle, CheckCircle, XCircle, Loader2,
-  ChevronLeft, ChevronRight, Send, Play
+  ChevronLeft, ChevronRight, Send, Play, ArrowLeft
 } from 'lucide-react';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -124,6 +124,9 @@ export default function QuizAttemptPage() {
       <>
         <SEOHead title={quiz.title} description={`Quiz: ${quiz.title}`} canonical={`/quizzes/${quizId}`} />
         <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-lg mx-auto">
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
+          <ArrowLeft className="h-4 w-4 mr-1" />Back
+        </Button>
         <Card>
           <CardContent className="p-6 text-center space-y-4">
             <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
