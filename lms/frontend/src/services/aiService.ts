@@ -1,4 +1,4 @@
-const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const OPENROUTER_URL = import.meta.env.VITE_OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1/chat/completions';
 
 function getApiKey() {
   return import.meta.env.VITE_OPENROUTER_API_KEY;

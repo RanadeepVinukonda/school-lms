@@ -1,4 +1,4 @@
-const YOUTUBE_API_KEY = 'AIzaSyDa4xK0f2h5HWE_C3GsEpezgWrBjPQDJAk';
+const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
 const YOUTUBE_BASE = 'https://www.googleapis.com/youtube/v3';
 
 export interface YouTubeVideo {
@@ -32,8 +32,7 @@ export async function searchVideos(query: string, maxResults = 5): Promise<YouTu
   const searchRes = await fetch(searchUrl);
   if (!searchRes.ok) {
     const err = await searchRes.text();
-    console.warn('YouTube search failed:', err);
-    return [];
+    throw new Error(`YouTube search failed: ${err}`);
   }
 
   const searchData = await searchRes.json();

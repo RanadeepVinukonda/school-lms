@@ -11,6 +11,7 @@ export async function deleteUpload(req: Request, res: Response) {
     const result = await deleteCloudinaryFile(publicId);
     return sendSuccess(res, result);
   } catch (error) {
-    return sendError(res, 'Failed to delete file');
+    const message = error instanceof Error ? error.message : 'Failed to delete file';
+    return sendError(res, message);
   }
 }

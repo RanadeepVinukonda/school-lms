@@ -30,11 +30,14 @@ export async function authenticate(req: Request, _res: Response, next: NextFunct
 
     const decoded = await verifyToken(idToken);
 
+    if (!decoded.role) {
+      throw new UnauthorizedError('User has no role assigned');
+    }
     req.user = {
       ...decoded,
       uid: decoded.uid,
       email: decoded.email || '',
-      role: (decoded.role as string) || 'student',
+      role: decoded.role as string,
       name: decoded.name || decoded.email?.split('@')[0] || 'User',
     };
 
@@ -67,7 +70,7 @@ export function optionalAuth(req: Request, _res: Response, next: NextFunction): 
         ...decoded,
         uid: decoded.uid,
         email: decoded.email || '',
-        role: (decoded.role as string) || 'student',
+        role: decoded.role as string,
         name: decoded.name || decoded.email?.split('@')[0] || 'User',
       };
       next();

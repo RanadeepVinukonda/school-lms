@@ -173,8 +173,10 @@ export async function submitAssignment(assignmentId: string, studentId: string, 
 
   await submissionRef.set(submission, { merge: true });
 
+  const currentAssignment = await assignmentRef.get();
+  const currentCount = (currentAssignment.data()?.submissionCount as number) || 0;
   await assignmentRef.update({
-    submissionCount: 1,
+    submissionCount: currentCount + 1,
     updatedAt: now,
   });
 

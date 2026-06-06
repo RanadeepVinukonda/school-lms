@@ -52,9 +52,11 @@ export async function createExam(data: {
   const now = new Date().toISOString();
 
   const totalPoints = data.questions.reduce((sum, q) => sum + q.points, 0);
+  const questionsWithIds = data.questions.map((q, i) => ({ ...q, id: `q_${examId}_${i}` }));
 
   const examData = {
     ...data,
+    questions: questionsWithIds,
     id: examId,
     totalPoints,
     attemptCount: 0,
@@ -215,7 +217,8 @@ export async function startExamAttempt(examId: string, studentId: string) {
   };
 
   await collections.examAttempts().doc(attemptId).set(attempt);
-  await examRef.update({ attemptCount: 1 });
+  const currentAttemptCount = (examData.attemptCount as number) || 0;
+  await examRef.update({ attemptCount: currentAttemptCount + 1 });
 
   logger.info('Exam attempt started', { examId, studentId, attemptId });
 
@@ -254,7 +257,7 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
   let score = 0;
   const gradedAnswers = data.answers.map((answer) => {
     const question = examData.questions.find(
-      (q: any) => q.questionText === answer.questionId
+      (q: any) => q.id === answer.questionId
     );
 
     if (!question) {
