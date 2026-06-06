@@ -4,6 +4,7 @@ import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 
+/** Create a new conversation with initial participants. */
 export async function createConversation(data: {
   participants: string[];
   title?: string;
@@ -33,6 +34,7 @@ export async function createConversation(data: {
   return { ...conversation };
 }
 
+/** Send a message in a conversation. Updates lastMessage and unreadCount. */
 export async function sendMessage(data: {
   conversationId: string;
   senderId: string;
@@ -93,6 +95,7 @@ export async function sendMessage(data: {
   return { ...message };
 }
 
+/** Get all conversations for a user, ordered by lastMessageAt desc. Includes unread count for the given user. */
 export async function getConversations(userId: string, query: { page?: string; limit?: string }) {
   const { page, limit } = parsePagination(query);
 
@@ -115,6 +118,7 @@ export async function getConversations(userId: string, query: { page?: string; l
   return { items, total, page, limit };
 }
 
+/** Get paginated messages in a conversation. Verifies the user is a participant. */
 export async function getMessages(conversationId: string, userId: string, query: {
   page?: string;
   limit?: string;
@@ -149,6 +153,7 @@ export async function getMessages(conversationId: string, userId: string, query:
   return { items, total, page, limit };
 }
 
+/** Mark all messages in a conversation as read for the given user. Updates unreadCount and reads messages. */
 export async function markConversationRead(conversationId: string, userId: string) {
   const ref = collections.conversations().doc(conversationId);
   const doc = await ref.get();
@@ -180,5 +185,3 @@ export async function markConversationRead(conversationId: string, userId: strin
 
   logger.info('Conversation marked as read', { conversationId, userId });
 }
-
-

@@ -21,6 +21,7 @@ const ALLOWED_MIME_TYPES: Record<string, string[]> = {
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
+/** Upload a file to Firebase Storage, validate type and size, and store a Firestore record. */
 export async function uploadFileService(
   file: Express.Multer.File,
   folder: string,
@@ -51,6 +52,7 @@ export async function uploadFileService(
   return fileRecord;
 }
 
+/** Get a signed URL for a file by its Firestore record id. */
 export async function getFileUrlService(fileId: string) {
   const doc = await collections.uploads().doc(fileId).get();
   if (!doc.exists) {
@@ -63,6 +65,7 @@ export async function getFileUrlService(fileId: string) {
   return { ...data, signedUrl };
 }
 
+/** Delete a file from both Firebase Storage and its Firestore record. */
 export async function deleteFileService(fileId: string) {
   const doc = await collections.uploads().doc(fileId).get();
   if (!doc.exists) {
@@ -76,6 +79,7 @@ export async function deleteFileService(fileId: string) {
   logger.info('File deleted', { fileId });
 }
 
+/** Validate that a file's MIME type is allowed for the given folder category. Throws ValidationError if not. */
 export function validateFileType(mimeType: string, folder: string): boolean {
   const allowedTypes = ALLOWED_MIME_TYPES[folder] || ALLOWED_MIME_TYPES.document;
   if (!allowedTypes.includes(mimeType)) {
@@ -86,6 +90,7 @@ export function validateFileType(mimeType: string, folder: string): boolean {
   return true;
 }
 
+/** Validate that a file's size does not exceed the 50 MB limit. Throws ValidationError if it does. */
 export function validateFileSize(size: number): boolean {
   if (size > MAX_FILE_SIZE) {
     throw new ValidationError(
@@ -95,6 +100,7 @@ export function validateFileSize(size: number): boolean {
   return true;
 }
 
+/** Get the map of all allowed MIME types per folder category. */
 export function getAllowedMimeTypes() {
   return ALLOWED_MIME_TYPES;
 }

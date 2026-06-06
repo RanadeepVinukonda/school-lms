@@ -7,11 +7,13 @@ cloudinary.v2.config({
   api_secret: env.CLOUDINARY_API_SECRET,
 });
 
+/** Delete a file from Cloudinary by its public id. */
 export async function deleteCloudinaryFile(publicId: string) {
   const result = await cloudinary.v2.uploader.destroy(publicId);
   return result;
 }
 
+/** Upload a file from a URL to Cloudinary under the given folder. */
 export async function uploadFromUrl(url: string, folder = 'genesis') {
   const result = await cloudinary.v2.uploader.upload(url, { folder });
   return { url: result.secure_url, publicId: result.public_id };

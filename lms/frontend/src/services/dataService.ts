@@ -72,12 +72,14 @@ const CLASSES_COLLECTION = 'classes';
 const GRADES_COLLECTION = 'grades';
 const NOTIFICATIONS_COLLECTION = 'notifications';
 
+/** Fetch all subjects from Firestore. */
 export async function getAllSubjects(): Promise<Subject[]> {
   const q = query(collection(db, SUBJECTS_COLLECTION));
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Subject));
 }
 
+/** Fetch a single subject by id. */
 export async function getSubject(id: string): Promise<Subject | null> {
   const docRef = doc(db, SUBJECTS_COLLECTION, id);
   const snap = await getDoc(docRef);
@@ -85,12 +87,14 @@ export async function getSubject(id: string): Promise<Subject | null> {
   return { id: snap.id, ...snap.data() } as Subject;
 }
 
+/** Fetch all students belonging to a class. */
 export async function getStudentsByClass(classId: string): Promise<UserDoc[]> {
   const q = query(collection(db, 'users'), where('classId', '==', classId));
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserDoc));
 }
 
+/** Create an enrollment linking a student to a course (subject). */
 export async function createEnrollment(studentId: string, courseId: string): Promise<void> {
   const eid = `${courseId}_${studentId}`;
   await setDoc(doc(db, ENROLLMENT_COLLECTION, eid), {
@@ -102,12 +106,14 @@ export async function createEnrollment(studentId: string, courseId: string): Pro
   });
 }
 
+/** Get all enrollments for a given student. */
 export async function getEnrollmentsByStudent(studentId: string): Promise<Enrollment[]> {
   const q = query(collection(db, ENROLLMENT_COLLECTION), where('studentId', '==', studentId));
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as unknown as Enrollment));
 }
 
+/** Get classes by an array of class ids. */
 export async function getClassesByIds(ids: string[]): Promise<ClassEntry[]> {
   if (ids.length === 0) return [];
   const q = query(collection(db, CLASSES_COLLECTION), where('__name__', 'in', ids));
@@ -115,6 +121,7 @@ export async function getClassesByIds(ids: string[]): Promise<ClassEntry[]> {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as unknown as ClassEntry));
 }
 
+/** Fetch a single class by id. */
 export async function getClass(id: string): Promise<ClassEntry | null> {
   const docRef = doc(db, CLASSES_COLLECTION, id);
   const snap = await getDoc(docRef);
@@ -122,27 +129,32 @@ export async function getClass(id: string): Promise<ClassEntry | null> {
   return { id: snap.id, ...snap.data() } as unknown as ClassEntry;
 }
 
+/** Fetch all classes from Firestore. */
 export async function getAllClasses(): Promise<ClassEntry[]> {
   const snap = await getDocs(collection(db, CLASSES_COLLECTION));
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as unknown as ClassEntry));
 }
 
+/** Fetch all enrollment records from Firestore. */
 export async function getAllEnrollments(): Promise<Enrollment[]> {
   const snap = await getDocs(collection(db, ENROLLMENT_COLLECTION));
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as unknown as Enrollment));
 }
 
+/** Fetch all grade records from Firestore. */
 export async function getAllGrades(): Promise<GradeEntry[]> {
   const snap = await getDocs(collection(db, GRADES_COLLECTION));
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as unknown as GradeEntry));
 }
 
+/** Fetch grades for a specific student. */
 export async function getGradesByStudent(studentId: string): Promise<GradeEntry[]> {
   const q = query(collection(db, GRADES_COLLECTION), where('studentId', '==', studentId));
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as unknown as GradeEntry));
 }
 
+/** Fetch notifications for a specific user. */
 export async function getNotificationsByUser(userId: string): Promise<NotificationItem[]> {
   const q = query(
     collection(db, NOTIFICATIONS_COLLECTION),
@@ -152,6 +164,7 @@ export async function getNotificationsByUser(userId: string): Promise<Notificati
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as NotificationItem));
 }
 
+/** Get count of unread notifications for a user. */
 export async function getUnreadNotificationsCount(userId: string): Promise<number> {
   const q = query(
     collection(db, NOTIFICATIONS_COLLECTION),
@@ -162,11 +175,13 @@ export async function getUnreadNotificationsCount(userId: string): Promise<numbe
   return snap.size;
 }
 
+/** Mark a single notification as read. */
 export async function markNotificationRead(notificationId: string): Promise<void> {
   const docRef = doc(db, NOTIFICATIONS_COLLECTION, notificationId);
   await updateDoc(docRef, { read: true, readAt: Timestamp.now().toDate().toISOString() });
 }
 
+/** Mark all unread notifications as read for a user. */
 export async function markAllNotificationsRead(userId: string): Promise<void> {
   const q = query(
     collection(db, NOTIFICATIONS_COLLECTION),
@@ -197,12 +212,14 @@ export interface AssignmentItem {
   createdAt?: string;
 }
 
+/** Fetch assignments for a specific subject. */
 export async function getAssignmentsBySubject(subjectId: string): Promise<AssignmentItem[]> {
   const q = query(collection(db, 'assignments'), where('subjectId', '==', subjectId));
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as AssignmentItem));
 }
 
+/** Fetch a single assignment by id. */
 export async function getAssignment(id: string): Promise<AssignmentItem | null> {
   const snap = await getDoc(doc(db, 'assignments', id));
   if (!snap.exists()) return null;
@@ -221,6 +238,7 @@ export interface SubmissionItem {
   feedback?: string;
 }
 
+/** Fetch submissions for a specific assignment. */
 export async function getSubmissionsByAssignment(assignmentId: string): Promise<SubmissionItem[]> {
   const q = query(collection(db, 'submissions'), where('assignmentId', '==', assignmentId));
   const snap = await getDocs(q);
@@ -241,12 +259,14 @@ export interface ExamItem {
   createdAt?: string;
 }
 
+/** Fetch exams for a specific subject. */
 export async function getExamsBySubject(subjectId: string): Promise<ExamItem[]> {
   const q = query(collection(db, 'exams'), where('subjectId', '==', subjectId));
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as ExamItem));
 }
 
+/** Fetch a single exam by id. */
 export async function getExam(id: string): Promise<ExamItem | null> {
   const snap = await getDoc(doc(db, 'exams', id));
   if (!snap.exists()) return null;
@@ -266,12 +286,14 @@ export interface CorrectionItem {
   correctedAt?: string;
 }
 
+/** Fetch corrections for a specific student. */
 export async function getCorrectionsByStudent(studentId: string): Promise<CorrectionItem[]> {
   const q = query(collection(db, 'corrections'), where('studentId', '==', studentId));
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as CorrectionItem));
 }
 
+/** Fetch corrections for a specific exam. */
 export async function getCorrectionsByExam(examId: string): Promise<CorrectionItem[]> {
   const q = query(collection(db, 'corrections'), where('examId', '==', examId));
   const snap = await getDocs(q);
@@ -291,6 +313,7 @@ export interface QuizItem {
   status?: string;
 }
 
+/** Fetch a single quiz by id. */
 export async function getQuiz(id: string): Promise<QuizItem | null> {
   const snap = await getDoc(doc(db, 'quizzes', id));
   if (!snap.exists()) return null;
@@ -308,6 +331,7 @@ export interface TimetableEntry {
   room?: string;
 }
 
+/** Fetch timetable entries for a specific class. */
 export async function getTimetableByClass(classId: string): Promise<TimetableEntry[]> {
   const q = query(collection(db, 'timetable'), where('classId', '==', classId));
   const snap = await getDocs(q);
@@ -334,23 +358,27 @@ export interface UserDoc {
   updatedAt?: string;
 }
 
+/** Fetch all users with a specific role. */
 export async function getUserByRole(role: string): Promise<UserDoc[]> {
   const q = query(collection(db, 'users'), where('role', '==', role));
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserDoc));
 }
 
+/** Fetch a single user by id. */
 export async function getUser(id: string): Promise<UserDoc | null> {
   const snap = await getDoc(doc(db, 'users', id));
   if (!snap.exists()) return null;
   return { id: snap.id, ...snap.data() } as UserDoc;
 }
 
+/** Fetch all users from Firestore. */
 export async function getAllUsers(): Promise<UserDoc[]> {
   const snap = await getDocs(collection(db, 'users'));
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserDoc));
 }
 
+/** Update a user document, stripping undefined fields and merging with existing data. */
 export async function updateUser(id: string, data: Partial<UserDoc>): Promise<void> {
   const cleanData = Object.fromEntries(
     Object.entries(data).filter(([_, v]) => v !== undefined)
@@ -376,12 +404,14 @@ export interface LessonItem {
   assignmentId?: string;
 }
 
+/** Fetch lessons belonging to a specific chapter. */
 export async function getLessonsByChapter(chapterId: string): Promise<LessonItem[]> {
   const q = query(collection(db, 'lessons'), where('chapterId', '==', chapterId));
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as LessonItem));
 }
 
+/** Fetch a single lesson by id. */
 export async function getLesson(id: string): Promise<LessonItem | null> {
   const snap = await getDoc(doc(db, 'lessons', id));
   if (!snap.exists()) return null;

@@ -2,9 +2,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { collections } from '../firebase/firestore';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
-
 import { parsePagination } from '../utils/pagination';
 
+/** List all quizzes with optional courseId filter, paginated by createdAt desc. */
 export async function listAllQuizzes(query: { page?: string; limit?: string; courseId?: string }) {
   const { page, limit } = parsePagination(query);
   let baseQuery: FirebaseFirestore.Query = collections.quizzes()
@@ -25,6 +25,7 @@ export async function listAllQuizzes(query: { page?: string; limit?: string; cou
   return { items, total, page, limit };
 }
 
+/** Create a new quiz with calculated totalPoints. */
 export async function createQuiz(data: {
   title: string;
   description?: string;
@@ -68,6 +69,7 @@ export async function createQuiz(data: {
   return { ...quizData };
 }
 
+/** Update quiz fields. Throws NotFoundError if missing. */
 export async function updateQuiz(quizId: string, data: Record<string, unknown>) {
   const ref = collections.quizzes().doc(quizId);
   const doc = await ref.get();
@@ -85,6 +87,7 @@ export async function updateQuiz(quizId: string, data: Record<string, unknown>) 
   return { ...updated.data() };
 }
 
+/** Delete a quiz by id. Throws NotFoundError if missing. */
 export async function deleteQuiz(quizId: string) {
   const ref = collections.quizzes().doc(quizId);
   const doc = await ref.get();
@@ -97,6 +100,7 @@ export async function deleteQuiz(quizId: string) {
   logger.info('Quiz deleted', { quizId });
 }
 
+/** Fetch a single quiz by id. Throws NotFoundError if missing. */
 export async function getQuizById(quizId: string) {
   const ref = collections.quizzes().doc(quizId);
   const doc = await ref.get();
@@ -108,6 +112,7 @@ export async function getQuizById(quizId: string) {
   return { ...doc.data() };
 }
 
+/** Start a quiz attempt for a student. Enforces maxAttempts. */
 export async function startAttempt(quizId: string, studentId: string) {
   const quizRef = collections.quizzes().doc(quizId);
   const quiz = await quizRef.get();
@@ -153,6 +158,7 @@ export async function startAttempt(quizId: string, studentId: string) {
   return { ...attempt, questions: quizData.questions };
 }
 
+/** Submit a quiz attempt, auto-grade MC / true-false / short-answer questions. */
 export async function submitAttempt(attemptId: string, studentId: string, data: {
   answers: Array<{
     questionId: string;
@@ -185,7 +191,7 @@ export async function submitAttempt(attemptId: string, studentId: string, data: 
   let score = 0;
   const gradedAnswers = data.answers.map((answer) => {
     const question = quizData.questions.find(
-      (q: any) => q.questionText === answer.questionId || q.questionText === answer.questionId
+      (q: { questionText: string; type: string; points: number; correctAnswer?: string }) => q.questionText === answer.questionId
     );
 
     if (!question) {
@@ -235,6 +241,7 @@ export async function submitAttempt(attemptId: string, studentId: string, data: 
   return { id: attemptId, ...attemptData, ...result };
 }
 
+/** Get all quiz results for a student, ordered by startedAt desc. */
 export async function getQuizResults(quizId: string, studentId: string) {
   const snapshot = await collections.quizAttempts()
     .where('quizId', '==', quizId)
@@ -244,5 +251,3 @@ export async function getQuizResults(quizId: string, studentId: string) {
 
   return snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
 }
-
-

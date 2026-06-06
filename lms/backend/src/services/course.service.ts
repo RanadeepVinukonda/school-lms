@@ -5,6 +5,7 @@ import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 
+/** Create a new course with draft status and zero enrollment/lesson counts. */
 export async function createCourse(data: {
   title: string;
   description: string;
@@ -39,6 +40,7 @@ export async function createCourse(data: {
   return { ...courseData };
 }
 
+/** Update course fields. Throws NotFoundError if missing. */
 export async function updateCourse(courseId: string, data: Record<string, unknown>) {
   const courseRef = collections.courses().doc(courseId);
   const course = await courseRef.get();
@@ -60,6 +62,7 @@ export async function updateCourse(courseId: string, data: Record<string, unknow
   return { ...updated.data() };
 }
 
+/** Delete a course by id. Throws NotFoundError if missing. */
 export async function deleteCourse(courseId: string) {
   const courseRef = collections.courses().doc(courseId);
   const course = await courseRef.get();
@@ -72,6 +75,7 @@ export async function deleteCourse(courseId: string) {
   logger.info('Course deleted', { courseId });
 }
 
+/** Fetch a single course by id. Throws NotFoundError if missing. */
 export async function getCourseById(courseId: string) {
   const courseRef = collections.courses().doc(courseId);
   const course = await courseRef.get();
@@ -83,6 +87,7 @@ export async function getCourseById(courseId: string) {
   return { ...course.data() };
 }
 
+/** List courses with optional filters (status, subjectId, classId, teacherId, search), paginated. */
 export async function listCourses(query: {
   page?: string;
   limit?: string;
@@ -116,7 +121,7 @@ export async function listCourses(query: {
   if (query.search) {
     const search = query.search.toLowerCase();
     items = items.filter(
-      (item: any) =>
+      (item: { id?: string; title?: string; description?: string }) =>
         item.title?.toLowerCase().includes(search) ||
         item.description?.toLowerCase().includes(search)
     );
@@ -125,6 +130,7 @@ export async function listCourses(query: {
   return { items, total, page, limit };
 }
 
+/** Enroll a student in a course. Checks for capacity and duplicate enrollment. */
 export async function enrollStudent(courseId: string, studentId: string) {
   const courseRef = collections.courses().doc(courseId);
   const course = await courseRef.get();
@@ -161,6 +167,7 @@ export async function enrollStudent(courseId: string, studentId: string) {
   logger.info('Student enrolled in course', { courseId, studentId });
 }
 
+/** Unenroll a student from a course and decrement enrollmentCount. */
 export async function unenrollStudent(courseId: string, studentId: string) {
   const enrollmentRef = collections.enrollment().doc(`${courseId}_${studentId}`);
   const enrollment = await enrollmentRef.get();
@@ -179,6 +186,7 @@ export async function unenrollStudent(courseId: string, studentId: string) {
   logger.info('Student unenrolled from course', { courseId, studentId });
 }
 
+/** Get all active enrollments for a given course. */
 export async function getEnrollments(courseId: string) {
   const snapshot = await collections.enrollment()
     .where('courseId', '==', courseId)
@@ -188,6 +196,5 @@ export async function getEnrollments(courseId: string) {
   return snapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
-  }));
+  })) as Array<{ id: string; studentId: string; courseId: string; status: string; progress: number; enrolledAt: string }>;
 }
-

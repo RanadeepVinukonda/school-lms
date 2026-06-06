@@ -6,6 +6,7 @@ import { parsePagination } from '../utils/pagination';
 import { getEnrollments } from './course.service';
 import { createBulkNotifications, createNotification } from './notification.service';
 
+/** List all exams with optional courseId filter, paginated by createdAt desc. */
 export async function listAllExams(query: { page?: string; limit?: string; courseId?: string }) {
   const { page, limit } = parsePagination(query);
   let baseQuery: FirebaseFirestore.Query = collections.exams()
@@ -26,6 +27,7 @@ export async function listAllExams(query: { page?: string; limit?: string; cours
   return { items, total, page, limit };
 }
 
+/** Create a new exam, assign IDs to each question, and notify enrolled students. */
 export async function createExam(data: {
   title: string;
   description?: string;
@@ -70,7 +72,7 @@ export async function createExam(data: {
   // Notify enrolled students
   try {
     const enrollments = await getEnrollments(data.courseId);
-    const notifications = enrollments.map((e: any) => ({
+    const notifications = enrollments.map((e: { id?: string; studentId: string }) => ({
       userId: e.studentId,
       type: 'exam',
       title: 'New Exam Created',
@@ -87,6 +89,7 @@ export async function createExam(data: {
   return { ...examData };
 }
 
+/** Update exam fields. Throws NotFoundError if missing. */
 export async function updateExam(examId: string, data: Record<string, unknown>) {
   const ref = collections.exams().doc(examId);
   const doc = await ref.get();
@@ -104,6 +107,7 @@ export async function updateExam(examId: string, data: Record<string, unknown>) 
   return { ...updated.data() };
 }
 
+/** Delete an exam by id. Throws NotFoundError if missing. */
 export async function deleteExam(examId: string) {
   const ref = collections.exams().doc(examId);
   const doc = await ref.get();
@@ -116,6 +120,7 @@ export async function deleteExam(examId: string) {
   logger.info('Exam deleted', { examId });
 }
 
+/** Fetch a single exam by id. Throws NotFoundError if missing. */
 export async function getExamById(examId: string) {
   const ref = collections.exams().doc(examId);
   const doc = await ref.get();
@@ -127,6 +132,7 @@ export async function getExamById(examId: string) {
   return { ...doc.data() };
 }
 
+/** Schedule an exam for specific classes and notify affected students. */
 export async function scheduleExam(examId: string, data: {
   startDate: string;
   endDate: string;
@@ -179,6 +185,7 @@ export async function scheduleExam(examId: string, data: {
   return { ...updated.data() };
 }
 
+/** Start an exam attempt for a student. Enforces maxAttempts, increments attemptCount. */
 export async function startExamAttempt(examId: string, studentId: string) {
   const examRef = collections.exams().doc(examId);
   const exam = await examRef.get();
@@ -225,6 +232,7 @@ export async function startExamAttempt(examId: string, studentId: string) {
   return { ...attempt, questions: examData.questions };
 }
 
+/** Submit an exam attempt, auto-grade multiple-choice / true-false / short-answer questions. */
 export async function submitExamAttempt(attemptId: string, studentId: string, data: {
   answers: Array<{
     questionId: string;
@@ -257,7 +265,7 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
   let score = 0;
   const gradedAnswers = data.answers.map((answer) => {
     const question = examData.questions.find(
-      (q: any) => q.id === answer.questionId
+      (q: { id: string; questionText: string; type: string; points: number; correctAnswer?: string }) => q.id === answer.questionId
     );
 
     if (!question) {
@@ -307,6 +315,7 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
   return { id: attemptId, ...attemptData, ...result };
 }
 
+/** Grade an exam attempt manually and notify the student. */
 export async function gradeExamAttempt(attemptId: string, graderId: string, data: {
   score: number;
   feedback?: string;
@@ -348,6 +357,7 @@ export async function gradeExamAttempt(attemptId: string, graderId: string, data
   return { ...updated.data() };
 }
 
+/** Get all exam results for a specific student, ordered by startedAt desc. */
 export async function getExamResults(examId: string, studentId: string) {
   const snapshot = await collections.examAttempts()
     .where('examId', '==', examId)
@@ -357,5 +367,3 @@ export async function getExamResults(examId: string, studentId: string) {
 
   return snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
 }
-
-

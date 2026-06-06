@@ -1,6 +1,7 @@
 import { collections } from '../firebase/firestore';
 import { logger } from '../utils/logger';
 
+/** Get a student's dashboard summary: total enrolled courses, unread notifications, overall grade, and stats. */
 export async function getStudentDashboard(studentId: string) {
   const coursesSnapshot = await collections.enrollment()
     .where('studentId', '==', studentId)
@@ -21,8 +22,8 @@ export async function getStudentDashboard(studentId: string) {
     .get();
 
   const grades = gradesSnapshot.docs.map((d) => d.data());
-  const totalScore = grades.reduce((sum: number, g: any) => sum + (g.score || 0), 0);
-  const totalPoints = grades.reduce((sum: number, g: any) => sum + (g.totalPoints || 1), 0);
+  const totalScore = grades.reduce((sum: number, g: { score?: number; totalPoints?: number }) => sum + (g.score || 0), 0);
+  const totalPoints = grades.reduce((sum: number, g: { score?: number; totalPoints?: number }) => sum + (g.totalPoints || 1), 0);
   const overallGrade = totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0;
 
   const pendingAssignments = 0;
@@ -54,6 +55,7 @@ export async function getStudentDashboard(studentId: string) {
   };
 }
 
+/** Get a teacher's dashboard summary: total courses, total students, pending grading, unread notifications. */
 export async function getTeacherDashboard(teacherId: string) {
   const coursesSnapshot = await collections.courses()
     .where('teacherId', '==', teacherId)
@@ -91,6 +93,7 @@ export async function getTeacherDashboard(teacherId: string) {
   };
 }
 
+/** Get an admin dashboard summary: user counts, course/class stats. */
 export async function getAdminDashboard() {
   const usersSnapshot = await collections.users().get();
   const totalUsers = usersSnapshot.docs.length;
@@ -135,6 +138,7 @@ export async function getAdminDashboard() {
   };
 }
 
+/** Get analytics for a single course: enrollment, lessons, assignments, submissions, grades, completion rates. */
 export async function getCourseAnalytics(courseId: string) {
   const courseDoc = await collections.courses().doc(courseId).get();
   if (!courseDoc.exists) {
@@ -167,8 +171,8 @@ export async function getCourseAnalytics(courseId: string) {
     .where('courseId', '==', courseId)
     .get();
   const grades = gradesSnapshot.docs.map((d) => d.data());
-  const totalScore = grades.reduce((sum: number, g: any) => sum + (g.score || 0), 0);
-  const totalPoints = grades.reduce((sum: number, g: any) => sum + (g.totalPoints || 1), 0);
+  const totalScore = grades.reduce((sum: number, g: { score?: number; totalPoints?: number }) => sum + (g.score || 0), 0);
+  const totalPoints = grades.reduce((sum: number, g: { score?: number; totalPoints?: number }) => sum + (g.totalPoints || 1), 0);
   const averageGrade = totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0;
 
   const completionRates: Array<{ lessonId: string; title: string; completedBy: number }> = [];

@@ -261,8 +261,8 @@ async function runProcessing(taskId: string) {
           await createEnrollment(student.id, task.subjectId);
         }
         addLog(`Enrolled ${students.length} students from class into subject`);
-      } catch (err: any) {
-        addLog(`Enrollment skipped: ${err.message}`);
+      } catch (err: unknown) {
+        addLog(`Enrollment skipped: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
 

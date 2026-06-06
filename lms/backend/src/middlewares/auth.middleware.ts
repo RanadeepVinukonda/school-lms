@@ -16,6 +16,7 @@ declare global {
   }
 }
 
+/** Require a valid Firebase Auth token. Sets req.user with uid, email, role, and name. Throws UnauthorizedError if missing, invalid, or no role claim. */
 export async function authenticate(req: Request, _res: Response, next: NextFunction): Promise<void> {
   try {
     const authHeader = req.headers.authorization;
@@ -51,6 +52,7 @@ export async function authenticate(req: Request, _res: Response, next: NextFunct
   }
 }
 
+/** Optionally parse a Firebase Auth token if present. Does not throw on failure — req.user will remain undefined. */
 export function optionalAuth(req: Request, _res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {

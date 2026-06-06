@@ -1,6 +1,7 @@
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || '';
 const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || '';
 
+/** Upload an image file to Cloudinary with optional folder and progress callback. Returns the secure URL. */
 export async function uploadImage(
   file: File,
   folder?: string,
@@ -44,6 +45,7 @@ export async function uploadImage(
   });
 }
 
+/** Upload a profile image for a specific user, storing it under the profiles/{userId} folder. */
 export async function uploadProfileImage(
   userId: string,
   file: File,
@@ -52,6 +54,7 @@ export async function uploadProfileImage(
   return uploadImage(file, `profiles/${userId}`, onProgress);
 }
 
+/** Get the current Cloudinary configuration status. */
 export function getCloudinaryConfig() {
   return { cloudName: CLOUD_NAME, uploadPreset: UPLOAD_PRESET, isConfigured: !!(CLOUD_NAME && UPLOAD_PRESET) };
 }

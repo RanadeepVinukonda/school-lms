@@ -3,6 +3,7 @@ import { API_BASE_URL } from '@/lib/constants';
 import { useAuthStore } from '@/store/authStore';
 import type { ApiError } from '@/types';
 
+/** Axios instance pre-configured with base URL, timeouts, and interceptors for auth tokens and error handling. */
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
@@ -11,6 +12,7 @@ const api = axios.create({
   },
 });
 
+/** Inject the Firebase Auth token from the auth store into every request. */
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = useAuthStore.getState().token;
@@ -22,6 +24,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+/** Normalize API errors into a standard ApiError shape. */
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ApiError>) => {

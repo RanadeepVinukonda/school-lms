@@ -26,6 +26,7 @@ function parseDuration(isoDuration: string): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+/** Search YouTube for educational videos matching a query. Returns up to maxResults videos. */
 export async function searchVideos(query: string, maxResults = 5): Promise<YouTubeVideo[]> {
   const searchUrl = `${YOUTUBE_BASE}/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=${maxResults}&videoEmbeddable=true&key=${YOUTUBE_API_KEY}`;
 
@@ -65,6 +66,7 @@ export async function searchVideos(query: string, maxResults = 5): Promise<YouTu
   }) || [];
 }
 
+/** Search for the best video matching a textbook concept (subject + chapter + concept). */
 export async function searchVideosForConcept(subject: string, chapterTitle: string, conceptTitle: string): Promise<YouTubeVideo[]> {
   const query = `${subject} ${conceptTitle} tutorial`;
 

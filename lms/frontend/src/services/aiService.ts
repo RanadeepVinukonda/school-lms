@@ -4,8 +4,8 @@ function getApiKey() {
   return import.meta.env.VITE_OPENROUTER_API_KEY;
 }
 
-function getModel(step: 'extract' | 'content' | 'question') {
-  // Choose a model based on the processing step. Fallback to a generic model if the specific env var is missing.
+/** Choose a model based on the processing step. Falls back to a generic model if the specific env var is missing. */
+export function getModel(step: 'extract' | 'content' | 'question') {
   switch (step) {
     case 'extract':
       return (import.meta.env.VITE_OPENROUTER_MODEL_EXTRACT as string) ||
@@ -21,7 +21,8 @@ function getModel(step: 'extract' | 'content' | 'question') {
   }
 }
 
-function getOpenRouterApiKey(): string {
+/** Returns the OpenRouter API key from env, throwing if not configured. */
+export function getOpenRouterApiKey(): string {
   const key = import.meta.env.VITE_OPENROUTER_API_KEY;
   if (!key) {
     throw new Error(
@@ -77,6 +78,7 @@ async function callOpenRouter(prompt: string, step: 'extract' | 'content' | 'que
   return data.choices?.[0]?.message?.content || '';
 }
 
+/** Extract chapter structure from textbook text using AI. */
 export async function extractChapters(text: string, subject: string): Promise<{ title: string; chapters: { title: string; description: string; concepts: { title: string; description: string }[] }[] }> {
   const prompt = `Analyze this "${subject}" textbook text and extract its structure.
 
@@ -105,6 +107,7 @@ ${text.slice(0, 30000)}`;
   }
 }
 
+/** Generate detailed learning content for a concept using AI. */
 export async function generateConceptContent(
   conceptTitle: string,
   chapterTitle: string,
@@ -143,6 +146,7 @@ Return valid JSON in this exact format:
   }
 }
 
+/** Generate a question bank for a concept using AI. */
 export async function generateQuestionBank(
   conceptTitle: string,
   chapterTitle: string,

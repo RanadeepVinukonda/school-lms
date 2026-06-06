@@ -4,6 +4,7 @@ import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 
+/** Create a single notification for a user. */
 export async function createNotification(data: {
   userId: string;
   type: string;
@@ -33,6 +34,7 @@ export async function createNotification(data: {
   return { ...notification };
 }
 
+/** Get notifications for a user, with optional unreadOnly filter, paginated by createdAt desc. */
 export async function getNotificationsByUser(userId: string, query: {
   page?: string;
   limit?: string;
@@ -59,6 +61,7 @@ export async function getNotificationsByUser(userId: string, query: {
   return { items, total, page, limit };
 }
 
+/** Mark a single notification as read. Verifies ownership. */
 export async function markNotificationRead(notificationId: string, userId: string) {
   const ref = collections.notifications().doc(notificationId);
   const doc = await ref.get();
@@ -80,6 +83,7 @@ export async function markNotificationRead(notificationId: string, userId: strin
   logger.info('Notification marked as read', { notificationId });
 }
 
+/** Mark all unread notifications as read for a user, using a batch write. */
 export async function markAllNotificationsRead(userId: string) {
   const snapshot = await collections.notifications()
     .where('userId', '==', userId)
@@ -99,6 +103,7 @@ export async function markAllNotificationsRead(userId: string) {
   logger.info('All notifications marked as read', { userId, count: snapshot.docs.length });
 }
 
+/** Get the count of unread notifications for a user. */
 export async function getUnreadCount(userId: string) {
   const snapshot = await collections.notifications()
     .where('userId', '==', userId)
@@ -109,6 +114,7 @@ export async function getUnreadCount(userId: string) {
   return { count: snapshot.data().count };
 }
 
+/** Delete a notification by id. Verifies ownership. */
 export async function deleteNotification(notificationId: string, userId: string) {
   const ref = collections.notifications().doc(notificationId);
   const doc = await ref.get();
@@ -126,6 +132,7 @@ export async function deleteNotification(notificationId: string, userId: string)
   logger.info('Notification deleted', { notificationId });
 }
 
+/** Fetch notification preferences for a user, returning defaults if not set. */
 export async function getNotificationPreferences(userId: string) {
   const ref = collections.users().doc(userId);
   const doc = await ref.get();
@@ -145,6 +152,7 @@ export async function getNotificationPreferences(userId: string) {
   return userData.notificationPreferences || defaultPreferences;
 }
 
+/** Update notification preferences for a user. */
 export async function updateNotificationPreferences(userId: string, preferences: {
   email: boolean;
   push: boolean;
@@ -168,6 +176,7 @@ export async function updateNotificationPreferences(userId: string, preferences:
   return preferences;
 }
 
+/** Create multiple notifications in a single batch write. */
 export async function createBulkNotifications(
   notifications: Array<{
     userId: string;
@@ -206,5 +215,3 @@ export async function createBulkNotifications(
 
   return results;
 }
-
-

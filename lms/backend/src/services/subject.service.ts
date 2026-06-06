@@ -4,6 +4,7 @@ import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 
+/** Create a new subject. */
 export async function createSubject(data: {
   name: string;
   code: string;
@@ -35,6 +36,7 @@ export async function createSubject(data: {
   return { ...subjectData };
 }
 
+/** Update subject fields. Throws NotFoundError if missing. */
 export async function updateSubject(subjectId: string, data: Record<string, unknown>) {
   const ref = collections.subjects().doc(subjectId);
   const doc = await ref.get();
@@ -52,6 +54,7 @@ export async function updateSubject(subjectId: string, data: Record<string, unkn
   return { ...updated.data() };
 }
 
+/** Delete a subject by id. Throws NotFoundError if missing. */
 export async function deleteSubject(subjectId: string) {
   const ref = collections.subjects().doc(subjectId);
   const doc = await ref.get();
@@ -64,6 +67,7 @@ export async function deleteSubject(subjectId: string) {
   logger.info('Subject deleted', { subjectId });
 }
 
+/** List subjects with optional filters (status, category, department, search), paginated. */
 export async function listSubjects(query: {
   page?: string;
   limit?: string;
@@ -92,7 +96,7 @@ export async function listSubjects(query: {
   if (query.search) {
     const search = query.search.toLowerCase();
     items = items.filter(
-      (item: any) =>
+      (item: { id?: string; name?: string; code?: string }) =>
         item.name?.toLowerCase().includes(search) ||
         item.code?.toLowerCase().includes(search)
     );
@@ -101,6 +105,7 @@ export async function listSubjects(query: {
   return { items, total, page, limit };
 }
 
+/** Fetch a single subject by id. Throws NotFoundError if missing. */
 export async function getSubjectById(subjectId: string) {
   const ref = collections.subjects().doc(subjectId);
   const doc = await ref.get();
@@ -111,5 +116,3 @@ export async function getSubjectById(subjectId: string) {
 
   return { ...doc.data() };
 }
-
-

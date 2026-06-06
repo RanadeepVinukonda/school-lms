@@ -6,6 +6,7 @@ import { parsePagination } from '../utils/pagination';
 import { getEnrollments } from './course.service';
 import { createBulkNotifications, createNotification } from './notification.service';
 
+/** Create a new assignment and notify enrolled students. */
 export async function createAssignment(data: {
   title: string;
   description: string;
@@ -34,7 +35,7 @@ export async function createAssignment(data: {
   // Notify enrolled students
   try {
     const enrollments = await getEnrollments(data.courseId);
-    const notifications = enrollments.map((e: any) => ({
+    const notifications = enrollments.map((e: { id?: string; studentId: string }) => ({
       userId: e.studentId,
       type: 'assignment',
       title: 'New Assignment Posted',
@@ -51,6 +52,7 @@ export async function createAssignment(data: {
   return { ...assignmentData };
 }
 
+/** Update assignment fields. Throws NotFoundError if missing. */
 export async function updateAssignment(assignmentId: string, data: Record<string, unknown>) {
   const ref = collections.assignments().doc(assignmentId);
   const doc = await ref.get();
@@ -68,6 +70,7 @@ export async function updateAssignment(assignmentId: string, data: Record<string
   return { ...updated.data() };
 }
 
+/** Delete an assignment by id. Throws NotFoundError if missing. */
 export async function deleteAssignment(assignmentId: string) {
   const ref = collections.assignments().doc(assignmentId);
   const doc = await ref.get();
@@ -80,6 +83,7 @@ export async function deleteAssignment(assignmentId: string) {
   logger.info('Assignment deleted', { assignmentId });
 }
 
+/** Fetch a single assignment by id. Throws NotFoundError if missing. */
 export async function getAssignmentById(assignmentId: string) {
   const ref = collections.assignments().doc(assignmentId);
   const doc = await ref.get();
@@ -91,6 +95,7 @@ export async function getAssignmentById(assignmentId: string) {
   return { ...doc.data() };
 }
 
+/** List all assignments with optional courseId filter, paginated by createdAt desc. */
 export async function listAllAssignments(query: { page?: string; limit?: string; courseId?: string }) {
   const { page, limit } = parsePagination(query);
   let baseQuery: FirebaseFirestore.Query = collections.assignments()
@@ -111,6 +116,7 @@ export async function listAllAssignments(query: { page?: string; limit?: string;
   return { items, total, page, limit };
 }
 
+/** List assignments for a specific course, paginated. */
 export async function listAssignmentsByCourse(courseId: string, query: { page?: string; limit?: string }) {
   const { page, limit } = parsePagination(query);
   let baseQuery: FirebaseFirestore.Query = collections.assignments()
@@ -128,6 +134,7 @@ export async function listAssignmentsByCourse(courseId: string, query: { page?: 
   return { items, total, page, limit };
 }
 
+/** Submit a student's assignment. Increments attemptCount if resubmitting, enforces maxAttempts. */
 export async function submitAssignment(assignmentId: string, studentId: string, data: {
   content?: string;
   attachments?: Array<{ name: string; url: string; type: string; size: number }>;
@@ -185,6 +192,7 @@ export async function submitAssignment(assignmentId: string, studentId: string, 
   return { ...submission };
 }
 
+/** Grade a submission and notify the student. */
 export async function gradeSubmission(submissionId: string, graderId: string, data: {
   score: number;
   totalPoints: number;
@@ -228,6 +236,7 @@ export async function gradeSubmission(submissionId: string, graderId: string, da
   return { ...updated.data() };
 }
 
+/** List submissions for an assignment with optional status filter. */
 export async function listSubmissions(assignmentId: string, query: {
   page?: string;
   limit?: string;
@@ -253,5 +262,3 @@ export async function listSubmissions(assignmentId: string, query: {
 
   return { items, total, page, limit };
 }
-
-

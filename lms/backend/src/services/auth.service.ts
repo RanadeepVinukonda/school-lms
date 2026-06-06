@@ -5,6 +5,7 @@ import { createUser as firebaseCreateUser, getUserByEmail, getUserById, deleteUs
 import { ConflictError, NotFoundError, UnauthorizedError, ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
+/** Register a new user in both Firebase Auth and Firestore. Sets custom claims with the user's role. */
 export async function register(data: {
   email: string;
   password: string;
@@ -51,6 +52,7 @@ export async function register(data: {
   return safeUser;
 }
 
+/** Authenticate a user by email and bcrypt password. Throws UnauthorizedError on failure. */
 export async function login(email: string, password: string) {
   const usersSnapshot = await collections.users().where('email', '==', email.toLowerCase()).limit(1).get();
   if (usersSnapshot.empty) {
@@ -75,6 +77,7 @@ export async function login(email: string, password: string) {
   };
 }
 
+/** Verify a user's token by uid. Returns user profile without password. */
 export async function verifyUserToken(uid: string) {
   const user = await getUserById(uid);
   if (!user) {
@@ -91,6 +94,7 @@ export async function verifyUserToken(uid: string) {
   return safeUser;
 }
 
+/** Generate a password reset token. Always returns the same message to avoid email enumeration. */
 export async function forgotPassword(email: string) {
   const user = await getUserByEmail(email);
   if (!user) {
@@ -117,6 +121,7 @@ export async function forgotPassword(email: string) {
   };
 }
 
+/** Reset a password using a valid, non-expired reset token. */
 export async function resetPassword(token: string, newPassword: string) {
   const tokensSnapshot = await collections.tokens()
     .where('type', '==', 'password_reset')
@@ -156,6 +161,7 @@ export async function resetPassword(token: string, newPassword: string) {
   logger.info('Password reset completed', { uid: matchedDocId });
 }
 
+/** Change a user's password by verifying their current password first. */
 export async function changePassword(uid: string, currentPassword: string, newPassword: string) {
   const userDoc = await collections.users().doc(uid).get();
   if (!userDoc.exists) {
@@ -177,6 +183,7 @@ export async function changePassword(uid: string, currentPassword: string, newPa
   logger.info('Password changed', { uid });
 }
 
+/** Fetch user profile by uid, excluding password. */
 export async function getUserProfile(uid: string) {
   const userDoc = await collections.users().doc(uid).get();
   if (!userDoc.exists) {
@@ -188,6 +195,7 @@ export async function getUserProfile(uid: string) {
   return safeUser;
 }
 
+/** Update a user's own profile fields (displayName, phoneNumber, photoURL). */
 export async function updateUserProfile(uid: string, data: {
   displayName?: string;
   phoneNumber?: string;

@@ -5,6 +5,7 @@ import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 import { createNotification, createBulkNotifications } from './notification.service';
 
+/** Get all grades for a student, optionally filtered by academic year. */
 export async function getStudentGrades(studentId: string, academicYear?: string) {
   let query: FirebaseFirestore.Query = collections.grades()
     .where('studentId', '==', studentId);
@@ -18,6 +19,7 @@ export async function getStudentGrades(studentId: string, academicYear?: string)
   return snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
 }
 
+/** Query the gradebook with filters (classId, courseId, subjectId, term, academicYear), paginated. */
 export async function getGradebook(query: {
   classId?: string;
   courseId?: string;
@@ -49,6 +51,7 @@ export async function getGradebook(query: {
   return { items, total, page, limit };
 }
 
+/** Update a single grade record, calculate letter grade, and notify the student. */
 export async function updateGrade(gradeId: string, data: {
   score: number;
   totalPoints: number;
@@ -95,6 +98,7 @@ export async function updateGrade(gradeId: string, data: {
   return { ...updated.data() };
 }
 
+/** Bulk update or insert grades for multiple students in a course. Notifies all affected students. */
 export async function bulkUpdate(grades: Array<{
   studentId: string;
   score: number;
@@ -156,6 +160,7 @@ export async function bulkUpdate(grades: Array<{
   return results;
 }
 
+/** Generate a student's report card for a given academic year and term with overall GPA. */
 export async function generateReport(studentId: string, academicYear: string, term: string) {
   const gradesSnapshot = await collections.grades()
     .where('studentId', '==', studentId)
@@ -165,8 +170,8 @@ export async function generateReport(studentId: string, academicYear: string, te
 
   const grades = gradesSnapshot.docs.map((d) => d.data());
 
-  const totalScore = grades.reduce((sum: number, g: any) => sum + (g.score || 0), 0);
-  const totalPoints = grades.reduce((sum: number, g: any) => sum + (g.totalPoints || 1), 0);
+  const totalScore = grades.reduce((sum: number, g: { score?: number; totalPoints?: number }) => sum + (g.score || 0), 0);
+  const totalPoints = grades.reduce((sum: number, g: { score?: number; totalPoints?: number }) => sum + (g.totalPoints || 1), 0);
   const overallPercentage = totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0;
   const gpa = calculateGPA(overallPercentage);
 
@@ -186,6 +191,7 @@ export async function generateReport(studentId: string, academicYear: string, te
   };
 }
 
+/** Convert a numeric percentage to a letter grade (A+ through F). */
 function calculateLetterGrade(percentage: number): string {
   if (percentage >= 97) return 'A+';
   if (percentage >= 93) return 'A';
@@ -202,6 +208,7 @@ function calculateLetterGrade(percentage: number): string {
   return 'F';
 }
 
+/** Convert a numeric percentage to a GPA (0.0 – 4.0 scale). */
 function calculateGPA(percentage: number): number {
   if (percentage >= 93) return 4.0;
   if (percentage >= 90) return 3.7;
@@ -216,5 +223,3 @@ function calculateGPA(percentage: number): number {
   if (percentage >= 60) return 0.7;
   return 0.0;
 }
-
-

@@ -4,6 +4,7 @@ import { collections } from '../firebase/firestore';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
+/** Create a new lesson, auto-assign order based on existing lesson count, and increment course lessonCount. */
 export async function createLesson(data: {
   title: string;
   description: string;
@@ -50,6 +51,7 @@ export async function createLesson(data: {
   return { ...lessonData };
 }
 
+/** Update lesson fields. Throws NotFoundError if missing. */
 export async function updateLesson(lessonId: string, data: Record<string, unknown>) {
   const lessonRef = collections.lessons().doc(lessonId);
   const lesson = await lessonRef.get();
@@ -67,6 +69,7 @@ export async function updateLesson(lessonId: string, data: Record<string, unknow
   return { ...updated.data() };
 }
 
+/** Delete a lesson by id and decrement the parent course's lessonCount. */
 export async function deleteLesson(lessonId: string) {
   const lessonRef = collections.lessons().doc(lessonId);
   const lesson = await lessonRef.get();
@@ -88,6 +91,7 @@ export async function deleteLesson(lessonId: string) {
   logger.info('Lesson deleted', { lessonId });
 }
 
+/** Fetch a single lesson by id. Throws NotFoundError if missing. */
 export async function getLessonById(lessonId: string) {
   const lessonRef = collections.lessons().doc(lessonId);
   const lesson = await lessonRef.get();
@@ -99,6 +103,7 @@ export async function getLessonById(lessonId: string) {
   return { ...lesson.data() };
 }
 
+/** List lessons for a course ordered by their `order` field ascending. */
 export async function listLessonsByCourse(courseId: string) {
   const snapshot = await collections.lessons()
     .where('courseId', '==', courseId)
@@ -111,6 +116,7 @@ export async function listLessonsByCourse(courseId: string) {
   }));
 }
 
+/** Reorder lessons by setting a new order index for each lesson id in the array. Uses a batch write. */
 export async function reorderLessons(lessonIds: string[]) {
   const batch = collections.lessons().firestore.batch();
 
@@ -123,6 +129,7 @@ export async function reorderLessons(lessonIds: string[]) {
   logger.info('Lessons reordered');
 }
 
+/** Mark a lesson as complete for a student. Updates course enrollment progress. */
 export async function markLessonComplete(lessonId: string, studentId: string) {
   const lessonRef = collections.lessons().doc(lessonId);
   const lesson = await lessonRef.get();
@@ -163,5 +170,3 @@ export async function markLessonComplete(lessonId: string, studentId: string) {
 
   logger.info('Lesson marked complete', { lessonId, studentId });
 }
-
-

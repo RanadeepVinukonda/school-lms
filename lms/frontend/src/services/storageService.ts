@@ -8,7 +8,9 @@ import {
 } from 'firebase/storage';
 import { storage } from '@/firebase/config';
 
+/** Firebase Storage service for file upload, download, and management. */
 export const storageService = {
+  /** Upload a file to Firebase Storage at the given path with progress tracking. */
   async uploadFile(path: string, file: File, onProgress?: (progress: number) => void) {
     const storageRef = ref(storage, path);
     const uploadTask = uploadBytesResumable(storageRef, file);
@@ -29,6 +31,7 @@ export const storageService = {
     });
   },
 
+  /** Upload raw bytes (Blob/Uint8Array/ArrayBuffer) to Firebase Storage at the given path. */
   async uploadBytes(path: string, data: Blob | Uint8Array | ArrayBuffer) {
     const storageRef = ref(storage, path);
     const result = await uploadBytes(storageRef, data);
@@ -36,16 +39,19 @@ export const storageService = {
     return { url, path: result.ref.fullPath };
   },
 
+  /** Get a download URL for a file at the given storage path. */
   async getDownloadUrl(path: string) {
     const storageRef = ref(storage, path);
     return getDownloadURL(storageRef);
   },
 
+  /** Delete a file from Firebase Storage at the given path. */
   async deleteFile(path: string) {
     const storageRef = ref(storage, path);
     await deleteObject(storageRef);
   },
 
+  /** List all items (files) at a given storage path prefix. */
   async listFiles(path: string) {
     const storageRef = ref(storage, path);
     const result = await listAll(storageRef);

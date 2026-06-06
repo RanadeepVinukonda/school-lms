@@ -37,6 +37,7 @@ const DEFAULT_SETTINGS = {
   features: {},
 };
 
+/** Get all settings. Initializes with defaults if the 'general' document doesn't exist. */
 export async function getSettings() {
   const settingsDoc = await collections.settings().doc('general').get();
 
@@ -48,6 +49,7 @@ export async function getSettings() {
   return { ...DEFAULT_SETTINGS, ...settingsDoc.data() };
 }
 
+/** Update settings by merging the given data with existing values. Creates the document if needed. */
 export async function updateSettings(data: Record<string, unknown>) {
   const ref = collections.settings().doc('general');
   const existing = await ref.get();
@@ -64,6 +66,7 @@ export async function updateSettings(data: Record<string, unknown>) {
   return updated.data();
 }
 
+/** Get system-level settings (academicYear, semester, grading, attendance, security, features). */
 export async function getSystemSettings() {
   const settings = await getSettings();
 
@@ -78,6 +81,7 @@ export async function getSystemSettings() {
   };
 }
 
+/** Update only system-level settings (whitelisted keys). Throws NotFoundError if no valid keys provided. */
 export async function updateSystemSettings(data: Record<string, unknown>) {
   const allowedKeys = [
     'academicYear',

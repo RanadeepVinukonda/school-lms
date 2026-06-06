@@ -6,6 +6,7 @@ import { NotFoundError, ConflictError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 
+/** List users with optional role/search/status/classId filters, paginated. Excludes password from results. */
 export async function listUsers(query: {
   page?: string;
   limit?: string;
@@ -41,21 +42,22 @@ export async function listUsers(query: {
   if (query.search) {
     const search = query.search.toLowerCase();
     items = items.filter(
-      (item: any) =>
+      (item: { id?: string; displayName?: string; email?: string }) =>
         item.displayName?.toLowerCase().includes(search) ||
         item.email?.toLowerCase().includes(search)
     );
   }
 
   if (query.classId) {
-    items = items.filter((item: any) =>
-      item.classIds?.includes(query.classId)
+    items = items.filter((item: { id?: string; classIds?: string[] }) =>
+      item.classIds?.includes(query.classId!)
     );
   }
 
   return { items, total, page, limit };
 }
 
+/** Fetch a single user by uid. Throws NotFoundError if missing. Excludes password. */
 export async function getUserByIdService(uid: string) {
   const userDoc = await collections.users().doc(uid).get();
   if (!userDoc.exists) {
@@ -67,6 +69,7 @@ export async function getUserByIdService(uid: string) {
   return { ...safeData };
 }
 
+/** Create a new user in both Firebase Auth and Firestore. Hashes the password with bcrypt. */
 export async function createUser(data: {
   email: string;
   password: string;
@@ -109,6 +112,7 @@ export async function createUser(data: {
   return safeUser;
 }
 
+/** Update a user's Firestore fields and optionally disable Firebase Auth account. */
 export async function updateUser(uid: string, data: {
   displayName?: string;
   phoneNumber?: string;
@@ -148,6 +152,7 @@ export async function updateUser(uid: string, data: {
   return safeUser;
 }
 
+/** Delete a user from both Firestore and Firebase Auth. */
 export async function deleteUserService(uid: string) {
   const userRef = collections.users().doc(uid);
   const existing = await userRef.get();
@@ -162,6 +167,7 @@ export async function deleteUserService(uid: string) {
   logger.info('User deleted by admin', { uid });
 }
 
+/** Assign a role to a user, updating both Firestore doc and Firebase custom claims. */
 export async function assignRole(uid: string, role: string) {
   const userRef = collections.users().doc(uid);
   const existing = await userRef.get();
@@ -181,6 +187,7 @@ export async function assignRole(uid: string, role: string) {
   logger.info('User role assigned', { uid, role });
 }
 
+/** Update only profile fields (displayName, phoneNumber, photoURL) for the current user. */
 export async function updateProfile(uid: string, data: {
   displayName?: string;
   phoneNumber?: string;
@@ -209,5 +216,3 @@ export async function updateProfile(uid: string, data: {
 
   return safeUser;
 }
-
-

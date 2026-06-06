@@ -4,6 +4,7 @@ import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 
+/** Create a new class with zero student count. */
 export async function createClass(data: {
   name: string;
   code: string;
@@ -37,6 +38,7 @@ export async function createClass(data: {
   return { ...classData };
 }
 
+/** Update class fields. Throws NotFoundError if missing. */
 export async function updateClass(classId: string, data: Record<string, unknown>) {
   const ref = collections.classes().doc(classId);
   const doc = await ref.get();
@@ -54,6 +56,7 @@ export async function updateClass(classId: string, data: Record<string, unknown>
   return { ...updated.data() };
 }
 
+/** Delete a class by id. Throws NotFoundError if missing. */
 export async function deleteClass(classId: string) {
   const ref = collections.classes().doc(classId);
   const doc = await ref.get();
@@ -66,6 +69,7 @@ export async function deleteClass(classId: string) {
   logger.info('Class deleted', { classId });
 }
 
+/** List classes with optional filters (status, academicYear, teacherId, search), paginated. */
 export async function listClasses(query: {
   page?: string;
   limit?: string;
@@ -91,15 +95,15 @@ export async function listClasses(query: {
   let items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
 
   if (query.teacherId) {
-    items = items.filter((item: any) =>
-      item.teacherIds?.includes(query.teacherId)
+    items = items.filter((item: { id?: string; teacherIds?: string[] }) =>
+      item.teacherIds?.includes(query.teacherId!)
     );
   }
 
   if (query.search) {
     const search = query.search.toLowerCase();
     items = items.filter(
-      (item: any) =>
+      (item: { id?: string; name?: string; code?: string }) =>
         item.name?.toLowerCase().includes(search) ||
         item.code?.toLowerCase().includes(search)
     );
@@ -108,6 +112,7 @@ export async function listClasses(query: {
   return { items, total, page, limit };
 }
 
+/** Fetch a single class by id. Throws NotFoundError if missing. */
 export async function getClassById(classId: string) {
   const ref = collections.classes().doc(classId);
   const doc = await ref.get();
@@ -119,6 +124,7 @@ export async function getClassById(classId: string) {
   return { ...doc.data() };
 }
 
+/** Add students to a class by updating their classIds array. Uses a batch write. */
 export async function addStudents(classId: string, studentIds: string[]) {
   const classRef = collections.classes().doc(classId);
   const classDoc = await classRef.get();
@@ -151,6 +157,7 @@ export async function addStudents(classId: string, studentIds: string[]) {
   logger.info('Students added to class', { classId, count: studentIds.length });
 }
 
+/** Remove students from a class by filtering their classIds array. Uses a batch write. */
 export async function removeStudents(classId: string, studentIds: string[]) {
   const classRef = collections.classes().doc(classId);
   const classDoc = await classRef.get();
@@ -177,6 +184,7 @@ export async function removeStudents(classId: string, studentIds: string[]) {
   logger.info('Students removed from class', { classId, count: studentIds.length });
 }
 
+/** Get the class roster — all users whose classIds array contains the given classId. Excludes password field. */
 export async function getRoster(classId: string) {
   const snapshot = await collections.users()
     .where('classIds', 'array-contains', classId)
@@ -188,5 +196,3 @@ export async function getRoster(classId: string) {
     return { id: doc.id, ...safeData };
   });
 }
-
-
