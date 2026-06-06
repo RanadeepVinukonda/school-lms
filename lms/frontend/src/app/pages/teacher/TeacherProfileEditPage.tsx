@@ -78,10 +78,8 @@ export default function TeacherProfileEditPage() {
     if (!user) return;
     setSaving(true);
     try {
-      const data: Record<string, unknown> = {
-        ...form,
-        avatar: avatarPreview || user.avatar,
-      };
+      const data: Record<string, unknown> = { ...form };
+      if (avatarPreview) data.avatar = avatarPreview;
       await updateUser(user.id, data);
       setUser({ ...user, ...data } as typeof user);
       toast.success('Profile updated');
