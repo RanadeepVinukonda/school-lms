@@ -1,7 +1,7 @@
 import admin from 'firebase-admin';
 import { initializeFirebase } from './config/firebase';
 
-async function cleanup() {
+loloasync function cleanup() {
   initializeFirebase();
   const db = admin.firestore();
   

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -14,7 +14,7 @@ import { pageTransition } from '@/lib/motion';
 import { getInitials } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import { uploadProfileImage } from '@/services/cloudinaryService';
-import { updateUser } from '@/services/dataService';
+import { getUser, updateUser } from '@/services/dataService';
 import { ROUTES } from '@/lib/constants';
 
 export default function AdminProfileEditPage() {
@@ -23,17 +23,37 @@ export default function AdminProfileEditPage() {
   const setUser = useAuthStore((s) => s.setUser);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
-    displayName: user?.displayName || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
-    bio: user?.bio || '',
-    address: user?.address || '',
+    displayName: '',
+    email: '',
+    phone: '',
+    bio: '',
+    address: '',
   });
 
-  const [avatarPreview, setAvatarPreview] = useState(user?.avatar || '');
+  const [avatarPreview, setAvatarPreview] = useState('');
+
+  useEffect(() => {
+    if (!user?.id) { setLoadingProfile(false); return; }
+    getUser(user.id)
+      .then((userDoc) => {
+        if (userDoc) {
+          setForm({
+            displayName: userDoc.displayName || '',
+            email: userDoc.email || '',
+            phone: userDoc.phone || '',
+            bio: userDoc.bio || '',
+            address: userDoc.address || '',
+          });
+          setAvatarPreview(userDoc.avatar || '');
+        }
+        setLoadingProfile(false);
+      })
+      .catch(() => { setLoadingProfile(false); toast.error('Failed to load profile data'); });
+  }, [user?.id]);
 
   const handleChange = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -125,8 +145,8 @@ export default function AdminProfileEditPage() {
 
             <div className="flex gap-3 pt-2">
               <Button variant="outline" className="flex-1" onClick={() => navigate(ROUTES.ADMIN_DASHBOARD)}>Cancel</Button>
-              <Button className="flex-1" onClick={handleSave} disabled={saving}>
-                {saving ? 'Saving...' : 'Save Changes'}
+              <Button className="flex-1" onClick={handleSave} disabled={saving || loadingProfile}>
+                {saving ? 'Saving...' : loadingProfile ? 'Loading...' : 'Save Changes'}
               </Button>
             </div>
           </CardContent>
