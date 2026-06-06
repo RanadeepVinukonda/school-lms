@@ -86,8 +86,9 @@ export default function TeacherProfileEditPage() {
       setUser({ ...user, ...data } as typeof user);
       toast.success('Profile updated');
       navigate(ROUTES.TEACHER_PROFILE);
-    } catch {
-      toast.error('Failed to update profile');
+    } catch (err: any) {
+      console.error('Profile update error:', err);
+      toast.error(err?.message || 'Failed to update profile');
     } finally {
       setSaving(false);
     }
