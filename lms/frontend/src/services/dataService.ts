@@ -334,10 +334,10 @@ export async function getAllUsers(): Promise<UserDoc[]> {
 }
 
 export async function updateUser(id: string, data: Partial<UserDoc>): Promise<void> {
-  await updateDoc(doc(db, 'users', id), {
+  await setDoc(doc(db, 'users', id), {
     ...data,
     updatedAt: new Date().toISOString(),
-  });
+  }, { merge: true });
 }
 
 // ── Lessons ──
