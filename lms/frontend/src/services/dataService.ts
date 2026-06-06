@@ -334,8 +334,11 @@ export async function getAllUsers(): Promise<UserDoc[]> {
 }
 
 export async function updateUser(id: string, data: Partial<UserDoc>): Promise<void> {
+  const cleanData = Object.fromEntries(
+    Object.entries(data).filter(([_, v]) => v !== undefined)
+  );
   await setDoc(doc(db, 'users', id), {
-    ...data,
+    ...cleanData,
     updatedAt: new Date().toISOString(),
   }, { merge: true });
 }
