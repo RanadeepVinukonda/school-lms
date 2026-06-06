@@ -3,6 +3,7 @@ import { extractTextFromPDF } from '@/lib/pdfUtils';
 import { extractChapters, generateConceptContent, generateQuestionBank } from '@/services/aiService';
 import { searchVideosForConcept } from '@/services/youtubeService';
 import { createTextbook, saveChapters } from '@/services/textbookService';
+import { getStudentsByClass, createEnrollment } from '@/services/dataService';
 import type { Chapter, Concept, CachedVideo, GeneratedQuestion } from '@/types/textbook';
 
 export type UploadStage =
@@ -22,6 +23,7 @@ export interface UploadTask {
   file: File;
   subjectId: string;
   subjectName: string;
+  classId: string | null;
   stage: UploadStage;
   progress: number;
   textbookId: string | null;
@@ -31,7 +33,7 @@ export interface UploadTask {
 
 interface UploadStore {
   tasks: UploadTask[];
-  startUpload: (file: File, subjectId: string, subjectName: string) => string;
+  startUpload: (file: File, subjectId: string, subjectName: string, classId?: string) => string;
   removeTask: (id: string) => void;
   retryTask: (id: string) => void;
 }
@@ -249,6 +251,21 @@ async function runProcessing(taskId: string) {
     update({ stage: 'saving', progress: 90 });
     addLog('Saving all content to database...');
     await saveChapters(id, chapters);
+
+    // Auto-enroll students in the class
+    if (task.classId && task.subjectId) {
+      addLog('Enrolling students from class...');
+      try {
+        const students = await getStudentsByClass(task.classId);
+        for (const student of students) {
+          await createEnrollment(student.id, task.subjectId);
+        }
+        addLog(`Enrolled ${students.length} students from class into subject`);
+      } catch (err: any) {
+        addLog(`Enrollment skipped: ${err.message}`);
+      }
+    }
+
     update({ progress: 100, stage: 'complete' });
     addLog('Textbook processing complete!');
   } catch (err) {
@@ -263,12 +280,12 @@ async function runProcessing(taskId: string) {
 export const useUploadStore = create<UploadStore>((set, get) => ({
   tasks: [],
 
-  startUpload: (file, subjectId, subjectName) => {
+  startUpload: (file, subjectId, subjectName, classId) => {
     const id = makeId();
     set((s) => ({
       tasks: [
         ...s.tasks,
-        { id, file, subjectId, subjectName, stage: 'idle', progress: 0, textbookId: null, log: [], error: null },
+        { id, file, subjectId, subjectName, classId: classId || null, stage: 'idle', progress: 0, textbookId: null, log: [], error: null },
       ],
     }));
     runProcessing(id);

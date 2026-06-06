@@ -85,6 +85,23 @@ export async function getSubject(id: string): Promise<Subject | null> {
   return { id: snap.id, ...snap.data() } as Subject;
 }
 
+export async function getStudentsByClass(classId: string): Promise<UserDoc[]> {
+  const q = query(collection(db, 'users'), where('classId', '==', classId));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserDoc));
+}
+
+export async function createEnrollment(studentId: string, courseId: string): Promise<void> {
+  const eid = `${courseId}_${studentId}`;
+  await setDoc(doc(db, ENROLLMENT_COLLECTION, eid), {
+    studentId,
+    courseId,
+    status: 'active',
+    progress: 0,
+    enrolledAt: Timestamp.now().toDate().toISOString(),
+  });
+}
+
 export async function getEnrollmentsByStudent(studentId: string): Promise<Enrollment[]> {
   const q = query(collection(db, ENROLLMENT_COLLECTION), where('studentId', '==', studentId));
   const snap = await getDocs(q);
@@ -305,6 +322,7 @@ export interface UserDoc {
   role: string;
   studentId?: string;
   classId?: string;
+  classIds?: string[];
   teacherId?: string;
   avatar?: string;
   phone?: string;

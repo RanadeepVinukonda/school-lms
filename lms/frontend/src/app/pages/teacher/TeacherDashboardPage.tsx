@@ -78,9 +78,10 @@ export default function TeacherDashboardPage() {
         getAllGrades(),
       ]);
 
-      const myClass = allClasses.find((c) => c.teacherIds?.includes(user?.id ?? ''));
-      const classId = myClass?.id;
-      const subjectIds = myClass?.subjectIds ?? [];
+      const myClassIds = user?.classIds ?? [];
+      const myClasses = allClasses.filter((c) => myClassIds.includes(c.id));
+      const classId = myClasses[0]?.id;
+      const subjectIds = [...new Set(myClasses.flatMap((c) => c.subjectIds ?? []))];
 
       const [examArrays, assignmentArrays, timetable] = await Promise.all([
         Promise.all(subjectIds.map((sid) => getExamsBySubject(sid))),

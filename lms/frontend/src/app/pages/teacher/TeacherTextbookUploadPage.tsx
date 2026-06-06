@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,8 @@ import { Icon } from '@/components/ui/Icon';
 import { Badge } from '@/components/ui/badge';
 import { pageTransition, listItem } from '@/lib/motion';
 import { useUploadStore, stageLabel } from '@/store/uploadStore';
+import { useAuthStore } from '@/store/authStore';
+import { getAllSubjects, getAllClasses } from '@/services/dataService';
 import type { UploadStage } from '@/store/uploadStore';
 
 const stageIcons: Record<UploadStage, string> = {
@@ -35,23 +38,23 @@ const stageColor: Record<UploadStage, string> = {
   error: 'text-red-500',
 };
 
-const subjects = [
-  { id: 'math', name: 'Mathematics' },
-  { id: 'physics', name: 'Physics' },
-  { id: 'chemistry', name: 'Chemistry' },
-  { id: 'biology', name: 'Biology' },
-  { id: 'history', name: 'History' },
-  { id: 'literature', name: 'Literature' },
-  { id: 'cs', name: 'Computer Science' },
-  { id: 'custom', name: 'Custom' },
-];
-
 export default function TeacherTextbookUploadPage() {
   const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
-  const [subjectId, setSubjectId] = useState('math');
+  const [subjectId, setSubjectId] = useState('');
+  const [classId, setClassId] = useState('');
   const [dragActive, setDragActive] = useState(false);
+
+  const { data: subjects } = useQuery({
+    queryKey: ['all-subjects'],
+    queryFn: getAllSubjects,
+  });
+  const { data: classes } = useQuery({
+    queryKey: ['all-classes'],
+    queryFn: getAllClasses,
+  });
 
   const tasks = useUploadStore((s) => s.tasks);
   const startUpload = useUploadStore((s) => s.startUpload);
@@ -79,10 +82,17 @@ export default function TeacherTextbookUploadPage() {
   }, []);
 
   const handleProcess = async () => {
-    if (!file) return;
-    const subj = subjects.find((s) => s.id === subjectId);
-    startUpload(file, subjectId, subj?.name ?? 'Custom');
+    if (!file || !subjectId) return;
+    const subj = subjects?.find((s) => s.id === subjectId);
+    startUpload(file, subjectId, subj?.name ?? 'Custom', classId || undefined);
   };
+
+  const subjectList = subjects ?? [];
+  const allClasses = classes ?? [];
+  const teacherClassIds = user?.classIds ?? [];
+  const classList = teacherClassIds.length > 0
+    ? allClasses.filter((c) => teacherClassIds.includes(c.id))
+    : allClasses;
 
   return (
     <>
@@ -103,7 +113,7 @@ export default function TeacherTextbookUploadPage() {
               <div>
                 <label className="text-sm font-medium mb-2 block">Subject</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {subjects.map((subj) => (
+                  {subjectList.map((subj) => (
                     <button
                       key={subj.id}
                       type="button"
@@ -119,6 +129,29 @@ export default function TeacherTextbookUploadPage() {
                   ))}
                 </div>
               </div>
+
+              {classList.length > 0 && (
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Assign to Class (optional)</label>
+                  <select
+                    value={classId}
+                    onChange={(e) => setClassId(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  >
+                    <option value="">No class assignment</option>
+                    {classList.map((cls) => (
+                      <option key={cls.id} value={cls.id}>
+                        {cls.name}
+                      </option>
+                    ))}
+                  </select>
+                  {classId && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Students in this class will be auto-enrolled in the selected subject
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div
                 onDragEnter={handleDrag}

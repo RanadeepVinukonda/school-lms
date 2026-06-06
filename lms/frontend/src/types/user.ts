@@ -12,6 +12,10 @@ export interface UserProfile {
   dateOfBirth?: string;
   bio?: string;
   address?: string;
+  classIds?: string[];
+  studentId?: string;
+  teacherId?: string;
+  classId?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

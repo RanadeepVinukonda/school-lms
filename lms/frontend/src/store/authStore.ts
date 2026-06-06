@@ -64,6 +64,10 @@ export const useAuthStore = create<AuthStore>()(
                   dateOfBirth: data.dateOfBirth as string | undefined,
                   bio: data.bio as string | undefined,
                   address: data.address as string | undefined,
+                  classIds: data.classIds as string[] | undefined,
+                  studentId: data.studentId as string | undefined,
+                  teacherId: data.teacherId as string | undefined,
+                  classId: data.classId as string | undefined,
                   createdAt: (data.createdAt as string) || new Date().toISOString(),
                   updatedAt: (data.updatedAt as string) || new Date().toISOString(),
                 };
