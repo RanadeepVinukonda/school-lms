@@ -1,6 +1,6 @@
 {
-  "buildCommand": "npm run build:frontend",
-  "installCommand": "npm install --include=dev",
+  "buildCommand": "npm run build:backend && npm run build:frontend",
+  "installCommand": "npm install --prefix backend --include=dev && npm install --include=dev",
   "outputDirectory": "frontend/dist",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api" },
