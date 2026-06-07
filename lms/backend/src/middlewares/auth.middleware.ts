@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken } from '../firebase/auth';
+import { getAdminFirestore } from '../firebase/admin';
 import { UnauthorizedError } from '../utils/errors';
 
 declare global {
@@ -16,7 +17,7 @@ declare global {
   }
 }
 
-/** Require a valid Firebase Auth token. Sets req.user with uid, email, role, and name. Throws UnauthorizedError if missing, invalid, or no role claim. */
+/** Require a valid Firebase Auth token. Sets req.user with uid, email, role, and name. Falls back to Firestore for role if token lacks it. Throws UnauthorizedError if missing or invalid. */
 export async function authenticate(req: Request, _res: Response, next: NextFunction): Promise<void> {
   try {
     const authHeader = req.headers.authorization;
@@ -31,14 +32,23 @@ export async function authenticate(req: Request, _res: Response, next: NextFunct
 
     const decoded = await verifyToken(idToken);
 
-    if (!decoded.role) {
-      throw new UnauthorizedError('User has no role assigned');
+    let role = decoded.role as string | undefined;
+    if (!role) {
+      try {
+        const snap = await getAdminFirestore().doc(`users/${decoded.uid}`).get();
+        if (snap.exists) {
+          role = snap.data()?.role as string | undefined;
+        }
+      } catch {
+        /* Firestore fallback not available */
+      }
     }
+
     req.user = {
       ...decoded,
       uid: decoded.uid,
       email: decoded.email || '',
-      role: decoded.role as string,
+      role: role || 'student',
       name: decoded.name || decoded.email?.split('@')[0] || 'User',
     };
 
