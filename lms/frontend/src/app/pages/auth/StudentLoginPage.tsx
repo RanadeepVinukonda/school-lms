@@ -114,17 +114,24 @@ export default function StudentLoginPage() {
           variants={pageTransition}
           className="relative z-10 w-full max-w-md"
         >
+          <div className="flex justify-center mb-6">
+            <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center shadow-lg shadow-primary/10">
+              <img
+                src="/genesis_icon.png"
+                alt="Genesis"
+                className="h-10 w-auto object-contain"
+              />
+            </div>
+          </div>
+
           <Card className={cn(
             'border-0 shadow-2xl shadow-primary/5 backdrop-blur-sm',
             'bg-surface/95',
           )}>
             <CardHeader className="text-center pb-4">
               <CardTitle className="text-2xl font-bold tracking-tight">
-                Student <span className="text-primary">Sign In</span>
+                <span className="text-primary">Sign In</span>
               </CardTitle>
-              <CardDescription className="text-sm">
-                Enter your credentials to continue
-              </CardDescription>
             </CardHeader>
             <form onSubmit={handleSubmit(onSubmit)}>
               <CardContent className="space-y-4">

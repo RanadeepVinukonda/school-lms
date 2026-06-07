@@ -79,20 +79,11 @@ export default function WelcomePage() {
                 src="/genesis_icon.png"
                 alt="Genesis"
                 className={cn(
-                  'h-32 w-auto object-contain sm:h-40 transition-all duration-700',
+                  'h-40 w-auto object-contain sm:h-48 transition-all duration-700',
                   mounted ? 'scale-100 opacity-100' : 'scale-90 opacity-0',
                 )}
               />
             </motion.div>
-
-            <motion.h1
-              className="mb-3 text-5xl font-extrabold tracking-tight sm:text-6xl md:text-7xl lg:text-8xl text-primary"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            >
-              Genesis
-            </motion.h1>
 
             <motion.p
               className="mb-2 text-lg font-medium tracking-widest text-tertiary uppercase sm:text-xl"
