@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
-import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
+import { LoadingSkeleton } from '@/components/common/LoadingSkeleton';
+import { ErrorState } from '@/components/common/ErrorState';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -78,16 +79,13 @@ export default function AdminTeachersPage() {
   return (
     <>
       <SEOHead title="Teachers" description="Manage teachers" canonical="/admin/teachers" />
-      <DataFetchWrapper
-        data={teachers}
-        isLoading={isLoading}
-        error={isError ? new Error('Failed to load teachers') : null}
-        onRetry={() => refetch()}
-        loadingType="table"
-      >
-        {() => (
-          <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit">
-            <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
+      {isLoading ? (
+        <LoadingSkeleton type="table" />
+      ) : isError ? (
+        <ErrorState title="Failed to load teachers" message="Could not fetch teacher data" onRetry={() => refetch()} />
+      ) : (
+        <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit">
+          <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
             <motion.div variants={listItem} className="flex items-center justify-between flex-wrap gap-3">
               <div>
                 <h1 className="text-headline-sm">Teachers</h1>
@@ -191,8 +189,7 @@ export default function AdminTeachersPage() {
             )}
             </motion.div>
           </motion.div>
-        )}
-      </DataFetchWrapper>
+      )}
 
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
         <DialogContent>
