@@ -102,6 +102,13 @@ export default function TeacherLoginPage() {
 
           <Card className="w-full max-w-md">
           <CardHeader className="text-center">
+            <div className="mx-auto mb-4">
+              <img
+                src="/genesis_icon.png"
+                alt="Genesis"
+                className="h-16 w-auto object-contain mx-auto"
+              />
+            </div>
             <CardTitle className="text-2xl">Teacher Sign In</CardTitle>
             <CardDescription>Enter your credentials to access your teacher portal</CardDescription>
           </CardHeader>

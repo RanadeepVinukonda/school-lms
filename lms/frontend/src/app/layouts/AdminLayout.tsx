@@ -82,7 +82,6 @@ export function AdminLayout() {
                 />
                 <div>
                   <p className="text-label-lg font-bold text-primary">Genesis</p>
-                  <p className="text-label-sm text-on-surface-variant tracking-wider">LMS</p>
                 </div>
               </div>
               <Button
