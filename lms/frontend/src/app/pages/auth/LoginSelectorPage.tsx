@@ -66,13 +66,6 @@ export default function LoginSelectorPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.05, 0, 0.133333, 0.06] }}
           >
-            <div className="mb-6 inline-flex items-center justify-center">
-              <img
-                src="/genesis_icon.png"
-                alt="Genesis"
-                className="h-24 w-auto object-contain sm:h-28"
-              />
-            </div>
             <h1 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">
               Welcome Back
             </h1>

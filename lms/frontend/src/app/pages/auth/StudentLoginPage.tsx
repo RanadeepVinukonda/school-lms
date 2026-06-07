@@ -100,15 +100,8 @@ export default function StudentLoginPage() {
           Back to Home
         </button>
 
-        <Card className="w-full max-w-md">
+          <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4">
-              <img
-                src="/genesis_icon.png"
-                alt="Genesis"
-                className="h-16 w-auto object-contain mx-auto"
-              />
-            </div>
             <CardTitle className="text-2xl">Student Sign In</CardTitle>
             <CardDescription>Enter your credentials to access your student portal</CardDescription>
           </CardHeader>
