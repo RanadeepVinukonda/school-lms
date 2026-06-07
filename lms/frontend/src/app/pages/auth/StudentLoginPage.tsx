@@ -54,20 +54,27 @@ export default function StudentLoginPage() {
         return;
       }
       const profileData = snap.data() as Record<string, unknown>;
-      if (profileData.role !== 'student') {
-        setError('This account is not a student account. Please use the correct login page.');
-        return;
-      }
+      const role = profileData.role as string;
+
       setUser({
         id: snap.id,
         email: (profileData.email as string) || firebaseUser.email || '',
         displayName: (profileData.displayName as string) || firebaseUser.displayName || '',
-        role: 'student',
+        role: role as any,
         isActive: profileData.isActive as boolean ?? true,
         createdAt: (profileData.createdAt as string) || new Date().toISOString(),
         updatedAt: (profileData.updatedAt as string) || new Date().toISOString(),
       });
-      navigate(ROUTES.STUDENT_DASHBOARD);
+
+      if (role === 'admin' || role === 'super_admin') {
+        navigate(ROUTES.ADMIN_DASHBOARD);
+      } else if (role === 'teacher') {
+        navigate(ROUTES.TEACHER_DASHBOARD);
+      } else if (role === 'student') {
+        navigate(ROUTES.STUDENT_DASHBOARD);
+      } else {
+        setError('Unrecognized account role.');
+      }
     } catch (err: any) {
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
         setError('Invalid email or password.');
@@ -84,11 +91,23 @@ export default function StudentLoginPage() {
   return (
     <>
       <SEOHead title="Student Sign In" description="Sign in to your Genesis student account." />
-      <motion.div className="flex min-h-[80vh] items-center justify-center px-4 py-12" initial="initial" animate="animate" variants={pageTransition}>
+      <motion.div className="relative flex min-h-screen items-center justify-center px-4 py-12" initial="initial" animate="animate" variants={pageTransition}>
+        <button
+          onClick={() => navigate('/welcome')}
+          className="absolute top-6 left-6 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <Icon name="arrow_back" size={18} />
+          Back to Home
+        </button>
+
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-              <Icon name="school" size={32} className="text-primary" />
+            <div className="mx-auto mb-4">
+              <img
+                src="/genesis_icon.png"
+                alt="Genesis"
+                className="h-16 w-auto object-contain mx-auto"
+              />
             </div>
             <CardTitle className="text-2xl">Student Sign In</CardTitle>
             <CardDescription>Enter your credentials to access your student portal</CardDescription>

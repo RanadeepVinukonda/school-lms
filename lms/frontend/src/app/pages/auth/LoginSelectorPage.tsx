@@ -28,17 +28,6 @@ const roles = [
     iconBg: 'bg-emerald-500/10',
     iconColor: 'text-emerald-500',
   },
-  {
-    id: 'admin' as const,
-    title: 'Administrator',
-    description: 'Manage users, classes, subjects, and system settings.',
-    icon: 'manage_accounts',
-    href: '/login/admin',
-    gradient: 'from-purple-500/20 to-pink-500/20',
-    borderColor: 'border-purple-500/30',
-    iconBg: 'bg-purple-500/10',
-    iconColor: 'text-purple-500',
-  },
 ];
 
 export default function LoginSelectorPage() {
@@ -63,6 +52,14 @@ export default function LoginSelectorPage() {
           animate="animate"
           variants={pageTransition}
         >
+          <button
+            onClick={() => navigate('/welcome')}
+            className="absolute top-6 left-6 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Icon name="arrow_back" size={18} />
+            Back to Home
+          </button>
+
           <motion.div
             className="text-center mb-12"
             initial={{ opacity: 0, y: 20 }}
@@ -72,8 +69,8 @@ export default function LoginSelectorPage() {
             <div className="mb-6 inline-flex items-center justify-center">
               <img
                 src="/genesis_icon.png"
-                alt="Genesis School Crest"
-                className="h-28 w-auto object-contain sm:h-36"
+                alt="Genesis"
+                className="h-24 w-auto object-contain sm:h-28"
               />
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">
@@ -88,7 +85,7 @@ export default function LoginSelectorPage() {
           </motion.div>
 
           <motion.div
-            className="grid w-full max-w-2xl gap-5 sm:grid-cols-3"
+            className="grid w-full max-w-lg gap-5 sm:grid-cols-2"
             variants={listContainer}
             initial="hidden"
             animate="show"

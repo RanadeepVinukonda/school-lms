@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -40,14 +41,11 @@ const valueCards = [
   },
 ];
 
-const roleLoginLinks = [
-  { label: 'Student Login', href: '/login/student', icon: 'school' },
-  { label: 'Teacher Login', href: '/login/teacher', icon: 'badge' },
-  { label: 'Admin Login', href: '/login/admin', icon: 'manage_accounts' },
-];
-
 export default function WelcomePage() {
   const navigate = useNavigate();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   return (
     <>
@@ -56,12 +54,12 @@ export default function WelcomePage() {
         description="Genesis Learning Management System - Empowering education for students, teachers, and administrators."
       />
 
-      <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-background via-primary/5 to-background">
+      <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-background via-primary/[0.03] to-background">
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
           <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
           <div className="absolute -bottom-32 -left-32 h-80 w-80 rounded-full bg-tertiary/10 blur-3xl" />
-          <div className="absolute top-1/3 left-1/4 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
-          <div className="absolute top-1/2 right-1/4 h-48 w-48 rounded-full bg-tertiary/5 blur-3xl" />
+          <div className="absolute top-1/3 left-1/4 h-64 w-64 rounded-full bg-primary/[0.04] blur-3xl" />
+          <div className="absolute top-1/2 right-1/4 h-48 w-48 rounded-full bg-tertiary/[0.04] blur-3xl" />
         </div>
 
         <section className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-20">
@@ -79,8 +77,11 @@ export default function WelcomePage() {
             >
               <img
                 src="/genesis_icon.png"
-                alt="Genesis School Crest"
-                className="h-32 w-auto object-contain sm:h-40"
+                alt="Genesis"
+                className={cn(
+                  'h-32 w-auto object-contain sm:h-40 transition-all duration-700',
+                  mounted ? 'scale-100 opacity-100' : 'scale-90 opacity-0',
+                )}
               />
             </motion.div>
 
@@ -123,15 +124,25 @@ export default function WelcomePage() {
                 onClick={() => navigate('/login')}
                 className="group relative overflow-hidden px-12 text-base font-semibold shadow-lg shadow-primary/25 transition-shadow hover:shadow-xl hover:shadow-primary/30"
               >
-                Get Started
+                <span className="relative z-10">Get Started</span>
               </Button>
               <Button
                 variant="outline"
                 size="xl"
-                onClick={() => navigate('/about')}
+                onClick={() => navigate('/login/student')}
                 className="px-10 text-base font-semibold"
               >
-                About Our School
+                <Icon name="school" size={18} className="mr-2" />
+                Student Login
+              </Button>
+              <Button
+                variant="outline"
+                size="xl"
+                onClick={() => navigate('/login/teacher')}
+                className="px-10 text-base font-semibold"
+              >
+                <Icon name="badge" size={18} className="mr-2" />
+                Teacher Login
               </Button>
             </motion.div>
           </motion.div>
@@ -191,22 +202,6 @@ export default function WelcomePage() {
                   <p className="text-label-sm text-on-surface-variant">Learn &bull; Lead &bull; Achieve</p>
                 </div>
               </div>
-
-              <nav className="flex flex-wrap items-center justify-center gap-4" aria-label="Role login links">
-                {roleLoginLinks.map((link) => (
-                  <Button
-                    key={link.href}
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate(link.href)}
-                    className="gap-2 text-muted-foreground hover:text-foreground"
-                  >
-                    <Icon name={link.icon} size={18} />
-                    {link.label}
-                  </Button>
-                ))}
-              </nav>
-
               <p className="text-sm text-muted-foreground">
                 &copy; {new Date().getFullYear()} Genesis. All rights reserved.
               </p>

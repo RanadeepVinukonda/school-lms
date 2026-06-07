@@ -12,11 +12,9 @@ import { ForgotPasswordForm } from '@/features/auth/components/ForgotPasswordFor
 import { ResetPasswordForm } from '@/features/auth/components/ResetPasswordForm';
 
 import WelcomePage from '@/app/pages/WelcomePage';
-import AboutSchoolPage from '@/app/pages/AboutSchoolPage';
 import LoginSelectorPage from '@/app/pages/auth/LoginSelectorPage';
 import StudentLoginPage from '@/app/pages/auth/StudentLoginPage';
 import TeacherLoginPage from '@/app/pages/auth/TeacherLoginPage';
-import AdminLoginPage from '@/app/pages/auth/AdminLoginPage';
 
 import StudentDashboardPage from '@/app/pages/student/StudentDashboardPage';
 import SubjectsPage from '@/app/pages/student/SubjectsPage';
@@ -64,17 +62,11 @@ export const router = createBrowserRouter([
     element: <WelcomePage />,
   },
   {
-    path: ROUTES.ABOUT,
-    element: <AboutSchoolPage />,
-  },
-
-  {
     element: <AuthLayout />,
     children: [
       { path: ROUTES.LOGIN, element: <LoginSelectorPage /> },
       { path: ROUTES.LOGIN_STUDENT, element: <StudentLoginPage /> },
       { path: ROUTES.LOGIN_TEACHER, element: <TeacherLoginPage /> },
-      { path: ROUTES.LOGIN_ADMIN, element: <AdminLoginPage /> },
       { path: ROUTES.REGISTER, element: <RegisterForm /> },
       { path: ROUTES.FORGOT_PASSWORD, element: <ForgotPasswordForm /> },
       { path: ROUTES.RESET_PASSWORD, element: <ResetPasswordForm /> },
