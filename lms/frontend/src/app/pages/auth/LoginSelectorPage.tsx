@@ -4,6 +4,7 @@ import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent } from '@/components/ui/card';
 import { Icon } from '@/components/ui/Icon';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
+import { cn } from '@/lib/utils';
 
 const roles = [
   {
@@ -40,10 +41,11 @@ export default function LoginSelectorPage() {
         description="Choose your role to sign in to Genesis."
       />
 
-      <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-background via-primary/5 to-background">
+      <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-background via-primary/[0.03] to-background">
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
           <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
           <div className="absolute -bottom-32 -left-32 h-80 w-80 rounded-full bg-tertiary/10 blur-3xl" />
+          <div className="absolute top-1/3 left-1/4 h-64 w-64 rounded-full bg-primary/[0.04] blur-3xl" />
         </div>
 
         <motion.div
@@ -52,13 +54,15 @@ export default function LoginSelectorPage() {
           animate="animate"
           variants={pageTransition}
         >
-          <button
+          <motion.button
             onClick={() => navigate('/welcome')}
             className="absolute top-6 left-6 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
           >
             <Icon name="arrow_back" size={18} />
-            Back to Home
-          </button>
+            Back
+          </motion.button>
 
           <motion.div
             className="text-center mb-12"
@@ -67,20 +71,19 @@ export default function LoginSelectorPage() {
             transition={{ duration: 0.6, ease: [0.05, 0, 0.133333, 0.06] }}
           >
             <div className="mb-6 inline-flex items-center justify-center">
-              <img
-                src="/genesis_icon.png"
-                alt="Genesis"
-                className="h-24 w-auto object-contain sm:h-28"
-              />
+              <div className="h-20 w-20 rounded-2xl bg-primary/10 flex items-center justify-center shadow-lg shadow-primary/10">
+                <img
+                  src="/genesis_icon.png"
+                  alt="Genesis"
+                  className="h-12 w-auto object-contain"
+                />
+              </div>
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">
               Welcome Back
             </h1>
-            <p className="mt-2 text-sm font-medium tracking-widest text-tertiary uppercase">
-              Learn &bull; Lead &bull; Achieve
-            </p>
-            <p className="mt-4 text-muted-foreground text-base max-w-md mx-auto">
-              Sign in to your account to continue your learning journey.
+            <p className="mt-3 text-muted-foreground text-base max-w-md mx-auto">
+              Choose your role to sign in
             </p>
           </motion.div>
 
@@ -93,7 +96,10 @@ export default function LoginSelectorPage() {
             {roles.map((role) => (
               <motion.div key={role.id} variants={listItem} className="cursor-pointer">
                 <Card
-                  className={`relative overflow-hidden border-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${role.borderColor} h-full`}
+                  className={cn(
+                    'relative overflow-hidden border-0 shadow-lg shadow-primary/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl h-full',
+                    'bg-surface/95 backdrop-blur-sm',
+                  )}
                   onClick={() => navigate(role.href)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
@@ -105,16 +111,16 @@ export default function LoginSelectorPage() {
                   role="button"
                   aria-label={`Sign in as ${role.title}`}
                 >
-                  <div
-                    className={`absolute inset-0 rounded-lg bg-gradient-to-br opacity-0 transition-opacity duration-300 hover:opacity-100 ${role.gradient}`}
-                  />
-                  <CardContent className="relative z-10 flex flex-col items-center text-center p-6">
+                  <CardContent className="flex flex-col items-center text-center p-8">
                     <div
-                      className={`mb-4 inline-flex h-16 w-16 items-center justify-center rounded-xl ${role.iconBg}`}
+                      className={cn(
+                        'mb-5 inline-flex h-16 w-16 items-center justify-center rounded-2xl shadow-lg',
+                        role.iconBg,
+                      )}
                     >
-                      <Icon name={role.icon} size={32} className={role.iconColor} />
+                      <Icon name={role.icon} size={30} className={role.iconColor} />
                     </div>
-                    <h3 className="text-lg font-bold mb-2">{role.title}</h3>
+                    <h3 className="text-xl font-bold mb-2">{role.title}</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">
                       {role.description}
                     </p>

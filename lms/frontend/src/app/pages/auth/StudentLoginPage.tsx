@@ -16,6 +16,7 @@ import { ROUTES } from '@/lib/constants';
 import { loginUser } from '@/firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
+import { cn } from '@/lib/utils';
 
 const studentLoginSchema = z.object({
   email: z
@@ -91,73 +92,123 @@ export default function StudentLoginPage() {
   return (
     <>
       <SEOHead title="Student Sign In" description="Sign in to your Genesis student account." />
-      <motion.div className="relative flex min-h-screen items-center justify-center px-4 py-12" initial="initial" animate="animate" variants={pageTransition}>
-        <button
+      <div className="relative min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-background via-primary/[0.03] to-background">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+          <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
+          <div className="absolute -bottom-32 -left-32 h-80 w-80 rounded-full bg-tertiary/10 blur-3xl" />
+        </div>
+
+        <motion.button
           onClick={() => navigate('/welcome')}
-          className="absolute top-6 left-6 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="absolute top-6 left-6 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors z-10"
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
         >
           <Icon name="arrow_back" size={18} />
-          Back to Home
-        </button>
+          Back
+        </motion.button>
 
-          <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4">
+        <motion.div
+          initial="initial"
+          animate="animate"
+          variants={pageTransition}
+          className="relative z-10 w-full max-w-md"
+        >
+          <div className="flex justify-center mb-6">
+            <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center shadow-lg shadow-primary/10">
               <img
                 src="/genesis_icon.png"
                 alt="Genesis"
-                className="h-16 w-auto object-contain mx-auto"
+                className="h-10 w-auto object-contain"
               />
             </div>
-            <CardTitle className="text-2xl">Student Sign In</CardTitle>
-            <CardDescription>Enter your credentials to access your student portal</CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <CardContent className="space-y-4">
-              {error && (
-                <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-                  <Icon name="error" size={16} className="shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="your@email.com" {...register('email')} error={errors.email?.message} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
-                    {...register('password')}
-                    error={errors.password?.message}
-                    className="pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    tabIndex={-1}
+          </div>
+
+          <Card className={cn(
+            'border-0 shadow-2xl shadow-primary/5 backdrop-blur-sm',
+            'bg-surface/95',
+          )}>
+            <CardHeader className="text-center pb-4">
+              <CardTitle className="text-2xl font-bold tracking-tight">
+                Student <span className="text-primary">Sign In</span>
+              </CardTitle>
+              <CardDescription className="text-sm">
+                Enter your credentials to continue
+              </CardDescription>
+            </CardHeader>
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <CardContent className="space-y-4">
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2 rounded-xl bg-destructive/10 p-3 text-sm text-destructive border border-destructive/20"
                   >
-                    <Icon name={showPassword ? 'visibility_off' : 'visibility'} size={18} />
-                  </button>
+                    <Icon name="error" size={16} className="shrink-0" />
+                    <span>{error}</span>
+                  </motion.div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="your@email.com"
+                    {...register('email')}
+                    error={errors.email?.message}
+                    className="h-11 rounded-xl"
+                  />
                 </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-3">
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? 'Signing in...' : 'Sign In'}
-              </Button>
-              <div className="flex items-center justify-between w-full text-sm">
-                <Link to={ROUTES.FORGOT_PASSWORD} className="text-primary hover:underline">Forgot password?</Link>
-                <Link to={ROUTES.REGISTER} className="text-primary hover:underline">Create account</Link>
-              </div>
-            </CardFooter>
-          </form>
-        </Card>
-      </motion.div>
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Enter your password"
+                      {...register('password')}
+                      error={errors.password?.message}
+                      className="h-11 rounded-xl pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      tabIndex={-1}
+                    >
+                      <Icon name={showPassword ? 'visibility_off' : 'visibility'} size={18} />
+                    </button>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-col gap-3 pt-2">
+                <Button
+                  type="submit"
+                  className="w-full h-11 rounded-xl text-base font-semibold shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center gap-2">
+                      <span className="h-4 w-4 rounded-full border-2 border-current border-r-transparent animate-spin" />
+                      Signing in...
+                    </span>
+                  ) : (
+                    'Sign In'
+                  )}
+                </Button>
+                <div className="flex items-center justify-between w-full text-sm pt-1">
+                  <Link to={ROUTES.FORGOT_PASSWORD} className="text-primary font-medium hover:underline underline-offset-4">
+                    Forgot password?
+                  </Link>
+                  <Link to={ROUTES.REGISTER} className="text-primary font-medium hover:underline underline-offset-4">
+                    Create account
+                  </Link>
+                </div>
+              </CardFooter>
+            </form>
+          </Card>
+        </motion.div>
+      </div>
     </>
   );
 }

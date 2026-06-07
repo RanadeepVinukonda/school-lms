@@ -74,16 +74,11 @@ export function AdminLayout() {
             </Button>
           ) : (
             <div className="w-full flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <img
-                  src="/genesis_icon.png"
-                  alt="Genesis"
-                  className="h-14 w-auto object-contain"
-                />
-                <div>
-                  <p className="text-label-lg font-bold text-primary">Genesis</p>
-                </div>
-              </div>
+              <img
+                src="/genesis_icon.png"
+                alt="Genesis"
+                className="h-12 w-auto object-contain"
+              />
               <Button
                 variant="text"
                 size="icon-sm"
