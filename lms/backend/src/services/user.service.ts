@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 import { collections } from '../firebase/firestore';
-import { createUser as firebaseCreateUser, updateUser as firebaseUpdateUser, deleteUser as firebaseDeleteUser, getUserById } from '../firebase/auth';
+import { createUser as firebaseCreateUser, updateUser as firebaseUpdateUser, deleteUser as firebaseDeleteUser, getUserById, setCustomClaims } from '../firebase/auth';
 import { NotFoundError, ConflictError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
@@ -106,6 +106,8 @@ export async function createUser(data: {
 
   await collections.users().doc(firebaseUser.uid).set(userData);
 
+  await setCustomClaims(firebaseUser.uid, { role: data.role });
+
   logger.info('User created by admin', { uid: firebaseUser.uid, email: data.email, role: data.role });
 
   const { password: _, ...safeUser } = userData;
@@ -167,6 +169,34 @@ export async function deleteUserService(uid: string) {
   logger.info('User deleted by admin', { uid });
 }
 
+/** Toggle a user's active status. Returns the updated user without password. */
+export async function toggleActive(uid: string) {
+  const userRef = collections.users().doc(uid);
+  const existing = await userRef.get();
+
+  if (!existing.exists) {
+    throw new NotFoundError('User not found');
+  }
+
+  const currentData = existing.data()!;
+  const newIsActive = !currentData.isActive;
+
+  await userRef.update({
+    isActive: newIsActive,
+    updatedAt: new Date().toISOString(),
+  });
+
+  await firebaseUpdateUser(uid, { disabled: !newIsActive });
+
+  const updated = await userRef.get();
+  const userData = updated.data()!;
+  const { password: _, ...safeUser } = userData;
+
+  logger.info('User active status toggled', { uid, isActive: newIsActive });
+
+  return safeUser;
+}
+
 /** Assign a role to a user, updating both Firestore doc and Firebase custom claims. */
 export async function assignRole(uid: string, role: string) {
   const userRef = collections.users().doc(uid);
@@ -181,7 +211,6 @@ export async function assignRole(uid: string, role: string) {
     updatedAt: new Date().toISOString(),
   });
 
-  const { setCustomClaims } = await import('../firebase/auth');
   await setCustomClaims(uid, { role });
 
   logger.info('User role assigned', { uid, role });

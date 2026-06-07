@@ -24,6 +24,9 @@ export interface PaginationParams {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   search?: string;
+  role?: string;
+  status?: string;
+  classId?: string;
 }
 
 export interface ApiError {

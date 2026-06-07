@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,32 +9,17 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Icon } from '@/components/ui/Icon';
 import { OptionsSelect } from '@/components/ui/select';
 import { getInitials } from '@/lib/utils';
-import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
-
-interface UserItem {
-  id: string;
-  name: string;
-  email: string;
-  role: 'student' | 'teacher' | 'admin';
-  status: 'active' | 'disabled';
-  lastActive: string;
-}
-
-const users: UserItem[] = [
-  { id: 'u1', name: 'Alex M.', email: 'alex@school.edu', role: 'student', status: 'active', lastActive: '2h ago' },
-  { id: 'u2', name: 'Mrs. Johnson', email: 'johnson@school.edu', role: 'teacher', status: 'active', lastActive: '1h ago' },
-  { id: 'u3', name: 'Sarah K.', email: 'sarah@school.edu', role: 'student', status: 'active', lastActive: '5h ago' },
-  { id: 'u4', name: 'James W.', email: 'james@school.edu', role: 'student', status: 'disabled', lastActive: '1w ago' },
-  { id: 'u5', name: 'Admin User', email: 'admin@school.edu', role: 'admin', status: 'active', lastActive: '30m ago' },
-];
+import { userService, type CreateUserInput } from '@/services/userService';
+import type { User } from '@/types';
 
 const roleOptions = [
   { value: 'student', label: 'Student' },
@@ -41,163 +27,240 @@ const roleOptions = [
   { value: 'admin', label: 'Admin' },
 ];
 
-const roleColors: Record<string, string> = {
-  student: 'bg-primary-container text-on-primary-container',
-  teacher: 'bg-success-container text-on-success-container',
-  admin: 'bg-primary-container text-on-primary-container',
+const roleBadgeColors: Record<string, string> = {
+  student: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+  teacher: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
+  admin: 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
+  super_admin: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
 };
 
 export default function UserManagementPage() {
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
-  const perPage = 5;
+  const [createForm, setCreateForm] = useState({ displayName: '', email: '', password: '', role: 'student' });
 
-  const { isLoading, isError, refetch } = useQuery({
-    queryKey: ['admin-users'],
-    queryFn: async () => { await new Promise(r => setTimeout(r, 500)); return null; },
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['admin-users', search, roleFilter, page],
+    queryFn: () => userService.getAll({ page, limit: 10, search: search || undefined, role: roleFilter !== 'all' ? roleFilter : undefined }),
   });
 
-  const filtered = users.filter(u => {
-    const matchesSearch = u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
-    const matchesRole = roleFilter === 'all' || u.role === roleFilter;
-    return matchesSearch && matchesRole;
+  const users = (data as unknown as { data?: User[]; pagination?: { total: number; page: number; limit: number } }) ?? {};
+  const items = (users as { data?: User[] }).data ?? [];
+  const pagination = (users as { pagination?: { total: number; page: number; limit: number } }).pagination ?? { total: 0, page: 1, limit: 10 };
+  const totalPages = Math.ceil(pagination.total / pagination.limit);
+
+  const createMutation = useMutation({
+    mutationFn: () =>
+      userService.create({
+        displayName: createForm.displayName,
+        email: createForm.email,
+        password: createForm.password,
+        role: createForm.role as CreateUserInput['role'],
+      }),
+    onSuccess: () => {
+      toast.success('User created');
+      setShowCreate(false);
+      setCreateForm({ displayName: '', email: '', password: '', role: 'student' });
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+    onError: (err: Error) => toast.error(err.message || 'Failed to create user'),
   });
 
-  const totalPages = Math.ceil(filtered.length / perPage);
-  const paged = filtered.slice((page - 1) * perPage, page * perPage);
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => userService.delete(id),
+    onSuccess: () => {
+      toast.success('User deleted');
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+    onError: (err: Error) => toast.error(err.message || 'Failed to delete user'),
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: (id: string) => userService.toggleActive(id),
+    onSuccess: () => {
+      toast.success('User status updated');
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+    onError: (err: Error) => toast.error(err.message || 'Failed to update user'),
+  });
 
   return (
     <>
       <SEOHead title="User Management" description="Manage system users" canonical="/admin/users" />
-      <DataFetchWrapper
-        data={isLoading || isError ? undefined : ({})}
-        isLoading={isLoading}
-        error={isError ? new Error('Failed to load users') : null}
-        onRetry={() => refetch()}
-        loadingType="table"
-      >
-        {() => (
-          <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit">
-          <div className="p-4 max-w-5xl mx-auto pb-20">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h1 className="text-headline-sm">User Management</h1>
-                <p className="text-sm text-on-surface-variant">{users.length} total users</p>
-              </div>
-              <Button onClick={() => setShowCreate(true)}>
-                <Icon name="add" size={16} className="mr-2" />
-                Add User
-              </Button>
-            </div>
+      <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-5xl mx-auto pb-20 space-y-6">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-headline-sm">User Management</h1>
+            <p className="text-sm text-on-surface-variant">{pagination.total} total users</p>
+          </div>
+          <Button onClick={() => setShowCreate(true)}>
+            <Icon name="add" size={16} className="mr-2" />
+            Add User
+          </Button>
+        </div>
 
-            <div className="flex items-center gap-3 mb-4">
-              <div className="relative flex-1">
-                <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
-                <Input placeholder="Search users..." className="pl-10" value={search} onChange={e => setSearch(e.target.value)} />
-              </div>
-              <OptionsSelect
-                options={[{ value: 'all', label: 'All Roles' }, ...roleOptions]}
-                value={roleFilter}
-                onChange={(v: string) => { setRoleFilter(v); setPage(1); }}
-                className="w-32"
-              />
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1">
+            <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
+            <Input placeholder="Search users..." className="pl-10" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
+          </div>
+          <OptionsSelect
+            options={[{ value: 'all', label: 'All Roles' }, ...roleOptions]}
+            value={roleFilter}
+            onChange={(v: string) => { setRoleFilter(v); setPage(1); }}
+            className="w-32"
+          />
+        </div>
 
-            {paged.length === 0 ? (
+        <DataFetchWrapper
+          data={data}
+          isLoading={isLoading}
+          error={isError ? error ?? new Error('Failed to load users') : null}
+          onRetry={() => refetch()}
+          loadingType="table"
+          emptyMessage="No users found"
+          emptyAction={
+            <Button onClick={() => setShowCreate(true)}>
+              <Icon name="add" size={16} className="mr-2" />
+              Create User
+            </Button>
+          }
+        >
+          {() => items.length > 0 ? (
+            <motion.div variants={listContainer} initial="hidden" animate="show">
               <Card>
-                <CardContent className="flex flex-col items-center gap-4 py-12">
-                  <Icon name="group" size={36} className="text-on-surface-variant/50" />
-                  <p className="font-medium">No users found</p>
-                  {users.length === 0 ? (
-                    <Button onClick={() => setShowCreate(true)}>
-                      <Icon name="add" size={16} className="mr-2" />
-                      Create User
-                    </Button>
-                  ) : (
-                    <Button variant="outline" onClick={() => { setSearch(''); setRoleFilter('all'); }}>
-                      <Icon name="close" size={16} className="mr-2" />
-                      Clear Filters
-                    </Button>
-                  )}
+                <CardContent className="p-0 divide-y divide-outline-variant">
+                  {items.map((u) => (
+                    <motion.div key={u.id} variants={listItem} className="flex items-center gap-3 p-3 hover:bg-surface-variant/40 transition-colors">
+                      <Avatar className="h-9 w-9">
+                        <AvatarFallback className="text-xs">{getInitials(u.displayName)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-body-md font-medium truncate">{u.displayName}</p>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${roleBadgeColors[u.role] ?? ''}`}>
+                            {u.role}
+                          </span>
+                          {!u.isActive && <Icon name="block" size={14} className="text-error" />}
+                        </div>
+                        <p className="text-xs text-on-surface-variant truncate">{u.email}</p>
+                      </div>
+                      <div className="text-right text-xs text-on-surface-variant flex-shrink-0 space-y-1">
+                        <p>{new Date(u.createdAt).toLocaleDateString()}</p>
+                        <Badge variant={u.isActive ? 'success' : 'secondary'} className="text-[10px]">
+                          {u.isActive ? 'Active' : 'Disabled'}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => toggleMutation.mutate(u.id)}
+                          title={u.isActive ? 'Disable user' : 'Enable user'}
+                        >
+                          <Icon name={u.isActive ? 'toggle_off' : 'toggle_on'} size={16} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-error"
+                          onClick={() => { if (confirm(`Delete ${u.displayName}?`)) deleteMutation.mutate(u.id); }}
+                          title="Delete user"
+                        >
+                          <Icon name="delete" size={16} />
+                        </Button>
+                      </div>
+                    </motion.div>
+                  ))}
                 </CardContent>
               </Card>
-            ) : (
-              <motion.div variants={listContainer} initial="hidden" animate="show">
-                <Card>
-                  <CardContent className="p-0 divide-y-outline-variant divide-y">
-                    {paged.map(u => (
-                      <motion.div key={u.id} variants={listItem} className="flex items-center gap-3 p-3 hover:bg-surface-variant/40 transition-colors">
-                        <Avatar className="h-9 w-9"><AvatarFallback className="text-xs">{getInitials(u.name)}</AvatarFallback></Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-body-md font-medium truncate">{u.name}</p>
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${roleColors[u.role]}`}>{u.role}</span>
-                            {u.status === 'disabled' && <Icon name="block" size={14} className="text-error" />}
-                          </div>
-                          <p className="text-xs text-on-surface-variant truncate">{u.email}</p>
-                        </div>
-                        <div className="text-right text-xs text-on-surface-variant flex-shrink-0">
-                          <p>{u.lastActive}</p>
-                          <Badge variant={u.status === 'active' ? 'success' : 'secondary'} className="text-[10px]">{u.status}</Badge>
-                        </div>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <Icon name="edit" size={14} />
-                        </Button>
-                      </motion.div>
-                    ))}
-                  </CardContent>
-                </Card>
 
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 mt-4">
-                    <Button variant="outline" size="icon" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
-                      <Icon name="chevron_left" size={18} />
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-4">
+                  <Button variant="outline" size="icon" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
+                    <Icon name="chevron_left" size={18} />
+                  </Button>
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <Button
+                      key={i + 1}
+                      variant={page === i + 1 ? 'default' : 'outline'}
+                      size="icon"
+                      onClick={() => setPage(i + 1)}
+                    >
+                      {i + 1}
                     </Button>
-                    {Array.from({ length: totalPages }, (_, i) => (
-                      <Button key={i} variant={page === i + 1 ? 'default' : 'outline'} size="icon" onClick={() => setPage(i + 1)}>
-                        {i + 1}
-                      </Button>
-                    ))}
-                    <Button variant="outline" size="icon" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
-                      <Icon name="chevron_right" size={18} />
-                    </Button>
-                  </div>
-                )}
-              </motion.div>
-            )}
-
-            <Dialog open={showCreate} onOpenChange={setShowCreate}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create User</DialogTitle>
-                  <DialogDescription>Add a new user to the system</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Full Name</Label>
-                    <Input placeholder="John Doe" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <Input type="email" placeholder="john@school.edu" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Role</Label>
-                    <OptionsSelect options={roleOptions} placeholder="Select role" />
-                  </div>
-                  <Button className="w-full" onClick={() => { toast.success('User created'); setShowCreate(false); }}>
-                    <Icon name="sync" size={16} className="mr-2 animate-spin" />
-                    Create User
+                  ))}
+                  <Button variant="outline" size="icon" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
+                    <Icon name="chevron_right" size={18} />
                   </Button>
                 </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-          </motion.div>
-        )}
-      </DataFetchWrapper>
+              )}
+            </motion.div>
+          ) : null}
+        </DataFetchWrapper>
+
+        <Dialog open={showCreate} onOpenChange={setShowCreate}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create User</DialogTitle>
+              <DialogDescription>Add a new user to the system</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Full Name</Label>
+                <Input
+                  placeholder="John Doe"
+                  value={createForm.displayName}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, displayName: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  placeholder="john@school.edu"
+                  value={createForm.email}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Password</Label>
+                <Input
+                  type="password"
+                  placeholder="Min 8 chars, upper+lower+number+special"
+                  value={createForm.password}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, password: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Role</Label>
+                <OptionsSelect
+                  options={roleOptions}
+                  value={createForm.role}
+                  onChange={(v: string) => setCreateForm((f) => ({ ...f, role: v }))}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
+              <Button
+                onClick={() => createMutation.mutate()}
+                disabled={!createForm.displayName || !createForm.email || !createForm.password || createMutation.isPending}
+              >
+                {createMutation.isPending ? (
+                  <><Icon name="sync" size={16} className="mr-2 animate-spin" />Creating...</>
+                ) : (
+                  <><Icon name="add" size={16} className="mr-2" />Create User</>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </motion.div>
     </>
   );
 }

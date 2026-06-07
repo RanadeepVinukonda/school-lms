@@ -1,5 +1,12 @@
 import api from './api';
-import type { ApiResponse, PaginatedResponse, PaginationParams, User, UserProfile } from '@/types';
+import type { ApiResponse, PaginatedResponse, PaginationParams, User, UserProfile, UserRole } from '@/types';
+
+export interface CreateUserInput {
+  displayName: string;
+  email: string;
+  password: string;
+  role: UserRole;
+}
 
 /** API service for user management (admin) and profile updates. */
 export const userService = {
@@ -16,7 +23,7 @@ export const userService = {
   },
 
   /** Create a new user (admin only). */
-  async create(data: Partial<User>) {
+  async create(data: CreateUserInput) {
     const response = await api.post<ApiResponse<User>>('/users', data);
     return response.data;
   },

@@ -14,6 +14,7 @@ router.post('/', authenticate, requireRole('admin'), validate(createUserSchema),
 router.get('/:userId', authenticate, requireRole('admin', 'teacher'), asyncHandler(userController.getUser));
 router.put('/:userId', authenticate, requireRole('admin'), validate(updateUserSchema), asyncHandler(userController.updateUser));
 router.delete('/:userId', authenticate, requireRole('admin'), asyncHandler(userController.deleteUser));
+router.patch('/:userId/toggle-active', authenticate, requireRole('admin'), asyncHandler(userController.toggleActive));
 router.put('/:userId/role', authenticate, requireRole('admin'), asyncHandler(userController.assignRole));
 
 export default router;

@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
 import * as userService from '../services/user.service';
-import { sendSuccess, sendCreated } from '../utils/response';
+import { sendSuccess, sendCreated, sendPaginated, buildPaginationMeta } from '../utils/response';
 
 export async function listUsers(req: Request, res: Response) {
-  const result = await userService.listUsers(req.query as any);
-  sendSuccess(res, result);
+  const { items, total, page, limit } = await userService.listUsers(req.query as any);
+  const pagination = buildPaginationMeta(total, page, limit);
+  sendPaginated(res, items, pagination);
 }
 
 export async function getUser(req: Request, res: Response) {
@@ -25,6 +26,11 @@ export async function updateUser(req: Request, res: Response) {
 export async function deleteUser(req: Request, res: Response) {
   await userService.deleteUserService(req.params.userId);
   sendSuccess(res, null, 'User deleted');
+}
+
+export async function toggleActive(req: Request, res: Response) {
+  const result = await userService.toggleActive(req.params.userId);
+  sendSuccess(res, result, 'User status toggled');
 }
 
 export async function assignRole(req: Request, res: Response) {
