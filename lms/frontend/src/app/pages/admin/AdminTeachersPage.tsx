@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Icon } from '@/components/ui/Icon';
 import {
   Dialog,
@@ -19,55 +18,53 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
-import { getUserByRole, getAllSubjects, getAllClasses } from '@/services/dataService';
-import type { Subject, ClassEntry, UserDoc } from '@/services/dataService';
+import { getUserByRole } from '@/services/dataService';
+import { userService } from '@/services/userService';
 
 interface TeacherForm {
   name: string;
   email: string;
-  teacherId: string;
-  subjectIds: string[];
+  password: string;
 }
 
-interface TeacherDisplay extends UserDoc {
-  teacherId: string;
-  subjectIds: string[];
-}
-
-const emptyForm: TeacherForm = { name: '', email: '', teacherId: '', subjectIds: [] };
+const emptyForm: TeacherForm = { name: '', email: '', password: '' };
 
 export default function AdminTeachersPage() {
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState<TeacherForm>(emptyForm);
-  const [teachers, setTeachers] = useState<TeacherDisplay[]>([]);
 
-  const { data: fetchedTeachers, isLoading, isError, refetch } = useQuery({
+  const { data: teachers = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-teachers'],
     queryFn: () => getUserByRole('teacher'),
   });
 
-  const { data: subjects = [] } = useQuery({
-    queryKey: ['admin-subjects-list'],
-    queryFn: getAllSubjects,
+  const createMutation = useMutation({
+    mutationFn: () =>
+      userService.create({
+        displayName: form.name,
+        email: form.email,
+        password: form.password,
+        role: 'teacher',
+      }),
+    onSuccess: () => {
+      toast.success(`Teacher ${form.name} created`);
+      setForm(emptyForm);
+      setShowAdd(false);
+      queryClient.invalidateQueries({ queryKey: ['admin-teachers'] });
+    },
+    onError: (err: Error) => toast.error(err.message || 'Failed to create teacher'),
   });
 
-  const { data: classes = [] } = useQuery({
-    queryKey: ['admin-classes-list'],
-    queryFn: getAllClasses,
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => userService.delete(id),
+    onSuccess: () => {
+      toast.success('Teacher deleted');
+      queryClient.invalidateQueries({ queryKey: ['admin-teachers'] });
+    },
+    onError: (err: Error) => toast.error(err.message || 'Failed to delete teacher'),
   });
-
-  useEffect(() => {
-    if (fetchedTeachers) {
-      setTeachers(
-        fetchedTeachers.map((u) => ({
-          ...u,
-          teacherId: u.teacherId || `TCH${u.id.slice(0, 4).toUpperCase()}`,
-          subjectIds: [] as string[],
-        }))
-      );
-    }
-  }, [fetchedTeachers]);
 
   const filtered = useMemo(
     () =>
@@ -77,42 +74,6 @@ export default function AdminTeachersPage() {
       }),
     [teachers, search]
   );
-
-  const toggleSubject = (id: string) => {
-    setForm((f) => ({
-      ...f,
-      subjectIds: f.subjectIds.includes(id)
-        ? f.subjectIds.filter((s) => s !== id)
-        : [...f.subjectIds, id],
-    }));
-  };
-
-  const handleAdd = () => {
-    if (!form.name || !form.email || !form.teacherId) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-    const newTeacher: TeacherDisplay = {
-      id: `t${Date.now()}`,
-      email: form.email,
-      displayName: form.name,
-      role: 'teacher',
-      teacherId: form.teacherId,
-      subjectIds: form.subjectIds,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setTeachers((prev) => [...prev, newTeacher]);
-    setForm(emptyForm);
-    setShowAdd(false);
-    toast.success(`Teacher ${form.name} added successfully`);
-  };
-
-  const handleDelete = (id: string, name: string) => {
-    setTeachers((prev) => prev.filter((t) => t.id !== id));
-    toast.error(`Teacher ${name} removed`);
-  };
 
   return (
     <>
@@ -187,45 +148,23 @@ export default function AdminTeachersPage() {
                         <th className="text-left text-label-sm font-medium text-on-surface-variant uppercase tracking-wider px-4 py-3">Name</th>
                         <th className="text-left text-label-sm font-medium text-on-surface-variant uppercase tracking-wider px-4 py-3">Email</th>
                         <th className="text-left text-label-sm font-medium text-on-surface-variant uppercase tracking-wider px-4 py-3">Teacher ID</th>
-                        <th className="text-left text-label-sm font-medium text-on-surface-variant uppercase tracking-wider px-4 py-3">Subjects</th>
-                        <th className="text-left text-label-sm font-medium text-on-surface-variant uppercase tracking-wider px-4 py-3">Class Teacher</th>
                         <th className="text-left text-label-sm font-medium text-on-surface-variant uppercase tracking-wider px-4 py-3">Status</th>
                         <th className="text-right text-label-sm font-medium text-on-surface-variant uppercase tracking-wider px-4 py-3">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y-outline-variant divide-y">
                       {filtered.map((teacher) => {
-                        const subjectNames = teacher.subjectIds
-                          .map((sid) => subjects.find((s: Subject) => s.id === sid)?.name)
-                          .filter(Boolean);
-                        const classTeacherOf = classes.find((c: ClassEntry) => c.teacherIds?.includes(teacher.id));
                         return (
                           <tr key={teacher.id} className="hover:bg-surface-variant/40 transition-colors">
                             <td className="px-4 py-3">
                               <span className="text-body-md font-medium">{teacher.displayName}</span>
                             </td>
                             <td className="px-4 py-3 text-body-md text-on-surface-variant">{teacher.email}</td>
-                            <td className="px-4 py-3 text-body-md text-on-surface-variant font-mono">{teacher.teacherId}</td>
+                            <td className="px-4 py-3 text-body-md text-on-surface-variant font-mono">{teacher.teacherId || '\u2014'}</td>
                             <td className="px-4 py-3">
-                              <div className="flex flex-wrap gap-1">
-                                {subjectNames.length > 0
-                                  ? subjectNames.map((sn) => (
-                                      <Badge key={sn} variant="secondary" className="text-[10px]">
-                                        {sn}
-                                      </Badge>
-                                    ))
-                                  : <span className="text-xs text-on-surface-variant">\u2014</span>}
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-body-md">
-                              {classTeacherOf ? (
-                                <Badge variant="info" className="text-[10px]">{classTeacherOf.name}</Badge>
-                              ) : (
-                                <span className="text-xs text-on-surface-variant">\u2014</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3">
-                              <Badge variant="success" className="text-[10px]">Active</Badge>
+                              <Badge variant={teacher.isActive === false ? 'destructive' : 'success'} className="text-[10px]">
+                                {teacher.isActive === false ? 'Inactive' : 'Active'}
+                              </Badge>
                             </td>
                             <td className="px-4 py-3 text-right">
                               <div className="flex items-center justify-end gap-1">
@@ -235,7 +174,8 @@ export default function AdminTeachersPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon-sm"
-                                  onClick={() => handleDelete(teacher.id, teacher.displayName)}
+                                  disabled={deleteMutation.isPending}
+                                  onClick={() => deleteMutation.mutate(teacher.id)}
                                 >
                                   <Icon name="delete" size={16} className="text-error" />
                                 </Button>
@@ -279,34 +219,27 @@ export default function AdminTeachersPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Teacher ID</Label>
+              <Label>Password</Label>
               <Input
-                placeholder="e.g. TCH003"
-                value={form.teacherId}
-                onChange={(e) => setForm((f) => ({ ...f, teacherId: e.target.value }))}
+                type="password"
+                placeholder="Temporary password"
+                value={form.password}
+                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
               />
             </div>
-            <div className="space-y-2">
-              <Label>Assigned Subjects</Label>
-              <div className="grid grid-cols-2 gap-2 border-outline-variant rounded-lg border p-3">
-                {subjects.map((subject: Subject) => (
-                  <label
-                    key={subject.id}
-                    className="flex items-center gap-2 text-sm cursor-pointer hover:bg-surface-variant/50 rounded px-2 py-1.5 transition-colors"
-                  >
-                    <Checkbox
-                      checked={form.subjectIds.includes(subject.id)}
-                      onCheckedChange={() => toggleSubject(subject.id)}
-                    />
-                    <Icon name={subject.icon || 'menu_book'} size={16} />
-                    <span>{subject.name}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <Button className="w-full" onClick={handleAdd}>
+            <Button
+              className="w-full"
+              disabled={createMutation.isPending}
+              onClick={() => {
+                if (!form.name || !form.email || !form.password) {
+                  toast.error('Please fill in name, email, and password');
+                  return;
+                }
+                createMutation.mutate();
+              }}
+            >
               <Icon name="person_add" size={16} className="mr-2" />
-              Add Teacher
+              {createMutation.isPending ? 'Creating...' : 'Add Teacher'}
             </Button>
           </div>
         </DialogContent>

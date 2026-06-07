@@ -54,7 +54,7 @@ import AdminTimetablePage from '@/app/pages/admin/AdminTimetablePage';
 import AdminSubjectsPage from '@/app/pages/admin/AdminSubjectsPage';
 import AdminSettingsPage from '@/app/pages/admin/AdminSettingsPage';
 import AdminProfileEditPage from '@/app/pages/admin/AdminProfileEditPage';
-import UserManagementPage from '@/app/pages/admin/UserManagementPage';
+
 
 import NotificationsPage from '@/app/pages/NotificationsPage';
 
@@ -141,7 +141,6 @@ export const router = createBrowserRouter([
       { path: ROUTES.ADMIN_CLASS_TIMETABLE(':id'), element: <AdminTimetablePage /> },
       { path: ROUTES.ADMIN_SUBJECTS, element: <AdminSubjectsPage /> },
       { path: ROUTES.ADMIN_SETTINGS, element: <AdminSettingsPage /> },
-      { path: ROUTES.ADMIN_USERS, element: <UserManagementPage /> },
       { path: '/admin/profile/edit', element: <AdminProfileEditPage /> },
     ],
   },

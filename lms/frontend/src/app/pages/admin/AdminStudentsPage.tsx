@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -20,30 +20,25 @@ import {
 } from '@/components/ui/dialog';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
 import { getUserByRole, getAllClasses } from '@/services/dataService';
-import type { ClassEntry, UserDoc } from '@/services/dataService';
+import { userService } from '@/services/userService';
+import type { ClassEntry } from '@/services/dataService';
 
 interface StudentForm {
   name: string;
   email: string;
-  studentId: string;
-  classId: string;
+  password: string;
 }
 
-interface StudentDisplay extends UserDoc {
-  studentId: string;
-  classId: string;
-}
-
-const emptyForm: StudentForm = { name: '', email: '', studentId: '', classId: '' };
+const emptyForm: StudentForm = { name: '', email: '', password: '' };
 
 export default function AdminStudentsPage() {
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [classFilter, setClassFilter] = useState('all');
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState<StudentForm>(emptyForm);
-  const [students, setStudents] = useState<StudentDisplay[]>([]);
 
-  const { data: fetchedStudents, isLoading, isError, refetch } = useQuery({
+  const { data: students = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-students'],
     queryFn: () => getUserByRole('student'),
   });
@@ -53,17 +48,31 @@ export default function AdminStudentsPage() {
     queryFn: getAllClasses,
   });
 
-  useEffect(() => {
-    if (fetchedStudents) {
-      setStudents(
-        fetchedStudents.map((u) => ({
-          ...u,
-          studentId: u.studentId || `STU${u.id.slice(0, 4).toUpperCase()}`,
-          classId: u.classId || '',
-        }))
-      );
-    }
-  }, [fetchedStudents]);
+  const createMutation = useMutation({
+    mutationFn: () =>
+      userService.create({
+        displayName: form.name,
+        email: form.email,
+        password: form.password,
+        role: 'student',
+      }),
+    onSuccess: () => {
+      toast.success(`Student ${form.name} created`);
+      setForm(emptyForm);
+      setShowAdd(false);
+      queryClient.invalidateQueries({ queryKey: ['admin-students'] });
+    },
+    onError: (err: Error) => toast.error(err.message || 'Failed to create student'),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => userService.delete(id),
+    onSuccess: () => {
+      toast.success('Student deleted');
+      queryClient.invalidateQueries({ queryKey: ['admin-students'] });
+    },
+    onError: (err: Error) => toast.error(err.message || 'Failed to delete student'),
+  });
 
   const classOptions = classes.map((c: ClassEntry) => ({ value: c.id, label: c.name }));
 
@@ -77,33 +86,6 @@ export default function AdminStudentsPage() {
       }),
     [students, search, classFilter]
   );
-
-  const handleAdd = () => {
-    if (!form.name || !form.email || !form.studentId || !form.classId) {
-      toast.error('Please fill in all fields');
-      return;
-    }
-    const newStudent: StudentDisplay = {
-      id: `s${Date.now()}`,
-      email: form.email,
-      displayName: form.name,
-      role: 'student',
-      studentId: form.studentId,
-      classId: form.classId,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setStudents((prev) => [...prev, newStudent]);
-    setForm(emptyForm);
-    setShowAdd(false);
-    toast.success(`Student ${form.name} added successfully`);
-  };
-
-  const handleDelete = (id: string, name: string) => {
-    setStudents((prev) => prev.filter((s) => s.id !== id));
-    toast.error(`Student ${name} removed`);
-  };
 
   return (
     <>
@@ -201,10 +183,12 @@ export default function AdminStudentsPage() {
                               <span className="text-body-md font-medium">{student.displayName}</span>
                             </td>
                             <td className="px-4 py-3 text-body-md text-on-surface-variant">{student.email}</td>
-                            <td className="px-4 py-3 text-body-md text-on-surface-variant font-mono">{student.studentId}</td>
+                            <td className="px-4 py-3 text-body-md text-on-surface-variant font-mono">{student.studentId || '\u2014'}</td>
                             <td className="px-4 py-3 text-body-md">{className}</td>
                             <td className="px-4 py-3">
-                              <Badge variant="success" className="text-[10px]">Active</Badge>
+                              <Badge variant={student.isActive === false ? 'destructive' : 'success'} className="text-[10px]">
+                                {student.isActive === false ? 'Inactive' : 'Active'}
+                              </Badge>
                             </td>
                             <td className="px-4 py-3 text-right">
                               <div className="flex items-center justify-end gap-1">
@@ -214,7 +198,8 @@ export default function AdminStudentsPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon-sm"
-                                  onClick={() => handleDelete(student.id, student.displayName)}
+                                  disabled={deleteMutation.isPending}
+                                  onClick={() => deleteMutation.mutate(student.id)}
                                 >
                                   <Icon name="delete" size={16} className="text-error" />
                                 </Button>
@@ -258,25 +243,27 @@ export default function AdminStudentsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Student ID</Label>
+              <Label>Password</Label>
               <Input
-                placeholder="e.g. STU004"
-                value={form.studentId}
-                onChange={(e) => setForm((f) => ({ ...f, studentId: e.target.value }))}
+                type="password"
+                placeholder="Temporary password"
+                value={form.password}
+                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
               />
             </div>
-            <div className="space-y-2">
-              <Label>Class</Label>
-              <OptionsSelect
-                options={classOptions}
-                placeholder="Select class"
-                value={form.classId}
-                onChange={(v: string) => setForm((f) => ({ ...f, classId: v }))}
-              />
-            </div>
-            <Button className="w-full" onClick={handleAdd}>
+            <Button
+              className="w-full"
+              disabled={createMutation.isPending}
+              onClick={() => {
+                if (!form.name || !form.email || !form.password) {
+                  toast.error('Please fill in name, email, and password');
+                  return;
+                }
+                createMutation.mutate();
+              }}
+            >
               <Icon name="person_add" size={16} className="mr-2" />
-              Add Student
+              {createMutation.isPending ? 'Creating...' : 'Add Student'}
             </Button>
           </div>
         </DialogContent>
