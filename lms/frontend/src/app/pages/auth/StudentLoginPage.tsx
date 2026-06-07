@@ -114,16 +114,6 @@ export default function StudentLoginPage() {
           variants={pageTransition}
           className="relative z-10 w-full max-w-md"
         >
-          <div className="flex justify-center mb-6">
-            <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center shadow-lg shadow-primary/10">
-              <img
-                src="/genesis_icon.png"
-                alt="Genesis"
-                className="h-10 w-auto object-contain"
-              />
-            </div>
-          </div>
-
           <Card className={cn(
             'border-0 shadow-2xl shadow-primary/5 backdrop-blur-sm',
             'bg-surface/95',
