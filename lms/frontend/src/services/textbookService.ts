@@ -1,9 +1,10 @@
 import { collection, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, query, where, deleteDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/firebase/config';
-import type { Textbook, Chapter, Concept, GeneratedQuestion, GeneratedAssignment, CachedVideo, ConceptProgress } from '@/types/textbook';
+import type { Textbook, Chapter, Concept, GeneratedQuestion, GeneratedAssignment, CachedVideo, ConceptProgress, ConceptRelease } from '@/types/textbook';
 
 const TEXTBOOKS_COLLECTION = 'textbooks';
 const CONCEPT_PROGRESS_COLLECTION = 'conceptProgress';
+const CONCEPT_RELEASES_COLLECTION = 'conceptReleases';
 
 /** Create a new textbook document in Firestore. Returns the new document id. */
 export async function createTextbook(data: Omit<Textbook, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
@@ -104,4 +105,47 @@ export async function getAllConceptProgress(userId: string): Promise<ConceptProg
   const q = query(collection(db, CONCEPT_PROGRESS_COLLECTION), where('userId', '==', userId));
   const snap = await getDocs(q);
   return snap.docs.map((d) => d.data() as ConceptProgress);
+}
+
+/** Fetch all concept releases for a textbook. */
+export async function getAllConceptReleases(textbookId: string): Promise<ConceptRelease[]> {
+  const q = query(
+    collection(db, CONCEPT_RELEASES_COLLECTION),
+    where('textbookId', '==', textbookId),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as ConceptRelease);
+}
+
+/** Fetch the release status for a concept. Returns default (all false) if not found. */
+export async function getConceptRelease(textbookId: string, conceptId: string): Promise<ConceptRelease | null> {
+  const docRef = doc(db, CONCEPT_RELEASES_COLLECTION, `${textbookId}_${conceptId}`);
+  const snap = await getDoc(docRef);
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() } as ConceptRelease;
+}
+
+/** Set or update concept release status (which content is pushed to students). */
+export async function setConceptRelease(
+  textbookId: string,
+  conceptId: string,
+  chapterId: string,
+  teacherId: string,
+  data: Partial<Pick<ConceptRelease, 'questionBankReleased' | 'assignmentsReleased'>>,
+): Promise<void> {
+  const docRef = doc(db, CONCEPT_RELEASES_COLLECTION, `${textbookId}_${conceptId}`);
+  const snap = await getDoc(docRef);
+  const payload = {
+    textbookId,
+    chapterId,
+    conceptId,
+    teacherId,
+    ...data,
+    updatedAt: Timestamp.now().toDate().toISOString(),
+  };
+  if (snap.exists()) {
+    await updateDoc(docRef, payload);
+  } else {
+    await setDoc(docRef, { ...payload, questionBankReleased: false, assignmentsReleased: false, ...data });
+  }
 }

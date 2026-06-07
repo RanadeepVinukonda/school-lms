@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -13,95 +13,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icon } from '@/components/ui/Icon';
 import { pageTransition } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
-import { getTextbook, getConceptProgress, saveConceptProgress } from '@/services/textbookService';
+import { getTextbook, getConceptProgress, saveConceptProgress, getConceptRelease } from '@/services/textbookService';
 import { useAuthStore } from '@/store/authStore';
-import type { GeneratedQuestion, CachedVideo } from '@/types/textbook';
-
-type PlayerState = { player: YT.Player | null; ready: boolean };
-
-function YouTubePlayer({
-  video,
-  initialTime,
-  onPositionChange,
-  onComplete,
-}: {
-  video: CachedVideo;
-  initialTime: number;
-  onPositionChange: (seconds: number) => void;
-  onComplete: () => void;
-}) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<YT.Player | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    const tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    const first = document.getElementsByTagName('script')[0];
-    first.parentNode?.insertBefore(tag, first);
-
-    let checkInterval: ReturnType<typeof setInterval>;
-
-    const initPlayer = () => {
-      if (!containerRef.current || playerRef.current) return;
-      playerRef.current = new YT.Player(containerRef.current, {
-        videoId: video.youtubeId,
-        playerVars: { start: Math.floor(initialTime), rel: 0 },
-        events: {
-          onReady: () => {
-            setLoaded(true);
-            intervalRef.current = setInterval(() => {
-              try {
-                const t = playerRef.current?.getCurrentTime();
-                if (typeof t === 'number') onPositionChange(t);
-              } catch { /* ignore */ }
-            }, 5000);
-          },
-          onStateChange: (e: YT.OnStateChangeEvent) => {
-            if (e.data === YT.PlayerState.ENDED) {
-              onComplete();
-            }
-          },
-        },
-      });
-    };
-
-    if (typeof YT !== 'undefined' && YT.Player) {
-      initPlayer();
-    } else {
-      checkInterval = setInterval(() => {
-        if (typeof YT !== 'undefined' && YT.Player) {
-          clearInterval(checkInterval);
-          initPlayer();
-        }
-      }, 200);
-    }
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (checkInterval) clearInterval(checkInterval);
-      if (playerRef.current) {
-        try {
-          const t = playerRef.current.getCurrentTime();
-          if (typeof t === 'number') onPositionChange(t);
-        } catch { /* ignore */ }
-        playerRef.current.destroy();
-        playerRef.current = null;
-      }
-    };
-  }, [video.youtubeId]);
-
-  return (
-    <div className="aspect-video rounded-xl overflow-hidden bg-muted" ref={containerRef}>
-      {!loaded && (
-        <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
-          Loading player...
-        </div>
-      )}
-    </div>
-  );
-}
+import type { GeneratedQuestion } from '@/types/textbook';
 
 type QuestionType = GeneratedQuestion['type'];
 
@@ -225,7 +139,6 @@ export default function StudentConceptPage() {
 
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
-  const [videoPos, setVideoPos] = useState(0);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-concept', textbookId, conceptId, userId],
@@ -235,8 +148,11 @@ export default function StudentConceptPage() {
       for (const ch of fb.chapters) {
         const c = ch.concepts.find((co) => co.id === conceptId);
         if (c) {
-          const progress = userId ? await getConceptProgress(userId, conceptId!) : null;
-          return { concept: c, chapter: ch, textbook: fb, progress };
+          const [progress, release] = await Promise.all([
+            userId ? getConceptProgress(userId, conceptId!) : null,
+            getConceptRelease(textbookId, conceptId!),
+          ]);
+          return { concept: c, chapter: ch, textbook: fb, progress, release };
         }
       }
       throw new Error('Concept not found');
@@ -251,24 +167,9 @@ export default function StudentConceptPage() {
 
   const concept = data?.concept;
   const progress = data?.progress;
-  const videoPosition = progress?.videoPosition ?? 0;
-  const videoCompleted = progress?.videoCompleted ?? false;
+  const release = data?.release;
+  const questionBankReleased = release?.questionBankReleased ?? false;
   const practiceCompleted = progress?.practiceCompleted ?? false;
-  const hasVideos = (concept?.videos?.length ?? 0) > 0;
-  const firstVideo = concept?.videos?.[0];
-
-  const handleVideoPosition = useCallback(
-    (seconds: number) => {
-      setVideoPos(seconds);
-      saveMutation.mutate({ videoPosition: Math.floor(seconds) });
-    },
-    [conceptId, userId],
-  );
-
-  const handleVideoComplete = useCallback(() => {
-    saveMutation.mutate({ videoCompleted: true, lastAccessed: new Date().toISOString() });
-    setVideoPos(0);
-  }, [conceptId, userId]);
 
   const handleAnswer = useCallback((qId: string, value: string) => {
     setAnswers((prev) => ({ ...prev, [qId]: value }));
@@ -323,7 +224,6 @@ export default function StudentConceptPage() {
                 <p className="text-muted-foreground mt-1">{d.concept.summary}</p>
                 {progress && (
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {videoCompleted && <Badge variant="outline" className="text-[10px] text-green-600 dark:text-green-400 border-green-300 dark:border-green-700"><Icon name="check_circle" size={12} className="mr-1" />Video watched</Badge>}
                     {practiceCompleted && <Badge variant="outline" className="text-[10px] text-green-600 dark:text-green-400 border-green-300 dark:border-green-700"><Icon name="check_circle" size={12} className="mr-1" />Practice done</Badge>}
                     {d.concept.questionBank.length > 0 && practiceCompleted && <Badge variant="outline" className="text-[10px] text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-700"><Icon name="bolt" size={12} className="mr-1" />Quiz ready</Badge>}
                   </div>
@@ -334,10 +234,6 @@ export default function StudentConceptPage() {
                 <TabsList className="w-full">
                   <TabsTrigger value="learn" className="flex-1">
                     <Icon name="menu_book" size={14} className="mr-1.5" />Learn
-                  </TabsTrigger>
-                  <TabsTrigger value="videos" className="flex-1">
-                    <Icon name="smart_display" size={14} className="mr-1.5" />Videos
-                    {videoCompleted && <Icon name="check_circle" size={12} className="ml-1 text-green-500" />}
                   </TabsTrigger>
                   <TabsTrigger value="practice" className="flex-1">
                     <Icon name="quiz" size={14} className="mr-1.5" />Practice
@@ -396,74 +292,20 @@ export default function StudentConceptPage() {
                     </Card>
                   )}
 
-                  <div className="flex gap-3">
-                    {hasVideos && (
-                      <Button variant="outline" className="flex-1" onClick={() => {
-                        const tab = document.querySelector('[data-value="videos"]') as HTMLElement;
-                        tab?.click();
-                      }}>
-                        <Icon name="smart_display" size={16} className="mr-2" />
-                        {videoCompleted ? 'Re-watch Video' : 'Watch Video'}
-                      </Button>
-                    )}
-                    {d.concept.questionBank.length > 0 && (
-                      <Button variant="outline" className="flex-1" onClick={() => {
-                        const tab = document.querySelector('[data-value="practice"]') as HTMLElement;
-                        tab?.click();
-                      }}>
-                        <Icon name="quiz" size={16} className="mr-2" />
-                        Practice ({d.concept.questionBank.length})
-                      </Button>
-                    )}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="videos" className="mt-4 space-y-4">
-                  {firstVideo ? (
-                    <Card>
-                      <CardContent className="p-4">
-                        <YouTubePlayer
-                          video={firstVideo}
-                          initialTime={videoPosition}
-                          onPositionChange={handleVideoPosition}
-                          onComplete={handleVideoComplete}
-                        />
-                        <div className="mt-3 flex items-start justify-between gap-3">
-                          <div>
-                            <h3 className="font-medium text-sm">{firstVideo.title}</h3>
-                            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                              <span>{firstVideo.channelName}</span>
-                              <span>•</span>
-                              <span>{firstVideo.duration}</span>
-                            </div>
-                          </div>
-                          {!videoCompleted && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="shrink-0 gap-1"
-                              onClick={() => handleVideoComplete()}
-                            >
-                              <Icon name="check_circle" size={14} />
-                              Mark as Watched
-                            </Button>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    <Card>
-                      <CardContent className="p-12 text-center">
-                        <Icon name="smart_display" size={48} className="text-muted-foreground/30 mx-auto mb-3" />
-                        <p className="text-muted-foreground">No videos found for this concept.</p>
-                      </CardContent>
-                    </Card>
+                  {d.concept.questionBank.length > 0 && (
+                    <Button variant="outline" className="flex-1" onClick={() => {
+                      const tab = document.querySelector('[data-value="practice"]') as HTMLElement;
+                      tab?.click();
+                    }}>
+                      <Icon name="quiz" size={16} className="mr-2" />
+                      Practice ({d.concept.questionBank.length})
+                    </Button>
                   )}
                 </TabsContent>
 
                 <TabsContent value="practice" className="mt-4 space-y-4">
-                  {!videoCompleted && hasVideos ? (
-                    <UnlockOverlay icon="lock" message="Watch the video first to unlock practice questions." />
+                  {!questionBankReleased ? (
+                    <UnlockOverlay icon="lock" message="Practice questions are not yet released by your teacher. They will appear here once the teacher finishes explaining the concept." />
                   ) : d.concept.questionBank.length > 0 ? (
                     <>
                       <div className="flex items-center justify-between">
@@ -545,8 +387,8 @@ export default function StudentConceptPage() {
                 </TabsContent>
 
                 <TabsContent value="quiz" className="mt-4">
-                  {hasVideos && !videoCompleted ? (
-                    <UnlockOverlay icon="lock" message="Watch the video and complete practice to unlock the quiz." />
+                  {!questionBankReleased ? (
+                    <UnlockOverlay icon="lock" message="Questions are not yet released by your teacher. Check back later." />
                   ) : !practiceCompleted && d.concept.questionBank.length > 0 ? (
                     <UnlockOverlay icon="lock" message="Complete the practice questions (60%+) to unlock the adaptive quiz." />
                   ) : (

@@ -40,6 +40,8 @@ export const ROUTES = {
   TEACHER_TEXTBOOKS: '/teacher/textbooks',
   TEACHER_TEXTBOOK: (id: string) => `/teacher/textbooks/${id}`,
   TEACHER_TEXTBOOK_UPLOAD: '/teacher/textbooks/upload',
+  TEACHER_CONCEPT: (textbookId: string, chapterId: string, conceptId: string) =>
+    `/teacher/textbooks/${textbookId}/chapters/${chapterId}/concepts/${conceptId}`,
   TEACHER_PROFILE: '/teacher/profile',
   TEACHER_PROFILE_EDIT: '/teacher/profile/edit',
 

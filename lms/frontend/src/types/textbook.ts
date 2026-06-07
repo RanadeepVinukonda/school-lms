@@ -76,6 +76,17 @@ export interface GeneratedAssignment {
   type: 'homework' | 'worksheet' | 'challenge' | 'project';
 }
 
+export interface ConceptRelease {
+  id: string;
+  textbookId: string;
+  chapterId: string;
+  conceptId: string;
+  teacherId: string;
+  questionBankReleased: boolean;
+  assignmentsReleased: boolean;
+  updatedAt: string;
+}
+
 export interface ConceptProgress {
   userId: string;
   conceptId: string;

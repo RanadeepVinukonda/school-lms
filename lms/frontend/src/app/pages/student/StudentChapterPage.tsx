@@ -6,12 +6,12 @@ import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
-import { getTextbook } from '@/services/textbookService';
+import { getTextbook, getAllConceptReleases } from '@/services/textbookService';
 import { getSubject } from '@/services/dataService';
+import type { ConceptRelease } from '@/types/textbook';
 
 export default function StudentChapterPage() {
   const { textbookId, chapterId } = useParams<{ textbookId: string; chapterId: string }>();
@@ -19,10 +19,14 @@ export default function StudentChapterPage() {
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-chapter', textbookId],
     queryFn: async () => {
-      const fb = await getTextbook(textbookId!);
+      const [fb, releases] = await Promise.all([
+        getTextbook(textbookId!),
+        getAllConceptReleases(textbookId!),
+      ]);
       if (!fb) throw new Error('Textbook not found');
       const subject = await getSubject(fb.subjectId);
-      return { textbook: fb, subject };
+      const releaseMap = new Map(releases.map((r) => [r.conceptId, r]));
+      return { textbook: fb, subject, releaseMap };
     },
     enabled: !!textbookId,
   });
@@ -31,8 +35,25 @@ export default function StudentChapterPage() {
     if (!data) return null;
     const ch = data.textbook.chapters.find((c) => c.id === chapterId || c.id === `ch_${textbookId}_${chapterId}`);
     if (!ch) return null;
-    return { chapter: ch, subject: data.subject };
+    return { chapter: ch, subject: data.subject, releaseMap: data.releaseMap };
   }, [data, chapterId, textbookId]);
+
+  function getReleaseBadge(release: ConceptRelease | undefined) {
+    if (!release) {
+      return <Badge variant="outline" className="text-[10px] text-muted-foreground">Pending</Badge>;
+    }
+    const released: string[] = [];
+    if (release.questionBankReleased) released.push('Questions');
+    if (release.assignmentsReleased) released.push('Assignments');
+    if (released.length === 0) {
+      return <Badge variant="outline" className="text-[10px] text-muted-foreground">Pending</Badge>;
+    }
+    return (
+      <Badge variant="outline" className="text-[10px] text-green-600 dark:text-green-400 border-green-300 dark:border-green-700">
+        {released.join(' + ')} released
+      </Badge>
+    );
+  }
 
   return (
     <>
@@ -51,7 +72,7 @@ export default function StudentChapterPage() {
           loadingType="detail"
           emptyMessage="Chapter not found"
         >
-          {(d) => { const ch = d.chapter; const subj = d.subject; return (
+          {(d) => { const ch = d.chapter; const subj = d.subject; const releaseMap = d.releaseMap; return (
             <div className="space-y-6">
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -90,10 +111,7 @@ export default function StudentChapterPage() {
                                       <Icon name="quiz" size={12} className="inline mr-0.5" />
                                       {concept.questionBank?.length || 0} questions
                                     </span>
-                                    <span className="text-xs text-muted-foreground">
-                                      <Icon name="smart_display" size={12} className="inline mr-0.5" />
-                                      {concept.videos?.length || 0} videos
-                                    </span>
+                                    {getReleaseBadge(releaseMap.get(concept.id))}
                                   </div>
                                 </div>
                                 <Icon name="chevron_right" size={18} className="text-muted-foreground/50 flex-shrink-0 mt-2" />
