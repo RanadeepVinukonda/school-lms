@@ -124,14 +124,15 @@ async function runProcessing(taskId: string) {
         addLog(`Generating content, questions & assignments for: ${cp.title}`);
 
         // Consolidated AI call: content + questions + assignments
-        let summary = cp.description || `Study of ${cp.title}`;
-        let notes = `Detailed notes for ${cp.title}. This concept covers key principles and applications.`;
+        const conceptTitle = cp.title || cp.description || `Concept ${coi + 1}`;
+        let summary = cp.description || `Study of ${conceptTitle}`;
+        let notes = `Detailed notes for ${conceptTitle}. This concept covers key principles and applications.`;
         let learningObjectives: string[] = [
-          `Understand ${cp.title}`,
-          `Apply ${cp.title} concepts`,
-          `Analyze problems involving ${cp.title}`,
+          `Understand ${conceptTitle}`,
+          `Apply ${conceptTitle} concepts`,
+          `Analyze problems involving ${conceptTitle}`,
         ];
-        let keywords: string[] = [cp.title.toLowerCase().replace(/\s+/g, '_')];
+        let keywords: string[] = [conceptTitle.toLowerCase().replace(/\s+/g, '_')];
         let difficulty: Concept['difficulty'] = 'intermediate';
         let prerequisites: string[] = [];
         let estimatedMinutes = 15;
@@ -139,7 +140,7 @@ async function runProcessing(taskId: string) {
         let assignments: Concept['assignments'] = [];
 
         try {
-          const result = await generateConceptContentAndQuestions(cp.title, ch.title, task.subjectName, text);
+          const result = await generateConceptContentAndQuestions(conceptTitle, ch.title, task.subjectName, text);
           summary = result.summary;
           notes = result.notes;
           learningObjectives = result.learningObjectives;
@@ -149,7 +150,7 @@ async function runProcessing(taskId: string) {
           estimatedMinutes = result.estimatedMinutes;
 
           questionBank = (result.questionBank || []).map((q, i) => ({
-            id: `${cp.title.replace(/\s+/g, '_')}_q_${i}`,
+            id: `${conceptTitle.replace(/\s+/g, '_')}_q_${i}`,
             type: q.type as GeneratedQuestion['type'],
             difficulty: q.difficulty as GeneratedQuestion['difficulty'],
             category: q.category as GeneratedQuestion['category'],
@@ -161,7 +162,7 @@ async function runProcessing(taskId: string) {
           }));
 
           assignments = (result.assignments || []).map((a, i) => ({
-            id: `${cp.title.replace(/\s+/g, '_')}_a_${i}`,
+            id: `${conceptTitle.replace(/\s+/g, '_')}_a_${i}`,
             title: a.title,
             instructions: a.instructions,
             marks: a.marks || 10,
@@ -189,7 +190,7 @@ async function runProcessing(taskId: string) {
           id: `concept_${id}_ch${ci}_co${coi}`,
           chapterId: `ch_${id}_${ci}`,
           textbookId: id,
-          title: cp.title,
+          title: conceptTitle,
           summary,
           notes,
           learningObjectives,
