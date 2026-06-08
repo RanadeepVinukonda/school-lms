@@ -39,12 +39,12 @@ export default function StudentProfilePage() {
       const firestoreUser = await getUser(authUser.id);
       if (!firestoreUser) throw new Error('User not found in Firestore');
       const user = firestoreUser as typeof firestoreUser & { studentId?: string; classId?: string };
-      const studentId = user.studentId ?? user.id;
+      const authId = user.id;
 
       const [allSubjects, enrollments, grades] = await Promise.all([
         getAllSubjects(),
-        getEnrollmentsByStudent(studentId),
-        getGradesByStudent(studentId),
+        getEnrollmentsByStudent(authId),
+        getGradesByStudent(authId),
       ]);
 
       const subjectMap = new Map(allSubjects.map((s) => [s.id, s]));

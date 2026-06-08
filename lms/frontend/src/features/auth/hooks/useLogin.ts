@@ -45,14 +45,24 @@ export function useLogin() {
         role,
         isActive: (userData.isActive as boolean) ?? true,
         avatar: (userData.avatar as string) || firebaseUser.photoURL || undefined,
+        studentId: userData.studentId as string | undefined,
+        classId: userData.classId as string | undefined,
+        classIds: userData.classIds as string[] | undefined,
+        teacherId: userData.teacherId as string | undefined,
+        firstName: userData.firstName as string | undefined,
+        lastName: userData.lastName as string | undefined,
+        phone: userData.phone as string | undefined,
+        dateOfBirth: userData.dateOfBirth as string | undefined,
+        bio: userData.bio as string | undefined,
+        address: userData.address as string | undefined,
         createdAt: (userData.createdAt as string) || firebaseUser.metadata.creationTime || new Date().toISOString(),
         updatedAt: (userData.updatedAt as string) || new Date().toISOString(),
         token,
       };
     },
-    onSuccess: ({ uid, email, displayName, role, isActive, avatar, createdAt, updatedAt, token }) => {
+    onSuccess: ({ uid, email, displayName, role, isActive, avatar, studentId, classId, classIds, teacherId, firstName, lastName, phone, dateOfBirth, bio, address, createdAt, updatedAt, token }) => {
       setToken(token);
-      setUser({ id: uid, email, displayName, role, isActive, avatar, createdAt, updatedAt });
+      setUser({ id: uid, email, displayName, role, isActive, avatar, studentId, classId, classIds, teacherId, firstName, lastName, phone, dateOfBirth, bio, address, createdAt, updatedAt });
       toast.success('Welcome back!');
       navigate(setupDashboard(role), { replace: true });
     },
