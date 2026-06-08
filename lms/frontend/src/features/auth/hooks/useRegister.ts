@@ -53,6 +53,7 @@ export function useRegister() {
           avatar: d.avatar as string | undefined,
           studentId: d.studentId as string | undefined,
           classId: d.classId as string | undefined,
+          tutorialSeen: d.tutorialSeen as boolean | undefined,
           classIds: d.classIds as string[] | undefined,
           teacherId: d.teacherId as string | undefined,
           firstName: d.firstName as string | undefined,

@@ -16,6 +16,7 @@ export interface UserProfile {
   studentId?: string;
   teacherId?: string;
   classId?: string;
+  tutorialSeen?: boolean;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

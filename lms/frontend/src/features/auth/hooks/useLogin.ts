@@ -47,6 +47,7 @@ export function useLogin() {
         avatar: (userData.avatar as string) || firebaseUser.photoURL || undefined,
         studentId: userData.studentId as string | undefined,
         classId: userData.classId as string | undefined,
+        tutorialSeen: userData.tutorialSeen as boolean | undefined,
         classIds: userData.classIds as string[] | undefined,
         teacherId: userData.teacherId as string | undefined,
         firstName: userData.firstName as string | undefined,
@@ -60,9 +61,9 @@ export function useLogin() {
         token,
       };
     },
-    onSuccess: ({ uid, email, displayName, role, isActive, avatar, studentId, classId, classIds, teacherId, firstName, lastName, phone, dateOfBirth, bio, address, createdAt, updatedAt, token }) => {
+    onSuccess: ({ uid, email, displayName, role, isActive, avatar, studentId, classId, classIds, teacherId, firstName, lastName, phone, dateOfBirth, bio, address, tutorialSeen, createdAt, updatedAt, token }) => {
       setToken(token);
-      setUser({ id: uid, email, displayName, role, isActive, avatar, studentId, classId, classIds, teacherId, firstName, lastName, phone, dateOfBirth, bio, address, createdAt, updatedAt });
+      setUser({ id: uid, email, displayName, role, isActive, avatar, studentId, classId, classIds, teacherId, firstName, lastName, phone, dateOfBirth, bio, address, tutorialSeen, createdAt, updatedAt });
       toast.success('Welcome back!');
       navigate(setupDashboard(role), { replace: true });
     },
