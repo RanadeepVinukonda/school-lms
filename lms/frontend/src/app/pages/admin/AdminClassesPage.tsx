@@ -19,6 +19,8 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '@/firebase/config';
 import { getAllClasses, getAllUsers } from '@/services/dataService';
 import type { ClassEntry, UserDoc } from '@/services/dataService';
 
@@ -61,24 +63,33 @@ export default function AdminClassesPage() {
     [classes, search]
   );
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!form.name || !form.code || !form.grade) {
       toast.error('Please fill in all fields');
       return;
     }
-    const newClass: ClassEntry = {
-      id: `c${Date.now()}`,
-      name: form.name,
-      code: form.code,
-      grade: form.grade,
-      teacherIds: [],
-      subjectIds: [],
-      studentCount: 0,
-    };
-    setClasses((prev) => [...prev, newClass]);
-    setForm(emptyForm);
-    setShowCreate(false);
-    toast.success(`Class ${form.name} created`);
+    try {
+      await addDoc(collection(db, 'classes'), {
+        name: form.name,
+        code: form.code,
+        grade: form.grade,
+        section: '',
+        academicYear: new Date().getFullYear().toString(),
+        teacherIds: [],
+        subjectIds: [],
+        studentCount: 0,
+        teacherCount: 0,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      setForm(emptyForm);
+      setShowCreate(false);
+      toast.success(`Class ${form.name} created`);
+      refetch();
+    } catch {
+      toast.error('Failed to create class');
+    }
   };
 
   const handleDelete = (id: string, name: string) => {
