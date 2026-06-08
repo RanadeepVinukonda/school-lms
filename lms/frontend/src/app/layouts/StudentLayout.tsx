@@ -51,7 +51,7 @@ export default function StudentLayout() {
       if (snap.exists() && snap.data().tutorialSeen === false) {
         setTutorialOpen(true);
       }
-    });
+    }).catch(() => {});
   }, [user]);
 
   return (

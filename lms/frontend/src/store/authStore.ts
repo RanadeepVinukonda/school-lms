@@ -77,7 +77,8 @@ export const useAuthStore = create<AuthStore>()(
                 set({ user: null, isAuthenticated: false, isLoading: false });
               }
             } catch (err) {
-              set({ user: null, isAuthenticated: false, isLoading: false });
+              await firebaseSignOut(auth);
+              set({ user: null, token: null, isAuthenticated: false, isLoading: false });
             }
           } else {
             set({ user: null, isAuthenticated: false, isLoading: false });
