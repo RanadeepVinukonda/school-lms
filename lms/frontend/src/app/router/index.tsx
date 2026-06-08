@@ -53,6 +53,8 @@ import AdminSubjectsPage from '@/app/pages/admin/AdminSubjectsPage';
 import AdminSettingsPage from '@/app/pages/admin/AdminSettingsPage';
 import AdminProfileEditPage from '@/app/pages/admin/AdminProfileEditPage';
 
+import RollNumberEntryPage from '@/app/pages/student/RollNumberEntryPage';
+import ClassSelectionPage from '@/app/pages/teacher/ClassSelectionPage';
 
 import NotificationsPage from '@/app/pages/NotificationsPage';
 
@@ -74,8 +76,17 @@ export const router = createBrowserRouter([
   },
 
   {
+    element: <ProtectedRoute><RollNumberEntryPage /></ProtectedRoute>,
+    path: ROUTES.STUDENT_ROLL_NUMBER,
+  },
+  {
+    element: <ProtectedRoute><ClassSelectionPage /></ProtectedRoute>,
+    path: ROUTES.TEACHER_SELECT_CLASS,
+  },
+
+  {
     element: (
-      <ProtectedRoute roles={['student']}>
+      <ProtectedRoute roles={['student']} checkSetup>
         <StudentLayout />
       </ProtectedRoute>
     ),
@@ -101,7 +112,7 @@ export const router = createBrowserRouter([
 
   {
     element: (
-      <ProtectedRoute roles={['teacher']}>
+      <ProtectedRoute roles={['teacher']} checkSetup>
         <TeacherLayout />
       </ProtectedRoute>
     ),

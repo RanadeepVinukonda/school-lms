@@ -1,12 +1,14 @@
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { doc, getDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { loginUser } from '@/firebase/auth';
+import { db } from '@/firebase/config';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
 import type { LoginInput, ApiError, UserRole } from '@/types';
 
-function roleDashboard(role: UserRole): string {
+function setupDashboard(role: UserRole): string {
   switch (role) {
     case 'admin':
     case 'super_admin':
@@ -25,25 +27,34 @@ export function useLogin() {
 
   return useMutation({
     mutationFn: async (data: LoginInput) => {
-      const user = await loginUser(data.email, data.password);
-      const token = await user.getIdToken();
-      return { user, token };
-    },
-    onSuccess: async ({ user, token }) => {
-      setToken(token);
-      const role: UserRole = 'student';
-      setUser({
-        id: user.uid,
-        email: user.email || '',
-        displayName: user.displayName || user.email?.split('@')[0] || 'User',
+      const firebaseUser = await loginUser(data.email, data.password);
+      const token = await firebaseUser.getIdToken();
+
+      const docRef = doc(db, 'users', firebaseUser.uid);
+      const snap = await getDoc(docRef);
+      if (!snap.exists()) {
+        throw new Error('User profile not found');
+      }
+      const userData = snap.data() as Record<string, unknown>;
+      const role = (userData.role as UserRole) || 'student';
+
+      return {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email || (userData.email as string) || '',
+        displayName: (userData.displayName as string) || firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
         role,
-        isActive: true,
-        avatar: user.photoURL || undefined,
-        createdAt: user.metadata.creationTime || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
+        isActive: (userData.isActive as boolean) ?? true,
+        avatar: (userData.avatar as string) || firebaseUser.photoURL || undefined,
+        createdAt: (userData.createdAt as string) || firebaseUser.metadata.creationTime || new Date().toISOString(),
+        updatedAt: (userData.updatedAt as string) || new Date().toISOString(),
+        token,
+      };
+    },
+    onSuccess: ({ uid, email, displayName, role, isActive, avatar, createdAt, updatedAt, token }) => {
+      setToken(token);
+      setUser({ id: uid, email, displayName, role, isActive, avatar, createdAt, updatedAt });
       toast.success('Welcome back!');
-      navigate(roleDashboard(role), { replace: true });
+      navigate(setupDashboard(role), { replace: true });
     },
     onError: (error: ApiError) => {
       const errorMessages: Record<string, string> = {

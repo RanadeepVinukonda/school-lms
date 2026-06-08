@@ -22,9 +22,10 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
   roles?: UserRole[];
   permission?: keyof typeof import('@/utils/permissions').PERMISSIONS;
+  checkSetup?: boolean;
 }
 
-export function ProtectedRoute({ children, roles, permission }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, roles, permission, checkSetup }: ProtectedRouteProps) {
   const { user, isAuthenticated, isLoading } = useAuthStore();
   const location = useLocation();
 
@@ -46,6 +47,15 @@ export function ProtectedRoute({ children, roles, permission }: ProtectedRoutePr
 
   if (permission && !checkPermission(user.role, permission)) {
     return <Navigate to={roleDashboard(user.role)} replace />;
+  }
+
+  if (checkSetup) {
+    if (user.role === 'student' && !user.classId) {
+      return <Navigate to={ROUTES.STUDENT_ROLL_NUMBER} replace />;
+    }
+    if (user.role === 'teacher' && !user.classId) {
+      return <Navigate to={ROUTES.TEACHER_SELECT_CLASS} replace />;
+    }
   }
 
   return <>{children}</>;

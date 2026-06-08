@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/firebase/config';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
 import NotificationDropdown from '@/components/common/NotificationDropdown';
 import GlobalSearchDialog from '@/components/common/GlobalSearchDialog';
+import { TutorialGuide } from '@/components/common/TutorialGuide';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { UserAvatar } from '@/components/layout/UserAvatar';
 import { Icon } from '@/components/ui/Icon';
@@ -29,6 +32,7 @@ export default function StudentLayout() {
   const user = useAuthStore((s) => s.user);
   const { sidebarCollapsed, setSidebarCollapsed } = useUIStore();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -40,6 +44,15 @@ export default function StudentLayout() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    getDoc(doc(db, 'users', user.id)).then((snap) => {
+      if (snap.exists() && snap.data().tutorialSeen === false) {
+        setTutorialOpen(true);
+      }
+    });
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -195,6 +208,7 @@ export default function StudentLayout() {
         </nav>
       </div>
       <GlobalSearchDialog isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+      <TutorialGuide open={tutorialOpen} onComplete={() => setTutorialOpen(false)} />
     </div>
   );
 }

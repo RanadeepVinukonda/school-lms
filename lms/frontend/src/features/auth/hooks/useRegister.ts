@@ -1,56 +1,71 @@
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { doc, getDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { registerUser } from '@/firebase/auth';
+import { authService } from '@/services/authService';
+import { db } from '@/firebase/config';
+import { loginUser } from '@/firebase/auth';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
 import type { RegisterInput, ApiError, UserRole } from '@/types';
 
-function roleDashboard(role: UserRole): string {
+function setupDashboard(role: UserRole): string {
   switch (role) {
     case 'admin':
     case 'super_admin':
       return ROUTES.ADMIN_DASHBOARD;
     case 'teacher':
-      return ROUTES.TEACHER_DASHBOARD;
+      return ROUTES.TEACHER_SELECT_CLASS;
     case 'student':
     default:
-      return ROUTES.STUDENT_DASHBOARD;
+      return ROUTES.STUDENT_ROLL_NUMBER;
   }
 }
 
 export function useRegister() {
   const navigate = useNavigate();
-  const { setUser, setToken } = useAuthStore();
+  const { setToken, setUser } = useAuthStore();
 
   return useMutation({
     mutationFn: async (data: RegisterInput) => {
-      const user = await registerUser(data.email, data.password);
-      const token = await user.getIdToken();
-      return { user, token, displayName: data.displayName, role: data.role };
-    },
-    onSuccess: async ({ user, token, displayName, role }) => {
-      setToken(token);
-      setUser({
-        id: user.uid,
-        email: user.email || '',
-        displayName,
-        role,
-        isActive: true,
-        createdAt: user.metadata.creationTime || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+      await authService.register({
+        email: data.email,
+        password: data.password,
+        displayName: data.displayName,
+        role: data.role,
       });
+      const firebaseUser = await loginUser(data.email, data.password);
+      const token = await firebaseUser.getIdToken();
+      return { uid: firebaseUser.uid, token, role: data.role };
+    },
+    onSuccess: async ({ uid, token, role }) => {
+      setToken(token);
+      const docRef = doc(db, 'users', uid);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const d = snap.data();
+        setUser({
+          id: snap.id,
+          email: (d.email as string) || '',
+          displayName: (d.displayName as string) || '',
+          role: (d.role as UserRole) || role,
+          isActive: (d.isActive as boolean) ?? true,
+          createdAt: (d.createdAt as string) || new Date().toISOString(),
+          updatedAt: (d.updatedAt as string) || new Date().toISOString(),
+        });
+      }
       toast.success('Account created successfully!');
-      navigate(roleDashboard(role), { replace: true });
+      navigate(setupDashboard(role), { replace: true });
     },
     onError: (error: ApiError) => {
-      const errorMessages: Record<string, string> = {
-        'auth/email-already-in-use': 'An account with this email already exists',
-        'auth/invalid-email': 'Invalid email address',
-        'auth/weak-password': 'Password is too weak',
-        'auth/too-many-requests': 'Too many attempts. Please try again later',
-      };
-      const message = errorMessages[error.code || ''] || error.message || 'Registration failed';
+      const message =
+        error.code === 'auth/email-already-in-use'
+          ? 'A user with this email already exists'
+          : error.code === 'auth/weak-password'
+            ? 'Password is too weak'
+            : error.code === 'auth/too-many-requests'
+              ? 'Too many attempts. Please try again later'
+              : error.message || 'Registration failed';
       toast.error(message);
     },
   });
