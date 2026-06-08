@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import { extractTextFromPDF } from '@/lib/pdfUtils';
-import { extractChapters, generateConceptContent, generateQuestionBank } from '@/services/aiService';
+import { extractChapters, generateConceptContentAndQuestions } from '@/services/aiService';
 import { searchVideosForConcept } from '@/services/youtubeService';
 import { createTextbook, saveChapters } from '@/services/textbookService';
 import { getStudentsByClass, createEnrollment } from '@/services/dataService';
-import type { Chapter, Concept, CachedVideo, GeneratedQuestion } from '@/types/textbook';
+import type { Chapter, Concept, GeneratedQuestion } from '@/types/textbook';
 
 export type UploadStage =
   | 'idle'
@@ -121,102 +121,68 @@ async function runProcessing(taskId: string) {
         const conceptProgress = ((ci * ch.concepts.length + coi + 1) / totalConcepts) * 100;
         const stagePct = 25 + conceptProgress * 0.5;
         update({ stage: 'generating', progress: Math.min(Math.round(stagePct), 75) });
-        addLog(`Generating content for concept: ${cp.title}`);
+        addLog(`Generating content, questions & assignments for: ${cp.title}`);
 
-        let content: Awaited<ReturnType<typeof generateConceptContent>>;
+        // Consolidated AI call: content + questions + assignments
+        let summary = cp.description || `Study of ${cp.title}`;
+        let notes = `Detailed notes for ${cp.title}. This concept covers key principles and applications.`;
+        let learningObjectives: string[] = [
+          `Understand ${cp.title}`,
+          `Apply ${cp.title} concepts`,
+          `Analyze problems involving ${cp.title}`,
+        ];
+        let keywords: string[] = [cp.title.toLowerCase().replace(/\s+/g, '_')];
+        let difficulty: Concept['difficulty'] = 'intermediate';
+        let prerequisites: string[] = [];
+        let estimatedMinutes = 15;
+        let questionBank: GeneratedQuestion[] = [];
+        let assignments: Concept['assignments'] = [];
+
         try {
-          content = await generateConceptContent(cp.title, ch.title, task.subjectName, text);
-        } catch {
-          content = {
-            summary: cp.description || `Study of ${cp.title}`,
-            notes: `Detailed notes for ${cp.title}. This concept covers key principles and applications.`,
-            learningObjectives: [
-              `Understand ${cp.title}`,
-              `Apply ${cp.title} concepts`,
-              `Analyze problems involving ${cp.title}`,
-            ],
-            keywords: [cp.title.toLowerCase().replace(/\s+/g, '_')],
-            difficulty: 'intermediate' as const,
-            prerequisites: [],
-            estimatedMinutes: 15,
-          };
+          const result = await generateConceptContentAndQuestions(cp.title, ch.title, task.subjectName, text);
+          summary = result.summary;
+          notes = result.notes;
+          learningObjectives = result.learningObjectives;
+          keywords = result.keywords;
+          difficulty = result.difficulty;
+          prerequisites = result.prerequisites;
+          estimatedMinutes = result.estimatedMinutes;
+
+          questionBank = (result.questionBank || []).map((q, i) => ({
+            id: `${cp.title.replace(/\s+/g, '_')}_q_${i}`,
+            type: q.type as GeneratedQuestion['type'],
+            difficulty: q.difficulty as GeneratedQuestion['difficulty'],
+            category: q.category as GeneratedQuestion['category'],
+            text: q.text,
+            options: q.options,
+            correctAnswer: q.correctAnswer,
+            explanation: q.explanation,
+            points: q.points || 1,
+          }));
+
+          assignments = (result.assignments || []).map((a, i) => ({
+            id: `${cp.title.replace(/\s+/g, '_')}_a_${i}`,
+            title: a.title,
+            instructions: a.instructions,
+            marks: a.marks || 10,
+            estimatedMinutes: a.estimatedMinutes || 30,
+            answerKey: a.answerKey,
+            rubric: a.rubric,
+            type: a.type,
+          }));
+
+          addLog(`Generated ${questionBank.length} questions & ${assignments.length} assignments for: ${cp.title}`);
+        } catch (e) {
+          addLog(`Content generation failed for ${cp.title}: ${e instanceof Error ? e.message : String(e)}`);
         }
 
         update({ stage: 'videos' });
-        let videos: CachedVideo[] = [];
+        let videos: Concept['videos'] = [];
         try {
           videos = await searchVideosForConcept(task.subjectName, ch.title, cp.title);
           addLog(`Found ${videos.length} videos for: ${cp.title}`);
-        } catch {
-          addLog('Video search skipped');
-        }
-
-        update({ stage: 'questions' });
-        let questionBank: GeneratedQuestion[] = [];
-        try {
-          const qb = await generateQuestionBank(cp.title, ch.title, task.subjectName);
-          const allQuestions: GeneratedQuestion[] = [];
-
-          [...(qb.easy || [])].forEach((q, i) => {
-            allQuestions.push({
-              id: `${cp.title.replace(/\s+/g, '_')}_easy_${i}`,
-              type: q.type as GeneratedQuestion['type'],
-              difficulty: 'easy',
-              category: 'recall',
-              text: q.text,
-              options: q.options,
-              correctAnswer: q.correctAnswer,
-              explanation: q.explanation,
-              points: 1,
-            });
-          });
-
-          [...(qb.medium || [])].forEach((q, i) => {
-            allQuestions.push({
-              id: `${cp.title.replace(/\s+/g, '_')}_medium_${i}`,
-              type: q.type as GeneratedQuestion['type'],
-              difficulty: 'medium',
-              category: 'application',
-              text: q.text,
-              options: q.options,
-              correctAnswer: q.correctAnswer,
-              explanation: q.explanation,
-              points: 2,
-            });
-          });
-
-          [...(qb.hard || [])].forEach((q, i) => {
-            allQuestions.push({
-              id: `${cp.title.replace(/\s+/g, '_')}_hard_${i}`,
-              type: q.type as GeneratedQuestion['type'],
-              difficulty: 'hard',
-              category: 'critical_thinking',
-              text: q.text,
-              options: q.options,
-              correctAnswer: q.correctAnswer,
-              explanation: q.explanation,
-              points: 3,
-            });
-          });
-
-          [...(qb.application || [])].forEach((q, i) => {
-            allQuestions.push({
-              id: `${cp.title.replace(/\s+/g, '_')}_app_${i}`,
-              type: q.type as GeneratedQuestion['type'],
-              difficulty: 'medium',
-              category: 'application',
-              text: q.text,
-              options: q.options,
-              correctAnswer: q.correctAnswer,
-              explanation: q.explanation,
-              points: 2,
-            });
-          });
-
-          questionBank = allQuestions;
-          addLog(`Generated ${allQuestions.length} questions for: ${cp.title}`);
-        } catch {
-          addLog('Question generation skipped for: ' + cp.title);
+        } catch (e) {
+          addLog(`Video search skipped: ${e instanceof Error ? e.message : String(e)}`);
         }
 
         concepts.push({
@@ -224,16 +190,16 @@ async function runProcessing(taskId: string) {
           chapterId: `ch_${id}_${ci}`,
           textbookId: id,
           title: cp.title,
-          summary: content.summary,
-          notes: content.notes,
-          learningObjectives: content.learningObjectives,
-          keywords: content.keywords,
-          difficulty: content.difficulty,
-          prerequisites: content.prerequisites,
-          estimatedMinutes: content.estimatedMinutes,
+          summary,
+          notes,
+          learningObjectives,
+          keywords,
+          difficulty,
+          prerequisites,
+          estimatedMinutes,
           videos,
           questionBank,
-          assignments: [],
+          assignments,
           order: coi,
         });
       }

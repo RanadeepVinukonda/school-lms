@@ -4,21 +4,14 @@ function getApiKey() {
   return import.meta.env.VITE_OPENROUTER_API_KEY;
 }
 
-/** Choose a model based on the processing step. Falls back to a generic model if the specific env var is missing. */
+/** Choose a model based on the processing step. Falls back to the generic model env var, then a default. */
 export function getModel(step: 'extract' | 'content' | 'question') {
-  switch (step) {
-    case 'extract':
-      return (import.meta.env.VITE_OPENROUTER_MODEL_EXTRACT as string) ||
-        'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free';
-    case 'content':
-      return (import.meta.env.VITE_OPENROUTER_MODEL_CONTENT as string) ||
-        'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free';
-    case 'question':
-      return (import.meta.env.VITE_OPENROUTER_MODEL_QUESTION as string) ||
-        'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free';
-    default:
-      return 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free';
-  }
+  const specificKey =
+    step === 'extract' ? 'VITE_OPENROUTER_MODEL_EXTRACT' :
+    step === 'content' ? 'VITE_OPENROUTER_MODEL_CONTENT' :
+    'VITE_OPENROUTER_MODEL_QUESTION';
+  const specific = import.meta.env[specificKey] as string | undefined;
+  return specific || (import.meta.env.VITE_OPENROUTER_MODEL as string) || 'nvidia/nemotron-3.5-content-safety:free';
 }
 
 /** Returns the OpenRouter API key from env, throwing if not configured. */
@@ -30,6 +23,11 @@ export function getOpenRouterApiKey(): string {
     );
   }
   return key;
+}
+
+/** Strip markdown code fences and whitespace so JSON.parse can work. */
+function stripCodeFences(text: string): string {
+  return text.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/gm, '').trim();
 }
 
 async function callOpenRouter(prompt: string, step: 'extract' | 'content' | 'question', schema?: Record<string, unknown>) {
@@ -47,7 +45,7 @@ async function callOpenRouter(prompt: string, step: 'extract' | 'content' | 'que
     model: getModel(step),
     messages,
     temperature: 0.3,
-    max_tokens: 16000,
+    max_tokens: 32000,
   };
 
   if (schema) {
@@ -75,7 +73,8 @@ async function callOpenRouter(prompt: string, step: 'extract' | 'content' | 'que
   }
 
   const data = await res.json();
-  return data.choices?.[0]?.message?.content || '';
+  const raw = data.choices?.[0]?.message?.content || '';
+  return stripCodeFences(raw);
 }
 
 /** Extract chapter structure from textbook text using AI. */
@@ -107,8 +106,8 @@ ${text.slice(0, 30000)}`;
   }
 }
 
-/** Generate detailed learning content for a concept using AI. */
-export async function generateConceptContent(
+/** Generate content, questions, AND assignments for a concept in ONE AI call. */
+export async function generateConceptContentAndQuestions(
   conceptTitle: string,
   chapterTitle: string,
   subject: string,
@@ -121,64 +120,75 @@ export async function generateConceptContent(
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   prerequisites: string[];
   estimatedMinutes: number;
+  questionBank: Array<{
+    type: string;
+    difficulty: 'easy' | 'medium' | 'hard';
+    category: string;
+    text: string;
+    options?: string[];
+    correctAnswer: string | string[];
+    explanation: string;
+    points: number;
+  }>;
+  assignments: Array<{
+    title: string;
+    instructions: string;
+    marks: number;
+    estimatedMinutes: number;
+    answerKey: string;
+    rubric: string;
+    type: 'homework' | 'worksheet' | 'challenge' | 'project';
+  }>;
 }> {
-  const prompt = `Generate detailed learning content for the concept "${conceptTitle}" in the chapter "${chapterTitle}" of "${subject}".
+  const prompt = `You are a curriculum designer. Generate complete learning material for the concept "${conceptTitle}" in the chapter "${chapterTitle}" of "${subject}".
 
 Textbook context:
 ${textbookContext.slice(0, 5000)}
 
-Return valid JSON in this exact format:
+Return valid JSON in this exact format — no markdown, no code fences:
+
 {
-  "summary": "2-3 sentence summary",
-  "notes": "Detailed study notes covering all important points",
+  "summary": "2-3 sentence summary of the concept",
+  "notes": "Detailed study notes covering all important points (300-500 words)",
   "learningObjectives": ["Objective 1", "Objective 2", "Objective 3"],
   "keywords": ["keyword1", "keyword2"],
   "difficulty": "beginner|intermediate|advanced",
   "prerequisites": ["prerequisite1"],
-  "estimatedMinutes": 15
-}`;
-
-  const result = await callOpenRouter(prompt, 'content');
-  try {
-    return JSON.parse(result);
-  } catch {
-    throw new Error('Failed to parse AI response');
-  }
+  "estimatedMinutes": 15,
+  "questionBank": [
+    {
+      "type": "mcq|true_false|short_answer|numerical",
+      "difficulty": "easy|medium|hard",
+      "category": "recall|application|critical_thinking",
+      "text": "Question text",
+      "options": ["A", "B", "C", "D"],
+      "correctAnswer": "correct answer",
+      "explanation": "Why this is correct",
+      "points": 1
+    }
+  ],
+  "assignments": [
+    {
+      "title": "Assignment title",
+      "instructions": "Detailed instructions for the student",
+      "marks": 10,
+      "estimatedMinutes": 30,
+      "answerKey": "Expected answers or solution guide",
+      "rubric": "Marking rubric",
+      "type": "homework|worksheet|challenge|project"
+    }
+  ]
 }
 
-/** Generate a question bank for a concept using AI. */
-export async function generateQuestionBank(
-  conceptTitle: string,
-  chapterTitle: string,
-  subject: string,
-): Promise<{
-  easy: Array<{ type: string; text: string; options?: string[]; correctAnswer: string | string[]; explanation: string }>;
-  medium: Array<{ type: string; text: string; options?: string[]; correctAnswer: string | string[]; explanation: string }>;
-  hard: Array<{ type: string; text: string; options?: string[]; correctAnswer: string | string[]; explanation: string }>;
-  application: Array<{ type: string; text: string; options?: string[]; correctAnswer: string | string[]; explanation: string }>;
-}> {
-  const prompt = `Generate questions for the concept "${conceptTitle}" in "${chapterTitle}" (${subject}).
-
 Generate:
-- 8 Easy questions (simple recall)
-- 6 Medium questions (application)
-- 4 Hard questions (complex problems)
-- 2 Critical thinking questions
+- 4-5 learning objectives
+- 8-12 questions: mix of easy (MCQ/T-F), medium (short answer), hard (numerical/problem-solving)
+- 2-3 assignments: at least one worksheet and one challenge/problem-solving task`;
 
-Mix of MCQ, true/false, short answer, and numerical problems.
-
-Return valid JSON in this exact format:
-{
-  "easy": [{ "type": "mcq|true_false|short_answer|numerical", "text": "question text", "options": ["A", "B", "C", "D"], "correctAnswer": "answer", "explanation": "why this is correct" }],
-  "medium": [...],
-  "hard": [...],
-  "application": [...]
-}`;
-
-  const result = await callOpenRouter(prompt, 'question');
+  const result = await callOpenRouter(prompt, 'content', { /* json_object hint */ });
   try {
     return JSON.parse(result);
-  } catch {
-    throw new Error('Failed to parse AI response');
+  } catch (e) {
+    throw new Error(`Failed to parse consolidated AI response: ${String(e)}`);
   }
 }

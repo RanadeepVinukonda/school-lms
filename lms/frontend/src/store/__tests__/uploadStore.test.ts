@@ -6,11 +6,17 @@ vi.mock('@/lib/pdfUtils', () => ({
 
 vi.mock('@/services/aiService', () => ({
   extractChapters: vi.fn().mockResolvedValue({ title: 'Test', chapters: [] }),
-  generateConceptContent: vi.fn().mockResolvedValue({
-    summary: 'test', notes: '', learningObjectives: [], keywords: [],
-    difficulty: 'intermediate', prerequisites: [], estimatedMinutes: 15,
+  generateConceptContentAndQuestions: vi.fn().mockResolvedValue({
+    summary: 'test',
+    notes: '',
+    learningObjectives: [],
+    keywords: [],
+    difficulty: 'intermediate',
+    prerequisites: [],
+    estimatedMinutes: 15,
+    questionBank: [],
+    assignments: [],
   }),
-  generateQuestionBank: vi.fn().mockResolvedValue({ easy: [], medium: [], hard: [], application: [] }),
 }));
 
 vi.mock('@/services/youtubeService', () => ({
