@@ -89,7 +89,7 @@ export default function TeacherTextbookUploadPage() {
 
   const subjectList = subjects ?? [];
   const allClasses = classes ?? [];
-  const teacherClassIds = user?.classIds ?? [];
+  const teacherClassIds = user?.classIds?.length ? user.classIds : (user?.classId ? [user.classId] : []);
   const classList = teacherClassIds.length > 0
     ? allClasses.filter((c) => teacherClassIds.includes(c.id))
     : allClasses;

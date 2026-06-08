@@ -78,7 +78,7 @@ export default function TeacherDashboardPage() {
         getAllGrades(),
       ]);
 
-      const myClassIds = user?.classIds ?? [];
+      const myClassIds = user?.classIds?.length ? user.classIds : (user?.classId ? [user.classId] : []);
       const myClasses = allClasses.filter((c) => myClassIds.includes(c.id));
       const classId = myClasses[0]?.id;
       const subjectIds = [...new Set(myClasses.flatMap((c) => c.subjectIds ?? []))];

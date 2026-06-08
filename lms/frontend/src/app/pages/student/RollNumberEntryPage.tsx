@@ -45,6 +45,18 @@ export default function RollNumberEntryPage() {
       }
       classId = snap.docs[0].id;
 
+      const duplicateCheck = query(
+        collection(db, 'users'),
+        where('classId', '==', classId),
+        where('studentId', '==', cleaned),
+      );
+      const duplicateSnap = await getDocs(duplicateCheck);
+      if (!duplicateSnap.empty) {
+        setError(`Roll number ${cleaned} is already taken in this class.`);
+        setLoading(false);
+        return;
+      }
+
       await updateDoc(doc(db, 'users', user.id), {
         classId,
         studentId: cleaned,
