@@ -129,11 +129,6 @@ export default function AdminSubjectsPage() {
     }
   };
 
-  const handleDelete = (id: string, name: string) => {
-    setSubjects((prev) => prev.filter((s) => s.id !== id));
-    toast.error(`Subject ${name} deleted`);
-  };
-
   const getTextbookCount = (subjectId: string) =>
     textbooks ? textbooks.filter((tb) => tb.subjectId === subjectId).length : 0;
 
