@@ -19,6 +19,8 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
+import { addDoc, collection, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '@/firebase/config';
 import { getAllSubjects } from '@/services/dataService';
 import { getAllTextbooks } from '@/services/textbookService';
 import type { Subject } from '@/services/dataService';
@@ -92,26 +94,39 @@ export default function AdminSubjectsPage() {
     [subjects, search]
   );
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!form.name || !form.code || !form.category) {
       toast.error('Please fill in all required fields');
       return;
     }
-    const newSubject: Subject = {
-      id: `sub${Date.now()}`,
-      name: form.name,
-      code: form.code.toUpperCase(),
-      icon: form.icon,
-      color: '#6366f1',
-      category: form.category,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setSubjects((prev) => [...prev, newSubject]);
-    setForm(emptyForm);
-    setShowAdd(false);
-    toast.success(`Subject ${form.name} added`);
+    try {
+      await addDoc(collection(db, 'subjects'), {
+        name: form.name,
+        code: form.code.toUpperCase(),
+        icon: form.icon,
+        color: '#6366f1',
+        category: form.category,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      setForm(emptyForm);
+      setShowAdd(false);
+      toast.success(`Subject ${form.name} added`);
+      refetch();
+    } catch {
+      toast.error('Failed to add subject');
+    }
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    try {
+      await deleteDoc(doc(db, 'subjects', id));
+      toast.success(`Subject ${name} deleted`);
+      refetch();
+    } catch {
+      toast.error('Failed to delete subject');
+    }
   };
 
   const handleDelete = (id: string, name: string) => {

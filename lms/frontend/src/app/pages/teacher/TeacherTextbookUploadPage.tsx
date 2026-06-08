@@ -44,6 +44,7 @@ export default function TeacherTextbookUploadPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [subjectId, setSubjectId] = useState('');
+  const [customSubject, setCustomSubject] = useState('');
   const [classId, setClassId] = useState('');
   const [dragActive, setDragActive] = useState(false);
 
@@ -82,9 +83,9 @@ export default function TeacherTextbookUploadPage() {
   }, []);
 
   const handleProcess = async () => {
-    if (!file || !subjectId) return;
-    const subj = subjects?.find((s) => s.id === subjectId);
-    startUpload(file, subjectId, subj?.name ?? 'Custom', classId || undefined);
+    if (!file || (!subjectId && !customSubject)) return;
+    const name = subjectId === 'custom' ? customSubject : (subjects?.find((s) => s.id === subjectId)?.name ?? 'Custom');
+    startUpload(file, subjectId || 'custom', name, classId || undefined);
   };
 
   const subjectList = subjects ?? [];
@@ -112,22 +113,32 @@ export default function TeacherTextbookUploadPage() {
             <CardContent className="p-6 space-y-6">
               <div>
                 <label className="text-sm font-medium mb-2 block">Subject</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {subjectList.map((subj) => (
-                    <button
-                      key={subj.id}
-                      type="button"
-                      onClick={() => setSubjectId(subj.id)}
-                      className={`px-3 py-2 rounded-lg text-sm border transition-all ${
-                        subjectId === subj.id
-                          ? 'border-primary bg-primary/10 text-primary font-medium'
-                          : 'border-border hover:border-muted-foreground/30'
-                      }`}
-                    >
-                      {subj.name}
-                    </button>
-                  ))}
-                </div>
+                {subjectList.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {subjectList.map((subj) => (
+                      <button
+                        key={subj.id}
+                        type="button"
+                        onClick={() => { setCustomSubject(''); setSubjectId(subj.id); }}
+                        className={`px-3 py-2 rounded-lg text-sm border transition-all ${
+                          subjectId === subj.id
+                            ? 'border-primary bg-primary/10 text-primary font-medium'
+                            : 'border-border hover:border-muted-foreground/30'
+                        }`}
+                      >
+                        {subj.name}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    value={customSubject}
+                    onChange={(e) => { setCustomSubject(e.target.value); setSubjectId('custom'); }}
+                    placeholder="Enter subject name..."
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                )}
               </div>
 
               {classList.length > 0 && (
