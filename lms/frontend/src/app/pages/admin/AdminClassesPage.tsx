@@ -106,6 +106,13 @@ export default function AdminClassesPage() {
         error={isError ? new Error('Failed to load classes') : null}
         onRetry={() => refetch()}
         loadingType="card"
+        emptyMessage="No classes yet"
+        emptyAction={
+          <Button onClick={() => setShowCreate(true)}>
+            <Icon name="add" size={18} className="mr-2" />
+            Create Class
+          </Button>
+        }
       >
         {() => (
           <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit">
