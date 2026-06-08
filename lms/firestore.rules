@@ -2,15 +2,18 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper: check if the user has a specific role
+    // Helper: check if the user has a specific role from their Firestore doc
+    function getRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
     function isAdmin() {
-      return request.auth.token.role == 'admin';
+      return getRole() == 'admin' || getRole() == 'super_admin';
     }
     function isTeacher() {
-      return request.auth.token.role == 'teacher';
+      return getRole() == 'teacher';
     }
     function isStudent() {
-      return request.auth.token.role == 'student';
+      return getRole() == 'student';
     }
     function isOwner(userId) {
       return request.auth.uid == userId;
