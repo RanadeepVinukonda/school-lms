@@ -24,18 +24,16 @@ import { db } from '@/firebase/config';
 import { getAllClasses, getAllUsers } from '@/services/dataService';
 import type { ClassEntry, UserDoc } from '@/services/dataService';
 
-interface ClassForm {
-  name: string;
-  code: string;
-  grade: string;
+function ordinal(n: number): string {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
-
-const emptyForm: ClassForm = { name: '', code: '', grade: '' };
 
 export default function AdminClassesPage() {
   const [search, setSearch] = useState('');
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState<ClassForm>(emptyForm);
+  const [grade, setGrade] = useState('');
   const [classes, setClasses] = useState<ClassEntry[]>([]);
 
   const { data: fetchedClasses, isLoading, isError, refetch } = useQuery({
@@ -64,15 +62,18 @@ export default function AdminClassesPage() {
   );
 
   const handleCreate = async () => {
-    if (!form.name || !form.code || !form.grade) {
-      toast.error('Please fill in all fields');
+    const g = grade.trim();
+    if (!g || !/^\d+$/.test(g)) {
+      toast.error('Enter a valid grade number');
       return;
     }
+    const num = parseInt(g, 10);
+    const className = `${ordinal(num)} class`;
     try {
       await addDoc(collection(db, 'classes'), {
-        name: form.name,
-        code: form.code,
-        grade: form.grade,
+        name: className,
+        code: `G${num}`,
+        grade: g,
         section: '',
         academicYear: new Date().getFullYear().toString(),
         teacherIds: [],
@@ -83,9 +84,9 @@ export default function AdminClassesPage() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
-      setForm(emptyForm);
+      setGrade('');
       setShowCreate(false);
-      toast.success(`Class ${form.name} created`);
+      toast.success(`${className} created`);
       refetch();
     } catch {
       toast.error('Failed to create class');
@@ -253,34 +254,22 @@ export default function AdminClassesPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create Class</DialogTitle>
-            <DialogDescription>Set up a new class for the academic year.</DialogDescription>
+            <DialogDescription>Enter the grade number. Name will be auto-generated (e.g. "1st class").</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Class Name</Label>
+              <Label>Grade</Label>
               <Input
-                placeholder="e.g. Grade 10A"
-                value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                placeholder="e.g. 1, 2, 3..."
+                value={grade}
+                onChange={(e) => setGrade(e.target.value)}
+                autoFocus
               />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Code</Label>
-                <Input
-                  placeholder="e.g. 10A"
-                  value={form.code}
-                  onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Grade</Label>
-                <Input
-                  placeholder="e.g. 10"
-                  value={form.grade}
-                  onChange={(e) => setForm((f) => ({ ...f, grade: e.target.value }))}
-                />
-              </div>
+              {grade && /^\d+$/.test(grade.trim()) && (
+                <p className="text-sm text-muted-foreground">
+                  Will be named: <span className="font-medium">{ordinal(parseInt(grade, 10))} class</span>
+                </p>
+              )}
             </div>
             <Button className="w-full" onClick={handleCreate}>
               <Icon name="add" size={16} className="mr-2" />
