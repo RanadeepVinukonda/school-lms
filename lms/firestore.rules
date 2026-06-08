@@ -128,5 +128,16 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow write: if isAdmin() || isTeacher();
     }
+
+    match /conceptProgress/{docId} {
+      allow read: if isAdmin() || isTeacher() || (isStudent() && resource.data.userId == request.auth.uid);
+      allow create: if isStudent();
+      allow write: if isAdmin() || isTeacher();
+    }
+
+    match /conceptReleases/{docId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin() || isTeacher();
+    }
   }
 }
