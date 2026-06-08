@@ -172,9 +172,14 @@ export default function TeacherLoginPage() {
                   'Sign In'
                 )}
               </Button>
-              <Link to={ROUTES.FORGOT_PASSWORD} className="block text-center text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Forgot password?
-              </Link>
+              <div className="flex items-center justify-between w-full text-sm">
+                <Link to={ROUTES.FORGOT_PASSWORD} className="text-muted-foreground hover:text-foreground transition-colors">
+                  Forgot password?
+                </Link>
+                <Link to={ROUTES.REGISTER} className="text-muted-foreground hover:text-foreground transition-colors">
+                  Create account
+                </Link>
+              </div>
             </form>
         </motion.div>
       </div>
