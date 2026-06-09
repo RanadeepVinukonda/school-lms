@@ -39,7 +39,7 @@ async function callAI(prompt: string, step: 'extract' | 'content' | 'question') 
     model: getModel(step),
     messages,
     temperature: 0.3,
-    max_tokens: 32000,
+    max_tokens: 4096,
   };
 
   try {

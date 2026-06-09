@@ -23,7 +23,7 @@ interface ChatResponse {
 }
 
 export async function chatCompletion(params: ChatRequest): Promise<string> {
-  const { model, messages, temperature = 0.3, max_tokens = 32000 } = params;
+  const { model, messages, temperature = 0.3, max_tokens = 4096 } = params;
 
   const payload = { model, messages, temperature, max_tokens };
 

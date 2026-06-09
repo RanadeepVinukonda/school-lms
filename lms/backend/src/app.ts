@@ -12,6 +12,7 @@ import { logger } from './utils/logger';
 initializeFirebase();
 
 const app = express();
+app.set('trust proxy', 1);
 
 app.use(securityHeaders);
 app.use(cors(corsOptions));
