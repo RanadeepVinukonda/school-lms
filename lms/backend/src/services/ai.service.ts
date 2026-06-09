@@ -23,14 +23,15 @@ interface ChatResponse {
 }
 
 export async function chatCompletion(params: ChatRequest): Promise<string> {
-  const { model, messages, temperature = 0.3, max_tokens = 4096 } = params;
+  const { model, messages, temperature = 0.7, max_tokens = 4096 } = params;
 
-  const payload = { model, messages, temperature, max_tokens };
+  const payload: Record<string, unknown> = { model, messages, temperature, max_tokens };
 
   const res = await fetch(env.AI_BASE_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      Accept: 'application/json',
       Authorization: `Bearer ${env.AI_API_KEY}`,
     },
     body: JSON.stringify(payload),
@@ -38,9 +39,12 @@ export async function chatCompletion(params: ChatRequest): Promise<string> {
 
   if (!res.ok) {
     const err = await res.text();
-    logger.error('AI API error', { status: res.status, body: err });
+    logger.error('AI API error', { status: res.status, body: err, url: env.AI_BASE_URL, model });
     if (res.status === 401) {
       throw new AppError(502, 'AI service rejected the API key. Check AI_API_KEY.');
+    }
+    if (res.status === 404) {
+      throw new AppError(502, `AI model "${model}" not found at ${env.AI_BASE_URL}. Check AI_MODEL and AI_BASE_URL.`);
     }
     throw new AppError(502, `AI API error ${res.status}: ${err.slice(0, 500)}`);
   }
