@@ -25,6 +25,7 @@ import { db } from '@/firebase/config';
 import { getAllSubjects } from '@/services/dataService';
 import { getAllTextbooks } from '@/services/textbookService';
 import { getSubjectDependencies } from '@/services/dependencyService';
+import { logAudit } from '@/services/auditService';
 import type { Subject } from '@/services/dataService';
 import type { DependencyReport } from '@/services/dependencyService';
 
@@ -68,6 +69,8 @@ const categoryColors: Record<string, string> = {
 export default function AdminSubjectsPage() {
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [editTarget, setEditTarget] = useState<Subject | null>(null);
   const [form, setForm] = useState<SubjectForm>(emptyForm);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
@@ -106,10 +109,16 @@ export default function AdminSubjectsPage() {
       toast.error('Please fill in all required fields');
       return;
     }
+    const code = form.code.toUpperCase();
+    const duplicate = subjects.find((s) => s.code === code && s.isActive !== false);
+    if (duplicate) {
+      toast.error(`Subject code "${code}" is already in use by "${duplicate.name}"`);
+      return;
+    }
     try {
-      await addDoc(collection(db, 'subjects'), {
+      const docRef = await addDoc(collection(db, 'subjects'), {
         name: form.name,
-        code: form.code.toUpperCase(),
+        code,
         icon: form.icon,
         color: '#6366f1',
         category: form.category,
@@ -117,12 +126,75 @@ export default function AdminSubjectsPage() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
+      logAudit({
+        action: 'subject.create',
+        targetId: docRef.id,
+        targetType: 'subject',
+        targetName: form.name,
+        summary: `Created subject "${form.name}" (${code})`,
+        newValue: { name: form.name, code, category: form.category, icon: form.icon },
+      });
       setForm(emptyForm);
       setShowAdd(false);
       toast.success(`Subject ${form.name} added`);
       refetch();
     } catch {
       toast.error('Failed to add subject');
+    }
+  };
+
+  const handleEditClick = (subject: Subject) => {
+    setEditTarget(subject);
+    setForm({ name: subject.name, code: subject.code, icon: subject.icon || 'menu_book', category: subject.category || 'STEM' });
+    setShowEdit(true);
+  };
+
+  const handleUpdate = async () => {
+    if (!editTarget || !form.name || !form.code) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    const code = form.code.toUpperCase();
+    const duplicate = subjects.find((s) => s.code === code && s.id !== editTarget.id && s.isActive !== false);
+    if (duplicate) {
+      toast.error(`Subject code "${code}" is already in use by "${duplicate.name}"`);
+      return;
+    }
+    const changedFields: string[] = [];
+    if (form.name !== editTarget.name) changedFields.push('name');
+    if (code !== editTarget.code) changedFields.push('code');
+    if (form.category !== editTarget.category) changedFields.push('category');
+    if (form.icon !== editTarget.icon) changedFields.push('icon');
+
+    const hasTextbooks = textbooks ? textbooks.filter((tb) => tb.subjectId === editTarget.id).length : 0;
+    if (hasTextbooks > 0 && changedFields.length > 0) {
+      const fieldList = changedFields.join(', ');
+      toast.info(`${editTarget.name} is used by ${hasTextbooks} textbook${hasTextbooks !== 1 ? 's' : ''}. Changing ${fieldList} will update references across the system.`);
+    }
+    try {
+      await updateDoc(doc(db, 'subjects', editTarget.id), {
+        name: form.name,
+        code,
+        icon: form.icon,
+        category: form.category,
+        updatedAt: new Date().toISOString(),
+      });
+      logAudit({
+        action: 'subject.update',
+        targetId: editTarget.id,
+        targetType: 'subject',
+        targetName: editTarget.name,
+        summary: `Updated subject "${editTarget.name}" (changed: ${changedFields.join(', ') || 'none'})`,
+        oldValue: { name: editTarget.name, code: editTarget.code, category: editTarget.category },
+        newValue: { name: form.name, code, category: form.category },
+      });
+      setForm(emptyForm);
+      setShowEdit(false);
+      setEditTarget(null);
+      toast.success(`Subject ${form.name} updated`);
+      refetch();
+    } catch {
+      toast.error('Failed to update subject');
     }
   };
 
@@ -144,6 +216,14 @@ export default function AdminSubjectsPage() {
     if (!deleteTarget) return;
     try {
       await updateDoc(doc(db, 'subjects', deleteTarget.id), { isActive: false });
+      logAudit({
+        action: 'subject.archive',
+        targetId: deleteTarget.id,
+        targetType: 'subject',
+        targetName: deleteTarget.name,
+        summary: `Archived subject "${deleteTarget.name}"`,
+        newValue: { isActive: false },
+      });
       toast.success(`Subject ${deleteTarget.name} archived`);
       setShowDependencyDialog(false);
       setDeleteTarget(null);
@@ -158,6 +238,13 @@ export default function AdminSubjectsPage() {
     setDeleteLoading(true);
     try {
       await deleteDoc(doc(db, 'subjects', deleteTarget.id));
+      logAudit({
+        action: 'subject.delete',
+        targetId: deleteTarget.id,
+        targetType: 'subject',
+        targetName: deleteTarget.name,
+        summary: `Permanently deleted subject "${deleteTarget.name}"`,
+      });
       toast.success(`Subject ${deleteTarget.name} permanently deleted`);
       setShowDependencyDialog(false);
       setDeleteTarget(null);
@@ -266,7 +353,7 @@ export default function AdminSubjectsPage() {
                           <Button
                             variant="ghost"
                             size="icon-sm"
-                            onClick={() => toast.success(`Edit ${subject.name}`)}
+                            onClick={() => handleEditClick(subject)}
                           >
                             <Icon name="edit" size={16} />
                           </Button>
@@ -360,6 +447,65 @@ export default function AdminSubjectsPage() {
             </Button>
             <Button variant="ghost" className="w-full" onClick={() => { setShowDependencyDialog(false); setDeleteTarget(null); }}>
               Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showEdit} onOpenChange={(open) => { if (!open) { setShowEdit(false); setEditTarget(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Subject</DialogTitle>
+            <DialogDescription>
+              {editTarget && `Updating "${editTarget.name}". Changes will be reflected across the system.`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Subject Name</Label>
+              <Input
+                placeholder="e.g. Computer Science"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Code</Label>
+                <Input
+                  placeholder="e.g. CS"
+                  value={form.code}
+                  onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Icon</Label>
+                <OptionsSelect
+                  options={iconOptions}
+                  placeholder="Select icon"
+                  value={form.icon}
+                  onChange={(v: string) => setForm((f) => ({ ...f, icon: v }))}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <OptionsSelect
+                options={categoryOptions}
+                placeholder="Select category"
+                value={form.category}
+                onChange={(v: string) => setForm((f) => ({ ...f, category: v }))}
+              />
+            </div>
+            {editTarget && (
+              <p className="text-xs text-on-surface-variant">
+                <Icon name="info" size={14} className="inline mr-1" />
+                Updating {editTarget.name} affects {subjects.find(s => s.id === editTarget.id)?.name || 'this subject'} across textbooks, exams, assignments, and grades.
+              </p>
+            )}
+            <Button className="w-full" onClick={handleUpdate}>
+              <Icon name="save" size={16} className="mr-2" />
+              Save Changes
             </Button>
           </div>
         </DialogContent>

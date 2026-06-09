@@ -20,6 +20,7 @@ import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
 import { userService, type CreateUserInput } from '@/services/userService';
 import { getUserDependencies } from '@/services/dependencyService';
+import { logAudit } from '@/services/auditService';
 import type { User } from '@/types';
 import type { DependencyReport } from '@/services/dependencyService';
 
@@ -79,6 +80,13 @@ export default function UserManagementPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => userService.delete(id),
     onSuccess: () => {
+      logAudit({
+        action: 'user.delete',
+        targetId: deleteTarget?.id || '',
+        targetType: 'user',
+        targetName: deleteTarget?.name || 'Unknown',
+        summary: `Permanently deleted user "${deleteTarget?.name}"`,
+      });
       toast.success('User deleted');
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       setShowDependencyDialog(false);
@@ -104,6 +112,17 @@ export default function UserManagementPage() {
   const toggleMutation = useMutation({
     mutationFn: (id: string) => userService.toggleActive(id),
     onSuccess: () => {
+      const user = items.find((u) => u.id === deleteTarget?.id);
+      logAudit({
+        action: user?.isActive ? 'user.deactivate' : 'user.activate',
+        targetId: deleteTarget?.id || '',
+        targetType: 'user',
+        targetName: deleteTarget?.name || 'Unknown',
+        summary: user?.isActive
+          ? `Deactivated user "${deleteTarget?.name}"`
+          : `Activated user "${deleteTarget?.name}"`,
+        newValue: { isActive: !user?.isActive },
+      });
       toast.success('User status updated');
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
     },

@@ -24,6 +24,7 @@ import { collection, addDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { getAllClasses, getAllUsers } from '@/services/dataService';
 import { getClassDependencies } from '@/services/dependencyService';
+import { logAudit } from '@/services/auditService';
 import type { ClassEntry, UserDoc } from '@/services/dataService';
 import type { DependencyReport } from '@/services/dependencyService';
 
@@ -120,6 +121,13 @@ export default function AdminClassesPage() {
     try {
       await deleteDoc(doc(db, 'classes', deleteTarget.id));
       setClasses((prev) => prev.filter((c) => c.id !== deleteTarget.id));
+      logAudit({
+        action: 'class.delete',
+        targetId: deleteTarget.id,
+        targetType: 'class',
+        targetName: deleteTarget.name,
+        summary: `Permanently deleted class "${deleteTarget.name}"`,
+      });
       toast.success(`Class ${deleteTarget.name} permanently deleted`);
       setShowDependencyDialog(false);
       setDeleteTarget(null);
