@@ -26,6 +26,11 @@ function stripCodeFences(text: string): string {
   return text.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/gm, '').trim();
 }
 
+/** Strip control characters that break JSON.parse but don't affect semantic content. */
+function sanitizeJson(raw: string): string {
+  return raw.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\u200B-\u200F\uFEFF]/g, '');
+}
+
 /** Try to extract valid JSON from a response — finds the first {…} or […] block. */
 function extractJson(raw: string): string {
   const cleaned = raw.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/gm, '').trim();
@@ -54,7 +59,7 @@ async function callAI(prompt: string, step: 'extract' | 'content' | 'question') 
   const payload = {
     model: getModel(step),
     messages,
-    temperature: 0.3,
+    temperature: 0.1,
     max_tokens: 4096,
   };
 
@@ -94,7 +99,7 @@ ${text.slice(0, 30000)}`;
 
   const result = await callAI(prompt, 'extract');
   try {
-    return JSON.parse(result);
+    return JSON.parse(sanitizeJson(result));
   } catch {
     console.error('AI extract raw response:', result.slice(0, 1000));
     throw new Error('Failed to parse AI response as JSON');
@@ -182,7 +187,7 @@ Generate:
 
   const result = await callAI(prompt, 'content');
   try {
-    return JSON.parse(result);
+    return JSON.parse(sanitizeJson(result));
   } catch (e) {
     console.error('AI content raw response:', result.slice(0, 1000));
     throw new Error(`Failed to parse consolidated AI response: ${String(e)}`);
