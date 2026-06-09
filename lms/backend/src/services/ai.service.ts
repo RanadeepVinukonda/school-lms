@@ -23,19 +23,30 @@ interface ChatResponse {
 }
 
 export async function chatCompletion(params: ChatRequest): Promise<string> {
-  const { model, messages, temperature = 0.7, max_tokens = 4096 } = params;
+  const { model, messages, temperature = 0.7, max_tokens = 2048 } = params;
 
   const payload: Record<string, unknown> = { model, messages, temperature, max_tokens, response_format: { type: 'json_object' } };
 
-  const res = await fetch(env.AI_BASE_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      Authorization: `Bearer ${env.AI_API_KEY}`,
-    },
-    body: JSON.stringify(payload),
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+
+  let res: Response;
+  try {
+    res = await fetch(env.AI_BASE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Bearer ${env.AI_API_KEY}`,
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    throw new AppError(504, `AI request timed out or failed: ${err instanceof Error ? err.message : String(err)}`);
+  } finally {
+    clearTimeout(timer);
+  }
 
   if (!res.ok) {
     const err = await res.text();
