@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
 
+vi.mock('@/services/api', () => ({
+  default: {
+    post: vi.fn(),
+  },
+}));
+
 describe('aiService model selection', () => {
   const ORIG_ENV = { ...import.meta.env };
 

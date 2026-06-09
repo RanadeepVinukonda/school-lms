@@ -14,6 +14,7 @@ import subjectRoutes from './subject.routes';
 import analyticsRoutes from './analytics.routes';
 import uploadRoutes from './upload.routes';
 import settingsRoutes from './settings.routes';
+import aiRoutes from './ai.routes';
 
 const router = Router();
 
@@ -32,6 +33,7 @@ router.use('/subjects', subjectRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/settings', settingsRoutes);
+router.use('/ai', aiRoutes);
 
 router.get('/health', (_req, res) => {
   res.json({

@@ -1,8 +1,4 @@
-const OPENROUTER_URL = import.meta.env.VITE_OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1/chat/completions';
-
-function getApiKey() {
-  return import.meta.env.VITE_OPENROUTER_API_KEY;
-}
+import api from './api';
 
 /** Choose a model based on the processing step. Falls back to the generic model env var, then a default. */
 export function getModel(step: 'extract' | 'content' | 'question') {
@@ -11,10 +7,10 @@ export function getModel(step: 'extract' | 'content' | 'question') {
     step === 'content' ? 'VITE_OPENROUTER_MODEL_CONTENT' :
     'VITE_OPENROUTER_MODEL_QUESTION';
   const specific = import.meta.env[specificKey] as string | undefined;
-  return specific || (import.meta.env.VITE_OPENROUTER_MODEL as string) || 'nvidia/nemotron-3.5-content-safety:free';
+  return specific || (import.meta.env.VITE_OPENROUTER_MODEL as string) || 'mistralai/mistral-medium-3.5-128b';
 }
 
-/** Returns the OpenRouter API key from env, throwing if not configured. */
+/** Returns the API key from env, throwing if not configured. */
 export function getOpenRouterApiKey(): string {
   const key = import.meta.env.VITE_OPENROUTER_API_KEY;
   if (!key) {
@@ -30,47 +26,33 @@ function stripCodeFences(text: string): string {
   return text.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/gm, '').trim();
 }
 
-async function callOpenRouter(prompt: string, step: 'extract' | 'content' | 'question') {
-  const apiKey = getOpenRouterApiKey();
-
+async function callAI(prompt: string, step: 'extract' | 'content' | 'question') {
   const messages = [
     {
-      role: 'system',
+      role: 'system' as const,
       content: 'You are an AI textbook analysis engine. Extract educational content from textbook text and return it as structured JSON. Be thorough and accurate.',
     },
-    { role: 'user', content: prompt },
+    { role: 'user' as const, content: prompt },
   ];
 
-  const body: Record<string, unknown> = {
+  const payload = {
     model: getModel(step),
     messages,
     temperature: 0.3,
     max_tokens: 32000,
   };
 
-  const res = await fetch(OPENROUTER_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-      'HTTP-Referer': window.location.origin,
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    if (res.status === 401) {
-      throw new Error(
-        'OpenRouter rejected the API key. Check that VITE_OPENROUTER_API_KEY in your .env file is correct and restart the dev server.',
-      );
+  try {
+    const res = await api.post('/ai/chat', payload);
+    const raw = res.data?.data?.content || '';
+    return stripCodeFences(raw);
+  } catch (err: unknown) {
+    const axiosErr = err as { status?: number; message?: string };
+    if (axiosErr.status === 502) {
+      throw new Error('AI service unavailable. Check server configuration.');
     }
-    throw new Error(`OpenRouter API error ${res.status}: ${err}`);
+    throw new Error(axiosErr.message || 'AI request failed');
   }
-
-  const data = await res.json();
-  const raw = data.choices?.[0]?.message?.content || '';
-  return stripCodeFences(raw);
 }
 
 /** Extract chapter structure from textbook text using AI. */
@@ -94,7 +76,7 @@ Return valid JSON in this exact format:
 Textbook content:
 ${text.slice(0, 30000)}`;
 
-  const result = await callOpenRouter(prompt, 'extract');
+  const result = await callAI(prompt, 'extract');
   try {
     return JSON.parse(result);
   } catch {
@@ -181,7 +163,7 @@ Generate:
 - 8-12 questions: mix of easy (MCQ/T-F), medium (short answer), hard (numerical/problem-solving)
 - 2-3 assignments: at least one worksheet and one challenge/problem-solving task`;
 
-  const result = await callOpenRouter(prompt, 'content');
+  const result = await callAI(prompt, 'content');
   try {
     return JSON.parse(result);
   } catch (e) {
