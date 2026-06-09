@@ -12,7 +12,7 @@ const envSchema = z.object({
   FIREBASE_PRIVATE_KEY: z.string().min(1).transform((key) => key.replace(/\\n/g, '\n')),
   AI_API_KEY: z.string().min(1),
   AI_BASE_URL: z.string().default('https://integrate.api.nvidia.com/v1/chat/completions'),
-  AI_MODEL: z.string().default('mistralai/mistral-medium-3.5-128b'),
+  AI_MODEL: z.string().default('nvidia/nemotron-3-nano-30b-a3b'),
   CLOUDINARY_CLOUD_NAME: z.string().min(1),
   CLOUDINARY_API_KEY: z.string().min(1),
   CLOUDINARY_API_SECRET: z.string().min(1),
