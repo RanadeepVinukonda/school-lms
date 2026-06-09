@@ -28,7 +28,7 @@ function stripCodeFences(text: string): string {
 
 /** Strip control characters that break JSON.parse but don't affect semantic content. */
 function sanitizeJson(raw: string): string {
-  return raw.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\u200B-\u200F\uFEFF]/g, '');
+  return raw.replace(/[\x00-\x1F\u200B-\u200F\uFEFF]/g, '');
 }
 
 /** Try to extract valid JSON from a response — finds the first {…} or […] block. */
