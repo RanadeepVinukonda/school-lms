@@ -7,7 +7,7 @@ export function getModel(step: 'extract' | 'content' | 'question') {
     step === 'content' ? 'VITE_OPENROUTER_MODEL_CONTENT' :
     'VITE_OPENROUTER_MODEL_QUESTION';
   const specific = import.meta.env[specificKey] as string | undefined;
-  return specific || (import.meta.env.VITE_OPENROUTER_MODEL as string) || 'nvidia/nemotron-3-nano-30b-a3b';
+  return specific || (import.meta.env.VITE_OPENROUTER_MODEL as string) || 'meta/llama-3.1-8b-instruct';
 }
 
 /** Returns the API key from env, throwing if not configured. */
@@ -24,6 +24,22 @@ export function getOpenRouterApiKey(): string {
 /** Strip markdown code fences and whitespace so JSON.parse can work. */
 function stripCodeFences(text: string): string {
   return text.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/gm, '').trim();
+}
+
+/** Try to extract valid JSON from a response — finds the first {…} or […] block. */
+function extractJson(raw: string): string {
+  const cleaned = raw.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/gm, '').trim();
+  const braceStart = cleaned.indexOf('{');
+  if (braceStart === -1) return cleaned;
+  let depth = 0;
+  for (let i = braceStart; i < cleaned.length; i++) {
+    if (cleaned[i] === '{') depth++;
+    else if (cleaned[i] === '}') {
+      depth--;
+      if (depth === 0) return cleaned.slice(braceStart, i + 1);
+    }
+  }
+  return cleaned;
 }
 
 async function callAI(prompt: string, step: 'extract' | 'content' | 'question') {
@@ -45,7 +61,7 @@ async function callAI(prompt: string, step: 'extract' | 'content' | 'question') 
   try {
     const res = await api.post('/ai/chat', payload);
     const raw = res.data?.data?.content || '';
-    return stripCodeFences(raw);
+    return extractJson(raw);
   } catch (err: unknown) {
     const axiosErr = err as { status?: number; message?: string };
     if (axiosErr.status === 502) {
@@ -80,6 +96,7 @@ ${text.slice(0, 30000)}`;
   try {
     return JSON.parse(result);
   } catch {
+    console.error('AI extract raw response:', result.slice(0, 1000));
     throw new Error('Failed to parse AI response as JSON');
   }
 }
@@ -167,6 +184,7 @@ Generate:
   try {
     return JSON.parse(result);
   } catch (e) {
+    console.error('AI content raw response:', result.slice(0, 1000));
     throw new Error(`Failed to parse consolidated AI response: ${String(e)}`);
   }
 }

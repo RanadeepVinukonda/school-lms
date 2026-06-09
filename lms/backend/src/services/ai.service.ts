@@ -51,5 +51,6 @@ export async function chatCompletion(params: ChatRequest): Promise<string> {
 
   const data = await res.json() as ChatResponse;
   const content = data.choices?.[0]?.message?.content || '';
+  logger.info('AI response received', { model, contentLength: content.length, contentPreview: content.slice(0, 200) });
   return content;
 }
