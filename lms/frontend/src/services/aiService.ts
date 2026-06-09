@@ -7,7 +7,7 @@ export function getModel(step: 'extract' | 'content' | 'question') {
     step === 'content' ? 'VITE_OPENROUTER_MODEL_CONTENT' :
     'VITE_OPENROUTER_MODEL_QUESTION';
   const specific = import.meta.env[specificKey] as string | undefined;
-  return specific || (import.meta.env.VITE_OPENROUTER_MODEL as string) || 'meta/llama-3.1-8b-instruct';
+  return specific || (import.meta.env.VITE_OPENROUTER_MODEL as string) || 'mistralai/mistral-7b-instruct-v0.3';
 }
 
 /** Returns the API key from env, throwing if not configured. */
@@ -21,23 +21,65 @@ export function getOpenRouterApiKey(): string {
   return key;
 }
 
-/** Strip markdown code fences and whitespace so JSON.parse can work. */
-function stripCodeFences(text: string): string {
-  return text.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/gm, '').trim();
-}
-
-/** Strip control characters that break JSON.parse but don't affect semantic content. */
+/** Strip control characters that break JSON.parse. */
 function sanitizeJson(raw: string): string {
   return raw.replace(/[\x00-\x1F\u200B-\u200F\uFEFF]/g, '');
 }
 
-/** Try to extract valid JSON from a response — finds the first {…} or […] block. */
+/** Attempt to parse/repair JSON — tries increasingly aggressive fixes. */
+function safeParse(text: string): unknown {
+  const tryParse = (s: string) => JSON.parse(s);
+
+  // 1. Direct
+  try { return tryParse(text); } catch { /* fall through */ }
+
+  // 2. Strip control chars
+  let s = text.replace(/[\x00-\x1F\u200B-\u200F\uFEFF]/g, '');
+  try { return tryParse(s); } catch { /* fall through */ }
+
+  // 3. Remove trailing commas
+  s = s.replace(/,\s*([}\]])/g, '$1');
+  try { return tryParse(s); } catch { /* fall through */ }
+
+  // 4. Missing comma after } or ] before next key:  }"key":  /  ]"key":
+  s = s.replace(/([}\]])"([^"]*"\s*:)/g, '$1,"$2');
+  try { return tryParse(s); } catch { /* fall through */ }
+
+  // 5. Missing comma after string value before next key: "value""key":
+  s = s.replace(/"([^"\\]*)"\s+"([^"]*"\s*:)/g, '"$1","$2"');
+  try { return tryParse(s); } catch { /* fall through */ }
+
+  // 6. Missing comma after number/bool/null before next key: 1"key": / true"key":
+  s = s.replace(/(\d)\s+"([^"]*"\s*:)/g, '$1,"$2');
+  s = s.replace(/(true|false|null)\s+"([^"]*"\s*:)/g, '$1,"$2');
+  try { return tryParse(s); } catch { /* fall through */ }
+
+  // 7. Unquoted keys: {foo: -> {"foo":
+  s = s.replace(/([{,]\s*)([a-zA-Z_$][a-zA-Z0-9_$]*)\s*:/g, '$1"$2":');
+  try { return tryParse(s); } catch { /* fall through */ }
+
+  // 8. Single quotes instead of double
+  s = s.replace(/'/g, '"');
+  try { return tryParse(s); } catch { /* fall through */ }
+
+  console.error('AI JSON repair failed, raw snippet:', text.slice(0, 1000));
+  throw new SyntaxError('Failed to parse AI response as JSON');
+}
+
+/** Try to extract valid JSON from a response — finds the first {…} block. */
 function extractJson(raw: string): string {
   const cleaned = raw.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/gm, '').trim();
   const braceStart = cleaned.indexOf('{');
   if (braceStart === -1) return cleaned;
   let depth = 0;
+  const inString = new Array<boolean>(cleaned.length).fill(false);
+  let str = false;
+  for (let i = 0; i < cleaned.length; i++) {
+    if (cleaned[i] === '"' && (i === 0 || cleaned[i - 1] !== '\\')) str = !str;
+    inString[i] = str;
+  }
   for (let i = braceStart; i < cleaned.length; i++) {
+    if (inString[i]) continue;
     if (cleaned[i] === '{') depth++;
     else if (cleaned[i] === '}') {
       depth--;
@@ -98,12 +140,7 @@ Textbook content:
 ${text.slice(0, 30000)}`;
 
   const result = await callAI(prompt, 'extract');
-  try {
-    return JSON.parse(sanitizeJson(result));
-  } catch {
-    console.error('AI extract raw response:', result.slice(0, 1000));
-    throw new Error('Failed to parse AI response as JSON');
-  }
+  return safeParse(sanitizeJson(result)) as ReturnType<typeof extractChapters>;
 }
 
 /** Generate content, questions, AND assignments for a concept in ONE AI call. */
@@ -186,10 +223,5 @@ Generate:
 - 2-3 assignments: at least one worksheet and one challenge/problem-solving task`;
 
   const result = await callAI(prompt, 'content');
-  try {
-    return JSON.parse(sanitizeJson(result));
-  } catch (e) {
-    console.error('AI content raw response:', result.slice(0, 1000));
-    throw new Error(`Failed to parse consolidated AI response: ${String(e)}`);
-  }
+  return safeParse(sanitizeJson(result)) as ReturnType<typeof generateConceptContentAndQuestions>;
 }

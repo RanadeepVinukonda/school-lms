@@ -25,7 +25,7 @@ interface ChatResponse {
 export async function chatCompletion(params: ChatRequest): Promise<string> {
   const { model, messages, temperature = 0.7, max_tokens = 4096 } = params;
 
-  const payload: Record<string, unknown> = { model, messages, temperature, max_tokens };
+  const payload: Record<string, unknown> = { model, messages, temperature, max_tokens, response_format: { type: 'json_object' } };
 
   const res = await fetch(env.AI_BASE_URL, {
     method: 'POST',
