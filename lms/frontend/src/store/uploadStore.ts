@@ -4,7 +4,7 @@ import { extractChapters, generateConceptContentAndQuestions } from '@/services/
 import { searchVideosForConcept } from '@/services/youtubeService';
 import { createTextbook, saveChapters } from '@/services/textbookService';
 import { getStudentsByClass, createEnrollment } from '@/services/dataService';
-import type { Chapter, Concept, GeneratedQuestion } from '@/types/textbook';
+import type { Chapter, Concept, GeneratedQuestion, GeneratedAssignment } from '@/types/textbook';
 
 export type UploadStage =
   | 'idle'
@@ -141,35 +141,37 @@ async function runProcessing(taskId: string) {
 
         try {
           const result = await generateConceptContentAndQuestions(conceptTitle, ch.title, task.subjectName, text);
-          summary = result.summary;
-          notes = result.notes;
-          learningObjectives = result.learningObjectives;
-          keywords = result.keywords;
-          difficulty = result.difficulty;
-          prerequisites = result.prerequisites;
-          estimatedMinutes = result.estimatedMinutes;
+          if (result) {
+            summary = result.summary ?? summary;
+            notes = result.notes ?? notes;
+            learningObjectives = result.learningObjectives ?? learningObjectives;
+            keywords = result.keywords ?? keywords;
+            difficulty = result.difficulty ?? difficulty;
+            prerequisites = result.prerequisites ?? prerequisites;
+            estimatedMinutes = result.estimatedMinutes ?? estimatedMinutes;
+          }
 
           questionBank = (result.questionBank || []).map((q, i) => ({
             id: `${conceptTitle.replace(/\s+/g, '_')}_q_${i}`,
-            type: q.type as GeneratedQuestion['type'],
-            difficulty: q.difficulty as GeneratedQuestion['difficulty'],
-            category: q.category as GeneratedQuestion['category'],
-            text: q.text,
+            type: (q.type as GeneratedQuestion['type']) ?? 'mcq',
+            difficulty: (q.difficulty as GeneratedQuestion['difficulty']) ?? 'medium',
+            category: (q.category as GeneratedQuestion['category']) ?? 'recall',
+            text: q.text ?? '',
             options: q.options,
-            correctAnswer: q.correctAnswer,
-            explanation: q.explanation,
-            points: q.points || 1,
+            correctAnswer: q.correctAnswer ?? '',
+            explanation: q.explanation ?? '',
+            points: q.points ?? 1,
           }));
 
           assignments = (result.assignments || []).map((a, i) => ({
             id: `${conceptTitle.replace(/\s+/g, '_')}_a_${i}`,
-            title: a.title,
-            instructions: a.instructions,
-            marks: a.marks || 10,
-            estimatedMinutes: a.estimatedMinutes || 30,
-            answerKey: a.answerKey,
-            rubric: a.rubric,
-            type: a.type,
+            title: a.title ?? 'Assignment',
+            instructions: a.instructions ?? '',
+            marks: a.marks ?? 10,
+            estimatedMinutes: a.estimatedMinutes ?? 30,
+            answerKey: a.answerKey ?? '',
+            rubric: a.rubric ?? '',
+            type: (a.type as GeneratedAssignment['type']) ?? 'homework',
           }));
 
           addLog(`Generated ${questionBank.length} questions & ${assignments.length} assignments for: ${cp.title}`);
@@ -191,16 +193,16 @@ async function runProcessing(taskId: string) {
           chapterId: `ch_${id}_${ci}`,
           textbookId: id,
           title: conceptTitle,
-          summary,
-          notes,
-          learningObjectives,
-          keywords,
-          difficulty,
-          prerequisites,
-          estimatedMinutes,
-          videos,
-          questionBank,
-          assignments,
+          summary: summary ?? `Study of ${conceptTitle}`,
+          notes: notes ?? `Detailed notes for ${conceptTitle}. This concept covers key principles and applications.`,
+          learningObjectives: learningObjectives ?? [`Understand ${conceptTitle}`],
+          keywords: keywords ?? [conceptTitle.toLowerCase().replace(/\s+/g, '_')],
+          difficulty: difficulty ?? 'intermediate',
+          prerequisites: prerequisites ?? [],
+          estimatedMinutes: estimatedMinutes ?? 15,
+          videos: videos ?? [],
+          questionBank: questionBank ?? [],
+          assignments: assignments ?? [],
           order: coi,
         });
       }
@@ -210,7 +212,7 @@ async function runProcessing(taskId: string) {
         textbookId: id,
         title: ch.title,
         order: ci,
-        description: ch.description,
+        description: ch.description ?? '',
         concepts,
       });
     }
