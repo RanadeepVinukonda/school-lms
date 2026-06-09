@@ -20,7 +20,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
-import { collection, addDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { getAllClasses, getAllUsers } from '@/services/dataService';
 import { getClassDependencies } from '@/services/dependencyService';
@@ -43,6 +43,9 @@ export default function AdminClassesPage() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [dependencyReport, setDependencyReport] = useState<DependencyReport | null>(null);
   const [showDependencyDialog, setShowDependencyDialog] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [editTarget, setEditTarget] = useState<ClassEntry | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', code: '', grade: '', section: '', roomNumber: '' });
 
   const { data: fetchedClasses, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-classes'],
@@ -98,6 +101,55 @@ export default function AdminClassesPage() {
       refetch();
     } catch {
       toast.error('Failed to create class');
+    }
+  };
+
+  const handleEditClick = (cls: ClassEntry) => {
+    setEditTarget(cls);
+    setEditForm({
+      name: cls.name,
+      code: cls.code,
+      grade: cls.grade || '',
+      section: cls.section || '',
+      roomNumber: cls.roomNumber || '',
+    });
+    setShowEdit(true);
+  };
+
+  const handleUpdateClass = async () => {
+    if (!editTarget || !editForm.name || !editForm.code) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    const duplicate = classes.find((c) => c.code === editForm.code.toUpperCase() && c.id !== editTarget.id);
+    if (duplicate) {
+      toast.error(`Class code "${editForm.code.toUpperCase()}" is already in use by "${duplicate.name}"`);
+      return;
+    }
+    try {
+      await updateDoc(doc(db, 'classes', editTarget.id), {
+        name: editForm.name,
+        code: editForm.code.toUpperCase(),
+        grade: editForm.grade || null,
+        section: editForm.section || null,
+        roomNumber: editForm.roomNumber || null,
+        updatedAt: new Date().toISOString(),
+      });
+      logAudit({
+        action: 'class.update',
+        targetId: editTarget.id,
+        targetType: 'class',
+        targetName: editTarget.name,
+        summary: `Updated class "${editTarget.name}"`,
+        oldValue: { name: editTarget.name, code: editTarget.code, grade: editTarget.grade, section: editTarget.section },
+        newValue: { name: editForm.name, code: editForm.code.toUpperCase(), grade: editForm.grade, section: editForm.section },
+      });
+      setShowEdit(false);
+      setEditTarget(null);
+      toast.success(`Class ${editForm.name} updated`);
+      refetch();
+    } catch {
+      toast.error('Failed to update class');
     }
   };
 
@@ -268,7 +320,7 @@ export default function AdminClassesPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => toast.success(`Edit ${cls.name}`)}
+                            onClick={() => handleEditClick(cls)}
                           >
                             <Icon name="edit" size={16} />
                           </Button>
@@ -290,6 +342,73 @@ export default function AdminClassesPage() {
           </motion.div>
         )}
       </DataFetchWrapper>
+
+      <Dialog open={showEdit} onOpenChange={(open) => { if (!open) { setShowEdit(false); setEditTarget(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Class</DialogTitle>
+            <DialogDescription>
+              {editTarget && `Updating "${editTarget.name}". Changes affect student enrollments and timetable.`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Class Name</Label>
+                <Input
+                  placeholder="e.g. 1st class"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Code</Label>
+                <Input
+                  placeholder="e.g. 1-A"
+                  value={editForm.code}
+                  onChange={(e) => setEditForm((f) => ({ ...f, code: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label>Grade</Label>
+                <Input
+                  placeholder="e.g. 1"
+                  value={editForm.grade}
+                  onChange={(e) => setEditForm((f) => ({ ...f, grade: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Section</Label>
+                <Input
+                  placeholder="e.g. A"
+                  value={editForm.section}
+                  onChange={(e) => setEditForm((f) => ({ ...f, section: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Room</Label>
+                <Input
+                  placeholder="e.g. 101"
+                  value={editForm.roomNumber}
+                  onChange={(e) => setEditForm((f) => ({ ...f, roomNumber: e.target.value }))}
+                />
+              </div>
+            </div>
+            {editTarget && (
+              <p className="text-xs text-on-surface-variant flex items-center gap-1">
+                <Icon name="info" size={14} />
+                Editing this class affects timetables and student enrollments.
+              </p>
+            )}
+            <Button className="w-full" onClick={handleUpdateClass}>
+              <Icon name="save" size={16} className="mr-2" />
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showDependencyDialog} onOpenChange={(open) => { if (!open) { setShowDependencyDialog(false); setDeleteTarget(null); } }}>
         <DialogContent className="sm:max-w-[480px]">
