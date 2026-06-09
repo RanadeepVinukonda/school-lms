@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -19,7 +19,9 @@ import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
 import { userService, type CreateUserInput } from '@/services/userService';
+import { getUserDependencies } from '@/services/dependencyService';
 import type { User } from '@/types';
+import type { DependencyReport } from '@/services/dependencyService';
 
 const roleOptions = [
   { value: 'student', label: 'Student' },
@@ -69,14 +71,35 @@ export default function UserManagementPage() {
     onError: (err: Error) => toast.error(err.message || 'Failed to create user'),
   });
 
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [dependencyReport, setDependencyReport] = useState<DependencyReport | null>(null);
+  const [showDependencyDialog, setShowDependencyDialog] = useState(false);
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => userService.delete(id),
     onSuccess: () => {
       toast.success('User deleted');
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      setShowDependencyDialog(false);
+      setDeleteTarget(null);
     },
     onError: (err: Error) => toast.error(err.message || 'Failed to delete user'),
   });
+
+  const handleDeleteClick = async (user: User) => {
+    setDeleteTarget({ id: user.id, name: user.displayName });
+    setDeleteLoading(true);
+    setDependencyReport(null);
+    setShowDependencyDialog(true);
+    try {
+      const report = await getUserDependencies(user.id);
+      setDependencyReport(report);
+    } catch {
+      setDependencyReport(null);
+    }
+    setDeleteLoading(false);
+  };
 
   const toggleMutation = useMutation({
     mutationFn: (id: string) => userService.toggleActive(id),
@@ -168,7 +191,8 @@ export default function UserManagementPage() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-error"
-                          onClick={() => { if (confirm(`Delete ${u.displayName}?`)) deleteMutation.mutate(u.id); }}
+                          onClick={() => handleDeleteClick(u)}
+                          disabled={deleteMutation.isPending}
                           title="Delete user"
                         >
                           <Icon name="delete" size={16} />
@@ -203,7 +227,81 @@ export default function UserManagementPage() {
           ) : null}
         </DataFetchWrapper>
 
-        <Dialog open={showCreate} onOpenChange={setShowCreate}>
+      <Dialog open={showDependencyDialog} onOpenChange={(open) => { if (!open) { setShowDependencyDialog(false); setDeleteTarget(null); } }}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Delete {deleteTarget?.name || 'User'}</DialogTitle>
+            <DialogDescription>
+              {deleteLoading ? (
+                <span className="flex items-center gap-2">
+                  <Icon name="sync" size={16} className="animate-spin" />
+                  Analyzing user dependencies...
+                </span>
+              ) : dependencyReport && dependencyReport.totalDependents > 0 ? (
+                <span className="text-destructive font-medium">
+                  {dependencyReport.totalDependents} dependenc{dependencyReport.totalDependents === 1 ? 'y' : 'ies'} found.
+                </span>
+              ) : dependencyReport ? (
+                <span className="text-success font-medium">No dependencies found.</span>
+              ) : (
+                'Unable to analyze dependencies.'
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          {dependencyReport && dependencyReport.categories.length > 0 && (
+            <div className="space-y-2 rounded-lg border border-outline-variant p-4">
+              <p className="text-label-sm font-medium text-on-surface-variant uppercase tracking-wider">
+                Impact Summary
+              </p>
+              {dependencyReport.categories.map((cat) => (
+                <div key={cat.label} className="flex items-center justify-between text-body-md">
+                  <span>{cat.label}</span>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{cat.count}</Badge>
+                    {cat.action && <span className="text-xs text-on-surface-variant">{cat.action}</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2 pt-2">
+            <Button
+              variant="tonal"
+              className="w-full justify-start"
+              onClick={() => {
+                if (deleteTarget) toggleMutation.mutate(deleteTarget.id);
+              }}
+              disabled={deleteMutation.isPending}
+            >
+              <Icon name="toggle_off" size={16} className="mr-2" />
+              Deactivate User (recommended)
+              <span className="ml-auto text-xs text-on-surface-variant">Preserves all records</span>
+            </Button>
+            <Button
+              variant="destructive"
+              className="w-full justify-start"
+              onClick={() => {
+                if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
+              }}
+              disabled={deleteMutation.isPending || (dependencyReport?.totalDependents ?? 0) > 0}
+              loading={deleteMutation.isPending}
+            >
+              <Icon name="delete_forever" size={16} className="mr-2" />
+              Permanently Delete
+              <span className="ml-auto text-xs text-on-surface-variant">
+                {(dependencyReport?.totalDependents ?? 0) > 0 ? 'Has dependencies' : 'Irreversible'}
+              </span>
+            </Button>
+            <Button variant="ghost" className="w-full" onClick={() => { setShowDependencyDialog(false); setDeleteTarget(null); }}>
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCreate} onOpenChange={setShowCreate}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create User</DialogTitle>

@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,11 +20,13 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
-import { addDoc, collection, deleteDoc, doc } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { getAllSubjects } from '@/services/dataService';
 import { getAllTextbooks } from '@/services/textbookService';
+import { getSubjectDependencies } from '@/services/dependencyService';
 import type { Subject } from '@/services/dataService';
+import type { DependencyReport } from '@/services/dependencyService';
 
 interface SubjectForm {
   name: string;
@@ -67,6 +70,10 @@ export default function AdminSubjectsPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState<SubjectForm>(emptyForm);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [dependencyReport, setDependencyReport] = useState<DependencyReport | null>(null);
+  const [showDependencyDialog, setShowDependencyDialog] = useState(false);
 
   const { data: fetchedSubjects, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-subjects'],
@@ -119,13 +126,46 @@ export default function AdminSubjectsPage() {
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
+  const handleDeleteClick = async (id: string, name: string) => {
+    setDeleteTarget({ id, name });
+    setDeleteLoading(true);
+    setDependencyReport(null);
+    setShowDependencyDialog(true);
     try {
-      await deleteDoc(doc(db, 'subjects', id));
-      toast.success(`Subject ${name} deleted`);
+      const report = await getSubjectDependencies(id);
+      setDependencyReport(report);
+    } catch {
+      setDependencyReport(null);
+    }
+    setDeleteLoading(false);
+  };
+
+  const handleArchiveSubject = async () => {
+    if (!deleteTarget) return;
+    try {
+      await updateDoc(doc(db, 'subjects', deleteTarget.id), { isActive: false });
+      toast.success(`Subject ${deleteTarget.name} archived`);
+      setShowDependencyDialog(false);
+      setDeleteTarget(null);
+      refetch();
+    } catch {
+      toast.error('Failed to archive subject');
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      await deleteDoc(doc(db, 'subjects', deleteTarget.id));
+      toast.success(`Subject ${deleteTarget.name} permanently deleted`);
+      setShowDependencyDialog(false);
+      setDeleteTarget(null);
       refetch();
     } catch {
       toast.error('Failed to delete subject');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -233,7 +273,7 @@ export default function AdminSubjectsPage() {
                           <Button
                             variant="ghost"
                             size="icon-sm"
-                            onClick={() => handleDelete(subject.id, subject.name)}
+                            onClick={() => handleDeleteClick(subject.id, subject.name)}
                           >
                             <Icon name="delete" size={16} className="text-error" />
                           </Button>
@@ -256,6 +296,74 @@ export default function AdminSubjectsPage() {
           </motion.div>
         )}
       </DataFetchWrapper>
+
+      <Dialog open={showDependencyDialog} onOpenChange={(open) => { if (!open) { setShowDependencyDialog(false); setDeleteTarget(null); } }}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Delete {deleteTarget?.name || 'Subject'}</DialogTitle>
+            <DialogDescription>
+              {deleteLoading ? (
+                <span className="flex items-center gap-2">
+                  <Icon name="sync" size={16} className="animate-spin" />
+                  Analyzing dependencies...
+                </span>
+              ) : dependencyReport && dependencyReport.totalDependents > 0 ? (
+                <span className="text-destructive font-medium">
+                  This subject has {dependencyReport.totalDependents} dependent entit{dependencyReport.totalDependents === 1 ? 'y' : 'ies'}.
+                  Deleting will orphan academic records.
+                </span>
+              ) : dependencyReport ? (
+                <span className="text-success font-medium">No dependencies found. Safe to delete.</span>
+              ) : (
+                'Unable to analyze dependencies. Proceed with caution.'
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          {dependencyReport && dependencyReport.categories.length > 0 && (
+            <div className="space-y-2 rounded-lg border border-outline-variant p-4">
+              <p className="text-label-sm font-medium text-on-surface-variant uppercase tracking-wider">
+                Impact Summary
+              </p>
+              {dependencyReport.categories.map((cat) => (
+                <div key={cat.label} className="flex items-center justify-between text-body-md">
+                  <span>{cat.label}</span>
+                  <Badge variant="outline">{cat.count}</Badge>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2">
+            <Button
+              variant="tonal"
+              className="w-full justify-start"
+              onClick={handleArchiveSubject}
+              disabled={deleteLoading}
+            >
+              <Icon name="archive" size={16} className="mr-2" />
+              Archive Subject (recommended)
+              <span className="ml-auto text-xs text-on-surface-variant">Students retain access</span>
+            </Button>
+            <Button
+              variant="destructive"
+              className="w-full justify-start"
+              onClick={handleConfirmDelete}
+              disabled={deleteLoading || (dependencyReport?.totalDependents ?? 0) > 0}
+              loading={deleteLoading}
+            >
+              <Icon name="delete_forever" size={16} className="mr-2" />
+              Permanently Delete
+              <span className="ml-auto text-xs text-on-surface-variant">
+                {(dependencyReport?.totalDependents ?? 0) > 0 ? 'Disabled — has dependencies' : 'Irreversible'}
+              </span>
+            </Button>
+            <Button variant="ghost" className="w-full" onClick={() => { setShowDependencyDialog(false); setDeleteTarget(null); }}>
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
         <DialogContent>

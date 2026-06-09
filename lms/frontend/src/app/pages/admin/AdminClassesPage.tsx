@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,10 +20,12 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { getAllClasses, getAllUsers } from '@/services/dataService';
+import { getClassDependencies } from '@/services/dependencyService';
 import type { ClassEntry, UserDoc } from '@/services/dataService';
+import type { DependencyReport } from '@/services/dependencyService';
 
 function ordinal(n: number): string {
   const s = ['th', 'st', 'nd', 'rd'];
@@ -35,6 +38,10 @@ export default function AdminClassesPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [grade, setGrade] = useState('');
   const [classes, setClasses] = useState<ClassEntry[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [dependencyReport, setDependencyReport] = useState<DependencyReport | null>(null);
+  const [showDependencyDialog, setShowDependencyDialog] = useState(false);
 
   const { data: fetchedClasses, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-classes'],
@@ -93,9 +100,35 @@ export default function AdminClassesPage() {
     }
   };
 
-  const handleDelete = (id: string, name: string) => {
-    setClasses((prev) => prev.filter((c) => c.id !== id));
-    toast.error(`Class ${name} deleted`);
+  const handleDeleteClick = async (id: string, name: string) => {
+    setDeleteTarget({ id, name });
+    setDeleteLoading(true);
+    setDependencyReport(null);
+    setShowDependencyDialog(true);
+    try {
+      const report = await getClassDependencies(id);
+      setDependencyReport(report);
+    } catch {
+      setDependencyReport(null);
+    }
+    setDeleteLoading(false);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      await deleteDoc(doc(db, 'classes', deleteTarget.id));
+      setClasses((prev) => prev.filter((c) => c.id !== deleteTarget.id));
+      toast.success(`Class ${deleteTarget.name} permanently deleted`);
+      setShowDependencyDialog(false);
+      setDeleteTarget(null);
+      refetch();
+    } catch {
+      toast.error('Failed to delete class');
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   return (
@@ -234,7 +267,7 @@ export default function AdminClassesPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDelete(cls.id, cls.name)}
+                            onClick={() => handleDeleteClick(cls.id, cls.name)}
                           >
                             <Icon name="delete" size={16} className="text-error" />
                           </Button>
@@ -249,6 +282,73 @@ export default function AdminClassesPage() {
           </motion.div>
         )}
       </DataFetchWrapper>
+
+      <Dialog open={showDependencyDialog} onOpenChange={(open) => { if (!open) { setShowDependencyDialog(false); setDeleteTarget(null); } }}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Delete {deleteTarget?.name || 'Class'}</DialogTitle>
+            <DialogDescription>
+              {deleteLoading ? (
+                <span className="flex items-center gap-2">
+                  <Icon name="sync" size={16} className="animate-spin" />
+                  Analyzing dependencies...
+                </span>
+              ) : dependencyReport && dependencyReport.totalDependents > 0 ? (
+                <span className="text-destructive font-medium">
+                  {dependencyReport.totalDependents} dependenc{dependencyReport.totalDependents === 1 ? 'y' : 'ies'} found.
+                  Deleting this class will affect linked records.
+                </span>
+              ) : dependencyReport ? (
+                <span className="text-success font-medium">No dependencies found. Safe to delete.</span>
+              ) : (
+                'Unable to analyze dependencies.'
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          {dependencyReport && dependencyReport.categories.length > 0 && (
+            <div className="space-y-2 rounded-lg border border-outline-variant p-4">
+              <p className="text-label-sm font-medium text-on-surface-variant uppercase tracking-wider">
+                Impact Summary
+              </p>
+              {dependencyReport.categories.map((cat) => (
+                <div key={cat.label} className="flex items-center justify-between text-body-md">
+                  <span>{cat.label}</span>
+                  <Badge variant="outline">{cat.count}</Badge>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2 pt-2">
+            <Button
+              variant="tonal"
+              className="w-full justify-start"
+              disabled={deleteLoading}
+            >
+              <Icon name="archive" size={16} className="mr-2" />
+              Archive Class (coming soon)
+              <span className="ml-auto text-xs text-on-surface-variant">Preserves all records</span>
+            </Button>
+            <Button
+              variant="destructive"
+              className="w-full justify-start"
+              onClick={handleConfirmDelete}
+              disabled={deleteLoading || (dependencyReport?.totalDependents ?? 0) > 0}
+              loading={deleteLoading}
+            >
+              <Icon name="delete_forever" size={16} className="mr-2" />
+              Permanently Delete
+              <span className="ml-auto text-xs text-on-surface-variant">
+                {(dependencyReport?.totalDependents ?? 0) > 0 ? 'Has dependencies' : 'Irreversible'}
+              </span>
+            </Button>
+            <Button variant="ghost" className="w-full" onClick={() => { setShowDependencyDialog(false); setDeleteTarget(null); }}>
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent>
