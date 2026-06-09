@@ -81,7 +81,7 @@ export default function AdminClassesPage() {
     const num = parseInt(g, 10);
     const className = `${ordinal(num)} class`;
     try {
-      await addDoc(collection(db, 'classes'), {
+      const classRef = await addDoc(collection(db, 'classes'), {
         name: className,
         code: `G${num}`,
         grade: g,
@@ -94,6 +94,14 @@ export default function AdminClassesPage() {
         isActive: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+      });
+      logAudit({
+        action: 'class.create',
+        targetId: classRef.id,
+        targetType: 'class',
+        targetName: className,
+        summary: `Created class "${className}" (G${num})`,
+        newValue: { name: className, code: `G${num}`, grade: g },
       });
       setGrade('');
       setShowCreate(false);
@@ -165,6 +173,30 @@ export default function AdminClassesPage() {
       setDependencyReport(null);
     }
     setDeleteLoading(false);
+  };
+
+  const handleArchiveClass = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      await updateDoc(doc(db, 'classes', deleteTarget.id), { isActive: false, updatedAt: new Date().toISOString() });
+      logAudit({
+        action: 'class.archive',
+        targetId: deleteTarget.id,
+        targetType: 'class',
+        targetName: deleteTarget.name,
+        summary: `Archived class "${deleteTarget.name}"`,
+        newValue: { isActive: false },
+      });
+      toast.success(`Class ${deleteTarget.name} archived`);
+      setShowDependencyDialog(false);
+      setDeleteTarget(null);
+      refetch();
+    } catch {
+      toast.error('Failed to archive class');
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const handleConfirmDelete = async () => {
@@ -451,10 +483,12 @@ export default function AdminClassesPage() {
             <Button
               variant="tonal"
               className="w-full justify-start"
+              onClick={handleArchiveClass}
               disabled={deleteLoading}
+              loading={deleteLoading}
             >
               <Icon name="archive" size={16} className="mr-2" />
-              Archive Class (coming soon)
+              Archive Class
               <span className="ml-auto text-xs text-on-surface-variant">Preserves all records</span>
             </Button>
             <Button

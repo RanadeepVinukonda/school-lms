@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { collection, getDocs, doc, updateDoc, getDoc, addDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useAuthStore } from '@/store/authStore';
+import { logAudit } from '@/services/auditService';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ROUTES } from '@/lib/constants';
@@ -87,6 +88,15 @@ export default function ClassSelectionPage() {
         .filter((c) => selectedIds.has(c.id))
         .map((c) => c.name)
         .join(', ');
+
+      logAudit({
+        action: 'teacher.class.assignment',
+        targetId: user.id,
+        targetType: 'user',
+        targetName: user.displayName,
+        summary: `Teacher "${user.displayName}" assigned to classes: ${selectedNames}`,
+        newValue: { classIds: classIdArray },
+      });
 
       await addDoc(collection(db, 'notifications'), {
         userId: user.id,

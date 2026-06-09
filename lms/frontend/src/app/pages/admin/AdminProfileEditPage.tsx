@@ -84,9 +84,8 @@ export default function AdminProfileEditPage() {
       setUser({ ...user, ...data } as typeof user);
       toast.success('Profile updated');
       navigate(ROUTES.ADMIN_DASHBOARD);
-    } catch (err: any) {
-      console.error('Profile update error:', err);
-      toast.error(err?.message || 'Failed to update profile');
+    } catch {
+      toast.error('Failed to update profile');
     } finally {
       setSaving(false);
     }
