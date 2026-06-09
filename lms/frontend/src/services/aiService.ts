@@ -30,7 +30,7 @@ function stripCodeFences(text: string): string {
   return text.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/gm, '').trim();
 }
 
-async function callOpenRouter(prompt: string, step: 'extract' | 'content' | 'question', schema?: Record<string, unknown>) {
+async function callOpenRouter(prompt: string, step: 'extract' | 'content' | 'question') {
   const apiKey = getOpenRouterApiKey();
 
   const messages = [
@@ -47,10 +47,6 @@ async function callOpenRouter(prompt: string, step: 'extract' | 'content' | 'que
     temperature: 0.3,
     max_tokens: 32000,
   };
-
-  if (schema) {
-    body.response_format = { type: 'json_object' };
-  }
 
   const res = await fetch(OPENROUTER_URL, {
     method: 'POST',
@@ -185,7 +181,7 @@ Generate:
 - 8-12 questions: mix of easy (MCQ/T-F), medium (short answer), hard (numerical/problem-solving)
 - 2-3 assignments: at least one worksheet and one challenge/problem-solving task`;
 
-  const result = await callOpenRouter(prompt, 'content', { /* json_object hint */ });
+  const result = await callOpenRouter(prompt, 'content');
   try {
     return JSON.parse(result);
   } catch (e) {
