@@ -181,7 +181,7 @@ Generate:
 - 8-12 questions: mix of easy (MCQ/T-F), medium (short answer), hard (numerical/problem-solving)
 - 2-3 assignments: at least one worksheet and one challenge/problem-solving task`;
 
-  const result = await callOpenRouter(prompt, 'content', { /* json_object hint */ });
+  const result = await callOpenRouter(prompt, 'content');
   try {
     return JSON.parse(result);
   } catch (e) {
