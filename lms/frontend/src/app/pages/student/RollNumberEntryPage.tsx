@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { doc, updateDoc, getDoc, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useAuthStore } from '@/store/authStore';
+import { logAudit } from '@/services/auditService';
 import type { UserRole } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -80,6 +81,15 @@ export default function RollNumberEntryPage() {
           updatedAt: (d.updatedAt as string) || '',
         });
       }
+
+      logAudit({
+        action: 'student.roll.assignment',
+        targetId: user.id,
+        targetType: 'user',
+        targetName: user.displayName,
+        summary: `Student "${user.displayName}" assigned roll number ${cleaned} in class ${classId}`,
+        newValue: { studentId: cleaned, classId },
+      });
 
       await addDoc(collection(db, 'notifications'), {
         userId: user.id,

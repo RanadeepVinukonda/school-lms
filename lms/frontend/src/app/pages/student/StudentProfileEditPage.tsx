@@ -86,9 +86,8 @@ export default function StudentProfileEditPage() {
       setUser({ ...user, ...data } as typeof user);
       toast.success('Profile updated');
       navigate(ROUTES.STUDENT_PROFILE);
-    } catch (err: any) {
-      console.error('Profile update error:', err);
-      toast.error(err?.message || 'Failed to update profile');
+    } catch {
+      toast.error('Failed to update profile');
     } finally {
       setSaving(false);
     }

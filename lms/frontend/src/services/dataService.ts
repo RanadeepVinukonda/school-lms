@@ -1,5 +1,6 @@
 import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, Timestamp } from 'firebase/firestore';
 import { db } from '@/firebase/config';
+import { logAudit } from '@/services/auditService';
 
 export interface Subject {
   id: string;
@@ -103,6 +104,14 @@ export async function createEnrollment(studentId: string, courseId: string): Pro
     status: 'active',
     progress: 0,
     enrolledAt: Timestamp.now().toDate().toISOString(),
+  });
+  logAudit({
+    action: 'enrollment.create',
+    targetId: eid,
+    targetType: 'enrollment',
+    targetName: `Student ${studentId} → Course ${courseId}`,
+    summary: `Enrolled student ${studentId} in course ${courseId}`,
+    newValue: { studentId, courseId, status: 'active' },
   });
 }
 
@@ -387,6 +396,14 @@ export async function updateUser(id: string, data: Partial<UserDoc>): Promise<vo
     ...cleanData,
     updatedAt: new Date().toISOString(),
   }, { merge: true });
+  logAudit({
+    action: 'profile.update',
+    targetId: id,
+    targetType: 'user',
+    targetName: id,
+    summary: `Updated profile for user ${id}`,
+    newValue: cleanData,
+  });
 }
 
 // ── Lessons ──

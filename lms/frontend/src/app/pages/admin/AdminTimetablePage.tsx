@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +17,7 @@ import { pageTransition, listContainer, listItem } from '@/lib/motion';
 import { getTimetableByClass, getAllSubjects, getAllUsers, getAllClasses } from '@/services/dataService';
 import { collection, addDoc, deleteDoc, doc, writeBatch } from 'firebase/firestore';
 import { db } from '@/firebase/config';
+import { logAudit } from '@/services/auditService';
 import type { TimetableEntry, Subject, UserDoc, ClassEntry } from '@/services/dataService';
 
 const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'] as const;
@@ -43,6 +45,7 @@ export default function AdminTimetablePage() {
   const [showEditor, setShowEditor] = useState(false);
   const [slotForm, setSlotForm] = useState<SlotForm>({ day: 'monday', period: 1, subjectId: '', teacherId: '', room: '' });
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; label: string } | null>(null);
 
   const { data: classList = [] } = useQuery({
     queryKey: ['admin-timetable-classes'],
@@ -111,12 +114,11 @@ export default function AdminTimetablePage() {
       return;
     }
     try {
-      if (selectedSlot) {
+      const existing = timetableMap.get(`${slotForm.day}-${slotForm.period}`);
+      const isUpdate = !!existing && !!existing.id;
+      if (isUpdate) {
         const batch = writeBatch(db);
-        const existing = timetableMap.get(`${slotForm.day}-${slotForm.period}`);
-        if (existing && existing.id) {
-          batch.delete(doc(db, 'timetable', existing.id));
-        }
+        batch.delete(doc(db, 'timetable', existing.id));
         batch.set(doc(collection(db, 'timetable')), {
           classId,
           day: slotForm.day,
@@ -127,11 +129,15 @@ export default function AdminTimetablePage() {
           updatedAt: new Date().toISOString(),
         });
         await batch.commit();
+        logAudit({
+          action: 'timetable.update',
+          targetId: existing.id,
+          targetType: 'timetable',
+          targetName: `${slotForm.day} P${slotForm.period}`,
+          summary: `Updated timetable slot for class ${classData?.name || classId}`,
+          newValue: { classId, day: slotForm.day, period: slotForm.period, subjectId: slotForm.subjectId, teacherId: slotForm.teacherId, room: slotForm.room },
+        });
       } else {
-        const existing = timetableMap.get(`${slotForm.day}-${slotForm.period}`);
-        if (existing && existing.id) {
-          await deleteDoc(doc(db, 'timetable', existing.id));
-        }
         await addDoc(collection(db, 'timetable'), {
           classId,
           day: slotForm.day,
@@ -140,6 +146,14 @@ export default function AdminTimetablePage() {
           teacherId: slotForm.teacherId,
           room: slotForm.room,
           createdAt: new Date().toISOString(),
+        });
+        logAudit({
+          action: 'timetable.create',
+          targetId: '',
+          targetType: 'timetable',
+          targetName: `${slotForm.day} P${slotForm.period}`,
+          summary: `Created timetable slot for class ${classData?.name || classId}`,
+          newValue: { classId, day: slotForm.day, period: slotForm.period, subjectId: slotForm.subjectId, teacherId: slotForm.teacherId, room: slotForm.room },
         });
       }
       setShowEditor(false);
@@ -153,6 +167,13 @@ export default function AdminTimetablePage() {
   const handleRemoveSlot = async (slotId: string) => {
     try {
       await deleteDoc(doc(db, 'timetable', slotId));
+      logAudit({
+        action: 'timetable.delete',
+        targetId: slotId,
+        targetType: 'timetable',
+        targetName: `Timetable slot`,
+        summary: `Deleted timetable slot from class ${classData?.name || classId}`,
+      });
       toast.success('Slot removed');
       refetch();
     } catch {
@@ -273,7 +294,7 @@ export default function AdminTimetablePage() {
                                   {slot && slot.id && (
                                     <button
                                       className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 text-error hover:text-error/80 transition-opacity"
-                                      onClick={(e) => { e.stopPropagation(); handleRemoveSlot(slot.id!); }}
+                                      onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ id: slot.id!, label: `${slot.day} P${slot.period}` }); }}
                                       title="Remove slot"
                                     >
                                       <Icon name="close" size={14} />
@@ -299,6 +320,21 @@ export default function AdminTimetablePage() {
           );
         }}
       </DataFetchWrapper>
+
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        onOpenChange={(open) => { if (!open) setDeleteConfirm(null); }}
+        title="Remove Timetable Slot"
+        description={deleteConfirm ? `Are you sure you want to remove "${deleteConfirm.label}"? This action cannot be undone.` : ''}
+        confirmText="Remove"
+        destructive
+        onConfirm={() => {
+          if (deleteConfirm) {
+            handleRemoveSlot(deleteConfirm.id);
+            setDeleteConfirm(null);
+          }
+        }}
+      />
 
       <Dialog open={showEditor} onOpenChange={(open) => { if (!open) setShowEditor(false); }}>
         <DialogContent>

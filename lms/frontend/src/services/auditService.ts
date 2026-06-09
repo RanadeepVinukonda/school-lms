@@ -8,7 +8,13 @@ export type AuditAction =
   | 'user.create' | 'user.update' | 'user.deactivate' | 'user.activate' | 'user.delete'
   | 'exam.create' | 'exam.update' | 'exam.delete'
   | 'assignment.create' | 'assignment.update' | 'assignment.delete'
-  | 'textbook.upload' | 'textbook.delete';
+  | 'textbook.create' | 'textbook.update' | 'textbook.delete' | 'textbook.chapters.save'
+  | 'concept.release'
+  | 'enrollment.create'
+  | 'profile.update'
+  | 'timetable.create' | 'timetable.update' | 'timetable.delete'
+  | 'teacher.class.assignment'
+  | 'student.roll.assignment';
 
 export interface AuditEntry {
   action: AuditAction;

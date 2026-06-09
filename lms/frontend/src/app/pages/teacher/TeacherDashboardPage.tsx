@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,7 +37,7 @@ const QUICK_ACTIONS = [
   { icon: 'add_circle', label: 'Create Exam', link: '/teacher/exams', bg: 'bg-primary-container', color: 'text-on-primary-container' },
   { icon: 'note_add', label: 'Create Assignment', link: '/teacher/assignments', bg: 'bg-secondary-container', color: 'text-on-secondary-container' },
   { icon: 'group', label: 'View Students', link: '/teacher/students', bg: 'bg-success-container', color: 'text-on-success-container' },
-  { icon: 'chat', label: 'Message Class', link: null, bg: 'bg-warning-container', color: 'text-on-warning-container' },
+  { icon: 'analytics', label: 'View Reports', link: '/teacher/reports', bg: 'bg-warning-container', color: 'text-on-warning-container' },
 ] as const;
 
 function NeedsAttentionCard({ item }: { item: NeedsAttentionItem }) {
@@ -229,33 +228,18 @@ export default function TeacherDashboardPage() {
               <motion.div variants={listItem} initial="hidden" animate="show">
                 <h2 className="text-title-md font-semibold mb-3">Quick Actions</h2>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                  {QUICK_ACTIONS.map((action) =>
-                    action.link ? (
-                      <Link key={action.label} to={action.link} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl">
-                        <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                          <CardContent className="p-4 flex flex-col items-center gap-2 text-center">
-                            <div className={`h-10 w-10 rounded-full ${action.bg} flex items-center justify-center`}>
-                              <Icon name={action.icon} size={22} className={action.color} />
-                            </div>
-                            <p className="text-sm font-medium">{action.label}</p>
-                          </CardContent>
-                        </Card>
-                      </Link>
-                    ) : (
-                      <button key={action.label} type="button" onClick={() => toast.success('Messaging coming soon!')}
-                        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl text-left w-full"
-                      >
-                        <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                          <CardContent className="p-4 flex flex-col items-center gap-2 text-center">
-                            <div className={`h-10 w-10 rounded-full ${action.bg} flex items-center justify-center`}>
-                              <Icon name={action.icon} size={22} className={action.color} />
-                            </div>
-                            <p className="text-sm font-medium">{action.label}</p>
-                          </CardContent>
-                        </Card>
-                      </button>
-                    ),
-                  )}
+                  {QUICK_ACTIONS.map((action) => (
+                    <Link key={action.label} to={action.link} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl">
+                      <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                        <CardContent className="p-4 flex flex-col items-center gap-2 text-center">
+                          <div className={`h-10 w-10 rounded-full ${action.bg} flex items-center justify-center`}>
+                            <Icon name={action.icon} size={22} className={action.color} />
+                          </div>
+                          <p className="text-sm font-medium">{action.label}</p>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
                 </div>
               </motion.div>
             </>

@@ -1,5 +1,6 @@
 import { collection, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, query, where, deleteDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/firebase/config';
+import { logAudit } from '@/services/auditService';
 import type { Textbook, Chapter, Concept, GeneratedQuestion, GeneratedAssignment, CachedVideo, ConceptProgress, ConceptRelease } from '@/types/textbook';
 
 const TEXTBOOKS_COLLECTION = 'textbooks';
@@ -13,6 +14,14 @@ export async function createTextbook(data: Omit<Textbook, 'id' | 'createdAt' | '
     createdAt: Timestamp.now().toDate().toISOString(),
     updatedAt: Timestamp.now().toDate().toISOString(),
   });
+  logAudit({
+    action: 'textbook.create',
+    targetId: docRef.id,
+    targetType: 'textbook',
+    targetName: data.title || 'Untitled',
+    summary: `Created textbook "${data.title || 'Untitled'}" for subject ${data.subjectId}`,
+    newValue: { ...data },
+  });
   return docRef.id;
 }
 
@@ -22,6 +31,14 @@ export async function updateTextbook(id: string, data: Partial<Textbook>): Promi
   await updateDoc(docRef, {
     ...data,
     updatedAt: Timestamp.now().toDate().toISOString(),
+  });
+  logAudit({
+    action: 'textbook.update',
+    targetId: id,
+    targetType: 'textbook',
+    targetName: data.title || id,
+    summary: `Updated textbook "${data.title || id}"`,
+    newValue: data,
   });
 }
 
@@ -50,6 +67,13 @@ export async function getTextbooksBySubject(subjectId: string): Promise<Textbook
 /** Delete a textbook document from Firestore. */
 export async function deleteTextbook(id: string): Promise<void> {
   await deleteDoc(doc(db, TEXTBOOKS_COLLECTION, id));
+  logAudit({
+    action: 'textbook.delete',
+    targetId: id,
+    targetType: 'textbook',
+    targetName: id,
+    summary: `Deleted textbook ${id}`,
+  });
 }
 
 /** Save chapter data to a textbook document and update its status to 'ready'. */
@@ -63,6 +87,14 @@ export async function saveChapters(textbookId: string, chapters: Chapter[]): Pro
       processingProgress: 100,
       processingStage: 'Complete',
       updatedAt: Timestamp.now().toDate().toISOString(),
+    });
+    logAudit({
+      action: 'textbook.chapters.save',
+      targetId: textbookId,
+      targetType: 'textbook',
+      targetName: textbookId,
+      summary: `Saved ${chapters.length} chapters to textbook ${textbookId} and marked as ready`,
+      newValue: { chapterCount: chapters.length, status: 'ready' },
     });
   }
 }
@@ -148,4 +180,12 @@ export async function setConceptRelease(
   } else {
     await setDoc(docRef, { ...payload, questionBankReleased: false, assignmentsReleased: false, ...data });
   }
+  logAudit({
+    action: 'concept.release',
+    targetId: `${textbookId}_${conceptId}`,
+    targetType: 'conceptRelease',
+    targetName: `Concept ${conceptId}`,
+    summary: `Updated release settings for concept ${conceptId} in textbook ${textbookId}`,
+    newValue: data,
+  });
 }
