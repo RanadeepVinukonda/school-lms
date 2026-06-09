@@ -1,40 +1,58 @@
 import { getTextbooksBySubject } from './textbookService';
-import { getAssignmentsBySubject, getExamsBySubject, getAllGrades, getStudentsByClass, getTimetableByClass, getUser, getAllUsers, getSubmissionsByAssignment } from './dataService';
+import { getAssignmentsBySubject, getExamsBySubject, getAllGrades, getStudentsByClass, getTimetableByClass, getUser, getAllUsers } from './dataService';
 import { collection, query, where, getDocs, getDoc, doc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
+
+export interface DependencyCategory {
+  label: string;
+  count: number;
+  action?: string;
+}
 
 export interface DependencyReport {
   entityName: string;
   entityType: string;
   totalDependents: number;
-  categories: { label: string; count: number; action?: string }[];
+  categories: DependencyCategory[];
   canArchive: boolean;
   canDelete: boolean;
   recommendedAction: 'archive' | 'deactivate' | 'delete' | 'cancel';
 }
 
+async function countQuery(collectionName: string, field: string, value: string): Promise<number> {
+  try {
+    const snapshot = await getDocs(query(collection(db, collectionName), where(field, '==', value)));
+    return snapshot.docs.length;
+  } catch {
+    return 0;
+  }
+}
+
+async function countArrayQuery(collectionName: string, field: string, value: string): Promise<number> {
+  try {
+    const snapshot = await getDocs(query(collection(db, collectionName), where(field, 'array-contains', value)));
+    return snapshot.docs.length;
+  } catch {
+    return 0;
+  }
+}
+
 /** Analyze what depends on a subject before deletion. */
 export async function getSubjectDependencies(subjectId: string): Promise<DependencyReport> {
-  const [textbooks, assignments, exams, users, grades] = await Promise.all([
-    getTextbooksBySubject(subjectId),
+  const [textbooks, assignments, exams, grades] = await Promise.all([
+    getTextbooksBySubject(subjectId).catch(() => []),
     getAssignmentsBySubject(subjectId).catch(() => []),
     getExamsBySubject(subjectId).catch(() => []),
-    getAllUsers().catch(() => []),
     getAllGrades().catch(() => []),
   ]);
 
-  const enrolledStudents = users.filter((u) => u.classIds?.some(() => true));
   const subjectGrades = grades.filter((g) => g.subjectId === subjectId);
-  const teacherCount = users.filter(
-    (u) => u.role === 'teacher' && u.classIds?.some(() => true),
-  ).length;
 
   const categories: DependencyReport['categories'] = [];
   if (textbooks.length > 0) categories.push({ label: 'Textbooks', count: textbooks.length });
   if (assignments.length > 0) categories.push({ label: 'Assignments', count: assignments.length });
   if (exams.length > 0) categories.push({ label: 'Exams', count: exams.length });
   if (subjectGrades.length > 0) categories.push({ label: 'Grade records', count: subjectGrades.length });
-  if (enrolledStudents.length > 0) categories.push({ label: 'Enrolled students', count: enrolledStudents.length });
 
   const totalDependents = categories.reduce((s, c) => s + c.count, 0);
 
@@ -43,7 +61,7 @@ export async function getSubjectDependencies(subjectId: string): Promise<Depende
     entityType: 'subject',
     totalDependents,
     categories,
-    canArchive: totalDependents > 0,
+    canArchive: true,
     canDelete: totalDependents === 0,
     recommendedAction: totalDependents > 0 ? 'archive' : 'delete',
   };
@@ -97,12 +115,13 @@ export async function getUserDependencies(userId: string): Promise<DependencyRep
   const categories: DependencyReport['categories'] = [];
 
   if (user.role === 'teacher') {
-    const allUsers = await getAllUsers().catch(() => []);
-    const assignedClasses = allUsers.filter(
-      (u) => u.classIds?.some(() => true) && u.teacherId === userId,
-    );
-    if (assignedClasses.length > 0) {
-      categories.push({ label: 'Classes assigned', count: assignedClasses.length });
+    const classCount = await countArrayQuery('classes', 'teacherIds', userId);
+    if (classCount > 0) {
+      categories.push({ label: 'Classes assigned', count: classCount });
+    }
+    const courseCount = await countQuery('courses', 'teacherId', userId);
+    if (courseCount > 0) {
+      categories.push({ label: 'Courses taught', count: courseCount });
     }
   }
 
@@ -111,6 +130,10 @@ export async function getUserDependencies(userId: string): Promise<DependencyRep
     const studentGrades = allGrades.filter((g) => g.studentId === userId);
     if (studentGrades.length > 0) {
       categories.push({ label: 'Grade records', count: studentGrades.length, action: 'Preserved on deactivation' });
+    }
+    const submissionCount = await countQuery('submissions', 'studentId', userId);
+    if (submissionCount > 0) {
+      categories.push({ label: 'Submissions', count: submissionCount, action: 'Preserved on deactivation' });
     }
   }
 
@@ -122,5 +145,132 @@ export async function getUserDependencies(userId: string): Promise<DependencyRep
     canArchive: true,
     canDelete: false,
     recommendedAction: 'deactivate',
+  };
+}
+
+/** Analyze what depends on a course before deletion. */
+export async function getCourseDependencies(courseId: string): Promise<DependencyReport> {
+  const [lessonCount, assignmentCount, examCount, enrollmentCount, gradeCount] = await Promise.all([
+    countQuery('lessons', 'courseId', courseId),
+    countQuery('assignments', 'courseId', courseId),
+    countQuery('exams', 'courseId', courseId),
+    countQuery('enrollment', 'courseId', courseId),
+    countQuery('grades', 'courseId', courseId),
+  ]);
+
+  const categories: DependencyReport['categories'] = [];
+  if (lessonCount > 0) categories.push({ label: 'Lessons', count: lessonCount });
+  if (assignmentCount > 0) categories.push({ label: 'Assignments', count: assignmentCount });
+  if (examCount > 0) categories.push({ label: 'Exams', count: examCount });
+  if (enrollmentCount > 0) categories.push({ label: 'Enrolled students', count: enrollmentCount });
+  if (gradeCount > 0) categories.push({ label: 'Grade records', count: gradeCount });
+
+  const total = categories.reduce((s, c) => s + c.count, 0);
+  return {
+    entityName: 'this course',
+    entityType: 'course',
+    totalDependents: total,
+    categories,
+    canArchive: true,
+    canDelete: total === 0,
+    recommendedAction: total > 0 ? 'archive' : 'delete',
+  };
+}
+
+/** Analyze what depends on a lesson before deletion. */
+export async function getLessonDependencies(lessonId: string): Promise<DependencyReport> {
+  const lessonData = await getDoc(doc(db, 'lessons', lessonId)).then((s) => s.data()).catch(() => null);
+  const completedCount = lessonData?.completedBy?.length || 0;
+
+  const categories: DependencyReport['categories'] = [];
+  if (completedCount > 0) categories.push({ label: 'Students who completed', count: completedCount, action: 'Progress preserved' });
+
+  return {
+    entityName: 'this lesson',
+    entityType: 'lesson',
+    totalDependents: completedCount,
+    categories,
+    canArchive: false,
+    canDelete: true,
+    recommendedAction: 'delete',
+  };
+}
+
+/** Analyze what depends on an assignment before deletion. */
+export async function getAssignmentDependencies(assignmentId: string): Promise<DependencyReport> {
+  const submissionCount = await countQuery('submissions', 'assignmentId', assignmentId);
+
+  const categories: DependencyReport['categories'] = [];
+  if (submissionCount > 0) categories.push({ label: 'Student submissions', count: submissionCount, action: 'Lost on delete' });
+
+  return {
+    entityName: 'this assignment',
+    entityType: 'assignment',
+    totalDependents: submissionCount,
+    categories,
+    canArchive: true,
+    canDelete: submissionCount === 0,
+    recommendedAction: submissionCount > 0 ? 'archive' : 'delete',
+  };
+}
+
+/** Analyze what depends on an exam before deletion. */
+export async function getExamDependencies(examId: string): Promise<DependencyReport> {
+  const attemptCount = await countQuery('examAttempts', 'examId', examId);
+
+  const categories: DependencyReport['categories'] = [];
+  if (attemptCount > 0) categories.push({ label: 'Student attempts', count: attemptCount, action: 'Lost on delete' });
+
+  return {
+    entityName: 'this exam',
+    entityType: 'exam',
+    totalDependents: attemptCount,
+    categories,
+    canArchive: true,
+    canDelete: attemptCount === 0,
+    recommendedAction: attemptCount > 0 ? 'archive' : 'delete',
+  };
+}
+
+/** Analyze what depends on a quiz before deletion. */
+export async function getQuizDependencies(quizId: string): Promise<DependencyReport> {
+  const attemptCount = await countQuery('quizAttempts', 'quizId', quizId);
+
+  const categories: DependencyReport['categories'] = [];
+  if (attemptCount > 0) categories.push({ label: 'Quiz attempts', count: attemptCount, action: 'Lost on delete' });
+
+  return {
+    entityName: 'this quiz',
+    entityType: 'quiz',
+    totalDependents: attemptCount,
+    categories,
+    canArchive: false,
+    canDelete: attemptCount === 0,
+    recommendedAction: attemptCount > 0 ? 'cancel' : 'delete',
+  };
+}
+
+/** Analyze what depends on a textbook before deletion. */
+export async function getTextbookDependencies(textbookId: string): Promise<DependencyReport> {
+  const [progressCount, conceptCount, chapterCount] = await Promise.all([
+    countQuery('conceptProgress', 'textbookId', textbookId),
+    countQuery('conceptReleases', 'textbookId', textbookId),
+    getDoc(doc(db, 'textbooks', textbookId)).then(
+      (s) => (s.data()?.chapters?.length as number) || 0,
+    ).catch(() => 0),
+  ]);
+
+  const categories: DependencyReport['categories'] = [];
+  if (chapterCount > 0) categories.push({ label: 'Chapters', count: chapterCount, action: 'Deleted with textbook' });
+  if (progressCount > 0) categories.push({ label: 'Student progress records', count: progressCount, action: 'Lost on delete' });
+
+  return {
+    entityName: 'this textbook',
+    entityType: 'textbook',
+    totalDependents: progressCount + conceptCount + chapterCount,
+    categories,
+    canArchive: true,
+    canDelete: progressCount === 0,
+    recommendedAction: progressCount > 0 ? 'archive' : 'delete',
   };
 }

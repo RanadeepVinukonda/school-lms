@@ -1,19 +1,34 @@
 import { Request, Response } from 'express';
 import * as assignmentService from '../services/assignment.service';
+import { requireNoDependenciesOrThrow, getAssignmentImpact } from '../services/impact.service';
+import { logAudit, adminAuditEntry } from '../services/audit.service';
 import { sendSuccess, sendCreated } from '../utils/response';
 
 export async function createAssignment(req: Request, res: Response) {
   const result = await assignmentService.createAssignment(req.body);
+  logAudit(adminAuditEntry(req as any, 'assignment.create', result.id, 'assignment', result.title, {
+    newValue: result,
+    summary: `Created assignment "${result.title}"`,
+  }));
   sendCreated(res, result, 'Assignment created');
 }
 
 export async function updateAssignment(req: Request, res: Response) {
+  const old = await assignmentService.getAssignmentById(req.params.assignmentId);
   const result = await assignmentService.updateAssignment(req.params.assignmentId, req.body);
+  logAudit(adminAuditEntry(req as any, 'assignment.update', req.params.assignmentId, 'assignment', old.title, {
+    oldValue: old,
+    newValue: result,
+    summary: `Updated assignment "${old.title}"`,
+  }));
   sendSuccess(res, result, 'Assignment updated');
 }
 
 export async function deleteAssignment(req: Request, res: Response) {
+  const assignment = await assignmentService.getAssignmentById(req.params.assignmentId);
+  await requireNoDependenciesOrThrow('assignment', req.params.assignmentId, getAssignmentImpact);
   await assignmentService.deleteAssignment(req.params.assignmentId);
+  logAudit(adminAuditEntry(req as any, 'assignment.delete', req.params.assignmentId, 'assignment', assignment.title));
   sendSuccess(res, null, 'Assignment deleted');
 }
 
@@ -39,6 +54,10 @@ export async function submitAssignment(req: Request, res: Response) {
 
 export async function gradeSubmission(req: Request, res: Response) {
   const result = await assignmentService.gradeSubmission(req.params.submissionId, req.user!.uid, req.body);
+  logAudit(adminAuditEntry(req as any, 'grade.update', req.params.submissionId, 'submission', req.params.submissionId, {
+    newValue: req.body,
+    summary: `Graded submission ${req.params.submissionId}: ${req.body.score}/${req.body.totalPoints}`,
+  }));
   sendSuccess(res, result, 'Submission graded');
 }
 

@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import * as examService from '../services/exam.service';
+import { requireNoDependenciesOrThrow, getExamImpact } from '../services/impact.service';
+import { logAudit, adminAuditEntry } from '../services/audit.service';
 import { sendSuccess, sendCreated } from '../utils/response';
 
 export async function listAllExams(req: Request, res: Response) {
@@ -9,16 +11,29 @@ export async function listAllExams(req: Request, res: Response) {
 
 export async function createExam(req: Request, res: Response) {
   const result = await examService.createExam(req.body);
+  logAudit(adminAuditEntry(req as any, 'exam.create', result.id, 'exam', result.title, {
+    newValue: result,
+    summary: `Created exam "${result.title}"`,
+  }));
   sendCreated(res, result, 'Exam created');
 }
 
 export async function updateExam(req: Request, res: Response) {
+  const old = await examService.getExamById(req.params.examId);
   const result = await examService.updateExam(req.params.examId, req.body);
+  logAudit(adminAuditEntry(req as any, 'exam.update', req.params.examId, 'exam', old.title, {
+    oldValue: old,
+    newValue: result,
+    summary: `Updated exam "${old.title}"`,
+  }));
   sendSuccess(res, result, 'Exam updated');
 }
 
 export async function deleteExam(req: Request, res: Response) {
+  const exam = await examService.getExamById(req.params.examId);
+  await requireNoDependenciesOrThrow('exam', req.params.examId, getExamImpact);
   await examService.deleteExam(req.params.examId);
+  logAudit(adminAuditEntry(req as any, 'exam.delete', req.params.examId, 'exam', exam.title));
   sendSuccess(res, null, 'Exam deleted');
 }
 
@@ -44,6 +59,10 @@ export async function submitExamAttempt(req: Request, res: Response) {
 
 export async function gradeExamAttempt(req: Request, res: Response) {
   const result = await examService.gradeExamAttempt(req.params.attemptId, req.user!.uid, req.body);
+  logAudit(adminAuditEntry(req as any, 'grade.update', req.params.attemptId, 'examAttempt', req.params.attemptId, {
+    newValue: req.body,
+    summary: `Graded exam attempt ${req.params.attemptId}`,
+  }));
   sendSuccess(res, result, 'Exam attempt graded');
 }
 

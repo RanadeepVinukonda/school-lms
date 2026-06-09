@@ -52,6 +52,7 @@ import AdminTimetablePage from '@/app/pages/admin/AdminTimetablePage';
 import AdminSubjectsPage from '@/app/pages/admin/AdminSubjectsPage';
 import AdminSettingsPage from '@/app/pages/admin/AdminSettingsPage';
 import AdminProfileEditPage from '@/app/pages/admin/AdminProfileEditPage';
+import UserManagementPage from '@/app/pages/admin/UserManagementPage';
 
 import RollNumberEntryPage from '@/app/pages/student/RollNumberEntryPage';
 import ClassSelectionPage from '@/app/pages/teacher/ClassSelectionPage';
@@ -145,6 +146,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.ADMIN_SUBJECTS, element: <AdminSubjectsPage /> },
       { path: ROUTES.ADMIN_SETTINGS, element: <AdminSettingsPage /> },
       { path: '/admin/profile/edit', element: <AdminProfileEditPage /> },
+      { path: ROUTES.ADMIN_USERS, element: <UserManagementPage /> },
     ],
   },
 

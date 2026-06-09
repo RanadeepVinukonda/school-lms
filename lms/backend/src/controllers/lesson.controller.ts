@@ -1,19 +1,34 @@
 import { Request, Response } from 'express';
 import * as lessonService from '../services/lesson.service';
+import { requireNoDependenciesOrThrow, getLessonImpact } from '../services/impact.service';
+import { logAudit, adminAuditEntry } from '../services/audit.service';
 import { sendSuccess, sendCreated } from '../utils/response';
 
 export async function createLesson(req: Request, res: Response) {
   const result = await lessonService.createLesson(req.body);
+  logAudit(adminAuditEntry(req as any, 'lesson.create', result.id, 'lesson', result.title, {
+    newValue: result,
+    summary: `Created lesson "${result.title}"`,
+  }));
   sendCreated(res, result, 'Lesson created');
 }
 
 export async function updateLesson(req: Request, res: Response) {
+  const old = await lessonService.getLessonById(req.params.lessonId);
   const result = await lessonService.updateLesson(req.params.lessonId, req.body);
+  logAudit(adminAuditEntry(req as any, 'lesson.update', req.params.lessonId, 'lesson', old.title, {
+    oldValue: old,
+    newValue: result,
+    summary: `Updated lesson "${old.title}"`,
+  }));
   sendSuccess(res, result, 'Lesson updated');
 }
 
 export async function deleteLesson(req: Request, res: Response) {
+  const lesson = await lessonService.getLessonById(req.params.lessonId);
+  await requireNoDependenciesOrThrow('lesson', req.params.lessonId, getLessonImpact);
   await lessonService.deleteLesson(req.params.lessonId);
+  logAudit(adminAuditEntry(req as any, 'lesson.delete', req.params.lessonId, 'lesson', lesson.title));
   sendSuccess(res, null, 'Lesson deleted');
 }
 

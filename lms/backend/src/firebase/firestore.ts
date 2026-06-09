@@ -32,4 +32,6 @@ export const collections = {
   uploads: () => getCollection('uploads'),
   enrollment: () => getCollection('enrollment'),
   tokens: () => getCollection('tokens'),
+  auditLogs: () => getCollection('auditLogs'),
+  timetable: () => getCollection('timetable'),
 };

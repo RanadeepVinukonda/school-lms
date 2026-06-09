@@ -1,19 +1,34 @@
 import { Request, Response } from 'express';
 import * as classService from '../services/class.service';
+import { requireNoDependenciesOrThrow, getClassImpact } from '../services/impact.service';
+import { logAudit, adminAuditEntry } from '../services/audit.service';
 import { sendSuccess, sendCreated } from '../utils/response';
 
 export async function createClass(req: Request, res: Response) {
   const result = await classService.createClass(req.body);
+  logAudit(adminAuditEntry(req as any, 'class.create', result.id, 'class', result.name, {
+    newValue: result,
+    summary: `Created class "${result.name}"`,
+  }));
   sendCreated(res, result, 'Class created');
 }
 
 export async function updateClass(req: Request, res: Response) {
+  const old = await classService.getClassById(req.params.classId);
   const result = await classService.updateClass(req.params.classId, req.body);
+  logAudit(adminAuditEntry(req as any, 'class.update', req.params.classId, 'class', old.name, {
+    oldValue: old,
+    newValue: result,
+    summary: `Updated class "${old.name}"`,
+  }));
   sendSuccess(res, result, 'Class updated');
 }
 
 export async function deleteClass(req: Request, res: Response) {
+  const cls = await classService.getClassById(req.params.classId);
+  await requireNoDependenciesOrThrow('class', req.params.classId, getClassImpact);
   await classService.deleteClass(req.params.classId);
+  logAudit(adminAuditEntry(req as any, 'class.delete', req.params.classId, 'class', cls.name));
   sendSuccess(res, null, 'Class deleted');
 }
 
