@@ -68,7 +68,7 @@ export async function chatCompletion(params: ChatRequest): Promise<string> {
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 60000);
+    const timer = setTimeout(() => controller.abort(), 120000);
 
     try {
       const res = await fetch(env.AI_BASE_URL, {
