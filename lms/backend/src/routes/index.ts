@@ -1,4 +1,4 @@
-﻿import { Router } from 'express';
+import { Router } from 'express';
 import authRoutes from './auth.routes';
 import courseRoutes from './course.routes';
 import lessonRoutes from './lesson.routes';
