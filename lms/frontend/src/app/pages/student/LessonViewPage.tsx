@@ -9,7 +9,7 @@ import { pageTransition, listItem } from '@/lib/motion';
 import { useQuery } from '@tanstack/react-query';
 import { getLesson } from '@/services/dataService';
 import { getQuiz, getSubject } from '@/services/dataService';
-import { getTextbook } from '@/services/textbookService';
+import { getTextbook, getChaptersForTextbook } from '@/services/textbookService';
 import { getAssignment } from '@/services/dataService';
 import { ROUTES } from '@/lib/constants';
 
@@ -57,7 +57,11 @@ export default function LessonViewPage() {
       ]);
 
       const subject = textbook?.subjectId ? await getSubject(textbook.subjectId) : null;
-      const chapter = textbook?.chapters?.find((ch) => ch.id === lesson.chapterId) ?? null;
+      let chapter = null;
+      if (textbook && lesson?.chapterId) {
+        const chapters = await getChaptersForTextbook(textbook.id);
+        chapter = chapters.find((ch) => ch.id === lesson.chapterId) ?? null;
+      }
 
       return { lesson, textbook, subject, chapter, quiz, assignment };
     },

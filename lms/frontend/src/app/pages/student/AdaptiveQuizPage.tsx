@@ -11,7 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { Icon } from '@/components/ui/Icon';
 import { pageTransition } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
-import { getTextbook } from '@/services/textbookService';
+import { getTextbook, getChaptersForTextbook, getConceptsForChapter } from '@/services/textbookService';
 import type { GeneratedQuestion } from '@/types/textbook';
 
 const DIFFICULTY_MAP: Record<string, 'easy' | 'medium' | 'hard'> = {
@@ -55,8 +55,10 @@ export default function AdaptiveQuizPage() {
     queryFn: async () => {
       const fb = await getTextbook(textbookId);
       if (fb) {
-        for (const ch of fb.chapters) {
-          const c = ch.concepts.find((co) => co.id === conceptId);
+        const chapters = await getChaptersForTextbook(fb.id);
+        for (const ch of chapters) {
+          const concepts = await getConceptsForChapter(fb.id, ch.id);
+          const c = concepts.find((co) => co.id === conceptId);
           if (c) return { concept: c, chapter: ch, textbook: fb };
         }
       }

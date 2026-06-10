@@ -71,3 +71,14 @@ export async function updateProfile(req: Request, res: Response) {
   const result = await userService.updateProfile(req.user!.uid, req.body);
   sendSuccess(res, result, 'Profile updated');
 }
+
+export async function pingActive(req: Request, res: Response) {
+  const result = await userService.pingActive(req.user!.uid);
+  sendSuccess(res, result, 'Active ping recorded');
+}
+
+export async function getStrengthsWeaknesses(req: Request, res: Response) {
+  const uid = req.params.userId || req.user!.uid;
+  const result = await userService.getStrengthsWeaknesses(uid);
+  sendSuccess(res, result);
+}

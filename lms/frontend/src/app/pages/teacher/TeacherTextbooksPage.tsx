@@ -21,8 +21,8 @@ export default function TeacherTextbooksPage() {
       return (result.filter((tb) => tb.status !== 'processing')).map((tb) => ({
         ...tb,
         subject: subjectMap.get(tb.subjectId) ?? null,
-        chapterCount: tb.chapters?.length ?? tb.chapterCount ?? 0,
-        lessonCount: tb.chapters?.reduce((s, ch) => s + (ch.concepts?.length ?? 0), 0) ?? 0,
+        chapterCount: tb.chapterCount ?? 0,
+        lessonCount: 0,
       }));
     },
   });
@@ -131,42 +131,6 @@ export default function TeacherTextbooksPage() {
                               {tb.lessonCount} lesson{tb.lessonCount !== 1 ? 's' : ''}
                             </Badge>
                           </div>
-
-                          {tb.chapters && tb.chapters.length > 0 && (
-                            <div className="mt-3 pt-3 border-t space-y-2">
-                              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                                Chapters
-                              </p>
-                              {tb.chapters.map((ch) => (
-                                <div key={ch.id}>
-                                  <div className="flex items-center gap-2 text-sm mb-1">
-                                    <Icon name="chapter" size={14} className="text-muted-foreground/50" />
-                                    <span className="font-medium text-muted-foreground">
-                                      {ch.order}. {ch.title}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground/50 ml-auto">
-                                      {ch.concepts?.length ?? 0} concept{(ch.concepts?.length ?? 0) !== 1 ? 's' : ''}
-                                    </span>
-                                  </div>
-                                  {ch.concepts && ch.concepts.length > 0 && (
-                                    <div className="ml-5 space-y-0.5">
-                                      {ch.concepts.map((concept) => (
-                                        <Link
-                                          key={concept.id}
-                                          to={ROUTES.TEACHER_CONCEPT(tb.id, ch.id, concept.id)}
-                                          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary py-0.5 group"
-                                        >
-                                          <span className="w-1 h-1 rounded-full bg-muted-foreground/30 group-hover:bg-primary/50" />
-                                          <span className="flex-1 truncate">{concept.title}</span>
-                                          <Icon name="open_in_new" size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        </Link>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          )}
                         </div>
                       </div>
                     </CardContent>

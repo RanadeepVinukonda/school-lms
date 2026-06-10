@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icon } from '@/components/ui/Icon';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
-import { getTextbook, getConceptRelease, setConceptRelease } from '@/services/textbookService';
+import { getTextbook, getChaptersForTextbook, getConceptsForChapter, getConceptRelease, setConceptRelease } from '@/services/textbookService';
 import { useAuthStore } from '@/store/authStore';
 import type { CachedVideo } from '@/types/textbook';
 
@@ -82,12 +82,17 @@ export default function TeacherConceptViewPage() {
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['teacher-concept', textbookId, conceptId],
     queryFn: async () => {
-      const fb = await getTextbook(textbookId!);
+      if (!textbookId || !conceptId) throw new Error('Missing params');
+      const [fb, chapters] = await Promise.all([
+        getTextbook(textbookId),
+        getChaptersForTextbook(textbookId),
+      ]);
       if (!fb) throw new Error('Textbook not found');
-      for (const ch of fb.chapters) {
-        const c = ch.concepts.find((co) => co.id === conceptId);
+      for (const ch of chapters) {
+        const concepts = await getConceptsForChapter(textbookId, ch.id);
+        const c = concepts.find((co) => co.id === conceptId);
         if (c) {
-          const release = await getConceptRelease(textbookId!, conceptId!);
+          const release = await getConceptRelease(textbookId, conceptId);
           return { concept: c, chapter: ch, textbook: fb, release };
         }
       }

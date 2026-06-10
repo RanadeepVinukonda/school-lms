@@ -9,7 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { Icon } from '@/components/ui/Icon';
 import { pageTransition, listItem } from '@/lib/motion';
 import { useQuery } from '@tanstack/react-query';
-import { getTextbooksBySubject } from '@/services/textbookService';
+import { getTextbooksBySubject, getChaptersForTextbook } from '@/services/textbookService';
 import { getSubject, getEnrollmentsByStudent, getGradesByStudent } from '@/services/dataService';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
@@ -43,12 +43,24 @@ export default function SubjectDetailPage() {
 
       if (!subject) return null;
 
-      const textbooks = firestoreTextbooks.filter((tb) => tb.status !== 'processing').map((tb) => ({ ...tb, chapterCount: tb.chapters?.length ?? 0 }));
+      const textbooks = firestoreTextbooks.filter((tb) => tb.status !== 'processing').map((tb) => ({ ...tb, chapterCount: tb.chapterCount ?? 0 }));
       const enrollment = enrollments.find((e) => e.courseId === id);
       const firstTb = textbooks[0];
-      const currentChapter = firstTb?.chapters?.[0]
-        ? { textbookId: firstTb.id, textbookTitle: firstTb.title, id: firstTb.chapters[0].id ?? '', title: firstTb.chapters[0].title, order: firstTb.chapters[0].order, conceptCount: firstTb.chapters[0].concepts?.length ?? 0 }
-        : null;
+      let currentChapter = null;
+      if (firstTb) {
+        const chapters = await getChaptersForTextbook(firstTb.id);
+        const firstCh = chapters[0];
+        if (firstCh) {
+          currentChapter = {
+            textbookId: firstTb.id,
+            textbookTitle: firstTb.title,
+            id: firstCh.id,
+            title: firstCh.title,
+            order: firstCh.order as number,
+            conceptCount: 0,
+          };
+        }
+      }
       const recentGrade = grades
         .filter((g) => g.subjectId === id)
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] ?? null;

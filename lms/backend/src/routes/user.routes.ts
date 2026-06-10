@@ -10,6 +10,9 @@ const router = Router();
 
 router.get('/', authenticate, requireRole('admin'), validate(userQuerySchema, 'query'), asyncHandler(userController.listUsers));
 router.put('/profile', authenticate, asyncHandler(userController.updateProfile));
+router.post('/ping-active', authenticate, asyncHandler(userController.pingActive));
+router.get('/strengths-weaknesses', authenticate, asyncHandler(userController.getStrengthsWeaknesses));
+router.get('/strengths-weaknesses/:userId', authenticate, requireRole('admin', 'teacher'), asyncHandler(userController.getStrengthsWeaknesses));
 router.post('/', authenticate, requireRole('admin'), validate(createUserSchema), asyncHandler(userController.createUser));
 router.get('/:userId', authenticate, requireRole('admin', 'teacher'), asyncHandler(userController.getUser));
 router.put('/:userId', authenticate, requireRole('admin'), validate(updateUserSchema), asyncHandler(userController.updateUser));

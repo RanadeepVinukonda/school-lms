@@ -12,7 +12,7 @@ import { useAuthStore } from '@/store/authStore';
 import { cn, getTimeGreeting } from '@/lib/utils';
 import { formatRelativeTime } from '@/lib/format';
 import { pageTransition, listItem } from '@/lib/motion';
-import { getAllTextbooks, getAllConceptProgress } from '@/services/textbookService';
+import { getAllTextbooks, getAllConceptProgress, getChaptersForTextbook, getConceptsForChapter } from '@/services/textbookService';
 import { getAllSubjects, getEnrollmentsByStudent, getGradesByStudent } from '@/services/dataService';
 import { ROUTES } from '@/lib/constants';
 
@@ -62,12 +62,23 @@ export default function StudentDashboardPage() {
       let continueLearning: ContinueLearning | null = null;
       if (inProgressConcepts.length > 0) {
         const latest = inProgressConcepts[0];
-        const foundTextbook = readyTextbooks.find((tb) =>
-          tb.chapters?.some((ch) => ch.concepts?.some((c) => c.id === latest.conceptId)),
-        );
+        let foundTextbook = null;
+        for (const tb of readyTextbooks) {
+          const chapters = await getChaptersForTextbook(tb.id);
+          for (const ch of chapters) {
+            const concepts = await getConceptsForChapter(tb.id, ch.id);
+            if (concepts.some((c) => c.id === latest.conceptId)) {
+              foundTextbook = tb;
+              break;
+            }
+          }
+          if (foundTextbook) break;
+        }
         if (foundTextbook) {
-          for (const ch of foundTextbook.chapters) {
-            const foundConcept = ch.concepts?.find((c) => c.id === latest.conceptId);
+          const foundChapters = await getChaptersForTextbook(foundTextbook.id);
+          for (const ch of foundChapters) {
+            const concepts = await getConceptsForChapter(foundTextbook.id, ch.id);
+            const foundConcept = concepts.find((c) => c.id === latest.conceptId);
             if (foundConcept) {
               const subject = subjectMap.get(foundTextbook.subjectId);
               const vidDuration = parseFloat(foundConcept.videos?.[0]?.duration ?? '0');
@@ -95,9 +106,11 @@ export default function StudentDashboardPage() {
       if (!continueLearning && readyTextbooks.length > 0) {
         const firstTb = readyTextbooks[0];
         const subject = subjectMap.get(firstTb.subjectId);
-        if (firstTb.chapters?.length) {
-          const firstCh = firstTb.chapters[0];
-          const firstConcept = firstCh.concepts?.[0];
+        const firstChapters = await getChaptersForTextbook(firstTb.id);
+        if (firstChapters.length) {
+          const firstCh = firstChapters[0];
+          const firstConcepts = await getConceptsForChapter(firstTb.id, firstCh.id);
+          const firstConcept = firstConcepts[0];
           if (firstConcept) {
             continueLearning = {
               subjectName: subject?.name ?? '',

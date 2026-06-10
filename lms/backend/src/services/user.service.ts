@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../firebase/firestore';
+import { collections, getDb } from '../firebase/firestore';
 import { createUser as firebaseCreateUser, updateUser as firebaseUpdateUser, deleteUser as firebaseDeleteUser, getUserById, setCustomClaims } from '../firebase/auth';
 import { NotFoundError, ConflictError } from '../utils/errors';
 import { logger } from '../utils/logger';
@@ -210,6 +210,90 @@ export async function assignRole(uid: string, role: string) {
   await setCustomClaims(uid, { role });
 
   logger.info('User role assigned', { uid, role });
+}
+
+/** Ping active — update streakCount using a transaction to avoid race conditions. */
+export async function pingActive(uid: string) {
+  const userRef = collections.users().doc(uid);
+  const now = new Date();
+  const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+
+  return await getDb().runTransaction(async (transaction) => {
+    const snap = await transaction.get(userRef);
+    if (!snap.exists) throw new NotFoundError('User not found');
+
+    const data = snap.data()!;
+    const lastActive = data.lastActiveDate ? new Date(data.lastActiveDate) : null;
+    let streakCount = data.streakCount ?? 0;
+
+    if (lastActive) {
+      const diffDays = Math.floor((today.getTime() - lastActive.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDays === 1) {
+        streakCount += 1;
+      } else if (diffDays > 1) {
+        streakCount = 1;
+      }
+    } else {
+      streakCount = 1;
+    }
+
+    transaction.update(userRef, {
+      streakCount,
+      lastActiveDate: today.toISOString(),
+    });
+
+    return { streakCount, lastActiveDate: today.toISOString() };
+  });
+}
+
+/** Compute strengths and weaknesses from quizAttempts and examAttempts grouped by conceptId. */
+export async function getStrengthsWeaknesses(uid: string) {
+  const quizSnap = await getDb().collection('quizAttempts')
+    .where('studentId', '==', uid)
+    .get();
+  const examSnap = await getDb().collection('examAttempts')
+    .where('studentId', '==', uid)
+    .get();
+
+  const conceptScores: Record<string, { totalScore: number; totalMax: number; count: number }> = {};
+
+  const processAttempts = (docs: FirebaseFirestore.QueryDocumentSnapshot[]) => {
+    for (const d of docs) {
+      const data = d.data();
+      const conceptIds: string[] = data.conceptIds ?? data.conceptId ? [data.conceptId] : [];
+      const score = data.score ?? 0;
+      const maxScore = data.maxScore ?? data.totalPoints ?? 100;
+
+      for (const cid of conceptIds) {
+        if (!cid) continue;
+        if (!conceptScores[cid]) {
+          conceptScores[cid] = { totalScore: 0, totalMax: 0, count: 0 };
+        }
+        conceptScores[cid].totalScore += score;
+        conceptScores[cid].totalMax += maxScore;
+        conceptScores[cid].count += 1;
+      }
+    }
+  };
+
+  processAttempts(quizSnap.docs);
+  processAttempts(examSnap.docs);
+
+  const strong: string[] = [];
+  const weak: string[] = [];
+  const details: Record<string, { name: string; averageScore: number; attemptCount: number }> = {};
+
+  for (const [cid, data] of Object.entries(conceptScores)) {
+    const averageScore = data.totalMax > 0 ? Math.round((data.totalScore / data.totalMax) * 100) : 0;
+    details[cid] = { name: cid, averageScore, attemptCount: data.count };
+    if (averageScore >= 70) {
+      strong.push(cid);
+    } else {
+      weak.push(cid);
+    }
+  }
+
+  return { strongConceptIds: strong, weakConceptIds: weak, conceptDetails: details };
 }
 
 /** Update only profile fields (displayName, phoneNumber, photoURL) for the current user. */

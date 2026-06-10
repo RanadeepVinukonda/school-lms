@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icon } from '@/components/ui/Icon';
 import { pageTransition } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
-import { getTextbook, getConceptProgress, saveConceptProgress, getConceptRelease } from '@/services/textbookService';
+import { getTextbook, getChaptersForTextbook, getConceptsForChapter, getConceptProgress, saveConceptProgress, getConceptRelease } from '@/services/textbookService';
 import { useAuthStore } from '@/store/authStore';
 import type { GeneratedQuestion } from '@/types/textbook';
 
@@ -143,14 +143,19 @@ export default function StudentConceptPage() {
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-concept', textbookId, conceptId, userId],
     queryFn: async () => {
-      const fb = await getTextbook(textbookId);
+      if (!textbookId || !conceptId) throw new Error('Missing params');
+      const [fb, chapters] = await Promise.all([
+        getTextbook(textbookId),
+        getChaptersForTextbook(textbookId),
+      ]);
       if (!fb) throw new Error('Textbook not found');
-      for (const ch of fb.chapters) {
-        const c = ch.concepts.find((co) => co.id === conceptId);
+      for (const ch of chapters) {
+        const concepts = await getConceptsForChapter(textbookId, ch.id);
+        const c = concepts.find((co) => co.id === conceptId);
         if (c) {
           const [progress, release] = await Promise.all([
-            userId ? getConceptProgress(userId, conceptId!) : null,
-            getConceptRelease(textbookId, conceptId!),
+            userId ? getConceptProgress(userId, conceptId) : null,
+            getConceptRelease(textbookId, conceptId),
           ]);
           return { concept: c, chapter: ch, textbook: fb, progress, release };
         }

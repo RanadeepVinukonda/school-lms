@@ -11,7 +11,7 @@ import { Icon } from '@/components/ui/Icon';
 import { pageTransition, listItem } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
-import { getTextbook, getAllConceptProgress } from '@/services/textbookService';
+import { getTextbook, getChaptersForTextbook, getConceptsForChapter, getAllConceptProgress } from '@/services/textbookService';
 import { getSubject } from '@/services/dataService';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
@@ -30,11 +30,13 @@ export default function TextbookDetailPage() {
       const subject = await getSubject(textbook.subjectId);
       const conceptProgress = authUser?.id ? await getAllConceptProgress(authUser.id) : [];
 
-      const chapters = (textbook.chapters ?? [])
-        .sort((a, b) => a.order - b.order)
-        .map((ch) => ({
+      const chapters = await getChaptersForTextbook(id);
+      const chaptersWithConcepts = [];
+      for (const ch of chapters) {
+        const concepts = await getConceptsForChapter(id, ch.id);
+        chaptersWithConcepts.push({
           ...ch,
-          chapterLessons: (ch.concepts ?? []).sort((a, b) => a.order - b.order).map((c) => ({
+          chapterLessons: concepts.sort((a, b) => a.order - b.order).map((c) => ({
             id: c.id,
             title: c.title,
             duration: c.estimatedMinutes ?? 10,
@@ -44,16 +46,17 @@ export default function TextbookDetailPage() {
             chapterId: ch.id ?? '',
             textbookId: textbook.id ?? '',
           })),
-        }));
+        });
+      }
 
-      const totalChapters = chapters.length;
+      const totalChapters = chaptersWithConcepts.length;
       const completedConceptIds = conceptProgress.filter((p) => p.lessonCompleted).map((p) => p.conceptId);
-      const completedCount = chapters.filter((ch) =>
-        ch.concepts?.length && ch.concepts.every((c) => completedConceptIds.includes(c.id)),
+      const completedCount = chaptersWithConcepts.filter((ch) =>
+        ch.chapterLessons.length && ch.chapterLessons.every((c: { id: string }) => completedConceptIds.includes(c.id)),
       ).length;
       const progressPct = totalChapters > 0 ? Math.round((completedCount / totalChapters) * 100) : 0;
 
-      const roadmapChapters = chapters.map((ch, idx) => ({
+      const roadmapChapters = chaptersWithConcepts.map((ch, idx) => ({
         ...ch,
         status: idx < completedCount ? 'completed' as const
           : idx === completedCount ? 'current' as const
