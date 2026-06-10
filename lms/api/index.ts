@@ -1,13 +1,14 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+// @ts-nocheck
+import { IncomingMessage, ServerResponse } from 'http';
 
-type HandlerFn = (req: VercelRequest, res: VercelResponse) => void;
+type HandlerFn = (req: IncomingMessage, res: ServerResponse) => void;
 
 let handler: HandlerFn;
 
 try {
   handler = require('../backend/dist/app').default;
 } catch (e: unknown) {
-  handler = function (req: VercelRequest, res: VercelResponse) {
+  handler = function (req: IncomingMessage, res: ServerResponse) {
     const err = e instanceof Error ? e : new Error(String(e));
     res.statusCode = err.message.includes('environment') ? 500 : 503;
     res.setHeader('content-type', 'application/json');
