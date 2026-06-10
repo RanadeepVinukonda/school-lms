@@ -28,7 +28,7 @@ export async function searchVideos(query: string, maxResults = 5) {
     throw new Error(`YouTube search failed: ${err}`);
   }
 
-  const searchData = await searchRes.json();
+  const searchData = (await searchRes.json()) as any;
   const videoIds = searchData.items?.map((i: { id: { videoId: string } }) => i.id.videoId).join(',') || '';
   if (!videoIds) return [];
 
@@ -36,7 +36,7 @@ export async function searchVideos(query: string, maxResults = 5) {
   const detailsRes = await fetch(detailsUrl);
   if (!detailsRes.ok) return [];
 
-  const detailsData = await detailsRes.json();
+  const detailsData = (await detailsRes.json()) as any;
 
   return searchData.items?.map((item: {
     id: { videoId: string };

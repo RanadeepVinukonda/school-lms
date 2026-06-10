@@ -60,7 +60,7 @@ export async function login(email: string, password: string) {
     }
   );
 
-  const data = await response.json();
+  const data = (await response.json()) as any;
   if (!response.ok) {
     throw new UnauthorizedError('Invalid email or password');
   }

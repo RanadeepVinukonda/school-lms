@@ -64,7 +64,7 @@ export async function getTeacherDashboard(teacherId: string) {
     .where('teacherId', '==', teacherId)
     .get();
 
-  const courses = coursesSnapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const courses = coursesSnapshot.docs.map((d) => ({ id: d.id, ...d.data() } as any));
   const totalCourses = courses.length;
 
   const coursePromises = courses.map(async (course) => {
