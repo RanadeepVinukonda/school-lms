@@ -21,7 +21,7 @@ export default function TeacherTextbooksPage() {
       return (result.filter((tb) => tb.status !== 'processing')).map((tb) => ({
         ...tb,
         subject: subjectMap.get(tb.subjectId) ?? null,
-        chapterCount: tb.chapters?.length ?? 0,
+        chapterCount: tb.chapters?.length ?? tb.chapterCount ?? 0,
         lessonCount: tb.chapters?.reduce((s, ch) => s + (ch.concepts?.length ?? 0), 0) ?? 0,
       }));
     },
