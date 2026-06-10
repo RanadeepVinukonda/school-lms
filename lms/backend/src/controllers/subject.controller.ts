@@ -41,3 +41,8 @@ export async function getSubject(req: Request, res: Response) {
   const result = await subjectService.getSubjectById(req.params.subjectId);
   sendSuccess(res, result);
 }
+
+export async function listSubjectsByClass(req: Request, res: Response) {
+  const result = await subjectService.listSubjectsByClass(req.params.classId);
+  sendSuccess(res, result);
+}

@@ -19,6 +19,8 @@ import jobsRoutes from './jobs.routes';
 import youtubeRoutes from './youtube.routes';
 import auditRoutes from './audit.routes';
 import conceptRoutes from './concept.routes';
+import teacherClassSubjectRoutes from './teacher-class-subject.routes';
+import textbookRoutes from './textbook.routes';
 
 const router = Router();
 
@@ -42,6 +44,8 @@ router.use('/jobs', jobsRoutes);
 router.use('/youtube', youtubeRoutes);
 router.use('/audit-logs', auditRoutes);
 router.use('/whiteboard', conceptRoutes);
+router.use('/teacher-class-subject', teacherClassSubjectRoutes);
+router.use('/textbooks', textbookRoutes);
 
 router.get('/health', (_req, res) => {
   res.json({

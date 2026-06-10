@@ -22,7 +22,7 @@ import {
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
-import { getAllSubjects } from '@/services/dataService';
+import { getAllSubjects, getAllClasses } from '@/services/dataService';
 import { getAllTextbooks } from '@/services/textbookService';
 import { getSubjectDependencies } from '@/services/dependencyService';
 import { logAudit } from '@/services/auditService';
@@ -34,9 +34,10 @@ interface SubjectForm {
   code: string;
   icon: string;
   category: string;
+  classId: string;
 }
 
-const emptyForm: SubjectForm = { name: '', code: '', icon: 'menu_book', category: 'STEM' };
+const emptyForm: SubjectForm = { name: '', code: '', icon: 'menu_book', category: 'STEM', classId: '' };
 
 const categoryOptions = [
   { value: 'STEM', label: 'STEM' },
@@ -88,6 +89,11 @@ export default function AdminSubjectsPage() {
     queryFn: getAllTextbooks,
   });
 
+  const { data: allClasses } = useQuery({
+    queryKey: ['admin-classes'],
+    queryFn: getAllClasses,
+  });
+
   // Sync fetched subjects into local state on initial load
   useEffect(() => {
     if (fetchedSubjects) {
@@ -109,6 +115,10 @@ export default function AdminSubjectsPage() {
       toast.error('Please fill in all required fields');
       return;
     }
+    if (!form.classId) {
+      toast.error('Please select a class for this subject');
+      return;
+    }
     const code = form.code.toUpperCase();
     const duplicate = subjects.find((s) => s.code === code && s.isActive !== false);
     if (duplicate) {
@@ -122,6 +132,7 @@ export default function AdminSubjectsPage() {
         icon: form.icon,
         color: '#6366f1',
         category: form.category,
+        classId: form.classId,
         isActive: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -145,7 +156,7 @@ export default function AdminSubjectsPage() {
 
   const handleEditClick = (subject: Subject) => {
     setEditTarget(subject);
-    setForm({ name: subject.name, code: subject.code, icon: subject.icon || 'menu_book', category: subject.category || 'STEM' });
+    setForm({ name: subject.name, code: subject.code, icon: subject.icon || 'menu_book', category: subject.category || 'STEM', classId: (subject as { classId?: string }).classId || '' });
     setShowEdit(true);
   };
 
@@ -165,6 +176,7 @@ export default function AdminSubjectsPage() {
     if (code !== editTarget.code) changedFields.push('code');
     if (form.category !== editTarget.category) changedFields.push('category');
     if (form.icon !== editTarget.icon) changedFields.push('icon');
+    if (form.classId !== ((editTarget as { classId?: string }).classId || '')) changedFields.push('classId');
 
     const hasTextbooks = textbooks ? textbooks.filter((tb) => tb.subjectId === editTarget.id).length : 0;
     if (hasTextbooks > 0 && changedFields.length > 0) {
@@ -177,6 +189,7 @@ export default function AdminSubjectsPage() {
         code,
         icon: form.icon,
         category: form.category,
+        classId: form.classId,
         updatedAt: new Date().toISOString(),
       });
       logAudit({
@@ -186,7 +199,7 @@ export default function AdminSubjectsPage() {
         targetName: editTarget.name,
         summary: `Updated subject "${editTarget.name}" (changed: ${changedFields.join(', ') || 'none'})`,
         oldValue: { name: editTarget.name, code: editTarget.code, category: editTarget.category },
-        newValue: { name: form.name, code, category: form.category },
+        newValue: { name: form.name, code, category: form.category, classId: form.classId },
       });
       setForm(emptyForm);
       setShowEdit(false);
@@ -367,9 +380,16 @@ export default function AdminSubjectsPage() {
                         </div>
                       </div>
                       <div className="flex items-center justify-between mt-3 pt-3 border-t-outline-variant border-t">
-                        <Badge className={`text-[10px] ${categoryColors[subject.category || ''] || ''}`}>
-                          {subject.category || '\u2014'}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          {(subject as { classId?: string }).classId && allClasses && (
+                            <span className="text-xs text-on-surface-variant font-medium">
+                              {allClasses.find((c) => c.id === (subject as { classId?: string }).classId)?.name || '\u2014'}
+                            </span>
+                          )}
+                          <Badge className={`text-[10px] ${categoryColors[subject.category || ''] || ''}`}>
+                            {subject.category || '\u2014'}
+                          </Badge>
+                        </div>
                         <span className="text-xs text-on-surface-variant">
                           {getTextbookCount(subject.id)} textbook{getTextbookCount(subject.id) !== 1 ? 's' : ''}
                         </span>
@@ -497,6 +517,15 @@ export default function AdminSubjectsPage() {
                 onChange={(v: string) => setForm((f) => ({ ...f, category: v }))}
               />
             </div>
+            <div className="space-y-2">
+              <Label>Class</Label>
+              <OptionsSelect
+                options={allClasses?.map((c) => ({ value: c.id, label: c.name })) || []}
+                placeholder="Select class"
+                value={form.classId}
+                onChange={(v: string) => setForm((f) => ({ ...f, classId: v }))}
+              />
+            </div>
             {editTarget && (
               <p className="text-xs text-on-surface-variant">
                 <Icon name="info" size={14} className="inline mr-1" />
@@ -552,6 +581,15 @@ export default function AdminSubjectsPage() {
                 placeholder="Select category"
                 value={form.category}
                 onChange={(v: string) => setForm((f) => ({ ...f, category: v }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Class</Label>
+              <OptionsSelect
+                options={allClasses?.map((c) => ({ value: c.id, label: c.name })) || []}
+                placeholder="Select class"
+                value={form.classId}
+                onChange={(v: string) => setForm((f) => ({ ...f, classId: v }))}
               />
             </div>
             <Button className="w-full" onClick={handleAdd}>

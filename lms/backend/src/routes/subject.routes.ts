@@ -9,6 +9,7 @@ import { asyncHandler } from '../middlewares/asyncHandler';
 const router = Router();
 
 router.get('/', authenticate, asyncHandler(subjectController.listSubjects));
+router.get('/by-class/:classId', authenticate, asyncHandler(subjectController.listSubjectsByClass));
 router.get('/:subjectId', authenticate, asyncHandler(subjectController.getSubject));
 router.post('/', authenticate, requireRole('admin'), validate(createSubjectSchema), asyncHandler(subjectController.createSubject));
 router.put('/:subjectId', authenticate, requireRole('admin'), validate(updateSubjectSchema), asyncHandler(subjectController.updateSubject));

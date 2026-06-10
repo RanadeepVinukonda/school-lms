@@ -34,4 +34,8 @@ export const collections = {
   tokens: () => getCollection('tokens'),
   auditLogs: () => getCollection('auditLogs'),
   timetable: () => getCollection('timetable'),
+  textbooks: () => getCollection('textbooks'),
+  teacherClassSubject: () => getCollection('teacherClassSubject'),
+  teacherVideos: () => getCollection('teacherVideos'),
+  assignmentSubmissions: () => getCollection('assignmentSubmissions'),
 };

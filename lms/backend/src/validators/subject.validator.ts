@@ -10,6 +10,7 @@ export const createSubjectSchema = z.object({
     .min(2, 'Subject code must be at least 2 characters')
     .max(20, 'Subject code must be at most 20 characters')
     .regex(/^[A-Za-z0-9_-]+$/, 'Subject code can only contain letters, numbers, hyphens, and underscores'),
+  classId: z.string().min(1, 'classId is required'),
   description: z.string().max(2000).optional(),
   category: z.string().max(100).optional(),
   credits: z.number().int().positive('Credits must be positive').optional(),
@@ -30,5 +31,6 @@ export const subjectQuerySchema = z.object({
   status: z.enum(['active', 'inactive', 'archived']).optional(),
   category: z.string().optional(),
   department: z.string().optional(),
+  classId: z.string().optional(),
   search: z.string().max(200).optional(),
 });
