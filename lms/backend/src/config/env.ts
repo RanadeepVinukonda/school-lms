@@ -12,7 +12,7 @@ const envSchema = z.object({
   FIREBASE_PRIVATE_KEY: z.string().min(1).transform((key) => key.replace(/\\n/g, '\n')),
   AI_API_KEY: z.string().min(1),
   AI_BASE_URL: z.string().default('https://openrouter.ai/api/v1/chat/completions'),
-  AI_MODEL: z.string().default('google/gemini-2.0-flash-001'),
+  AI_MODEL: z.string().default('openrouter/free'),
   CLOUDINARY_CLOUD_NAME: z.string().min(1),
   CLOUDINARY_API_KEY: z.string().min(1),
   CLOUDINARY_API_SECRET: z.string().min(1),

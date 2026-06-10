@@ -44,7 +44,6 @@ export async function chatCompletion(params: ChatRequest): Promise<string> {
     messages,
     temperature,
     max_tokens,
-    response_format: { type: 'json_object' },
   };
 
   let res: Response;
