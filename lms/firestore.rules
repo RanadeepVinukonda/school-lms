@@ -113,8 +113,12 @@ service cloud.firestore {
       allow write: if isAdmin() || isTeacher();
     }
 
-    // --- Textbook collections ---
+    // --- Textbook collections (including subcollections) ---
     match /textbooks/{textbookId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin() || isTeacher();
+    }
+    match /textbooks/{textbookId}/{document=**} {
       allow read: if request.auth != null;
       allow write: if isAdmin() || isTeacher();
     }
