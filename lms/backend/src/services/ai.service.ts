@@ -22,7 +22,7 @@ interface ChatResponse {
   }>;
 }
 
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 1;
 const BASE_DELAY_MS = 2000;
 
 function sleep(ms: number): Promise<void> {

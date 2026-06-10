@@ -6,7 +6,7 @@ import type { ApiError } from '@/types';
 /** Axios instance pre-configured with base URL, timeouts, and interceptors for auth tokens and error handling. */
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 120000,
+  timeout: 180000,
   headers: {
     'Content-Type': 'application/json',
   },
