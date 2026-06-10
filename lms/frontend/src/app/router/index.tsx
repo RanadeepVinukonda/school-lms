@@ -39,6 +39,7 @@ import TeacherStudentDetailPage from '@/app/pages/teacher/TeacherStudentDetailPa
 import TeacherExamsPage from '@/app/pages/teacher/TeacherExamsPage';
 import TeacherExamCorrectionPage from '@/app/pages/teacher/TeacherExamCorrectionPage';
 import TeacherTextbooksPage from '@/app/pages/teacher/TeacherTextbooksPage';
+import TeacherTextbookDetailPage from '@/app/pages/teacher/TeacherTextbookDetailPage';
 import TeacherTextbookUploadPage from '@/app/pages/teacher/TeacherTextbookUploadPage';
 import TeacherConceptViewPage from '@/app/pages/teacher/TeacherConceptViewPage';
 import TeacherProfilePage from '@/app/pages/teacher/TeacherProfilePage';
@@ -124,6 +125,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.TEACHER_EXAMS, element: <TeacherExamsPage /> },
       { path: ROUTES.TEACHER_EXAM_CORRECT(':id'), element: <TeacherExamCorrectionPage /> },
       { path: ROUTES.TEACHER_TEXTBOOKS, element: <TeacherTextbooksPage /> },
+      { path: ROUTES.TEACHER_TEXTBOOK(':textbookId'), element: <TeacherTextbookDetailPage /> },
       { path: ROUTES.TEACHER_TEXTBOOK_UPLOAD, element: <TeacherTextbookUploadPage /> },
       { path: ROUTES.TEACHER_CONCEPT(':textbookId', ':chapterId', ':conceptId'), element: <TeacherConceptViewPage /> },
       { path: ROUTES.TEACHER_PROFILE, element: <TeacherProfilePage /> },

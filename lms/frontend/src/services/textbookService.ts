@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, query, where, deleteDoc, Timestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, query, where, deleteDoc, Timestamp, orderBy } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { logAudit } from '@/services/auditService';
 import type { Textbook, Chapter, Concept, GeneratedQuestion, GeneratedAssignment, CachedVideo, ConceptProgress, ConceptRelease } from '@/types/textbook';
@@ -182,6 +182,26 @@ export async function getConceptRelease(textbookId: string, conceptId: string): 
   const snap = await getDoc(docRef);
   if (!snap.exists()) return null;
   return { id: snap.id, ...snap.data() } as ConceptRelease;
+}
+
+/** Fetch all chapters in a textbook, ordered by chapter order. */
+export async function getChaptersForTextbook(textbookId: string): Promise<Chapter[]> {
+  const q = query(
+    collection(db, TEXTBOOKS_COLLECTION, textbookId, CHAPTERS_COLLECTION),
+    orderBy('order'),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Chapter));
+}
+
+/** Fetch all concepts in a chapter, ordered by concept order. */
+export async function getConceptsForChapter(textbookId: string, chapterId: string): Promise<Concept[]> {
+  const q = query(
+    collection(db, TEXTBOOKS_COLLECTION, textbookId, CHAPTERS_COLLECTION, chapterId, CONCEPTS_COLLECTION),
+    orderBy('order'),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Concept));
 }
 
 /** Set or update concept release status (which content is pushed to students). */
