@@ -7,7 +7,7 @@ export function getModel(step: 'extract' | 'content' | 'question') {
     step === 'content' ? 'VITE_OPENROUTER_MODEL_CONTENT' :
     'VITE_OPENROUTER_MODEL_QUESTION';
   const specific = import.meta.env[specificKey] as string | undefined;
-  return specific || (import.meta.env.VITE_OPENROUTER_MODEL as string) || 'google/gemini-2.0-flash-001:free';
+  return specific || (import.meta.env.VITE_OPENROUTER_MODEL as string) || 'google/gemma-4-31b-it:free';
 }
 
 /** Strip control characters that break JSON.parse. */
