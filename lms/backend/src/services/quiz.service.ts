@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { FieldValue } from 'firebase-admin/firestore';
 import { collections } from '../firebase/firestore';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
@@ -151,7 +152,7 @@ export async function startAttempt(quizId: string, studentId: string) {
   };
 
   await collections.quizAttempts().doc(attemptId).set(attempt);
-  await quizRef.update({ attemptCount: 1 });
+  await quizRef.update({ attemptCount: FieldValue.increment(1) });
 
   logger.info('Quiz attempt started', { quizId, studentId, attemptId });
 

@@ -15,6 +15,8 @@ import analyticsRoutes from './analytics.routes';
 import uploadRoutes from './upload.routes';
 import settingsRoutes from './settings.routes';
 import aiRoutes from './ai.routes';
+import jobsRoutes from './jobs.routes';
+import youtubeRoutes from './youtube.routes';
 
 const router = Router();
 
@@ -34,6 +36,8 @@ router.use('/analytics', analyticsRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/ai', aiRoutes);
+router.use('/jobs', jobsRoutes);
+router.use('/youtube', youtubeRoutes);
 
 router.get('/health', (_req, res) => {
   res.json({

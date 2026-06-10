@@ -1,5 +1,4 @@
 import { v4 as uuidv4 } from 'uuid';
-import bcrypt from 'bcryptjs';
 import { collections } from '../firebase/firestore';
 import { createUser as firebaseCreateUser, updateUser as firebaseUpdateUser, deleteUser as firebaseDeleteUser, getUserById, setCustomClaims } from '../firebase/auth';
 import { NotFoundError, ConflictError } from '../utils/errors';
@@ -27,11 +26,7 @@ export async function listUsers(query: {
 
   baseQuery = baseQuery.orderBy('createdAt', 'desc');
 
-  const countSnapshot = await baseQuery.count().get();
-  const total = countSnapshot.data().count;
-
-  const offset = (page - 1) * limit;
-  const snapshot = await baseQuery.offset(offset).limit(limit).get();
+  const snapshot = await baseQuery.get();
 
   let items = snapshot.docs.map((doc) => {
     const data = doc.data();
@@ -54,7 +49,11 @@ export async function listUsers(query: {
     );
   }
 
-  return { items, total, page, limit };
+  const total = items.length;
+  const offset = (page - 1) * limit;
+  const paged = items.slice(offset, offset + limit);
+
+  return { items: paged, total, page, limit };
 }
 
 /** Fetch a single user by uid. Throws NotFoundError if missing. Excludes password. */
@@ -87,7 +86,6 @@ export async function createUser(data: {
     photoURL: data.photoURL,
   });
 
-  const hashedPassword = await bcrypt.hash(data.password, 12);
   const now = new Date().toISOString();
 
   const userData = {
@@ -101,7 +99,6 @@ export async function createUser(data: {
     isActive: true,
     createdAt: now,
     updatedAt: now,
-    password: hashedPassword,
   };
 
   await collections.users().doc(firebaseUser.uid).set(userData);
@@ -110,8 +107,7 @@ export async function createUser(data: {
 
   logger.info('User created by admin', { uid: firebaseUser.uid, email: data.email, role: data.role });
 
-  const { password: _, ...safeUser } = userData;
-  return safeUser;
+  return userData;
 }
 
 /** Update a user's Firestore fields and optionally disable Firebase Auth account. */

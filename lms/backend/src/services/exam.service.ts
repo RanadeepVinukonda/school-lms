@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { FieldValue } from 'firebase-admin/firestore';
 import { collections } from '../firebase/firestore';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
@@ -224,8 +225,7 @@ export async function startExamAttempt(examId: string, studentId: string) {
   };
 
   await collections.examAttempts().doc(attemptId).set(attempt);
-  const currentAttemptCount = (examData.attemptCount as number) || 0;
-  await examRef.update({ attemptCount: currentAttemptCount + 1 });
+  await examRef.update({ attemptCount: FieldValue.increment(1) });
 
   logger.info('Exam attempt started', { examId, studentId, attemptId });
 

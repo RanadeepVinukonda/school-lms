@@ -10,17 +10,6 @@ export function getModel(step: 'extract' | 'content' | 'question') {
   return specific || (import.meta.env.VITE_OPENROUTER_MODEL as string) || 'mistralai/mistral-7b-instruct-v0.3';
 }
 
-/** Returns the API key from env, throwing if not configured. */
-export function getOpenRouterApiKey(): string {
-  const key = import.meta.env.VITE_OPENROUTER_API_KEY;
-  if (!key) {
-    throw new Error(
-      'OpenRouter API key is not configured. Set VITE_OPENROUTER_API_KEY in your .env file and restart the dev server.',
-    );
-  }
-  return key;
-}
-
 /** Strip control characters that break JSON.parse. */
 function sanitizeJson(raw: string): string {
   return raw.replace(/[\x00-\x1F\u200B-\u200F\uFEFF]/g, '');

@@ -107,11 +107,7 @@ export async function listCourses(query: {
 
   baseQuery = baseQuery.orderBy('createdAt', 'desc');
 
-  const countSnapshot = await baseQuery.count().get();
-  const total = countSnapshot.data().count;
-
-  const offset = (page - 1) * limit;
-  const snapshot = await baseQuery.offset(offset).limit(limit).get();
+  const snapshot = await baseQuery.get();
 
   let items = snapshot.docs.map((doc) => ({
     id: doc.id,
@@ -127,7 +123,11 @@ export async function listCourses(query: {
     );
   }
 
-  return { items, total, page, limit };
+  const total = items.length;
+  const offset = (page - 1) * limit;
+  const paged = items.slice(offset, offset + limit);
+
+  return { items: paged, total, page, limit };
 }
 
 /** Enroll a student in a course. Checks for capacity and duplicate enrollment. */

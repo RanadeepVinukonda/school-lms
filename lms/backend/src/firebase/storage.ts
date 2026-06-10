@@ -25,10 +25,12 @@ export async function uploadFile(
     });
 
     blobStream.on('finish', async () => {
-      await blob.makePublic();
-      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
+      const [url] = await blob.getSignedUrl({
+        action: 'read',
+        expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
+      });
       resolve({
-        url: publicUrl,
+        url,
         path: blob.name,
         name: file.originalname,
       });

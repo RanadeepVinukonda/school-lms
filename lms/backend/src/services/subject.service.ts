@@ -85,11 +85,7 @@ export async function listSubjects(query: {
 
   baseQuery = baseQuery.orderBy('createdAt', 'desc');
 
-  const countSnapshot = await baseQuery.count().get();
-  const total = countSnapshot.data().count;
-
-  const offset = (page - 1) * limit;
-  const snapshot = await baseQuery.offset(offset).limit(limit).get();
+  const snapshot = await baseQuery.get();
 
   let items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
 
@@ -102,7 +98,11 @@ export async function listSubjects(query: {
     );
   }
 
-  return { items, total, page, limit };
+  const total = items.length;
+  const offset = (page - 1) * limit;
+  const paged = items.slice(offset, offset + limit);
+
+  return { items: paged, total, page, limit };
 }
 
 /** Fetch a single subject by id. Throws NotFoundError if missing. */

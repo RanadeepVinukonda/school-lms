@@ -1,9 +1,9 @@
-import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { collections } from '../firebase/firestore';
-import { createUser as firebaseCreateUser, getUserByEmail, getUserById, deleteUser as firebaseDeleteUser, setCustomClaims } from '../firebase/auth';
+import { createUser as firebaseCreateUser, getUserByEmail, getUserById, setCustomClaims, updateUser as firebaseUpdateUser } from '../firebase/auth';
 import { ConflictError, NotFoundError, UnauthorizedError, ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
+import { env } from '../config/env';
 
 /** Register a new user in both Firebase Auth and Firestore. Sets custom claims with the user's role. */
 export async function register(data: {
@@ -29,8 +29,6 @@ export async function register(data: {
 
   await setCustomClaims(firebaseUser.uid, { role: data.role });
 
-  const hashedPassword = await bcrypt.hash(data.password, 12);
-
   const userData = {
     uid: firebaseUser.uid,
     email: data.email,
@@ -41,43 +39,52 @@ export async function register(data: {
     isActive: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    password: hashedPassword,
   };
 
   await collections.users().doc(firebaseUser.uid).set(userData);
 
   logger.info('User registered', { uid: firebaseUser.uid, email: data.email, role: data.role });
 
-  const { password: _, ...safeUser } = userData;
-  return safeUser;
+  return userData;
 }
 
-/** Authenticate a user by email and bcrypt password. Throws UnauthorizedError on failure. */
+/** Authenticate a user by email and password using Firebase Auth REST API. */
 export async function login(email: string, password: string) {
-  const usersSnapshot = await collections.users().where('email', '==', email.toLowerCase()).limit(1).get();
-  if (usersSnapshot.empty) {
+  const firebaseApiKey = env.FIREBASE_WEB_API_KEY;
+  const response = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${firebaseApiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.toLowerCase(), password, returnSecureToken: true }),
+    }
+  );
+
+  const data = await response.json();
+  if (!response.ok) {
     throw new UnauthorizedError('Invalid email or password');
   }
-  const userDoc = usersSnapshot.docs[0];
-  const userData = userDoc.data();
+
+  const userDoc = await collections.users().doc(data.localId).get();
+  if (!userDoc.exists) {
+    throw new UnauthorizedError('User not found');
+  }
+
+  const userData = userDoc.data()!;
   if (!userData.isActive) {
     throw new UnauthorizedError('Account is disabled');
   }
-  const isValidPassword = await bcrypt.compare(password, userData.password || '');
-  if (!isValidPassword) {
-    throw new UnauthorizedError('Invalid email or password');
-  }
 
-  logger.info('User logged in', { uid: userDoc.id, email });
+  logger.info('User logged in', { uid: data.localId, email });
 
-  const { password: _, ...safeUser } = userData;
   return {
-    user: safeUser,
-    uid: userDoc.id,
+    user: userData,
+    uid: data.localId,
+    token: data.idToken,
   };
 }
 
-/** Verify a user's token by uid. Returns user profile without password. */
+/** Verify a user's token by uid. Returns user profile. */
 export async function verifyUserToken(uid: string) {
   const user = await getUserById(uid);
   if (!user) {
@@ -89,9 +96,7 @@ export async function verifyUserToken(uid: string) {
     throw new NotFoundError('User profile not found');
   }
 
-  const userData = userDoc.data()!;
-  const { password: _, ...safeUser } = userData;
-  return safeUser;
+  return userDoc.data()!;
 }
 
 /** Generate a password reset token. Always returns the same message to avoid email enumeration. */
@@ -102,11 +107,10 @@ export async function forgotPassword(email: string) {
   }
 
   const resetToken = uuidv4();
-  const hashedToken = await bcrypt.hash(resetToken, 10);
 
   await collections.tokens().doc(user.uid).set({
     type: 'password_reset',
-    token: hashedToken,
+    token: resetToken,
     email: email,
     createdAt: new Date().toISOString(),
     expiresAt: new Date(Date.now() + 3600000).toISOString(),
@@ -121,7 +125,7 @@ export async function forgotPassword(email: string) {
   };
 }
 
-/** Reset a password using a valid, non-expired reset token. */
+/** Reset a password using a valid, non-expired reset token. Uses Firebase Auth Admin SDK. */
 export async function resetPassword(token: string, newPassword: string) {
   const tokensSnapshot = await collections.tokens()
     .where('type', '==', 'password_reset')
@@ -133,8 +137,7 @@ export async function resetPassword(token: string, newPassword: string) {
 
   for (const doc of tokensSnapshot.docs) {
     const data = doc.data();
-    const isValid = await bcrypt.compare(token, data.token);
-    if (isValid) {
+    if (data.token === token) {
       matchedToken = data;
       matchedDocId = doc.id;
       break;
@@ -150,49 +153,47 @@ export async function resetPassword(token: string, newPassword: string) {
     throw new ValidationError('Reset token has expired');
   }
 
-  const hashedPassword = await bcrypt.hash(newPassword, 12);
-  await collections.users().doc(matchedDocId).update({
-    password: hashedPassword,
-    updatedAt: new Date().toISOString(),
-  });
+  await firebaseUpdateUser(matchedDocId, { password: newPassword });
 
   await collections.tokens().doc(matchedDocId).update({ used: true });
 
   logger.info('Password reset completed', { uid: matchedDocId });
 }
 
-/** Change a user's password by verifying their current password first. */
+/** Change a user's password using Firebase Auth Admin SDK. */
 export async function changePassword(uid: string, currentPassword: string, newPassword: string) {
   const userDoc = await collections.users().doc(uid).get();
   if (!userDoc.exists) {
     throw new NotFoundError('User not found');
   }
-
   const userData = userDoc.data()!;
-  const isValid = await bcrypt.compare(currentPassword, userData.password);
-  if (!isValid) {
+  const firebaseApiKey = env.FIREBASE_WEB_API_KEY;
+  const response = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${firebaseApiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: userData.email, password: currentPassword, returnSecureToken: true }),
+    }
+  );
+
+  if (!response.ok) {
     throw new UnauthorizedError('Current password is incorrect');
   }
 
-  const hashedPassword = await bcrypt.hash(newPassword, 12);
-  await collections.users().doc(uid).update({
-    password: hashedPassword,
-    updatedAt: new Date().toISOString(),
-  });
+  await firebaseUpdateUser(uid, { password: newPassword });
 
   logger.info('Password changed', { uid });
 }
 
-/** Fetch user profile by uid, excluding password. */
+/** Fetch user profile by uid. */
 export async function getUserProfile(uid: string) {
   const userDoc = await collections.users().doc(uid).get();
   if (!userDoc.exists) {
     throw new NotFoundError('User not found');
   }
 
-  const userData = userDoc.data()!;
-  const { password: _, ...safeUser } = userData;
-  return safeUser;
+  return userDoc.data()!;
 }
 
 /** Update a user's own profile fields (displayName, phoneNumber, photoURL). */
@@ -217,10 +218,8 @@ export async function updateUserProfile(uid: string, data: {
   await collections.users().doc(uid).update(updateData);
 
   const updated = await collections.users().doc(uid).get();
-  const userData = updated.data()!;
-  const { password: _, ...safeUser } = userData;
 
   logger.info('User profile updated', { uid });
 
-  return safeUser;
+  return updated.data()!;
 }

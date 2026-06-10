@@ -26,23 +26,24 @@ export async function getStudentDashboard(studentId: string) {
   const totalPoints = grades.reduce((sum: number, g: { score?: number; totalPoints?: number }) => sum + (g.totalPoints || 1), 0);
   const overallGrade = totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0;
 
-  const pendingAssignments = 0;
-  const upcomingExams = 0;
-
   const now = new Date().toISOString();
-  for (const cid of courseIds) {
+  const coursePromises = courseIds.map(async (cid) => {
     const assignmentsSnapshot = await collections.assignments()
       .where('courseId', '==', cid)
       .where('dueDate', '>=', now)
-      .limit(10)
       .get();
-
     const examsSnapshot = await collections.exams()
       .where('courseId', '==', cid)
       .where('startDate', '>=', now)
-      .limit(10)
       .get();
-  }
+    return {
+      pendingAssignments: assignmentsSnapshot.docs.length,
+      upcomingExams: examsSnapshot.docs.length,
+    };
+  });
+  const results = await Promise.all(coursePromises);
+  const pendingAssignments = results.reduce((sum, r) => sum + r.pendingAssignments, 0);
+  const upcomingExams = results.reduce((sum, r) => sum + r.upcomingExams, 0);
 
   logger.info('Student dashboard retrieved', { studentId });
 
@@ -51,6 +52,8 @@ export async function getStudentDashboard(studentId: string) {
     unreadNotifications,
     overallGrade,
     averageScore: overallGrade,
+    pendingAssignments,
+    upcomingExams,
     recentActivity: [],
   };
 }
@@ -61,21 +64,22 @@ export async function getTeacherDashboard(teacherId: string) {
     .where('teacherId', '==', teacherId)
     .get();
 
-  const courses = coursesSnapshot.docs.map((d) => d.data());
+  const courses = coursesSnapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
   const totalCourses = courses.length;
 
-  let totalStudents = 0;
-  let pendingGrading = 0;
-
-  for (const course of courses) {
-    totalStudents += course.enrollmentCount || 0;
-
+  const coursePromises = courses.map(async (course) => {
     const submissionsSnapshot = await collections.submissions()
       .where('courseId', '==', course.id)
       .where('status', '==', 'submitted')
       .get();
-    pendingGrading += submissionsSnapshot.docs.length;
-  }
+    return {
+      students: course.enrollmentCount || 0,
+      pending: submissionsSnapshot.docs.length,
+    };
+  });
+  const results = await Promise.all(coursePromises);
+  const totalStudents = results.reduce((sum, r) => sum + r.students, 0);
+  const pendingGrading = results.reduce((sum, r) => sum + r.pending, 0);
 
   const notificationsSnapshot = await collections.notifications()
     .where('userId', '==', teacherId)
@@ -95,42 +99,25 @@ export async function getTeacherDashboard(teacherId: string) {
 
 /** Get an admin dashboard summary: user counts, course/class stats. */
 export async function getAdminDashboard() {
-  const usersSnapshot = await collections.users().get();
-  const totalUsers = usersSnapshot.docs.length;
+  const studentsCount = (await collections.users().where('role', '==', 'student').count().get()).data().count;
+  const teachersCount = (await collections.users().where('role', '==', 'teacher').count().get()).data().count;
+  const adminsCount = (await collections.users().where('role', '==', 'admin').count().get()).data().count;
+  const parentsCount = (await collections.users().where('role', '==', 'parent').count().get()).data().count;
 
-  const roles = { students: 0, teachers: 0, admins: 0, parents: 0 };
-  usersSnapshot.docs.forEach((doc) => {
-    const data = doc.data();
-    if (data.role === 'student') roles.students++;
-    else if (data.role === 'teacher') roles.teachers++;
-    else if (data.role === 'admin') roles.admins++;
-    else if (data.role === 'parent') roles.parents++;
-  });
+  const totalCourses = (await collections.courses().count().get()).data().count;
+  const publishedCourses = (await collections.courses().where('status', '==', 'published').count().get()).data().count;
 
-  const coursesSnapshot = await collections.courses().get();
-  const totalCourses = coursesSnapshot.docs.length;
-
-  const classesSnapshot = await collections.classes().get();
-  const totalClasses = classesSnapshot.docs.length;
-
-  const activeClassesSnapshot = await collections.classes()
-    .where('status', '==', 'active')
-    .get();
-  const activeClasses = activeClassesSnapshot.docs.length;
-
-  const publishedCoursesSnapshot = await collections.courses()
-    .where('status', '==', 'published')
-    .get();
-  const publishedCourses = publishedCoursesSnapshot.docs.length;
+  const totalClasses = (await collections.classes().count().get()).data().count;
+  const activeClasses = (await collections.classes().where('status', '==', 'active').count().get()).data().count;
 
   logger.info('Admin dashboard retrieved');
 
   return {
-    totalUsers,
-    totalStudents: roles.students,
-    totalTeachers: roles.teachers,
-    totalAdmins: roles.admins,
-    totalParents: roles.parents,
+    totalUsers: studentsCount + teachersCount + adminsCount + parentsCount,
+    totalStudents: studentsCount,
+    totalTeachers: teachersCount,
+    totalAdmins: adminsCount,
+    totalParents: parentsCount,
     totalCourses,
     publishedCourses,
     totalClasses,

@@ -1,5 +1,25 @@
-import { collections } from '../firebase/firestore';
+import { collections, getCollection } from '../firebase/firestore';
 import { logger } from '../utils/logger';
+
+const SENT_REMINDERS_COLLECTION = 'sentReminders';
+
+async function hasReminderBeenSent(type: string, refId: string, userId: string): Promise<boolean> {
+  const docRef = getCollection(SENT_REMINDERS_COLLECTION)
+    .doc(`${type}_${refId}_${userId}`);
+  const snap = await docRef.get();
+  return snap.exists;
+}
+
+async function markReminderSent(type: string, refId: string, userId: string): Promise<void> {
+  const docRef = getCollection(SENT_REMINDERS_COLLECTION)
+    .doc(`${type}_${refId}_${userId}`);
+  await docRef.set({
+    type,
+    refId,
+    userId,
+    sentAt: new Date().toISOString(),
+  });
+}
 
 export async function checkUpcomingDeadlines() {
   logger.info('Checking upcoming deadlines...');
@@ -24,9 +44,13 @@ export async function checkUpcomingDeadlines() {
 
         for (const enrollment of enrollmentsSnapshot.docs) {
           const enrollmentData = enrollment.data();
+          const reminderType = 'assignment_reminder';
+          if (await hasReminderBeenSent(reminderType, doc.id, enrollmentData.studentId)) {
+            continue;
+          }
           await collections.notifications().add({
             userId: enrollmentData.studentId,
-            type: 'assignment_reminder',
+            type: reminderType,
             title: 'Assignment Due Soon',
             body: `"${assignment.title}" is due within 24 hours`,
             data: {
@@ -39,6 +63,7 @@ export async function checkUpcomingDeadlines() {
             readAt: null,
             createdAt: new Date().toISOString(),
           });
+          await markReminderSent(reminderType, doc.id, enrollmentData.studentId);
         }
       }
       logger.info(`Sent ${assignmentsSnapshot.docs.length} assignment reminders`);
@@ -61,9 +86,13 @@ export async function checkUpcomingDeadlines() {
             .get();
 
           for (const student of studentsSnapshot.docs) {
+            const reminderType = 'exam_reminder';
+            if (await hasReminderBeenSent(reminderType, doc.id, student.id)) {
+              continue;
+            }
             await collections.notifications().add({
               userId: student.id,
-              type: 'exam_reminder',
+              type: reminderType,
               title: 'Upcoming Exam',
               body: `"${exam.title}" is scheduled soon`,
               data: {
@@ -76,6 +105,7 @@ export async function checkUpcomingDeadlines() {
               readAt: null,
               createdAt: new Date().toISOString(),
             });
+            await markReminderSent(reminderType, doc.id, student.id);
           }
         }
       }

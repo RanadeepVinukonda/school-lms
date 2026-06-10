@@ -47,6 +47,8 @@ export const useAuthStore = create<AuthStore>()(
         onAuthStateChanged(auth, async (firebaseUser) => {
           if (firebaseUser) {
             try {
+              const token = await firebaseUser.getIdToken();
+              set({ token });
               const docRef = doc(db, 'users', firebaseUser.uid);
               const snap = await getDoc(docRef);
               if (snap.exists()) {

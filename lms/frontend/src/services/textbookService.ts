@@ -4,6 +4,8 @@ import { logAudit } from '@/services/auditService';
 import type { Textbook, Chapter, Concept, GeneratedQuestion, GeneratedAssignment, CachedVideo, ConceptProgress, ConceptRelease } from '@/types/textbook';
 
 const TEXTBOOKS_COLLECTION = 'textbooks';
+const CHAPTERS_COLLECTION = 'chapters';
+const CONCEPTS_COLLECTION = 'concepts';
 const CONCEPT_PROGRESS_COLLECTION = 'conceptProgress';
 const CONCEPT_RELEASES_COLLECTION = 'conceptReleases';
 
@@ -76,27 +78,52 @@ export async function deleteTextbook(id: string): Promise<void> {
   });
 }
 
-/** Save chapter data to a textbook document and update its status to 'ready'. */
+/** Save chapter data to a textbook: creates subcollection documents for each chapter and concept. */
 export async function saveChapters(textbookId: string, chapters: Chapter[]): Promise<void> {
   const textbookRef = doc(db, TEXTBOOKS_COLLECTION, textbookId);
   const snap = await getDoc(textbookRef);
-  if (snap.exists()) {
-    await updateDoc(textbookRef, {
-      chapters,
-      status: 'ready',
-      processingProgress: 100,
-      processingStage: 'Complete',
-      updatedAt: Timestamp.now().toDate().toISOString(),
+  if (!snap.exists()) return;
+
+  const chaptersCollectionRef = collection(db, TEXTBOOKS_COLLECTION, textbookId, CHAPTERS_COLLECTION);
+
+  for (const chapter of chapters) {
+    const { concepts, ...chapterData } = chapter;
+    const chapterRef = doc(chaptersCollectionRef, chapter.id);
+    await setDoc(chapterRef, {
+      ...chapterData,
+      textbookId,
+      chapterCount: concepts.length,
+      createdAt: Timestamp.now().toDate().toISOString(),
     });
-    logAudit({
-      action: 'textbook.chapters.save',
-      targetId: textbookId,
-      targetType: 'textbook',
-      targetName: textbookId,
-      summary: `Saved ${chapters.length} chapters to textbook ${textbookId} and marked as ready`,
-      newValue: { chapterCount: chapters.length, status: 'ready' },
-    });
+
+    const conceptsCollectionRef = collection(db, TEXTBOOKS_COLLECTION, textbookId, CHAPTERS_COLLECTION, chapter.id, CONCEPTS_COLLECTION);
+    for (const concept of concepts) {
+      const conceptRef = doc(conceptsCollectionRef, concept.id);
+      await setDoc(conceptRef, {
+        ...concept,
+        textbookId,
+        chapterId: chapter.id,
+        createdAt: Timestamp.now().toDate().toISOString(),
+      });
+    }
   }
+
+  await updateDoc(textbookRef, {
+    chapterCount: chapters.length,
+    status: 'ready',
+    processingProgress: 100,
+    processingStage: 'Complete',
+    updatedAt: Timestamp.now().toDate().toISOString(),
+  });
+
+  logAudit({
+    action: 'textbook.chapters.save',
+    targetId: textbookId,
+    targetType: 'textbook',
+    targetName: textbookId,
+    summary: `Saved ${chapters.length} chapters to textbook ${textbookId} and marked as ready`,
+    newValue: { chapterCount: chapters.length, status: 'ready' },
+  });
 }
 
 /** Save or update concept progress for a user. Creates a new document with defaults if none exists. */
