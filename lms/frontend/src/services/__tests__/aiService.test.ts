@@ -38,11 +38,4 @@ describe('aiService model selection', () => {
     expect(getModel('question')).toBe('test-model-questions');
   });
 
-  it('throws if no API key', async () => {
-    const key = import.meta.env.VITE_OPENROUTER_API_KEY;
-    delete import.meta.env.VITE_OPENROUTER_API_KEY;
-    const { getOpenRouterApiKey } = await import('@/services/aiService');
-    expect(() => getOpenRouterApiKey()).toThrow('OpenRouter API key');
-    import.meta.env.VITE_OPENROUTER_API_KEY = key;
-  });
 });

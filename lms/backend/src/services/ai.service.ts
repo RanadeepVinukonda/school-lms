@@ -73,13 +73,20 @@ export async function chatCompletion(params: ChatRequest): Promise<string> {
         response_format: { type: 'json_object' },
       };
 
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Bearer ${env.AI_API_KEY}`,
+      };
+
+      if (env.AI_BASE_URL.includes('openrouter.ai')) {
+        headers['HTTP-Referer'] = 'https://school-lms-nine-phi.vercel.app';
+        headers['X-Title'] = 'School LMS';
+      }
+
       res = await fetch(env.AI_BASE_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Authorization: `Bearer ${env.AI_API_KEY}`,
-        },
+        headers,
         body: JSON.stringify(payload),
         signal: controller.signal,
       });
