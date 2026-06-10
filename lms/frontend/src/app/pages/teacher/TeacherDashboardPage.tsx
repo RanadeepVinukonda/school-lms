@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { useAuthStore } from '@/store/authStore';
+import { ROUTES } from '@/lib/constants';
 import {
   getAllSubjects,
   getAllClasses,
@@ -20,6 +21,7 @@ import {
   getTimetableByClass,
   getNotificationsByUser,
 } from '@/services/dataService';
+import { getTextbooksBySubject } from '@/services/textbookService';
 import { pageTransition, listItem, listContainer } from '@/lib/motion';
 
 interface NeedsAttentionItem {
@@ -31,6 +33,7 @@ interface DashboardData {
   needsAttention: NeedsAttentionItem[];
   todaySchedule: { period: number; subjectName: string; room: string }[];
   stats: { icon: string; label: string; value: string | number; color: string; bg: string }[];
+  teaching: { classes: { id: string; name: string }[]; textbooks: { id: string; title: string; subjectId: string }[]; studentCount: number };
 }
 
 const QUICK_ACTIONS = [
@@ -125,6 +128,18 @@ export default function TeacherDashboardPage() {
 
       const totalStudents = new Set(allGrades.map((g) => g.studentId)).size;
 
+      const textbookArrays = await Promise.all(
+        subjectIds.map((sid) => getTextbooksBySubject(sid).catch(() => [] as any[])),
+      );
+      const allTextbooks = textbookArrays.flat();
+
+      const enrolledStudentIds = new Set(
+        allEnrollments
+          .filter((e) => e.courseId && subjectIds.includes(e.courseId))
+          .map((e) => e.studentId),
+      );
+      const teachingStudentCount = enrolledStudentIds.size;
+
       return {
         needsAttention: [
           { icon: 'rate_review', label: 'Awaiting Grading', count: awaitingGradingCount, color: 'text-warning', bg: 'bg-warning-container/60', link: '/teacher/assignments', description: 'Assignments to review' },
@@ -137,6 +152,11 @@ export default function TeacherDashboardPage() {
           { icon: 'school', label: 'Total Students', value: totalStudents, color: 'text-primary', bg: 'bg-primary-container/60' },
           { icon: 'assignment', label: 'Exams Created', value: allExams.length, color: 'text-secondary', bg: 'bg-secondary-container/60' },
         ],
+        teaching: {
+          classes: myClasses.map((c) => ({ id: c.id, name: c.name })),
+          textbooks: allTextbooks.map((tb) => ({ id: tb.id, title: tb.title, subjectId: tb.subjectId })),
+          studentCount: teachingStudentCount,
+        },
       };
     },
   });
@@ -198,9 +218,72 @@ export default function TeacherDashboardPage() {
                       )}
                     </CardContent>
                   </Card>
-                </motion.div>
+              </motion.div>
 
+              {(d.teaching.classes.length > 0 || d.teaching.textbooks.length > 0) && (
                 <motion.div variants={listItem} initial="hidden" animate="show">
+                  <h2 className="text-title-md font-semibold mb-3">My Teaching</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {d.teaching.classes.length > 0 && (
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-3">
+                            <div className="h-9 w-9 rounded-lg bg-primary-container flex items-center justify-center flex-shrink-0">
+                              <Icon name="school" size={18} className="text-on-primary-container" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold">Classes</p>
+                              {d.teaching.classes.map((cls) => (
+                                <p key={cls.id} className="text-xs text-muted-foreground">{cls.name}</p>
+                              ))}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                    {d.teaching.textbooks.length > 0 && (
+                      <Link to={ROUTES.TEACHER_TEXTBOOKS} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl">
+                        <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                          <CardContent className="p-4">
+                            <div className="flex items-start gap-3">
+                              <div className="h-9 w-9 rounded-lg bg-secondary-container flex items-center justify-center flex-shrink-0">
+                                <Icon name="menu_book" size={18} className="text-on-secondary-container" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold">Textbooks</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {d.teaching.textbooks.length} textbook{d.teaching.textbooks.length > 1 ? 's' : ''}
+                                </p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    )}
+                    {d.teaching.studentCount > 0 && (
+                      <Link to={ROUTES.TEACHER_STUDENTS} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl">
+                        <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                          <CardContent className="p-4">
+                            <div className="flex items-start gap-3">
+                              <div className="h-9 w-9 rounded-lg bg-success-container flex items-center justify-center flex-shrink-0">
+                                <Icon name="group" size={18} className="text-on-success-container" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold">Enrolled Students</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {d.teaching.studentCount} student{d.teaching.studentCount > 1 ? 's' : ''}
+                                </p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+
+              <motion.div variants={listItem} initial="hidden" animate="show">
                   <Card className="h-full">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base flex items-center gap-2">
