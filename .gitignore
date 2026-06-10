@@ -6,3 +6,4 @@ dist/
 _ignore_this/
 
 .vercel
+*_env.env
