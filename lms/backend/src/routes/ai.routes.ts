@@ -9,7 +9,7 @@ import * as aiController from '../controllers/ai.controller';
 const router = Router();
 
 const chatSchema = z.object({
-  model: z.string().min(1),
+  model: z.string().min(1).optional(),
   messages: z.array(z.object({
     role: z.enum(['system', 'user', 'assistant']),
     content: z.string(),
