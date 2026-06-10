@@ -38,4 +38,10 @@ export const collections = {
   teacherClassSubject: () => getCollection('teacherClassSubject'),
   teacherVideos: () => getCollection('teacherVideos'),
   assignmentSubmissions: () => getCollection('assignmentSubmissions'),
+  quizV2: () => getCollection('quizV2'),
+  quizAttemptV2: () => getCollection('quizAttemptV2'),
+  assignmentV2: () => getCollection('assignmentV2'),
+  assignmentSubmissionV2: () => getCollection('assignmentSubmissionV2'),
+  examV2: () => getCollection('examV2'),
+  examAttemptV2: () => getCollection('examAttemptV2'),
 };

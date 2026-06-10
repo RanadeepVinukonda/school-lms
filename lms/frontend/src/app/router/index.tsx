@@ -32,6 +32,7 @@ import StudentProfileEditPage from '@/app/pages/student/StudentProfileEditPage';
 import AssignmentDetailPage from '@/app/pages/student/AssignmentDetailPage';
 import QuizAttemptPage from '@/app/pages/student/QuizAttemptPage';
 import ExamAttemptPage from '@/app/pages/student/ExamAttemptPage';
+import StudentQuizTakePageV2 from '@/app/pages/student/StudentQuizTakePageV2';
 
 import TeacherDashboardPage from '@/app/pages/teacher/TeacherDashboardPage';
 import TeacherStudentsPage from '@/app/pages/teacher/TeacherStudentsPage';
@@ -42,6 +43,8 @@ import TeacherTextbooksPage from '@/app/pages/teacher/TeacherTextbooksPage';
 import TeacherTextbookDetailPage from '@/app/pages/teacher/TeacherTextbookDetailPage';
 import TeacherTextbookUploadPage from '@/app/pages/teacher/TeacherTextbookUploadPage';
 import TeacherConceptViewPage from '@/app/pages/teacher/TeacherConceptViewPage';
+import TeacherAssessmentCreatePage from '@/app/pages/teacher/TeacherAssessmentCreatePage';
+import TeacherExamCreatePage from '@/app/pages/teacher/TeacherExamCreatePage';
 import TeacherProfilePage from '@/app/pages/teacher/TeacherProfilePage';
 import TeacherProfileEditPage from '@/app/pages/teacher/TeacherProfileEditPage';
 
@@ -110,6 +113,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.ASSIGNMENT_DETAIL(':id'), element: <AssignmentDetailPage /> },
       { path: ROUTES.QUIZ_ATTEMPT(':id'), element: <QuizAttemptPage /> },
       { path: ROUTES.EXAM_DETAIL(':id'), element: <ExamAttemptPage /> },
+      { path: ROUTES.STUDENT_TAKE_ASSESSMENT(':id'), element: <StudentQuizTakePageV2 /> },
     ],
   },
 
@@ -123,7 +127,9 @@ export const router = createBrowserRouter([
       { path: ROUTES.TEACHER_DASHBOARD, element: <TeacherDashboardPage /> },
       { path: ROUTES.TEACHER_STUDENTS, element: <TeacherStudentsPage /> },
       { path: ROUTES.TEACHER_STUDENT(':id'), element: <TeacherStudentDetailPage /> },
+      { path: ROUTES.TEACHER_ASSESSMENTS, element: <TeacherAssessmentCreatePage /> },
       { path: ROUTES.TEACHER_EXAMS, element: <TeacherExamsPage /> },
+      { path: ROUTES.TEACHER_EXAM_CREATE, element: <TeacherExamCreatePage /> },
       { path: ROUTES.TEACHER_EXAM_CORRECT(':id'), element: <TeacherExamCorrectionPage /> },
       { path: ROUTES.TEACHER_TEXTBOOKS, element: <TeacherTextbooksPage /> },
       { path: ROUTES.TEACHER_TEXTBOOK(':textbookId'), element: <TeacherTextbookDetailPage /> },

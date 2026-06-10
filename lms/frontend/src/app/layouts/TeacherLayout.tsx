@@ -23,6 +23,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Home', href: ROUTES.TEACHER_DASHBOARD, icon: 'home' },
   { label: 'Students', href: ROUTES.TEACHER_STUDENTS, icon: 'group' },
+  { label: 'Assessments', href: ROUTES.TEACHER_ASSESSMENTS, icon: 'quiz' },
   { label: 'Exams', href: ROUTES.TEACHER_EXAMS, icon: 'assignment' },
   { label: 'Textbooks', href: ROUTES.TEACHER_TEXTBOOKS, icon: 'menu_book' },
   { label: 'Profile', href: ROUTES.TEACHER_PROFILE, icon: 'person' },

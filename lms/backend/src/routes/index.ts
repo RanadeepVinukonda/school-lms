@@ -21,6 +21,9 @@ import auditRoutes from './audit.routes';
 import conceptRoutes from './concept.routes';
 import teacherClassSubjectRoutes from './teacher-class-subject.routes';
 import textbookRoutes from './textbook.routes';
+import quizV2Routes from './quiz-v2.routes';
+import assignmentV2Routes from './assignment-v2.routes';
+import examV2Routes from './exam-v2.routes';
 
 const router = Router();
 
@@ -46,6 +49,9 @@ router.use('/audit-logs', auditRoutes);
 router.use('/whiteboard', conceptRoutes);
 router.use('/teacher-class-subject', teacherClassSubjectRoutes);
 router.use('/textbooks', textbookRoutes);
+router.use('/quizzes-v2', quizV2Routes);
+router.use('/assignments-v2', assignmentV2Routes);
+router.use('/exams-v2', examV2Routes);
 
 router.get('/health', (_req, res) => {
   res.json({

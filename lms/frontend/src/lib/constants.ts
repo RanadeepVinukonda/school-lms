@@ -43,6 +43,8 @@ export const ROUTES = {
   TEACHER_CONCEPT: (textbookId: string, chapterId: string, conceptId: string) =>
     `/teacher/textbooks/${textbookId}/chapters/${chapterId}/concepts/${conceptId}`,
   TEACHER_PROFILE: '/teacher/profile',
+  TEACHER_ASSESSMENTS: '/teacher/assessments',
+  TEACHER_EXAM_CREATE: '/teacher/exams/create',
   TEACHER_PROFILE_EDIT: '/teacher/profile/edit',
 
   ADMIN_DASHBOARD: '/admin/dashboard',
@@ -58,6 +60,7 @@ export const ROUTES = {
   ASSIGNMENT_DETAIL: (id: string) => `/assignments/${id}`,
   QUIZ_ATTEMPT: (id: string) => `/quizzes/${id}/attempt`,
   EXAM_DETAIL: (id: string) => `/exams/${id}`,
+  STUDENT_TAKE_ASSESSMENT: (id: string) => `/student/assessments/${id}/take`,
   NOTIFICATIONS: '/notifications',
   ABOUT: '/about',
 
