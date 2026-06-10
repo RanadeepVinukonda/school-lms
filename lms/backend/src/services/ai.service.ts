@@ -32,13 +32,22 @@ export async function chatCompletion(params: ChatRequest): Promise<string> {
 
   let res: Response;
   try {
-    res = await fetch(env.AI_BASE_URL, {
+    const fetchUrl = env.AI_BASE_URL.includes('generativelanguage.googleapis.com')
+      ? `${env.AI_BASE_URL}?key=${env.AI_API_KEY}`
+      : env.AI_BASE_URL;
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    };
+
+    if (!env.AI_BASE_URL.includes('generativelanguage.googleapis.com')) {
+      headers.Authorization = `Bearer ${env.AI_API_KEY}`;
+    }
+
+    res = await fetch(fetchUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Authorization: `Bearer ${env.AI_API_KEY}`,
-      },
+      headers,
       body: JSON.stringify(payload),
       signal: controller.signal,
     });
