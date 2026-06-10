@@ -43,6 +43,51 @@ function parseRetryAfter(errBody: string): number | null {
   return null;
 }
 
+function extractJsonBlock(raw: string): string {
+  const cleaned = raw.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/gm, '').trim();
+  const braceStart = cleaned.indexOf('{');
+  if (braceStart === -1) return cleaned;
+  let depth = 0;
+  let inString = false;
+  for (let i = braceStart; i < cleaned.length; i++) {
+    const c = cleaned[i];
+    if (c === '"' && (i === 0 || cleaned[i - 1] !== '\\')) inString = !inString;
+    if (inString) continue;
+    if (c === '{') depth++;
+    if (c === '}') {
+      depth--;
+      if (depth === 0) return cleaned.slice(braceStart, i + 1);
+    }
+  }
+  return cleaned;
+}
+
+function sanitizeJson(raw: string): string {
+  return raw.replace(/[\x00-\x1F\u200B-\u200F\uFEFF]/g, '');
+}
+
+function buildPayload(model: string, messages: ChatMessage[], temperature: number, max_tokens: number, useResponseFormat: boolean): Record<string, unknown> {
+  const payload: Record<string, unknown> = {
+    model,
+    messages,
+    temperature,
+    max_tokens,
+  };
+  if (useResponseFormat) {
+    payload.response_format = { type: 'json_object' };
+  }
+  return payload;
+}
+
+async function fetchWithPayload(headers: Record<string, string>, payload: Record<string, unknown>, signal: AbortSignal): Promise<Response> {
+  return fetch(env.AI_BASE_URL, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+    signal,
+  });
+}
+
 export async function chatCompletion(params: ChatRequest): Promise<string> {
   const { model, messages, temperature = 0.7, max_tokens = 2048 } = params;
 
@@ -57,33 +102,33 @@ export async function chatCompletion(params: ChatRequest): Promise<string> {
     headers['X-Title'] = 'School LMS';
   }
 
-  const payload: Record<string, unknown> = {
-    model,
-    messages,
-    temperature,
-    max_tokens,
-  };
-
+  let useResponseFormat = true;
   let lastError: string | null = null;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const payload = buildPayload(model, messages, temperature, max_tokens, useResponseFormat);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 120000);
 
     try {
-      const res = await fetch(env.AI_BASE_URL, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
+      const res = await fetchWithPayload(headers, payload, controller.signal);
       clearTimeout(timer);
 
       if (res.ok) {
         const data = await res.json() as ChatResponse;
         const content = data.choices?.[0]?.message?.content || '';
-        logger.info('AI response received', { model, attempt, contentLength: content.length, contentPreview: content.slice(0, 200) });
-        return content;
+        logger.info('AI response received', { model, attempt, useResponseFormat, contentLength: content.length, contentPreview: content.slice(0, 200) });
+
+        const jsonBlock = extractJsonBlock(content);
+        const sanitized = sanitizeJson(jsonBlock);
+
+        try {
+          JSON.parse(sanitized);
+          return sanitized;
+        } catch {
+          logger.warn('AI response was not valid JSON, returning raw content', { model, contentPreview: content.slice(0, 200) });
+          return content;
+        }
       }
 
       const errBody = await res.text();
@@ -93,6 +138,12 @@ export async function chatCompletion(params: ChatRequest): Promise<string> {
         logger.warn(`AI rate limited, retrying in ${retryMs}ms (attempt ${attempt + 1}/${MAX_RETRIES})`, { model, status: 429 });
         await sleep(retryMs);
         lastError = errBody;
+        continue;
+      }
+
+      if (res.status === 400 && useResponseFormat && (errBody.includes('response_format') || errBody.includes('json_object'))) {
+        logger.warn('Model does not support response_format, retrying without it', { model, errBody: errBody.slice(0, 200) });
+        useResponseFormat = false;
         continue;
       }
 
