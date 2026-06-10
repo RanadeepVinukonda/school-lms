@@ -242,13 +242,62 @@ export async function submitAttempt(attemptId: string, studentId: string, data: 
   return { id: attemptId, ...attemptData, ...result };
 }
 
+/** Toggle whether quiz results (correct answers) are visible to students. */
+export async function releaseQuizGrades(quizId: string, showResults: boolean) {
+  const ref = collections.quizzes().doc(quizId);
+  const doc = await ref.get();
+
+  if (!doc.exists) {
+    throw new NotFoundError('Quiz not found');
+  }
+
+  await ref.update({ showResults, updatedAt: new Date().toISOString() });
+  logger.info('Quiz grades release toggled', { quizId, showResults });
+
+  const updated = await ref.get();
+  return { ...updated.data() };
+}
+
 /** Get all quiz results for a student, ordered by startedAt desc. */
 export async function getQuizResults(quizId: string, studentId: string) {
+  const quizRef = collections.quizzes().doc(quizId);
+  const quiz = await quizRef.get();
+  if (!quiz.exists) throw new NotFoundError('Quiz not found');
+
+  const quizData = quiz.data()!;
+  const resultsGated = !quizData.showResults;
+
   const snapshot = await collections.quizAttempts()
     .where('quizId', '==', quizId)
     .where('studentId', '==', studentId)
     .orderBy('startedAt', 'desc')
     .get();
 
-  return snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const items = snapshot.docs.map((doc) => {
+    const data = doc.data();
+
+    if (resultsGated && data.status === 'completed') {
+      return {
+        id: doc.id,
+        quizId: data.quizId,
+        studentId: data.studentId,
+        score: data.score,
+        totalPoints: data.totalPoints,
+        percentage: data.percentage,
+        passed: data.passed,
+        timeSpent: data.timeSpent,
+        startedAt: data.startedAt,
+        submittedAt: data.submittedAt,
+        status: data.status,
+        answers: data.answers?.map((a: { questionId: string; pointsEarned: number }) => ({
+          questionId: a.questionId,
+          pointsEarned: a.pointsEarned,
+        })) ?? [],
+      };
+    }
+
+    return { ...data, id: doc.id };
+  });
+
+  return items;
 }

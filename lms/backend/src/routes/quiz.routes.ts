@@ -16,5 +16,6 @@ router.get('/:quizId', authenticate, asyncHandler(quizController.getQuiz));
 router.post('/:quizId/start', authenticate, requireRole('student'), asyncHandler(quizController.startAttempt));
 router.post('/:quizId/attempts/:attemptId/submit', authenticate, validate(submitAttemptSchema), asyncHandler(quizController.submitAttempt));
 router.get('/:quizId/results', authenticate, asyncHandler(quizController.getResults));
+router.patch('/:quizId/release-grades', authenticate, requireRole('teacher', 'admin'), asyncHandler(quizController.releaseGrades));
 
 export default router;

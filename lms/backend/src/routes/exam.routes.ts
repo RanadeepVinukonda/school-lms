@@ -18,5 +18,6 @@ router.post('/:examId/start', authenticate, requireRole('student'), asyncHandler
 router.post('/:examId/attempts/:attemptId/submit', authenticate, validate(submitExamAttemptSchema), asyncHandler(examController.submitExamAttempt));
 router.put('/:examId/attempts/:attemptId/grade', authenticate, requireRole('teacher', 'admin'), asyncHandler(examController.gradeExamAttempt));
 router.get('/:examId/results', authenticate, asyncHandler(examController.getExamResults));
+router.patch('/:examId/release-grades', authenticate, requireRole('teacher', 'admin'), asyncHandler(examController.releaseExamGrades));
 
 export default router;

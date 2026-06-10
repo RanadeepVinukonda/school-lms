@@ -56,3 +56,15 @@ export async function getResults(req: Request, res: Response) {
   const result = await quizService.getQuizResults(req.params.quizId, req.user!.uid);
   sendSuccess(res, result);
 }
+
+export async function releaseGrades(req: Request, res: Response) {
+  const { showResults } = req.body;
+  const old = await quizService.getQuizById(req.params.quizId);
+  const result = await quizService.releaseQuizGrades(req.params.quizId, showResults);
+  logAudit(adminAuditEntry(req as any, 'quiz.update', req.params.quizId, 'quiz', old.title, {
+    oldValue: { showResults: old.showResults },
+    newValue: { showResults },
+    summary: `${showResults ? 'Released' : 'Withheld'} grades for quiz "${old.title}"`,
+  }));
+  sendSuccess(res, result, `Grades ${showResults ? 'released' : 'withheld'}`);
+}

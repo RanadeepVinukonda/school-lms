@@ -357,13 +357,62 @@ export async function gradeExamAttempt(attemptId: string, graderId: string, data
   return { ...updated.data() };
 }
 
+/** Toggle whether exam grades are visible to students. */
+export async function releaseExamGrades(examId: string, gradesReleased: boolean) {
+  const ref = collections.exams().doc(examId);
+  const doc = await ref.get();
+
+  if (!doc.exists) {
+    throw new NotFoundError('Exam not found');
+  }
+
+  await ref.update({ gradesReleased, updatedAt: new Date().toISOString() });
+  logger.info('Exam grades release toggled', { examId, gradesReleased });
+
+  const updated = await ref.get();
+  return { ...updated.data() };
+}
+
 /** Get all exam results for a specific student, ordered by startedAt desc. */
 export async function getExamResults(examId: string, studentId: string) {
+  const examRef = collections.exams().doc(examId);
+  const exam = await examRef.get();
+  if (!exam.exists) throw new NotFoundError('Exam not found');
+
+  const examData = exam.data()!;
+  const resultsGated = !examData.gradesReleased;
+
   const snapshot = await collections.examAttempts()
     .where('examId', '==', examId)
     .where('studentId', '==', studentId)
     .orderBy('startedAt', 'desc')
     .get();
 
-  return snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const items = snapshot.docs.map((doc) => {
+    const data = doc.data();
+
+    if (resultsGated && data.status === 'completed') {
+      return {
+        id: doc.id,
+        examId: data.examId,
+        studentId: data.studentId,
+        score: data.score,
+        totalPoints: data.totalPoints,
+        percentage: data.percentage,
+        passed: data.passed,
+        timeSpent: data.timeSpent,
+        startedAt: data.startedAt,
+        submittedAt: data.submittedAt,
+        status: data.status,
+        answers: data.answers?.map((a: { questionId: string; pointsEarned: number }) => ({
+          questionId: a.questionId,
+          pointsEarned: a.pointsEarned,
+        })) ?? [],
+      };
+    }
+
+    return { ...data, id: doc.id };
+  });
+
+  return items;
 }

@@ -17,6 +17,8 @@ import settingsRoutes from './settings.routes';
 import aiRoutes from './ai.routes';
 import jobsRoutes from './jobs.routes';
 import youtubeRoutes from './youtube.routes';
+import auditRoutes from './audit.routes';
+import conceptRoutes from './concept.routes';
 
 const router = Router();
 
@@ -38,6 +40,8 @@ router.use('/settings', settingsRoutes);
 router.use('/ai', aiRoutes);
 router.use('/jobs', jobsRoutes);
 router.use('/youtube', youtubeRoutes);
+router.use('/audit-logs', auditRoutes);
+router.use('/whiteboard', conceptRoutes);
 
 router.get('/health', (_req, res) => {
   res.json({

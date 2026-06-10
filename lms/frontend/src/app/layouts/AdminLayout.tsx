@@ -25,6 +25,7 @@ const navItems: NavItem[] = [
   { label: 'Classes', href: ROUTES.ADMIN_CLASSES, icon: 'meeting_room' },
   { label: 'Subjects', href: ROUTES.ADMIN_SUBJECTS, icon: 'book' },
   { label: 'Settings', href: ROUTES.ADMIN_SETTINGS, icon: 'settings' },
+  { label: 'Audit Logs', href: ROUTES.ADMIN_AUDIT_LOGS, icon: 'history' },
 ];
 
 export function AdminLayout() {

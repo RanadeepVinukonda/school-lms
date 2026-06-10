@@ -53,6 +53,7 @@ export const ROUTES = {
   ADMIN_SUBJECTS: '/admin/subjects',
   ADMIN_SETTINGS: '/admin/settings',
   ADMIN_USERS: '/admin/users',
+  ADMIN_AUDIT_LOGS: '/admin/audit-logs',
 
   ASSIGNMENT_DETAIL: (id: string) => `/assignments/${id}`,
   QUIZ_ATTEMPT: (id: string) => `/quizzes/${id}/attempt`,

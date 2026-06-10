@@ -70,3 +70,15 @@ export async function getExamResults(req: Request, res: Response) {
   const result = await examService.getExamResults(req.params.examId, req.user!.uid);
   sendSuccess(res, result);
 }
+
+export async function releaseExamGrades(req: Request, res: Response) {
+  const { gradesReleased } = req.body;
+  const old = await examService.getExamById(req.params.examId);
+  const result = await examService.releaseExamGrades(req.params.examId, gradesReleased);
+  logAudit(adminAuditEntry(req as any, 'exam.update', req.params.examId, 'exam', old.title, {
+    oldValue: { gradesReleased: old.gradesReleased },
+    newValue: { gradesReleased },
+    summary: `${gradesReleased ? 'Released' : 'Withheld'} grades for exam "${old.title}"`,
+  }));
+  sendSuccess(res, result, `Grades ${gradesReleased ? 'released' : 'withheld'}`);
+}
