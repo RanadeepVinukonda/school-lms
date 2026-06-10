@@ -28,7 +28,7 @@ export async function chatCompletion(params: ChatRequest): Promise<string> {
   const payload: Record<string, unknown> = { model, messages, temperature, max_tokens, response_format: { type: 'json_object' } };
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15000);
+  const timer = setTimeout(() => controller.abort(), 60000);
 
   let res: Response;
   try {
