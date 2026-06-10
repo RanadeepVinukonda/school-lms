@@ -139,8 +139,8 @@ async function runProcessing(taskId: string) {
         let questionBank: GeneratedQuestion[] = [];
         let assignments: Concept['assignments'] = [];
 
-        // Free-tier rate limit guard: 60s between AI calls (OpenRouter free tier: ~1 req / 60s)
-        await new Promise((r) => setTimeout(r, coi === 0 && ci === 0 ? 0 : 60000));
+        // Rate limit guard: 10s between AI calls (Gemini free: ~10 req/min, OpenRouter: ~1 req/60s with retry)
+        await new Promise((r) => setTimeout(r, coi === 0 && ci === 0 ? 0 : 10000));
 
         try {
           const result = await generateConceptContentAndQuestions(conceptTitle, ch.title, task.subjectName, text);
