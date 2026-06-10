@@ -7,6 +7,7 @@ export interface Textbook {
   description?: string;
   fileUrl?: string;
   chapters: Chapter[];
+  chapterCount?: number;
   status: 'processing' | 'ready' | 'error';
   processingProgress: number;
   processingStage: string;
