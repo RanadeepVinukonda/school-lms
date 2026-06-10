@@ -1,15 +1,5 @@
 import api from './api';
 
-/** Choose a model based on the processing step. Falls back to the generic model env var, then a default. */
-export function getModel(step: 'extract' | 'content' | 'question') {
-  const specificKey =
-    step === 'extract' ? 'VITE_OPENROUTER_MODEL_EXTRACT' :
-    step === 'content' ? 'VITE_OPENROUTER_MODEL_CONTENT' :
-    'VITE_OPENROUTER_MODEL_QUESTION';
-  const specific = import.meta.env[specificKey] as string | undefined;
-  return specific || (import.meta.env.VITE_OPENROUTER_MODEL as string) || 'google/gemma-4-31b-it:free';
-}
-
 /** Strip control characters that break JSON.parse. */
 function sanitizeJson(raw: string): string {
   return raw.replace(/[\x00-\x1F\u200B-\u200F\uFEFF]/g, '');
@@ -78,7 +68,7 @@ function extractJson(raw: string): string {
   return cleaned;
 }
 
-async function callAI(prompt: string, step: 'extract' | 'content' | 'question') {
+async function callAI(prompt: string) {
   const messages = [
     {
       role: 'system' as const,
@@ -88,7 +78,6 @@ async function callAI(prompt: string, step: 'extract' | 'content' | 'question') 
   ];
 
   const payload = {
-    model: getModel(step),
     messages,
     temperature: 0.1,
     max_tokens: 2048,
@@ -128,7 +117,7 @@ Return valid JSON in this exact format:
 Textbook content:
 ${text.slice(0, 30000)}`;
 
-  const result = await callAI(prompt, 'extract');
+  const result = await callAI(prompt);
   return safeParse(sanitizeJson(result)) as ReturnType<typeof extractChapters>;
 }
 
@@ -211,6 +200,6 @@ Generate:
 - 8-12 questions: mix of easy (MCQ/T-F), medium (short answer), hard (numerical/problem-solving)
 - 2-3 assignments: at least one worksheet and one challenge/problem-solving task`;
 
-  const result = await callAI(prompt, 'content');
+  const result = await callAI(prompt);
   return safeParse(sanitizeJson(result)) as ReturnType<typeof generateConceptContentAndQuestions>;
 }
