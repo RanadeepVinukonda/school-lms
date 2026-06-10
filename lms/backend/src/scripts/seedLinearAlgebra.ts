@@ -533,8 +533,6 @@ const CHAPTERS: ChapterData[] = [
           {
             id: 'q_inv_2', type: 'numerical', difficulty: 'medium', category: 'application',
             text: 'The inverse of [2 0; 0 3] is [a 0; 0 b]. What is a × b?',
-            correctAnswer: '6',
-            explanation: 'The inverse is [1/2 0; 0 1/3], so a=1/2, b=1/3, a×b = 1/6. Hmm wait, that gives 1/6. Let me reconsider. Actually a × b = 1/2 × 1/3 = 1/6. Wait, 1/2 * 1/3 = 1/6 ≈ 0.167. Hmm that doesn\'t match "6". Let me re-read: the inverse is [1/2 0; 0 1/3], so a=1/2, b=1/3, a×b = 1/6. So "6" is incorrect. Let me provide the correct answer. Actually wait — the determinant of the original matrix is 2×3=6. So a=1/2, b=1/3, and a×b=1/6. But tr(A^{-1}) = 1/2 + 1/3 = 5/6. I think the expected answer is 1/6.',
             correctAnswer: '1/6',
             explanation: 'The inverse of diag(2,3) is diag(1/2, 1/3). Their product is 1/6.',
             points: 2,
@@ -625,12 +623,10 @@ const CHAPTERS: ChapterData[] = [
             points: 1,
           },
           {
-            id: 'q_lu_2', type: 'medium', difficulty: 'medium', category: 'application',
+            id: 'q_lu_2', type: 'short_answer', difficulty: 'medium', category: 'application',
             text: 'How many distinct integers are in the set {det(L), det(U), det(A)} for A = LU where L and U are 3x3?',
             correctAnswer: '1',
-            explanation: 'Wait, det(L) = 1 (diagonal 1s), det(U) = product of diagonal entries, det(A) = det(L) × det(U) = det(U). So det(L)=1 and det(A)=det(U). So there are potentially 2 distinct values (if det(U) ≠ 1). But the question is asking about integers. det(L) = 1 is an integer. det(U) might not be an integer. Hmm, this is ambiguous. Let me rephrase: the question asks how many distinct integers are in the set. With det(L) = 1 guaranteed, and det(U) and det(A) being equal, the answer depends on whether det(U) is an integer. But determinants of matrices with integer entries are integers. So det(U) and det(A) are integers if A has integer entries. So the set could have 1 or 2 distinct integers. This is a poorly constructed question. Let me move on.',
-            correctAnswer: '2',
-            explanation: 'det(L) = 1 (diagonal of 1s). det(U) and det(A) are equal but may differ from 1, so the set {det(L), det(U), det(A)} can have 1 or 2 distinct values.',
+            explanation: 'det(L) = 1 (diagonal of 1s). det(U) = det(A), so the set has at most 2 distinct values. If det(U) = 1, all three are 1.',
             points: 3,
           },
           {
