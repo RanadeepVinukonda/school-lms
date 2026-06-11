@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -7,6 +7,8 @@ import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import api from '@/services/api';
+import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -136,6 +138,7 @@ export default function StudentConceptPage() {
   const textbookId = searchParams.get('textbookId') || '';
   const authUser = useAuthStore((s) => s.user);
   const userId = authUser?.id ?? '';
+  const navigate = useNavigate();
 
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -297,7 +300,7 @@ export default function StudentConceptPage() {
                     </Card>
                   )}
 
-                  {d.concept.questionBank.length > 0 && (
+                  {d.concept.questionBank.length > 0 && (<>
 <Button variant="outline" className="flex-1" onClick={() => {
                         const tab = document.querySelector('[data-value="practice"]') as HTMLElement;
                         tab?.click();
@@ -320,7 +323,7 @@ export default function StudentConceptPage() {
   <Icon name="play_arrow" size={16} className="mr-2" />
   Start Adaptive Quiz
 </Button>
-                  )}
+                  </>)}
                 </TabsContent>
 
                 <TabsContent value="practice" className="mt-4 space-y-4">
@@ -379,9 +382,9 @@ export default function StudentConceptPage() {
                                       </p>
                                       {q.explanation && (
                                         <p className="text-xs text-muted-foreground mt-1">{q.explanation}</p>
-                                      )}
+)}
                                     </div>
-                                  )}
+)}
                                 </div>
                               </div>
                             </CardContent>
@@ -425,7 +428,7 @@ export default function StudentConceptPage() {
                               <Badge variant="secondary" className="text-xs">
                                 Best: {Math.max(...progress.quizScores)}%
                               </Badge>
-                            )}
+                  )}
                             <Badge variant="secondary" className="text-xs">
                               Attempts: {progress.quizAttempts}
                             </Badge>
