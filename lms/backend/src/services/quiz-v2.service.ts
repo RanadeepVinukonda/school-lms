@@ -426,3 +426,17 @@ export async function listQuizzesForTeacher(teacherId: string): Promise<any[]> {
   const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
   return items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
+
+/** Get a quiz for a specific concept (first matching). */
+export async function getQuizForConcept(conceptId: string) {
+  const snapshot = await collections.quizV2()
+    .where('conceptId', '==', conceptId)
+    .limit(1)
+    .get();
+  if (snapshot.empty) {
+    throw new NotFoundError('Quiz not found for concept');
+  }
+  const doc = snapshot.docs[0];
+  return { id: doc.id, ...doc.data() };
+}
+

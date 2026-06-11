@@ -46,6 +46,12 @@ export async function getQuizById(req: Request, res: Response) {
   sendSuccess(res, result);
 }
 
+// Get quiz for a concept (first match)
+export async function getQuizByConcept(req: Request, res: Response) {
+  const result = await quizV2Service.getQuizForConcept(req.params.conceptId);
+  sendSuccess(res, result);
+}
+
 export async function listForClass(req: Request, res: Response) {
   const result = await quizV2Service.listQuizzesForClass(req.params.classId);
   sendSuccess(res, result);

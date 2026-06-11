@@ -16,6 +16,7 @@ router.get('/class/:classId', authenticate, asyncHandler(quizV2Controller.listFo
 router.get('/my', authenticate, asyncHandler(quizV2Controller.listForTeacher));
 // Get a single quiz by ID
 router.get('/:quizId', authenticate, asyncHandler(quizV2Controller.getQuizById));
+router.get('/concept/:conceptId', authenticate, asyncHandler(quizV2Controller.getQuizByConcept));
 // List all quizzes for the authenticated user (same as /my but at root)
 router.get('/', authenticate, asyncHandler(quizV2Controller.listForTeacher));
 

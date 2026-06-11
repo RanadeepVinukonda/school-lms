@@ -298,13 +298,28 @@ export default function StudentConceptPage() {
                   )}
 
                   {d.concept.questionBank.length > 0 && (
-                    <Button variant="outline" className="flex-1" onClick={() => {
-                      const tab = document.querySelector('[data-value="practice"]') as HTMLElement;
-                      tab?.click();
-                    }}>
-                      <Icon name="quiz" size={16} className="mr-2" />
-                      Practice ({d.concept.questionBank.length})
-                    </Button>
+<Button variant="outline" className="flex-1" onClick={() => {
+                        const tab = document.querySelector('[data-value="practice"]') as HTMLElement;
+                        tab?.click();
+                      }}>
+                        <Icon name="quiz" size={16} className="mr-2" />
+                        Practice ({d.concept.questionBank.length})
+                      </Button>
+
+{/* Start Adaptive Quiz button */}
+<Button variant="default" className="flex-1" onClick={async () => {
+  try {
+    const res = await api.get(`/quizzes-v2/concept/${conceptId}`);
+    const quizId = res.data.data.id;
+    // Navigate to quiz take page
+    navigate(ROUTES.STUDENT_TAKE_ASSESSMENT(quizId) + '?type=quiz');
+  } catch (e) {
+    toast.error('Quiz not available');
+  }
+}}>
+  <Icon name="play_arrow" size={16} className="mr-2" />
+  Start Adaptive Quiz
+</Button>
                   )}
                 </TabsContent>
 
