@@ -41,6 +41,11 @@ export async function getResults(req: Request, res: Response) {
   sendSuccess(res, result);
 }
 
+export async function getQuizById(req: Request, res: Response) {
+  const result = await quizV2Service.getQuizById(req.params.quizId);
+  sendSuccess(res, result);
+}
+
 export async function listForClass(req: Request, res: Response) {
   const result = await quizV2Service.listQuizzesForClass(req.params.classId);
   sendSuccess(res, result);
