@@ -18,12 +18,15 @@ export async function createQuiz(data: {
   conceptId: string;
   teacherId: string;
   timeLimitMinutes: number;
-  selectedModels: string[];
-  questionCount: number;
+  selectedModels?: string[];
+  questionCount?: number;
   passingScore?: number;
   maxAttempts?: number;
   shuffleQuestions?: boolean;
   showResults?: boolean;
+  // optional fields that might be sent by client but are not used for generation
+  subjectId?: string;
+  questions?: any[];
 }) {
   const assignment = await getTeacherAssignment(data.teacherId, data.classId);
   if (!assignment) {
