@@ -9,6 +9,7 @@
     "start": "node dist/index.js",
     "lint": "eslint src/",
     "seed": "tsx src/scripts/createTestUsers.ts",
+    "seed:full": "tsx src/scripts/seedFull.ts",
     "test": "jest",
     "test:watch": "jest --watch"
   },
