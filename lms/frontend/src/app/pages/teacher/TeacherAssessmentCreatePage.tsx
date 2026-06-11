@@ -153,7 +153,7 @@ export default function TeacherAssessmentCreatePage() {
   const quizzesList: AssessmentItem[] = (quizzesData ?? []).map((q: Record<string, unknown>) => ({
     id: q.id as string,
     title: q.title as string,
-    status: (q.status as 'draft' | 'released') ?? 'draft',
+    status: q.releasedAt ? 'released' as const : 'draft' as const,
     type: 'quiz' as const,
     attemptCount: (q.attemptCount as number) ?? 0,
     showResults: (q.showResults as boolean) ?? false,
@@ -164,7 +164,7 @@ export default function TeacherAssessmentCreatePage() {
   const assignmentsListItem: AssessmentItem[] = (assignmentsData ?? []).map((a: Record<string, unknown>) => ({
     id: a.id as string,
     title: a.title as string,
-    status: (a.status as 'draft' | 'released') ?? 'draft',
+    status: a.releasedAt ? 'released' as const : 'draft' as const,
     type: 'assignment' as const,
     attemptCount: (a.attemptCount as number) ?? 0,
     showResults: (a.showResults as boolean) ?? false,

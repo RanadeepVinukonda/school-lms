@@ -25,9 +25,10 @@ import {
 export default function StudentTasksPage() {
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
   const studentId = useAuthStore((s) => s.user?.id);
+  const classId = useAuthStore((s) => s.user?.classId);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['student-tasks', studentId],
+    queryKey: ['student-tasks', studentId, classId],
     queryFn: async () => {
       if (!studentId) return [];
       const allSubjects = await getAllSubjects();
@@ -41,14 +42,12 @@ export default function StudentTasksPage() {
       const assignmentResults = await Promise.all(assignmentPromises);
       const allAssignments = assignmentResults.flat();
 
-      // Fetch quizzes for the enrolled classes using the newer quiz‑v2 API (class‑scoped)
-      const quizzesResponses = await Promise.all(
-        [...enrolledSubjectIds].map((classId) =>
-          api.get(`/quizzes-v2/class/${classId}`).then((r) => r.data.data ?? []),
-        ),
-      );
-      const allQuizzes = quizzesResponses
-        .flat()
+      // Fetch quizzes for the student's class using the newer quiz‑v2 API (class‑scoped)
+      const quizzesResponse = classId
+        ? await api.get(`/quizzes-v2/class/${classId}`).then((r) => r.data.data ?? [])
+        : [];
+      const allQuizzes = quizzesResponse
+        .filter((q: any) => !!q.releasedAt)
         .map((q: any) => ({ id: q.id, ...q })) as QuizItem[];
 
       // Fetch exams for enrolled subjects only
