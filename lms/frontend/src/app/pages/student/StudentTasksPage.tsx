@@ -7,6 +7,7 @@ import { Icon } from '@/components/ui/Icon';
 import { useQuery } from '@tanstack/react-query';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase/config';
+import api from '@/services/api';
 import { pageTransition, listContainer } from '@/lib/motion';
 import { getAllSubjects, getExamsBySubject, getEnrollmentsByStudent, getAssignmentsBySubject } from '@/services/dataService';
 import { useAuthStore } from '@/store/authStore';
@@ -40,11 +41,15 @@ export default function StudentTasksPage() {
       const assignmentResults = await Promise.all(assignmentPromises);
       const allAssignments = assignmentResults.flat();
 
-      // Fetch quizzes — filter by subjectId field
-      const quizzesSnap = await getDocs(collection(db, 'quizzes'));
-      const allQuizzes = quizzesSnap.docs
-        .map((d) => ({ id: d.id, ...d.data() }) as QuizItem)
-        .filter((q) => enrolledSubjectIds.has((q as any).subjectId));
+      // Fetch quizzes for the enrolled classes using the newer quiz‑v2 API (class‑scoped)
+      const quizzesResponses = await Promise.all(
+        [...enrolledSubjectIds].map((classId) =>
+          api.get(`/quizzes-v2/class/${classId}`).then((r) => r.data.data ?? []),
+        ),
+      );
+      const allQuizzes = quizzesResponses
+        .flat()
+        .map((q: any) => ({ id: q.id, ...q })) as QuizItem[];
 
       // Fetch exams for enrolled subjects only
       const examPromises = [...enrolledSubjectIds].map((sid) => getExamsBySubject(sid));
