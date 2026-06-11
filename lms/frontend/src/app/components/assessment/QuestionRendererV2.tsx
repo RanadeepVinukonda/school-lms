@@ -4,14 +4,25 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 
-type QuestionModel = 'multiple_choice' | 'true_false' | 'short_answer' | 'fill_blank' | 'matching';
+export type QuestionModel =
+  | 'multiple_choice'
+  | 'true_false'
+  | 'short_answer'
+  | 'fill_blank'
+  | 'matching'
+  | 'mcq'
+  | 'numerical'
+  | 'descriptive'
+  | 'passage';
 
-interface V2Question {
+export interface V2Question {
   id: string;
   type: QuestionModel;
   text: string;
   points: number;
   options?: string[];
+  correctAnswer?: string;
+  passageText?: string;
   order: number;
 }
 
@@ -28,7 +39,8 @@ export function QuestionRendererV2({
   onAnswerChange,
   disabled,
 }: QuestionRendererProps) {
-  if (question.type === 'multiple_choice' || question.type === 'matching') {
+  // MCQ, multiple_choice and matching can be rendered as radio group selectors
+  if (question.type === 'mcq' || question.type === 'multiple_choice' || question.type === 'matching') {
     return (
       <RadioGroup value={answer} onValueChange={onAnswerChange} disabled={disabled} className="space-y-2">
         {question.options?.map((opt, i) => (
@@ -87,7 +99,7 @@ export function QuestionRendererV2({
     );
   }
 
-  if (question.type === 'short_answer') {
+  if (question.type === 'short_answer' || question.type === 'descriptive') {
     return (
       <Textarea
         value={answer}
@@ -100,7 +112,7 @@ export function QuestionRendererV2({
     );
   }
 
-  if (question.type === 'fill_blank') {
+  if (question.type === 'fill_blank' || question.type === 'numerical') {
     return (
       <Input
         value={answer}
@@ -109,6 +121,45 @@ export function QuestionRendererV2({
         disabled={disabled}
         className="text-base"
       />
+    );
+  }
+
+  if (question.type === 'passage') {
+    return (
+      <div className="space-y-4">
+        {question.passageText && (
+          <div className="p-4 rounded-xl bg-muted border border-outline-variant text-sm italic font-serif leading-relaxed">
+            {question.passageText}
+          </div>
+        )}
+        <div className="font-semibold text-base mb-2">Question: {question.text}</div>
+        <RadioGroup value={answer} onValueChange={onAnswerChange} disabled={disabled} className="space-y-2">
+          {question.options?.map((opt, i) => (
+            <div key={i}>
+              <RadioGroupItem value={opt} id={`q${question.id}_opt${i}`} className="peer sr-only" />
+              <Label
+                htmlFor={`q${question.id}_opt${i}`}
+                className={cn(
+                  'flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all text-base',
+                  'hover:bg-accent hover:border-primary/50',
+                  'peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 peer-data-[state=checked]:ring-2 peer-data-[state=checked]:ring-primary/20',
+                  disabled && 'opacity-60 cursor-default',
+                )}
+              >
+                <div
+                  className={cn(
+                    'h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0',
+                    answer === opt ? 'border-primary bg-primary' : 'border-muted-foreground/30',
+                  )}
+                >
+                  {answer === opt && <div className="h-2 w-2 rounded-full bg-white" />}
+                </div>
+                <span>{opt}</span>
+              </Label>
+            </div>
+          ))}
+        </RadioGroup>
+      </div>
     );
   }
 

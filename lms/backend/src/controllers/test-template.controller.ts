@@ -26,3 +26,8 @@ export async function listTemplates(req: Request, res: Response) {
   const result = await testTemplateService.listTemplates(req.query as any);
   sendSuccess(res, result);
 }
+
+export async function compilePaper(req: Request, res: Response) {
+  const result = await testTemplateService.compilePaper({ ...req.body, userId: req.user!.uid });
+  sendSuccess(res, result, 'Question paper compiled successfully from template');
+}

@@ -1,5 +1,6 @@
 import { collections } from '../firebase/firestore';
 import { logger } from '../utils/logger';
+import { getSettings } from './settings.service';
 
 async function getAssessmentData(type: 'quiz' | 'assignment' | 'exam') {
   if (type === 'quiz') {
@@ -189,4 +190,109 @@ export async function getAssessmentAnalytics(assessmentId: string, type: 'quiz' 
       level: a.level,
     })),
   };
+}
+
+export async function getConceptOversight() {
+  const tcsSnap = await collections.teacherClassSubject().get();
+  const assignments = tcsSnap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+
+  const classIds = [...new Set(assignments.map(a => a.classId))];
+  const subjectIds = [...new Set(assignments.map(a => a.subjectId))];
+  const teacherIds = [...new Set(assignments.map(a => a.teacherId))];
+
+  const [classesSnap, subjectsSnap, teachersSnap] = await Promise.all([
+    Promise.all(classIds.map(id => collections.classes().doc(id).get())),
+    Promise.all(subjectIds.map(id => collections.subjects().doc(id).get())),
+    Promise.all(teacherIds.map(id => collections.users().doc(id).get())),
+  ]);
+
+  const classMap = new Map(classesSnap.filter(c => c.exists).map(c => [c.id, c.data()!.name]));
+  const subjectMap = new Map(subjectsSnap.filter(s => s.exists).map(s => [s.id, s.data()!.name]));
+  const teacherMap = new Map(teachersSnap.filter(t => t.exists).map(t => [t.id, t.data()!.displayName]));
+
+  const settings = await getSettings();
+  const threshold = settings.conceptFlaggingThreshold ?? 50;
+
+  const oversightItems: any[] = [];
+
+  for (const assignment of assignments) {
+    const textbookId = assignment.textbookId;
+    if (!textbookId) continue;
+
+    try {
+      const chaptersSnap = await collections.textbooks().doc(textbookId).collection('chapters').get();
+      for (const chapDoc of chaptersSnap.docs) {
+        const chapId = chapDoc.id;
+        const conceptsSnap = await collections.textbooks().doc(textbookId).collection('chapters').doc(chapId).collection('concepts').get();
+        for (const concDoc of conceptsSnap.docs) {
+          const conceptId = concDoc.id;
+          const conceptData = concDoc.data();
+          const conceptName = conceptData.title || 'Unknown Concept';
+
+          // Get V2 quizzes for this concept
+          const quizzesSnap = await collections.quizV2()
+            .where('classId', '==', assignment.classId)
+            .where('conceptId', '==', conceptId)
+            .get();
+          const quizIds = quizzesSnap.docs.map(d => d.id);
+
+          // Get V2 assignments for this concept
+          const assignmentsSnap = await collections.assignmentV2()
+            .where('classId', '==', assignment.classId)
+            .where('conceptId', '==', conceptId)
+            .get();
+          const assignmentIds = assignmentsSnap.docs.map(d => d.id);
+
+          let quizPercentages: number[] = [];
+          for (const qId of quizIds) {
+            const attemptsSnap = await collections.quizAttemptV2()
+              .where('quizId', '==', qId)
+              .get();
+            attemptsSnap.docs.forEach(d => {
+              const at = d.data();
+              if (at.percentage != null) quizPercentages.push(at.percentage);
+            });
+          }
+
+          let assignmentPercentages: number[] = [];
+          for (const aId of assignmentIds) {
+            const submissionsSnap = await collections.assignmentSubmissionV2()
+              .where('assignmentId', '==', aId)
+              .get();
+            submissionsSnap.docs.forEach(d => {
+              const sub = d.data();
+              if (sub.percentage != null) assignmentPercentages.push(sub.percentage);
+            });
+          }
+
+          const allScores = [...quizPercentages, ...assignmentPercentages];
+          const attemptCount = allScores.length;
+          const averageScore = attemptCount > 0
+            ? Math.round(allScores.reduce((sum, val) => sum + val, 0) / attemptCount)
+            : 0;
+
+          const status = (attemptCount > 0 && averageScore < threshold) ? 'low' : 'normal';
+
+          oversightItems.push({
+            classId: assignment.classId,
+            className: classMap.get(assignment.classId) || 'Unknown Class',
+            subjectId: assignment.subjectId,
+            subjectName: subjectMap.get(assignment.subjectId) || 'Unknown Subject',
+            conceptId,
+            conceptName,
+            averageScore,
+            attemptCount,
+            teacherName: teacherMap.get(assignment.teacherId) || 'Unknown Teacher',
+            teacherId: assignment.teacherId,
+            status,
+            threshold,
+          });
+        }
+      }
+    } catch (err) {
+      logger.error('Error computing oversight for assignment', { assignmentId: assignment.id, err });
+    }
+  }
+
+  return oversightItems;
 }

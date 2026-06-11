@@ -179,6 +179,9 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
   const selected = available.slice(0, Math.min(quizData.questionCount, available.length));
 
   const questionsForStudent = selected.map((q) => {
+    if (quizData.isRepublished) {
+      return q;
+    }
     const { correctAnswer, ...rest } = q;
     return rest;
   });
@@ -281,11 +284,16 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     }
 
     let isCorrect = false;
-    if (question.type === 'multiple_choice' || question.type === 'true_false') {
+    if (question.type === 'multiple_choice' || question.type === 'mcq' || question.type === 'true_false' || question.type === 'passage') {
       isCorrect = answer.answer === question.correctAnswer;
     } else if (question.type === 'short_answer' || question.type === 'fill_blank') {
       isCorrect = answer.answer.toString().toLowerCase().trim() ===
         question.correctAnswer?.toString().toLowerCase().trim();
+    } else if (question.type === 'numerical' || question.type === 'matching') {
+      isCorrect = answer.answer.toString().toLowerCase().trim() ===
+        question.correctAnswer?.toString().toLowerCase().trim();
+    } else if (question.type === 'descriptive') {
+      isCorrect = answer.answer.toString().trim().length > 5;
     }
 
     const pointsEarned = isCorrect ? question.points : 0;
@@ -429,14 +437,30 @@ export async function listQuizzesForTeacher(teacherId: string): Promise<any[]> {
 
 /** Get a quiz for a specific concept (first matching). */
 export async function getQuizForConcept(conceptId: string) {
-  const snapshot = await collections.quizV2()
+  const quizzes = await collections.quizV2()
     .where('conceptId', '==', conceptId)
-    .limit(1)
     .get();
-  if (snapshot.empty) {
-    throw new NotFoundError('Quiz not found for concept');
-  }
-  const doc = snapshot.docs[0];
-  return { id: doc.id, ...doc.data() };
+  return quizzes.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
+export async function republishQuiz(quizId: string, teacherId: string) {
+  const ref = collections.quizV2().doc(quizId);
+  const doc = await ref.get();
+
+  if (!doc.exists) {
+    throw new NotFoundError('Quiz not found');
+  }
+
+  const quizData = doc.data()!;
+  if (quizData.teacherId !== teacherId) {
+    throw new ForbiddenError('You do not own this quiz');
+  }
+
+  const now = new Date().toISOString();
+  await ref.update({ isRepublished: true, updatedAt: now });
+
+  const updated = await ref.get();
+  logger.info('Quiz V2 republished (interactive mode enabled)', { quizId, teacherId });
+
+  return { ...updated.data() };
+}

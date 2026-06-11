@@ -68,18 +68,68 @@ export async function getUserByIdService(uid: string) {
 }
 
 /** Create a new user in both Firebase Auth and Firestore. Hashes the password with bcrypt. */
+function generateRandomPassword() {
+  const length = 10;
+  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+  let password = "";
+  password += "A";
+  password += "a";
+  password += "1";
+  password += "!";
+  for (let i = 4; i < length; i++) {
+    password += charset.charAt(Math.floor(Math.random() * charset.length));
+  }
+  return password.split('').sort(() => 0.5 - Math.random()).join('');
+}
+
+/** Create a new user in both Firebase Auth and Firestore. Hashes the password with bcrypt. */
 export async function createUser(data: {
-  email: string;
-  password: string;
+  email?: string;
+  password?: string;
   displayName: string;
   role: string;
   phoneNumber?: string;
   photoURL?: string;
   classIds?: string[];
+  classId?: string;
+  rollNo?: number;
+  academicYear?: string;
 }) {
+  let studentId = '';
+  let finalClassIds = data.classIds || [];
+  let studentClassId = data.classId || '';
+
+  if (data.role === 'student') {
+    if (!data.classId) {
+      throw new Error('Class ID is required for students');
+    }
+    if (data.rollNo === undefined) {
+      throw new Error('Roll number is required for students');
+    }
+    const classDoc = await collections.classes().doc(data.classId).get();
+    if (!classDoc.exists) {
+      throw new Error('Assigned Class not found');
+    }
+    const classData = classDoc.data()!;
+    const classCode = (classData.code || 'CLASS').toUpperCase();
+    const acYear = (data.academicYear || classData.academicYear || new Date().getFullYear().toString()).replace(/\s+/g, '');
+    const formattedRoll = String(data.rollNo).padStart(2, '0');
+    studentId = `${classCode}-${formattedRoll}-${acYear}`;
+    
+    if (!finalClassIds.includes(data.classId)) {
+      finalClassIds.push(data.classId);
+    }
+  }
+
+  const generatedEmail = data.email || (data.role === 'student' 
+    ? `${studentId.toLowerCase()}@school.edu`
+    : `${data.displayName.toLowerCase().replace(/[^a-z0-9]/g, '')}@school.edu`);
+
+  const generatedPassword = data.password || generateRandomPassword();
+
   const firebaseUser = await firebaseCreateUser({
-    email: data.email,
-    password: data.password,
+    email: generatedEmail,
+    password: generatedPassword,
     displayName: data.displayName,
     phoneNumber: data.phoneNumber,
     photoURL: data.photoURL,
@@ -89,24 +139,36 @@ export async function createUser(data: {
 
   const userData = {
     uid: firebaseUser.uid,
-    email: data.email,
+    email: generatedEmail,
     displayName: data.displayName,
     role: data.role,
     phoneNumber: data.phoneNumber || '',
     photoURL: data.photoURL || '',
-    classIds: data.classIds || [],
+    classIds: finalClassIds,
+    classId: studentClassId || null,
+    studentId: studentId || null,
+    rollNo: data.rollNo || null,
+    academicYear: data.academicYear || null,
     isActive: true,
     createdAt: now,
     updatedAt: now,
   };
 
   await collections.users().doc(firebaseUser.uid).set(userData);
-
   await setCustomClaims(firebaseUser.uid, { role: data.role });
 
-  logger.info('User created by admin', { uid: firebaseUser.uid, email: data.email, role: data.role });
+  logger.info('User created by admin', { uid: firebaseUser.uid, email: generatedEmail, role: data.role });
 
-  return userData;
+  if (data.role === 'student') {
+    const classRef = collections.classes().doc(data.classId!);
+    const classDoc = await classRef.get();
+    if (classDoc.exists) {
+      const currentCount = classDoc.data()!.studentCount || 0;
+      await classRef.update({ studentCount: currentCount + 1, updatedAt: now });
+    }
+  }
+
+  return { ...userData, generatedPassword };
 }
 
 /** Update a user's Firestore fields and optionally disable Firebase Auth account. */

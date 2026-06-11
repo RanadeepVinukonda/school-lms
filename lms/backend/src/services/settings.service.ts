@@ -12,6 +12,7 @@ const DEFAULT_SETTINGS = {
   logo: '',
   academicYear: new Date().getFullYear().toString(),
   semester: 'First Semester',
+  conceptFlaggingThreshold: 50,
   gradingSystem: {
     type: 'percentage',
     scale: 100,
@@ -74,6 +75,7 @@ export async function getSystemSettings() {
     schoolName: settings.schoolName,
     academicYear: settings.academicYear,
     semester: settings.semester,
+    conceptFlaggingThreshold: settings.conceptFlaggingThreshold,
     gradingSystem: settings.gradingSystem,
     attendanceSettings: settings.attendanceSettings,
     securitySettings: settings.securitySettings,
@@ -86,6 +88,7 @@ export async function updateSystemSettings(data: Record<string, unknown>) {
   const allowedKeys = [
     'academicYear',
     'semester',
+    'conceptFlaggingThreshold',
     'gradingSystem',
     'attendanceSettings',
     'securitySettings',

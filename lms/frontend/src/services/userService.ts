@@ -3,9 +3,12 @@ import type { ApiResponse, PaginatedResponse, PaginationParams, User, UserProfil
 
 export interface CreateUserInput {
   displayName: string;
-  email: string;
-  password: string;
+  email?: string;
+  password?: string;
   role: UserRole;
+  classId?: string;
+  rollNo?: number;
+  academicYear?: string;
 }
 
 /** API service for user management (admin) and profile updates. */

@@ -34,4 +34,16 @@ export const analyticsService = {
     const response = await api.get<ApiResponse<PerformanceData>>('/analytics/enrollment-trends');
     return response.data;
   },
+
+  /** Fetch concept oversight data (Admin). */
+  async getConceptOversight() {
+    const response = await api.get<ApiResponse<any[]>>('/analytics-v2/oversight');
+    return response.data.data;
+  },
+
+  /** Send re-teach notification to a teacher (Admin). */
+  async requestReTeach(data: { teacherId: string; className: string; subjectName: string; conceptName: string }) {
+    const response = await api.post<ApiResponse<void>>('/analytics-v2/re-teach', data);
+    return response.data;
+  },
 };

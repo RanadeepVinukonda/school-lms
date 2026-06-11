@@ -11,5 +11,6 @@ router.get('/', authenticate, asyncHandler(testTemplateController.listTemplates)
 router.get('/:id', authenticate, asyncHandler(testTemplateController.getTemplate));
 router.put('/:id', authenticate, requireRole('teacher'), asyncHandler(testTemplateController.updateTemplate));
 router.delete('/:id', authenticate, requireRole('teacher'), asyncHandler(testTemplateController.deleteTemplate));
+router.post('/:id/compile', authenticate, requireRole('teacher'), asyncHandler(testTemplateController.compilePaper));
 
 export default router;

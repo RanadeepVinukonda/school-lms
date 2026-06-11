@@ -17,6 +17,7 @@ export const updateSettingsSchema = z.object({
   logo: z.string().url().optional(),
   academicYear: z.string().max(20).optional(),
   semester: z.string().max(50).optional(),
+  conceptFlaggingThreshold: z.number().int().min(0).max(100).optional(),
   gradingSystem: z
     .object({
       type: z.enum(['letter', 'percentage', 'gpa']),

@@ -4,15 +4,13 @@ export const createUserSchema = z.object({
   email: z
     .string()
     .email('Invalid email address')
-    .max(255, 'Email must be at most 255 characters'),
+    .max(255, 'Email must be at most 255 characters')
+    .optional(),
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')
     .max(128, 'Password must be at most 128 characters')
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
-    ),
+    .optional(),
   displayName: z
     .string()
     .min(2, 'Name must be at least 2 characters')
@@ -21,6 +19,9 @@ export const createUserSchema = z.object({
   phoneNumber: z.string().max(20).optional(),
   photoURL: z.string().url('Invalid photo URL').optional(),
   classIds: z.array(z.string()).optional(),
+  classId: z.string().optional(),
+  rollNo: z.number().int().positive().optional(),
+  academicYear: z.string().optional(),
 });
 
 export const updateUserSchema = z.object({

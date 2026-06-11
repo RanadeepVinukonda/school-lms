@@ -8,6 +8,7 @@ const router = Router();
 
 router.post('/', authenticate, requireRole('teacher', 'admin'), asyncHandler(quizV2Controller.createQuiz));
 router.post('/:quizId/release', authenticate, requireRole('teacher', 'admin'), asyncHandler(quizV2Controller.releaseQuiz));
+router.post('/:quizId/republish', authenticate, requireRole('teacher', 'admin'), asyncHandler(quizV2Controller.republishQuiz));
 router.post('/:quizId/start', authenticate, requireRole('student'), asyncHandler(quizV2Controller.startAttempt));
 router.post('/attempts/:attemptId/submit', authenticate, asyncHandler(quizV2Controller.submitAttempt));
 router.put('/:quizId/grades', authenticate, requireRole('teacher', 'admin'), asyncHandler(quizV2Controller.releaseGrades));

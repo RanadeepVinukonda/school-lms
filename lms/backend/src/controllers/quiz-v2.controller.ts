@@ -61,3 +61,8 @@ export async function listForTeacher(req: Request, res: Response) {
   const result = await quizV2Service.listQuizzesForTeacher(req.user!.uid);
   sendSuccess(res, result);
 }
+
+export async function republishQuiz(req: Request, res: Response) {
+  const result = await quizV2Service.republishQuiz(req.params.quizId, req.user!.uid);
+  sendSuccess(res, result, 'Quiz republished in interactive mode');
+}
