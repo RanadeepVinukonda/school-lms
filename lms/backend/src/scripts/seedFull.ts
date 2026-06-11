@@ -79,6 +79,42 @@ function genShort(text: string, answer: string, explanation: string, difficulty 
   return { type: 'short_answer', difficulty, category: 'application', text, correctAnswer: answer, explanation, points: 2 };
 }
 
+// ── Real YouTube Video IDs ──
+const VIDEO_IDS: Record<string, [string, string, string, string]> = {
+  'math_Numbers & Counting':      ['pzmB0GoEKkA', 'Jack Hartmann', 'CRQdhS1TJdo', 'Jack Hartmann'],
+  'math_Addition & Subtraction':   ['uRoJ5E-Xx9s', 'Jack Hartmann', '8hz0fAQV0ac', 'Numberock'],
+  'math_Multiplication & Division':['9dYXfZZsbzc', 'Numberock',     'eAZ7UJweYZ8', 'Jack Hartmann'],
+  'math_Shapes & Geometry':        ['a4FXl4zb3E4', 'Numberock',     'pzmB0GoEKkA', 'Jack Hartmann'],
+  'math_Measurement':              ['a4FXl4zb3E4', 'Numberock',     'eAZ7UJweYZ8', 'Jack Hartmann'],
+  'math_Fractions & Decimals':     ['SZaXtOHNh6s', 'Numberock',     'NnyzzkIVNSQ', 'Numberock'],
+  'math_Geometry & Area':          ['a4FXl4zb3E4', 'Numberock',     'pzmB0GoEKkA', 'Jack Hartmann'],
+  'english_Alphabet & Phonics':    ['M1S9y-xO7eQ', 'KidsTV123',     'ptk68qC1woI', 'Gracie\'s Corner'],
+  'english_Grammar & Punctuation': ['c3yJhw7R3fI', 'Jack Hartmann', '_yarxGq1Ens', 'GrammarSongs'],
+  'english_Reading Comprehension': ['3GMJmd4wCtY', 'Alphablocks',   'ZAZ74S0vPqs', 'Harry Kindergarten'],
+  'english_Writing':               ['c3yJhw7R3fI', 'Jack Hartmann', 'vfnXDl4-bCw', 'Jack Hartmann'],
+  'english_Vocabulary':            ['ptk68qC1woI', 'Gracie\'s Corner', 'M1S9y-xO7eQ', 'KidsTV123'],
+  'science_Living Things':         ['Gy60BqCnTG4', 'SciShow Kids',  'BEz7RPvQCAI', 'Learning Time Fun'],
+  'science_Plants':                ['qULkjDccCeY', 'FreeSchool',    '6a0dmntR0Dw', 'SciShow Kids'],
+  'science_Animals':               ['-iO_LdNR_80', 'Periwinkle',    'SIbFuiCfkr8', 'Smile and Learn'],
+  'science_Weather & Seasons':     ['Uo8lbeVVb4M', 'SciShow Kids',  'UQjT5uKp2hg', 'SciShow Kids'],
+  'science_Earth & Space':         ['joq-IUFNkrw', 'SciShow Kids',  'PePymheJcbc', 'SciShow Kids'],
+};
+
+function videoIdsFor(subject: string, chapterTitle: string): [VideoDef, VideoDef] {
+  const key = `${subject}_${chapterTitle}`;
+  const pair = VIDEO_IDS[key];
+  if (!pair) {
+    const fallback = VIDEO_IDS[`${subject}_Living Things`] ?? VIDEO_IDS[`${subject}_Numbers & Counting`] ?? VIDEO_IDS['science_Living Things'];
+    return [
+      { youtubeId: fallback[0], title: `Introduction`, duration: '5:00', channelName: fallback[1], description: `Learn about ${chapterTitle}`, relevance: 0.95 },
+      { youtubeId: fallback[2], title: `Practice`,       duration: '5:00', channelName: fallback[3], description: `Practice ${chapterTitle}`, relevance: 0.9 },
+    ];
+  }
+  return [
+    { youtubeId: pair[0], title: `Introduction to ${chapterTitle}`, duration: '5:00', channelName: pair[1], description: `Learn about ${chapterTitle}`, relevance: 0.95 },
+    { youtubeId: pair[2], title: `${chapterTitle} - Practice`,       duration: '5:00', channelName: pair[3], description: `Practice ${chapterTitle} problems`, relevance: 0.9 },
+  ];
+}
 // ── Chapter/Question Factories ──
 function mathQuestions(grade: number, chapter: string): QDef[] {
   const g = grade;
@@ -330,10 +366,12 @@ function getChapterDefs(subject: string, grade: number): ChapterDef[] {
         keywords: c.keywords,
         difficulty: c.difficulty,
         estimatedMinutes: c.mins,
-        videos: [
-          { youtubeId: 'dummy_' + uid().slice(0, 4), title: `Introduction to ${c.title}`, duration: `${c.mins}:00`, channelName: 'Learning Hub', description: `Learn about ${c.title}`, relevance: 0.95 },
-          { youtubeId: 'dummy_' + uid().slice(0, 4), title: `${c.title} - Practice Problems`, duration: '15:00', channelName: 'Math & Science Academy', description: `Practice ${c.title} problems`, relevance: 0.9 },
-        ],
+        videos: videoIdsFor(subject, ch.title).map((v, vi) => ({
+          ...v,
+          title: vi === 0 ? `Introduction to ${c.title}` : `${c.title} - Practice`,
+          duration: `${c.mins}:00`,
+          description: vi === 0 ? `Learn about ${c.title}` : `Practice ${c.title} problems`,
+        })),
         questions: qf(grade, ch.title).length > 0 ? qf(grade, ch.title) : [
           genMCQ(`Which best describes ${c.title}?`, ['Definition A', 'Definition B', 'Definition C', 'Definition D'], 'Definition B', `${c.title} is best described by Definition B.`),
           genTF(`This is a true statement about ${c.title}.`, true, `This concept is fundamental to ${ch.title}.`),

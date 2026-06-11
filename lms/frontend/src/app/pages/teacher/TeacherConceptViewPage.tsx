@@ -20,12 +20,23 @@ import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
 import type { CachedVideo } from '@/types/textbook';
 
+const YOUTUBE_ID_RE = /^[a-zA-Z0-9_-]{11}$/;
+
+function isValidYoutubeId(id: string): boolean {
+  return YOUTUBE_ID_RE.test(id);
+}
+
 function YouTubePlayer({ video }: { video: CachedVideo }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YT.Player | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
 
   useEffect(() => {
+    if (!isValidYoutubeId(video.youtubeId)) {
+      setState('error');
+      return;
+    }
+
     const tag = document.createElement('script');
     tag.src = 'https://www.youtube.com/iframe_api';
     const first = document.getElementsByTagName('script')[0];
@@ -35,11 +46,18 @@ function YouTubePlayer({ video }: { video: CachedVideo }) {
 
     const initPlayer = () => {
       if (!containerRef.current || playerRef.current) return;
-      playerRef.current = new YT.Player(containerRef.current, {
-        videoId: video.youtubeId,
-        playerVars: { rel: 0 },
-        events: { onReady: () => setLoaded(true) },
-      });
+      try {
+        playerRef.current = new YT.Player(containerRef.current, {
+          videoId: video.youtubeId,
+          playerVars: { rel: 0 },
+          events: {
+            onReady: () => setState('ready'),
+            onError: () => setState('error'),
+          },
+        });
+      } catch {
+        setState('error');
+      }
     };
 
     if (typeof YT !== 'undefined' && YT.Player) {
@@ -62,9 +80,19 @@ function YouTubePlayer({ video }: { video: CachedVideo }) {
     };
   }, [video.youtubeId]);
 
+  if (state === 'error') {
+    return (
+      <div className="aspect-video rounded-xl overflow-hidden bg-muted flex flex-col items-center justify-center gap-2 text-muted-foreground">
+        <Icon name="videocam_off" className="text-3xl" />
+        <p className="text-sm">Video unavailable</p>
+        <p className="text-xs opacity-70">{video.title}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="aspect-video rounded-xl overflow-hidden bg-muted" ref={containerRef}>
-      {!loaded && (
+      {state === 'loading' && (
         <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
           Loading player...
         </div>
