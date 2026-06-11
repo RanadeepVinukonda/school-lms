@@ -300,34 +300,32 @@ export async function getResults(assignmentId: string, studentId: string) {
 
 export async function listAssignmentsForClass(classId: string, query: { page?: string; limit?: string }) {
   const { page, limit } = parsePagination(query);
-  const baseQuery: FirebaseFirestore.Query = collections.assignmentV2()
+  const snapshot = await collections.assignmentV2()
     .where('classId', '==', classId)
-    .orderBy('createdAt', 'desc');
+    .get();
 
-  const countSnapshot = await baseQuery.count().get();
-  const total = countSnapshot.data().count;
+  const all = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
+  const total = all.length;
   const offset = (page - 1) * limit;
-  const snapshot = await baseQuery.offset(offset).limit(limit).get();
-
-  const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const items = all.slice(offset, offset + limit);
 
   return { items, total, page, limit };
 }
 
 export async function listAssignmentsForTeacher(teacherId: string, query: { page?: string; limit?: string }) {
   const { page, limit } = parsePagination(query);
-  const baseQuery: FirebaseFirestore.Query = collections.assignmentV2()
+  const snapshot = await collections.assignmentV2()
     .where('teacherId', '==', teacherId)
-    .orderBy('createdAt', 'desc');
+    .get();
 
-  const countSnapshot = await baseQuery.count().get();
-  const total = countSnapshot.data().count;
+  const all2 = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  all2.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
+  const total = all2.length;
   const offset = (page - 1) * limit;
-  const snapshot = await baseQuery.offset(offset).limit(limit).get();
-
-  const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const items = all2.slice(offset, offset + limit);
 
   return { items, total, page, limit };
 }

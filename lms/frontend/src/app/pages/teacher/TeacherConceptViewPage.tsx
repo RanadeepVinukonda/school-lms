@@ -49,7 +49,7 @@ function YouTubePlayer({ video }: { video: CachedVideo }) {
       try {
         playerRef.current = new YT.Player(containerRef.current, {
           videoId: video.youtubeId,
-          playerVars: { rel: 0 },
+          playerVars: { rel: 0, origin: window.location.origin },
           events: {
             onReady: () => setState('ready'),
             onError: () => setState('error'),

@@ -452,17 +452,17 @@ export async function getExamById(examId: string) {
 export async function listExamsForClass(classId: string) {
   const snapshot = await collections.examV2()
     .where('classId', '==', classId)
-    .orderBy('createdAt', 'desc')
     .get();
 
-  return snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  return items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export async function listExamsForTeacher(teacherId: string) {
   const snapshot = await collections.examV2()
     .where('teacherId', '==', teacherId)
-    .orderBy('createdAt', 'desc')
     .get();
 
-  return snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  return items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }

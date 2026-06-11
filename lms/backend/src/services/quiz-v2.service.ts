@@ -402,17 +402,17 @@ export async function getQuizById(quizId: string) {
 export async function listQuizzesForClass(classId: string) {
   const snapshot = await collections.quizV2()
     .where('classId', '==', classId)
-    .orderBy('createdAt', 'desc')
     .get();
 
-  return snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  return items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export async function listQuizzesForTeacher(teacherId: string) {
   const snapshot = await collections.quizV2()
     .where('teacherId', '==', teacherId)
-    .orderBy('createdAt', 'desc')
     .get();
 
-  return snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  return items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
