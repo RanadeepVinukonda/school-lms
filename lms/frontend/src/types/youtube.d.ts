@@ -21,10 +21,12 @@ declare namespace YT {
     end?: number;
     rel?: 0 | 1;
     modestbranding?: 0 | 1;
+    origin?: string;
   }
   interface Events {
     onReady?: (event: PlayerEvent) => void;
     onStateChange?: (event: OnStateChangeEvent) => void;
+    onError?: (event: PlayerEvent) => void;
   }
   interface PlayerEvent {
     target: Player;

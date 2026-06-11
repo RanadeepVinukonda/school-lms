@@ -304,7 +304,7 @@ export async function listAssignmentsForClass(classId: string, query: { page?: s
     .where('classId', '==', classId)
     .get();
 
-  const all = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const all: any[] = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
   all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const total = all.length;
@@ -320,12 +320,12 @@ export async function listAssignmentsForTeacher(teacherId: string, query: { page
     .where('teacherId', '==', teacherId)
     .get();
 
-  const all2 = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-  all2.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const all: any[] = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  const total = all2.length;
+  const total = all.length;
   const offset = (page - 1) * limit;
-  const items = all2.slice(offset, offset + limit);
+  const items = all.slice(offset, offset + limit);
 
   return { items, total, page, limit };
 }

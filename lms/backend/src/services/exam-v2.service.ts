@@ -449,20 +449,20 @@ export async function getExamById(examId: string) {
   return { ...doc.data() };
 }
 
-export async function listExamsForClass(classId: string) {
+export async function listExamsForClass(classId: string): Promise<any[]> {
   const snapshot = await collections.examV2()
     .where('classId', '==', classId)
     .get();
 
   const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-  return items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
-export async function listExamsForTeacher(teacherId: string) {
+export async function listExamsForTeacher(teacherId: string): Promise<any[]> {
   const snapshot = await collections.examV2()
     .where('teacherId', '==', teacherId)
     .get();
 
   const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-  return items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }

@@ -399,20 +399,20 @@ export async function getQuizById(quizId: string) {
   return { ...doc.data() };
 }
 
-export async function listQuizzesForClass(classId: string) {
+export async function listQuizzesForClass(classId: string): Promise<any[]> {
   const snapshot = await collections.quizV2()
     .where('classId', '==', classId)
     .get();
 
   const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-  return items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
-export async function listQuizzesForTeacher(teacherId: string) {
+export async function listQuizzesForTeacher(teacherId: string): Promise<any[]> {
   const snapshot = await collections.quizV2()
     .where('teacherId', '==', teacherId)
     .get();
 
   const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-  return items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
