@@ -54,6 +54,10 @@ export async function createQuiz(data: {
   const quizId = uuidv4();
   const now = new Date().toISOString();
 
+  // Ensure optional fields are defined to avoid Firestore "undefined" errors.
+  const selectedModels = data.selectedModels ?? [];
+  const questionCount = data.questionCount ?? 0;
+
   const quizData = {
     id: quizId,
     title: data.title,
@@ -64,8 +68,8 @@ export async function createQuiz(data: {
     conceptId: data.conceptId,
     teacherId: data.teacherId,
     timeLimitMinutes: data.timeLimitMinutes,
-    selectedModels: data.selectedModels,
-    questionCount: data.questionCount,
+    selectedModels,
+    questionCount,
     totalPoints,
     passingScore: data.passingScore ?? 50,
     maxAttempts: data.maxAttempts ?? 3,
