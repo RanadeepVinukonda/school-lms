@@ -103,8 +103,7 @@ export async function getSchedule(id: string) {
 export async function listSchedules(params: {
   classId?: string; subjectId?: string; createdBy?: string; status?: string;
 }) {
-  let query: FirebaseFirestore.Query = collections.testSchedule()
-    .orderBy('createdAt', 'desc');
+  let query: FirebaseFirestore.Query = collections.testSchedule();
 
   if (params.classId) query = query.where('classId', '==', params.classId);
   if (params.subjectId) query = query.where('subjectId', '==', params.subjectId);
@@ -112,5 +111,7 @@ export async function listSchedules(params: {
   if (params.status) query = query.where('status', '==', params.status);
 
   const snapshot = await query.get();
-  return snapshot.docs.map((d) => ({ ...d.data(), id: d.id }));
+  const results = snapshot.docs.map((d) => ({ ...d.data(), id: d.id }));
+  results.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return results;
 }

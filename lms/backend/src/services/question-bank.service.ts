@@ -115,8 +115,7 @@ export async function listQuestions(params: {
   page?: number;
   limit?: number;
 }) {
-  let query: FirebaseFirestore.Query = collections.questionBank()
-    .orderBy('createdAt', 'desc');
+  let query: FirebaseFirestore.Query = collections.questionBank();
 
   if (params.classId) query = query.where('classId', '==', params.classId);
   if (params.subjectId) query = query.where('subjectId', '==', params.subjectId);
@@ -127,22 +126,21 @@ export async function listQuestions(params: {
   if (params.createdBy) query = query.where('createdBy', '==', params.createdBy);
   if (params.tags?.length) query = query.where('tags', 'array-contains-any', params.tags);
 
-  const page = params.page || 1;
-  const limit = params.limit || 50;
-  const offset = (page - 1) * limit;
-
-  const snapshot = await query.offset(offset).limit(limit).get();
-  let docs = snapshot.docs.map((d) => ({ ...d.data(), id: d.id }));
+  const snapshot = await query.get();
+  let results = snapshot.docs.map((d) => ({ ...d.data(), id: d.id }));
+  results.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   if (params.search) {
-    const s = params.search.toLowerCase();
-    docs = docs.filter((d: any) => d.text.toLowerCase().includes(s));
+    const q = params.search.toLowerCase();
+    results = results.filter((r: any) => r.title?.toLowerCase().includes(q) || r.questionText?.toLowerCase().includes(q) || r.instruction?.toLowerCase().includes(q));
   }
 
-  const countSnap = await query.count().get();
-  const total = countSnap.data().count;
+  const page = params.page || 1;
+  const limit = params.limit || 50;
+  const offsetVal = (page - 1) * limit;
+  const paginated = results.slice(offsetVal, offsetVal + limit);
 
-  return { items: docs, total, page, limit };
+  return { items: paginated, total: results.length, page, limit };
 }
 
 export async function importFromConcept(textbookId: string, chapterId: string, conceptId: string, userId: string) {
