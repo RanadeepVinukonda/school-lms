@@ -1,11 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
-import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,13 +18,21 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
-import { collection, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { cn } from '@/lib/utils';
+import { collection, addDoc, deleteDoc, doc, updateDoc, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/firebase/config';
-import { getAllClasses, getAllUsers } from '@/services/dataService';
+import { getAllClasses, getAllUsers, getAllSubjects } from '@/services/dataService';
 import { getClassDependencies } from '@/services/dependencyService';
 import { logAudit } from '@/services/auditService';
-import type { ClassEntry, UserDoc } from '@/services/dataService';
+import type { ClassEntry, UserDoc, Subject } from '@/services/dataService';
 import type { DependencyReport } from '@/services/dependencyService';
+
+interface TeacherClassSubject {
+  id: string;
+  teacherId: string;
+  classId: string;
+  subjectId: string;
+}
 
 function ordinal(n: number): string {
   const s = ['th', 'st', 'nd', 'rd'];
@@ -46,6 +52,7 @@ export default function AdminClassesPage() {
   const [showEdit, setShowEdit] = useState(false);
   const [editTarget, setEditTarget] = useState<ClassEntry | null>(null);
   const [editForm, setEditForm] = useState({ name: '', code: '', grade: '', section: '', roomNumber: '' });
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const { data: fetchedClasses, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-classes'],
@@ -55,6 +62,19 @@ export default function AdminClassesPage() {
   const { data: users = [] } = useQuery({
     queryKey: ['admin-users-list'],
     queryFn: getAllUsers,
+  });
+
+  const { data: subjects = [] } = useQuery({
+    queryKey: ['admin-subjects'],
+    queryFn: getAllSubjects,
+  });
+
+  const { data: tcAssignments = [] } = useQuery({
+    queryKey: ['admin-tc-assignments'],
+    queryFn: async () => {
+      const snap = await getDocs(collection(db, 'teacherClassSubject'));
+      return snap.docs.map((d) => ({ id: d.id, ...d.data() } as TeacherClassSubject));
+    },
   });
 
   useEffect(() => {
@@ -223,6 +243,18 @@ export default function AdminClassesPage() {
     }
   };
 
+  const getClassSubjects = (classId: string) =>
+    subjects.filter((s) => s.classId === classId);
+
+  const getSubjectTeacher = (classId: string, subjectId: string): UserDoc | undefined => {
+    const assignment = tcAssignments.find((a) => a.classId === classId && a.subjectId === subjectId);
+    if (!assignment) return undefined;
+    return users.find((u) => u.id === assignment.teacherId);
+  };
+
+  const getClassStudents = (classId: string) =>
+    users.filter((u) => u.role === 'student' && u.classId === classId);
+
   return (
     <>
       <SEOHead title="Classes" description="Manage classes" canonical="/admin/classes" />
@@ -243,112 +275,174 @@ export default function AdminClassesPage() {
         {() => (
           <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit">
             <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
-            <motion.div variants={listItem} className="flex items-center justify-between flex-wrap gap-3">
-              <div>
-                <h1 className="text-headline-sm">Classes</h1>
-                <p className="text-sm text-on-surface-variant">{classes.length} total classes</p>
-              </div>
-              <Button onClick={() => setShowCreate(true)}>
-                <Icon name="add" size={18} className="mr-2" />
-                Create Class
-              </Button>
-            </motion.div>
-
-            <motion.div variants={listItem}>
-              <div className="relative max-w-sm">
-                <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
-                <Input
-                  placeholder="Search classes..."
-                  className="pl-10"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-            </motion.div>
-
-            {filtered.length === 0 ? (
-              <motion.div variants={listItem}>
-                {classes.length === 0 ? (
-                  <Card>
-                    <CardContent className="flex flex-col items-center gap-4 py-16">
-                      <Icon name="class" size={48} className="text-on-surface-variant/50" />
-                      <p className="font-medium">No classes yet</p>
-                      <p className="text-sm text-on-surface-variant">Create your first class to get started.</p>
-                      <Button onClick={() => setShowCreate(true)}>
-                        <Icon name="add" size={18} className="mr-2" />
-                        Create Class
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <Card>
-                    <CardContent className="flex flex-col items-center gap-4 py-16">
-                      <Icon name="search_off" size={48} className="text-on-surface-variant/50" />
-                      <p className="font-medium">No classes match your search</p>
-                      <p className="text-sm text-on-surface-variant">Try a different search term.</p>
-                      <Button variant="outline" onClick={() => setSearch('')}>
-                        <Icon name="close" size={16} className="mr-2" />
-                        Clear Search
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
+              <motion.div variants={listItem} className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <h1 className="text-headline-sm">Classes</h1>
+                  <p className="text-sm text-on-surface-variant">{classes.length} total classes</p>
+                </div>
+                <Button onClick={() => setShowCreate(true)}>
+                  <Icon name="add" size={18} className="mr-2" />
+                  Create Class
+                </Button>
               </motion.div>
-            ) : (
-              <motion.div
-                variants={listItem}
-                className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
-              >
-                {filtered.map((cls) => {
-                  const classTeacher = users.find(
-                    (u: UserDoc) => cls.teacherIds?.includes(u.id)
-                  );
-                  const subjectCount = cls.subjectIds?.length ?? 0;
-                  return (
-                    <Card key={cls.id} variant="elevated" className="hover:shadow-elevation-2 transition-shadow">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-lg bg-primary-container flex items-center justify-center">
-                              <Icon name="class" size={20} className="text-on-primary-container" />
+
+              <motion.div variants={listItem}>
+                <div className="relative max-w-sm">
+                  <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
+                  <Input
+                    placeholder="Search classes..."
+                    className="pl-10"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
+              </motion.div>
+
+              {filtered.length === 0 ? (
+                <motion.div variants={listItem}>
+                  {classes.length === 0 ? (
+                    <Card>
+                      <CardContent className="flex flex-col items-center gap-4 py-16">
+                        <Icon name="class" size={48} className="text-on-surface-variant/50" />
+                        <p className="font-medium">No classes yet</p>
+                        <p className="text-sm text-on-surface-variant">Create your first class to get started.</p>
+                        <Button onClick={() => setShowCreate(true)}>
+                          <Icon name="add" size={18} className="mr-2" />
+                          Create Class
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card>
+                      <CardContent className="flex flex-col items-center gap-4 py-16">
+                        <Icon name="search_off" size={48} className="text-on-surface-variant/50" />
+                        <p className="font-medium">No classes match your search</p>
+                        <p className="text-sm text-on-surface-variant">Try a different search term.</p>
+                        <Button variant="outline" onClick={() => setSearch('')}>
+                          <Icon name="close" size={16} className="mr-2" />
+                          Clear Search
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
+                </motion.div>
+              ) : (
+                <motion.div
+                  variants={listItem}
+                  className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+                >
+                  {filtered.map((cls) => {
+                    const classTeacher = users.find(
+                      (u: UserDoc) => cls.teacherIds?.includes(u.id)
+                    );
+                    const subjectCount = cls.subjectIds?.length ?? 0;
+                    const isExpanded = expandedId === cls.id;
+                    const classSubjects = getClassSubjects(cls.id);
+                    const classStudents = getClassStudents(cls.id);
+
+                    return (
+                      <Card key={cls.id} variant="elevated" className="hover:shadow-elevation-2 transition-shadow">
+                        <div
+                          className="cursor-pointer"
+                          onClick={() => setExpandedId(isExpanded ? null : cls.id)}
+                        >
+                          <CardHeader className="pb-3">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-lg bg-primary-container flex items-center justify-center">
+                                  <Icon name="class" size={20} className="text-on-primary-container" />
+                                </div>
+                                <div>
+                                  <CardTitle className="text-title-md">{cls.name}</CardTitle>
+                                  <Badge variant="outline" className="text-[10px] mt-0.5">
+                                    {cls.code}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <Icon
+                                name={isExpanded ? 'expand_less' : 'expand_more'}
+                                size={20}
+                                className="text-on-surface-variant"
+                              />
                             </div>
+                          </CardHeader>
+                          <CardContent className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3 text-body-md">
+                              <div className="flex items-center gap-2 text-on-surface-variant">
+                                <Icon name="school" size={16} />
+                                <span>Grade {cls.grade || '\u2014'}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-on-surface-variant">
+                                <Icon name="people" size={16} />
+                                <span>{cls.studentCount ?? 0} students</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-on-surface-variant">
+                                <Icon name="badge" size={16} />
+                                <span className="truncate">
+                                  {classTeacher ? classTeacher.displayName : 'No teacher'}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 text-on-surface-variant">
+                                <Icon name="menu_book" size={16} />
+                                <span>{subjectCount} subjects</span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </div>
+
+                        {isExpanded && (
+                          <div className="border-t border-outline-variant px-4 pb-4 pt-3 space-y-4">
                             <div>
-                              <CardTitle className="text-title-md">{cls.name}</CardTitle>
-                              <Badge variant="outline" className="text-[10px] mt-0.5">
-                                {cls.code}
-                              </Badge>
+                              <h4 className="text-label-sm font-medium text-on-surface-variant uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                <Icon name="menu_book" size={14} />
+                                Subjects
+                              </h4>
+                              {classSubjects.length === 0 ? (
+                                <p className="text-sm text-on-surface-variant/60 ml-6">No subjects assigned</p>
+                              ) : (
+                                <ul className="space-y-1.5">
+                                  {classSubjects.map((subject) => {
+                                    const teacher = getSubjectTeacher(cls.id, subject.id);
+                                    return (
+                                      <li key={subject.id} className="flex items-center justify-between text-sm py-1 px-3 rounded-lg bg-surface-variant/40">
+                                        <span className="font-medium">{subject.name}</span>
+                                        <span className="text-on-surface-variant text-xs flex items-center gap-1">
+                                          <Icon name="person" size={12} />
+                                          {teacher ? teacher.displayName : 'Unassigned'}
+                                        </span>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              )}
+                            </div>
+
+                            <div>
+                              <h4 className="text-label-sm font-medium text-on-surface-variant uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                <Icon name="people" size={14} />
+                                Students ({classStudents.length})
+                              </h4>
+                              {classStudents.length === 0 ? (
+                                <p className="text-sm text-on-surface-variant/60 ml-6">No students enrolled</p>
+                              ) : (
+                                <ul className="space-y-1 max-h-48 overflow-y-auto">
+                                  {classStudents.map((student) => (
+                                    <li key={student.id} className="flex items-center justify-between text-sm py-1 px-3 rounded-lg bg-surface-variant/40">
+                                      <span className="font-medium">{student.displayName}</span>
+                                      {student.studentId && (
+                                        <Badge variant="outline" className="text-[10px]">
+                                          {student.studentId}
+                                        </Badge>
+                                      )}
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
                             </div>
                           </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="grid grid-cols-2 gap-3 text-body-md">
-                          <div className="flex items-center gap-2 text-on-surface-variant">
-                            <Icon name="school" size={16} />
-                            <span>Grade {cls.grade || '\u2014'}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-on-surface-variant">
-                            <Icon name="people" size={16} />
-                            <span>{cls.studentCount ?? 0} students</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-on-surface-variant">
-                            <Icon name="badge" size={16} />
-                            <span className="truncate">
-                              {classTeacher ? classTeacher.displayName : 'No teacher'}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 text-on-surface-variant">
-                            <Icon name="menu_book" size={16} />
-                            <span>{subjectCount} subjects</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 pt-2">
-                          <Button variant="outline" size="sm" className="flex-1" asChild>
-                            <Link to={`/admin/classes/${cls.id}/timetable`}>
-                              <Icon name="calendar_today" size={14} className="mr-1.5" />
-                              Timetable
-                            </Link>
-                          </Button>
+                        )}
+
+                        <div className={cn('px-4 pb-4 flex items-center gap-2', isExpanded && 'pt-1')}>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -364,12 +458,11 @@ export default function AdminClassesPage() {
                             <Icon name="delete" size={16} className="text-error" />
                           </Button>
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </motion.div>
-            )}
+                      </Card>
+                    );
+                  })}
+                </motion.div>
+              )}
             </motion.div>
           </motion.div>
         )}

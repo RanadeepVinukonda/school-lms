@@ -18,7 +18,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { useQuery } from '@tanstack/react-query';
 import { changePassword } from '@/firebase/auth';
-import { getAllSubjects, getEnrollmentsByStudent, getGradesByStudent, getUser } from '@/services/dataService';
+import { getAllSubjects, getEnrollmentsByStudent, getGradesByStudent, getUser, getClass } from '@/services/dataService';
 
 function EmptySection({ icon, message }: { icon: string; message: string }) {
   return (
@@ -41,10 +41,11 @@ export default function StudentProfilePage() {
       const user = firestoreUser as typeof firestoreUser & { studentId?: string; classId?: string };
       const authId = user.id;
 
-      const [allSubjects, enrollments, grades] = await Promise.all([
+      const [allSubjects, enrollments, grades, classDoc] = await Promise.all([
         getAllSubjects(),
         getEnrollmentsByStudent(authId),
         getGradesByStudent(authId),
+        user.classId ? getClass(user.classId) : Promise.resolve(null),
       ]);
 
       const subjectMap = new Map(allSubjects.map((s) => [s.id, s]));
@@ -64,7 +65,7 @@ export default function StudentProfilePage() {
         ? enrichedGrades.reduce((sum, g) => sum + g.percentage, 0) / enrichedGrades.length
         : 0;
 
-      return { user, enrolledSubjects, grades: enrichedGrades, assignmentGrades, avgPercentage, totalEnrolled: enrolledSubjects.length };
+      return { user, enrolledSubjects, grades: enrichedGrades, assignmentGrades, avgPercentage, totalEnrolled: enrolledSubjects.length, className: classDoc?.name ?? null, classGrade: classDoc?.grade ?? null };
     },
     enabled: !!authUser,
   });
@@ -117,9 +118,10 @@ export default function StudentProfilePage() {
                     </Avatar>
                     <div className="flex-1 text-center sm:text-left">
                       <h2 className="text-xl font-bold">{d.user.displayName}</h2>
-                      <p className="text-body-md text-muted-foreground">Student &middot; ID: {d.user.studentId ?? 'N/A'}</p>
+                      <p className="text-body-md text-muted-foreground">Student &middot; Roll No: {d.user.studentId ?? 'N/A'}</p>
                       <div className="flex items-center justify-center sm:justify-start gap-3 mt-2 flex-wrap">
                         <Badge variant="secondary" className="text-xs gap-1"><Icon name="mail" size={12} />{d.user.email}</Badge>
+                        {d.className && <Badge variant="info" className="text-xs gap-1"><Icon name="school" size={12} />{d.className}{d.classGrade ? ` (Grade ${d.classGrade})` : ''}</Badge>}
                       </div>
                     </div>
                     <Button variant="outline" size="sm" className="gap-2" asChild>

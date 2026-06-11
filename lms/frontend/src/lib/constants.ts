@@ -59,7 +59,6 @@ export const ROUTES = {
   ADMIN_STUDENTS: '/admin/students',
   ADMIN_TEACHERS: '/admin/teachers',
   ADMIN_CLASSES: '/admin/classes',
-  ADMIN_CLASS_TIMETABLE: (id: string) => `/admin/classes/${id}/timetable`,
   ADMIN_SUBJECTS: '/admin/subjects',
   ADMIN_SETTINGS: '/admin/settings',
   ADMIN_USERS: '/admin/users',

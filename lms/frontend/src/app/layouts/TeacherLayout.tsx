@@ -20,20 +20,47 @@ interface NavItem {
   icon: string;
 }
 
-const navItems: NavItem[] = [
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
+  {
+    label: 'Main',
+    items: [
+      { label: 'Home', href: ROUTES.TEACHER_DASHBOARD, icon: 'home' },
+      { label: 'Teaching', href: ROUTES.TEACHER_TEXTBOOKS, icon: 'menu_book' },
+    ],
+  },
+  {
+    label: 'Assessments',
+    items: [
+      { label: 'Question Bank', href: ROUTES.TEACHER_QUESTION_BANK, icon: 'question_answer' },
+      { label: 'Manage Tests', href: ROUTES.TEACHER_TEST_SCHEDULE, icon: 'calendar_month' },
+    ],
+  },
+  {
+    label: 'Review',
+    items: [
+      { label: 'Students', href: ROUTES.TEACHER_STUDENTS, icon: 'group' },
+      { label: 'Results', href: ROUTES.TEACHER_RESULTS_PUSH, icon: 'send' },
+      { label: 'Analytics', href: ROUTES.TEACHER_ANALYTICS, icon: 'analytics' },
+    ],
+  },
+  {
+    label: 'More',
+    items: [
+      { label: 'Videos', href: ROUTES.TEACHER_VIDEOS, icon: 'video_library' },
+      { label: 'Profile', href: ROUTES.TEACHER_PROFILE, icon: 'person' },
+    ],
+  },
+];
+
+const mobileNavItems: NavItem[] = [
   { label: 'Home', href: ROUTES.TEACHER_DASHBOARD, icon: 'home' },
-  { label: 'Students', href: ROUTES.TEACHER_STUDENTS, icon: 'group' },
-  { label: 'Assessments', href: ROUTES.TEACHER_ASSESSMENTS, icon: 'quiz' },
-  { label: 'Exams', href: ROUTES.TEACHER_EXAMS, icon: 'assignment' },
-  { label: 'Textbooks', href: ROUTES.TEACHER_TEXTBOOKS, icon: 'menu_book' },
-  { label: 'Question Bank', href: ROUTES.TEACHER_QUESTION_BANK, icon: 'question_answer' },
-  { label: 'Question Papers', href: ROUTES.TEACHER_QUESTION_PAPERS, icon: 'description' },
-  { label: 'Test Templates', href: ROUTES.TEACHER_TEST_TEMPLATES, icon: 'view_quilt' },
-  { label: 'Schedule', href: ROUTES.TEACHER_TEST_SCHEDULE, icon: 'calendar_month' },
-  { label: 'PYQ', href: ROUTES.TEACHER_PYQ, icon: 'history' },
-  { label: 'Videos', href: ROUTES.TEACHER_VIDEOS, icon: 'video_library' },
-  { label: 'Analytics', href: ROUTES.TEACHER_ANALYTICS, icon: 'analytics' },
-  { label: 'Grades', href: ROUTES.TEACHER_RESULTS_PUSH, icon: 'send' },
+  { label: 'Teaching', href: ROUTES.TEACHER_TEXTBOOKS, icon: 'menu_book' },
+  { label: 'Tests', href: ROUTES.TEACHER_TEST_SCHEDULE, icon: 'calendar_month' },
   { label: 'Profile', href: ROUTES.TEACHER_PROFILE, icon: 'person' },
 ];
 
@@ -113,25 +140,36 @@ export default function TeacherLayout() {
           )}
         </div>
 
-        {/* Nav items */}
-        <nav className="flex-1 overflow-y-auto p-3 space-y-1">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.href}
-              to={item.href}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  isActive
-                    ? 'bg-secondary-container text-on-secondary-container'
-                    : 'text-on-surface-variant hover:bg-surface-variant/50',
-                  sidebarCollapsed && 'justify-center px-2',
-                )
-              }
-            >
-              <Icon name={item.icon} size={24} />
-              {!sidebarCollapsed && <span>{item.label}</span>}
-            </NavLink>
+        {/* Nav groups */}
+        <nav className="flex-1 overflow-y-auto p-3 space-y-4">
+          {navGroups.map((group) => (
+            <div key={group.label}>
+              {!sidebarCollapsed && (
+                <p className="text-label-xs font-semibold text-on-surface-variant uppercase tracking-wider px-3 pb-1.5">
+                  {group.label}
+                </p>
+              )}
+              <div className="space-y-0.5">
+                {group.items.map((item) => (
+                  <NavLink
+                    key={item.href}
+                    to={item.href}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        isActive
+                          ? 'bg-secondary-container text-on-secondary-container'
+                          : 'text-on-surface-variant hover:bg-surface-variant/50',
+                        sidebarCollapsed && 'justify-center px-2',
+                      )
+                    }
+                  >
+                    <Icon name={item.icon} size={24} />
+                    {!sidebarCollapsed && <span>{item.label}</span>}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
 
@@ -188,7 +226,7 @@ export default function TeacherLayout() {
         {/* Bottom navigation (mobile only) */}
         <nav className="fixed bottom-0 left-0 right-0 z-40 h-20 bg-surface border-t border-outline-variant lg:hidden">
           <div className="flex items-center justify-around h-full px-2">
-            {navItems.map((item) => (
+            {mobileNavItems.map((item) => (
               <NavLink
                 key={item.href}
                 to={item.href}

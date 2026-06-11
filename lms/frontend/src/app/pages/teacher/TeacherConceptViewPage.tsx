@@ -2,18 +2,22 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icon } from '@/components/ui/Icon';
-import { pageTransition, listContainer, listItem } from '@/lib/motion';
+import { pageTransition } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
-import { getTextbook, getChaptersForTextbook, getConceptsForChapter, getConceptRelease, setConceptRelease } from '@/services/textbookService';
+import { getTextbook, getChaptersForTextbook, getConceptsForChapter } from '@/services/textbookService';
 import { useAuthStore } from '@/store/authStore';
+import api from '@/services/api';
 import type { CachedVideo } from '@/types/textbook';
 
 function YouTubePlayer({ video }: { video: CachedVideo }) {
@@ -69,6 +73,110 @@ function YouTubePlayer({ video }: { video: CachedVideo }) {
   );
 }
 
+function MarkerCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [color, setColor] = useState('#000000');
+  const [lineWidth, setLineWidth] = useState(3);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineWidth;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+    }
+  }, [color, lineWidth]);
+
+  const startDrawing = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    setIsDrawing(true);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  }, []);
+
+  const draw = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  }, [isDrawing]);
+
+  const stopDrawing = useCallback(() => {
+    setIsDrawing(false);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (ctx) ctx.closePath();
+  }, []);
+
+  const clearCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }, []);
+
+  const colors = ['#000000', '#ef4444', '#3b82f6', '#22c55e', '#f59e0b', '#8b5cf6'];
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1">
+          {colors.map((c) => (
+            <button
+              key={c}
+              className={`w-6 h-6 rounded-full border-2 ${color === c ? 'border-primary' : 'border-transparent'}`}
+              style={{ backgroundColor: c }}
+              onClick={() => setColor(c)}
+            />
+          ))}
+        </div>
+        <select
+          value={lineWidth}
+          onChange={(e) => setLineWidth(Number(e.target.value))}
+          className="border rounded px-2 py-1 text-xs bg-background"
+        >
+          <option value={2}>Thin</option>
+          <option value={4}>Medium</option>
+          <option value={8}>Thick</option>
+        </select>
+        <Button variant="outline" size="sm" onClick={clearCanvas}>
+          <Icon name="delete" size={14} className="mr-1" /> Clear
+        </Button>
+      </div>
+      <canvas
+        ref={canvasRef}
+        className="w-full h-[400px] border rounded-xl bg-white cursor-crosshair"
+        onMouseDown={startDrawing}
+        onMouseMove={draw}
+        onMouseUp={stopDrawing}
+        onMouseLeave={stopDrawing}
+        onTouchStart={startDrawing}
+        onTouchMove={draw}
+        onTouchEnd={stopDrawing}
+      />
+    </div>
+  );
+}
+
 export default function TeacherConceptViewPage() {
   const { textbookId, chapterId, conceptId } = useParams<{
     textbookId: string;
@@ -79,21 +187,28 @@ export default function TeacherConceptViewPage() {
   const teacherId = authUser?.id ?? '';
   const queryClient = useQueryClient();
 
+  const [showQuizDialog, setShowQuizDialog] = useState(false);
+  const [quizTimeLimit, setQuizTimeLimit] = useState(10);
+  const [showAssignmentDialog, setShowAssignmentDialog] = useState(false);
+  const [assignTimeLimit, setAssignTimeLimit] = useState(20);
+  const [showExamDialog, setShowExamDialog] = useState(false);
+  const [examTimeLimit, setExamTimeLimit] = useState(60);
+  const [examTitle, setExamTitle] = useState('');
+
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['teacher-concept', textbookId, conceptId],
     queryFn: async () => {
       if (!textbookId || !conceptId) throw new Error('Missing params');
-      const [fb, chapters] = await Promise.all([
+      const [tb, chapters] = await Promise.all([
         getTextbook(textbookId),
         getChaptersForTextbook(textbookId),
       ]);
-      if (!fb) throw new Error('Textbook not found');
+      if (!tb) throw new Error('Textbook not found');
       for (const ch of chapters) {
         const concepts = await getConceptsForChapter(textbookId, ch.id);
         const c = concepts.find((co) => co.id === conceptId);
         if (c) {
-          const release = await getConceptRelease(textbookId, conceptId);
-          return { concept: c, chapter: ch, textbook: fb, release };
+          return { concept: c, chapter: ch, textbook: tb };
         }
       }
       throw new Error('Concept not found');
@@ -101,36 +216,146 @@ export default function TeacherConceptViewPage() {
     enabled: !!textbookId && !!conceptId,
   });
 
-  const releaseMutation = useMutation({
-    mutationFn: async (updates: { questionBankReleased?: boolean; assignmentsReleased?: boolean }) => {
-      await setConceptRelease(textbookId!, conceptId!, chapterId!, teacherId, updates);
+  const createQuizMutation = useMutation({
+    mutationFn: async (timeLimit: number) => {
+      if (!data) throw new Error('No concept data');
+      const questions = data.concept.questionBank.map((q: any) => ({
+        text: q.text,
+        type: q.type,
+        difficulty: q.difficulty,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation,
+        points: q.points || 1,
+      }));
+      return api.post('/quizzes-v2', {
+        title: `${data.concept.title} Quiz`,
+        description: `Auto-generated quiz for ${data.concept.title}`,
+        classId: data.textbook.classId,
+        subjectId: data.textbook.subjectId,
+        textbookId,
+        chapterId,
+        conceptId,
+        questions,
+        timeLimitMinutes: timeLimit,
+        maxAttempts: 1,
+        shuffleQuestions: true,
+        showResults: false,
+        passingScore: 50,
+        releasedAt: new Date().toISOString(),
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teacher-concept', textbookId, conceptId] });
+      toast.success('Quiz created and released to students!');
+      setShowQuizDialog(false);
     },
+    onError: () => toast.error('Failed to create quiz'),
+  });
+
+  const createAssignmentMutation = useMutation({
+    mutationFn: async (timeLimit: number) => {
+      if (!data) throw new Error('No concept data');
+      const questions = data.concept.questionBank.map((q: any) => ({
+        text: q.text,
+        type: q.type,
+        difficulty: q.difficulty,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation,
+        points: q.points || 1,
+      }));
+      return api.post('/assignments-v2', {
+        title: `${data.concept.title} Assignment`,
+        description: `Auto-generated assignment for ${data.concept.title}`,
+        classId: data.textbook.classId,
+        subjectId: data.textbook.subjectId,
+        textbookId,
+        chapterId,
+        conceptId,
+        questions,
+        timeLimitMinutes: timeLimit,
+        maxAttempts: 2,
+        shuffleQuestions: false,
+        showResults: false,
+        passingScore: 40,
+        releasedAt: new Date().toISOString(),
+      });
+    },
+    onSuccess: () => {
+      toast.success('Assignment created and released!');
+      setShowAssignmentDialog(false);
+    },
+    onError: () => toast.error('Failed to create assignment'),
+  });
+
+  const createExamMutation = useMutation({
+    mutationFn: async (timeLimit: number) => {
+      if (!data) throw new Error('No concept data');
+      const allChapters = await queryClient.fetchQuery({
+        queryKey: ['textbook-chapters-all', textbookId],
+        queryFn: () => getChaptersForTextbook(textbookId!),
+      });
+      const allConcepts = await Promise.all(
+        allChapters.map((ch) => getConceptsForChapter(textbookId!, ch.id))
+      );
+      const allQuestions = allConcepts.flatMap((clist) =>
+        clist.flatMap((c) =>
+          c.questionBank.map((q: any) => ({
+            text: q.text,
+            type: q.type,
+            difficulty: q.difficulty,
+            options: q.options,
+            correctAnswer: q.correctAnswer,
+            explanation: q.explanation,
+            points: q.points || 1,
+            conceptId: c.id,
+          }))
+        )
+      );
+      return api.post('/exams-v2', {
+        title: examTitle || `${data.chapter.title} Exam`,
+        description: `End-of-chapter exam for ${data.chapter.title}`,
+        classId: data.textbook.classId,
+        subjectId: data.textbook.subjectId,
+        textbookId,
+        chapterId,
+        conceptIds: [conceptId],
+        questions: allQuestions.slice(0, 30),
+        timeLimitMinutes: timeLimit,
+        maxAttempts: 1,
+        shuffleQuestions: true,
+        showResults: false,
+        passingScore: 40,
+        releasedAt: new Date().toISOString(),
+      });
+    },
+    onSuccess: () => {
+      toast.success('Exam created and released!');
+      setShowExamDialog(false);
+    },
+    onError: () => toast.error('Failed to create exam'),
   });
 
   const concept = data?.concept;
-  const release = data?.release;
-  const questionBankReleased = release?.questionBankReleased ?? false;
-  const assignmentsReleased = release?.assignmentsReleased ?? false;
+  const chapter = data?.chapter;
+  const textbook = data?.textbook;
 
   return (
     <>
-      <SEOHead title={concept?.title || 'Concept'} description={`Manage ${concept?.title || 'concept'} content`} />
-      <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-4xl mx-auto space-y-6 pb-20">
+      <SEOHead title={concept?.title || 'Teaching'} description={`Teach ${concept?.title || ''}`} />
+      <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-6xl mx-auto space-y-6 pb-20">
         <Link
-          to={ROUTES.TEACHER_TEXTBOOKS}
+          to={textbookId ? `/teacher/textbooks/${textbookId}` : ROUTES.TEACHER_TEXTBOOKS}
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
           <Icon name="arrow_back" size={16} />
-          Back to textbooks
+          Back to textbook
         </Link>
 
         <DataFetchWrapper
           data={data}
           isLoading={isLoading}
-          error={isError ? error ?? new Error('Failed to load concept') : null}
+          error={isError ? error ?? new Error('Failed to load') : null}
           onRetry={() => refetch()}
           loadingType="detail"
           emptyMessage="Concept not found"
@@ -154,83 +379,76 @@ export default function TeacherConceptViewPage() {
                     <Icon name="quiz" size={12} className="mr-1" />
                     {d.concept.questionBank.length} question{d.concept.questionBank.length !== 1 ? 's' : ''}
                   </Badge>
-                  <Badge variant="outline" className="text-[10px]">
-                    <Icon name="assignment" size={12} className="mr-1" />
-                    {d.concept.assignments.length} assignment{d.concept.assignments.length !== 1 ? 's' : ''}
-                  </Badge>
                 </div>
               </div>
 
-              <Card>
-                <CardContent className="p-4">
-                  <h2 className="font-semibold mb-3 flex items-center gap-2 text-sm">
-                    <Icon name="publish" size={16} className="text-primary" />
-                    Content Release to Students
-                  </h2>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Icon name="quiz" size={16} className="text-muted-foreground" />
-                        <span className="text-sm">Practice Questions</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {questionBankReleased && (
-                          <Badge variant="outline" className="text-[10px] text-green-600 dark:text-green-400 border-green-300 dark:border-green-700">
-                            <Icon name="check_circle" size={10} className="mr-0.5" />Released
-                          </Badge>
-                        )}
-                        <Switch
-                          checked={questionBankReleased}
-                          onCheckedChange={(checked) => releaseMutation.mutate({ questionBankReleased: checked })}
-                          disabled={d.concept.questionBank.length === 0}
-                        />
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Icon name="assignment" size={16} className="text-muted-foreground" />
-                        <span className="text-sm">Assignments</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {assignmentsReleased && (
-                          <Badge variant="outline" className="text-[10px] text-green-600 dark:text-green-400 border-green-300 dark:border-green-700">
-                            <Icon name="check_circle" size={10} className="mr-0.5" />Released
-                          </Badge>
-                        )}
-                        <Switch
-                          checked={assignmentsReleased}
-                          onCheckedChange={(checked) => releaseMutation.mutate({ assignmentsReleased: checked })}
-                          disabled={d.concept.assignments.length === 0}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-3">
-                    Students see only released content. Use the videos below to explain concepts in class, then release materials when ready.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Tabs defaultValue="learn">
+              <Tabs defaultValue="teach">
                 <TabsList className="w-full">
-                  <TabsTrigger value="learn" className="flex-1">
-                    <Icon name="menu_book" size={14} className="mr-1.5" />Study Notes
+                  <TabsTrigger value="teach" className="flex-1">
+                    <Icon name="school" size={14} className="mr-1.5" />Teach
                   </TabsTrigger>
-                  <TabsTrigger value="videos" className="flex-1">
-                    <Icon name="smart_display" size={14} className="mr-1.5" />Videos
-                    <Badge variant="secondary" className="ml-1.5 text-[10px] px-1">{d.concept.videos.length}</Badge>
+                  <TabsTrigger value="notes" className="flex-1">
+                    <Icon name="menu_book" size={14} className="mr-1.5" />Notes
                   </TabsTrigger>
                   <TabsTrigger value="questions" className="flex-1">
                     <Icon name="quiz" size={14} className="mr-1.5" />Questions
                     <Badge variant="secondary" className="ml-1.5 text-[10px] px-1">{d.concept.questionBank.length}</Badge>
                   </TabsTrigger>
-                  <TabsTrigger value="assignments" className="flex-1">
-                    <Icon name="assignment" size={14} className="mr-1.5" />Assignments
-                    <Badge variant="secondary" className="ml-1.5 text-[10px] px-1">{d.concept.assignments.length}</Badge>
-                  </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="learn" className="mt-4 space-y-4">
+                <TabsContent value="teach" className="mt-4 space-y-4">
+                  {d.concept.videos.length > 0 && (
+                    d.concept.videos.map((video) => (
+                      <Card key={video.id}>
+                        <CardContent className="p-4">
+                          <YouTubePlayer video={video} />
+                          <div className="mt-2">
+                            <h3 className="font-medium text-sm">{video.title}</h3>
+                            <p className="text-xs text-muted-foreground">{video.channelName} &middot; {video.duration}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Icon name="draw" size={18} className="text-primary" />
+                        <h2 className="font-semibold text-sm">Marker Board</h2>
+                      </div>
+                      <MarkerCanvas />
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-4">
+                      <h2 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                        <Icon name="assignment" size={16} className="text-primary" />
+                        After Lecture Actions
+                      </h2>
+                      <p className="text-xs text-muted-foreground mb-4">
+                        Auto-generate assessments from the concept's question bank and release instantly.
+                      </p>
+                      <div className="flex flex-wrap gap-3">
+                        <Button onClick={() => setShowQuizDialog(true)} disabled={d.concept.questionBank.length === 0}>
+                          <Icon name="quiz" size={16} className="mr-1.5" />
+                          Pass Quiz
+                        </Button>
+                        <Button variant="secondary" onClick={() => setShowAssignmentDialog(true)} disabled={d.concept.questionBank.length === 0}>
+                          <Icon name="assignment" size={16} className="mr-1.5" />
+                          Give Assignment
+                        </Button>
+                        <Button variant="tonal" onClick={() => setShowExamDialog(true)} disabled={d.concept.questionBank.length === 0}>
+                          <Icon name="fact_check" size={16} className="mr-1.5" />
+                          Start Exam
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="notes" className="mt-4 space-y-4">
                   <Card>
                     <CardContent className="p-5">
                       <h2 className="font-semibold mb-3 flex items-center gap-2">
@@ -243,7 +461,7 @@ export default function TeacherConceptViewPage() {
                     </CardContent>
                   </Card>
 
-                  {d.concept.learningObjectives.length > 0 && (
+                  {d.concept.learningObjectives?.length > 0 && (
                     <Card>
                       <CardContent className="p-5">
                         <h2 className="font-semibold mb-3 flex items-center gap-2">
@@ -253,7 +471,7 @@ export default function TeacherConceptViewPage() {
                         <ul className="space-y-1.5">
                           {d.concept.learningObjectives.map((obj, i) => (
                             <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                              <span className="text-tertiary mt-0.5">•</span>
+                              <span className="text-tertiary mt-0.5">&bull;</span>
                               {obj}
                             </li>
                           ))}
@@ -262,7 +480,7 @@ export default function TeacherConceptViewPage() {
                     </Card>
                   )}
 
-                  {d.concept.keywords.length > 0 && (
+                  {d.concept.keywords?.length > 0 && (
                     <Card>
                       <CardContent className="p-5">
                         <h2 className="font-semibold mb-3 flex items-center gap-2">
@@ -274,36 +492,6 @@ export default function TeacherConceptViewPage() {
                             <Badge key={i} variant="secondary" className="text-xs">{kw}</Badge>
                           ))}
                         </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="videos" className="mt-4 space-y-4">
-                  {d.concept.videos.length > 0 ? (
-                    d.concept.videos.map((video) => (
-                      <Card key={video.id}>
-                        <CardContent className="p-4">
-                          <YouTubePlayer video={video} />
-                          <div className="mt-3">
-                            <h3 className="font-medium text-sm">{video.title}</h3>
-                            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                              <span>{video.channelName}</span>
-                              <span>•</span>
-                              <span>{video.duration}</span>
-                            </div>
-                            {video.description && (
-                              <p className="text-xs text-muted-foreground mt-2">{video.description}</p>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  ) : (
-                    <Card>
-                      <CardContent className="p-12 text-center">
-                        <Icon name="smart_display" size={48} className="text-muted-foreground/30 mx-auto mb-3" />
-                        <p className="text-muted-foreground">No videos for this concept.</p>
                       </CardContent>
                     </Card>
                   )}
@@ -353,52 +541,7 @@ export default function TeacherConceptViewPage() {
                     <Card>
                       <CardContent className="p-12 text-center">
                         <Icon name="quiz" size={48} className="text-muted-foreground/30 mx-auto mb-3" />
-                        <p className="text-muted-foreground">No questions generated for this concept.</p>
-                      </CardContent>
-                    </Card>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="assignments" className="mt-4 space-y-4">
-                  {d.concept.assignments.length > 0 ? (
-                    d.concept.assignments.map((a) => (
-                      <Card key={a.id}>
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <h3 className="font-medium text-sm">{a.title}</h3>
-                              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                                <span>{a.marks} marks</span>
-                                <span>•</span>
-                                <span>~{a.estimatedMinutes} min</span>
-                                <Badge variant="outline" className="text-[10px] capitalize">{a.type}</Badge>
-                              </div>
-                            </div>
-                          </div>
-                          <p className="text-sm text-muted-foreground mt-2">{a.instructions}</p>
-                          <details className="mt-2">
-                            <summary className="text-xs text-primary cursor-pointer">Answer Key & Rubric</summary>
-                            {a.answerKey && (
-                              <div className="mt-2">
-                                <p className="text-xs font-medium text-muted-foreground">Answer Key</p>
-                                <p className="text-xs text-muted-foreground whitespace-pre-wrap">{a.answerKey}</p>
-                              </div>
-                            )}
-                            {a.rubric && (
-                              <div className="mt-2">
-                                <p className="text-xs font-medium text-muted-foreground">Rubric</p>
-                                <p className="text-xs text-muted-foreground whitespace-pre-wrap">{a.rubric}</p>
-                              </div>
-                            )}
-                          </details>
-                        </CardContent>
-                      </Card>
-                    ))
-                  ) : (
-                    <Card>
-                      <CardContent className="p-12 text-center">
-                        <Icon name="assignment" size={48} className="text-muted-foreground/30 mx-auto mb-3" />
-                        <p className="text-muted-foreground">No assignments for this concept.</p>
+                        <p className="text-muted-foreground">No questions in this concept.</p>
                       </CardContent>
                     </Card>
                   )}
@@ -408,6 +551,82 @@ export default function TeacherConceptViewPage() {
           )}
         </DataFetchWrapper>
       </motion.div>
+
+      <Dialog open={showQuizDialog} onOpenChange={setShowQuizDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pass Quiz</DialogTitle>
+            <DialogDescription>Create a timed quiz from this concept's question bank and release to students.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Time Limit (minutes)</Label>
+              <Input type="number" value={quizTimeLimit} onChange={(e) => setQuizTimeLimit(Number(e.target.value))} min={1} />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {concept?.questionBank?.length || 0} questions will be included. Students will see results after you push them.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowQuizDialog(false)}>Cancel</Button>
+            <Button onClick={() => createQuizMutation.mutate(quizTimeLimit)} loading={createQuizMutation.isPending}>
+              Create & Release Quiz
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showAssignmentDialog} onOpenChange={setShowAssignmentDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Give Assignment</DialogTitle>
+            <DialogDescription>Create an assignment for deeper understanding and release to students.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Time Limit (minutes)</Label>
+              <Input type="number" value={assignTimeLimit} onChange={(e) => setAssignTimeLimit(Number(e.target.value))} min={1} />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Students get 2 attempts. Auto-graded from question bank answers.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAssignmentDialog(false)}>Cancel</Button>
+            <Button onClick={() => createAssignmentMutation.mutate(assignTimeLimit)} loading={createAssignmentMutation.isPending}>
+              Create & Release Assignment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showExamDialog} onOpenChange={setShowExamDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Start Exam</DialogTitle>
+            <DialogDescription>Create end-of-chapter exam from all concept questions.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Exam Title</Label>
+              <Input value={examTitle} onChange={(e) => setExamTitle(e.target.value)} placeholder={`${chapter?.title || ''} Exam`} />
+            </div>
+            <div>
+              <Label>Time Limit (minutes)</Label>
+              <Input type="number" value={examTimeLimit} onChange={(e) => setExamTimeLimit(Number(e.target.value))} min={1} />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Pulls questions across all concepts in this chapter. Auto-graded when submitted.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowExamDialog(false)}>Cancel</Button>
+            <Button onClick={() => createExamMutation.mutate(examTimeLimit)} loading={createExamMutation.isPending}>
+              Create & Release Exam
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

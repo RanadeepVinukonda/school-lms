@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
-import { ROUTES } from '@/lib/constants';
 import { getAllTextbooks } from '@/services/textbookService';
 import { getAllSubjects } from '@/services/dataService';
 
@@ -50,16 +49,10 @@ export default function TeacherTextbooksPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button asChild variant="outline">
-              <Link to="/teacher/textbooks/upload" className="gap-1">
-                <Icon name="upload" size={16} />
-                Upload
-              </Link>
-            </Button>
             <Button asChild>
-              <Link to="/teacher/textbooks/create" className="gap-1">
-                <Icon name="add" size={16} />
-                Create Textbook
+              <Link to="/teacher/textbooks/upload" className="gap-1">
+                <Icon name="upload_file" size={16} />
+                Upload Textbook
               </Link>
             </Button>
           </div>
@@ -74,9 +67,9 @@ export default function TeacherTextbooksPage() {
           emptyMessage="No textbooks yet"
           emptyAction={
             <Button asChild>
-              <Link to="/teacher/textbooks/create" className="gap-1">
-                <Icon name="add" size={16} />
-                Create Textbook
+              <Link to="/teacher/textbooks/upload" className="gap-1">
+                <Icon name="upload_file" size={16} />
+                Upload Textbook
               </Link>
             </Button>
           }
@@ -85,56 +78,42 @@ export default function TeacherTextbooksPage() {
             <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-4">
               {textbookList.map((tb) => (
                 <motion.div key={tb.id} variants={listItem}>
-                  <Card variant="elevated" className="overflow-hidden">
-                    <div className="h-1.5 w-full" style={{ backgroundColor: tb.subject?.color ?? '#6366f1' }} />
-                    <CardContent className="p-5">
-                      <div className="flex items-start gap-4">
-                        <div
-                          className="h-13 w-13 rounded-xl flex items-center justify-center flex-shrink-0"
-                          style={{ backgroundColor: `${tb.subject?.color ?? '#6366f1'}15` }}
-                        >
-                          <span style={{ color: tb.subject?.color ?? '#6366f1' }}>
-                            <Icon name="menu_book" size={26} />
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-4">
+                  <Link to={`/teacher/textbooks/${tb.id}`}>
+                    <Card variant="elevated" className="overflow-hidden hover:shadow-md transition-shadow">
+                      <div className="h-1.5 w-full" style={{ backgroundColor: tb.subject?.color ?? '#6366f1' }} />
+                      <CardContent className="p-5">
+                        <div className="flex items-start gap-4">
+                          <div
+                            className="h-13 w-13 rounded-xl flex items-center justify-center flex-shrink-0"
+                            style={{ backgroundColor: `${tb.subject?.color ?? '#6366f1'}15` }}
+                          >
+                            <span style={{ color: tb.subject?.color ?? '#6366f1' }}>
+                              <Icon name="menu_book" size={26} />
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
                             <div>
-                              <h3 className="font-semibold text-lg">{tb.title}</h3>
+                              <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">{tb.title}</h3>
                               <p className="text-sm text-muted-foreground">
                                 {tb.subject?.name ?? 'Unknown Subject'}
                               </p>
                             </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              <Button variant="outline" size="sm" asChild>
-                                <Link to={`/teacher/textbooks/${tb.id}`} className="gap-1">
-                                  <Icon name="edit" size={15} />
-                                  Edit
-                                </Link>
-                              </Button>
-                              <Button variant="outline" size="sm" asChild>
-                                <Link to={`/teacher/textbooks/${tb.id}/chapters/create`} className="gap-1">
-                                  <Icon name="add" size={15} />
-                                  Add Chapter
-                                </Link>
-                              </Button>
+                            <p className="text-xs text-muted-foreground mt-1">{tb.description}</p>
+                            <div className="flex items-center gap-3 mt-3">
+                              <Badge variant="secondary" className="text-[10px]">
+                                <Icon name="chapter" size={11} className="mr-1" />
+                                {tb.chapterCount} chapter{tb.chapterCount !== 1 ? 's' : ''}
+                              </Badge>
+                              <Badge variant="secondary" className="text-[10px]">
+                                <Icon name="play_lesson" size={11} className="mr-1" />
+                                {tb.lessonCount} lesson{tb.lessonCount !== 1 ? 's' : ''}
+                              </Badge>
                             </div>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1">{tb.description}</p>
-                          <div className="flex items-center gap-3 mt-3">
-                            <Badge variant="secondary" className="text-[10px]">
-                              <Icon name="chapter" size={11} className="mr-1" />
-                              {tb.chapterCount} chapter{tb.chapterCount !== 1 ? 's' : ''}
-                            </Badge>
-                            <Badge variant="secondary" className="text-[10px]">
-                              <Icon name="play_lesson" size={11} className="mr-1" />
-                              {tb.lessonCount} lesson{tb.lessonCount !== 1 ? 's' : ''}
-                            </Badge>
-                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 </motion.div>
               ))}
             </motion.div>

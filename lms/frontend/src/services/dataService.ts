@@ -9,6 +9,7 @@ export interface Subject {
   icon?: string;
   color?: string;
   category?: string;
+  classId?: string;
   description?: string;
   isActive?: boolean;
   createdAt?: string;

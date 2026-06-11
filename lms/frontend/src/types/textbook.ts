@@ -1,5 +1,6 @@
 export interface Textbook {
   id: string;
+  classId: string;
   subjectId: string;
   title: string;
   author?: string;

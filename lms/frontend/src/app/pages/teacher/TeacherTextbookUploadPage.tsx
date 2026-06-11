@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,6 +12,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { pageTransition, listItem } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import { useAuthStore } from '@/store/authStore';
+import { db } from '@/firebase/config';
+import { getAllSubjects, getAllClasses } from '@/services/dataService';
 import api from '@/services/api';
 
 interface TeacherAssignment {
@@ -26,26 +29,54 @@ export default function TeacherTextbookUploadPage() {
   const user = useAuthStore((s) => s.user);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [selectedClassId, setSelectedClassId] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
   const { data: assignments, isLoading: assignmentsLoading } = useQuery({
     queryKey: ['teacher-assignments', user?.id],
-    queryFn: () => api.get('/teacher-class-subject/my').then((r) => r.data.data),
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const q = query(collection(db, 'teacherClassSubject'), where('teacherId', '==', user.id));
+      const snapshot = await getDocs(q);
+      const [allSubjects, allClasses] = await Promise.all([getAllSubjects(), getAllClasses()]);
+      const subjectMap = new Map(allSubjects.map((s) => [s.id, s]));
+      const classMap = new Map(allClasses.map((c) => [c.id, c]));
+      return snapshot.docs.map((doc) => {
+        const data = doc.data();
+        const subject = subjectMap.get(data.subjectId);
+        const cls = classMap.get(data.classId);
+        return {
+          id: doc.id,
+          classId: data.classId,
+          className: cls?.name ?? 'Unknown Class',
+          subjectId: data.subjectId,
+          subjectName: subject?.name ?? 'Unknown Subject',
+        } as TeacherAssignment;
+      });
+    },
     enabled: !!user?.id,
   });
 
   const assignmentList: TeacherAssignment[] = assignments ?? [];
 
-  const selectedAssignment = assignmentList.find((a) => a.classId === selectedClassId);
+  const selectedAssignment = assignmentList.length === 1
+    ? assignmentList[0]
+    : assignmentList.find((a) => a.classId === selectedClassId) ?? null;
 
-  // Auto-select if the teacher has only one assignment
   useEffect(() => {
     if (assignmentList.length === 1 && !selectedClassId) {
       setSelectedClassId(assignmentList[0].classId);
     }
   }, [assignmentList, selectedClassId]);
+
+  useEffect(() => {
+    if (file && !title) {
+      setTitle(file.name.replace('.pdf', ''));
+    }
+  }, [file, title]);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -75,7 +106,8 @@ export default function TeacherTextbookUploadPage() {
       formData.append('file', file);
       formData.append('subjectId', selectedAssignment.subjectId);
       formData.append('classId', selectedAssignment.classId);
-      formData.append('title', file.name.replace('.pdf', ''));
+      formData.append('title', title || file.name.replace('.pdf', ''));
+      if (description) formData.append('description', description);
 
       const res = await api.post('/textbooks', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -99,7 +131,6 @@ export default function TeacherTextbookUploadPage() {
     }
   };
 
-  // Loading state
   if (assignmentsLoading) {
     return (
       <>
@@ -113,7 +144,6 @@ export default function TeacherTextbookUploadPage() {
     );
   }
 
-  // Empty state — teacher has no assignments
   if (!assignmentsLoading && assignmentList.length === 0) {
     return (
       <>
@@ -144,7 +174,6 @@ export default function TeacherTextbookUploadPage() {
     );
   }
 
-  // Populated state
   return (
     <>
       <SEOHead title="Upload Textbook" description="Upload and process a textbook PDF" canonical="/teacher/textbooks/upload" />
@@ -155,40 +184,61 @@ export default function TeacherTextbookUploadPage() {
             Back
           </Button>
           <h1 className="text-headline-sm">Upload Textbook</h1>
-          <p className="text-sm text-muted-foreground">Upload a PDF textbook for your assigned class</p>
+          <p className="text-sm text-muted-foreground">Upload a PDF textbook for your class</p>
         </motion.div>
 
         <motion.div variants={listItem}>
           <Card>
             <CardContent className="p-6 space-y-6">
-              {/* Class selector — populated from teacher's assignments */}
               <div>
-                <label className="text-sm font-medium mb-2 block">Class</label>
-                <select
-                  value={selectedClassId}
-                  onChange={(e) => setSelectedClassId(e.target.value)}
+                <label className="text-sm font-medium mb-2 block">Title</label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter textbook title"
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                >
-                  <option value="">Select a class...</option>
-                  {assignmentList.map((a) => (
-                    <option key={a.classId} value={a.classId}>
-                      {a.className}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
 
-              {/* Subject — read-only, derived from the selected class */}
-              {selectedAssignment && (
+              <div>
+                <label className="text-sm font-medium mb-2 block">Description <span className="text-muted-foreground font-normal">(optional)</span></label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Brief description of the textbook"
+                  rows={3}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                />
+              </div>
+
+              {assignmentList.length === 1 && (
                 <div>
                   <label className="text-sm font-medium mb-2 block">Subject</label>
                   <div className="w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-                    {selectedAssignment.subjectName}
+                    {assignmentList[0].subjectName}
                   </div>
                 </div>
               )}
 
-              {/* File drop zone */}
+              {assignmentList.length > 1 && (
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Class</label>
+                  <select
+                    value={selectedClassId}
+                    onChange={(e) => setSelectedClassId(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  >
+                    <option value="">Select a class...</option>
+                    {assignmentList.map((a) => (
+                      <option key={a.classId} value={a.classId}>
+                        {a.className} — {a.subjectName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
@@ -223,7 +273,7 @@ export default function TeacherTextbookUploadPage() {
                 className="w-full gap-2"
                 size="lg"
                 onClick={handleSubmit}
-                disabled={!file || !selectedClassId || isUploading}
+                disabled={!file || !selectedAssignment || isUploading}
               >
                 {isUploading ? (
                   <>

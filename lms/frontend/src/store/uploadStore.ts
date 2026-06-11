@@ -81,6 +81,7 @@ async function runProcessing(taskId: string) {
     addLog('Starting textbook processing...');
 
     const initialTextbook = {
+      classId: task.classId || '',
       subjectId: task.subjectId || 'custom',
       title: task.file.name.replace('.pdf', ''),
       chapters: [],

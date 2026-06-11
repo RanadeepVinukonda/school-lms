@@ -8,8 +8,8 @@ import { useQuery } from '@tanstack/react-query';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { pageTransition, listContainer } from '@/lib/motion';
-import { getAllSubjects, getExamsBySubject } from '@/services/dataService';
-import { getSubmissionsByAssignment } from '@/services/dataService';
+import { getAllSubjects, getExamsBySubject, getEnrollmentsByStudent, getAssignmentsBySubject } from '@/services/dataService';
+import { useAuthStore } from '@/store/authStore';
 import type { AssignmentItem, ExamItem, QuizItem } from '@/services/dataService';
 import type { Subject } from '@/types';
 import {
@@ -23,32 +23,37 @@ import {
 
 export default function StudentTasksPage() {
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
+  const studentId = useAuthStore((s) => s.user?.id);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['student-tasks'],
+    queryKey: ['student-tasks', studentId],
     queryFn: async () => {
+      if (!studentId) return [];
       const allSubjects = await getAllSubjects();
+      const enrollments = await getEnrollmentsByStudent(studentId);
+      const enrolledSubjectIds = new Set(enrollments.map((e) => e.courseId));
 
-      // Fetch all assignments
-      const assignmentsSnap = await getDocs(collection(db, 'assignments'));
-      const allAssignments = assignmentsSnap.docs.map(
-        (d) => ({ id: d.id, ...d.data() }) as AssignmentItem,
+      // Fetch assignments for enrolled subjects only
+      const assignmentPromises = [...enrolledSubjectIds].map((sid) =>
+        getAssignmentsBySubject(sid).catch(() => [] as AssignmentItem[]),
       );
+      const assignmentResults = await Promise.all(assignmentPromises);
+      const allAssignments = assignmentResults.flat();
 
-      // Fetch all quizzes
+      // Fetch quizzes — filter by subjectId field
       const quizzesSnap = await getDocs(collection(db, 'quizzes'));
-      const allQuizzes = quizzesSnap.docs.map(
-        (d) => ({ id: d.id, ...d.data() }) as QuizItem,
-      );
+      const allQuizzes = quizzesSnap.docs
+        .map((d) => ({ id: d.id, ...d.data() }) as QuizItem)
+        .filter((q) => enrolledSubjectIds.has((q as any).subjectId));
 
-      // Fetch all exams (by subject)
-      const subjectIds = allSubjects.map((s) => s.id);
-      const examPromises = subjectIds.map((sid) => getExamsBySubject(sid));
+      // Fetch exams for enrolled subjects only
+      const examPromises = [...enrolledSubjectIds].map((sid) => getExamsBySubject(sid));
       const examResults = await Promise.all(examPromises);
       const allExams = examResults.flat();
 
       return buildTasks(allAssignments, allQuizzes, allExams, allSubjects as Subject[]);
     },
+    enabled: !!studentId,
   });
 
   const overdueCount = useMemo(

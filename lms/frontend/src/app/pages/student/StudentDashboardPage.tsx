@@ -1,13 +1,17 @@
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
 import { useAuthStore } from '@/store/authStore';
 import { cn, getTimeGreeting } from '@/lib/utils';
 import { pageTransition, listItem } from '@/lib/motion';
-import { getGradesByStudent } from '@/services/dataService';
+import { ROUTES } from '@/lib/constants';
+import { getGradesByStudent, getEnrollmentsByStudent, getClass } from '@/services/dataService';
 
 const motivationalMessages = [
   'Every expert was once a beginner. Keep going!',
@@ -19,7 +23,7 @@ const motivationalMessages = [
 ];
 
 interface ResultEntry { id: string; itemName: string; score: number; maxScore: number; percentage: number; gradedAt: string; feedback?: string }
-interface DashboardData { displayName: string; greeting: string; motivationalMessage: string; todayDate: string; recentResults: ResultEntry[] }
+interface DashboardData { displayName: string; greeting: string; motivationalMessage: string; todayDate: string; recentResults: ResultEntry[]; enrolledCount: number; className: string | null; classGrade: string | null; avgGrade: number; totalAssessments: number }
 
 export default function StudentDashboardPage() {
   const authUser = useAuthStore((state) => state.user);
@@ -31,14 +35,20 @@ export default function StudentDashboardPage() {
     queryKey: ['student-dashboard', studentId],
     enabled: !!studentId,
     queryFn: async () => {
+      if (!studentId) throw new Error('Not authenticated');
       const now = new Date();
       const greeting = getTimeGreeting();
+      const authUserData = useAuthStore.getState().user;
 
-      const grades = studentId ? await getGradesByStudent(studentId) : [];
+      const [grades, enrollments, classDoc] = await Promise.all([
+        getGradesByStudent(studentId),
+        getEnrollmentsByStudent(studentId),
+        authUserData?.classId ? getClass(authUserData.classId) : Promise.resolve(null),
+      ]);
 
       const recentResults: ResultEntry[] = grades
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, 10)
+        .slice(0, 5)
         .map((g) => ({
           id: g.id,
           itemName: g.itemName ?? 'Assessment',
@@ -49,10 +59,19 @@ export default function StudentDashboardPage() {
           feedback: g.feedback,
         }));
 
+      const avgGrade = grades.length > 0
+        ? Math.round(grades.reduce((s, g) => s + g.percentage, 0) / grades.length)
+        : 0;
+
       return {
         displayName, greeting, motivationalMessage: motivationalMessages[messageIndex],
         todayDate: now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
         recentResults,
+        enrolledCount: enrollments.length,
+        className: classDoc?.name ?? null,
+        classGrade: classDoc?.grade ?? null,
+        avgGrade,
+        totalAssessments: grades.length,
       } satisfies DashboardData;
     },
   });
@@ -68,13 +87,75 @@ export default function StudentDashboardPage() {
                 <div className="flex flex-col gap-1">
                   <h1 className="text-headline-sm">{dash.greeting}, {dash.displayName.split(' ')[0]}</h1>
                   <p className="text-body-md text-on-surface-variant">{dash.todayDate}</p>
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                    {dash.className && (
+                      <Badge variant="info" className="text-xs gap-1">
+                        <Icon name="school" size={12} />{dash.className}{dash.classGrade ? ` (Grade ${dash.classGrade})` : ''}
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-body-md italic text-on-surface-variant/80 mt-1">{dash.motivationalMessage}</p>
                 </div>
               </motion.div>
 
               <motion.div variants={listItem} initial="hidden" animate="show">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { icon: 'school', label: 'Subjects', value: dash.enrolledCount, color: 'text-primary bg-primary-container' },
+                    { icon: 'grade', label: 'Avg Grade', value: `${dash.avgGrade}%`, color: 'text-success bg-success-container' },
+                    { icon: 'checklist', label: 'Completed', value: dash.totalAssessments, color: 'text-warning bg-warning-container' },
+                    { icon: 'group', label: 'Class', value: dash.className ?? '—', color: 'text-tertiary bg-tertiary-container' },
+                  ].map((stat) => (
+                    <Card key={stat.label} variant="elevated" className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${stat.color}`}>
+                          <Icon name={stat.icon} size={20} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs text-muted-foreground">{stat.label}</p>
+                          <p className="text-lg font-bold">{stat.value}</p>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </motion.div>
+
+              <motion.div variants={listItem} initial="hidden" animate="show">
+                <div className="grid grid-cols-2 gap-3">
+                  <Button variant="outline" className="h-auto py-4 justify-start gap-3" asChild>
+                    <Link to={ROUTES.STUDENT_TASKS}>
+                      <div className="h-10 w-10 rounded-full bg-primary-container flex items-center justify-center shrink-0">
+                        <Icon name="checklist" size={20} className="text-primary" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm font-semibold">View Tasks</p>
+                        <p className="text-xs text-muted-foreground">Pending assignments &amp; quizzes</p>
+                      </div>
+                    </Link>
+                  </Button>
+                  <Button variant="outline" className="h-auto py-4 justify-start gap-3" asChild>
+                    <Link to={ROUTES.STUDENT_EXAMS}>
+                      <div className="h-10 w-10 rounded-full bg-error-container flex items-center justify-center shrink-0">
+                        <Icon name="fact_check" size={20} className="text-error" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm font-semibold">View Exams</p>
+                        <p className="text-xs text-muted-foreground">Upcoming &amp; past results</p>
+                      </div>
+                    </Link>
+                  </Button>
+                </div>
+              </motion.div>
+
+              <motion.div variants={listItem} initial="hidden" animate="show">
                 <Card variant="elevated">
-                  <CardHeader className="pb-3"><CardTitle className="text-title-lg flex items-center gap-2"><Icon name="grade" size={20} />Recent Results</CardTitle></CardHeader>
+                  <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                    <CardTitle className="text-title-sm flex items-center gap-2"><Icon name="grade" size={18} />Recent Results</CardTitle>
+                    {dash.recentResults.length > 0 && (
+                      <Badge variant="secondary" className="text-[10px]">Last 5</Badge>
+                    )}
+                  </CardHeader>
                   <CardContent>
                     {dash.recentResults.length === 0 ? (
                       <div className="flex flex-col items-center py-6 text-center">
@@ -82,7 +163,7 @@ export default function StudentDashboardPage() {
                         <p className="text-body-md text-on-surface-variant">No results yet. Complete assessments to see your grades here.</p>
                       </div>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="space-y-1">
                         {dash.recentResults.map((result) => {
                           const colorClass = result.percentage >= 80 ? 'text-success bg-success-container/30' : result.percentage >= 60 ? 'text-warning bg-warning-container/30' : 'text-error bg-error-container/30';
                           return (
