@@ -185,7 +185,7 @@ export default function StudentConceptPage() {
 
   const handleSubmitPractice = useCallback(() => {
     if (!concept) return;
-    const qs = concept.questionBank;
+    const qs = concept.questionBank || [];
     let correct = 0;
     qs.forEach((q) => {
       if (isCorrect(q, answers[q.id] ?? '')) correct++;
@@ -424,13 +424,13 @@ export default function StudentConceptPage() {
                         </p>
                         {progress && (
                           <div className="flex flex-wrap justify-center gap-3 mb-4">
-                            {progress.quizScores.length > 0 && (
+                            {(progress.quizScores || []).length > 0 && (
                               <Badge variant="secondary" className="text-xs">
-                                Best: {Math.max(...progress.quizScores)}%
+                                Best: {Math.max(...(progress.quizScores || [0]))}%
                               </Badge>
-                  )}
+                            )}
                             <Badge variant="secondary" className="text-xs">
-                              Attempts: {progress.quizAttempts}
+                              Attempts: {progress.quizAttempts || 0}
                             </Badge>
                           </div>
                         )}
