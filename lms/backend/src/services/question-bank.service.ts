@@ -107,7 +107,7 @@ export async function listQuestions(params: {
   subjectId?: string;
   type?: string;
   difficulty?: string;
-  isPreviousYear?: boolean;
+  isPreviousYear?: boolean | string;
   year?: string;
   createdBy?: string;
   search?: string;
@@ -121,7 +121,10 @@ export async function listQuestions(params: {
   if (params.subjectId) query = query.where('subjectId', '==', params.subjectId);
   if (params.type) query = query.where('type', '==', params.type);
   if (params.difficulty) query = query.where('difficulty', '==', params.difficulty);
-  if (params.isPreviousYear !== undefined) query = query.where('isPreviousYear', '==', params.isPreviousYear);
+  if (params.isPreviousYear !== undefined) {
+    const isPyq = params.isPreviousYear === true || params.isPreviousYear === 'true';
+    query = query.where('isPreviousYear', '==', isPyq);
+  }
   if (params.year) query = query.where('year', '==', params.year);
   if (params.createdBy) query = query.where('createdBy', '==', params.createdBy);
   if (params.tags?.length) query = query.where('tags', 'array-contains-any', params.tags);
