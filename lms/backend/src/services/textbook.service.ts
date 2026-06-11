@@ -76,11 +76,34 @@ export async function getTextbooksByClassAndSubject(classId: string, subjectId: 
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
+/** List all textbooks (no filter) */
+export async function listAllTextbooks() {
+  const snap = await collections.textbooks().get();
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
 /** Get a single textbook. */
 export async function getTextbookById(textbookId: string) {
   const doc = await collections.textbooks().doc(textbookId).get();
   if (!doc.exists) throw new NotFoundError('Textbook not found');
   return { id: doc.id, ...doc.data() };
+}
+
+/** Get chapters for a textbook */
+export async function getChapters(textbookId: string) {
+  const snap = await collections.textbooks().doc(textbookId).collection('chapters').get();
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+/** Get concepts for a chapter of a textbook */
+export async function getConcepts(textbookId: string, chapterId: string) {
+  const snap = await collections.textbooks()
+    .doc(textbookId)
+    .collection('chapters')
+    .doc(chapterId)
+    .collection('concepts')
+    .get();
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
 /** Delete a textbook. */

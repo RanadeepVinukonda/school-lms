@@ -15,6 +15,24 @@ export async function getTextbook(req: Request, res: Response) {
   sendSuccess(res, result);
 }
 
+// List all textbooks (no filters)
+export async function listTextbooks(req: Request, res: Response) {
+  const result = await textbookService.listAllTextbooks();
+  sendSuccess(res, result);
+}
+
+// List chapters for a textbook
+export async function listChapters(req: Request, res: Response) {
+  const result = await textbookService.getChapters(req.params.textbookId);
+  sendSuccess(res, result);
+}
+
+// List concepts for a chapter of a textbook
+export async function listConcepts(req: Request, res: Response) {
+  const result = await textbookService.getConcepts(req.params.textbookId, req.params.chapterId);
+  sendSuccess(res, result);
+}
+
 export async function getTextbooksByClassAndSubject(req: Request, res: Response) {
   const result = await textbookService.getTextbooksByClassAndSubject(
     req.params.classId,
