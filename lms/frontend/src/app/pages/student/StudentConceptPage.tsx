@@ -233,11 +233,11 @@ export default function StudentConceptPage() {
                 {progress && (
                   <div className="flex flex-wrap gap-2 mt-2">
                     {practiceCompleted && <Badge variant="outline" className="text-[10px] text-green-600 dark:text-green-400 border-green-300 dark:border-green-700"><Icon name="check_circle" size={12} className="mr-1" />Practice done</Badge>}
-                    {d.concept.questionBank.length > 0 && practiceCompleted && <Badge variant="outline" className="text-[10px] text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-700"><Icon name="bolt" size={12} className="mr-1" />Quiz ready</Badge>}
+                    {(d.concept.questionBank || []).length > 0 && practiceCompleted && <Badge variant="outline" className="text-[10px] text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-700"><Icon name="bolt" size={12} className="mr-1" />Quiz ready</Badge>}
                   </div>
                 )}
               </div>
-
+ 
               <Tabs defaultValue="learn">
                 <TabsList className="w-full">
                   <TabsTrigger value="learn" className="flex-1">
@@ -251,7 +251,7 @@ export default function StudentConceptPage() {
                     <Icon name="bolt" size={14} className="mr-1.5" />Quiz
                   </TabsTrigger>
                 </TabsList>
-
+ 
                 <TabsContent value="learn" className="mt-4 space-y-4">
                   <Card>
                     <CardContent className="p-5">
@@ -264,8 +264,8 @@ export default function StudentConceptPage() {
                       </div>
                     </CardContent>
                   </Card>
-
-                  {d.concept.learningObjectives.length > 0 && (
+ 
+                  {(d.concept.learningObjectives || []).length > 0 && (
                     <Card>
                       <CardContent className="p-5">
                         <h2 className="font-semibold mb-3 flex items-center gap-2">
@@ -273,7 +273,7 @@ export default function StudentConceptPage() {
                           Learning Objectives
                         </h2>
                         <ul className="space-y-1.5">
-                          {d.concept.learningObjectives.map((obj, i) => (
+                          {d.concept.learningObjectives!.map((obj, i) => (
                             <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
                               <span className="text-tertiary mt-0.5">•</span>
                               {obj}
@@ -283,8 +283,8 @@ export default function StudentConceptPage() {
                       </CardContent>
                     </Card>
                   )}
-
-                  {d.concept.keywords.length > 0 && (
+ 
+                  {(d.concept.keywords || []).length > 0 && (
                     <Card>
                       <CardContent className="p-5">
                         <h2 className="font-semibold mb-3 flex items-center gap-2">
@@ -292,21 +292,21 @@ export default function StudentConceptPage() {
                           Keywords
                         </h2>
                         <div className="flex flex-wrap gap-1.5">
-                          {d.concept.keywords.map((kw, i) => (
+                          {d.concept.keywords!.map((kw, i) => (
                             <Badge key={i} variant="secondary" className="text-xs">{kw}</Badge>
                           ))}
                         </div>
                       </CardContent>
                     </Card>
                   )}
-
-                  {d.concept.questionBank.length > 0 && (<>
+ 
+                  {(d.concept.questionBank || []).length > 0 && (<>
 <Button variant="outline" className="flex-1" onClick={() => {
                         const tab = document.querySelector('[data-value="practice"]') as HTMLElement;
                         tab?.click();
                       }}>
                         <Icon name="quiz" size={16} className="mr-2" />
-                        Practice ({d.concept.questionBank.length})
+                        Practice ({(d.concept.questionBank || []).length})
                       </Button>
 
 {/* Start Adaptive Quiz button */}
@@ -329,13 +329,13 @@ export default function StudentConceptPage() {
                 <TabsContent value="practice" className="mt-4 space-y-4">
                   {!questionBankReleased ? (
                     <UnlockOverlay icon="lock" message="Practice questions are not yet released by your teacher. They will appear here once the teacher finishes explaining the concept." />
-                  ) : d.concept.questionBank.length > 0 ? (
+                  ) : (d.concept.questionBank || []).length > 0 ? (
                     <>
                       <div className="flex items-center justify-between">
                         <p className="text-sm text-muted-foreground">
                           {submitted
-                            ? `You scored ${d.concept.questionBank.filter((q) => isCorrect(q, answers[q.id] ?? '')).length}/${d.concept.questionBank.length}`
-                            : `${d.concept.questionBank.length} questions`
+                            ? `You scored ${(d.concept.questionBank || []).filter((q) => isCorrect(q, answers[q.id] ?? '')).length}/${(d.concept.questionBank || []).length}`
+                            : `${(d.concept.questionBank || []).length} questions`
                           }
                         </p>
                         {submitted ? (
@@ -348,7 +348,7 @@ export default function StudentConceptPage() {
                         )}
                       </div>
 
-                      {d.concept.questionBank.map((q, i) => {
+                      {(d.concept.questionBank || []).map((q, i) => {
                         const userAnswer = answers[q.id] ?? '';
                         const correct = isCorrect(q, userAnswer);
                         return (
@@ -363,7 +363,7 @@ export default function StudentConceptPage() {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 mb-1">
                                     <Badge variant="outline" className="text-[10px] capitalize">{q.difficulty}</Badge>
-                                    <Badge variant="outline" className="text-[10px]">{(questionConfig[q.type] ?? q.type).label}</Badge>
+                                    <Badge variant="outline" className="text-[10px] capitalize">{questionConfig[q.type]?.label || q.type}</Badge>
                                   </div>
                                   <p className="text-sm">{q.text}</p>
                                   <QuestionInput
@@ -412,7 +412,7 @@ export default function StudentConceptPage() {
                 <TabsContent value="quiz" className="mt-4">
                   {!questionBankReleased ? (
                     <UnlockOverlay icon="lock" message="Questions are not yet released by your teacher. Check back later." />
-                  ) : !practiceCompleted && d.concept.questionBank.length > 0 ? (
+                  ) : !practiceCompleted && (d.concept.questionBank || []).length > 0 ? (
                     <UnlockOverlay icon="lock" message="Complete the practice questions (60%+) to unlock the adaptive quiz." />
                   ) : (
                     <Card>
@@ -420,7 +420,7 @@ export default function StudentConceptPage() {
                         <Icon name="bolt" size={48} className="text-primary/50 mx-auto mb-3" />
                         <h2 className="text-title-md font-semibold mb-2">Adaptive Quiz</h2>
                         <p className="text-sm text-muted-foreground mb-4">
-                          Take an adaptive quiz that adjusts to your skill level. Questions are selected from {d.concept.questionBank.length} available questions.
+                          Take an adaptive quiz that adjusts to your skill level. Questions are selected from {(d.concept.questionBank || []).length} available questions.
                         </p>
                         {progress && (
                           <div className="flex flex-wrap justify-center gap-3 mb-4">

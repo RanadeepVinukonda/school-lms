@@ -212,6 +212,15 @@ export async function createTextbook(data: {
           `https://www.youtube.com/watch?v=mock_video_1_${conceptId.substring(0, 4)}`,
           `https://www.youtube.com/watch?v=mock_video_2_${conceptId.substring(0, 4)}`
         ],
+        learningObjectives: [
+          `Understand the fundamentals of ${conceptTitle}`,
+          `Apply ${conceptTitle} principles to solve practical problems`
+        ],
+        keywords: [
+          conceptTitle.toLowerCase().replace(/\s+/g, '_'),
+          'theory',
+          'application'
+        ],
         questionBank: generatedQuestions
       });
     }
