@@ -17,15 +17,7 @@ import StudentLoginPage from '@/app/pages/auth/StudentLoginPage';
 import TeacherLoginPage from '@/app/pages/auth/TeacherLoginPage';
 
 import StudentDashboardPage from '@/app/pages/student/StudentDashboardPage';
-import SubjectsPage from '@/app/pages/student/SubjectsPage';
-import SubjectDetailPage from '@/app/pages/student/SubjectDetailPage';
-import TextbookDetailPage from '@/app/pages/student/TextbookDetailPage';
-import StudentChapterPage from '@/app/pages/student/StudentChapterPage';
-import StudentConceptPage from '@/app/pages/student/StudentConceptPage';
-import AdaptiveQuizPage from '@/app/pages/student/AdaptiveQuizPage';
-import LessonViewPage from '@/app/pages/student/LessonViewPage';
 import StudentExamsPage from '@/app/pages/student/StudentExamsPage';
-import StudentTimetablePage from '@/app/pages/student/StudentTimetablePage';
 import StudentTasksPage from '@/app/pages/student/StudentTasksPage';
 import StudentProfilePage from '@/app/pages/student/StudentProfilePage';
 import StudentProfileEditPage from '@/app/pages/student/StudentProfileEditPage';
@@ -47,6 +39,9 @@ import TeacherAssessmentCreatePage from '@/app/pages/teacher/TeacherAssessmentCr
 import TeacherExamCreatePage from '@/app/pages/teacher/TeacherExamCreatePage';
 import TeacherProfilePage from '@/app/pages/teacher/TeacherProfilePage';
 import TeacherProfileEditPage from '@/app/pages/teacher/TeacherProfileEditPage';
+import TeacherVideoLibraryPage from '@/app/pages/teacher/TeacherVideoLibraryPage';
+import TeacherAnalyticsPage from '@/app/pages/teacher/TeacherAnalyticsPage';
+import TeacherResultsPushPage from '@/app/pages/teacher/TeacherResultsPushPage';
 
 import AdminDashboardPage from '@/app/pages/admin/AdminDashboardPage';
 import AdminStudentsPage from '@/app/pages/admin/AdminStudentsPage';
@@ -98,16 +93,8 @@ export const router = createBrowserRouter([
     ),
     children: [
       { path: ROUTES.STUDENT_DASHBOARD, element: <StudentDashboardPage /> },
-      { path: ROUTES.STUDENT_SUBJECTS, element: <SubjectsPage /> },
-      { path: ROUTES.STUDENT_SUBJECT(':id'), element: <SubjectDetailPage /> },
-      { path: ROUTES.STUDENT_TEXTBOOK(':id'), element: <TextbookDetailPage /> },
-      { path: ROUTES.STUDENT_CHAPTER(':textbookId', ':chapterId'), element: <StudentChapterPage /> },
-      { path: ROUTES.STUDENT_CONCEPT(':conceptId'), element: <StudentConceptPage /> },
-      { path: ROUTES.STUDENT_CONCEPT_QUIZ(':conceptId'), element: <AdaptiveQuizPage /> },
-      { path: ROUTES.STUDENT_LESSON(':id'), element: <LessonViewPage /> },
       { path: ROUTES.STUDENT_EXAMS, element: <StudentExamsPage /> },
       { path: ROUTES.STUDENT_TASKS, element: <StudentTasksPage /> },
-      { path: ROUTES.STUDENT_TIMETABLE, element: <StudentTimetablePage /> },
       { path: ROUTES.STUDENT_PROFILE, element: <StudentProfilePage /> },
       { path: ROUTES.STUDENT_PROFILE_EDIT, element: <StudentProfileEditPage /> },
       { path: ROUTES.ASSIGNMENT_DETAIL(':id'), element: <AssignmentDetailPage /> },
@@ -137,6 +124,9 @@ export const router = createBrowserRouter([
       { path: ROUTES.TEACHER_CONCEPT(':textbookId', ':chapterId', ':conceptId'), element: <TeacherConceptViewPage /> },
       { path: ROUTES.TEACHER_PROFILE, element: <TeacherProfilePage /> },
       { path: ROUTES.TEACHER_PROFILE_EDIT, element: <TeacherProfileEditPage /> },
+      { path: ROUTES.TEACHER_VIDEOS, element: <TeacherVideoLibraryPage /> },
+      { path: ROUTES.TEACHER_ANALYTICS, element: <TeacherAnalyticsPage /> },
+      { path: ROUTES.TEACHER_RESULTS_PUSH, element: <TeacherResultsPushPage /> },
     ],
   },
 

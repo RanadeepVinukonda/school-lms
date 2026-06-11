@@ -9,11 +9,9 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { pageTransition, listContainer } from '@/lib/motion';
 import { getAllSubjects, getExamsBySubject } from '@/services/dataService';
-import { getAllTextbooks } from '@/services/textbookService';
 import { getSubmissionsByAssignment } from '@/services/dataService';
 import type { AssignmentItem, ExamItem, QuizItem } from '@/services/dataService';
 import type { Subject } from '@/types';
-import type { Textbook } from '@/types/textbook';
 import {
   buildTasks,
   FilterBar,
@@ -29,10 +27,7 @@ export default function StudentTasksPage() {
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-tasks'],
     queryFn: async () => {
-      const [allSubjects, allTextbooks] = await Promise.all([
-        getAllSubjects(),
-        getAllTextbooks(),
-      ]);
+      const allSubjects = await getAllSubjects();
 
       // Fetch all assignments
       const assignmentsSnap = await getDocs(collection(db, 'assignments'));
@@ -52,7 +47,7 @@ export default function StudentTasksPage() {
       const examResults = await Promise.all(examPromises);
       const allExams = examResults.flat();
 
-      return buildTasks(allAssignments, allQuizzes, allExams, allSubjects as Subject[], allTextbooks);
+      return buildTasks(allAssignments, allQuizzes, allExams, allSubjects as Subject[]);
     },
   });
 

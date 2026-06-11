@@ -26,6 +26,9 @@ const navItems: NavItem[] = [
   { label: 'Assessments', href: ROUTES.TEACHER_ASSESSMENTS, icon: 'quiz' },
   { label: 'Exams', href: ROUTES.TEACHER_EXAMS, icon: 'assignment' },
   { label: 'Textbooks', href: ROUTES.TEACHER_TEXTBOOKS, icon: 'menu_book' },
+  { label: 'Videos', href: ROUTES.TEACHER_VIDEOS, icon: 'video_library' },
+  { label: 'Analytics', href: ROUTES.TEACHER_ANALYTICS, icon: 'analytics' },
+  { label: 'Grades', href: ROUTES.TEACHER_RESULTS_PUSH, icon: 'send' },
   { label: 'Profile', href: ROUTES.TEACHER_PROFILE, icon: 'person' },
 ];
 

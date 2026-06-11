@@ -9,7 +9,6 @@ import { listContainer, listItem } from '@/lib/motion';
 import { formatTime } from '@/lib/format';
 import type { AssignmentItem, ExamItem, QuizItem } from '@/services/dataService';
 import type { Subject } from '@/types';
-import type { Textbook } from '@/types/textbook';
 
 export type TaskType = 'assignment' | 'quiz' | 'exam';
 export type UrgencyLevel = 'overdue' | 'today' | 'tomorrow' | 'thisWeek' | 'later';
@@ -105,20 +104,11 @@ export function getUrgencyLevel(date: Date | null): UrgencyLevel {
 
 function findSubjectName(
   subjects: Subject[],
-  textbooks: Textbook[],
-  textbookId?: string,
   subjectId?: string,
 ): string {
   if (subjectId) {
     const subject = subjects.find((s) => s.id === subjectId);
     if (subject) return subject.name;
-  }
-  if (textbookId) {
-    const textbook = textbooks.find((t) => t.id === textbookId);
-    if (textbook) {
-      const subject = subjects.find((s) => s.id === textbook.subjectId);
-      if (subject) return subject.name;
-    }
   }
   return 'Unknown Subject';
 }
@@ -128,7 +118,6 @@ export function buildTasks(
   quizzes: QuizItem[],
   exams: ExamItem[],
   subjects: Subject[],
-  textbooks: Textbook[],
 ): TaskItem[] {
   const tasks: TaskItem[] = [];
 
@@ -139,7 +128,7 @@ export function buildTasks(
       type: 'assignment',
       title: a.title,
       description: a.description ?? '',
-      subjectName: findSubjectName(subjects, textbooks, a.textbookId),
+      subjectName: 'Assignment',
       date: dueDate,
       urgency: getUrgencyLevel(dueDate),
       linkTo: `/assignments/${a.id}`,
@@ -154,7 +143,7 @@ export function buildTasks(
       type: 'quiz',
       title: q.title,
       description: q.description ?? '',
-      subjectName: findSubjectName(subjects, textbooks, q.textbookId),
+      subjectName: 'Quiz',
       date: null,
       urgency: 'later',
       linkTo: `/quizzes/${q.id}/attempt`,
@@ -170,7 +159,7 @@ export function buildTasks(
       type: 'exam',
       title: e.title,
       description: e.description ?? '',
-      subjectName: findSubjectName(subjects, textbooks, undefined, e.subjectId),
+      subjectName: findSubjectName(subjects, e.subjectId),
       date: startDate,
       urgency: getUrgencyLevel(startDate),
       linkTo: `/exams/${e.id}`,

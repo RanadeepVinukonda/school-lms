@@ -1,20 +1,13 @@
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Icon } from '@/components/ui/Icon';
 import { useAuthStore } from '@/store/authStore';
 import { cn, getTimeGreeting } from '@/lib/utils';
-import { formatRelativeTime } from '@/lib/format';
 import { pageTransition, listItem } from '@/lib/motion';
-import { getAllTextbooks, getAllConceptProgress, getChaptersForTextbook, getConceptsForChapter } from '@/services/textbookService';
-import { getAllSubjects, getEnrollmentsByStudent, getGradesByStudent } from '@/services/dataService';
-import { ROUTES } from '@/lib/constants';
+import { getGradesByStudent } from '@/services/dataService';
 
 const motivationalMessages = [
   'Every expert was once a beginner. Keep going!',
@@ -25,9 +18,8 @@ const motivationalMessages = [
   'Believe you can and you\u2019re halfway there.',
 ];
 
-interface ContinueLearning { subjectName: string; subjectColor: string; subjectIcon: string; textbookTitle: string; chapterTitle: string; lessonTitle: string; conceptId: string; textbookId: string; progress: number; duration: number; videoProgress: number }
 interface ResultEntry { id: string; itemName: string; score: number; maxScore: number; percentage: number; gradedAt: string; feedback?: string }
-interface DashboardData { displayName: string; greeting: string; motivationalMessage: string; todayDate: string; streakCount: number; continueLearning: ContinueLearning | null; recentResults: ResultEntry[] }
+interface DashboardData { displayName: string; greeting: string; motivationalMessage: string; todayDate: string; recentResults: ResultEntry[] }
 
 export default function StudentDashboardPage() {
   const authUser = useAuthStore((state) => state.user);
@@ -41,93 +33,8 @@ export default function StudentDashboardPage() {
     queryFn: async () => {
       const now = new Date();
       const greeting = getTimeGreeting();
-      const streakCount = 7;
 
-      const [allSubjects, allTextbooks, conceptProgressList, enrollments, grades] = await Promise.all([
-        getAllSubjects(),
-        getAllTextbooks(),
-        studentId ? getAllConceptProgress(studentId) : Promise.resolve([]),
-        studentId ? getEnrollmentsByStudent(studentId) : Promise.resolve([]),
-        studentId ? getGradesByStudent(studentId) : Promise.resolve([]),
-      ]);
-
-      const subjectMap = new Map(allSubjects.map((s) => [s.id, s]));
-      const readyTextbooks = allTextbooks.filter((tb) => tb.status !== 'processing');
-      const enrolledSubjectIds = new Set(enrollments.map((e) => e.courseId));
-
-      const inProgressConcepts = conceptProgressList
-        .filter((p) => p.videoPosition > 0 || p.lessonCompleted)
-        .sort((a, b) => new Date(b.lastAccessed).getTime() - new Date(a.lastAccessed).getTime());
-
-      let continueLearning: ContinueLearning | null = null;
-      if (inProgressConcepts.length > 0) {
-        const latest = inProgressConcepts[0];
-        let foundTextbook = null;
-        for (const tb of readyTextbooks) {
-          const chapters = await getChaptersForTextbook(tb.id);
-          for (const ch of chapters) {
-            const concepts = await getConceptsForChapter(tb.id, ch.id);
-            if (concepts.some((c) => c.id === latest.conceptId)) {
-              foundTextbook = tb;
-              break;
-            }
-          }
-          if (foundTextbook) break;
-        }
-        if (foundTextbook) {
-          const foundChapters = await getChaptersForTextbook(foundTextbook.id);
-          for (const ch of foundChapters) {
-            const concepts = await getConceptsForChapter(foundTextbook.id, ch.id);
-            const foundConcept = concepts.find((c) => c.id === latest.conceptId);
-            if (foundConcept) {
-              const subject = subjectMap.get(foundTextbook.subjectId);
-              const vidDuration = parseFloat(foundConcept.videos?.[0]?.duration ?? '0');
-              const videoPct = vidDuration > 0
-                ? Math.round((latest.videoPosition / vidDuration) * 100)
-                : 0;
-              continueLearning = {
-                subjectName: subject?.name ?? '',
-                subjectColor: subject?.color ?? '#6366f1',
-                subjectIcon: subject?.icon ?? 'menu_book',
-                textbookTitle: foundTextbook.title,
-                chapterTitle: ch.title,
-                lessonTitle: foundConcept.title,
-                conceptId: latest.conceptId,
-                textbookId: foundTextbook.id,
-                progress: latest.lessonCompleted ? 100 : Math.min(videoPct, 99),
-                duration: foundConcept.estimatedMinutes ?? 10,
-                videoProgress: latest.videoPosition,
-              };
-              break;
-            }
-          }
-        }
-      }
-      if (!continueLearning && readyTextbooks.length > 0) {
-        const firstTb = readyTextbooks[0];
-        const subject = subjectMap.get(firstTb.subjectId);
-        const firstChapters = await getChaptersForTextbook(firstTb.id);
-        if (firstChapters.length) {
-          const firstCh = firstChapters[0];
-          const firstConcepts = await getConceptsForChapter(firstTb.id, firstCh.id);
-          const firstConcept = firstConcepts[0];
-          if (firstConcept) {
-            continueLearning = {
-              subjectName: subject?.name ?? '',
-              subjectColor: subject?.color ?? '#6366f1',
-              subjectIcon: subject?.icon ?? 'menu_book',
-              textbookTitle: firstTb.title,
-              chapterTitle: firstCh.title,
-              lessonTitle: firstConcept.title,
-              conceptId: firstConcept.id,
-              textbookId: firstTb.id,
-              progress: 0,
-              duration: firstConcept.estimatedMinutes ?? 10,
-              videoProgress: 0,
-            };
-          }
-        }
-      }
+      const grades = studentId ? await getGradesByStudent(studentId) : [];
 
       const recentResults: ResultEntry[] = grades
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -145,14 +52,14 @@ export default function StudentDashboardPage() {
       return {
         displayName, greeting, motivationalMessage: motivationalMessages[messageIndex],
         todayDate: now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
-        streakCount, continueLearning, recentResults,
+        recentResults,
       } satisfies DashboardData;
     },
   });
 
   return (
     <>
-      <SEOHead title="Dashboard" description="Your student learning dashboard" />
+      <SEOHead title="Dashboard" description="Your student dashboard" />
       <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-4xl mx-auto space-y-5 pb-24">
         <DataFetchWrapper data={data} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="detail">
           {(dash) => (
@@ -161,61 +68,8 @@ export default function StudentDashboardPage() {
                 <div className="flex flex-col gap-1">
                   <h1 className="text-headline-sm">{dash.greeting}, {dash.displayName.split(' ')[0]}</h1>
                   <p className="text-body-md text-on-surface-variant">{dash.todayDate}</p>
-                  <div className="flex items-center justify-between mt-1">
-                    <p className="text-body-md italic text-on-surface-variant/80">{dash.motivationalMessage}</p>
-                    <div className="flex items-center gap-1.5 bg-error-container px-3 py-1.5 rounded-full">
-                      <Icon name="local_fire_department" size={18} className="text-error" />
-                      <span className="text-label-sm font-semibold text-on-error-container">{dash.streakCount} day streak</span>
-                    </div>
-                  </div>
+                  <p className="text-body-md italic text-on-surface-variant/80 mt-1">{dash.motivationalMessage}</p>
                 </div>
-              </motion.div>
-
-              <motion.div variants={listItem} initial="hidden" animate="show">
-                {dash.continueLearning ? (
-                  <Card className="overflow-hidden border-0">
-                    <div className="relative p-5" style={{ background: `linear-gradient(135deg, ${dash.continueLearning.subjectColor}18, ${dash.continueLearning.subjectColor}06)` }}>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                        <div className="h-14 w-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${dash.continueLearning.subjectColor}22` }}>
-                          <Icon name={dash.continueLearning.subjectIcon} size={28} style={{ color: dash.continueLearning.subjectColor }} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 text-label-sm text-on-surface-variant mb-1">
-                            <span>{dash.continueLearning.subjectName}</span>
-                            <span className="text-outline">&middot;</span>
-                            <span>{dash.continueLearning.textbookTitle}</span>
-                          </div>
-                          <h2 className="text-title-md font-semibold mb-0.5">{dash.continueLearning.chapterTitle}</h2>
-                          <p className="text-body-md text-on-surface-variant">{dash.continueLearning.lessonTitle}</p>
-                          <div className="flex items-center gap-3 mt-3">
-                            <div className="flex-1 max-w-xs"><Progress value={dash.continueLearning.progress} size="sm" indicatorClassName="bg-primary" /></div>
-                            <span className="text-label-sm tabular-nums text-on-surface-variant">{dash.continueLearning.progress}%</span>
-                          </div>
-                          <p className="text-label-sm text-on-surface-variant/70 mt-1">
-                            <Icon name="schedule" size={14} className="inline align-text-bottom mr-0.5" />
-                            {dash.continueLearning.videoProgress > 0 ? `${Math.round(dash.continueLearning.progress)}% complete` : `${dash.continueLearning.duration} min`}
-                          </p>
-                        </div>
-                        <Button asChild className="flex-shrink-0 w-full sm:w-auto">
-                          <Link to={`${ROUTES.STUDENT_CONCEPT(dash.continueLearning.conceptId)}?textbookId=${dash.continueLearning.textbookId}`}>
-                            <Icon name="play_arrow" size={16} className="mr-1.5" />Continue Learning
-                          </Link>
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ) : (
-                  <Card variant="filled" className="text-center py-10">
-                    <CardContent className="flex flex-col items-center gap-3">
-                      <div className="h-16 w-16 rounded-full bg-primary-container flex items-center justify-center">
-                        <Icon name="auto_awesome" size={32} className="text-on-primary-container" />
-                      </div>
-                      <p className="text-title-md">Start Your Learning Journey</p>
-                      <p className="text-body-md text-on-surface-variant max-w-sm">No textbooks available yet.</p>
-                      <Button asChild><Link to="/student/subjects"><Icon name="menu_book" size={16} className="mr-2" />Browse Subjects</Link></Button>
-                    </CardContent>
-                  </Card>
-                )}
               </motion.div>
 
               <motion.div variants={listItem} initial="hidden" animate="show">

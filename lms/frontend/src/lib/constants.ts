@@ -46,6 +46,9 @@ export const ROUTES = {
   TEACHER_ASSESSMENTS: '/teacher/assessments',
   TEACHER_EXAM_CREATE: '/teacher/exams/create',
   TEACHER_PROFILE_EDIT: '/teacher/profile/edit',
+  TEACHER_VIDEOS: '/teacher/videos',
+  TEACHER_ANALYTICS: '/teacher/analytics',
+  TEACHER_RESULTS_PUSH: '/teacher/release-grades',
 
   ADMIN_DASHBOARD: '/admin/dashboard',
   ADMIN_STUDENTS: '/admin/students',
