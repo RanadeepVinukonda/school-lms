@@ -44,4 +44,8 @@ export const collections = {
   assignmentSubmissionV2: () => getCollection('assignmentSubmissionV2'),
   examV2: () => getCollection('examV2'),
   examAttemptV2: () => getCollection('examAttemptV2'),
+  questionBank: () => getCollection('questionBank'),
+  questionPapers: () => getCollection('questionPapers'),
+  testTemplates: () => getCollection('testTemplates'),
+  testSchedule: () => getCollection('testSchedule'),
 };

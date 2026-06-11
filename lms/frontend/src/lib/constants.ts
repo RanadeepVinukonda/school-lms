@@ -49,6 +49,11 @@ export const ROUTES = {
   TEACHER_VIDEOS: '/teacher/videos',
   TEACHER_ANALYTICS: '/teacher/analytics',
   TEACHER_RESULTS_PUSH: '/teacher/release-grades',
+  TEACHER_QUESTION_BANK: '/teacher/question-bank',
+  TEACHER_QUESTION_PAPERS: '/teacher/question-papers',
+  TEACHER_TEST_TEMPLATES: '/teacher/test-templates',
+  TEACHER_TEST_SCHEDULE: '/teacher/test-schedule',
+  TEACHER_PYQ: '/teacher/pyq',
 
   ADMIN_DASHBOARD: '/admin/dashboard',
   ADMIN_STUDENTS: '/admin/students',

@@ -42,6 +42,11 @@ import TeacherProfileEditPage from '@/app/pages/teacher/TeacherProfileEditPage';
 import TeacherVideoLibraryPage from '@/app/pages/teacher/TeacherVideoLibraryPage';
 import TeacherAnalyticsPage from '@/app/pages/teacher/TeacherAnalyticsPage';
 import TeacherResultsPushPage from '@/app/pages/teacher/TeacherResultsPushPage';
+import TeacherQuestionBankPage from '@/app/pages/teacher/TeacherQuestionBankPage';
+import TeacherQuestionPapersPage from '@/app/pages/teacher/TeacherQuestionPapersPage';
+import TeacherTestTemplatesPage from '@/app/pages/teacher/TeacherTestTemplatesPage';
+import TeacherTestSchedulePage from '@/app/pages/teacher/TeacherTestSchedulePage';
+import TeacherPreviousYearQPage from '@/app/pages/teacher/TeacherPreviousYearQPage';
 
 import AdminDashboardPage from '@/app/pages/admin/AdminDashboardPage';
 import AdminStudentsPage from '@/app/pages/admin/AdminStudentsPage';
@@ -127,6 +132,11 @@ export const router = createBrowserRouter([
       { path: ROUTES.TEACHER_VIDEOS, element: <TeacherVideoLibraryPage /> },
       { path: ROUTES.TEACHER_ANALYTICS, element: <TeacherAnalyticsPage /> },
       { path: ROUTES.TEACHER_RESULTS_PUSH, element: <TeacherResultsPushPage /> },
+      { path: ROUTES.TEACHER_QUESTION_BANK, element: <TeacherQuestionBankPage /> },
+      { path: ROUTES.TEACHER_QUESTION_PAPERS, element: <TeacherQuestionPapersPage /> },
+      { path: ROUTES.TEACHER_TEST_TEMPLATES, element: <TeacherTestTemplatesPage /> },
+      { path: ROUTES.TEACHER_TEST_SCHEDULE, element: <TeacherTestSchedulePage /> },
+      { path: ROUTES.TEACHER_PYQ, element: <TeacherPreviousYearQPage /> },
     ],
   },
 

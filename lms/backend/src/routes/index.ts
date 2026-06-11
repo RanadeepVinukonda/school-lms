@@ -27,6 +27,10 @@ import examV2Routes from './exam-v2.routes';
 import teacherVideoRoutes from './teacher-video.routes';
 import analyticsV2Routes from './analytics-v2.routes';
 import resultsPushRoutes from './results-push.routes';
+import questionBankRoutes from './question-bank.routes';
+import questionPaperRoutes from './question-paper.routes';
+import testTemplateRoutes from './test-template.routes';
+import testScheduleRoutes from './test-schedule.routes';
 
 const router = Router();
 
@@ -58,6 +62,10 @@ router.use('/exams-v2', examV2Routes);
 router.use('/teacher-videos', teacherVideoRoutes);
 router.use('/analytics-v2', analyticsV2Routes);
 router.use('/results-push', resultsPushRoutes);
+router.use('/question-bank', questionBankRoutes);
+router.use('/question-papers', questionPaperRoutes);
+router.use('/test-templates', testTemplateRoutes);
+router.use('/test-schedule', testScheduleRoutes);
 
 router.get('/health', (_req, res) => {
   res.json({
