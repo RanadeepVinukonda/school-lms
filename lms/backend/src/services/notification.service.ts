@@ -48,17 +48,15 @@ export async function getNotificationsByUser(userId: string, query: {
     baseQuery = baseQuery.where('read', '==', false);
   }
 
-  baseQuery = baseQuery.orderBy('createdAt', 'desc');
-
-  const countSnapshot = await baseQuery.count().get();
-  const total = countSnapshot.data().count;
-
   const offset = (page - 1) * limit;
-  const snapshot = await baseQuery.offset(offset).limit(limit).get();
+  const snapshot = await baseQuery.get();
 
   const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const sorted = items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const total = sorted.length;
+  const paged = sorted.slice(offset, offset + limit);
 
-  return { items, total, page, limit };
+  return { items: paged, total, page, limit };
 }
 
 /** Mark a single notification as read. Verifies ownership. */

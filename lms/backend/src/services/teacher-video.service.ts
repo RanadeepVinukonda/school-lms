@@ -53,8 +53,7 @@ export async function listVideos(teacherId: string, query?: {
   tag?: string;
 }) {
   let baseQuery: FirebaseFirestore.Query = collections.teacherVideos()
-    .where('teacherId', '==', teacherId)
-    .orderBy('createdAt', 'desc');
+    .where('teacherId', '==', teacherId);
 
   if (query?.textbookId) {
     baseQuery = baseQuery.where('textbookId', '==', query.textbookId);
@@ -70,7 +69,8 @@ export async function listVideos(teacherId: string, query?: {
   }
 
   const snapshot = await baseQuery.get();
-  return snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  return items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export async function removeVideo(videoId: string, teacherId: string) {

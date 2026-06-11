@@ -89,11 +89,10 @@ export async function listSubjects(query: {
   if (query.department) baseQuery = baseQuery.where('department', '==', query.department);
   if (query.classId) baseQuery = baseQuery.where('classId', '==', query.classId);
 
-  baseQuery = baseQuery.orderBy('createdAt', 'desc');
-
   const snapshot = await baseQuery.get();
 
   let items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  items = items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   if (query.search) {
     const search = query.search.toLowerCase();
@@ -115,9 +114,9 @@ export async function listSubjects(query: {
 export async function listSubjectsByClass(classId: string) {
   const snap = await collections.subjects()
     .where('classId', '==', classId)
-    .orderBy('createdAt', 'desc')
     .get();
-  return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  const items = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  return items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 /** Fetch a single subject by id. Throws NotFoundError if missing. */

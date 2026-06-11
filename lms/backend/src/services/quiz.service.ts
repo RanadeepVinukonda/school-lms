@@ -8,22 +8,21 @@ import { parsePagination } from '../utils/pagination';
 /** List all quizzes with optional courseId filter, paginated by createdAt desc. */
 export async function listAllQuizzes(query: { page?: string; limit?: string; courseId?: string }) {
   const { page, limit } = parsePagination(query);
-  let baseQuery: FirebaseFirestore.Query = collections.quizzes()
-    .orderBy('createdAt', 'desc');
+  let baseQuery: FirebaseFirestore.Query = collections.quizzes();
 
   if (query.courseId) {
     baseQuery = baseQuery.where('courseId', '==', query.courseId);
   }
 
-  const countSnapshot = await baseQuery.count().get();
-  const total = countSnapshot.data().count;
-
   const offset = (page - 1) * limit;
-  const snapshot = await baseQuery.offset(offset).limit(limit).get();
+  const snapshot = await baseQuery.get();
 
   const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const sorted = items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const total = sorted.length;
+  const paged = sorted.slice(offset, offset + limit);
 
-  return { items, total, page, limit };
+  return { items: paged, total, page, limit };
 }
 
 /** Create a new quiz with calculated totalPoints. */
@@ -270,15 +269,15 @@ export async function getQuizResults(quizId: string, studentId: string) {
   const snapshot = await collections.quizAttempts()
     .where('quizId', '==', quizId)
     .where('studentId', '==', studentId)
-    .orderBy('startedAt', 'desc')
     .get();
 
-  const items = snapshot.docs.map((doc) => {
-    const data = doc.data();
+  const attempts = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const sorted = attempts.sort((a: any, b: any) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
 
+  return sorted.map((data: any) => {
     if (resultsGated && data.status === 'completed') {
       return {
-        id: doc.id,
+        id: data.id,
         quizId: data.quizId,
         studentId: data.studentId,
         score: data.score,
@@ -295,9 +294,6 @@ export async function getQuizResults(quizId: string, studentId: string) {
         })) ?? [],
       };
     }
-
-    return { ...data, id: doc.id };
+    return data;
   });
-
-  return items;
 }

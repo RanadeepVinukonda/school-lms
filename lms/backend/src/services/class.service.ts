@@ -84,11 +84,10 @@ export async function listClasses(query: {
   if (query.status) baseQuery = baseQuery.where('status', '==', query.status);
   if (query.academicYear) baseQuery = baseQuery.where('academicYear', '==', query.academicYear);
 
-  baseQuery = baseQuery.orderBy('createdAt', 'desc');
-
   const snapshot = await baseQuery.get();
 
   let items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  items = items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   if (query.teacherId) {
     items = items.filter((item: { id?: string; teacherIds?: string[] }) =>

@@ -105,14 +105,13 @@ export async function listCourses(query: {
   if (query.classId) baseQuery = baseQuery.where('classId', '==', query.classId);
   if (query.teacherId) baseQuery = baseQuery.where('teacherId', '==', query.teacherId);
 
-  baseQuery = baseQuery.orderBy('createdAt', 'desc');
-
   const snapshot = await baseQuery.get();
 
   let items = snapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
   }));
+  items = items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   if (query.search) {
     const search = query.search.toLowerCase();

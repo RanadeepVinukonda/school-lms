@@ -404,15 +404,16 @@ export async function getExamResults(examId: string, studentId: string) {
   const snapshot = await collections.examAttemptV2()
     .where('examId', '==', examId)
     .where('studentId', '==', studentId)
-    .orderBy('startedAt', 'desc')
+
     .get();
 
-  const items = snapshot.docs.map((doc) => {
-    const data = doc.data();
+  const attempts = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const sorted = attempts.sort((a: any, b: any) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
 
+  return sorted.map((data: any) => {
     if (resultsGated && data.status === 'completed') {
       return {
-        id: doc.id,
+        id: data.id,
         examId: data.examId,
         studentId: data.studentId,
         score: data.score,
@@ -431,11 +432,8 @@ export async function getExamResults(examId: string, studentId: string) {
         })) ?? [],
       };
     }
-
-    return { ...data, id: doc.id };
+    return data;
   });
-
-  return items;
 }
 
 export async function getExamById(examId: string) {

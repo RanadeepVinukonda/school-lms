@@ -265,7 +265,7 @@ export async function getResults(assignmentId: string, studentId: string) {
   const snapshot = await collections.assignmentSubmissionV2()
     .where('assignmentId', '==', assignmentId)
     .where('studentId', '==', studentId)
-    .orderBy('startedAt', 'desc')
+
     .get();
 
   const items = snapshot.docs.map((doc) => {

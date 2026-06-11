@@ -119,18 +119,14 @@ export async function listAllAssignments(query: { page?: string; limit?: string;
 /** List assignments for a specific course, paginated. */
 export async function listAssignmentsByCourse(courseId: string, query: { page?: string; limit?: string }) {
   const { page, limit } = parsePagination(query);
-  let baseQuery: FirebaseFirestore.Query = collections.assignments()
-    .where('courseId', '==', courseId)
-    .orderBy('createdAt', 'desc');
-
-  const countSnapshot = await baseQuery.count().get();
-  const total = countSnapshot.data().count;
-
+  // Fetch all assignments for the given course
+  const snapshot = await collections.assignments().where('courseId', '==', courseId).get();
+  const all = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  // Sort by createdAt descending
+  const sorted = all.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const total = sorted.length;
   const offset = (page - 1) * limit;
-  const snapshot = await baseQuery.offset(offset).limit(limit).get();
-
-  const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-
+  const items = sorted.slice(offset, offset + limit);
   return { items, total, page, limit };
 }
 
@@ -243,22 +239,15 @@ export async function listSubmissions(assignmentId: string, query: {
   status?: string;
 }) {
   const { page, limit } = parsePagination(query);
-  let baseQuery: FirebaseFirestore.Query = collections.submissions()
-    .where('assignmentId', '==', assignmentId);
-
+  let queryRef: FirebaseFirestore.Query = collections.submissions().where('assignmentId', '==', assignmentId);
   if (query.status) {
-    baseQuery = baseQuery.where('status', '==', query.status);
+    queryRef = queryRef.where('status', '==', query.status);
   }
-
-  baseQuery = baseQuery.orderBy('submittedAt', 'desc');
-
-  const countSnapshot = await baseQuery.count().get();
-  const total = countSnapshot.data().count;
-
+  const snapshot = await queryRef.get();
+  const all = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const sorted = all.sort((a: any, b: any) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+  const total = sorted.length;
   const offset = (page - 1) * limit;
-  const snapshot = await baseQuery.offset(offset).limit(limit).get();
-
-  const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-
+  const items = sorted.slice(offset, offset + limit);
   return { items, total, page, limit };
 }

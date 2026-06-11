@@ -24,8 +24,6 @@ export async function listUsers(query: {
     baseQuery = baseQuery.where('isActive', '==', query.status === 'active');
   }
 
-  baseQuery = baseQuery.orderBy('createdAt', 'desc');
-
   const snapshot = await baseQuery.get();
 
   let items = snapshot.docs.map((doc) => {
@@ -33,6 +31,7 @@ export async function listUsers(query: {
     const { password, ...safeData } = data;
     return { id: doc.id, ...safeData };
   });
+  items = items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   if (query.search) {
     const search = query.search.toLowerCase();

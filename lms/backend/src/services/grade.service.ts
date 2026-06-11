@@ -14,9 +14,9 @@ export async function getStudentGrades(studentId: string, academicYear?: string)
     query = query.where('academicYear', '==', academicYear);
   }
 
-  const snapshot = await query.orderBy('createdAt', 'desc').get();
-
-  return snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const snapshot = await query.get();
+  const grades = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  return grades.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 /** Query the gradebook with filters (classId, courseId, subjectId, term, academicYear), paginated. */
@@ -38,17 +38,15 @@ export async function getGradebook(query: {
   if (query.term) baseQuery = baseQuery.where('term', '==', query.term);
   if (query.academicYear) baseQuery = baseQuery.where('academicYear', '==', query.academicYear);
 
-  baseQuery = baseQuery.orderBy('createdAt', 'desc');
-
-  const countSnapshot = await baseQuery.count().get();
-  const total = countSnapshot.data().count;
-
   const offset = (page - 1) * limit;
-  const snapshot = await baseQuery.offset(offset).limit(limit).get();
+  const snapshot = await baseQuery.get();
 
   const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const sorted = items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const total = sorted.length;
+  const paged = sorted.slice(offset, offset + limit);
 
-  return { items, total, page, limit };
+  return { items: paged, total, page, limit };
 }
 
 /** Update a single grade record, calculate letter grade, and notify the student. */
