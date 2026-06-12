@@ -50,3 +50,30 @@ export async function listForTeacher(req: Request, res: Response) {
   const result = await examV2Service.listExamsForTeacher(req.user!.uid);
   sendSuccess(res, result);
 }
+
+export async function logProctoringEvent(req: Request, res: Response) {
+  let eventData = req.body;
+  if (typeof eventData === 'string') {
+    try {
+      eventData = JSON.parse(eventData);
+    } catch {
+      // ignore
+    }
+  }
+  const result = await examV2Service.logProctoringEvent(
+    req.params.attemptId,
+    req.user!.uid,
+    eventData
+  );
+  sendSuccess(res, result, 'Proctoring event logged');
+}
+
+export async function getStudentAttempt(req: Request, res: Response) {
+  const result = await examV2Service.getStudentAttempt(req.params.examId, req.params.studentId);
+  sendSuccess(res, result);
+}
+
+export async function getProctoringLogs(req: Request, res: Response) {
+  const result = await examV2Service.getProctoringLogs(req.params.attemptId);
+  sendSuccess(res, result);
+}

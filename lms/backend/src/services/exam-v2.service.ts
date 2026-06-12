@@ -44,8 +44,8 @@ export async function createExam(data: {
 
   let totalPoints = 0;
   for (const doc of conceptsSnapshot.docs) {
-    const conceptData = doc.data();
-    const questionBank = (conceptData.questionBank || []) as Array<{ type: string; points: number }>;
+    const questionsSnapshot = await doc.ref.collection('questions').get();
+    const questionBank = questionsSnapshot.docs.map(qDoc => qDoc.data()) as Array<{ type: string; points: number }>;
 
     const filtered = questionBank.filter((q) => data.selectedModels.includes(q.type));
     const selected = filtered.slice(0, Math.min(data.questionCountPerConcept, filtered.length));
@@ -168,8 +168,8 @@ export async function startExamAttempt(examId: string, studentId: string, select
   }> = [];
 
   for (const doc of conceptsSnapshot.docs) {
-    const conceptData = doc.data();
-    const questionBank = (conceptData.questionBank || []) as Array<{
+    const questionsSnapshot = await doc.ref.collection('questions').get();
+    const questionBank = questionsSnapshot.docs.map(qDoc => qDoc.data()) as Array<{
       id: string;
       type: string;
       difficulty?: Difficulty;
@@ -295,8 +295,8 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
   }> = [];
 
   for (const doc of conceptsSnapshot.docs) {
-    const conceptData = doc.data();
-    const questionBank = (conceptData.questionBank || []) as Array<{
+    const questionsSnapshot = await doc.ref.collection('questions').get();
+    const questionBank = questionsSnapshot.docs.map(qDoc => qDoc.data()) as Array<{
       id: string;
       type: string;
       difficulty?: Difficulty;
@@ -463,4 +463,49 @@ export async function listExamsForTeacher(teacherId: string): Promise<any[]> {
 
   const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
   return items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+export async function logProctoringEvent(attemptId: string, studentId: string, eventData: { event: string; timestamp?: string }) {
+  const attemptRef = collections.examAttemptV2().doc(attemptId);
+  const attemptDoc = await attemptRef.get();
+  if (!attemptDoc.exists) {
+    throw new NotFoundError('Attempt not found');
+  }
+  const attempt = attemptDoc.data()!;
+  if (attempt.studentId !== studentId) {
+    throw new ForbiddenError('Not your attempt');
+  }
+
+  const logId = uuidv4();
+  const timestamp = eventData.timestamp || new Date().toISOString();
+  const logRef = attemptRef.collection('proctoringLogs').doc(logId);
+  const payload = {
+    id: logId,
+    event: eventData.event,
+    timestamp,
+  };
+  await logRef.set(payload);
+  return payload;
+}
+
+export async function getStudentAttempt(examId: string, studentId: string) {
+  const snapshot = await collections.examAttemptV2()
+    .where('examId', '==', examId)
+    .where('studentId', '==', studentId)
+    .limit(1)
+    .get();
+
+  if (snapshot.empty) {
+    return null;
+  }
+  return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+}
+
+export async function getProctoringLogs(attemptId: string) {
+  const attemptRef = collections.examAttemptV2().doc(attemptId);
+  const logsSnapshot = await attemptRef.collection('proctoringLogs')
+    .orderBy('timestamp', 'asc')
+    .get();
+
+  return logsSnapshot.docs.map((doc) => doc.data());
 }

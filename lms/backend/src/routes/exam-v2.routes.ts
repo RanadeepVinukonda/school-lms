@@ -10,6 +10,9 @@ router.post('/', authenticate, requireRole('teacher', 'admin'), asyncHandler(exa
 router.post('/:examId/release', authenticate, requireRole('teacher', 'admin'), asyncHandler(examV2Controller.releaseExam));
 router.post('/:examId/start', authenticate, requireRole('student'), asyncHandler(examV2Controller.startAttempt));
 router.post('/attempts/:attemptId/submit', authenticate, asyncHandler(examV2Controller.submitAttempt));
+router.post('/attempts/:attemptId/logs', authenticate, asyncHandler(examV2Controller.logProctoringEvent));
+router.get('/exams/:examId/students/:studentId/attempt', authenticate, asyncHandler(examV2Controller.getStudentAttempt));
+router.get('/attempts/:attemptId/logs', authenticate, asyncHandler(examV2Controller.getProctoringLogs));
 router.put('/:examId/grades', authenticate, requireRole('teacher', 'admin'), asyncHandler(examV2Controller.releaseGrades));
 router.get('/:examId/results', authenticate, asyncHandler(examV2Controller.getResults));
 router.get('/class/:classId', authenticate, asyncHandler(examV2Controller.listForClass));

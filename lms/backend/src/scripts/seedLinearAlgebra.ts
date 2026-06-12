@@ -1641,10 +1641,22 @@ async function main() {
           estimatedMinutes: cpData.estimatedMinutes,
           order: coi,
           videos,
-          questionBank: questions,
+          questionBank: [],
           assignments,
           createdAt: now,
         });
+
+      const questionsColl = db
+        .collection('textbooks')
+        .doc(textbookId)
+        .collection('chapters')
+        .doc(chapterId)
+        .collection('concepts')
+        .doc(conceptId)
+        .collection('questions');
+      for (const q of questions) {
+        await questionsColl.doc(q.id).set(q);
+      }
       totalConcepts++;
       console.log(`  Concept ${ci+1}.${coi+1}: ${cpData.title} (${questions.length} questions, ${assignments.length} assignments, ${videos.length} videos)`);
     }

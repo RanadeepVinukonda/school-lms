@@ -616,10 +616,18 @@ async function main() {
             learningObjectives: c.learningObjectives,
             keywords: c.keywords, difficulty: c.difficulty,
             prerequisites: [], estimatedMinutes: c.estimatedMinutes,
-            order: coi, videos, questionBank, assignments: [],
+            order: coi, videos, questionBank: [], assignments: [],
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           });
+
+        const questionsColl = db.collection('textbooks').doc(tbId)
+          .collection('chapters').doc(chId)
+          .collection('concepts').doc(conceptId)
+          .collection('questions');
+        for (const q of questionBank) {
+          await questionsColl.doc(q.id).set(q);
+        }
       }
 
       // Create chapter doc

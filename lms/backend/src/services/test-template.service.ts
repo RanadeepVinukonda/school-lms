@@ -137,9 +137,9 @@ export async function compilePaper(data: {
     .doc(conceptId)
     .get();
   if (!conceptDoc.exists) throw new NotFoundError('Concept not found');
-  const conceptData = conceptDoc.data()!;
 
-  const questionBank = Array.isArray(conceptData.questionBank) ? conceptData.questionBank : [];
+  const questionsSnapshot = await conceptDoc.ref.collection('questions').get();
+  const questionBank = questionsSnapshot.docs.map(qDoc => qDoc.data());
 
   // Filter allowed formats — map selectedModels from selectionConfig to question types
   const selectedModels: string[] = template.selectionConfig?.selectedModels || [];

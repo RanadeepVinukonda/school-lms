@@ -45,10 +45,8 @@ export async function createQuiz(data: {
     throw new NotFoundError('Concept not found');
   }
 
-  const conceptData = conceptDoc.data()!;
-  // Ensure questionBank is an array; Firestore may store it as undefined or an object.
-  const rawBank = conceptData.questionBank;
-  const questionBank = Array.isArray(rawBank) ? (rawBank as Array<{ points: number }>) : [];
+  const questionsSnap = await conceptRef.collection('questions').get();
+  const questionBank = questionsSnap.docs.map(doc => doc.data() as { points: number });
   const totalPoints = questionBank.reduce((sum: number, q: { points: number }) => sum + (q.points || 0), 0);
 
   const quizId = uuidv4();
@@ -149,10 +147,8 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
     throw new NotFoundError('Concept not found');
   }
 
-  const conceptData = conceptDoc.data()!;
-  // Ensure questionBank is an array; fallback to empty array if missing or malformed.
-  const rawBank = conceptData.questionBank;
-  const questionBank = Array.isArray(rawBank) ? (rawBank as Array<{
+  const questionsSnap = await conceptRef.collection('questions').get();
+  const questionBank = questionsSnap.docs.map(doc => doc.data() as {
     id: string;
     type: string;
     difficulty?: Difficulty;
@@ -161,7 +157,7 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
     correctAnswer: string;
     explanation?: string;
     points: number;
-  }>) : [];
+  });
 
   let available = questionBank.filter((q) => selectedModels.includes(q.type));
 
@@ -261,10 +257,8 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
 
   const conceptDoc = await conceptRef.get();
   if (!conceptDoc.exists) throw new NotFoundError('Concept not found');
-  const conceptData = conceptDoc.data()!;
-  // Ensure questionBank is an array; fallback to empty array.
-  const rawBank = conceptData.questionBank;
-  const questionBank = Array.isArray(rawBank) ? (rawBank as Array<{
+  const questionsSnap = await conceptRef.collection('questions').get();
+  const questionBank = questionsSnap.docs.map(doc => doc.data() as {
     id: string;
     type: string;
     difficulty?: Difficulty;
@@ -273,7 +267,7 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     correctAnswer: string;
     explanation?: string;
     points: number;
-  }>) : [];
+  });
 
   let score = 0;
   const gradedAnswers = data.answers.map((answer) => {

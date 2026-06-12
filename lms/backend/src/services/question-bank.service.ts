@@ -158,8 +158,8 @@ export async function importFromConcept(textbookId: string, chapterId: string, c
   const conceptSnap = await conceptRef.get();
   if (!conceptSnap.exists) return { imported: 0 };
 
-  const concept = conceptSnap.data() as any;
-  const bank = concept.questionBank || [];
+  const questionsSnapshot = await conceptRef.collection('questions').get();
+  const bank = questionsSnapshot.docs.map(qDoc => qDoc.data() as any);
   let imported = 0;
 
   for (const q of bank) {

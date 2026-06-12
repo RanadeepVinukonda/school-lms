@@ -98,13 +98,21 @@ export async function saveChapters(textbookId: string, chapters: Chapter[]): Pro
 
     const conceptsCollectionRef = collection(db, TEXTBOOKS_COLLECTION, textbookId, CHAPTERS_COLLECTION, chapter.id, CONCEPTS_COLLECTION);
     for (const concept of concepts) {
+      const { questionBank, ...conceptData } = concept;
       const conceptRef = doc(conceptsCollectionRef, concept.id);
       await setDoc(conceptRef, {
-        ...concept,
+        ...conceptData,
         textbookId,
         chapterId: chapter.id,
         createdAt: Timestamp.now().toDate().toISOString(),
       });
+
+      if (Array.isArray(questionBank)) {
+        const questionsCollectionRef = collection(conceptRef, 'questions');
+        for (const q of questionBank) {
+          await setDoc(doc(questionsCollectionRef, q.id), q);
+        }
+      }
     }
   }
 
@@ -201,7 +209,15 @@ export async function getConceptsForChapter(textbookId: string, chapterId: strin
     orderBy('order'),
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Concept));
+  const concepts = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Concept));
+
+  for (const concept of concepts) {
+    const qSnap = await getDocs(
+      collection(db, TEXTBOOKS_COLLECTION, textbookId, CHAPTERS_COLLECTION, chapterId, CONCEPTS_COLLECTION, concept.id, 'questions')
+    );
+    concept.questionBank = qSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as GeneratedQuestion));
+  }
+  return concepts;
 }
 
 /** Set or update concept release status (which content is pushed to students). */

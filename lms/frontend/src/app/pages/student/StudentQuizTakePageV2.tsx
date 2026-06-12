@@ -143,6 +143,7 @@ export default function StudentQuizTakePageV2() {
   const [attempt, setAttempt] = useState<V2AttemptStarted | null>(null);
   const [result, setResult] = useState<V2SubmitResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(true);
 
   // Status tracking for Normal Exam Console
   const [questionStatuses, setQuestionStatuses] = useState<Record<string, 'unvisited' | 'visited' | 'attempted' | 'review'>>({});
@@ -393,13 +394,79 @@ export default function StudentQuizTakePageV2() {
     }
   };
 
+  const logProctoring = useCallback(async (event: string) => {
+    if (!attempt) return;
+    try {
+      const payload = {
+        event,
+        timestamp: new Date().toISOString(),
+      };
+      const url = `${api.defaults.baseURL || ''}${basePath}/attempts/${attempt.id}/logs`;
+      const token = useAuthStore.getState().token;
+      
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+        keepalive: true,
+      }).catch((err) => console.error('Proctoring log fetch failed:', err));
+    } catch (err) {
+      console.error('Failed to log proctoring event:', err);
+    }
+  }, [attempt, basePath]);
+
+  useEffect(() => {
+    if (phase !== 'quiz' || assessmentType !== 'exam' || !attempt) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        logProctoring('tab_focus_lost');
+      } else {
+        logProctoring('tab_focus_gained');
+      }
+    };
+
+    const handleFullscreenChange = () => {
+      const isFull = !!document.fullscreenElement;
+      setIsFullscreen(isFull);
+      if (!isFull) {
+        logProctoring('fullscreen_exit');
+        toast.warning('Warning: Exited fullscreen mode! This violation has been logged.', {
+          duration: 5000,
+        });
+      } else {
+        logProctoring('fullscreen_enter');
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, [phase, assessmentType, attempt, logProctoring]);
+
+  const requestFullscreen = () => {
+    document.documentElement.requestFullscreen().catch((err) => {
+      console.warn('Could not enter fullscreen:', err);
+    });
+  };
+
   const handleStart = useCallback(() => {
     if (selectedModels.length === 0) {
       toast.error('Please select at least one question type');
       return;
     }
+    if (assessmentType === 'exam') {
+      requestFullscreen();
+    }
     startMutation.mutate(selectedModels);
-  }, [selectedModels, startMutation]);
+  }, [selectedModels, startMutation, assessmentType]);
 
   const toggleModel = useCallback((model: QuestionModel) => {
     setSelectedModels((prev) =>
@@ -995,6 +1062,31 @@ export default function StudentQuizTakePageV2() {
               </CardContent>
             </Card>
           </motion.div>
+        </div>
+      )}
+
+      {/* FULLSCREEN BLOCKING MODAL FOR EXAMS */}
+      {assessmentType === 'exam' && !isFullscreen && phase === 'quiz' && (
+        <div className="fixed inset-0 bg-background/95 backdrop-blur-md z-[100] flex flex-col items-center justify-center p-4">
+          <Card className="w-full max-w-md border-destructive/50 shadow-2xl">
+            <CardHeader className="text-center pb-2">
+              <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-2 text-destructive">
+                <AlertTriangle className="h-6 w-6" />
+              </div>
+              <CardTitle className="text-xl font-bold">Fullscreen Required</CardTitle>
+              <CardDescription className="text-sm">
+                Leaving fullscreen mode violates exam integrity policies. This exit has been logged.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4 pt-4 text-center">
+              <p className="text-xs text-muted-foreground">
+                To continue with your exam, you must return to fullscreen mode immediately.
+              </p>
+              <Button onClick={requestFullscreen} size="lg" className="w-full font-semibold">
+                Return to Fullscreen
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       )}
     </>

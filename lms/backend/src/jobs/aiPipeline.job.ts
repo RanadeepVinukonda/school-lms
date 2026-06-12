@@ -283,8 +283,13 @@ export async function runAIPipeline(textbookId: string): Promise<void> {
           order: typeof concept.order === 'number' ? concept.order : totalConcepts + 1,
           notes: String(concept.notes ?? ''),
           videoLinks,
-          questionBank: questions,
+          questionBank: [],
         });
+
+        const questionsColl = conceptRef.collection('questions');
+        for (const q of questions) {
+          await questionsColl.doc(q.id).set(q);
+        }
         totalConcepts++;
       }
     }

@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import api from '@/services/api';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -67,6 +68,33 @@ export default function TeacherExamCorrectionPage() {
   const [feedback, setFeedback] = useState<Record<string, string>>({});
   const [overallFb, setOverallFb] = useState('');
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
+  const [proctoringLogs, setProctoringLogs] = useState<any[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+
+  useEffect(() => {
+    if (!id || !studentId) return;
+    setLoadingLogs(true);
+    setProctoringLogs([]);
+    api.get(`/exams-v2/exams/${id}/students/${studentId}/attempt`)
+      .then((res) => {
+        const attempt = res.data.data;
+        if (attempt?.id) {
+          return api.get(`/exams-v2/attempts/${attempt.id}/logs`);
+        }
+        return null;
+      })
+      .then((res) => {
+        if (res?.data?.data) {
+          setProctoringLogs(res.data.data);
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not load proctoring logs:', err);
+      })
+      .finally(() => {
+        setLoadingLogs(false);
+      });
+  }, [id, studentId]);
 
   const { data: examData, isLoading: examLoading } = useQuery({
     queryKey: ['teacher-exam-correction', id],
@@ -291,6 +319,49 @@ export default function TeacherExamCorrectionPage() {
               Next <Icon name="chevron_right" size={15} />
             </Button>
           </div>
+        </div>
+
+        {/* Proctoring Violations Card */}
+        <div className="border-t border-border pt-4 mt-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h5 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Proctoring Log</h5>
+            {proctoringLogs.length > 0 && (
+              <Badge variant="destructive" className="text-[10px] gap-1 px-1.5 py-0.5">
+                <Icon name="gavel" size={11} />
+                {proctoringLogs.filter(l => ['tab_focus_lost', 'fullscreen_exit'].includes(l.event)).length} Violations
+              </Badge>
+            )}
+          </div>
+          
+          {loadingLogs ? (
+            <p className="text-xs text-muted-foreground animate-pulse">Loading proctoring logs...</p>
+          ) : proctoringLogs.length === 0 ? (
+            <div className="rounded-lg bg-success-container/10 border border-success/30 p-2.5 flex items-center gap-2 text-success">
+              <Icon name="check_circle" size={14} />
+              <span className="text-xs font-medium">Clean attempt. No violations.</span>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-48 overflow-y-auto pr-1 border rounded-lg bg-muted/20 p-2.5">
+              {proctoringLogs.map((log, li) => {
+                const isViolation = ['tab_focus_lost', 'fullscreen_exit'].includes(log.event);
+                const eventLabel =
+                  log.event === 'tab_focus_lost' ? 'Left Exam Window' :
+                  log.event === 'tab_focus_gained' ? 'Returned to Exam' :
+                  log.event === 'fullscreen_exit' ? 'Exited Fullscreen' :
+                  log.event === 'fullscreen_enter' ? 'Entered Fullscreen' : log.event;
+                  
+                return (
+                  <div key={log.id || li} className="flex items-start gap-2 text-[11px] leading-normal">
+                    <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${isViolation ? 'bg-destructive' : 'bg-success'}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-semibold ${isViolation ? 'text-destructive font-bold' : 'text-foreground/80 font-medium'}`}>{eventLabel}</p>
+                      <p className="text-[9px] text-muted-foreground">{new Date(log.timestamp).toLocaleTimeString()}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     );

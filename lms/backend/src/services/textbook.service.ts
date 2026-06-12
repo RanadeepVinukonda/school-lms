@@ -77,8 +77,13 @@ async function populateMockContent(textbookId: string, textbookTitle: string): P
         order: coIdx + 1,
         notes: `Study notes covering key rules and principles of ${conceptTitle}.`,
         videoLinks: [`https://www.youtube.com/results?search_query=${encodeURIComponent(conceptTitle)}`],
-        questionBank,
+        questionBank: [],
       });
+
+      const questionsColl = chapRef.collection('concepts').doc(conceptId).collection('questions');
+      for (const q of questionBank) {
+        await questionsColl.doc(q.id).set(q);
+      }
     }
   }
 
