@@ -141,8 +141,19 @@ export async function compilePaper(data: {
 
   const questionBank = Array.isArray(conceptData.questionBank) ? conceptData.questionBank : [];
 
-  // Filter allowed formats
-  const allowedFormats = template.config?.allowedFormats || ['mcq', 'true_false', 'fill_blank', 'matching', 'numerical', 'descriptive', 'passage'];
+  // Filter allowed formats — map selectedModels from selectionConfig to question types
+  const selectedModels: string[] = template.selectionConfig?.selectedModels || [];
+  const allowedFormats = selectedModels.length > 0
+    ? selectedModels.map((m: string) =>
+        m === 'multiple_choice' ? 'mcq' :
+        m === 'true_false' ? 'true_false' :
+        m === 'fill_blank' ? 'fill_blank' :
+        m === 'matching' ? 'matching' :
+        m === 'numerical' ? 'numerical' :
+        m === 'descriptive' ? 'descriptive' :
+        m === 'passage' ? 'passage' : m
+      )
+    : ['mcq', 'true_false', 'fill_blank', 'matching', 'numerical', 'descriptive', 'passage'];
   let filtered = questionBank.filter((q: any) => allowedFormats.includes(q.type));
 
   // Reformat dynamically if needed (e.g. if allowedFormats doesn't match and we need to adapt)
@@ -167,9 +178,9 @@ export async function compilePaper(data: {
   const mediumQ = adapted.filter((q: any) => q.difficulty === 'medium');
   const hardQ = adapted.filter((q: any) => q.difficulty === 'hard' || q.difficulty === 'hots');
 
-  const easyTarget = Math.round((difficultyDistribution.easy / 100) * targetCount);
-  const mediumTarget = Math.round((difficultyDistribution.medium / 100) * targetCount);
-  const hardTarget = targetCount - easyTarget - mediumTarget;
+  const easyTarget = difficultyDistribution.easy || 0;
+  const mediumTarget = difficultyDistribution.medium || 0;
+  const hardTarget = difficultyDistribution.hard || 0;
 
   const selectedQuestions: any[] = [];
   selectedQuestions.push(...easyQ.slice(0, easyTarget));
@@ -194,9 +205,9 @@ export async function compilePaper(data: {
   const paperData = {
     id: paperId,
     templateId: data.templateId,
-    conceptId: data.conceptId,
-    chapterId: data.chapterId,
-    textbookId: data.textbookId,
+    conceptId,
+    chapterId,
+    textbookId,
     questions: selectedQuestions,
     totalPoints: selectedQuestions.reduce((sum, q) => sum + (q.points || 0), 0),
     createdBy: data.userId,
@@ -205,7 +216,7 @@ export async function compilePaper(data: {
   };
 
   await collections.questionPapers().doc(paperId).set(paperData);
-  logger.info('Question paper compiled from template', { paperId, templateId: data.templateId });
+  logger.info('Question paper compiled from template', { paperId, templateId: data.templateId, questionCount: selectedQuestions.length });
 
   return paperData;
 }

@@ -35,7 +35,7 @@ export function errorHandler(
   res.status(500).json({
     success: false,
     error: {
-      message: 'Internal server error',
+      message: err.message || 'Internal server error',
       ...(env.NODE_ENV === 'development' && { stack: err.stack }),
     },
   });
