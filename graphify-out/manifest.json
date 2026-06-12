@@ -70,8 +70,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\controllers\\analytics-v2.controller.ts": {
-    "mtime": 1781237629.9048383,
-    "ast_hash": "16b2144259e812164f010d328467a6a9",
+    "mtime": 1781272563.7426865,
+    "ast_hash": "1eb701437e96e7dbeb86c938973ab0b8",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\controllers\\analytics.controller.ts": {
@@ -280,8 +280,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\routes\\analytics-v2.routes.ts": {
-    "mtime": 1781237638.037139,
-    "ast_hash": "efb6ff4fbe352da86ae00cdd9abee394",
+    "mtime": 1781272557.6916137,
+    "ast_hash": "6f72f018c0c01451aa491798d4787c1d",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\routes\\analytics.routes.ts": {
@@ -450,8 +450,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\analytics-v2.service.ts": {
-    "mtime": 1781237621.1883934,
-    "ast_hash": "f737a8f5ecc63833b66cf403e818888b",
+    "mtime": 1781272584.42597,
+    "ast_hash": "5d37c7d13758de09e67adc5bae02ec1a",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\analytics.service.ts": {
@@ -575,8 +575,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\user.service.ts": {
-    "mtime": 1781271002.7543125,
-    "ast_hash": "14045d963344d01b0b36adccd20d3273",
+    "mtime": 1781272056.3449109,
+    "ast_hash": "fb6e95b94d95726143b8cb0f5f3cb3a3",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\youtube.service.ts": {
@@ -740,13 +740,13 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\admin\\AdminClassesPage.tsx": {
-    "mtime": 1781270937.514722,
-    "ast_hash": "477ac600e6557bfa93ed90fc64ada025",
+    "mtime": 1781272160.157294,
+    "ast_hash": "c1ad6d1e915aef7a95d0862c9df1b505",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\admin\\AdminDashboardPage.tsx": {
-    "mtime": 1781270915.9845288,
-    "ast_hash": "3d014bdf78136d30fa3b0d9809bbe68e",
+    "mtime": 1781272939.888201,
+    "ast_hash": "e05c3abbdddd5c1ebbbc84117123104d",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\admin\\AdminProfileEditPage.tsx": {
@@ -815,8 +815,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\auth\\StudentLoginPage.tsx": {
-    "mtime": 1780926828.0562575,
-    "ast_hash": "99f35d8b9e78f3ae56a374a519a07ab2",
+    "mtime": 1781272076.8477607,
+    "ast_hash": "7f1d4894f70b7409176ce9885f364579",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\auth\\TeacherLoginPage.tsx": {
@@ -1375,8 +1375,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\services\\analyticsService.ts": {
-    "mtime": 1781197660.2364242,
-    "ast_hash": "a0a45ba5f8ef3de5819211d6c55fb33f",
+    "mtime": 1781272592.9094362,
+    "ast_hash": "fde4550195910a10e59e03efc5749654",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\services\\api.ts": {
@@ -1825,8 +1825,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\utils\\studentIdGenerator.ts": {
-    "mtime": 1781261768.1045096,
-    "ast_hash": "fa44421df85b601c5a6deeab9f3da162",
+    "mtime": 1781272041.22841,
+    "ast_hash": "769783e43658c0464de4db022303c14b",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\validators\\academic-year.validator.ts": {
@@ -1877,6 +1877,11 @@
   "C:\\Users\\USER\\Desktop\\school\\tasks.md": {
     "mtime": 1781265139.1791537,
     "ast_hash": "294bf967de8d0e45a89380bfc1bc5aaa",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\services\\teacherClassSubjectService.ts": {
+    "mtime": 1781272089.5636082,
+    "ast_hash": "7fef694e100f53766a8a19060d3a63ce",
     "semantic_hash": ""
   }
 }

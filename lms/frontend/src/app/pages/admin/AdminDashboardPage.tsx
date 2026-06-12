@@ -16,6 +16,7 @@ import { getAllUsers, getAllClasses, getAllGrades } from '@/services/dataService
 import { analyticsService } from '@/services/analyticsService';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase/config';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface ExamDoc {
   id: string;
@@ -34,9 +35,48 @@ interface AssignmentDoc {
 
 export default function AdminDashboardPage() {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'overview' | 'oversight' | 'monitor'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'oversight' | 'tests_monitor' | 'monitor'>('overview');
   const [oversightSearch, setOversightSearch] = useState('');
   const [oversightStatusFilter, setOversightStatusFilter] = useState('all');
+
+  const [testsSearch, setTestsSearch] = useState('');
+  const [testsTypeFilter, setTestsTypeFilter] = useState('all');
+  const [inspectTest, setInspectTest] = useState<any | null>(null);
+
+  // Conducted Tests Query
+  const { data: conductedTestsData = [], isLoading: isTestsLoading, isError: isTestsError, refetch: refetchTests } = useQuery({
+    queryKey: ['admin-conducted-tests'],
+    queryFn: () => analyticsService.getConductedTests(),
+    enabled: activeTab === 'tests_monitor',
+  });
+
+  // Inspect Test attempts Query
+  const { data: inspectDetails, isLoading: isInspectLoading } = useQuery({
+    queryKey: ['admin-test-details', inspectTest?.id, inspectTest?.type],
+    queryFn: () => {
+      if (!inspectTest) return null;
+      return analyticsService.getAssessmentAnalytics(inspectTest.id, inspectTest.type.toLowerCase() as 'quiz' | 'exam' | 'assignment');
+    },
+    enabled: !!inspectTest,
+  });
+
+  const filteredTests = useMemo(() => {
+    return conductedTestsData.filter((item: any) => {
+      const q = testsSearch.toLowerCase();
+      const matchesSearch =
+        item.title.toLowerCase().includes(q) ||
+        item.className.toLowerCase().includes(q) ||
+        item.subjectName.toLowerCase().includes(q) ||
+        item.teacherName.toLowerCase().includes(q) ||
+        (item.conceptName && item.conceptName.toLowerCase().includes(q));
+
+      const matchesType =
+        testsTypeFilter === 'all' ||
+        item.type.toLowerCase() === testsTypeFilter.toLowerCase();
+
+      return matchesSearch && matchesType;
+    });
+  }, [conductedTestsData, testsSearch, testsTypeFilter]);
 
   // Overview Query
   const { data: overviewData, isLoading: isOverviewLoading, isError: isOverviewError, refetch: refetchOverview } = useQuery({
@@ -156,9 +196,32 @@ export default function AdminDashboardPage() {
     { icon: 'calendar_month', label: 'Upcoming Exams', value: overviewData?.upcomingExamCount ?? 0, color: 'text-error', bg: 'bg-error-container' },
   ], [overviewData]);
 
-  const isTabLoading = activeTab === 'overview' ? isOverviewLoading : activeTab === 'monitor' ? (isTeachersLoading || isStudentsLoading) : isOversightLoading;
-  const isTabError = activeTab === 'overview' ? isOverviewError : activeTab === 'monitor' ? (isTeachersError || isStudentsError) : isOversightError;
-  const tabRefetch = activeTab === 'overview' ? refetchOverview : activeTab === 'monitor' ? () => { refetchOverview(); } : refetchOversight;
+  const isTabLoading =
+    activeTab === 'overview'
+      ? isOverviewLoading
+      : activeTab === 'oversight'
+      ? isOversightLoading
+      : activeTab === 'tests_monitor'
+      ? isTestsLoading
+      : (isTeachersLoading || isStudentsLoading);
+
+  const isTabError =
+    activeTab === 'overview'
+      ? isOverviewError
+      : activeTab === 'oversight'
+      ? isOversightError
+      : activeTab === 'tests_monitor'
+      ? isTestsError
+      : (isTeachersError || isStudentsError);
+
+  const tabRefetch =
+    activeTab === 'overview'
+      ? refetchOverview
+      : activeTab === 'oversight'
+      ? refetchOversight
+      : activeTab === 'tests_monitor'
+      ? refetchTests
+      : () => { refetchOverview(); };
 
   return (
     <>
@@ -198,6 +261,17 @@ export default function AdminDashboardPage() {
               )}
             </button>
             <button
+              onClick={() => setActiveTab('tests_monitor')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                activeTab === 'tests_monitor'
+                  ? 'bg-surface text-primary shadow-sm'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              <Icon name="analytics" size={16} />
+              Test Monitor
+            </button>
+            <button
               onClick={() => setActiveTab('monitor')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
                 activeTab === 'monitor'
@@ -212,7 +286,15 @@ export default function AdminDashboardPage() {
         </div>
 
         <DataFetchWrapper
-          data={activeTab === 'overview' ? overviewData : activeTab === 'monitor' ? {} : oversightData}
+          data={
+            activeTab === 'overview'
+              ? overviewData
+              : activeTab === 'oversight'
+              ? oversightData
+              : activeTab === 'tests_monitor'
+              ? conductedTestsData
+              : {}
+          }
           isLoading={isTabLoading}
           error={isTabError ? new Error('Failed to load dashboard data') : null}
           onRetry={() => tabRefetch()}
@@ -444,9 +526,112 @@ export default function AdminDashboardPage() {
                     )}
                   </motion.div>
                 </motion.div>
+              ) : activeTab === 'tests_monitor' ? (
+                /* CONDUCTED TESTS TAB */
+                <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
+                  {/* Search and Type Filter */}
+                  <motion.div variants={listItem} className="flex gap-3 items-center flex-wrap">
+                    <div className="relative flex-1 min-w-[200px]">
+                      <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
+                      <Input
+                        placeholder="Search conducted tests (title, class, subject, teacher, concept)..."
+                        className="pl-10"
+                        value={testsSearch}
+                        onChange={(e) => setTestsSearch(e.target.value)}
+                      />
+                    </div>
+                    <select
+                      className="h-10 px-3 rounded-lg border border-outline-variant bg-surface text-on-surface focus:outline-none focus:ring-2 focus:ring-primary w-48 text-sm"
+                      value={testsTypeFilter}
+                      onChange={(e) => setTestsTypeFilter(e.target.value)}
+                    >
+                      <option value="all">All Types</option>
+                      <option value="quiz">Quizzes</option>
+                      <option value="exam">Exams</option>
+                      <option value="assignment">Assignments</option>
+                    </select>
+                  </motion.div>
+
+                  {/* Tests Table */}
+                  <motion.div variants={listItem}>
+                    {filteredTests.length === 0 ? (
+                      <Card>
+                        <CardContent className="flex flex-col items-center gap-4 py-16 text-on-surface-variant">
+                          <Icon name="search_off" size={48} className="opacity-50" />
+                          <p className="font-medium">No conducted tests match your filters</p>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <div className="border border-outline-variant rounded-lg overflow-hidden bg-surface">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="border-b border-b-outline-variant bg-surface-variant/30 text-label-sm font-medium text-on-surface-variant uppercase tracking-wider">
+                              <th className="px-4 py-3">Test Details</th>
+                              <th className="px-4 py-3">Class & Subject</th>
+                              <th className="px-4 py-3">Teacher</th>
+                              <th className="px-4 py-3">Concept</th>
+                              <th className="px-4 py-3 text-center">Attempts</th>
+                              <th className="px-4 py-3 text-center">Avg. Score</th>
+                              <th className="px-4 py-3 text-right">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-outline-variant text-body-md">
+                            {filteredTests.map((test: any) => (
+                              <tr key={`${test.type}-${test.id}`} className="hover:bg-surface-variant/15 transition-colors">
+                                <td className="px-4 py-3">
+                                  <div className="font-semibold text-on-surface">{test.title}</div>
+                                  <div className="flex items-center gap-1.5 mt-0.5">
+                                    <Badge variant={test.type === 'Quiz' ? 'default' : test.type === 'Exam' ? 'destructive' : 'warning'} className="text-[10px] uppercase font-bold py-0 px-1.5 h-4">
+                                      {test.type}
+                                    </Badge>
+                                    <span className="text-[10px] text-on-surface-variant">
+                                      {new Date(test.createdAt).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="font-medium">{test.className}</div>
+                                  <div className="text-xs text-on-surface-variant">{test.subjectName}</div>
+                                </td>
+                                <td className="px-4 py-3 text-on-surface-variant">
+                                  {test.teacherName}
+                                </td>
+                                <td className="px-4 py-3 text-on-surface-variant">
+                                  {test.conceptName}
+                                </td>
+                                <td className="px-4 py-3 text-center font-semibold font-mono">
+                                  {test.attemptCount}
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                  {test.attemptCount > 0 ? (
+                                    <span className={`font-bold font-mono ${test.averageScore < 70 ? 'text-error' : 'text-success'}`}>
+                                      {test.averageScore}%
+                                    </span>
+                                  ) : (
+                                    <span className="text-on-surface-variant/40">\u2014</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setInspectTest(test)}
+                                  >
+                                    <Icon name="visibility" size={16} className="mr-1" />
+                                    Results
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </motion.div>
+                </motion.div>
               ) : (
-                  /* FULL MONITOR TAB */
-                  <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
+                /* FULL MONITOR TAB */
+                <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                       <motion.div variants={listItem}>
                         <Card>
@@ -549,6 +734,118 @@ export default function AdminDashboardPage() {
             )}
           </DataFetchWrapper>
         </div>
-      </>
+      <Dialog open={!!inspectTest} onOpenChange={(open) => { if (!open) setInspectTest(null); }}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between gap-4">
+              <div className="flex flex-col gap-1">
+                <span className="text-xl font-bold">{inspectTest?.title}</span>
+                <span className="text-sm font-normal text-on-surface-variant flex items-center gap-2">
+                  <Badge variant={inspectTest?.type === 'Quiz' ? 'default' : inspectTest?.type === 'Exam' ? 'destructive' : 'warning'} className="text-[10px] uppercase font-bold py-0.5">
+                    {inspectTest?.type}
+                  </Badge>
+                  <span>Class: {inspectTest?.className}</span>
+                  <span>•</span>
+                  <span>Subject: {inspectTest?.subjectName}</span>
+                </span>
+              </div>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-on-surface-variant mt-1">
+              Conducted by {inspectTest?.teacherName} on {inspectTest?.conceptName || 'General Concept'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {isInspectLoading ? (
+            <div className="flex flex-col items-center justify-center py-12 gap-2">
+              <Icon name="progress_activity" size={32} className="animate-spin text-primary" />
+              <p className="text-sm text-on-surface-variant">Loading results data...</p>
+            </div>
+          ) : inspectDetails ? (
+            <div className="space-y-6 mt-4">
+              {/* Quick Metrics Header */}
+              <div className="grid grid-cols-3 gap-4">
+                <Card variant="outlined">
+                  <CardContent className="p-4 flex flex-col items-center text-center">
+                    <span className="text-xs text-on-surface-variant">Total Submissions</span>
+                    <span className="text-2xl font-bold font-mono mt-1 text-on-surface">{inspectDetails.attemptCount}</span>
+                  </CardContent>
+                </Card>
+                <Card variant="outlined">
+                  <CardContent className="p-4 flex flex-col items-center text-center">
+                    <span className="text-xs text-on-surface-variant">Average Score</span>
+                    <span className={`text-2xl font-bold font-mono mt-1 ${inspectDetails.avgScore < 70 ? 'text-error' : 'text-success'}`}>{inspectDetails.avgScore}%</span>
+                  </CardContent>
+                </Card>
+                <Card variant="outlined">
+                  <CardContent className="p-4 flex flex-col items-center text-center">
+                    <span className="text-xs text-on-surface-variant">Passing Rate</span>
+                    <span className="text-2xl font-bold font-mono mt-1 text-primary">{inspectDetails.passRate}%</span>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Student Scores List */}
+              <div className="space-y-3">
+                <h3 className="text-title-sm font-semibold flex items-center gap-2">
+                  <Icon name="list" size={18} />
+                  Individual Student Results
+                </h3>
+                {(!inspectDetails.studentAttempts || inspectDetails.studentAttempts.length === 0) ? (
+                  <div className="flex flex-col items-center py-8 text-on-surface-variant bg-surface-variant/20 rounded-lg border border-outline-variant">
+                    <Icon name="info" size={32} />
+                    <p className="text-sm mt-2">No scored submissions found</p>
+                  </div>
+                ) : (
+                  <div className="border border-outline-variant rounded-lg overflow-hidden bg-surface">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-b-outline-variant bg-surface-variant/30 text-label-sm font-medium text-on-surface-variant uppercase tracking-wider">
+                          <th className="px-4 py-2.5">Roll No</th>
+                          <th className="px-4 py-2.5">Student ID</th>
+                          <th className="px-4 py-2.5">Name</th>
+                          <th className="px-4 py-2.5">Submitted At</th>
+                          <th className="px-4 py-2.5 text-center">Score</th>
+                          <th className="px-4 py-2.5 text-center">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-outline-variant text-body-md">
+                        {inspectDetails.studentAttempts.map((attempt: any) => (
+                          <tr key={attempt.studentId} className="hover:bg-surface-variant/10 transition-colors">
+                            <td className="px-4 py-2.5 font-mono text-on-surface-variant">
+                              {attempt.studentRollNo || '-'}
+                            </td>
+                            <td className="px-4 py-2.5 font-mono text-xs text-on-surface-variant">
+                              {attempt.studentCustomId || '-'}
+                            </td>
+                            <td className="px-4 py-2.5 font-medium text-on-surface">
+                              {attempt.studentName}
+                            </td>
+                            <td className="px-4 py-2.5 text-xs text-on-surface-variant">
+                              {attempt.submittedAt ? new Date(attempt.submittedAt).toLocaleString() : '-'}
+                            </td>
+                            <td className="px-4 py-2.5 text-center font-bold font-mono">
+                              {attempt.percentage}%
+                            </td>
+                            <td className="px-4 py-2.5 text-center">
+                              <Badge variant={attempt.passed ? 'success' : 'destructive'} className="text-[10px] uppercase font-bold px-1.5 py-0">
+                                {attempt.passed ? 'Passed' : 'Failed'}
+                              </Badge>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-6 text-on-surface-variant">
+              Failed to load details.
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

@@ -13,6 +13,8 @@ export function generateStudentId(
   classCode: string,
   rollNo: number
 ): string {
-  const paddedRoll = String(rollNo).padStart(2, "0");
-  return `${academicYear}_${classCode}_${paddedRoll}`;
+  const paddedRoll = String(rollNo).padStart(2, '0');
+  const cleanYear = academicYear.match(/\d{4}/)?.[0] || academicYear.replace(/[^0-9]/g, '');
+  const cleanClass = classCode.toLowerCase().replace(/[^a-z0-9]/g, '');
+  return `${cleanClass}${paddedRoll}${cleanYear}`;
 }

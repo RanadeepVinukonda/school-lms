@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
 import { cn } from '@/lib/utils';
@@ -25,6 +26,7 @@ import { db } from '@/firebase/config';
 import { getAllClasses, getAllUsers, getAllSubjects } from '@/services/dataService';
 import { getClassDependencies } from '@/services/dependencyService';
 import { logAudit } from '@/services/auditService';
+import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
 import type { ClassEntry, UserDoc, Subject } from '@/services/dataService';
 import type { DependencyReport } from '@/services/dependencyService';
 
@@ -43,6 +45,7 @@ function ordinal(n: number): string {
 
 export default function AdminClassesPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [grade, setGrade] = useState('');
@@ -58,6 +61,54 @@ export default function AdminClassesPage() {
   const [editTarget, setEditTarget] = useState<ClassEntry | null>(null);
   const [editForm, setEditForm] = useState({ name: '', code: '', grade: '', section: '', roomNumber: '' });
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Teacher Assignment states
+  const [showAssign, setShowAssign] = useState(false);
+  const [assignClassId, setAssignClassId] = useState('');
+  const [assignSubjectId, setAssignSubjectId] = useState('');
+  const [selectedTeacherId, setSelectedTeacherId] = useState('');
+  const [assignLoading, setAssignLoading] = useState(false);
+
+  const handleAssignClick = (classId: string, subjectId: string) => {
+    setAssignClassId(classId);
+    setAssignSubjectId(subjectId);
+    setSelectedTeacherId('');
+    setShowAssign(true);
+  };
+
+  const handleAssignTeacher = async () => {
+    if (!selectedTeacherId) {
+      toast.error('Please select a teacher');
+      return;
+    }
+    setAssignLoading(true);
+    try {
+      await teacherClassSubjectService.assign({
+        teacherId: selectedTeacherId,
+        classId: assignClassId,
+        subjectId: assignSubjectId,
+      });
+      toast.success('Teacher assigned successfully');
+      setShowAssign(false);
+      queryClient.invalidateQueries({ queryKey: ['admin-tc-assignments'] });
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to assign teacher');
+    } finally {
+      setAssignLoading(false);
+    }
+  };
+
+  const handleRemoveTeacherAssignment = async (classId: string, subjectId: string) => {
+    const assignment = tcAssignments.find((a) => a.classId === classId && a.subjectId === subjectId);
+    if (!assignment) return;
+    try {
+      await teacherClassSubjectService.remove(assignment.id);
+      toast.success('Teacher assignment removed');
+      queryClient.invalidateQueries({ queryKey: ['admin-tc-assignments'] });
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to remove assignment');
+    }
+  };
 
   const { data: fetchedClasses, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-classes'],
@@ -432,10 +483,41 @@ export default function AdminClassesPage() {
                                     return (
                                       <li key={subject.id} className="flex items-center justify-between text-sm py-1 px-3 rounded-lg bg-surface-variant/40">
                                         <span className="font-medium">{subject.name}</span>
-                                        <span className="text-on-surface-variant text-xs flex items-center gap-1">
-                                          <Icon name="person" size={12} />
-                                          {teacher ? teacher.displayName : 'Unassigned'}
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                          {teacher ? (
+                                            <div className="flex items-center gap-1 bg-surface/60 px-2 py-0.5 rounded border border-outline-variant/30">
+                                              <span className="text-on-surface-variant text-xs flex items-center gap-1 font-medium">
+                                                <Icon name="person" size={12} className="text-primary" />
+                                                {teacher.displayName}
+                                              </span>
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-5 w-5 p-0 text-error hover:bg-error/15 rounded-full"
+                                                title="Remove Teacher Assignment"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleRemoveTeacherAssignment(cls.id, subject.id);
+                                                }}
+                                              >
+                                                <Icon name="close" size={12} />
+                                              </Button>
+                                            </div>
+                                          ) : (
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              className="h-6 text-[10px] py-0 px-2 flex items-center gap-0.5 font-semibold text-primary border-primary/30 hover:bg-primary/5"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleAssignClick(cls.id, subject.id);
+                                              }}
+                                            >
+                                              <Icon name="person_add" size={10} />
+                                              Assign
+                                            </Button>
+                                          )}
+                                        </div>
                                       </li>
                                     );
                                   })}
@@ -700,6 +782,48 @@ export default function AdminClassesPage() {
               Create Class
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ASSIGN TEACHER DIALOG */}
+      <Dialog open={showAssign} onOpenChange={setShowAssign}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Teacher</DialogTitle>
+            <DialogDescription>
+              Assign a teacher to the selected subject in this class. Each class subject can only have one active teacher assignment.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Select Teacher</Label>
+              <select
+                className="w-full h-10 px-3 rounded-lg border border-outline-variant bg-surface text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+                value={selectedTeacherId}
+                onChange={(e) => setSelectedTeacherId(e.target.value)}
+              >
+                <option value="">-- Choose a teacher --</option>
+                {users.filter((u: UserDoc) => u.role === 'teacher').map((t: UserDoc) => (
+                  <option key={t.id} value={t.id}>
+                    {t.displayName} ({t.email})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAssign(false)}>Cancel</Button>
+            <Button
+              onClick={handleAssignTeacher}
+              disabled={!selectedTeacherId || assignLoading}
+            >
+              {assignLoading ? (
+                <><Icon name="sync" size={16} className="mr-2 animate-spin" />Assigning...</>
+              ) : (
+                <><Icon name="check" size={16} className="mr-2" />Assign Teacher</>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

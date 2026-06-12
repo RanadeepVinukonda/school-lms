@@ -46,4 +46,18 @@ export const analyticsService = {
     const response = await api.post<ApiResponse<void>>('/analytics-v2/re-teach', data);
     return response.data;
   },
+
+  /** Fetch conducted tests monitor data (Admin). */
+  async getConductedTests() {
+    const response = await api.get<ApiResponse<any[]>>('/analytics-v2/conducted-tests');
+    return response.data.data;
+  },
+
+  /** Fetch assessment analytics drill-down data (Admin). */
+  async getAssessmentAnalytics(assessmentId: string, type: 'quiz' | 'exam' | 'assignment') {
+    const response = await api.get<ApiResponse<any>>(`/analytics-v2/assessment/${assessmentId}`, {
+      params: { type },
+    });
+    return response.data.data;
+  },
 };

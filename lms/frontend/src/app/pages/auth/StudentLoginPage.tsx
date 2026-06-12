@@ -20,8 +20,7 @@ import { db } from '@/firebase/config';
 const studentLoginSchema = z.object({
   email: z
     .string()
-    .min(1, 'Email is required')
-    .email('Invalid email address')
+    .min(1, 'Student ID or Email is required')
     .transform((email) => email.toLowerCase().trim()),
   password: z.string().min(1, 'Password is required'),
 });
@@ -46,7 +45,11 @@ export default function StudentLoginPage() {
   async function onSubmit(data: StudentLoginFormData) {
     setError('');
     try {
-      const firebaseUser = await loginUser(data.email, data.password);
+      let loginEmail = data.email;
+      if (!loginEmail.includes('@')) {
+        loginEmail = `${loginEmail}@school.edu`;
+      }
+      const firebaseUser = await loginUser(loginEmail, data.password);
       const docRef = doc(db, 'users', firebaseUser.uid);
       const snap = await getDoc(docRef);
       if (!snap.exists()) {
@@ -139,11 +142,11 @@ export default function StudentLoginPage() {
                 </motion.div>
               )}
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-foreground">Email</Label>
+                <Label htmlFor="email" className="text-sm font-medium text-foreground">Student ID or Email</Label>
                 <Input
                   id="email"
-                  type="email"
-                  placeholder="your@email.com"
+                  type="text"
+                  placeholder="e.g. g1a052026 or email"
                   {...register('email')}
                   error={errors.email?.message}
                   className="h-11"

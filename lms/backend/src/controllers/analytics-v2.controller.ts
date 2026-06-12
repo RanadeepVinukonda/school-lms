@@ -48,3 +48,8 @@ export async function notifyReTeach(req: Request, res: Response) {
   });
   sendSuccess(res, null, 'Teacher notified to re-teach concept');
 }
+
+export async function getConductedTests(req: Request, res: Response) {
+  const result = await analyticsV2Service.getConductedTests();
+  sendSuccess(res, result);
+}

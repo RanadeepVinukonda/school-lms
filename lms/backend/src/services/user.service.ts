@@ -190,15 +190,38 @@ export async function updateUser(uid: string, data: {
   if (data.disabled !== undefined) updateData.isActive = !data.disabled;
   if (data.classIds !== undefined) updateData.classIds = data.classIds;
   
+  const existingData = existing.data()!;
+  const isStudent = existingData.role === 'student';
+
   if (data.classId !== undefined) {
     updateData.classId = data.classId;
-    const existingClassIds = existing.data()!.classIds || [];
+    const existingClassIds = existingData.classIds || [];
     if (data.classId && !existingClassIds.includes(data.classId)) {
       updateData.classIds = [...existingClassIds, data.classId];
     }
   }
   if (data.rollNo !== undefined) updateData.rollNo = data.rollNo;
   if (data.academicYear !== undefined) updateData.academicYear = data.academicYear;
+
+  if (isStudent && (data.classId !== undefined || data.rollNo !== undefined || data.academicYear !== undefined)) {
+    const finalClassId = data.classId !== undefined ? data.classId : existingData.classId;
+    const finalRollNo = data.rollNo !== undefined ? data.rollNo : existingData.rollNo;
+    const finalAcademicYear = data.academicYear !== undefined ? data.academicYear : existingData.academicYear;
+
+    if (finalClassId && finalRollNo !== undefined) {
+      const classDoc = await collections.classes().doc(finalClassId).get();
+      if (classDoc.exists) {
+        const classData = classDoc.data()!;
+        const classCode = (classData.code || classData.section
+          ? `${classData.grade || ''}${classData.section || ''}`
+          : 'CLASS'
+        ).toUpperCase().replace(/\s+/g, '');
+        const acYear = finalAcademicYear || classData.academicYear || new Date().getFullYear().toString();
+        const studentId = generateStudentId(acYear, classCode, finalRollNo);
+        updateData.studentId = studentId;
+      }
+    }
+  }
 
   await userRef.update(updateData);
 

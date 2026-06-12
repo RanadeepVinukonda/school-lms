@@ -158,7 +158,7 @@ export async function getAssessmentAnalytics(assessmentId: string, type: 'quiz' 
 
   const scored = attempts.filter((a) => a.percentage != null);
   const avgScore = scored.length > 0
-    ? Math.round(scored.reduce((s, a) => s + a.percentage, 0) / scored.length)
+    ? Math.round(scored.reduce((s: number, a: any) => s + a.percentage, 0) / scored.length)
     : 0;
   const passCount = scored.filter((a) => a.passed === true).length;
 
@@ -172,6 +172,12 @@ export async function getAssessmentAnalytics(assessmentId: string, type: 'quiz' 
     else scoreDist['81-100']++;
   }
 
+  const studentIds = [...new Set(scored.map((a) => a.studentId))];
+  const studentsSnap = studentIds.length > 0
+    ? await Promise.all(studentIds.map((id) => collections.users().doc(id).get()))
+    : [];
+  const studentMap = new Map(studentsSnap.filter((s) => s.exists).map((s) => [s.id, s.data()]));
+
   logger.info('Assessment analytics retrieved', { assessmentId, type });
 
   return {
@@ -181,14 +187,20 @@ export async function getAssessmentAnalytics(assessmentId: string, type: 'quiz' 
     avgScore,
     passRate: scored.length > 0 ? Math.round((passCount / scored.length) * 100) : 0,
     scoreDistribution: scoreDist,
-    studentAttempts: scored.map((a) => ({
-      studentId: a.studentId,
-      percentage: a.percentage,
-      passed: a.passed,
-      timeSpent: a.timeSpent,
-      submittedAt: a.submittedAt,
-      level: a.level,
-    })),
+    studentAttempts: scored.map((a) => {
+      const student = studentMap.get(a.studentId);
+      return {
+        studentId: a.studentId,
+        studentName: student?.displayName || student?.email || 'Unknown Student',
+        studentRollNo: student?.rollNo || '-',
+        studentCustomId: student?.studentId || '-',
+        percentage: a.percentage,
+        passed: a.passed,
+        timeSpent: a.timeSpent,
+        submittedAt: a.submittedAt,
+        level: a.level,
+      };
+    }),
   };
 }
 
@@ -300,4 +312,127 @@ export async function getConceptOversight() {
   }
 
   return oversightItems;
+}
+
+export async function getConductedTests() {
+  const [quizzesSnap, examsSnap, assignmentsSnap, classesSnap, subjectsSnap, teachersSnap] = await Promise.all([
+    collections.quizV2().get(),
+    collections.examV2().get(),
+    collections.assignmentV2().get(),
+    collections.classes().get(),
+    collections.subjects().get(),
+    collections.users().where('role', '==', 'teacher').get(),
+  ]);
+
+  const classMap = new Map(classesSnap.docs.map(c => [c.id, c.data().name]));
+  const subjectMap = new Map(subjectsSnap.docs.map(s => [s.id, s.data().name]));
+  const teacherMap = new Map(teachersSnap.docs.map(t => [t.id, t.data().displayName || t.data().email]));
+
+  const textbooksSnap = await collections.textbooks().get();
+  const conceptMap = new Map<string, string>();
+  for (const tbDoc of textbooksSnap.docs) {
+    try {
+      const chaptersSnap = await tbDoc.ref.collection('chapters').get();
+      for (const chapDoc of chaptersSnap.docs) {
+        const conceptsSnap = await chapDoc.ref.collection('concepts').get();
+        conceptsSnap.docs.forEach(concDoc => {
+          conceptMap.set(concDoc.id, concDoc.data().title || 'Unknown Concept');
+        });
+      }
+    } catch {}
+  }
+
+  const tests: any[] = [];
+
+  for (const doc of quizzesSnap.docs) {
+    const data = doc.data();
+    tests.push({
+      id: doc.id,
+      type: 'Quiz',
+      title: data.title,
+      classId: data.classId,
+      className: classMap.get(data.classId) || 'Unknown Class',
+      subjectId: data.subjectId,
+      subjectName: subjectMap.get(data.subjectId) || 'Unknown Subject',
+      teacherId: data.teacherId,
+      teacherName: teacherMap.get(data.teacherId) || 'Unknown Teacher',
+      conceptId: data.conceptId,
+      conceptName: conceptMap.get(data.conceptId) || 'General',
+      createdAt: data.createdAt || new Date().toISOString(),
+      releasedAt: data.releasedAt,
+    });
+  }
+
+  for (const doc of examsSnap.docs) {
+    const data = doc.data();
+    tests.push({
+      id: doc.id,
+      type: 'Exam',
+      title: data.title,
+      classId: data.classId,
+      className: classMap.get(data.classId) || 'Unknown Class',
+      subjectId: data.subjectId,
+      subjectName: subjectMap.get(data.subjectId) || 'Unknown Subject',
+      teacherId: data.teacherId,
+      teacherName: teacherMap.get(data.teacherId) || 'Unknown Teacher',
+      conceptId: data.conceptId,
+      conceptName: conceptMap.get(data.conceptId) || 'General',
+      createdAt: data.createdAt || new Date().toISOString(),
+      releasedAt: data.releasedAt,
+    });
+  }
+
+  for (const doc of assignmentsSnap.docs) {
+    const data = doc.data();
+    tests.push({
+      id: doc.id,
+      type: 'Assignment',
+      title: data.title,
+      classId: data.classId,
+      className: classMap.get(data.classId) || 'Unknown Class',
+      subjectId: data.subjectId,
+      subjectName: subjectMap.get(data.subjectId) || 'Unknown Subject',
+      teacherId: data.teacherId,
+      teacherName: teacherMap.get(data.teacherId) || 'Unknown Teacher',
+      conceptId: data.conceptId,
+      conceptName: conceptMap.get(data.conceptId) || 'General',
+      createdAt: data.createdAt || new Date().toISOString(),
+      releasedAt: data.releasedAt,
+    });
+  }
+
+  const results = [];
+  for (const t of tests) {
+    try {
+      let attemptsSnap;
+      if (t.type === 'Quiz') {
+        attemptsSnap = await collections.quizAttemptV2().where('quizId', '==', t.id).get();
+      } else if (t.type === 'Exam') {
+        attemptsSnap = await collections.examAttemptV2().where('examId', '==', t.id).get();
+      } else {
+        attemptsSnap = await collections.assignmentSubmissionV2().where('assignmentId', '==', t.id).get();
+      }
+
+      const attempts = attemptsSnap.docs.map(d => d.data());
+      const scored = attempts.filter(at => at.percentage != null);
+      const averageScore = scored.length > 0
+        ? Math.round(scored.reduce((sum, at) => sum + at.percentage, 0) / scored.length)
+        : 0;
+
+      results.push({
+        ...t,
+        attemptCount: attempts.length,
+        averageScore,
+      });
+    } catch (err) {
+      logger.error('Error computing metrics for test', { testId: t.id, type: t.type, err });
+      results.push({
+        ...t,
+        attemptCount: 0,
+        averageScore: 0,
+      });
+    }
+  }
+
+  return results;
 }
