@@ -71,13 +71,13 @@ export function TeacherHierarchyNav() {
     label: string; value: string; options: HierarchyNode[];
     onChange: (v: string) => void; disabled?: boolean;
   }) => (
-    <div className="flex flex-col gap-1 min-w-0">
+    <div className="flex flex-col gap-1 min-w-0 w-full sm:w-auto">
       <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled || options.length === 0}
-        className="h-9 rounded-lg border border-input bg-background px-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 disabled:cursor-not-allowed truncate max-w-[200px]"
+        className="h-9 rounded-lg border border-input bg-background px-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 disabled:cursor-not-allowed truncate w-full sm:w-auto sm:max-w-[200px]"
       >
         <option value="">Select {label}...</option>
         {options.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
@@ -86,15 +86,15 @@ export function TeacherHierarchyNav() {
   );
 
   return (
-    <div className="flex items-center gap-3 flex-wrap">
+    <div className="flex items-center gap-3 flex-wrap w-full sm:w-auto">
       <Selector label="Class" value={classId} options={classList} onChange={setClassId} />
-      {classId && <Icon name="chevron_right" size={16} className="text-muted-foreground -mx-1" />}
+      {classId && <Icon name="chevron_right" size={16} className="text-muted-foreground -mx-1 hidden sm:block" />}
       {classId && <Selector label="Subject" value={subjectId} options={uniqueSubjects} onChange={setSubjectId} disabled={!classId} />}
-      {subjectId && <Icon name="chevron_right" size={16} className="text-muted-foreground -mx-1" />}
+      {subjectId && <Icon name="chevron_right" size={16} className="text-muted-foreground -mx-1 hidden sm:block" />}
       {subjectId && <Selector label="Textbook" value={textbookId} options={textbookList} onChange={setTextbookId} disabled={!subjectId} />}
-      {textbookId && <Icon name="chevron_right" size={16} className="text-muted-foreground -mx-1" />}
+      {textbookId && <Icon name="chevron_right" size={16} className="text-muted-foreground -mx-1 hidden sm:block" />}
       {textbookId && <Selector label="Chapter" value={chapterId} options={chapterList} onChange={setChapterId} disabled={!textbookId} />}
-      {chapterId && <Icon name="chevron_right" size={16} className="text-muted-foreground -mx-1" />}
+      {chapterId && <Icon name="chevron_right" size={16} className="text-muted-foreground -mx-1 hidden sm:block" />}
       {chapterId && <Selector label="Concept" value={conceptId} options={conceptList} onChange={setConceptId} disabled={!chapterId} />}
     </div>
   );
