@@ -122,8 +122,12 @@ export async function compilePaper(data: {
   const chapterId = data.chapterId || template.selectionConfig?.chapterId;
   const conceptId = data.conceptId || template.selectionConfig?.conceptId;
   if (!textbookId || !chapterId || !conceptId) {
-    throw new Error('textbookId, chapterId, and conceptId are required to compile');
+    throw new Error('textbookId, chapterId, and conceptId are required to compile. Update the template with a textbook, chapter, and concept selection first.');
   }
+
+  // Read question count and difficulty from selectionConfig (set at template creation)
+  const targetCount = template.selectionConfig?.questionCount || 5;
+  const difficultyDistribution = template.selectionConfig?.difficultyDistribution || { easy: 40, medium: 40, hard: 20 };
 
   const conceptDoc = await collections.textbooks()
     .doc(textbookId)
@@ -159,13 +163,10 @@ export async function compilePaper(data: {
     return cloned;
   });
 
-  // Sort by difficulty to match distribution
-  const difficultyDistribution = template.config?.difficultyDistribution || { easy: 40, medium: 40, hard: 20 };
   const easyQ = adapted.filter((q: any) => q.difficulty === 'easy');
   const mediumQ = adapted.filter((q: any) => q.difficulty === 'medium');
   const hardQ = adapted.filter((q: any) => q.difficulty === 'hard' || q.difficulty === 'hots');
 
-  const targetCount = template.config?.questionCount || 5;
   const easyTarget = Math.round((difficultyDistribution.easy / 100) * targetCount);
   const mediumTarget = Math.round((difficultyDistribution.medium / 100) * targetCount);
   const hardTarget = targetCount - easyTarget - mediumTarget;
