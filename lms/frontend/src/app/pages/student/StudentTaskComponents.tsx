@@ -20,6 +20,7 @@ export interface TaskItem {
   title: string;
   description: string;
   subjectName: string;
+  subjectId?: string;
   date: Date | null;
   urgency: UrgencyLevel;
   linkTo: string;
@@ -128,7 +129,8 @@ export function buildTasks(
       type: 'assignment',
       title: a.title,
       description: a.description ?? '',
-      subjectName: 'Assignment',
+      subjectName: findSubjectName(subjects, a.subjectId),
+      subjectId: a.subjectId,
       date: dueDate,
       urgency: getUrgencyLevel(dueDate),
       linkTo: `/assignments/${a.id}`,
@@ -143,7 +145,8 @@ export function buildTasks(
       type: 'quiz',
       title: q.title,
       description: q.description ?? '',
-      subjectName: 'Quiz',
+      subjectName: findSubjectName(subjects, q.subjectId),
+      subjectId: q.subjectId,
       date: null,
       urgency: 'later',
       linkTo: `/quizzes/${q.id}/attempt`,
@@ -160,6 +163,7 @@ export function buildTasks(
       title: e.title,
       description: e.description ?? '',
       subjectName: findSubjectName(subjects, e.subjectId),
+      subjectId: e.subjectId,
       date: startDate,
       urgency: getUrgencyLevel(startDate),
       linkTo: `/exams/${e.id}`,

@@ -44,6 +44,7 @@ interface AssessmentItem {
   showResults: boolean;
   createdAt: string;
   conceptId?: string;
+  isRepublished?: boolean;
 }
 
 const QUESTION_MODELS = [
@@ -153,12 +154,13 @@ export default function TeacherAssessmentCreatePage() {
   const quizzesList: AssessmentItem[] = (quizzesData ?? []).map((q: Record<string, unknown>) => ({
     id: q.id as string,
     title: q.title as string,
-    status: q.releasedAt ? 'released' as const : 'draft' as const,
-    type: 'quiz' as const,
-    attemptCount: (q.attemptCount as number) ?? 0,
-    showResults: (q.showResults as boolean) ?? false,
-    createdAt: (q.createdAt as string) ?? '',
-    conceptId: q.conceptId as string,
+    status: (q.releasedAt ? 'released' : 'draft') as 'draft' | 'released',
+    type: 'quiz',
+    attemptCount: q.attemptCount as number | undefined,
+    showResults: !!q.showResults,
+    createdAt: q.createdAt as string,
+    conceptId: q.conceptId as string | undefined,
+    isRepublished: !!q.isRepublished,
   }));
 
   const assignmentsListItem: AssessmentItem[] = (assignmentsData ?? []).map((a: Record<string, unknown>) => ({
@@ -252,6 +254,20 @@ export default function TeacherAssessmentCreatePage() {
     },
   });
 
+  const republishQuizMutation = useMutation({
+    mutationFn: (id: string) => api.post(`/quizzes-v2/${id}/republish`).then((r) => r.data.data),
+    onSuccess: () => {
+      toast.success('Quiz republished as interactive practice mode');
+      queryClient.invalidateQueries({ queryKey: ['assessments-quizzes', selectedClassId] });
+    },
+    onError: (err: unknown) => {
+      const message = err && typeof err === 'object' && 'message' in err
+        ? (err as { message: string }).message
+        : 'Failed to republish quiz';
+      toast.error(message);
+    },
+  });
+
   const toggleAssignmentGradesMutation = useMutation({
     mutationFn: ({ id, showResults }: { id: string; showResults: boolean }) =>
       api.put(`/assignments-v2/${id}/grades`, { showResults }).then((r) => r.data.data),
@@ -307,6 +323,7 @@ export default function TeacherAssessmentCreatePage() {
     createQuizMutation.mutate({
       title: quizTitle.trim(),
       classId: selectedClassId,
+      subjectId: selectedAssignment?.subjectId,
       textbookId: selectedTextbookId,
       chapterId: selectedChapterId,
       conceptId: selectedConceptId,
@@ -1092,6 +1109,25 @@ export default function TeacherAssessmentCreatePage() {
                                     <Icon name="publish" size={12} className="mr-1" />
                                     Release
                                   </Button>
+                                )}
+                                {assessment.type === 'quiz' && assessment.status === 'released' && (
+                                  assessment.isRepublished ? (
+                                    <Badge variant="success" className="text-[10px] gap-1 py-1">
+                                      <Icon name="check" size={10} />
+                                      Republished
+                                    </Badge>
+                                  ) : (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => republishQuizMutation.mutate(assessment.id)}
+                                      disabled={republishQuizMutation.isPending}
+                                      className="text-success border-success/30 hover:bg-success/5 hover:text-success"
+                                    >
+                                      <Icon name="refresh" size={12} className="mr-1" />
+                                      Republish
+                                    </Button>
+                                  )
                                 )}
                                 <label className="flex items-center gap-1.5 cursor-pointer">
                                   <span className="text-[10px] text-muted-foreground hidden sm:inline">Grades</span>

@@ -61,6 +61,7 @@ export async function createQuiz(data: {
     title: data.title,
     description: data.description || '',
     classId: data.classId,
+    subjectId: data.subjectId || null,
     textbookId: data.textbookId,
     chapterId: data.chapterId,
     conceptId: data.conceptId,
@@ -417,7 +418,25 @@ export async function listQuizzesForClass(classId: string): Promise<any[]> {
     .get();
 
   const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-  return items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  
+  // Resolve subjectId fallback for older quiz documents
+  const resolvedItems = await Promise.all(
+    items.map(async (item: any) => {
+      if (!item.subjectId && item.textbookId) {
+        try {
+          const tbDoc = await collections.textbooks().doc(item.textbookId).get();
+          if (tbDoc.exists) {
+            item.subjectId = tbDoc.data()?.subjectId || null;
+          }
+        } catch (err) {
+          logger.error('Failed to resolve fallback subjectId for quiz', { quizId: item.id, err });
+        }
+      }
+      return item;
+    })
+  );
+
+  return resolvedItems.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export async function listQuizzesForTeacher(teacherId: string): Promise<any[]> {

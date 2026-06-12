@@ -318,6 +318,7 @@ export interface QuizItem {
   lessonId?: string;
   chapterId?: string;
   textbookId?: string;
+  subjectId?: string;
   timeLimit?: number;
   questions?: unknown[];
   status?: string;
