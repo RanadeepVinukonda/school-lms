@@ -109,21 +109,28 @@ export async function listTemplates(params: {
 
 export async function compilePaper(data: {
   templateId: string;
-  textbookId: string;
-  chapterId: string;
-  conceptId: string;
+  textbookId?: string;
+  chapterId?: string;
+  conceptId?: string;
   userId: string;
 }) {
   const templateDoc = await collections.testTemplates().doc(data.templateId).get();
   if (!templateDoc.exists) throw new NotFoundError('Template not found');
   const template = templateDoc.data()!;
 
+  const textbookId = data.textbookId || template.selectionConfig?.textbookId;
+  const chapterId = data.chapterId || template.selectionConfig?.chapterId;
+  const conceptId = data.conceptId || template.selectionConfig?.conceptId;
+  if (!textbookId || !chapterId || !conceptId) {
+    throw new Error('textbookId, chapterId, and conceptId are required to compile');
+  }
+
   const conceptDoc = await collections.textbooks()
-    .doc(data.textbookId)
+    .doc(textbookId)
     .collection('chapters')
-    .doc(data.chapterId)
+    .doc(chapterId)
     .collection('concepts')
-    .doc(data.conceptId)
+    .doc(conceptId)
     .get();
   if (!conceptDoc.exists) throw new NotFoundError('Concept not found');
   const conceptData = conceptDoc.data()!;

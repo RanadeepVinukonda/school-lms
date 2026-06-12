@@ -108,6 +108,7 @@ export default function TeacherTestTemplatesPage() {
     mutationFn: () => api.post('/test-templates', {
       title, description: description || undefined,
       classId, subjectId,
+      source: 'question_bank',
       config: { timeLimitMinutes: timeLimit, passingScore, maxAttempts, shuffleQuestions: shuffle, showResults },
       selectionConfig: { selectedModels, questionCount, difficultyDistribution: { easy: easyCount, medium: mediumCount, hard: hardCount }, textbookId: textbookId || undefined, chapterId: chapterId || undefined, conceptId: searchParams.get('conceptId') || undefined },
     }),
@@ -121,7 +122,8 @@ export default function TeacherTestTemplatesPage() {
   });
 
   const compileMutation = useMutation({
-    mutationFn: (id: string) => api.post(`/test-templates/${id}/compile`).then((r) => r.data.data),
+    mutationFn: ({ id, textbookId, chapterId, conceptId }: { id: string; textbookId?: string; chapterId?: string; conceptId?: string }) =>
+      api.post(`/test-templates/${id}/compile`, { textbookId, chapterId, conceptId }).then((r) => r.data.data),
     onSuccess: (data) => {
       setPreviewQuestions(data.questions ?? []);
       setPreviewTitle(data.title || 'Compiled Paper');
@@ -184,7 +186,10 @@ export default function TeacherTestTemplatesPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
-                          <Button size="sm" variant="outline" onClick={() => { setCompilingId(t.id); compileMutation.mutate(t.id); }} disabled={compileMutation.isPending}>
+                          <Button size="sm" variant="outline" onClick={() => {
+                            setCompilingId(t.id);
+                            compileMutation.mutate({ id: t.id, textbookId: t.selectionConfig?.textbookId, chapterId: t.selectionConfig?.chapterId, conceptId: t.selectionConfig?.conceptId });
+                          }} disabled={compileMutation.isPending}>
                             <Icon name="visibility" size={14} className="mr-1" />Preview
                           </Button>
                           <Button variant="ghost" size="icon-sm" onClick={() => { if (confirm('Delete this template?')) deleteMutation.mutate(t.id); }}><Icon name="delete" size={16} /></Button>
