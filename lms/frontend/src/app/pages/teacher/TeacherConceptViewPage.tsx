@@ -15,9 +15,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icon } from '@/components/ui/Icon';
 import { pageTransition } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
-import { getTextbook, getChaptersForTextbook, getConceptsForChapter } from '@/services/textbookService';
+import { getTextbook, getChaptersForTextbook, getConceptsForChapter, getConceptRelease, setConceptRelease } from '@/services/textbookService';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
+import { ConceptDetailMindMap } from '@/components/teacher/ConceptDetailMindMap';
 import type { CachedVideo } from '@/types/textbook';
 
 const YOUTUBE_ID_RE = /^[a-zA-Z0-9_-]{11}$/;
@@ -237,7 +238,8 @@ export default function TeacherConceptViewPage() {
         const concepts = await getConceptsForChapter(textbookId, ch.id);
         const c = concepts.find((co) => co.id === conceptId);
         if (c) {
-          return { concept: c, chapter: ch, textbook: tb };
+          const release = await getConceptRelease(textbookId, conceptId);
+          return { concept: c, chapter: ch, textbook: tb, release };
         }
       }
       throw new Error('Concept not found');
@@ -365,6 +367,23 @@ export default function TeacherConceptViewPage() {
     onError: () => toast.error('Failed to create exam'),
   });
 
+  const toggleReleaseMutation = useMutation({
+    mutationFn: async (field: 'questionBankReleased' | 'assignmentsReleased' | 'mindMapReleased') => {
+      if (!data) return;
+      const currentVal = data.release?.[field] ?? false;
+      await setConceptRelease(textbookId!, conceptId!, chapterId!, teacherId, {
+        [field]: !currentVal,
+      });
+    },
+    onSuccess: () => {
+      toast.success('Release settings updated!');
+      queryClient.invalidateQueries({ queryKey: ['teacher-concept', textbookId, conceptId] });
+    },
+    onError: () => {
+      toast.error('Failed to update release settings');
+    },
+  });
+
   const concept = data?.concept;
   const chapter = data?.chapter;
   const textbook = data?.textbook;
@@ -411,6 +430,49 @@ export default function TeacherConceptViewPage() {
                 </div>
               </div>
 
+              <Card className="border-primary/20 bg-primary/5">
+                <CardContent className="p-4 space-y-3">
+                  <h2 className="font-semibold text-sm flex items-center gap-2">
+                    <Icon name="rss_feed" size={16} className="text-primary" />
+                    Student Release &amp; Push Settings
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    Toggle what is visible and accessible to students in their portal.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <Button
+                      variant={d.release?.questionBankReleased ? 'default' : 'outline'}
+                      onClick={() => toggleReleaseMutation.mutate('questionBankReleased')}
+                      disabled={toggleReleaseMutation.isPending}
+                      className="justify-start gap-2 h-10 px-3"
+                    >
+                      <Icon name={d.release?.questionBankReleased ? 'visibility' : 'visibility_off'} size={16} />
+                      <span className="text-xs truncate">Practice: {d.release?.questionBankReleased ? 'Released' : 'Locked'}</span>
+                    </Button>
+
+                    <Button
+                      variant={d.release?.assignmentsReleased ? 'default' : 'outline'}
+                      onClick={() => toggleReleaseMutation.mutate('assignmentsReleased')}
+                      disabled={toggleReleaseMutation.isPending}
+                      className="justify-start gap-2 h-10 px-3"
+                    >
+                      <Icon name={d.release?.assignmentsReleased ? 'visibility' : 'visibility_off'} size={16} />
+                      <span className="text-xs truncate">Assignments: {d.release?.assignmentsReleased ? 'Released' : 'Locked'}</span>
+                    </Button>
+
+                    <Button
+                      variant={d.release?.mindMapReleased ? 'default' : 'outline'}
+                      onClick={() => toggleReleaseMutation.mutate('mindMapReleased')}
+                      disabled={toggleReleaseMutation.isPending}
+                      className="justify-start gap-2 h-10 px-3"
+                    >
+                      <Icon name={d.release?.mindMapReleased ? 'send' : 'send_and_archive'} size={16} />
+                      <span className="text-xs truncate">Mind Map: {d.release?.mindMapReleased ? 'Pushed' : 'Not Pushed'}</span>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
               <Tabs defaultValue="teach">
                 <TabsList className="w-full">
                   <TabsTrigger value="teach" className="flex-1">
@@ -418,6 +480,9 @@ export default function TeacherConceptViewPage() {
                   </TabsTrigger>
                   <TabsTrigger value="notes" className="flex-1">
                     <Icon name="menu_book" size={14} className="mr-1.5" />Notes
+                  </TabsTrigger>
+                  <TabsTrigger value="mindmap" className="flex-1">
+                    <Icon name="account_tree" size={14} className="mr-1.5" />Mind Map
                   </TabsTrigger>
                   <TabsTrigger value="questions" className="flex-1">
                     <Icon name="quiz" size={14} className="mr-1.5" />Questions
@@ -482,6 +547,10 @@ export default function TeacherConceptViewPage() {
                       </div>
                     </CardContent>
                   </Card>
+                </TabsContent>
+
+                <TabsContent value="mindmap" className="mt-4">
+                  <ConceptDetailMindMap concept={d.concept} />
                 </TabsContent>
 
                 <TabsContent value="notes" className="mt-4 space-y-4">

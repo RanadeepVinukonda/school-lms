@@ -1,16 +1,16 @@
 # Graph Report - school  (2026-06-12)
 
 ## Corpus Check
-- 369 files · ~227,034 words
+- 370 files · ~228,032 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2427 nodes · 6651 edges · 127 communities (114 shown, 13 thin omitted)
+- 2430 nodes · 6668 edges · 132 communities (119 shown, 13 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 21 edges (avg confidence: 0.79)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a7ca4b4d`
+- Built from commit: `60ddd91b`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -107,9 +107,14 @@
 - [[_COMMUNITY_Community 97|Community 97]]
 - [[_COMMUNITY_Community 98|Community 98]]
 - [[_COMMUNITY_Community 100|Community 100]]
+- [[_COMMUNITY_Community 101|Community 101]]
+- [[_COMMUNITY_Community 102|Community 102]]
+- [[_COMMUNITY_Community 103|Community 103]]
 - [[_COMMUNITY_Community 104|Community 104]]
+- [[_COMMUNITY_Community 105|Community 105]]
 - [[_COMMUNITY_Community 106|Community 106]]
 - [[_COMMUNITY_Community 107|Community 107]]
+- [[_COMMUNITY_Community 108|Community 108]]
 - [[_COMMUNITY_Community 109|Community 109]]
 - [[_COMMUNITY_Community 110|Community 110]]
 - [[_COMMUNITY_Community 116|Community 116]]
@@ -120,7 +125,6 @@
 - [[_COMMUNITY_Community 157|Community 157]]
 - [[_COMMUNITY_Community 169|Community 169]]
 - [[_COMMUNITY_Community 170|Community 170]]
-- [[_COMMUNITY_Community 173|Community 173]]
 - [[_COMMUNITY_Community 176|Community 176]]
 - [[_COMMUNITY_Community 178|Community 178]]
 - [[_COMMUNITY_Community 182|Community 182]]
@@ -138,12 +142,12 @@
 2. `useAuthStore` - 104 edges
 3. `cn()` - 83 edges
 4. `Button` - 80 edges
-5. `Icon()` - 74 edges
-6. `Card` - 63 edges
-7. `CardContent` - 63 edges
+5. `Icon()` - 75 edges
+6. `Card` - 64 edges
+7. `CardContent` - 64 edges
 8. `SEOHead()` - 62 edges
 9. `pageTransition` - 57 edges
-10. `Badge()` - 53 edges
+10. `Badge()` - 54 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `getDocumentById()` --calls--> `getCollection()`  [INFERRED]
@@ -154,53 +158,53 @@
   lms/frontend/index.html → lms/frontend/public/genesis_icon.png
 - `createAcademicYear()` --calls--> `sendCreated()`  [EXTRACTED]
   lms/backend/src/controllers/academic-year.controller.ts → lms/backend/src/utils/response.ts
-- `getClassPerformance()` --calls--> `sendSuccess()`  [EXTRACTED]
-  lms/backend/src/controllers/analytics-v2.controller.ts → lms/backend/src/utils/response.ts
+- `chat()` --calls--> `sendSuccess()`  [EXTRACTED]
+  lms/backend/src/controllers/ai.controller.ts → lms/backend/src/utils/response.ts
 
 ## Import Cycles
 - 1-file cycle: `lms/backend/src/firebase/admin.ts -> lms/backend/src/firebase/admin.ts`
 
-## Communities (127 total, 13 thin omitted)
+## Communities (132 total, 13 thin omitted)
 
 ### Community 0 - "Community 0"
-Cohesion: 0.11
-Nodes (11): auth, clearAllData(), createUser(), db, deleteCollection(), main(), createClass(), listClasses() (+3 more)
+Cohesion: 0.33
+Nodes (9): auth, clearAllData(), createUser(), db, deleteCollection(), main(), createClass(), createSubject() (+1 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.06
-Nodes (74): schoolInfo, statsConfig, systemConfig, QuestionModel, QuestionRendererProps, QuestionRendererV2(), V2Question, AdminLoginFormData (+66 more)
+Cohesion: 0.07
+Nodes (48): schoolInfo, statsConfig, systemConfig, QuestionModel, QuestionRendererProps, QuestionRendererV2(), V2Question, AdminLoginFormData (+40 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.13
 Nodes (16): Firebase platform, School LMS entry page, firebase, vite, Genesis school management platform, Genesis brand logo, Genesis entry page, firebase (+8 more)
 
 ### Community 3 - "Community 3"
-Cohesion: 0.20
-Nodes (7): ExamQuestion, QuestionMark, SaveHandler, SaveStatus, selectedWrong, shortcuts, studentAnswers
+Cohesion: 0.09
+Nodes (17): RouteErrorFallback(), ForgotPasswordForm(), ResetPasswordForm(), AuthLayout(), getExam(), STATUS, submitSchema, teacherNotes (+9 more)
 
 ### Community 4 - "Community 4"
 Cohesion: 0.10
 Nodes (26): dependencies, bcryptjs, cloudinary, cors, dotenv, express, express-rate-limit, firebase-admin (+18 more)
 
 ### Community 5 - "Community 5"
-Cohesion: 0.13
-Nodes (28): TutorialGuide(), Theme, ThemeToggle(), UserAvatar(), AdminLayout(), NavItem, navItems, NavItem (+20 more)
+Cohesion: 0.16
+Nodes (22): TutorialGuide(), Theme, ThemeToggle(), UserAvatar(), NavItem, navItems, StudentLayout(), mobileNavItems (+14 more)
 
 ### Community 7 - "Community 7"
 Cohesion: 0.04
 Nodes (47): 10. Profiling Engine Design, 11. Exam Console Architecture, 12. Notification System Design, 13. Concept Health Calculation, 14. Security Design, 15. Backend File Structure, 16. Frontend File Structure, 1. Architecture Overview (+39 more)
 
 ### Community 8 - "Community 8"
-Cohesion: 0.09
-Nodes (23): listContainer, getNotificationsByUser(), markAllNotificationsRead(), markNotificationRead(), getAllConceptReleases(), getChaptersForTextbook(), getConceptRelease(), getConceptsForChapter() (+15 more)
+Cohesion: 0.08
+Nodes (37): listContainer, listItem, getCorrectionsByExam(), getAllConceptProgress(), getAllConceptReleases(), getChaptersForTextbook(), getConceptProgress(), getConceptRelease() (+29 more)
 
 ### Community 9 - "Community 9"
-Cohesion: 0.18
-Nodes (7): ACTION_COLORS, AuditLog, Pagination, RouteErrorFallback(), ForgotPasswordForm(), ResetPasswordForm(), AuthLayout()
+Cohesion: 0.07
+Nodes (31): ACTION_COLORS, AuditLog, Pagination, roles, DataFetchWrapper(), DataFetchWrapperProps, SEOHead(), SEOHeadProps (+23 more)
 
 ### Community 10 - "Community 10"
-Cohesion: 0.06
-Nodes (58): AdminClassesPage(), ordinal(), TeacherClassSubject, AssignmentDoc, ExamDoc, categoryColors, categoryOptions, emptyForm (+50 more)
+Cohesion: 0.07
+Nodes (48): AdminClassesPage(), ordinal(), TeacherClassSubject, AssignmentDoc, ExamDoc, categoryColors, categoryOptions, emptyForm (+40 more)
 
 ### Community 11 - "Community 11"
 Cohesion: 0.25
@@ -223,36 +227,36 @@ Cohesion: 0.05
 Nodes (40): 10. Integration Points, 1. Architecture Overview, 2. Tech Stack, 3.10 Exam Management, 3.11 Content Management, 3.12 Reports & Analytics, 3.13 Notifications, 3.14 Other (+32 more)
 
 ### Community 16 - "Community 16"
-Cohesion: 0.46
-Nodes (7): getAdminAuth(), createUser(), deleteUser(), listUsers(), revokeTokens(), updateUser(), verifyToken()
+Cohesion: 0.19
+Nodes (12): getAdminAuth(), createUser(), deleteUser(), getUserByEmail(), getUserById(), listUsers(), revokeTokens(), updateUser() (+4 more)
 
 ### Community 17 - "Community 17"
-Cohesion: 0.07
-Nodes (40): roles, EmptyState(), EmptyStateProps, Pagination(), PaginationProps, StatusBadge(), StatusBadgeProps, statusVariantMap (+32 more)
+Cohesion: 0.17
+Nodes (18): AttachToConceptTab(), MyLibraryTab(), MyLibraryTabProps, SearchYouTubeTab(), TeacherVideo, YouTubeSearchResult, VideoCard(), VideoCardProps (+10 more)
 
 ### Community 18 - "Community 18"
-Cohesion: 0.06
-Nodes (54): createAcademicYear(), deleteAcademicYear(), getAcademicYear(), getCurrentAcademicYear(), listAcademicYears(), updateAcademicYear(), chat(), getAdminDashboard() (+46 more)
+Cohesion: 0.05
+Nodes (59): createAcademicYear(), deleteAcademicYear(), getAcademicYear(), getCurrentAcademicYear(), listAcademicYears(), updateAcademicYear(), getAdminDashboard(), getCourseAnalytics() (+51 more)
 
 ### Community 19 - "Community 19"
 Cohesion: 0.06
 Nodes (33): material-expressive-react, @material/web, react-dropzone, dependencies, class-variance-authority, clsx, date-fns, framer-motion (+25 more)
 
 ### Community 20 - "Community 20"
-Cohesion: 0.07
-Nodes (14): computeComplexityHandled(), computeLevel(), Difficulty, DIFFICULTY_RANK, StudentLevel, submitAssignment(), createExam(), DIFFICULTY_RANK (+6 more)
+Cohesion: 0.06
+Nodes (16): computeComplexityHandled(), computeLevel(), Difficulty, DIFFICULTY_RANK, StudentLevel, listAssignmentsForClass(), listAssignmentsForTeacher(), submitAssignment() (+8 more)
 
 ### Community 21 - "Community 21"
 Cohesion: 0.06
 Nodes (34): dependencies, axios, class-variance-authority, clsx, date-fns, framer-motion, @hookform/resolvers, lucide-react (+26 more)
 
 ### Community 22 - "Community 22"
-Cohesion: 0.07
-Nodes (31): createExam(), createConversation(), getConversations(), getMessages(), markConversationRead(), sendMessage(), bulkCreate(), createQuestion() (+23 more)
+Cohesion: 0.06
+Nodes (37): createExam(), createConversation(), getConversations(), getMessages(), markConversationRead(), sendMessage(), bulkCreate(), createQuestion() (+29 more)
 
 ### Community 23 - "Community 23"
 Cohesion: 0.08
-Nodes (38): createAssignment(), deleteAssignment(), getAssignment(), gradeSubmission(), listAllAssignments(), listAssignmentsByCourse(), listSubmissions(), submitAssignment() (+30 more)
+Nodes (38): deleteAssignment(), addStudents(), createClass(), deleteClass(), getClass(), getRoster(), listClasses(), removeStudents() (+30 more)
 
 ### Community 24 - "Community 24"
 Cohesion: 0.06
@@ -275,8 +279,8 @@ Cohesion: 0.16
 Nodes (13): setCustomClaims(), getDb(), assignRole(), createUser(), generateRandomPassword(), getStrengthsWeaknesses(), listUsers(), pingActive() (+5 more)
 
 ### Community 29 - "Community 29"
-Cohesion: 0.13
-Nodes (17): Cat, CATS, CFG, EMPTY, GlobalSearchDialog(), Item, Props, Results (+9 more)
+Cohesion: 0.16
+Nodes (13): Cat, CATS, CFG, EMPTY, GlobalSearchDialog(), Item, Props, Results (+5 more)
 
 ### Community 30 - "Community 30"
 Cohesion: 0.10
@@ -311,8 +315,8 @@ Cohesion: 0.27
 Nodes (4): addVideo(), searchAndSave(), searchVideos(), searchVideosForConcept()
 
 ### Community 38 - "Community 38"
-Cohesion: 0.16
-Nodes (17): createSubject(), deleteSubject(), getSubject(), listSubjects(), listSubjectsByClass(), updateSubject(), countArrayWhere(), countWhere() (+9 more)
+Cohesion: 0.14
+Nodes (19): createLesson(), deleteLesson(), getLesson(), listLessonsByCourse(), markLessonComplete(), reorderLessons(), updateLesson(), countArrayWhere() (+11 more)
 
 ### Community 39 - "Community 39"
 Cohesion: 0.18
@@ -350,6 +354,10 @@ Nodes (5): router, createQuizSchema, questionSchema, submitAttemptSchema, update
 Cohesion: 0.29
 Nodes (6): Events, OnStateChangeEvent, Player, PlayerEvent, PlayerOptions, PlayerVars
 
+### Community 48 - "Community 48"
+Cohesion: 0.18
+Nodes (6): LoadingSkeleton(), LoadingSkeletonProps, ProtectedRoute(), ProtectedRouteProps, roleDashboard(), checkPermission()
+
 ### Community 49 - "Community 49"
 Cohesion: 0.33
 Nodes (5): firestore, indexes, rules, storage, rules
@@ -371,8 +379,8 @@ Cohesion: 0.14
 Nodes (20): auth, ChapterDef, ConceptDef, createUser(), db, deleteCollection(), deleteSubcollections(), englishQuestions() (+12 more)
 
 ### Community 54 - "Community 54"
-Cohesion: 0.22
-Nodes (8): SheetContent, SheetContentProps, SheetDescription, SheetFooter(), SheetHeader(), SheetOverlay, SheetTitle, sheetVariants
+Cohesion: 0.15
+Nodes (19): StudentLoginFormData, studentLoginSchema, TeacherLoginFormData, teacherLoginSchema, db, firebaseConfig, PAGINATION, ROUTES (+11 more)
 
 ### Community 55 - "Community 55"
 Cohesion: 0.53
@@ -395,12 +403,12 @@ Cohesion: 0.22
 Nodes (10): createAssignment(), getAssignmentById(), getResults(), listForClass(), listForTeacher(), releaseAssignment(), releaseGrades(), startAssignment() (+2 more)
 
 ### Community 67 - "Community 67"
-Cohesion: 0.18
-Nodes (10): createExam(), getExam(), getExamResults(), gradeExamAttempt(), listAllExams(), releaseExamGrades(), scheduleExam(), startExamAttempt() (+2 more)
+Cohesion: 0.24
+Nodes (11): useAuthStore, User, CreateUserInput, userService, AuthStore, PaginatedResponse, PaginationParams, UserRole (+3 more)
 
 ### Community 69 - "Community 69"
-Cohesion: 0.10
-Nodes (20): LoginForm(), RegisterForm(), loginUser(), useLogin(), useRegister(), useAuthStore, User, authService (+12 more)
+Cohesion: 0.19
+Nodes (9): LoginForm(), RegisterForm(), loginUser(), useLogin(), useRegister(), authService, ApiError, LoginInput (+1 more)
 
 ### Community 70 - "Community 70"
 Cohesion: 0.29
@@ -423,16 +431,16 @@ Cohesion: 0.22
 Nodes (10): bucket, deleteFile(), getFileUrl(), uploadFile(), ALLOWED_MIME_TYPES, deleteFileService(), getFileUrlService(), uploadFileService() (+2 more)
 
 ### Community 81 - "Community 81"
-Cohesion: 0.05
-Nodes (64): DataFetchWrapper(), DataFetchWrapperProps, SEOHead(), SEOHeadProps, formatDate(), formatDateTime(), formatRelativeTime(), getLetterGrade() (+56 more)
+Cohesion: 0.07
+Nodes (35): getTimeGreeting(), CorrectionItem, Enrollment, ExamItem, getAllSubjects(), getAssignment(), getClass(), getCorrectionsByStudent() (+27 more)
 
 ### Community 82 - "Community 82"
-Cohesion: 0.43
-Nodes (5): BreadcrumbItem, Breadcrumbs(), BreadcrumbsProps, PageHeader(), PageHeaderProps
+Cohesion: 0.08
+Nodes (25): BreadcrumbItem, Breadcrumbs(), BreadcrumbsProps, EmptyState(), EmptyStateProps, PageHeader(), PageHeaderProps, Pagination() (+17 more)
 
 ### Community 83 - "Community 83"
-Cohesion: 0.10
-Nodes (23): api, assignmentService, PaginatedItems, examService, PaginatedItems, messagingService, PaginatedItems, quizService (+15 more)
+Cohesion: 0.16
+Nodes (10): api, examService, PaginatedItems, PaginatedItems, quizService, settingsService, SystemSettings, TeacherClassSubject (+2 more)
 
 ### Community 84 - "Community 84"
 Cohesion: 0.27
@@ -440,35 +448,39 @@ Nodes (5): createQuestion(), CreateQuestionData, importFromConcept(), listQuesti
 
 ### Community 85 - "Community 85"
 Cohesion: 0.08
-Nodes (13): getUserByEmail(), getUserById(), AppError, forgotPassword(), register(), verifyUserToken(), AppError, ConflictError (+5 more)
+Nodes (16): getBucket(), createTextbook(), populateMockContent(), AppError, createTextbook(), getConcepts(), getTextbooksByClassAndSubject(), listAllTextbooks() (+8 more)
 
 ### Community 86 - "Community 86"
 Cohesion: 0.21
 Nodes (10): getAssessmentAnalytics(), getAssessmentData(), getConceptOversight(), getConceptsForClass(), getStudentPerformance(), DEFAULT_SETTINGS, getSettings(), getSystemSettings() (+2 more)
 
 ### Community 87 - "Community 87"
-Cohesion: 0.40
-Nodes (4): Conversation, ConversationParticipant, Message, MessageAttachment
+Cohesion: 0.33
+Nodes (5): messagingService, Conversation, ConversationParticipant, Message, MessageAttachment
 
 ### Community 88 - "Community 88"
-Cohesion: 0.29
-Nodes (6): approveSchedule(), createSchedule(), deleteSchedule(), getSchedule(), listSchedules(), updateScheduleStatus()
+Cohesion: 0.17
+Nodes (9): FormControl, FormDescription, FormFieldContext, FormFieldContextValue, FormItem, FormItemContext, FormItemContextValue, FormLabel (+1 more)
 
 ### Community 89 - "Community 89"
-Cohesion: 0.15
-Nodes (8): getBucket(), createTextbook(), populateMockContent(), createTextbook(), getConcepts(), getTextbooksByClassAndSubject(), listAllTextbooks(), populateMockContent()
+Cohesion: 0.20
+Nodes (9): assignmentService, PaginatedItems, Assignment, AssignmentStatus, Grade, GradeLevel, RubricCriteria, Submission (+1 more)
 
 ### Community 90 - "Community 90"
 Cohesion: 0.11
-Nodes (21): getWhiteboard(), saveWhiteboard(), bulkUpdateGrades(), generateReport(), getGradebook(), getStudentGrades(), updateGrade(), createQuiz() (+13 more)
+Nodes (21): createAssignment(), getAssignment(), gradeSubmission(), listAllAssignments(), listAssignmentsByCourse(), listSubmissions(), submitAssignment(), updateAssignment() (+13 more)
 
 ### Community 91 - "Community 91"
 Cohesion: 0.40
 Nodes (4): name, private, type, version
 
 ### Community 92 - "Community 92"
-Cohesion: 0.11
-Nodes (16): changePassword(), confirmReset(), resetPassword(), auth, firebaseConfig, storage, countArrayQuery(), countQuery() (+8 more)
+Cohesion: 0.25
+Nodes (4): changePassword(), confirmReset(), resetPassword(), auth
+
+### Community 93 - "Community 93"
+Cohesion: 0.22
+Nodes (8): createQuiz(), getQuiz(), getResults(), listAllQuizzes(), releaseGrades(), startAttempt(), submitAttempt(), updateQuiz()
 
 ### Community 94 - "Community 94"
 Cohesion: 0.53
@@ -487,20 +499,32 @@ Cohesion: 0.15
 Nodes (12): Implementation Plan: OpenCode LMS, Notes, Overview, Sprint 1: Foundation & RBAC, Sprint 2: Admin Portal — Classes, Subjects, Teachers, Students, Sprint 3: Teacher Portal — Textbooks & AI Pipeline, Sprint 4: Test Template Engine, Sprint 5: Student Portal & Exam Consoles (+4 more)
 
 ### Community 98 - "Community 98"
-Cohesion: 0.17
-Nodes (19): AdminProfileEditPage(), getInitials(), getTimeGreeting(), uploadImage(), uploadProfileImage(), CorrectionItem, getUser(), updateUser() (+11 more)
+Cohesion: 0.10
+Nodes (27): formatDate(), formatDateTime(), formatRelativeTime(), getLetterGrade(), getInitials(), uploadImage(), uploadProfileImage(), getAllEnrollments() (+19 more)
 
 ### Community 100 - "Community 100"
-Cohesion: 0.06
-Nodes (34): AdminLoginPage(), StudentLoginPage(), TeacherLoginPage(), TeacherLayout(), NotificationsPage(), useAuthStore, AssignmentDetailPage(), RollNumberEntryPage() (+26 more)
+Cohesion: 0.05
+Nodes (37): AdminProfileEditPage(), AdminLoginPage(), StudentLoginPage(), TeacherLoginPage(), NotificationBell(), NotificationsPage(), useAuthStore, AssignmentDetailPage() (+29 more)
+
+### Community 102 - "Community 102"
+Cohesion: 0.29
+Nodes (6): lessonService, Lesson, LessonProgress, LessonResource, LessonType, ResourceType
+
+### Community 103 - "Community 103"
+Cohesion: 0.29
+Nodes (6): AuthState, ForgotPasswordInput, LoginInput, RegisterInput, ResetPasswordInput, User
 
 ### Community 104 - "Community 104"
 Cohesion: 0.47
 Nodes (4): router, createSubjectSchema, subjectQuerySchema, updateSubjectSchema
 
+### Community 105 - "Community 105"
+Cohesion: 0.40
+Nodes (4): gradeService, GradeDetail, GradeItem, GradeSummary
+
 ### Community 106 - "Community 106"
-Cohesion: 0.12
-Nodes (18): listAuditLogs(), recoverEntity(), deleteUpload(), assignRole(), createUser(), getStrengthsWeaknesses(), getUser(), listUsers() (+10 more)
+Cohesion: 0.11
+Nodes (19): chat(), listAuditLogs(), recoverEntity(), deleteUpload(), assignRole(), createUser(), getStrengthsWeaknesses(), getUser() (+11 more)
 
 ### Community 107 - "Community 107"
 Cohesion: 0.20
@@ -524,23 +548,19 @@ Nodes (4): useIsDesktop(), useIsMobile(), useIsTablet(), useMediaQuery()
 
 ### Community 153 - "Community 153"
 Cohesion: 0.07
-Nodes (22): allowedOrigins, corsOptions, envSchema, parsed, collections, cleanupExpiredData(), jobs, startScheduler() (+14 more)
+Nodes (20): allowedOrigins, corsOptions, envSchema, parsed, collections, cleanupExpiredData(), jobs, startScheduler() (+12 more)
 
 ### Community 157 - "Community 157"
-Cohesion: 0.16
-Nodes (10): Item, NotificationDropdown(), P_CFG, P_ORDER, Priority, TYPE_ICONS, NotificationBell(), NotificationStore (+2 more)
+Cohesion: 0.15
+Nodes (11): Item, NotificationDropdown(), P_CFG, P_ORDER, Priority, TYPE_ICONS, markAllNotificationsRead(), markNotificationRead() (+3 more)
 
 ### Community 169 - "Community 169"
-Cohesion: 0.11
-Nodes (24): extractTextFromPDF(), callAI(), extractChapters(), extractJson(), generateConceptContentAndQuestions(), getModel(), safeParse(), sanitizeJson() (+16 more)
+Cohesion: 0.08
+Nodes (36): extractTextFromPDF(), callAI(), extractChapters(), extractJson(), generateConceptContentAndQuestions(), getModel(), safeParse(), sanitizeJson() (+28 more)
 
 ### Community 170 - "Community 170"
 Cohesion: 0.33
 Nodes (4): ALLOWED_ATTRS, ALLOWED_TAGS, sanitizeHtml(), URI_ATTRS
-
-### Community 173 - "Community 173"
-Cohesion: 0.22
-Nodes (11): getConceptProgress(), saveConceptProgress(), ChapterWithConcepts, CachedVideo, Chapter, Concept, ConceptProgress, ConceptRelease (+3 more)
 
 ### Community 176 - "Community 176"
 Cohesion: 0.15
@@ -555,16 +575,16 @@ Cohesion: 0.14
 Nodes (13): validate(), ValidationTarget, router, router, router, router, searchConceptSchema, createAcademicYearSchema (+5 more)
 
 ### Community 186 - "Community 186"
-Cohesion: 0.07
-Nodes (26): ForgotPasswordFormData, forgotPasswordSchema, LoginFormData, loginSchema, RegisterFormData, registerSchema, ResetPasswordFormData, resetPasswordSchema (+18 more)
+Cohesion: 0.12
+Nodes (17): ForgotPasswordFormData, forgotPasswordSchema, LoginFormData, loginSchema, RegisterFormData, registerSchema, ResetPasswordFormData, resetPasswordSchema (+9 more)
 
 ### Community 197 - "Community 197"
 Cohesion: 0.04
-Nodes (34): getAssessmentAnalytics(), getClassConcepts(), getClassPerformance(), getConceptOversight(), getConductedTests(), getStudentPerformance(), notifyReTeach(), createAssignment() (+26 more)
+Nodes (28): notifyReTeach(), createAssignment(), gradeSubmission(), listAllAssignments(), listAssignmentsByCourse(), listSubmissions(), listClasses(), getEnrollments() (+20 more)
 
 ### Community 326 - "Community 326"
-Cohesion: 0.10
-Nodes (40): courseService, gradeService, lessonService, Assignment, AssignmentStatus, Grade, GradeLevel, RubricCriteria (+32 more)
+Cohesion: 0.12
+Nodes (35): courseService, ConceptDetailMindMapProps, ChapterWithConcepts, Class, Schedule, Section, Course, CourseFilters (+27 more)
 
 ### Community 375 - "Community 375"
 Cohesion: 0.38
@@ -575,8 +595,8 @@ Cohesion: 0.13
 Nodes (8): formatPercentage(), AssessmentDetail, AssessmentSummary, ClassOverview, OverviewCards(), StudentAssessmentDetail, StudentPerformance, TeacherAssignment
 
 ### Community 403 - "Community 403"
-Cohesion: 0.12
-Nodes (12): PAGINATION, ROLE_HIERARCHY, UPLOAD, ProtectedRoute(), ProtectedRouteProps, roleDashboard(), canManageUsers(), canViewAnalytics() (+4 more)
+Cohesion: 0.09
+Nodes (18): AdminLayout(), NavItem, navItems, ROLE_HIERARCHY, SheetContent, SheetContentProps, SheetDescription, SheetFooter() (+10 more)
 
 ## Ambiguous Edges - Review These
 - `Genesis graduation cap favicon SVG` → `Genesis platform icon PNG`  [AMBIGUOUS]
@@ -592,15 +612,15 @@ _Questions this graph is uniquely positioned to answer:_
 
 - **What is the exact relationship between `Genesis graduation cap favicon SVG` and `Genesis platform icon PNG`?**
   _Edge tagged AMBIGUOUS (relation: references) - confidence is low._
-- **Why does `sendSuccess()` connect `Community 18` to `Community 64`, `Community 96`, `Community 67`, `Community 197`, `Community 38`, `Community 106`, `Community 109`, `Community 22`, `Community 23`, `Community 88`, `Community 90`?**
+- **Why does `sendSuccess()` connect `Community 18` to `Community 64`, `Community 96`, `Community 197`, `Community 38`, `Community 106`, `Community 109`, `Community 22`, `Community 23`, `Community 90`, `Community 93`?**
   _High betweenness centrality (0.044) - this node is a cross-community bridge._
 - **Why does `dependencies` connect `Community 21` to `Community 19`, `Community 34`, `Community 2`?**
-  _High betweenness centrality (0.021) - this node is a cross-community bridge._
+  _High betweenness centrality (0.022) - this node is a cross-community bridge._
 - **Why does `dependencies` connect `Community 19` to `Community 2`, `Community 91`, `Community 21`?**
-  _High betweenness centrality (0.021) - this node is a cross-community bridge._
+  _High betweenness centrality (0.022) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `React UI framework` (e.g. with `School LMS entry page` and `Genesis entry page`) actually correct?**
   _`React UI framework` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `$schema`, `plugin`, `@opencode-ai/plugin` to the rest of the system?**
   _790 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.11231884057971014 - nodes in this community are weakly interconnected._
+- **Should `Community 1` be split into smaller, more focused modules?**
+  _Cohesion score 0.07292707292707293 - nodes in this community are weakly interconnected._

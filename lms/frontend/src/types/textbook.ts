@@ -86,6 +86,7 @@ export interface ConceptRelease {
   teacherId: string;
   questionBankReleased: boolean;
   assignmentsReleased: boolean;
+  mindMapReleased?: boolean;
   updatedAt: string;
 }
 

@@ -17,6 +17,7 @@ import { pageTransition } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import { getTextbook, getChaptersForTextbook, getConceptsForChapter, getConceptProgress, saveConceptProgress, getConceptRelease } from '@/services/textbookService';
 import { useAuthStore } from '@/store/authStore';
+import { ConceptDetailMindMap } from '@/components/teacher/ConceptDetailMindMap';
 import type { GeneratedQuestion } from '@/types/textbook';
 
 type QuestionType = GeneratedQuestion['type'];
@@ -243,6 +244,9 @@ export default function StudentConceptPage() {
                   <TabsTrigger value="learn" className="flex-1">
                     <Icon name="menu_book" size={14} className="mr-1.5" />Learn
                   </TabsTrigger>
+                  <TabsTrigger value="mindmap" className="flex-1">
+                    <Icon name="account_tree" size={14} className="mr-1.5" />Mind Map
+                  </TabsTrigger>
                   <TabsTrigger value="practice" className="flex-1">
                     <Icon name="quiz" size={14} className="mr-1.5" />Practice
                     {practiceCompleted && <Icon name="check_circle" size={12} className="ml-1 text-green-500" />}
@@ -324,6 +328,14 @@ export default function StudentConceptPage() {
   Start Adaptive Quiz
 </Button>
                   </>)}
+                </TabsContent>
+
+                <TabsContent value="mindmap" className="mt-4">
+                  {!release?.mindMapReleased ? (
+                    <UnlockOverlay icon="lock" message="The mind map has not yet been pushed by your teacher. It will be available once the concept is explained." />
+                  ) : (
+                    <ConceptDetailMindMap concept={d.concept} />
+                  )}
                 </TabsContent>
 
                 <TabsContent value="practice" className="mt-4 space-y-4">

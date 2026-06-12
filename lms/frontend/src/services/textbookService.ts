@@ -226,7 +226,7 @@ export async function setConceptRelease(
   conceptId: string,
   chapterId: string,
   teacherId: string,
-  data: Partial<Pick<ConceptRelease, 'questionBankReleased' | 'assignmentsReleased'>>,
+  data: Partial<Pick<ConceptRelease, 'questionBankReleased' | 'assignmentsReleased' | 'mindMapReleased'>>,
 ): Promise<void> {
   const docRef = doc(db, CONCEPT_RELEASES_COLLECTION, `${textbookId}_${conceptId}`);
   const snap = await getDoc(docRef);
@@ -241,7 +241,13 @@ export async function setConceptRelease(
   if (snap.exists()) {
     await updateDoc(docRef, payload);
   } else {
-    await setDoc(docRef, { ...payload, questionBankReleased: false, assignmentsReleased: false, ...data });
+    await setDoc(docRef, {
+      ...payload,
+      questionBankReleased: false,
+      assignmentsReleased: false,
+      mindMapReleased: false,
+      ...data,
+    });
   }
   logAudit({
     action: 'concept.release',

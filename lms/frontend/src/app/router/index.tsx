@@ -26,6 +26,7 @@ import AssignmentDetailPage from '@/app/pages/student/AssignmentDetailPage';
 import QuizAttemptPage from '@/app/pages/student/QuizAttemptPage';
 import ExamAttemptPage from '@/app/pages/student/ExamAttemptPage';
 import StudentQuizTakePageV2 from '@/app/pages/student/StudentQuizTakePageV2';
+import StudentConceptPage from '@/app/pages/student/StudentConceptPage';
 
 import TeacherDashboardPage from '@/app/pages/teacher/TeacherDashboardPage';
 import TeacherStudentsPage from '@/app/pages/teacher/TeacherStudentsPage';
@@ -110,6 +111,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.QUIZ_ATTEMPT(':id'), element: <QuizAttemptPage /> },
       { path: ROUTES.EXAM_DETAIL(':id'), element: <ExamAttemptPage /> },
       { path: ROUTES.STUDENT_TAKE_ASSESSMENT(':id'), element: <StudentQuizTakePageV2 /> },
+      { path: ROUTES.STUDENT_CONCEPT(':conceptId'), element: <StudentConceptPage /> },
     ],
   },
 
