@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -41,9 +42,13 @@ function ordinal(n: number): string {
 }
 
 export default function AdminClassesPage() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [grade, setGrade] = useState('');
+  const [code, setCode] = useState('');
+  const [section, setSection] = useState('');
+  const [roomNumber, setRoomNumber] = useState('');
   const [classes, setClasses] = useState<ClassEntry[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -92,6 +97,15 @@ export default function AdminClassesPage() {
     [classes, search]
   );
 
+  const handleGradeChange = (val: string) => {
+    setGrade(val);
+    if (/^\d+$/.test(val.trim())) {
+      setCode(`G${val.trim()}`);
+    } else {
+      setCode('');
+    }
+  };
+
   const handleCreate = async () => {
     const g = grade.trim();
     if (!g || !/^\d+$/.test(g)) {
@@ -100,12 +114,21 @@ export default function AdminClassesPage() {
     }
     const num = parseInt(g, 10);
     const className = `${ordinal(num)} class`;
+    const finalCode = code.trim().toUpperCase() || `G${num}`;
+
+    const duplicate = classes.find((c) => c.code === finalCode);
+    if (duplicate) {
+      toast.error(`Class code "${finalCode}" is already in use by "${duplicate.name}"`);
+      return;
+    }
+
     try {
       const classRef = await addDoc(collection(db, 'classes'), {
         name: className,
-        code: `G${num}`,
+        code: finalCode,
         grade: g,
-        section: '',
+        section: section.trim() || '',
+        roomNumber: roomNumber.trim() || '',
         academicYear: new Date().getFullYear().toString(),
         teacherIds: [],
         subjectIds: [],
@@ -120,10 +143,13 @@ export default function AdminClassesPage() {
         targetId: classRef.id,
         targetType: 'class',
         targetName: className,
-        summary: `Created class "${className}" (G${num})`,
-        newValue: { name: className, code: `G${num}`, grade: g },
+        summary: `Created class "${className}" (${finalCode})`,
+        newValue: { name: className, code: finalCode, grade: g, section: section.trim(), roomNumber: roomNumber.trim() },
       });
       setGrade('');
+      setCode('');
+      setSection('');
+      setRoomNumber('');
       setShowCreate(false);
       toast.success(`${className} created`);
       refetch();
@@ -446,7 +472,16 @@ export default function AdminClassesPage() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={() => navigate(`/admin/classes/${cls.id}/timetable`)}
+                            title="Timetable"
+                          >
+                            <Icon name="calendar_month" size={16} className="text-primary" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => handleEditClick(cls)}
+                            title="Edit"
                           >
                             <Icon name="edit" size={16} />
                           </Button>
@@ -454,6 +489,7 @@ export default function AdminClassesPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteClick(cls.id, cls.name)}
+                            title="Delete"
                           >
                             <Icon name="delete" size={16} className="text-error" />
                           </Button>
@@ -604,11 +640,19 @@ export default function AdminClassesPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+      <Dialog open={showCreate} onOpenChange={(open) => {
+        if (!open) {
+          setShowCreate(false);
+          setGrade('');
+          setCode('');
+          setSection('');
+          setRoomNumber('');
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create Class</DialogTitle>
-            <DialogDescription>Enter the grade number. Name will be auto-generated (e.g. "1st class").</DialogDescription>
+            <DialogDescription>Fill in class details. Class name will be auto-generated based on the grade number.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -616,7 +660,7 @@ export default function AdminClassesPage() {
               <Input
                 placeholder="e.g. 1, 2, 3..."
                 value={grade}
-                onChange={(e) => setGrade(e.target.value)}
+                onChange={(e) => handleGradeChange(e.target.value)}
                 autoFocus
               />
               {grade && /^\d+$/.test(grade.trim()) && (
@@ -624,6 +668,32 @@ export default function AdminClassesPage() {
                   Will be named: <span className="font-medium">{ordinal(parseInt(grade, 10))} class</span>
                 </p>
               )}
+            </div>
+            <div className="space-y-2">
+              <Label>Class Code</Label>
+              <Input
+                placeholder="e.g. G1-A"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Section</Label>
+                <Input
+                  placeholder="e.g. A, B"
+                  value={section}
+                  onChange={(e) => setSection(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Room Number</Label>
+                <Input
+                  placeholder="e.g. 101"
+                  value={roomNumber}
+                  onChange={(e) => setRoomNumber(e.target.value)}
+                />
+              </div>
             </div>
             <Button className="w-full" onClick={handleCreate}>
               <Icon name="add" size={16} className="mr-2" />

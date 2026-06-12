@@ -12,10 +12,11 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Icon } from '@/components/ui/Icon';
 import { OptionsSelect } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
 import { getTimetableByClass, getAllSubjects, getAllUsers, getAllClasses } from '@/services/dataService';
-import { collection, addDoc, deleteDoc, doc, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, writeBatch, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { logAudit } from '@/services/auditService';
 import type { TimetableEntry, Subject, UserDoc, ClassEntry } from '@/services/dataService';
@@ -114,8 +115,36 @@ export default function AdminTimetablePage() {
       return;
     }
     try {
+      const clashQuery = query(
+        collection(db, 'timetable'),
+        where('day', '==', slotForm.day),
+        where('period', '==', slotForm.period)
+      );
+      const clashSnap = await getDocs(clashQuery);
+
       const existing = timetableMap.get(`${slotForm.day}-${slotForm.period}`);
       const isUpdate = !!existing && !!existing.id;
+      const currentSlotId = isUpdate ? existing.id : null;
+
+      for (const d of clashSnap.docs) {
+        const slotData = d.data();
+        const slotId = d.id;
+
+        if (slotId === currentSlotId) continue;
+
+        if (slotData.teacherId === slotForm.teacherId) {
+          const conflictingClass = classList.find((c: ClassEntry) => c.id === slotData.classId);
+          toast.error(`Scheduling Conflict: This teacher is already scheduled for ${conflictingClass?.name || 'another class'} at this period!`);
+          return;
+        }
+
+        if (slotForm.room && slotData.room && slotData.room.trim().toLowerCase() === slotForm.room.trim().toLowerCase()) {
+          const conflictingClass = classList.find((c: ClassEntry) => c.id === slotData.classId);
+          toast.error(`Scheduling Conflict: Room "${slotForm.room}" is already occupied by ${conflictingClass?.name || 'another class'} at this period!`);
+          return;
+        }
+      }
+
       if (isUpdate) {
         const batch = writeBatch(db);
         batch.delete(doc(db, 'timetable', existing.id));
@@ -383,15 +412,14 @@ export default function AdminTimetablePage() {
                 onChange={(v: string) => setSlotForm((f) => ({ ...f, teacherId: v }))}
               />
             </div>
-            <div className="space-y-2">
-              <Label>Room</Label>
-              <OptionsSelect
-                options={[{ value: '101', label: 'Room 101' }, { value: '102', label: 'Room 102' }, { value: '103', label: 'Room 103' }, { value: '201', label: 'Room 201' }, { value: '202', label: 'Room 202' }, { value: '203', label: 'Room 203' }, { value: 'Lab A', label: 'Lab A' }, { value: 'Lab B', label: 'Lab B' }, { value: 'Auditorium', label: 'Auditorium' }]}
-                placeholder="Select room"
-                value={slotForm.room}
-                onChange={(v: string) => setSlotForm((f) => ({ ...f, room: v }))}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label>Room</Label>
+                <Input
+                  placeholder="e.g. Room 101, Lab A"
+                  value={slotForm.room}
+                  onChange={(e) => setSlotForm((f) => ({ ...f, room: e.target.value }))}
+                />
+              </div>
             <Button className="w-full" onClick={handleSaveSlot}>
               <Icon name="save" size={16} className="mr-2" />
               {selectedSlot ? 'Update Slot' : 'Add Slot'}

@@ -169,6 +169,9 @@ export async function updateUser(uid: string, data: {
   photoURL?: string;
   disabled?: boolean;
   classIds?: string[];
+  classId?: string;
+  rollNo?: number;
+  academicYear?: string;
 }) {
   const userRef = collections.users().doc(uid);
   const existing = await userRef.get();
@@ -186,6 +189,16 @@ export async function updateUser(uid: string, data: {
   if (data.photoURL !== undefined) updateData.photoURL = data.photoURL;
   if (data.disabled !== undefined) updateData.isActive = !data.disabled;
   if (data.classIds !== undefined) updateData.classIds = data.classIds;
+  
+  if (data.classId !== undefined) {
+    updateData.classId = data.classId;
+    const existingClassIds = existing.data()!.classIds || [];
+    if (data.classId && !existingClassIds.includes(data.classId)) {
+      updateData.classIds = [...existingClassIds, data.classId];
+    }
+  }
+  if (data.rollNo !== undefined) updateData.rollNo = data.rollNo;
+  if (data.academicYear !== undefined) updateData.academicYear = data.academicYear;
 
   await userRef.update(updateData);
 

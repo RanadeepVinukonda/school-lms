@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { pageTransition } from '@/lib/motion';
 import api from '@/services/api';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 
 export default function AdminAcademicYearsPage() {
   const queryClient = useQueryClient();
@@ -22,6 +23,7 @@ export default function AdminAcademicYearsPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [isCurrent, setIsCurrent] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<any | null>(null);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['academic-years'],
@@ -43,7 +45,24 @@ export default function AdminAcademicYearsPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/academic-years/${id}`),
     onSuccess: () => { toast.success('Academic year deleted'); queryClient.invalidateQueries({ queryKey: ['academic-years'] }); },
+    onError: (err: any) => toast.error(err.message || 'Failed to delete'),
   });
+
+  const handleSave = () => {
+    if (!name.trim() || !code.trim()) {
+      toast.error('Name and Code are required');
+      return;
+    }
+    if (startDate && endDate && new Date(endDate) <= new Date(startDate)) {
+      toast.error('End date must be after start date');
+      return;
+    }
+    if (editing) {
+      updateMutation.mutate();
+    } else {
+      createMutation.mutate();
+    }
+  };
 
   function closeDialog() { setShowCreate(false); setEditing(null); setName(''); setCode(''); setStartDate(''); setEndDate(''); setIsCurrent(false); }
 
@@ -91,7 +110,7 @@ export default function AdminAcademicYearsPage() {
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
                           <Button variant="ghost" size="icon-sm" onClick={() => openEdit(y)}><Icon name="edit" size={16} /></Button>
-                          <Button variant="ghost" size="icon-sm" onClick={() => { if (confirm('Delete this academic year?')) deleteMutation.mutate(y.id); }}><Icon name="delete" size={16} /></Button>
+                          <Button variant="ghost" size="icon-sm" onClick={() => setDeleteConfirm(y)}><Icon name="delete" size={16} /></Button>
                         </div>
                       </div>
                     </CardContent>
@@ -122,10 +141,25 @@ export default function AdminAcademicYearsPage() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={closeDialog}>Cancel</Button>
-              <Button onClick={() => (editing ? updateMutation : createMutation).mutate()} disabled={!name.trim() || !code.trim()}>Save</Button>
+              <Button onClick={handleSave} disabled={!name.trim() || !code.trim() || createMutation.isPending || updateMutation.isPending}>Save</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <ConfirmDialog
+          open={!!deleteConfirm}
+          onOpenChange={(o) => { if (!o) setDeleteConfirm(null); }}
+          title="Delete Academic Year"
+          description={deleteConfirm ? `Are you sure you want to delete the academic year "${deleteConfirm.name}"? This action is permanent and cannot be undone.` : ''}
+          confirmText="Delete"
+          destructive
+          onConfirm={() => {
+            if (deleteConfirm) {
+              deleteMutation.mutate(deleteConfirm.id);
+              setDeleteConfirm(null);
+            }
+          }}
+        />
       </motion.div>
     </>
   );

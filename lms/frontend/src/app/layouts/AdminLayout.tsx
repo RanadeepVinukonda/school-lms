@@ -24,7 +24,8 @@ const navItems: NavItem[] = [
   { label: 'Students', href: ROUTES.ADMIN_STUDENTS, icon: 'school' },
   { label: 'Teachers', href: ROUTES.ADMIN_TEACHERS, icon: 'badge' },
   { label: 'Classes', href: ROUTES.ADMIN_CLASSES, icon: 'meeting_room' },
-  { label: 'Subjects', href: ROUTES.ADMIN_SUBJECTS, icon: 'book' },
+  { label: 'Subjects', href: ROUTES.ADMIN_SUBJECTS, icon: 'menu_book' },
+  { label: 'User Management', href: ROUTES.ADMIN_USERS, icon: 'groups' },
   { label: 'Settings', href: ROUTES.ADMIN_SETTINGS, icon: 'settings' },
   { label: 'Audit Logs', href: ROUTES.ADMIN_AUDIT_LOGS, icon: 'history' },
 ];

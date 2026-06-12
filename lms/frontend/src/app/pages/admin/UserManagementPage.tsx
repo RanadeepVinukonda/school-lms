@@ -30,6 +30,10 @@ const roleOptions = [
   { value: 'admin', label: 'Admin' },
 ];
 
+const creationRoleOptions = [
+  { value: 'admin', label: 'Admin' },
+];
+
 const roleBadgeColors: Record<string, string> = {
   student: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
   teacher: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
@@ -43,7 +47,7 @@ export default function UserManagementPage() {
   const [roleFilter, setRoleFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
-  const [createForm, setCreateForm] = useState({ displayName: '', email: '', password: '', role: 'student' });
+  const [createForm, setCreateForm] = useState({ displayName: '', email: '', password: '', role: 'admin' });
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin-users', search, roleFilter, page],
@@ -66,7 +70,7 @@ export default function UserManagementPage() {
     onSuccess: () => {
       toast.success('User created');
       setShowCreate(false);
-      setCreateForm({ displayName: '', email: '', password: '', role: 'student' });
+      setCreateForm({ displayName: '', email: '', password: '', role: 'admin' });
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
     },
     onError: (err: Error) => toast.error(err.message || 'Failed to create user'),
@@ -356,7 +360,7 @@ export default function UserManagementPage() {
               <div className="space-y-2">
                 <Label>Role</Label>
                 <OptionsSelect
-                  options={roleOptions}
+                  options={creationRoleOptions}
                   value={createForm.role}
                   onChange={(v: string) => setCreateForm((f) => ({ ...f, role: v }))}
                 />

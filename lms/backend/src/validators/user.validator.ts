@@ -34,6 +34,9 @@ export const updateUserSchema = z.object({
   photoURL: z.string().url('Invalid photo URL').optional(),
   disabled: z.boolean().optional(),
   classIds: z.array(z.string()).optional(),
+  classId: z.string().optional(),
+  rollNo: z.number().int().positive().optional(),
+  academicYear: z.string().optional(),
 });
 
 export const userQuerySchema = z.object({

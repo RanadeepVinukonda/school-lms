@@ -33,6 +33,8 @@ export interface User {
   avatar?: string;
   studentId?: string;
   classId?: string;
+  rollNo?: number;
+  academicYear?: string;
   createdAt: string;
   updatedAt: string;
 }

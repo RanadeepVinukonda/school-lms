@@ -108,13 +108,13 @@ export default function AdminDashboardPage() {
     enabled: activeTab === 'oversight',
   });
 
-  const { data: teachersData = [] } = useQuery({
+  const { data: teachersData = [], isLoading: isTeachersLoading, isError: isTeachersError } = useQuery({
     queryKey: ['admin-teachers'],
     queryFn: () => getAllUsers().then((u) => u.filter((x) => x.role === 'teacher')),
     enabled: activeTab === 'monitor',
   });
 
-  const { data: studentsData = [] } = useQuery({
+  const { data: studentsData = [], isLoading: isStudentsLoading, isError: isStudentsError } = useQuery({
     queryKey: ['admin-students'],
     queryFn: () => getAllUsers().then((u) => u.filter((x) => x.role === 'student')),
     enabled: activeTab === 'monitor',
@@ -156,9 +156,9 @@ export default function AdminDashboardPage() {
     { icon: 'calendar_month', label: 'Upcoming Exams', value: overviewData?.upcomingExamCount ?? 0, color: 'text-error', bg: 'bg-error-container' },
   ], [overviewData]);
 
-  const isTabLoading = activeTab === 'overview' ? isOverviewLoading : activeTab === 'monitor' ? false : isOversightLoading;
-  const isTabError = activeTab === 'overview' ? isOverviewError : activeTab === 'monitor' ? false : isOversightError;
-  const tabRefetch = activeTab === 'overview' ? refetchOverview : activeTab === 'monitor' ? refetchOverview : refetchOversight;
+  const isTabLoading = activeTab === 'overview' ? isOverviewLoading : activeTab === 'monitor' ? (isTeachersLoading || isStudentsLoading) : isOversightLoading;
+  const isTabError = activeTab === 'overview' ? isOverviewError : activeTab === 'monitor' ? (isTeachersError || isStudentsError) : isOversightError;
+  const tabRefetch = activeTab === 'overview' ? refetchOverview : activeTab === 'monitor' ? () => { refetchOverview(); } : refetchOversight;
 
   return (
     <>
@@ -212,7 +212,7 @@ export default function AdminDashboardPage() {
         </div>
 
         <DataFetchWrapper
-          data={activeTab === 'overview' ? overviewData : oversightData}
+          data={activeTab === 'overview' ? overviewData : activeTab === 'monitor' ? {} : oversightData}
           isLoading={isTabLoading}
           error={isTabError ? new Error('Failed to load dashboard data') : null}
           onRetry={() => tabRefetch()}

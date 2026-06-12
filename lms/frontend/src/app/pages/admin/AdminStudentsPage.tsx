@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -82,6 +82,48 @@ export default function AdminStudentsPage() {
     },
   });
 
+  const [showEdit, setShowEdit] = useState(false);
+  const [editTarget, setEditTarget] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState({
+    displayName: '',
+    rollNo: '',
+    classId: '',
+    academicYear: '',
+  });
+
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const editMutation = useMutation({
+    mutationFn: () =>
+      userService.update(editTarget.id, {
+        displayName: editForm.displayName,
+        classId: editForm.classId,
+        rollNo: editForm.rollNo ? parseInt(editForm.rollNo, 10) : undefined,
+        academicYear: editForm.academicYear,
+      }),
+    onSuccess: () => {
+      toast.success('Student updated successfully');
+      setShowEdit(false);
+      setEditTarget(null);
+      queryClient.invalidateQueries({ queryKey: ['admin-students'] });
+    },
+    onError: (err: any) => {
+      toast.error(err.message || 'Failed to update student');
+    },
+  });
+
+  const handleEditClick = (student: any) => {
+    setEditTarget(student);
+    setEditForm({
+      displayName: student.displayName || '',
+      rollNo: student.rollNo ? String(student.rollNo) : '',
+      classId: student.classId || '',
+      academicYear: student.academicYear || '',
+    });
+    setShowEdit(true);
+  };
+
   const filtered = useMemo(
     () =>
       students.filter((s) => {
@@ -92,6 +134,18 @@ export default function AdminStudentsPage() {
       }),
     [students, search, classFilter]
   );
+
+  const paginatedStudents = useMemo(() => {
+    const startIdx = (page - 1) * itemsPerPage;
+    return filtered.slice(startIdx, startIdx + itemsPerPage);
+  }, [filtered, page, itemsPerPage]);
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+
+  // Reset page when search or classFilter changes
+  useEffect(() => {
+    setPage(1);
+  }, [search, classFilter]);
 
   return (
     <>
@@ -176,10 +230,11 @@ export default function AdminStudentsPage() {
                         <th className="text-left text-label-sm font-medium text-on-surface-variant uppercase tracking-wider px-4 py-3">Student ID</th>
                         <th className="text-left text-label-sm font-medium text-on-surface-variant uppercase tracking-wider px-4 py-3">Class</th>
                         <th className="text-left text-label-sm font-medium text-on-surface-variant uppercase tracking-wider px-4 py-3">Status</th>
+                        <th className="text-right text-label-sm font-medium text-on-surface-variant uppercase tracking-wider px-4 py-3">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y-outline-variant divide-y">
-                      {filtered.map((student) => {
+                      {paginatedStudents.map((student) => {
                         const className = classes.find((c: ClassEntry) => c.id === student.classId)?.name || '\u2014';
                         return (
                           <tr key={student.id} className="hover:bg-surface-variant/40 transition-colors">
@@ -194,12 +249,44 @@ export default function AdminStudentsPage() {
                                 {student.isActive === false ? 'Inactive' : 'Active'}
                               </Badge>
                             </td>
+                            <td className="px-4 py-3 text-right">
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={() => handleEditClick(student)}
+                                title="Edit Student"
+                              >
+                                <Icon name="edit" size={16} />
+                              </Button>
+                            </td>
                           </tr>
                         );
                       })}
                     </tbody>
                   </table>
                 </div>
+
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-4">
+                    <Button variant="outline" size="icon" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
+                      <Icon name="chevron_left" size={18} />
+                    </Button>
+                    {Array.from({ length: totalPages }, (_, i) => (
+                      <Button
+                        key={i + 1}
+                        variant={page === i + 1 ? 'default' : 'outline'}
+                        size="icon"
+                        className="h-8 w-8 text-xs font-semibold"
+                        onClick={() => setPage(i + 1)}
+                      >
+                        {i + 1}
+                      </Button>
+                    ))}
+                    <Button variant="outline" size="icon" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
+                      <Icon name="chevron_right" size={18} />
+                    </Button>
+                  </div>
+                )}
               </motion.div>
             )}
           </motion.div>
@@ -299,9 +386,84 @@ export default function AdminStudentsPage() {
               </div>
             </div>
           )}
-          <DialogFooter>
-            <Button className="w-full" onClick={() => setCreatedCredentials(null)}>
+          <DialogFooter className="flex gap-2">
+            <Button
+              className="flex-1"
+              variant="outline"
+              onClick={() => {
+                if (createdCredentials) {
+                  const text = `Name: ${createdCredentials.displayName}\nStudent ID: ${createdCredentials.studentId}\nEmail: ${createdCredentials.email}\nPassword: ${createdCredentials.generatedPassword}`;
+                  navigator.clipboard.writeText(text);
+                  toast.success('Credentials copied to clipboard');
+                }
+              }}
+            >
+              <Icon name="content_copy" size={16} className="mr-2" />
+              Copy Credentials
+            </Button>
+            <Button className="flex-1" onClick={() => setCreatedCredentials(null)}>
               Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* EDIT STUDENT DIALOG */}
+      <Dialog open={showEdit} onOpenChange={(open) => { if (!open) { setShowEdit(false); setEditTarget(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Student Profile</DialogTitle>
+            <DialogDescription>Update the student's name, class mapping, or roll number.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Full Name</Label>
+              <Input
+                placeholder="John Doe"
+                value={editForm.displayName}
+                onChange={(e) => setEditForm((f) => ({ ...f, displayName: e.target.value }))}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Class</Label>
+                <OptionsSelect
+                  options={classOptions}
+                  placeholder="Select Class"
+                  value={editForm.classId}
+                  onChange={(v: string) => setEditForm((f) => ({ ...f, classId: v }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Roll Number</Label>
+                <Input
+                  type="number"
+                  placeholder="e.g. 5"
+                  value={editForm.rollNo}
+                  onChange={(e) => setEditForm((f) => ({ ...f, rollNo: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Academic Year</Label>
+              <Input
+                placeholder="e.g. 2026"
+                value={editForm.academicYear}
+                onChange={(e) => setEditForm((f) => ({ ...f, academicYear: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowEdit(false); setEditTarget(null); }}>Cancel</Button>
+            <Button
+              onClick={() => editMutation.mutate()}
+              disabled={!editForm.displayName || !editForm.classId || !editForm.rollNo || editMutation.isPending}
+            >
+              {editMutation.isPending ? (
+                <><Icon name="sync" size={16} className="mr-2 animate-spin" />Saving...</>
+              ) : (
+                <><Icon name="save" size={16} className="mr-2" />Save Changes</>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

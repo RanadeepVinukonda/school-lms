@@ -120,9 +120,9 @@ export default function AdminSubjectsPage() {
       return;
     }
     const code = form.code.toUpperCase();
-    const duplicate = subjects.find((s) => s.code === code && s.isActive !== false);
+    const duplicate = subjects.find((s) => s.code === code && (s as { classId?: string }).classId === form.classId && s.isActive !== false);
     if (duplicate) {
-      toast.error(`Subject code "${code}" is already in use by "${duplicate.name}"`);
+      toast.error(`Subject code "${code}" is already in use by "${duplicate.name}" for this class`);
       return;
     }
     try {
@@ -166,9 +166,9 @@ export default function AdminSubjectsPage() {
       return;
     }
     const code = form.code.toUpperCase();
-    const duplicate = subjects.find((s) => s.code === code && s.id !== editTarget.id && s.isActive !== false);
+    const duplicate = subjects.find((s) => s.code === code && s.id !== editTarget.id && (s as { classId?: string }).classId === form.classId && s.isActive !== false);
     if (duplicate) {
-      toast.error(`Subject code "${code}" is already in use by "${duplicate.name}"`);
+      toast.error(`Subject code "${code}" is already in use by "${duplicate.name}" for this class`);
       return;
     }
     const changedFields: string[] = [];
@@ -472,7 +472,7 @@ export default function AdminSubjectsPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showEdit} onOpenChange={(open) => { if (!open) { setShowEdit(false); setEditTarget(null); } }}>
+      <Dialog open={showEdit} onOpenChange={(open) => { if (!open) { setShowEdit(false); setEditTarget(null); setForm(emptyForm); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Subject</DialogTitle>
@@ -540,7 +540,7 @@ export default function AdminSubjectsPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showAdd} onOpenChange={setShowAdd}>
+      <Dialog open={showAdd} onOpenChange={(open) => { if (!open) { setShowAdd(false); setForm(emptyForm); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Subject</DialogTitle>
