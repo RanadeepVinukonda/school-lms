@@ -4,6 +4,7 @@ import { AdminLayout } from '@/app/layouts/AdminLayout';
 import StudentLayout from '@/app/layouts/StudentLayout';
 import TeacherLayout from '@/app/layouts/TeacherLayout';
 import { ProtectedRoute } from '@/app/router/ProtectedRoute';
+import { RouteErrorFallback } from '@/components/common/RouteErrorFallback';
 import { ROUTES } from '@/lib/constants';
 
 import { LoginForm } from '@/features/auth/components/LoginForm';
@@ -70,6 +71,7 @@ export const router = createBrowserRouter([
   },
   {
     element: <AuthLayout />,
+    errorElement: <RouteErrorFallback />,
     children: [
       { path: ROUTES.LOGIN, element: <LoginSelectorPage /> },
       { path: ROUTES.LOGIN_STUDENT, element: <StudentLoginPage /> },
@@ -90,6 +92,7 @@ export const router = createBrowserRouter([
   },
 
   {
+    errorElement: <RouteErrorFallback />,
     element: (
       <ProtectedRoute roles={['student']} checkSetup>
         <StudentLayout />
@@ -109,6 +112,7 @@ export const router = createBrowserRouter([
   },
 
   {
+    errorElement: <RouteErrorFallback />,
     element: (
       <ProtectedRoute roles={['teacher']} checkSetup>
         <TeacherLayout />
@@ -140,6 +144,7 @@ export const router = createBrowserRouter([
   },
 
   {
+    errorElement: <RouteErrorFallback />,
     element: (
       <ProtectedRoute roles={['super_admin', 'admin']}>
         <AdminLayout />

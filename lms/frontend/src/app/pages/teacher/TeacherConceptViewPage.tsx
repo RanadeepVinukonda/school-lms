@@ -401,11 +401,11 @@ export default function TeacherConceptViewPage() {
                   <Badge variant="outline" className="text-[10px] capitalize">{d.concept.difficulty}</Badge>
                   <Badge variant="outline" className="text-[10px]">
                     <Icon name="smart_display" size={12} className="mr-1" />
-                    {d.concept.videos.length} video{d.concept.videos.length !== 1 ? 's' : ''}
+                    {(d.concept.videos ?? []).length} video{(d.concept.videos ?? []).length !== 1 ? 's' : ''}
                   </Badge>
                   <Badge variant="outline" className="text-[10px]">
                     <Icon name="quiz" size={12} className="mr-1" />
-                    {d.concept.questionBank.length} question{d.concept.questionBank.length !== 1 ? 's' : ''}
+                    {(d.concept.questionBank ?? []).length} question{(d.concept.questionBank ?? []).length !== 1 ? 's' : ''}
                   </Badge>
                 </div>
               </div>
@@ -420,12 +420,12 @@ export default function TeacherConceptViewPage() {
                   </TabsTrigger>
                   <TabsTrigger value="questions" className="flex-1">
                     <Icon name="quiz" size={14} className="mr-1.5" />Questions
-                    <Badge variant="secondary" className="ml-1.5 text-[10px] px-1">{d.concept.questionBank.length}</Badge>
+                    <Badge variant="secondary" className="ml-1.5 text-[10px] px-1">{(d.concept.questionBank ?? []).length}</Badge>
                   </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="teach" className="mt-4 space-y-4">
-                  {d.concept.videos.length > 0 && (
+                  {(d.concept.videos?.length ?? 0) > 0 && (
                     d.concept.videos.map((video) => (
                       <Card key={video.id}>
                         <CardContent className="p-4">
@@ -459,15 +459,15 @@ export default function TeacherConceptViewPage() {
                         Auto-generate assessments from the concept's question bank and release instantly.
                       </p>
                       <div className="flex flex-wrap gap-3">
-                        <Button onClick={() => setShowQuizDialog(true)} disabled={d.concept.questionBank.length === 0}>
+                        <Button onClick={() => setShowQuizDialog(true)} disabled={(d.concept.questionBank?.length ?? 0) === 0}>
                           <Icon name="quiz" size={16} className="mr-1.5" />
                           Pass Quiz
                         </Button>
-                        <Button variant="secondary" onClick={() => setShowAssignmentDialog(true)} disabled={d.concept.questionBank.length === 0}>
+                        <Button variant="secondary" onClick={() => setShowAssignmentDialog(true)} disabled={(d.concept.questionBank?.length ?? 0) === 0}>
                           <Icon name="assignment" size={16} className="mr-1.5" />
                           Give Assignment
                         </Button>
-                        <Button variant="tonal" onClick={() => setShowExamDialog(true)} disabled={d.concept.questionBank.length === 0}>
+                        <Button variant="tonal" onClick={() => setShowExamDialog(true)} disabled={(d.concept.questionBank?.length ?? 0) === 0}>
                           <Icon name="fact_check" size={16} className="mr-1.5" />
                           Start Exam
                         </Button>
@@ -526,7 +526,7 @@ export default function TeacherConceptViewPage() {
                 </TabsContent>
 
                 <TabsContent value="questions" className="mt-4 space-y-4">
-                  {d.concept.questionBank.length > 0 ? (
+                  {(d.concept.questionBank?.length ?? 0) > 0 ? (
                     d.concept.questionBank.map((q, i) => (
                       <Card key={q.id}>
                         <CardContent className="p-4">

@@ -234,7 +234,7 @@ export default function StudentQuizTakePageV2() {
   const goToQuestion = useCallback(
     (index: number) => {
       if (!attempt) return;
-      if (index >= 0 && index < attempt.questions.length) {
+      if (index >= 0 && index < (attempt.questions?.length ?? 0)) {
         const currentQ = attempt.questions[currentIndex];
         if (currentQ) trackTimeOnQuestion(currentQ.id);
         
@@ -340,7 +340,7 @@ export default function StudentQuizTakePageV2() {
 
       // Auto advance to next question after 1.2s delay
       setTimeout(() => {
-        if (currentIndex < attempt.questions.length - 1) {
+        if (currentIndex < (attempt.questions?.length ?? 0) - 1) {
           goToQuestion(currentIndex + 1);
         } else {
           setShowConfirm(true);
@@ -380,7 +380,7 @@ export default function StudentQuizTakePageV2() {
       handleAnswerChange(customTextInput);
 
       setTimeout(() => {
-        if (currentIndex < attempt.questions.length - 1) {
+        if (currentIndex < (attempt.questions?.length ?? 0) - 1) {
           goToQuestion(currentIndex + 1);
         } else {
           setShowConfirm(true);
@@ -590,8 +590,9 @@ export default function StudentQuizTakePageV2() {
   if (phase === 'result' && result) {
     const isPassed = result.passed;
     const levelLabel = result.level || 'beginner';
-    const correctCount = result.answers.filter((a) => a.isCorrect).length;
-    const totalQuestions = result.answers.length;
+    const safeAnswers = result.answers ?? [];
+    const correctCount = safeAnswers.filter((a) => a.isCorrect).length;
+    const totalQuestions = safeAnswers.length;
 
     return (
       <>
