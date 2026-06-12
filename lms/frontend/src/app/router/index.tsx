@@ -50,6 +50,7 @@ import TeacherTestSchedulePage from '@/app/pages/teacher/TeacherTestSchedulePage
 import TeacherPreviousYearQPage from '@/app/pages/teacher/TeacherPreviousYearQPage';
 
 import AdminDashboardPage from '@/app/pages/admin/AdminDashboardPage';
+import AdminAcademicYearsPage from '@/app/pages/admin/AdminAcademicYearsPage';
 import AdminStudentsPage from '@/app/pages/admin/AdminStudentsPage';
 import AdminTeachersPage from '@/app/pages/admin/AdminTeachersPage';
 import AdminClassesPage from '@/app/pages/admin/AdminClassesPage';
@@ -152,6 +153,7 @@ export const router = createBrowserRouter([
     ),
     children: [
       { path: ROUTES.ADMIN_DASHBOARD, element: <AdminDashboardPage /> },
+      { path: ROUTES.ADMIN_ACADEMIC_YEARS, element: <AdminAcademicYearsPage /> },
       { path: ROUTES.ADMIN_STUDENTS, element: <AdminStudentsPage /> },
       { path: ROUTES.ADMIN_TEACHERS, element: <AdminTeachersPage /> },
       { path: ROUTES.ADMIN_CLASSES, element: <AdminClassesPage /> },

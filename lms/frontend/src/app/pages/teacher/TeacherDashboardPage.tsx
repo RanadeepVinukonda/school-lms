@@ -23,6 +23,7 @@ import {
 } from '@/services/dataService';
 import { getTextbooksBySubject } from '@/services/textbookService';
 import { pageTransition, listItem, listContainer } from '@/lib/motion';
+import { TeacherHierarchyNav } from '@/components/teacher/TeacherHierarchyNav';
 
 interface NeedsAttentionItem {
   icon: string; label: string; count: number;
@@ -173,6 +174,11 @@ export default function TeacherDashboardPage() {
               <motion.div variants={listItem} initial="hidden" animate="show">
                 <h1 className="text-headline-sm">Welcome, {teacherName}</h1>
                 <p className="text-sm text-muted-foreground">Here&apos;s what needs your attention today</p>
+              </motion.div>
+
+              <motion.div variants={listItem} initial="hidden" animate="show" className="bg-card border rounded-xl p-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Navigate to Concept</p>
+                <TeacherHierarchyNav />
               </motion.div>
 
               <section>

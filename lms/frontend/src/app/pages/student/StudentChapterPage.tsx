@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -6,7 +6,9 @@ import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icon } from '@/components/ui/Icon';
+import { ConceptMindMap } from '@/components/teacher/ConceptMindMap';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import { getTextbook, getChaptersForTextbook, getConceptsForChapter, getAllConceptReleases } from '@/services/textbookService';
@@ -87,45 +89,61 @@ export default function StudentChapterPage() {
                 </div>
 
                 {concepts.length > 0 && (
-                  <div>
-                    <h2 className="text-title-md font-semibold mb-3">Concepts ({concepts.length})</h2>
-                    <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-3">
-                      {concepts.map((concept: any, i: number) => (
-                        <motion.div key={concept.id} variants={listItem}>
-                          <Link to={`${ROUTES.STUDENT_CONCEPT(concept.id)}?textbookId=${textbookId}`}>
-                            <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                              <CardContent className="p-4">
-                                <div className="flex items-start gap-3">
-                                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                    <span className="text-sm font-bold text-primary">{i + 1}</span>
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <h3 className="font-medium">{concept.title}</h3>
-                                    <p className="text-sm text-muted-foreground line-clamp-1">{concept.summary}</p>
-                                    <div className="flex items-center gap-3 mt-2">
-                                      <Badge variant="outline" className="text-[10px] capitalize">
-                                        {concept.difficulty}
-                                      </Badge>
-                                      <span className="text-xs text-muted-foreground">
-                                        <Icon name="schedule" size={12} className="inline mr-0.5" />
-                                        {concept.estimatedMinutes} min
-                                      </span>
-                                      <span className="text-xs text-muted-foreground">
-                                        <Icon name="quiz" size={12} className="inline mr-0.5" />
-                                        {concept.questionBank?.length || 0} questions
-                                      </span>
-                                      {getReleaseBadge(releaseMap.get(concept.id))}
+                  <Tabs defaultValue="list">
+                    <TabsList>
+                      <TabsTrigger value="list"><Icon name="list" size={14} className="mr-1" />List</TabsTrigger>
+                      <TabsTrigger value="mindmap"><Icon name="account_tree" size={14} className="mr-1" />Mind Map</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="list">
+                      <h2 className="text-title-md font-semibold mb-3 mt-4">Concepts ({concepts.length})</h2>
+                      <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-3">
+                        {concepts.map((concept: any, i: number) => (
+                          <motion.div key={concept.id} variants={listItem}>
+                            <Link to={`${ROUTES.STUDENT_CONCEPT(concept.id)}?textbookId=${textbookId}`}>
+                              <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                                <CardContent className="p-4">
+                                  <div className="flex items-start gap-3">
+                                    <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                      <span className="text-sm font-bold text-primary">{i + 1}</span>
                                     </div>
+                                    <div className="flex-1 min-w-0">
+                                      <h3 className="font-medium">{concept.title}</h3>
+                                      <p className="text-sm text-muted-foreground line-clamp-1">{concept.summary}</p>
+                                      <div className="flex items-center gap-3 mt-2">
+                                        <Badge variant="outline" className="text-[10px] capitalize">
+                                          {concept.difficulty}
+                                        </Badge>
+                                        <span className="text-xs text-muted-foreground">
+                                          <Icon name="schedule" size={12} className="inline mr-0.5" />
+                                          {concept.estimatedMinutes} min
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
+                                          <Icon name="quiz" size={12} className="inline mr-0.5" />
+                                          {concept.questionBank?.length || 0} questions
+                                        </span>
+                                        {getReleaseBadge(releaseMap.get(concept.id))}
+                                      </div>
+                                    </div>
+                                    <Icon name="chevron_right" size={18} className="text-muted-foreground/50 flex-shrink-0 mt-2" />
                                   </div>
-                                  <Icon name="chevron_right" size={18} className="text-muted-foreground/50 flex-shrink-0 mt-2" />
-                                </div>
-                              </CardContent>
-                            </Card>
-                          </Link>
-                        </motion.div>
-                      ))}
-                    </motion.div>
-                  </div>
+                                </CardContent>
+                              </Card>
+                            </Link>
+                          </motion.div>
+                        ))}
+                      </motion.div>
+                    </TabsContent>
+
+                    <TabsContent value="mindmap">
+                      <div className="mt-4">
+                        <ConceptMindMap
+                          concepts={concepts}
+                          chapterTitle={(ch as any).title}
+                        />
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                 )}
 
                 {concepts.length === 0 && (

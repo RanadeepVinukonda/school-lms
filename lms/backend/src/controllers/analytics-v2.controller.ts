@@ -23,6 +23,11 @@ export async function getAssessmentAnalytics(req: Request, res: Response) {
   sendSuccess(res, result);
 }
 
+export async function getClassConcepts(req: Request, res: Response) {
+  const result = await analyticsV2Service.getConceptsForClass(req.params.classId);
+  sendSuccess(res, result);
+}
+
 export async function getConceptOversight(req: Request, res: Response) {
   const result = await analyticsV2Service.getConceptOversight();
   sendSuccess(res, result);

@@ -10,6 +10,7 @@ import GlobalSearchDialog from '@/components/common/GlobalSearchDialog';
 import { TutorialGuide } from '@/components/common/TutorialGuide';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { UserAvatar } from '@/components/layout/UserAvatar';
+import { StudentHierarchyNav } from '@/components/student/StudentHierarchyNav';
 import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/lib/constants';
@@ -171,7 +172,9 @@ export default function StudentLayout() {
           </div>
         </header>
 
-        {/* Page content */}
+        <div className="px-4 py-2 border-b border-outline-variant bg-surface/50 overflow-x-auto">
+          <StudentHierarchyNav />
+        </div>
         <main className="min-h-[calc(100vh-8rem)]">
           <Outlet />
         </main>

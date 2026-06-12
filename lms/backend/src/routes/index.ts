@@ -31,6 +31,7 @@ import questionBankRoutes from './question-bank.routes';
 import questionPaperRoutes from './question-paper.routes';
 import testTemplateRoutes from './test-template.routes';
 import testScheduleRoutes from './test-schedule.routes';
+import academicYearRoutes from './academic-year.routes';
 
 const router = Router();
 
@@ -66,6 +67,7 @@ router.use('/question-bank', questionBankRoutes);
 router.use('/question-papers', questionPaperRoutes);
 router.use('/test-templates', testTemplateRoutes);
 router.use('/test-schedule', testScheduleRoutes);
+router.use('/academic-years', academicYearRoutes);
 
 router.get('/health', (_req, res) => {
   res.json({

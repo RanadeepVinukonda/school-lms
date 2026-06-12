@@ -48,4 +48,5 @@ export const collections = {
   questionPapers: () => getCollection('questionPapers'),
   testTemplates: () => getCollection('testTemplates'),
   testSchedule: () => getCollection('testSchedule'),
+  academicYears: () => getCollection('academicYears'),
 };

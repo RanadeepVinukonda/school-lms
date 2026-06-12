@@ -20,6 +20,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: ROUTES.ADMIN_DASHBOARD, icon: 'dashboard' },
+  { label: 'Academic Years', href: ROUTES.ADMIN_ACADEMIC_YEARS, icon: 'calendar_month' },
   { label: 'Students', href: ROUTES.ADMIN_STUDENTS, icon: 'school' },
   { label: 'Teachers', href: ROUTES.ADMIN_TEACHERS, icon: 'badge' },
   { label: 'Classes', href: ROUTES.ADMIN_CLASSES, icon: 'meeting_room' },

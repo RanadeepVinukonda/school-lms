@@ -34,7 +34,7 @@ interface AssignmentDoc {
 
 export default function AdminDashboardPage() {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'overview' | 'oversight'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'oversight' | 'monitor'>('overview');
   const [oversightSearch, setOversightSearch] = useState('');
   const [oversightStatusFilter, setOversightStatusFilter] = useState('all');
 
@@ -108,6 +108,18 @@ export default function AdminDashboardPage() {
     enabled: activeTab === 'oversight',
   });
 
+  const { data: teachersData = [] } = useQuery({
+    queryKey: ['admin-teachers'],
+    queryFn: () => getAllUsers().then((u) => u.filter((x) => x.role === 'teacher')),
+    enabled: activeTab === 'monitor',
+  });
+
+  const { data: studentsData = [] } = useQuery({
+    queryKey: ['admin-students'],
+    queryFn: () => getAllUsers().then((u) => u.filter((x) => x.role === 'student')),
+    enabled: activeTab === 'monitor',
+  });
+
   const reTeachMutation = useMutation({
     mutationFn: (data: { teacherId: string; className: string; subjectName: string; conceptName: string }) =>
       analyticsService.requestReTeach(data),
@@ -144,9 +156,9 @@ export default function AdminDashboardPage() {
     { icon: 'calendar_month', label: 'Upcoming Exams', value: overviewData?.upcomingExamCount ?? 0, color: 'text-error', bg: 'bg-error-container' },
   ], [overviewData]);
 
-  const isTabLoading = activeTab === 'overview' ? isOverviewLoading : isOversightLoading;
-  const isTabError = activeTab === 'overview' ? isOverviewError : isOversightError;
-  const tabRefetch = activeTab === 'overview' ? refetchOverview : refetchOversight;
+  const isTabLoading = activeTab === 'overview' ? isOverviewLoading : activeTab === 'monitor' ? false : isOversightLoading;
+  const isTabError = activeTab === 'overview' ? isOverviewError : activeTab === 'monitor' ? false : isOversightError;
+  const tabRefetch = activeTab === 'overview' ? refetchOverview : activeTab === 'monitor' ? refetchOverview : refetchOversight;
 
   return (
     <>
@@ -184,6 +196,17 @@ export default function AdminDashboardPage() {
               {oversightData.some((x: any) => x.status === 'low') && (
                 <span className="h-2 w-2 rounded-full bg-error" />
               )}
+            </button>
+            <button
+              onClick={() => setActiveTab('monitor')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                activeTab === 'monitor'
+                  ? 'bg-surface text-primary shadow-sm'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              <Icon name="monitor_heart" size={16} />
+              Full Monitor
             </button>
           </div>
         </div>
@@ -311,7 +334,7 @@ export default function AdminDashboardPage() {
                     </Card>
                   </motion.div>
                 </motion.div>
-              ) : (
+              ) : activeTab === 'oversight' ? (
                 /* CONCEPT OVERSIGHT TAB CONTENT */
                 <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
                   {/* Search and Filters */}
@@ -421,11 +444,111 @@ export default function AdminDashboardPage() {
                     )}
                   </motion.div>
                 </motion.div>
-              )}
-            </motion.div>
-          )}
-        </DataFetchWrapper>
-      </div>
-    </>
+              ) : (
+                  /* FULL MONITOR TAB */
+                  <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                      <motion.div variants={listItem}>
+                        <Card>
+                          <CardHeader className="pb-3"><CardTitle className="text-sm flex items-center gap-2"><Icon name="badge" size={16} className="text-primary" /> Teachers ({teachersData.length})</CardTitle></CardHeader>
+                          <CardContent className="max-h-[400px] overflow-y-auto space-y-1">
+                            {teachersData.length === 0 ? (
+                              <p className="text-sm text-muted-foreground text-center py-4">No teachers</p>
+                            ) : (
+                              teachersData.slice(0, 20).map((t: any) => (
+                                <div key={t.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                                  <span className="text-sm font-medium truncate">{t.displayName || t.email}</span>
+                                  <span className="text-xs text-muted-foreground capitalize">{t.status || 'active'}</span>
+                                </div>
+                              ))
+                            )}
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+
+                      <motion.div variants={listItem}>
+                        <Card>
+                          <CardHeader className="pb-3"><CardTitle className="text-sm flex items-center gap-2"><Icon name="groups" size={16} className="text-success" /> Students ({studentsData.length})</CardTitle></CardHeader>
+                          <CardContent className="max-h-[400px] overflow-y-auto space-y-1">
+                            {studentsData.length === 0 ? (
+                              <p className="text-sm text-muted-foreground text-center py-4">No students</p>
+                            ) : (
+                              studentsData.slice(0, 20).map((s: any) => (
+                                <div key={s.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-medium truncate">{s.displayName || s.email}</p>
+                                    <p className="text-[10px] text-muted-foreground">{s.studentId || s.id?.slice(0, 8)}</p>
+                                  </div>
+                                  <div className="text-right shrink-0">
+                                    <Badge variant={s.level === 'advanced' ? 'success' : s.level === 'intermediate' ? 'warning' : 'secondary'} className="text-[10px] capitalize">{s.level || 'beginner'}</Badge>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+
+                      <motion.div variants={listItem}>
+                        <Card>
+                          <CardHeader className="pb-3"><CardTitle className="text-sm flex items-center gap-2"><Icon name="warning" size={16} className="text-destructive" /> At-Risk Students</CardTitle></CardHeader>
+                          <CardContent className="max-h-[400px] overflow-y-auto">
+                            {overviewData?.atRiskStudents?.length === 0 ? (
+                              <p className="text-sm text-muted-foreground text-center py-4">All performing well</p>
+                            ) : (
+                              <div className="space-y-2">
+                                {(overviewData?.atRiskStudents ?? []).slice(0, 15).map((s: any) => (
+                                  <div key={s.id} className="flex items-center justify-between p-2 rounded-lg bg-error-container/20 border border-error/10">
+                                    <div className="min-w-0">
+                                      <p className="text-sm font-medium truncate">{s.studentName}</p>
+                                      <p className="text-[10px] text-muted-foreground">{s.subject}</p>
+                                    </div>
+                                    <span className="text-sm font-bold text-destructive">{s.percentage}%</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    </div>
+
+                    <motion.div variants={listItem}>
+                      <Card>
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <Icon name="history" size={16} />
+                            Recent Activity
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          {overviewData?.activityFeed?.length === 0 ? (
+                            <p className="text-sm text-muted-foreground text-center py-4">No recent activity</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {overviewData?.activityFeed?.map((item: any) => (
+                                <div key={item.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
+                                  <div className="h-2 w-2 rounded-full bg-primary shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium">{item.title}</p>
+                                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                                  </div>
+                                  <span className="text-[10px] text-muted-foreground shrink-0">
+                                    {new Date(item.ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </motion.div>
+            )}
+          </DataFetchWrapper>
+        </div>
+      </>
   );
 }

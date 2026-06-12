@@ -85,6 +85,7 @@ function AssessmentRow({ assessment }: { assessment: any }) {
 export default function TeacherAnalyticsPage() {
   const user = useAuthStore((s) => s.user);
   const [selectedClassId, setSelectedClassId] = useState('');
+  const [activeTab, setActiveTab] = useState('overview');
 
   const { data: assignments } = useQuery({
     queryKey: ['teacher-assignments', user?.id],
@@ -95,7 +96,13 @@ export default function TeacherAnalyticsPage() {
   const { data: classData, isLoading, error, refetch } = useQuery({
     queryKey: ['class-analytics', selectedClassId],
     queryFn: () => api.get(`/analytics-v2/class/${selectedClassId}`).then((r) => r.data.data),
-    enabled: !!selectedClassId,
+    enabled: !!selectedClassId && activeTab === 'overview',
+  });
+
+  const { data: conceptMastery, isLoading: masteryLoading, error: masteryError } = useQuery({
+    queryKey: ['concept-mastery', selectedClassId],
+    queryFn: () => api.get(`/analytics-v2/class/${selectedClassId}/concepts`).then((r) => r.data.data),
+    enabled: !!selectedClassId && activeTab === 'concepts',
   });
 
   const classes = [...new Map((assignments ?? []).map((a: any) => [a.classId, { id: a.classId, name: a.className }])).values()] as any[];
@@ -135,51 +142,103 @@ export default function TeacherAnalyticsPage() {
         )}
 
         {selectedClassId && (
-          <DataFetchWrapper data={classData} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="card">
-            {(data) => <div className="space-y-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <StatCard icon="school" label="Students" value={data.totalStudents ?? 0} color="bg-blue-600" />
-                <StatCard icon="quiz" label="Assessments" value={data.totalAssessments ?? 0} color="bg-purple-600" />
-                <StatCard icon="trending_up" label="Avg Score" value={`${data.avgScore ?? 0}%`} color="bg-emerald-600" />
-                <StatCard icon="check_circle" label="Pass Rate" value={`${data.passRate ?? 0}%`} color="bg-amber-600" />
-              </div>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList>
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="concepts">Concept Mastery</TabsTrigger>
+            </TabsList>
 
-              {data.studentLevelDistribution && (
-                <Card>
-                  <CardHeader><CardTitle className="text-sm">Student Level Distribution</CardTitle></CardHeader>
-                  <CardContent className="space-y-3">
-                    {(['beginner', 'intermediate', 'advanced'] as const).map((level) => (
-                      <div key={level} className="flex items-center gap-3">
-                        <span className="text-sm w-24 capitalize">{level}</span>
-                        <Progress
-                          value={data.totalStudents > 0 ? (data.studentLevelDistribution[level] / data.totalStudents) * 100 : 0}
-                          className={levelColors[level]}
-                        />
-                        <span className="text-sm font-semibold w-8 text-right">{data.studentLevelDistribution[level]}</span>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
+            <TabsContent value="overview">
+              <DataFetchWrapper data={classData} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="card">
+                {(data) => <div className="space-y-6">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <StatCard icon="school" label="Students" value={data.totalStudents ?? 0} color="bg-blue-600" />
+                    <StatCard icon="quiz" label="Assessments" value={data.totalAssessments ?? 0} color="bg-purple-600" />
+                    <StatCard icon="trending_up" label="Avg Score" value={`${data.avgScore ?? 0}%`} color="bg-emerald-600" />
+                    <StatCard icon="check_circle" label="Pass Rate" value={`${data.passRate ?? 0}%`} color="bg-amber-600" />
+                  </div>
 
-              {data.assessments && data.assessments.length > 0 ? (
-                <Card>
-                  <CardHeader><CardTitle className="text-sm">Assessments ({data.assessments.length})</CardTitle></CardHeader>
-                  <CardContent className="space-y-2">
-                    {data.assessments.map((a: any, i: number) => (
-                      <AssessmentRow key={i} assessment={a} />
-                    ))}
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card>
-                  <CardContent className="p-6 text-center text-muted-foreground">
-                    <p>No assessments found for this class</p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>}
-          </DataFetchWrapper>
+                  {data.studentLevelDistribution && (
+                    <Card>
+                      <CardHeader><CardTitle className="text-sm">Student Level Distribution</CardTitle></CardHeader>
+                      <CardContent className="space-y-3">
+                        {(['beginner', 'intermediate', 'advanced'] as const).map((level) => (
+                          <div key={level} className="flex items-center gap-3">
+                            <span className="text-sm w-24 capitalize">{level}</span>
+                            <Progress
+                              value={data.totalStudents > 0 ? (data.studentLevelDistribution[level] / data.totalStudents) * 100 : 0}
+                              className={levelColors[level]}
+                            />
+                            <span className="text-sm font-semibold w-8 text-right">{data.studentLevelDistribution[level]}</span>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {data.assessments && data.assessments.length > 0 ? (
+                    <Card>
+                      <CardHeader><CardTitle className="text-sm">Assessments ({data.assessments.length})</CardTitle></CardHeader>
+                      <CardContent className="space-y-2">
+                        {data.assessments.map((a: any, i: number) => (
+                          <AssessmentRow key={i} assessment={a} />
+                        ))}
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card>
+                      <CardContent className="p-6 text-center text-muted-foreground">
+                        <p>No assessments found for this class</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>}
+              </DataFetchWrapper>
+            </TabsContent>
+
+            <TabsContent value="concepts">
+              <DataFetchWrapper data={conceptMastery} isLoading={masteryLoading} error={masteryError} loadingType="card">
+                {(data) => {
+                  const concepts: any[] = Array.isArray(data) ? data : [];
+                  if (concepts.length === 0) return (
+                    <Card><CardContent className="p-6 text-center text-muted-foreground"><p>No concept data available. Create assessments linked to concepts to see mastery here.</p></CardContent></Card>
+                  );
+                  return (
+                    <div className="space-y-2">
+                      {concepts.map((c: any, i: number) => (
+                        <Card key={i}>
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between gap-4">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm">{c.conceptName}</p>
+                                <p className="text-xs text-muted-foreground">{c.subjectName} &middot; {c.className}</p>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <p className={`text-lg font-bold ${c.averageScore >= 80 ? 'text-success' : c.averageScore >= 50 ? 'text-warning' : 'text-destructive'}`}>
+                                  {c.averageScore}%
+                                </p>
+                                <p className="text-[10px] text-muted-foreground">{c.attemptCount} attempts</p>
+                              </div>
+                            </div>
+                            <Progress
+                              value={c.averageScore}
+                              className={`h-1.5 mt-2 ${c.averageScore >= 80 ? 'bg-emerald-500' : c.averageScore >= 50 ? 'bg-amber-500' : 'bg-destructive'}`}
+                            />
+                            {c.status === 'low' && (
+                              <div className="flex items-center gap-1 mt-2 text-xs text-destructive">
+                                <Icon name="warning" size={14} />
+                                <span>Below threshold ({c.threshold}%) &mdash; flagged for attention</span>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  );
+                }}
+              </DataFetchWrapper>
+            </TabsContent>
+          </Tabs>
         )}
       </motion.div>
     </>

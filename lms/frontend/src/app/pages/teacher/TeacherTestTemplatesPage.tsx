@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
@@ -13,6 +13,10 @@ import { Input } from '@/components/ui/input';
 import { pageTransition } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
+
+interface CompiledQuestion {
+  id: string; questionText: string; type: string; difficulty: string; points: number; options?: string[];
+}
 
 const QUESTION_MODELS = [
   { value: 'multiple_choice', label: 'Multiple Choice' },
@@ -27,10 +31,17 @@ export default function TeacherTestTemplatesPage() {
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewQuestions, setPreviewQuestions] = useState<CompiledQuestion[]>([]);
+  const [previewTitle, setPreviewTitle] = useState('');
+  const [compilingId, setCompilingId] = useState<string | null>(null);
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [source, setSource] = useState<'question_paper' | 'question_bank'>('question_bank');
-  const [questionPaperId, setQuestionPaperId] = useState('');
+  const [classId, setClassId] = useState('');
+  const [subjectId, setSubjectId] = useState('');
+  const [textbookId, setTextbookId] = useState('');
+  const [chapterId, setChapterId] = useState('');
   const [timeLimit, setTimeLimit] = useState(30);
   const [passingScore, setPassingScore] = useState(50);
   const [maxAttempts, setMaxAttempts] = useState(1);
@@ -38,6 +49,9 @@ export default function TeacherTestTemplatesPage() {
   const [showResults, setShowResults] = useState(false);
   const [selectedModels, setSelectedModels] = useState<string[]>(['multiple_choice', 'true_false']);
   const [questionCount, setQuestionCount] = useState(10);
+  const [easyCount, setEasyCount] = useState(3);
+  const [mediumCount, setMediumCount] = useState(5);
+  const [hardCount, setHardCount] = useState(2);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['test-templates', user?.id],
@@ -45,15 +59,56 @@ export default function TeacherTestTemplatesPage() {
     enabled: !!user?.id,
   });
 
+  const { data: myAssignments } = useQuery({
+    queryKey: ['teacher-my-assignments', user?.id],
+    queryFn: () => api.get('/teacher-class-subject/my').then((r) => r.data.data),
+    enabled: !!user?.id,
+  });
+
+  const classOptions = myAssignments
+    ? [...new Map(myAssignments.map((a: any) => [a.classId, { id: a.classId, name: a.className || a.classId }])).values()]
+    : [];
+
+  const subjectOptions = myAssignments
+    ?.filter((a: any) => a.classId === classId)
+    .map((a: any) => ({ id: a.subjectId, name: a.subjectName || a.subjectId })) ?? [];
+
+  const { data: textbooks } = useQuery({
+    queryKey: ['textbooks-by-subject', subjectId, classId],
+    queryFn: () => (subjectId && classId) ? api.get(`/textbooks/by-class/${classId}/subject/${subjectId}`).then((r) => r.data.data) : Promise.resolve([]),
+    enabled: !!subjectId && !!classId,
+  });
+
+  const { data: chapters } = useQuery({
+    queryKey: ['chapters-by-textbook', textbookId],
+    queryFn: () => textbookId ? api.get(`/textbooks/${textbookId}/chapters`).then((r) => r.data.data) : Promise.resolve([]),
+    enabled: !!textbookId,
+  });
+
   const createMutation = useMutation({
     mutationFn: () => api.post('/test-templates', {
       title, description: description || undefined,
-      classId: '', subjectId: '', source, questionPaperId: questionPaperId || undefined,
+      classId, subjectId,
       config: { timeLimitMinutes: timeLimit, passingScore, maxAttempts, shuffleQuestions: shuffle, showResults },
-      selectionConfig: source === 'question_bank' ? { selectedModels, questionCount, difficultyDistribution: { easy: 3, medium: 5, hard: 2 } } : undefined,
+      selectionConfig: { selectedModels, questionCount, difficultyDistribution: { easy: easyCount, medium: mediumCount, hard: hardCount }, textbookId: textbookId || undefined, chapterId: chapterId || undefined },
     }),
-    onSuccess: () => { toast.success('Template created'); setShowCreate(false); resetForm(); queryClient.invalidateQueries({ queryKey: ['test-templates'] }); },
+    onSuccess: (r) => {
+      toast.success('Template created');
+      setShowCreate(false);
+      resetForm();
+      queryClient.invalidateQueries({ queryKey: ['test-templates'] });
+    },
     onError: () => toast.error('Failed to create template'),
+  });
+
+  const compileMutation = useMutation({
+    mutationFn: (id: string) => api.post(`/test-templates/${id}/compile`).then((r) => r.data.data),
+    onSuccess: (data) => {
+      setPreviewQuestions(data.questions ?? []);
+      setPreviewTitle(data.title || 'Compiled Paper');
+      setShowPreview(true);
+    },
+    onError: (err: any) => toast.error(err.message || 'Failed to compile'),
   });
 
   const deleteMutation = useMutation({
@@ -61,11 +116,18 @@ export default function TeacherTestTemplatesPage() {
     onSuccess: () => { toast.success('Template deleted'); queryClient.invalidateQueries({ queryKey: ['test-templates'] }); },
   });
 
-  function resetForm() { setTitle(''); setDescription(''); setSource('question_bank'); setQuestionPaperId(''); setTimeLimit(30); setPassingScore(50); setMaxAttempts(1); setShuffle(true); setShowResults(false); setSelectedModels(['multiple_choice', 'true_false']); setQuestionCount(10); }
+  function resetForm() {
+    setTitle(''); setDescription(''); setClassId(''); setSubjectId(''); setTextbookId(''); setChapterId('');
+    setTimeLimit(30); setPassingScore(50); setMaxAttempts(1); setShuffle(true); setShowResults(false);
+    setSelectedModels(['multiple_choice', 'true_false']); setQuestionCount(10);
+    setEasyCount(3); setMediumCount(5); setHardCount(2);
+  }
 
   const toggleModel = (val: string) => {
     setSelectedModels((prev) => prev.includes(val) ? prev.filter((v) => v !== val) : [...prev, val]);
   };
+
+  const templates: any[] = Array.isArray(data) ? data : data?.items ?? [];
 
   return (
     <>
@@ -79,8 +141,8 @@ export default function TeacherTestTemplatesPage() {
           <Button onClick={() => setShowCreate(true)}><Icon name="add" size={16} className="mr-1" />New Template</Button>
         </div>
 
-        <DataFetchWrapper data={data} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="list">
-          {(templates: any[]) => (
+        <DataFetchWrapper data={templates} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="list">
+          {() => (
             <div className="space-y-2">
               {templates.length === 0 ? (
                 <Card><CardContent className="p-8 text-center text-muted-foreground"><Icon name="description" size={48} className="mx-auto mb-3 opacity-40" /><p>No templates yet.</p></CardContent></Card>
@@ -93,17 +155,21 @@ export default function TeacherTestTemplatesPage() {
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="font-semibold">{t.title}</h3>
                             <Badge variant={t.status === 'active' ? 'default' : t.status === 'archived' ? 'secondary' : 'outline'} className="text-xs">{t.status}</Badge>
-                            <Badge variant="outline" className="text-xs">{t.source}</Badge>
                           </div>
                           {t.description && <p className="text-sm text-muted-foreground">{t.description}</p>}
                           <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                             <span>{t.config?.timeLimitMinutes} min</span>
                             <span>Pass: {t.config?.passingScore}%</span>
-                            <span>Max attempts: {t.config?.maxAttempts}</span>
+                            <span>Max: {t.config?.maxAttempts} attempts</span>
                             <span>{t.config?.shuffleQuestions ? 'Shuffled' : 'Ordered'}</span>
                           </div>
                         </div>
-                        <Button variant="ghost" size="icon-sm" onClick={() => { if (confirm('Delete this template?')) deleteMutation.mutate(t.id); }}><Icon name="delete" size={16} /></Button>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button size="sm" variant="outline" onClick={() => { setCompilingId(t.id); compileMutation.mutate(t.id); }} disabled={compileMutation.isPending}>
+                            <Icon name="visibility" size={14} className="mr-1" />Preview
+                          </Button>
+                          <Button variant="ghost" size="icon-sm" onClick={() => { if (confirm('Delete this template?')) deleteMutation.mutate(t.id); }}><Icon name="delete" size={16} /></Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -117,29 +183,57 @@ export default function TeacherTestTemplatesPage() {
           <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create Test Template</DialogTitle>
-              <DialogDescription>Set up a reusable assessment blueprint.</DialogDescription>
+              <DialogDescription>Configure question selection and exam settings.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Template title" />
               <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description (optional)" />
 
-              <div>
-                <label className="text-sm font-medium">Question Source</label>
-                <div className="flex gap-2 mt-1">
-                  <Button variant={source === 'question_bank' ? 'default' : 'outline'} size="sm" onClick={() => setSource('question_bank')}>From Question Bank</Button>
-                  <Button variant={source === 'question_paper' ? 'default' : 'outline'} size="sm" onClick={() => setSource('question_paper')}>From Question Paper</Button>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium">Class</label>
+                  <select value={classId} onChange={(e) => { setClassId(e.target.value); setSubjectId(''); setTextbookId(''); setChapterId(''); }} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1">
+                    <option value="">Select class...</option>
+                    {classOptions.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Subject</label>
+                  <select value={subjectId} onChange={(e) => { setSubjectId(e.target.value); setTextbookId(''); setChapterId(''); }} disabled={!classId} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1">
+                    <option value="">Select subject...</option>
+                    {subjectOptions.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
                 </div>
               </div>
 
-              {source === 'question_paper' && (
-                <Input value={questionPaperId} onChange={(e) => setQuestionPaperId(e.target.value)} placeholder="Question Paper ID" />
-              )}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium">Textbook (optional)</label>
+                  <select value={textbookId} onChange={(e) => { setTextbookId(e.target.value); setChapterId(''); }} disabled={!subjectId} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1">
+                    <option value="">All textbooks</option>
+                    {(textbooks ?? []).map((t: any) => <option key={t.id} value={t.id}>{t.title}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Chapter (optional)</label>
+                  <select value={chapterId} onChange={(e) => setChapterId(e.target.value)} disabled={!textbookId} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1">
+                    <option value="">All chapters</option>
+                    {(chapters ?? []).map((ch: any) => <option key={ch.id} value={ch.id}>Chapter {ch.order}: {ch.title}</option>)}
+                  </select>
+                </div>
+              </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="text-sm font-medium">Time Limit (min)</label><Input type="number" value={timeLimit} onChange={(e) => setTimeLimit(Number(e.target.value))} min={1} /></div>
                 <div><label className="text-sm font-medium">Passing Score (%)</label><Input type="number" value={passingScore} onChange={(e) => setPassingScore(Number(e.target.value))} min={0} max={100} /></div>
                 <div><label className="text-sm font-medium">Max Attempts</label><Input type="number" value={maxAttempts} onChange={(e) => setMaxAttempts(Number(e.target.value))} min={1} /></div>
                 <div><label className="text-sm font-medium">Question Count</label><Input type="number" value={questionCount} onChange={(e) => setQuestionCount(Number(e.target.value))} min={1} /></div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div><label className="text-sm font-medium">Easy</label><Input type="number" value={easyCount} onChange={(e) => setEasyCount(Number(e.target.value))} min={0} /></div>
+                <div><label className="text-sm font-medium">Medium</label><Input type="number" value={mediumCount} onChange={(e) => setMediumCount(Number(e.target.value))} min={0} /></div>
+                <div><label className="text-sm font-medium">Hard</label><Input type="number" value={hardCount} onChange={(e) => setHardCount(Number(e.target.value))} min={0} /></div>
               </div>
 
               <div className="flex items-center gap-4">
@@ -153,20 +247,60 @@ export default function TeacherTestTemplatesPage() {
                 </label>
               </div>
 
-              {source === 'question_bank' && (
-                <div>
-                  <label className="text-sm font-medium">Question Types</label>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {QUESTION_MODELS.map((m) => (
-                      <Button key={m.value} variant={selectedModels.includes(m.value) ? 'default' : 'outline'} size="sm" onClick={() => toggleModel(m.value)}>{m.label}</Button>
-                    ))}
-                  </div>
+              <div>
+                <label className="text-sm font-medium">Question Types</label>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {QUESTION_MODELS.map((m) => (
+                    <Button key={m.value} variant={selectedModels.includes(m.value) ? 'default' : 'outline'} size="sm" onClick={() => toggleModel(m.value)}>{m.label}</Button>
+                  ))}
                 </div>
-              )}
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => { resetForm(); setShowCreate(false); }}>Cancel</Button>
-              <Button onClick={() => createMutation.mutate()} disabled={!title.trim() || createMutation.isPending}>Create Template</Button>
+              <Button onClick={() => createMutation.mutate()} disabled={!title.trim() || !classId || !subjectId || createMutation.isPending}>Create Template</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showPreview} onOpenChange={setShowPreview}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Paper Preview: {previewTitle}</DialogTitle>
+              <DialogDescription>Review the compiled question paper before scheduling.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              {previewQuestions.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">No questions matched the criteria. Adjust your template settings.</p>
+              ) : (
+                previewQuestions.map((q, i) => (
+                  <Card key={q.id || i}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <span className="text-sm font-bold text-muted-foreground mt-0.5 min-w-[24px]">{i + 1}.</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline" className="text-[10px] capitalize">{q.type?.replace(/_/g, ' ')}</Badge>
+                            <Badge variant="secondary" className="text-[10px]">{q.difficulty}</Badge>
+                            <span className="text-xs text-muted-foreground">{q.points} pt{q.points !== 1 ? 's' : ''}</span>
+                          </div>
+                          <p className="text-sm">{q.questionText}</p>
+                          {q.options && q.options.length > 0 && (
+                            <div className="mt-2 space-y-1">
+                              {q.options.map((opt, oi) => (
+                                <p key={oi} className="text-xs text-muted-foreground pl-3 border-l-2 border-border">{String.fromCharCode(65 + oi)}. {opt}</p>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowPreview(false)}>Close</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

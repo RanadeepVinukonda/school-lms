@@ -192,6 +192,11 @@ export async function getAssessmentAnalytics(assessmentId: string, type: 'quiz' 
   };
 }
 
+export async function getConceptsForClass(classId: string) {
+  const allItems = await getConceptOversight();
+  return allItems.filter((item) => item.classId === classId);
+}
+
 export async function getConceptOversight() {
   const tcsSnap = await collections.teacherClassSubject().get();
   const assignments = tcsSnap.docs.map(d => ({ id: d.id, ...d.data() } as any));

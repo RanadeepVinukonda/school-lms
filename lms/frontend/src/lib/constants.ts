@@ -56,6 +56,7 @@ export const ROUTES = {
   TEACHER_PYQ: '/teacher/pyq',
 
   ADMIN_DASHBOARD: '/admin/dashboard',
+  ADMIN_ACADEMIC_YEARS: '/admin/academic-years',
   ADMIN_STUDENTS: '/admin/students',
   ADMIN_TEACHERS: '/admin/teachers',
   ADMIN_CLASSES: '/admin/classes',
