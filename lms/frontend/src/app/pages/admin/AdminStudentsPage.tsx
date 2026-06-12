@@ -221,7 +221,7 @@ export default function AdminStudentsPage() {
               </motion.div>
             ) : (
               <motion.div variants={listItem}>
-                <div className="border-outline-variant rounded-lg overflow-hidden border">
+                <div className="border-outline-variant rounded-lg overflow-x-auto border">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b-outline-variant border-b bg-surface-variant/50">

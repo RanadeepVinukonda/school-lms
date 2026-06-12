@@ -452,7 +452,7 @@ export default function AdminDashboardPage() {
                         </CardContent>
                       </Card>
                     ) : (
-                      <div className="border border-outline-variant rounded-lg overflow-hidden">
+                      <div className="border border-outline-variant rounded-lg overflow-x-auto">
                         <table className="w-full">
                           <thead>
                             <tr className="border-b border-b-outline-variant bg-surface-variant/30 text-label-sm font-medium text-on-surface-variant uppercase tracking-wider">
@@ -562,7 +562,7 @@ export default function AdminDashboardPage() {
                         </CardContent>
                       </Card>
                     ) : (
-                      <div className="border border-outline-variant rounded-lg overflow-hidden bg-surface">
+                      <div className="border border-outline-variant rounded-lg overflow-x-auto bg-surface">
                         <table className="w-full text-left border-collapse">
                           <thead>
                             <tr className="border-b border-b-outline-variant bg-surface-variant/30 text-label-sm font-medium text-on-surface-variant uppercase tracking-wider">
@@ -796,7 +796,7 @@ export default function AdminDashboardPage() {
                     <p className="text-sm mt-2">No scored submissions found</p>
                   </div>
                 ) : (
-                  <div className="border border-outline-variant rounded-lg overflow-hidden bg-surface">
+                  <div className="border border-outline-variant rounded-lg overflow-x-auto bg-surface">
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="border-b border-b-outline-variant bg-surface-variant/30 text-label-sm font-medium text-on-surface-variant uppercase tracking-wider">
