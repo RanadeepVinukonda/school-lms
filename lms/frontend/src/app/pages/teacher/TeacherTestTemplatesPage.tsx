@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -30,6 +31,8 @@ const QUESTION_MODELS = [
 export default function TeacherTestTemplatesPage() {
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [showCreate, setShowCreate] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewQuestions, setPreviewQuestions] = useState<CompiledQuestion[]>([]);
@@ -52,6 +55,22 @@ export default function TeacherTestTemplatesPage() {
   const [easyCount, setEasyCount] = useState(3);
   const [mediumCount, setMediumCount] = useState(5);
   const [hardCount, setHardCount] = useState(2);
+
+  useEffect(() => {
+    const qClassId = searchParams.get('classId');
+    const qSubjectId = searchParams.get('subjectId');
+    const qTextbookId = searchParams.get('textbookId');
+    const qChapterId = searchParams.get('chapterId');
+    const qConceptId = searchParams.get('conceptId');
+    if (qClassId && qSubjectId) {
+      setClassId(qClassId);
+      setSubjectId(qSubjectId);
+      if (qTextbookId) setTextbookId(qTextbookId);
+      if (qChapterId) setChapterId(qChapterId);
+      setTitle(`Test - ${qConceptId ? `Concept ${qConceptId.slice(0, 8)}` : 'Untitled'}`);
+      setShowCreate(true);
+    }
+  }, [searchParams]);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['test-templates', user?.id],
@@ -90,7 +109,7 @@ export default function TeacherTestTemplatesPage() {
       title, description: description || undefined,
       classId, subjectId,
       config: { timeLimitMinutes: timeLimit, passingScore, maxAttempts, shuffleQuestions: shuffle, showResults },
-      selectionConfig: { selectedModels, questionCount, difficultyDistribution: { easy: easyCount, medium: mediumCount, hard: hardCount }, textbookId: textbookId || undefined, chapterId: chapterId || undefined },
+      selectionConfig: { selectedModels, questionCount, difficultyDistribution: { easy: easyCount, medium: mediumCount, hard: hardCount }, textbookId: textbookId || undefined, chapterId: chapterId || undefined, conceptId: searchParams.get('conceptId') || undefined },
     }),
     onSuccess: (r) => {
       toast.success('Template created');
@@ -299,8 +318,11 @@ export default function TeacherTestTemplatesPage() {
                 ))
               )}
             </div>
-            <DialogFooter>
+            <DialogFooter className="flex items-center justify-between sm:justify-between">
               <Button variant="outline" onClick={() => setShowPreview(false)}>Close</Button>
+              <Button onClick={() => { setShowPreview(false); navigate(`/teacher/test-schedule?templateId=${compilingId}`); }} disabled={!compilingId}>
+                <Icon name="calendar_month" size={16} className="mr-1" />Schedule to Class
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

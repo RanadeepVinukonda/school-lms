@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -211,6 +211,7 @@ export default function TeacherConceptViewPage() {
     chapterId: string;
     conceptId: string;
   }>();
+  const navigate = useNavigate();
   const authUser = useAuthStore((s) => s.user);
   const teacherId = authUser?.id ?? '';
   const queryClient = useQueryClient();
@@ -470,6 +471,13 @@ export default function TeacherConceptViewPage() {
                         <Button variant="tonal" onClick={() => setShowExamDialog(true)} disabled={(d.concept.questionBank?.length ?? 0) === 0}>
                           <Icon name="fact_check" size={16} className="mr-1.5" />
                           Start Exam
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => navigate(`${ROUTES.TEACHER_TEST_TEMPLATES}?classId=${d.textbook.classId}&subjectId=${d.textbook.subjectId}&textbookId=${textbookId}&chapterId=${chapterId}&conceptId=${conceptId}`)}
+                        >
+                          <Icon name="description" size={16} className="mr-1.5" />
+                          Create Test Template
                         </Button>
                       </div>
                     </CardContent>

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -14,8 +15,15 @@ import { pageTransition } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
 
-function ScheduleForm({ onSave, loading }: { onSave: (data: any) => void; loading: boolean }) {
-  const [templateId, setTemplateId] = useState('');
+function ScheduleForm({ onSave, loading, defaultTemplateId }: { onSave: (data: any) => void; loading: boolean; defaultTemplateId?: string }) {
+  const [templateId, setTemplateId] = useState(defaultTemplateId || '');
+
+  useEffect(() => {
+    if (defaultTemplateId) {
+      setTemplateId(defaultTemplateId);
+    }
+  }, [defaultTemplateId]);
+
   const [title, setTitle] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -74,7 +82,8 @@ const STATUS_STYLES: Record<string, string> = {
 export default function TeacherTestSchedulePage() {
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
-  const [showCreate, setShowCreate] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [showCreate, setShowCreate] = useState(!!searchParams.get('templateId'));
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['test-schedules', user?.id],
@@ -159,7 +168,7 @@ export default function TeacherTestSchedulePage() {
               <DialogTitle>Schedule a Test</DialogTitle>
               <DialogDescription>Select a template and set the schedule.</DialogDescription>
             </DialogHeader>
-            <ScheduleForm onSave={(formData) => createMutation.mutate(formData)} loading={createMutation.isPending} />
+            <ScheduleForm onSave={(formData) => createMutation.mutate(formData)} loading={createMutation.isPending} defaultTemplateId={searchParams.get('templateId') || undefined} />
           </DialogContent>
         </Dialog>
       </motion.div>
