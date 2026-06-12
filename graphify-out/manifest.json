@@ -14,46 +14,6 @@
     "ast_hash": "32b67963417a30cb80544e0b2a56a98d",
     "semantic_hash": ""
   },
-  "C:\\Users\\USER\\Desktop\\school\\backend\\package.json": {
-    "mtime": 1780409797.1757457,
-    "ast_hash": "639961b872d35cae800609f10b11ea43",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\USER\\Desktop\\school\\backend\\tsconfig.json": {
-    "mtime": 1780409825.0326803,
-    "ast_hash": "39ef6e84fcad52c4e6d5bb8fa353853b",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\USER\\Desktop\\school\\frontend\\package.json": {
-    "mtime": 1780409792.9154909,
-    "ast_hash": "7ed2ee9c0e02ff5243f60b974706aa13",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\USER\\Desktop\\school\\frontend\\postcss.config.js": {
-    "mtime": 1780409814.6102226,
-    "ast_hash": "c735540bb63936a123bc867d950c9f69",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\USER\\Desktop\\school\\frontend\\src\\firebase\\config.ts": {
-    "mtime": 1780409821.5608883,
-    "ast_hash": "b153fd9f087ff6a14369a6c8cd7d6b30",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\USER\\Desktop\\school\\frontend\\tailwind.config.js": {
-    "mtime": 1780409811.2834177,
-    "ast_hash": "a6616b0886a754fe1c1c3561a66c9ebc",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\USER\\Desktop\\school\\frontend\\tsconfig.json": {
-    "mtime": 1780409804.2432036,
-    "ast_hash": "033124d8ce78d8e8eaf7e3ce93088b89",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\USER\\Desktop\\school\\frontend\\vite.config.ts": {
-    "mtime": 1780409800.5508175,
-    "ast_hash": "649217e2aa80ddc2f0684b3dca85e890",
-    "semantic_hash": ""
-  },
   "C:\\Users\\USER\\Desktop\\school\\lms\\api\\[...slug].ts": {
     "mtime": 1780485248.5266821,
     "ast_hash": "815c0f5847318d6ffc2188db36b73407",
@@ -75,13 +35,13 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\package.json": {
-    "mtime": 1781173144.9110656,
-    "ast_hash": "73ffbc23ffbd0e7489401fc9fcfd8834",
+    "mtime": 1781263284.1516228,
+    "ast_hash": "b138b8c15b7fcfe24be81c394a49f113",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\__tests__\\auth.middleware.test.ts": {
-    "mtime": 1780752384.4357228,
-    "ast_hash": "d87360ae45d7cf174ff4eeb8bb360539",
+    "mtime": 1781248812.0909057,
+    "ast_hash": "067a3a0c314548911464b32e80c9b211",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\app.ts": {
@@ -110,8 +70,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\controllers\\analytics-v2.controller.ts": {
-    "mtime": 1781196052.9946144,
-    "ast_hash": "a25d4e840881efc19a9c93fc8151cf12",
+    "mtime": 1781237629.9048383,
+    "ast_hash": "16b2144259e812164f010d328467a6a9",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\controllers\\analytics.controller.ts": {
@@ -185,8 +145,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\controllers\\quiz-v2.controller.ts": {
-    "mtime": 1781196178.8688383,
-    "ast_hash": "ce638b334ae3ae0827aa1d30e2b942f0",
+    "mtime": 1781197660.1522703,
+    "ast_hash": "c2a753746793e8c93abb55fec0a7b0e2",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\controllers\\quiz.controller.ts": {
@@ -250,8 +210,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\firebase\\firestore.ts": {
-    "mtime": 1781161978.7036066,
-    "ast_hash": "5a11d8a50c34c691ba139912ccddf11c",
+    "mtime": 1781237122.681226,
+    "ast_hash": "ba6fb70ec602acbb6c1b117e64da300b",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\firebase\\storage.ts": {
@@ -270,8 +230,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\jobs\\scheduler.ts": {
-    "mtime": 1780410734.3372183,
-    "ast_hash": "e56188a5ebe1eb201d57e1177a2fc1d6",
+    "mtime": 1781263118.069278,
+    "ast_hash": "ff4f409f0e9e9dfb0c2832225af1a033",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\jobs\\sendReminders.job.ts": {
@@ -285,13 +245,13 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\middlewares\\auth.middleware.ts": {
-    "mtime": 1780842681.5100808,
-    "ast_hash": "318306650ff3b77bdd14dda7d0e112e0",
+    "mtime": 1781248803.716799,
+    "ast_hash": "30951dc9a607cc6391058612729fe8cc",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\middlewares\\error.middleware.ts": {
-    "mtime": 1780410346.3681953,
-    "ast_hash": "cc64c8a4d22c0e7120b77ad1bc171234",
+    "mtime": 1781245072.4794376,
+    "ast_hash": "f8820bcd6d87534de116ecc9dd91f923",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\middlewares\\rateLimit.middleware.ts": {
@@ -320,8 +280,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\routes\\analytics-v2.routes.ts": {
-    "mtime": 1781196057.6730437,
-    "ast_hash": "399944afbea0f319925b4d283916a25c",
+    "mtime": 1781237638.037139,
+    "ast_hash": "efb6ff4fbe352da86ae00cdd9abee394",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\routes\\analytics.routes.ts": {
@@ -380,8 +340,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\routes\\index.ts": {
-    "mtime": 1781162055.2534275,
-    "ast_hash": "3e418816d4c1aa15b3209c464c53691d",
+    "mtime": 1781237141.6698742,
+    "ast_hash": "bf16cf9a53df0c8529db8b0254eab603",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\routes\\jobs.routes.ts": {
@@ -405,8 +365,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\routes\\quiz-v2.routes.ts": {
-    "mtime": 1781196188.0654166,
-    "ast_hash": "13ae5d48afc11dcfaba060a7788c76bd",
+    "mtime": 1781197660.1522703,
+    "ast_hash": "f1f373aacfb028ddfabdc37b170164a4",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\routes\\quiz.routes.ts": {
@@ -490,8 +450,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\analytics-v2.service.ts": {
-    "mtime": 1781196046.9520905,
-    "ast_hash": "0c664241c00ad12029c11df46e159a1e",
+    "mtime": 1781237621.1883934,
+    "ast_hash": "f737a8f5ecc63833b66cf403e818888b",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\analytics.service.ts": {
@@ -570,8 +530,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\quiz-v2.service.ts": {
-    "mtime": 1781196219.299622,
-    "ast_hash": "e7a49212e410fb00b37b46ba6df806b9",
+    "mtime": 1781197660.1776826,
+    "ast_hash": "7a513c24f2920a45f957200fadfb522a",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\quiz.service.ts": {
@@ -585,8 +545,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\settings.service.ts": {
-    "mtime": 1781195968.7261927,
-    "ast_hash": "470010b90d39e9e23c5afe8d958a4d00",
+    "mtime": 1781197660.1810255,
+    "ast_hash": "1537384ce9b90a828491dd953c45bd34",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\subject.service.ts": {
@@ -605,8 +565,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\textbook.service.ts": {
-    "mtime": 1781197380.226492,
-    "ast_hash": "4f44ec4e439b4a9ed9cec9ae71ba173c",
+    "mtime": 1781263083.4536364,
+    "ast_hash": "9b46639c25d8c555b35e9ca1275dc80a",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\upload.service.ts": {
@@ -615,8 +575,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\user.service.ts": {
-    "mtime": 1781195871.8324943,
-    "ast_hash": "556267d91167e3874eebcfec7d99c1d5",
+    "mtime": 1781261854.6606317,
+    "ast_hash": "0babad4c79d3db865ae3ba9f2f2943c1",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\youtube.service.ts": {
@@ -690,8 +650,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\validators\\settings.validator.ts": {
-    "mtime": 1781195977.3887355,
-    "ast_hash": "582db943d49736e25c43e2148f9ca670",
+    "mtime": 1781197660.1810255,
+    "ast_hash": "3e77eeeeb51e14df7e99d25a7be140a5",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\validators\\subject.validator.ts": {
@@ -700,8 +660,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\validators\\user.validator.ts": {
-    "mtime": 1781195859.784137,
-    "ast_hash": "3ecd3e649ec8ef19c50a3b8096574562",
+    "mtime": 1781197660.1977644,
+    "ast_hash": "fc17c693365f1eddd98ce13290d0774d",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\tsconfig.json": {
@@ -735,13 +695,13 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\components\\assessment\\QuestionRendererV2.tsx": {
-    "mtime": 1781196524.7836561,
-    "ast_hash": "0fd7b2af036d3c224e64b8578c077754",
+    "mtime": 1781197660.199536,
+    "ast_hash": "bc567ba40cec3fc4d3657ed596e71e1c",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\layouts\\AdminLayout.tsx": {
-    "mtime": 1781103827.5804157,
-    "ast_hash": "6156795c9a316af3a8b61c0bc1579ab3",
+    "mtime": 1781237176.0408819,
+    "ast_hash": "e58d7d94a9fa9908c859862f3ca7d652",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\layouts\\AuthLayout.tsx": {
@@ -750,13 +710,13 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\layouts\\StudentLayout.tsx": {
-    "mtime": 1781158728.7898748,
-    "ast_hash": "3358daecc56e19de7d85ac6dd9637689",
+    "mtime": 1781237515.1284807,
+    "ast_hash": "cb777db3f6ce92af55f54a97f169301f",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\layouts\\TeacherLayout.tsx": {
-    "mtime": 1781169357.0758524,
-    "ast_hash": "45bf98bd3de8f52751739c147ae76e0e",
+    "mtime": 1781237457.274888,
+    "ast_hash": "7b741b5756038dd241791fb978b4e0c7",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\AboutSchoolPage.tsx": {
@@ -785,8 +745,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\admin\\AdminDashboardPage.tsx": {
-    "mtime": 1781196088.5462942,
-    "ast_hash": "854bf923354a9e29bf00131a926b2629",
+    "mtime": 1781239087.8464034,
+    "ast_hash": "c04f4858c7978b4f2195a8eec263543e",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\admin\\AdminProfileEditPage.tsx": {
@@ -795,13 +755,13 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\admin\\AdminSettingsPage.tsx": {
-    "mtime": 1781196003.421383,
-    "ast_hash": "9fd93bde6018602c0ecaf493ac750559",
+    "mtime": 1781197660.2080538,
+    "ast_hash": "1b12b80d7f430ff6d7b28330408e1ef6",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\admin\\AdminStudentsPage.tsx": {
-    "mtime": 1781195954.9801104,
-    "ast_hash": "d2212f2eb140c47cbcb0885f245241b9",
+    "mtime": 1781197660.2237062,
+    "ast_hash": "ffe483066bf43e2e0766dfe5d7ab2fa6",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\admin\\AdminSubjectsPage.tsx": {
@@ -900,13 +860,13 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\student\\StudentChapterPage.tsx": {
-    "mtime": 1781107726.0240839,
-    "ast_hash": "77538a878d1e077bc28643c2d0cab877",
+    "mtime": 1781237985.3445115,
+    "ast_hash": "dac6eb9cc5aac97fcbe0195287ee0748",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\student\\StudentConceptPage.tsx": {
-    "mtime": 1781187315.6441836,
-    "ast_hash": "902988d429dd4daa8dac84d3df987299",
+    "mtime": 1781198763.9547849,
+    "ast_hash": "c1a6cf7907089d771c751300501897ca",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\student\\StudentDashboardPage.tsx": {
@@ -915,8 +875,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\student\\StudentExamsPage.tsx": {
-    "mtime": 1780730325.3547828,
-    "ast_hash": "d24098c2d9f22ba76b2525949b56fb1f",
+    "mtime": 1781266055.436726,
+    "ast_hash": "5e3c9d7b949c7845e6ffa550cc9cccf2",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\student\\StudentProfileEditPage.tsx": {
@@ -930,8 +890,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\student\\StudentQuizTakePageV2.tsx": {
-    "mtime": 1781196547.7817965,
-    "ast_hash": "bfc4e1e35f1b950a1544902189a8614d",
+    "mtime": 1781233958.771912,
+    "ast_hash": "681c02e57237b021509f11906b67aba3",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\student\\StudentTaskComponents.tsx": {
@@ -940,7 +900,7 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\student\\StudentTasksPage.tsx": {
-    "mtime": 1781187315.648183,
+    "mtime": 1781197646.7720563,
     "ast_hash": "86779f128c0bf1563d4ebac5043be2fe",
     "semantic_hash": ""
   },
@@ -975,23 +935,23 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherAnalyticsPage.tsx": {
-    "mtime": 1781158364.301624,
-    "ast_hash": "83bfdb5e3f617f011f3ae1c713b47c5e",
+    "mtime": 1781239000.2452629,
+    "ast_hash": "cf62411ce6235d750cc29b24e113b5ac",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherAssessmentCreatePage.tsx": {
-    "mtime": 1781187315.652184,
+    "mtime": 1781197646.804098,
     "ast_hash": "da2ee3d6ac26104fba5136ec9f779922",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherConceptViewPage.tsx": {
-    "mtime": 1781175570.80223,
-    "ast_hash": "4073ce88e0244021e413986b6439332a",
+    "mtime": 1781240957.7687814,
+    "ast_hash": "7e1148311e00bba14dd6a2059df8b559",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherDashboardPage.tsx": {
-    "mtime": 1781109361.837251,
-    "ast_hash": "03e69f8d5fbfca0a73d2d5d7818c6b81",
+    "mtime": 1781237319.142805,
+    "ast_hash": "8b4b9efb338cecc32da61397b3e4e5d8",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherExamCorrectionPage.tsx": {
@@ -1035,8 +995,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherTextbookDetailPage.tsx": {
-    "mtime": 1781169406.6846113,
-    "ast_hash": "d3b90655914c9f505e9812baf9d0281e",
+    "mtime": 1781238035.956779,
+    "ast_hash": "efb865d6754ac5f1cfb67ad5bc5893dc",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherTextbookUploadPage.tsx": {
@@ -1085,8 +1045,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\router\\index.tsx": {
-    "mtime": 1781169375.0024366,
-    "ast_hash": "be1715203edc5eb68509b74d457dd77b",
+    "mtime": 1781237220.8800027,
+    "ast_hash": "a8cc4fc90908dcd8924c31479ab722c7",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\components\\common\\Breadcrumbs.tsx": {
@@ -1375,8 +1335,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\lib\\constants.ts": {
-    "mtime": 1781169373.5861073,
-    "ast_hash": "1b6381efbd8afa4658ffde000dbba48e",
+    "mtime": 1781237185.7361877,
+    "ast_hash": "170d474e0aa7af52ff7c96ae5f19f8eb",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\lib\\format.ts": {
@@ -1409,19 +1369,14 @@
     "ast_hash": "1e47698c14d2e9d81c74fafadb3f60a8",
     "semantic_hash": ""
   },
-  "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\services\\__tests__\\aiService.test.ts": {
-    "mtime": 1781085704.863281,
-    "ast_hash": "15f52c98e3da472e59fe8b2108a88dcb",
-    "semantic_hash": ""
-  },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\services\\aiService.ts": {
     "mtime": 1781102886.9178634,
     "ast_hash": "d25c9facb170565481720076f7fc34de",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\services\\analyticsService.ts": {
-    "mtime": 1781196511.8227775,
-    "ast_hash": "1de1de6fda9ece5342c717cc01bc9e0a",
+    "mtime": 1781197660.2364242,
+    "ast_hash": "a0a45ba5f8ef3de5819211d6c55fb33f",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\services\\api.ts": {
@@ -1505,8 +1460,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\services\\userService.ts": {
-    "mtime": 1781195941.329319,
-    "ast_hash": "7b907908d76e1ef9ac5dfcb3d5829041",
+    "mtime": 1781197660.2364242,
+    "ast_hash": "bdb97a5773a7b7968252571b0c068efd",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\services\\youtubeService.ts": {
@@ -1684,16 +1639,6 @@
     "ast_hash": "eaeefabe4788c3a08ea3f233205dcafd",
     "semantic_hash": ""
   },
-  "C:\\Users\\USER\\Desktop\\school\\cookies.txt": {
-    "mtime": 1781156397.4573913,
-    "ast_hash": "b9b5d54f548c50865679ee68d3c2865e",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\USER\\Desktop\\school\\frontend\\index.html": {
-    "mtime": 1780409828.0777953,
-    "ast_hash": "5ed3cdc54798d02477d8f6261f620a51",
-    "semantic_hash": ""
-  },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\index.html": {
     "mtime": 1780575282.3139434,
     "ast_hash": "28e6454cb2bb1469796f0fd1e85f542d",
@@ -1717,16 +1662,6 @@
   "C:\\Users\\USER\\Desktop\\school\\production_readiness_analysis.md": {
     "mtime": 1781063504.7366397,
     "ast_hash": "b9b2f673baf71881633a53f2fa720756",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\USER\\Desktop\\school\\site.html": {
-    "mtime": 1781156549.7053466,
-    "ast_hash": "bea07e6d2b8dce396fe21baa61b34956",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\USER\\Desktop\\school\\Genesis.png": {
-    "mtime": 1780574956.2149677,
-    "ast_hash": "343fc5628424bd435aa4edb93a6c80df",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\public\\favicon.svg": {
@@ -1755,8 +1690,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\controllers\\test-template.controller.ts": {
-    "mtime": 1781196136.433433,
-    "ast_hash": "1c97e3b07b6bdd523dbf834e2e52a141",
+    "mtime": 1781243063.1897776,
+    "ast_hash": "927327edc0a8abb980439e538f603590",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\routes\\question-bank.routes.ts": {
@@ -1775,8 +1710,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\routes\\test-template.routes.ts": {
-    "mtime": 1781196141.265869,
-    "ast_hash": "645104597d725a5a52be6d8f7c5793e2",
+    "mtime": 1781197660.1686642,
+    "ast_hash": "d4ecf4cb1e64476060308fc67b33f003",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\scripts\\seedFull.ts": {
@@ -1800,8 +1735,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\test-template.service.ts": {
-    "mtime": 1781196130.9677148,
-    "ast_hash": "a81f3a792b46c135bf940b3d8aff8bce",
+    "mtime": 1781244959.5672152,
+    "ast_hash": "956b69f845a7b7d54313f62724204107",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherPreviousYearQPage.tsx": {
@@ -1820,13 +1755,13 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherTestSchedulePage.tsx": {
-    "mtime": 1781162247.8081648,
-    "ast_hash": "7251d1c89f53ba923544f5e529ec0a44",
+    "mtime": 1781241140.367522,
+    "ast_hash": "02159c563463e934196f72c411e67378",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherTestTemplatesPage.tsx": {
-    "mtime": 1781162230.4770145,
-    "ast_hash": "11a0080e2c27a68489fda5ec145baf7a",
+    "mtime": 1781242657.2575953,
+    "ast_hash": "99ee626a470c01060942f093f0206a70",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms-flowchart.html": {
@@ -1835,18 +1770,113 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\services\\settingsService.ts": {
-    "mtime": 1781196516.805592,
-    "ast_hash": "430b0061452b8e1c625961b191407d96",
+    "mtime": 1781197660.2364242,
+    "ast_hash": "79923ae0d0578b0bead05600e719bac3",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\opencode_perfection_plan.md": {
-    "mtime": 1781193630.3805785,
-    "ast_hash": "15c4afd0f0a173b2ff75b68b46572be5",
+    "mtime": 1781197660.2364242,
+    "ast_hash": "eecd6d17c676f90c3de75914e09a988a",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\scripts\\seedProductionReady.ts": {
-    "mtime": 1781197315.3991983,
-    "ast_hash": "ee446e0fc6a1d2b92f90de06fea65132",
+    "mtime": 1781197660.1686642,
+    "ast_hash": "f729b10412109254aa937f36eab05344",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\.vscode\\settings.json": {
+    "mtime": 1781257474.1500063,
+    "ast_hash": "f2b1770abeb3e6537424cd4d2e6a82e1",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\controllers\\academic-year.controller.ts": {
+    "mtime": 1781237102.8302536,
+    "ast_hash": "ccfa94419db48365b60239daf9c1dd73",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\jobs\\aiPipeline.job.ts": {
+    "mtime": 1781262967.8238456,
+    "ast_hash": "36ad5b940c76ac5b612fe72462578c05",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\routes\\academic-year.routes.ts": {
+    "mtime": 1781237113.9895475,
+    "ast_hash": "13e35f15c40f47a4ee7b27e6206dfcf4",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\academic-year.service.ts": {
+    "mtime": 1781237080.505855,
+    "ast_hash": "223f535bfae75918d67c6c0ab570e1ac",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\profilingEngine.ts": {
+    "mtime": 1781263758.6310828,
+    "ast_hash": "61a2b3e76b6b8288ae3ebd15fad06648",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\questionReformatter.ts": {
+    "mtime": 1781263728.054279,
+    "ast_hash": "7fb883fec539f6cb11c644b66621c84f",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\utils\\passwordGenerator.ts": {
+    "mtime": 1781261776.3708131,
+    "ast_hash": "0a787af430fce756b2369fe787e34b59",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\utils\\studentIdGenerator.ts": {
+    "mtime": 1781261768.1045096,
+    "ast_hash": "fa44421df85b601c5a6deeab9f3da162",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\validators\\academic-year.validator.ts": {
+    "mtime": 1781237091.859076,
+    "ast_hash": "a553e44efa4f8de52dce2e8de8335eee",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\admin\\AdminAcademicYearsPage.tsx": {
+    "mtime": 1781237162.6904302,
+    "ast_hash": "3212ca789562f30b21a19747fe802fbb",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\components\\common\\RouteErrorFallback.tsx": {
+    "mtime": 1781233989.9603598,
+    "ast_hash": "94de2240a86195f14fc267c5e4176f60",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\components\\student\\StudentHierarchyNav.tsx": {
+    "mtime": 1781238601.1886985,
+    "ast_hash": "ed8fd60a0c6cb950b12af9574d42e76b",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\components\\teacher\\ConceptMindMap.tsx": {
+    "mtime": 1781238618.8800235,
+    "ast_hash": "771c44e619b3eecf61ef75bc8dc1b49a",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\components\\teacher\\TeacherHierarchyNav.tsx": {
+    "mtime": 1781239009.1838243,
+    "ast_hash": "4939c4e9b09f4d442ea88212008313e7",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\.kiro\\specs\\opencode-lms\\tasks.md": {
+    "mtime": 1781264668.996444,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\design.md": {
+    "mtime": 1781253284.287129,
+    "ast_hash": "8aa8e10eef3f037f1bc11b8c7c602e38",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\requirements.md": {
+    "mtime": 1781250563.5834782,
+    "ast_hash": "00085c8456b3820532fc8e1777400e93",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\tasks.md": {
+    "mtime": 1781265139.1791537,
+    "ast_hash": "294bf967de8d0e45a89380bfc1bc5aaa",
     "semantic_hash": ""
   }
 }

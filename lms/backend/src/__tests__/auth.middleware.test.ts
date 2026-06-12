@@ -6,6 +6,15 @@ jest.mock('../firebase/auth', () => ({
   verifyToken: mockVerifyToken,
 }));
 
+const mockGetDoc = jest.fn<any>();
+const mockDoc = jest.fn<any>().mockReturnValue({ get: mockGetDoc });
+const mockFirestore = {
+  doc: mockDoc,
+};
+jest.mock('../firebase/admin', () => ({
+  getAdminFirestore: () => mockFirestore,
+}));
+
 jest.mock('../utils/errors', () => ({
   UnauthorizedError: class extends Error {
     constructor(msg: string) {
@@ -31,6 +40,7 @@ describe('authenticate', () => {
   beforeEach(() => {
     next = jest.fn<any>();
     mockVerifyToken.mockReset();
+    mockGetDoc.mockReset();
   });
 
   it('throws if no token provided', async () => {
@@ -45,6 +55,7 @@ describe('authenticate', () => {
 
   it('throws if token has no role', async () => {
     mockVerifyToken.mockResolvedValue({ uid: 'u1', email: 'test@test.com' });
+    mockGetDoc.mockResolvedValue({ exists: false });
     await authenticate(mockReq('Bearer valid-token'), mockRes(), next);
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ name: 'UnauthorizedError' }));
   });
@@ -66,6 +77,7 @@ describe('optionalAuth', () => {
   beforeEach(() => {
     next = jest.fn<any>();
     mockVerifyToken.mockReset();
+    mockGetDoc.mockReset();
   });
 
   it('does nothing if no auth header', async () => {

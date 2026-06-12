@@ -4,6 +4,8 @@ import { createUser as firebaseCreateUser, updateUser as firebaseUpdateUser, del
 import { NotFoundError, ConflictError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
+import { generateStudentId } from '../utils/studentIdGenerator.js';
+import { generatePassword } from '../utils/passwordGenerator.js';
 
 /** List users with optional role/search/status/classId filters, paginated. Excludes password from results. */
 export async function listUsers(query: {
@@ -67,20 +69,7 @@ export async function getUserByIdService(uid: string) {
   return { ...safeData };
 }
 
-/** Create a new user in both Firebase Auth and Firestore. Hashes the password with bcrypt. */
-function generateRandomPassword() {
-  const length = 10;
-  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-  let password = "";
-  password += "A";
-  password += "a";
-  password += "1";
-  password += "!";
-  for (let i = 4; i < length; i++) {
-    password += charset.charAt(Math.floor(Math.random() * charset.length));
-  }
-  return password.split('').sort(() => 0.5 - Math.random()).join('');
-}
+// generateRandomPassword is replaced by the spec-compliant generatePassword() from passwordGenerator.ts
 
 /** Create a new user in both Firebase Auth and Firestore. Hashes the password with bcrypt. */
 export async function createUser(data: {
@@ -111,10 +100,12 @@ export async function createUser(data: {
       throw new Error('Assigned Class not found');
     }
     const classData = classDoc.data()!;
-    const classCode = (classData.code || 'CLASS').toUpperCase();
-    const acYear = (data.academicYear || classData.academicYear || new Date().getFullYear().toString()).replace(/\s+/g, '');
-    const formattedRoll = String(data.rollNo).padStart(2, '0');
-    studentId = `${classCode}-${formattedRoll}-${acYear}`;
+    const classCode = (classData.code || classData.section
+      ? `${classData.grade || ''}${classData.section || ''}`
+      : 'CLASS'
+    ).toUpperCase().replace(/\s+/g, '');
+    const acYear = data.academicYear || classData.academicYear || new Date().getFullYear().toString();
+    studentId = generateStudentId(acYear, classCode, data.rollNo);
     
     if (!finalClassIds.includes(data.classId)) {
       finalClassIds.push(data.classId);
@@ -125,7 +116,7 @@ export async function createUser(data: {
     ? `${studentId.toLowerCase()}@school.edu`
     : `${data.displayName.toLowerCase().replace(/[^a-z0-9]/g, '')}@school.edu`);
 
-  const generatedPassword = data.password || generateRandomPassword();
+  const generatedPassword = data.password || generatePassword();
 
   const firebaseUser = await firebaseCreateUser({
     email: generatedEmail,

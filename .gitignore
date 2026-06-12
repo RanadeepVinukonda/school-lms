@@ -7,3 +7,6 @@ _ignore_this/
 
 .vercel
 *_env.env
+
+.vscode/
+.kiro/

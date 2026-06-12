@@ -44,11 +44,15 @@ export async function authenticate(req: Request, _res: Response, next: NextFunct
       }
     }
 
+    if (!role) {
+      throw new UnauthorizedError('User has no assigned role');
+    }
+
     req.user = {
       ...decoded,
       uid: decoded.uid,
       email: decoded.email || '',
-      role: role || 'student',
+      role,
       name: decoded.name || decoded.email?.split('@')[0] || 'User',
     };
 
