@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
+import NotFoundPage from '@/app/pages/shared/NotFoundPage';
 import { AuthLayout } from '@/app/layouts/AuthLayout';
 import { AdminLayout } from '@/app/layouts/AdminLayout';
 import StudentLayout from '@/app/layouts/StudentLayout';
@@ -179,6 +180,6 @@ export const router = createBrowserRouter([
   },
   {
     path: '*',
-    element: <Navigate to={ROUTES.WELCOME} replace />,
+    element: <NotFoundPage />,
   },
 ]);

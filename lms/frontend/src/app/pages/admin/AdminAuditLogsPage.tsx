@@ -117,7 +117,7 @@ export default function AdminAuditLogsPage() {
                 <p className="text-muted-foreground text-sm text-center py-8">No audit logs found.</p>
               )}
               {items.map((log) => (
-                <Card key={log.id} variant="elevated" className="cursor-pointer hover:ring-1 hover:ring-primary/20" onClick={() => setSelectedLog(selectedLog?.id === log.id ? null : log)}>
+                <Card key={log.id} variant="elevated" className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:ring-1 hover:ring-primary/20" tabIndex={0} role="button" onClick={() => setSelectedLog(selectedLog?.id === log.id ? null : log)}>
                   <CardContent className="p-3">
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex-1 min-w-0">

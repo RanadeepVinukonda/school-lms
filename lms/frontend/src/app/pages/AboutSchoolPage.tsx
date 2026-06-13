@@ -151,7 +151,7 @@ export default function AboutSchoolPage() {
             viewport={{ once: true, amount: 0.2 }}
           >
             <motion.div variants={listItem}>
-              <Card className="h-full rounded-2xl border border-primary/10 p-8">
+              <Card className="h-full rounded-xl border border-primary/10 p-8">
                 <CardContent className="p-0">
                   <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
                     <Icon name="visibility" size={24} className="text-primary" />
@@ -166,7 +166,7 @@ export default function AboutSchoolPage() {
             </motion.div>
 
             <motion.div variants={listItem}>
-              <Card className="h-full rounded-2xl border border-tertiary/10 p-8">
+              <Card className="h-full rounded-xl border border-tertiary/10 p-8">
                 <CardContent className="p-0">
                   <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-tertiary/10">
                     <Icon name="explore" size={24} className="text-tertiary" />
@@ -201,7 +201,7 @@ export default function AboutSchoolPage() {
                 <motion.div key={value.title} variants={listItem}>
                   <Card
                     className={cn(
-                      'group h-full rounded-2xl border border-border/50 p-6 text-center transition-all duration-300',
+                      'group h-full rounded-xl border border-border/50 p-6 text-center transition-all duration-300',
                     )}
                   >
                     <CardContent className="p-0">
@@ -235,7 +235,7 @@ export default function AboutSchoolPage() {
             </motion.h2>
 
             <motion.div variants={listItem}>
-              <Card className="mx-auto max-w-4xl rounded-3xl border border-border/50 p-8 sm:p-10">
+              <Card className="mx-auto max-w-4xl rounded-xl border border-border/50 p-8 sm:p-10">
                 <CardContent className="p-0">
                   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
                     {schoolFacts.map((fact) => (
@@ -275,7 +275,7 @@ export default function AboutSchoolPage() {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
               {academicPrograms.map((program) => (
                 <motion.div key={program.title} variants={listItem}>
-                  <Card className="group h-full rounded-2xl border border-border/50 p-6 transition-all duration-300">
+                  <Card className="group h-full rounded-xl border border-border/50 p-6 transition-all duration-300">
                     <CardContent className="p-0">
                       <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 transition-colors duration-300 group-hover:bg-primary/20">
                         <Icon name={program.icon} size={28} className="text-primary" />

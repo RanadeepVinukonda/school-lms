@@ -193,9 +193,13 @@ export default function WelcomePage() {
                   <p className="text-label-sm text-on-surface-variant">Learn &bull; Lead &bull; Achieve</p>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground">
-                &copy; {new Date().getFullYear()} Genesis. All rights reserved.
-              </p>
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <p>&copy; {new Date().getFullYear()} Genesis. All rights reserved.</p>
+                <span aria-hidden="true">&middot;</span>
+                <a href="/privacy" className="hover:text-foreground transition-colors">Privacy</a>
+                <span aria-hidden="true">&middot;</span>
+                <a href="/terms" className="hover:text-foreground transition-colors">Terms</a>
+              </div>
             </div>
           </div>
         </footer>

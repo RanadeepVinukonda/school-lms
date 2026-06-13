@@ -56,6 +56,9 @@ export default function StudentLayout() {
 
   return (
     <div className="min-h-screen bg-background">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md">
+        Skip to content
+      </a>
       {/* Desktop nav rail */}
       <aside
         className={cn(
@@ -175,7 +178,7 @@ export default function StudentLayout() {
         <div className="px-4 py-2 border-b border-outline-variant bg-surface/50 overflow-x-auto">
           <StudentHierarchyNav />
         </div>
-        <main className="min-h-[calc(100vh-8rem)]">
+        <main id="main-content" className="min-h-[calc(100vh-8rem)]">
           <Outlet />
         </main>
 

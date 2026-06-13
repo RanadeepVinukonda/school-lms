@@ -48,6 +48,9 @@ export function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-background">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md">
+        Skip to content
+      </a>
       {/* Desktop nav rail */}
       <aside
         className={cn(
@@ -224,7 +227,7 @@ export function AdminLayout() {
           </div>
         </header>
 
-        <main className="min-h-[calc(100vh-8rem)]">
+        <main id="main-content" className="min-h-[calc(100vh-8rem)]">
           <Outlet />
         </main>
 
