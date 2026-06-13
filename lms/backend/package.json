@@ -10,6 +10,9 @@
     "lint": "eslint src/",
     "seed": "tsx src/scripts/createTestUsers.ts",
     "seed:full": "tsx src/scripts/seedFull.ts",
+    "seed:supplemental": "tsx src/scripts/seedSupplemental.ts",
+    "seed:reset": "tsx src/scripts/cleanAll.ts && npm run seed:full && npm run seed:supplemental",
+    "seed:all": "npm run seed:full && npm run seed:supplemental",
     "test": "jest",
     "test:watch": "jest --watch"
   },
