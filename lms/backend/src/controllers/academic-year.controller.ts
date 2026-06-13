@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import * as academicYearService from '../services/academic-year.service';
 import { sendSuccess, sendCreated } from '../utils/response';
+import type { ReqWithUser, QueryParams } from '../types/common';
 
 export async function createAcademicYear(req: Request, res: Response) {
   const result = await academicYearService.createAcademicYear(req.body);
@@ -23,7 +24,7 @@ export async function getAcademicYear(req: Request, res: Response) {
 }
 
 export async function listAcademicYears(req: Request, res: Response) {
-  const result = await academicYearService.listAcademicYears(req.query as any);
+  const result = await academicYearService.listAcademicYears(req.query as QueryParams);
   sendSuccess(res, result);
 }
 

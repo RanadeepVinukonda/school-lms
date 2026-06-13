@@ -31,7 +31,7 @@ export function ThemeToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative" aria-label={`Current theme: ${theme}`} aria-pressed={theme === 'dark'}>
           {iconMap[theme]}
           <span className="sr-only">Toggle theme</span>
         </Button>

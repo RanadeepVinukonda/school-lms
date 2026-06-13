@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -67,6 +67,12 @@ function NeedsAttentionCard({ item }: { item: NeedsAttentionItem }) {
 
 export default function TeacherDashboardPage() {
   const user = useAuthStore((s) => s.user);
+  // Fetch notifications when user ID changes
+  useEffect(() => {
+    if (user?.id) {
+      void getNotificationsByUser(user.id);
+    }
+  }, [user?.id]);
   const todayDate = useMemo(() => new Date(), []);
   const todayKey = todayDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
   const todayLabel = todayDate.toLocaleDateString('en-US', { weekday: 'long' });
@@ -104,7 +110,7 @@ export default function TeacherDashboardPage() {
         allAssignments.map((ass) => getSubmissionsByAssignment(ass.id)),
       );
       const allSubmissions = submissionArrays.flat();
-      if (user?.id) await getNotificationsByUser(user.id);
+      // Notifications fetched via useEffect
 
       const correctedExamIds = new Set(allCorrections.map((c) => c.examId));
       const awaitingGradingCount = allSubmissions.filter((s) => s.status === 'submitted').length;

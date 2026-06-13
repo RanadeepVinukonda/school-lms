@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
 import * as auditService from '../services/audit.service';
 import { sendSuccess, sendPaginated, buildPaginationMeta } from '../utils/response';
+import type { ReqWithUser, QueryParams } from '../types/common';
+import type { AuditAction } from '../services/audit.service';
 
 export async function listAuditLogs(req: Request, res: Response) {
-  const { items, total, page, limit } = await auditService.listAuditLogs(req.query as any);
+  const { items, total, page, limit } = await auditService.listAuditLogs(req.query as QueryParams);
   const pagination = buildPaginationMeta(total, page, limit);
   sendPaginated(res, items, pagination);
 }
@@ -11,9 +13,9 @@ export async function listAuditLogs(req: Request, res: Response) {
 export async function recoverEntity(req: Request, res: Response) {
   const result = await auditService.recoverEntity(req.params.logId);
   const log = await auditService.getAuditLogById(req.params.logId);
-  const entry = log as any;
+  const entry = log as unknown as { targetId: string; targetType: string; targetName: string; };
   auditService.logAudit(auditService.adminAuditEntry(
-    req as any, 'user.recover' as any,
+    req as ReqWithUser, 'user.recover' as AuditAction,
     entry.targetId, entry.targetType, entry.targetName,
     { summary: `Recovered ${entry.targetType} "${entry.targetName}" from audit log` }
   ));

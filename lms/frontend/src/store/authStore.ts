@@ -90,9 +90,10 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: 'lms-auth-v2',
-      partialize: (state) => ({
-        token: state.token,
-      }),
+partialize: (state) => ({
+          token: state.token,
+          user: state.user,
+        }),
     },
   ),
 );

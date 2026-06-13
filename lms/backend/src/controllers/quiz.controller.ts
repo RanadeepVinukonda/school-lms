@@ -3,15 +3,16 @@ import * as quizService from '../services/quiz.service';
 import { requireNoDependenciesOrThrow, getQuizImpact } from '../services/impact.service';
 import { logAudit, adminAuditEntry } from '../services/audit.service';
 import { sendSuccess, sendCreated } from '../utils/response';
+import type { ReqWithUser, QueryParams } from '../types/common';
 
 export async function listAllQuizzes(req: Request, res: Response) {
-  const result = await quizService.listAllQuizzes(req.query as any);
+  const result = await quizService.listAllQuizzes(req.query as QueryParams);
   sendSuccess(res, result);
 }
 
 export async function createQuiz(req: Request, res: Response) {
   const result = await quizService.createQuiz(req.body);
-  logAudit(adminAuditEntry(req as any, 'quiz.create', result.id, 'quiz', result.title, {
+  logAudit(adminAuditEntry(req as ReqWithUser, 'quiz.create', result.id, 'quiz', result.title, {
     newValue: result,
     summary: `Created quiz "${result.title}"`,
   }));
@@ -21,7 +22,7 @@ export async function createQuiz(req: Request, res: Response) {
 export async function updateQuiz(req: Request, res: Response) {
   const old = await quizService.getQuizById(req.params.quizId);
   const result = await quizService.updateQuiz(req.params.quizId, req.body);
-  logAudit(adminAuditEntry(req as any, 'quiz.update', req.params.quizId, 'quiz', old.title, {
+  logAudit(adminAuditEntry(req as ReqWithUser, 'quiz.update', req.params.quizId, 'quiz', old.title, {
     oldValue: old,
     newValue: result,
     summary: `Updated quiz "${old.title}"`,
@@ -33,7 +34,7 @@ export async function deleteQuiz(req: Request, res: Response) {
   const quiz = await quizService.getQuizById(req.params.quizId);
   await requireNoDependenciesOrThrow('quiz', req.params.quizId, getQuizImpact);
   await quizService.deleteQuiz(req.params.quizId);
-  logAudit(adminAuditEntry(req as any, 'quiz.delete', req.params.quizId, 'quiz', quiz.title));
+  logAudit(adminAuditEntry(req as ReqWithUser, 'quiz.delete', req.params.quizId, 'quiz', quiz.title));
   sendSuccess(res, null, 'Quiz deleted');
 }
 
@@ -61,7 +62,7 @@ export async function releaseGrades(req: Request, res: Response) {
   const { showResults } = req.body;
   const old = await quizService.getQuizById(req.params.quizId);
   const result = await quizService.releaseQuizGrades(req.params.quizId, showResults);
-  logAudit(adminAuditEntry(req as any, 'quiz.update', req.params.quizId, 'quiz', old.title, {
+  logAudit(adminAuditEntry(req as ReqWithUser, 'quiz.update', req.params.quizId, 'quiz', old.title, {
     oldValue: { showResults: old.showResults },
     newValue: { showResults },
     summary: `${showResults ? 'Released' : 'Withheld'} grades for quiz "${old.title}"`,

@@ -875,8 +875,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\student\\StudentExamsPage.tsx": {
-    "mtime": 1781266055.436726,
-    "ast_hash": "5e3c9d7b949c7845e6ffa550cc9cccf2",
+    "mtime": 1781333128.3412213,
+    "ast_hash": "ba898f1d394dc86426cbf106186a2380",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\student\\StudentProfileEditPage.tsx": {
@@ -900,8 +900,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\student\\StudentTasksPage.tsx": {
-    "mtime": 1781319322.8081217,
-    "ast_hash": "b409967f9d7540c44667727fccd4bb02",
+    "mtime": 1781333105.8070168,
+    "ast_hash": "a50e35148913839b783b5716569e15cc",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\student\\StudentTimetablePage.tsx": {
@@ -1820,8 +1820,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\utils\\passwordGenerator.ts": {
-    "mtime": 1781261776.3708131,
-    "ast_hash": "0a787af430fce756b2369fe787e34b59",
+    "mtime": 1781332204.0001113,
+    "ast_hash": "8bf37ca3d7ea3f6d25e1239fd0834a05",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\utils\\studentIdGenerator.ts": {

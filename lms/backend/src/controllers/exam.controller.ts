@@ -3,15 +3,16 @@ import * as examService from '../services/exam.service';
 import { requireNoDependenciesOrThrow, getExamImpact } from '../services/impact.service';
 import { logAudit, adminAuditEntry } from '../services/audit.service';
 import { sendSuccess, sendCreated } from '../utils/response';
+import type { ReqWithUser, QueryParams } from '../types/common';
 
 export async function listAllExams(req: Request, res: Response) {
-  const result = await examService.listAllExams(req.query as any);
+  const result = await examService.listAllExams(req.query as QueryParams);
   sendSuccess(res, result);
 }
 
 export async function createExam(req: Request, res: Response) {
   const result = await examService.createExam(req.body);
-  logAudit(adminAuditEntry(req as any, 'exam.create', result.id, 'exam', result.title, {
+  logAudit(adminAuditEntry(req as ReqWithUser, 'exam.create', result.id, 'exam', result.title, {
     newValue: result,
     summary: `Created exam "${result.title}"`,
   }));
@@ -21,7 +22,7 @@ export async function createExam(req: Request, res: Response) {
 export async function updateExam(req: Request, res: Response) {
   const old = await examService.getExamById(req.params.examId);
   const result = await examService.updateExam(req.params.examId, req.body);
-  logAudit(adminAuditEntry(req as any, 'exam.update', req.params.examId, 'exam', old.title, {
+  logAudit(adminAuditEntry(req as ReqWithUser, 'exam.update', req.params.examId, 'exam', old.title, {
     oldValue: old,
     newValue: result,
     summary: `Updated exam "${old.title}"`,
@@ -33,7 +34,7 @@ export async function deleteExam(req: Request, res: Response) {
   const exam = await examService.getExamById(req.params.examId);
   await requireNoDependenciesOrThrow('exam', req.params.examId, getExamImpact);
   await examService.deleteExam(req.params.examId);
-  logAudit(adminAuditEntry(req as any, 'exam.delete', req.params.examId, 'exam', exam.title));
+  logAudit(adminAuditEntry(req as ReqWithUser, 'exam.delete', req.params.examId, 'exam', exam.title));
   sendSuccess(res, null, 'Exam deleted');
 }
 
@@ -59,7 +60,7 @@ export async function submitExamAttempt(req: Request, res: Response) {
 
 export async function gradeExamAttempt(req: Request, res: Response) {
   const result = await examService.gradeExamAttempt(req.params.attemptId, req.user!.uid, req.body);
-  logAudit(adminAuditEntry(req as any, 'grade.update', req.params.attemptId, 'examAttempt', req.params.attemptId, {
+  logAudit(adminAuditEntry(req as ReqWithUser, 'grade.update', req.params.attemptId, 'examAttempt', req.params.attemptId, {
     newValue: req.body,
     summary: `Graded exam attempt ${req.params.attemptId}`,
   }));
@@ -75,7 +76,7 @@ export async function releaseExamGrades(req: Request, res: Response) {
   const { gradesReleased } = req.body;
   const old = await examService.getExamById(req.params.examId);
   const result = await examService.releaseExamGrades(req.params.examId, gradesReleased);
-  logAudit(adminAuditEntry(req as any, 'exam.update', req.params.examId, 'exam', old.title, {
+  logAudit(adminAuditEntry(req as ReqWithUser, 'exam.update', req.params.examId, 'exam', old.title, {
     oldValue: { gradesReleased: old.gradesReleased },
     newValue: { gradesReleased },
     summary: `${gradesReleased ? 'Released' : 'Withheld'} grades for exam "${old.title}"`,

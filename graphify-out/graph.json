@@ -5256,7 +5256,7 @@
       "source_file": "lms/backend/src/services/class.service.ts",
       "source_location": "L1",
       "id": "services_class_service",
-      "community": 16,
+      "community": 113,
       "norm_label": "class.service.ts"
     },
     {
@@ -5274,7 +5274,7 @@
       "source_file": "lms/backend/src/services/class.service.ts",
       "source_location": "L42",
       "id": "services_class_service_updateclass",
-      "community": 16,
+      "community": 113,
       "norm_label": "updateclass()"
     },
     {
@@ -5283,7 +5283,7 @@
       "source_file": "lms/backend/src/services/class.service.ts",
       "source_location": "L60",
       "id": "services_class_service_deleteclass",
-      "community": 16,
+      "community": 113,
       "norm_label": "deleteclass()"
     },
     {
@@ -5292,7 +5292,7 @@
       "source_file": "lms/backend/src/services/class.service.ts",
       "source_location": "L73",
       "id": "services_class_service_listclasses",
-      "community": 16,
+      "community": 113,
       "norm_label": "listclasses()"
     },
     {
@@ -5301,7 +5301,7 @@
       "source_file": "lms/backend/src/services/class.service.ts",
       "source_location": "L115",
       "id": "services_class_service_getclassbyid",
-      "community": 16,
+      "community": 113,
       "norm_label": "getclassbyid()"
     },
     {
@@ -5310,7 +5310,7 @@
       "source_file": "lms/backend/src/services/class.service.ts",
       "source_location": "L127",
       "id": "services_class_service_addstudents",
-      "community": 16,
+      "community": 113,
       "norm_label": "addstudents()"
     },
     {
@@ -5319,7 +5319,7 @@
       "source_file": "lms/backend/src/services/class.service.ts",
       "source_location": "L160",
       "id": "services_class_service_removestudents",
-      "community": 16,
+      "community": 113,
       "norm_label": "removestudents()"
     },
     {
@@ -5328,7 +5328,7 @@
       "source_file": "lms/backend/src/services/class.service.ts",
       "source_location": "L187",
       "id": "services_class_service_getroster",
-      "community": 16,
+      "community": 113,
       "norm_label": "getroster()"
     },
     {
@@ -6543,7 +6543,7 @@
       "source_file": "lms/backend/src/services/quiz.service.ts",
       "source_location": "L1",
       "id": "services_quiz_service",
-      "community": 16,
+      "community": 96,
       "norm_label": "quiz.service.ts"
     },
     {
@@ -6552,7 +6552,7 @@
       "source_file": "lms/backend/src/services/quiz.service.ts",
       "source_location": "L9",
       "id": "services_quiz_service_listallquizzes",
-      "community": 16,
+      "community": 96,
       "norm_label": "listallquizzes()"
     },
     {
@@ -6561,7 +6561,7 @@
       "source_file": "lms/backend/src/services/quiz.service.ts",
       "source_location": "L29",
       "id": "services_quiz_service_createquiz",
-      "community": 16,
+      "community": 96,
       "norm_label": "createquiz()"
     },
     {
@@ -6570,7 +6570,7 @@
       "source_file": "lms/backend/src/services/quiz.service.ts",
       "source_location": "L73",
       "id": "services_quiz_service_updatequiz",
-      "community": 16,
+      "community": 96,
       "norm_label": "updatequiz()"
     },
     {
@@ -6579,7 +6579,7 @@
       "source_file": "lms/backend/src/services/quiz.service.ts",
       "source_location": "L91",
       "id": "services_quiz_service_deletequiz",
-      "community": 16,
+      "community": 96,
       "norm_label": "deletequiz()"
     },
     {
@@ -6588,7 +6588,7 @@
       "source_file": "lms/backend/src/services/quiz.service.ts",
       "source_location": "L104",
       "id": "services_quiz_service_getquizbyid",
-      "community": 16,
+      "community": 96,
       "norm_label": "getquizbyid()"
     },
     {
@@ -6597,7 +6597,7 @@
       "source_file": "lms/backend/src/services/quiz.service.ts",
       "source_location": "L116",
       "id": "services_quiz_service_startattempt",
-      "community": 16,
+      "community": 96,
       "norm_label": "startattempt()"
     },
     {
@@ -6606,7 +6606,7 @@
       "source_file": "lms/backend/src/services/quiz.service.ts",
       "source_location": "L162",
       "id": "services_quiz_service_submitattempt",
-      "community": 16,
+      "community": 96,
       "norm_label": "submitattempt()"
     },
     {
@@ -6615,7 +6615,7 @@
       "source_file": "lms/backend/src/services/quiz.service.ts",
       "source_location": "L245",
       "id": "services_quiz_service_releasequizgrades",
-      "community": 16,
+      "community": 96,
       "norm_label": "releasequizgrades()"
     },
     {
@@ -6624,7 +6624,7 @@
       "source_file": "lms/backend/src/services/quiz.service.ts",
       "source_location": "L261",
       "id": "services_quiz_service_getquizresults",
-      "community": 16,
+      "community": 96,
       "norm_label": "getquizresults()"
     },
     {
@@ -6714,7 +6714,7 @@
       "source_file": "lms/backend/src/services/subject.service.ts",
       "source_location": "L1",
       "id": "services_subject_service",
-      "community": 16,
+      "community": 95,
       "norm_label": "subject.service.ts"
     },
     {
@@ -6732,7 +6732,7 @@
       "source_file": "lms/backend/src/services/subject.service.ts",
       "source_location": "L44",
       "id": "services_subject_service_updatesubject",
-      "community": 16,
+      "community": 95,
       "norm_label": "updatesubject()"
     },
     {
@@ -6741,7 +6741,7 @@
       "source_file": "lms/backend/src/services/subject.service.ts",
       "source_location": "L62",
       "id": "services_subject_service_deletesubject",
-      "community": 16,
+      "community": 95,
       "norm_label": "deletesubject()"
     },
     {
@@ -6750,7 +6750,7 @@
       "source_file": "lms/backend/src/services/subject.service.ts",
       "source_location": "L75",
       "id": "services_subject_service_listsubjects",
-      "community": 16,
+      "community": 95,
       "norm_label": "listsubjects()"
     },
     {
@@ -6759,7 +6759,7 @@
       "source_file": "lms/backend/src/services/subject.service.ts",
       "source_location": "L114",
       "id": "services_subject_service_listsubjectsbyclass",
-      "community": 16,
+      "community": 95,
       "norm_label": "listsubjectsbyclass()"
     },
     {
@@ -6768,7 +6768,7 @@
       "source_file": "lms/backend/src/services/subject.service.ts",
       "source_location": "L123",
       "id": "services_subject_service_getsubjectbyid",
-      "community": 16,
+      "community": 95,
       "norm_label": "getsubjectbyid()"
     },
     {
@@ -7594,7 +7594,7 @@
       "label": "generatePassword()",
       "file_type": "code",
       "source_file": "lms/backend/src/utils/passwordGenerator.ts",
-      "source_location": "L59",
+      "source_location": "L55",
       "id": "utils_passwordgenerator_generatepassword",
       "community": 28,
       "norm_label": "generatepassword()"
@@ -10359,7 +10359,7 @@
       "source_file": "lms/frontend/src/app/pages/student/LessonViewPage.tsx",
       "source_location": "L1",
       "id": "student_lessonviewpage",
-      "community": 3,
+      "community": 8,
       "norm_label": "lessonviewpage.tsx"
     },
     {
@@ -10368,7 +10368,7 @@
       "source_file": "lms/frontend/src/app/pages/student/LessonViewPage.tsx",
       "source_location": "L16",
       "id": "student_lessonviewpage_entry",
-      "community": 3,
+      "community": 8,
       "norm_label": "entry"
     },
     {
@@ -10377,7 +10377,7 @@
       "source_file": "lms/frontend/src/app/pages/student/LessonViewPage.tsx",
       "source_location": "L18",
       "id": "student_lessonviewpage_data",
-      "community": 3,
+      "community": 8,
       "norm_label": "data"
     },
     {
@@ -10386,7 +10386,7 @@
       "source_file": "lms/frontend/src/app/pages/student/LessonViewPage.tsx",
       "source_location": "L36",
       "id": "student_lessonviewpage_match",
-      "community": 3,
+      "community": 8,
       "norm_label": "match()"
     },
     {
@@ -10395,7 +10395,7 @@
       "source_file": "lms/frontend/src/app/pages/student/LessonViewPage.tsx",
       "source_location": "L42",
       "id": "student_lessonviewpage_lessonviewpage",
-      "community": 3,
+      "community": 8,
       "norm_label": "lessonviewpage()"
     },
     {
@@ -10584,7 +10584,7 @@
       "source_file": "lms/frontend/src/app/pages/student/StudentExamsPage.tsx",
       "source_location": "L1",
       "id": "student_studentexamspage",
-      "community": 3,
+      "community": 98,
       "norm_label": "studentexamspage.tsx"
     },
     {
@@ -10593,7 +10593,7 @@
       "source_file": "lms/frontend/src/app/pages/student/StudentExamsPage.tsx",
       "source_location": "L17",
       "id": "student_studentexamspage_countdown",
-      "community": 3,
+      "community": 98,
       "norm_label": "countdown()"
     },
     {
@@ -10611,7 +10611,7 @@
       "source_file": "lms/frontend/src/app/pages/student/StudentExamsPage.tsx",
       "source_location": "L56",
       "id": "student_studentexamspage_pastexamresult",
-      "community": 3,
+      "community": 98,
       "norm_label": "pastexamresult"
     },
     {
@@ -11061,7 +11061,7 @@
       "source_file": "lms/frontend/src/app/pages/student/SubjectsPage.tsx",
       "source_location": "L1",
       "id": "student_subjectspage",
-      "community": 3,
+      "community": 8,
       "norm_label": "subjectspage.tsx"
     },
     {
@@ -11394,7 +11394,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherExamCorrectionPage.tsx",
       "source_location": "L1",
       "id": "teacher_teacherexamcorrectionpage",
-      "community": 3,
+      "community": 98,
       "norm_label": "teacherexamcorrectionpage.tsx"
     },
     {
@@ -11403,7 +11403,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherExamCorrectionPage.tsx",
       "source_location": "L25",
       "id": "teacher_teacherexamcorrectionpage_savestatus",
-      "community": 3,
+      "community": 98,
       "norm_label": "savestatus"
     },
     {
@@ -11412,7 +11412,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherExamCorrectionPage.tsx",
       "source_location": "L27",
       "id": "teacher_teacherexamcorrectionpage_examquestion",
-      "community": 3,
+      "community": 98,
       "norm_label": "examquestion"
     },
     {
@@ -11421,7 +11421,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherExamCorrectionPage.tsx",
       "source_location": "L36",
       "id": "teacher_teacherexamcorrectionpage_savehandler",
-      "community": 3,
+      "community": 98,
       "norm_label": "savehandler"
     },
     {
@@ -11430,7 +11430,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherExamCorrectionPage.tsx",
       "source_location": "L38",
       "id": "teacher_teacherexamcorrectionpage_studentanswers",
-      "community": 3,
+      "community": 98,
       "norm_label": "studentanswers"
     },
     {
@@ -11439,7 +11439,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherExamCorrectionPage.tsx",
       "source_location": "L43",
       "id": "teacher_teacherexamcorrectionpage_selectedwrong",
-      "community": 3,
+      "community": 98,
       "norm_label": "selectedwrong"
     },
     {
@@ -11448,7 +11448,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherExamCorrectionPage.tsx",
       "source_location": "L44",
       "id": "teacher_teacherexamcorrectionpage_shortcuts",
-      "community": 3,
+      "community": 98,
       "norm_label": "shortcuts"
     },
     {
@@ -11457,7 +11457,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherExamCorrectionPage.tsx",
       "source_location": "L51",
       "id": "teacher_teacherexamcorrectionpage_questionmark",
-      "community": 3,
+      "community": 98,
       "norm_label": "questionmark"
     },
     {
@@ -11466,7 +11466,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherExamCorrectionPage.tsx",
       "source_location": "L57",
       "id": "teacher_teacherexamcorrectionpage_getmark",
-      "community": 3,
+      "community": 98,
       "norm_label": "getmark()"
     },
     {
@@ -11475,7 +11475,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherExamCorrectionPage.tsx",
       "source_location": "L62",
       "id": "teacher_teacherexamcorrectionpage_teacherexamcorrectionpage",
-      "community": 3,
+      "community": 98,
       "norm_label": "teacherexamcorrectionpage()"
     },
     {
@@ -11799,7 +11799,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherStudentsPage.tsx",
       "source_location": "L1",
       "id": "teacher_teacherstudentspage",
-      "community": 3,
+      "community": 98,
       "norm_label": "teacherstudentspage.tsx"
     },
     {
@@ -11808,7 +11808,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherStudentsPage.tsx",
       "source_location": "L23",
       "id": "teacher_teacherstudentspage_studentrow",
-      "community": 3,
+      "community": 98,
       "norm_label": "studentrow"
     },
     {
@@ -11817,7 +11817,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherStudentsPage.tsx",
       "source_location": "L32",
       "id": "teacher_teacherstudentspage_teacherstudentspage",
-      "community": 3,
+      "community": 98,
       "norm_label": "teacherstudentspage()"
     },
     {
@@ -11952,7 +11952,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherTextbooksPage.tsx",
       "source_location": "L1",
       "id": "teacher_teachertextbookspage",
-      "community": 17,
+      "community": 8,
       "norm_label": "teachertextbookspage.tsx"
     },
     {
@@ -11961,7 +11961,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherTextbooksPage.tsx",
       "source_location": "L14",
       "id": "teacher_teachertextbookspage_teachertextbookspage",
-      "community": 17,
+      "community": 8,
       "norm_label": "teachertextbookspage()"
     },
     {
@@ -13203,7 +13203,7 @@
       "source_file": "lms/frontend/src/components/ui/button.tsx",
       "source_location": "L1",
       "id": "ui_button",
-      "community": 9,
+      "community": 8,
       "norm_label": "button.tsx"
     },
     {
@@ -13212,7 +13212,7 @@
       "source_file": "lms/frontend/src/components/ui/button.tsx",
       "source_location": "L6",
       "id": "ui_button_buttonvariants",
-      "community": 9,
+      "community": 8,
       "norm_label": "buttonvariants"
     },
     {
@@ -13221,7 +13221,7 @@
       "source_file": "lms/frontend/src/components/ui/button.tsx",
       "source_location": "L40",
       "id": "ui_button_buttonprops",
-      "community": 9,
+      "community": 8,
       "norm_label": "buttonprops"
     },
     {
@@ -13752,7 +13752,7 @@
       "source_file": "lms/frontend/src/components/ui/select.tsx",
       "source_location": "L1",
       "id": "ui_select",
-      "community": 1,
+      "community": 17,
       "norm_label": "select.tsx"
     },
     {
@@ -13761,7 +13761,7 @@
       "source_file": "lms/frontend/src/components/ui/select.tsx",
       "source_location": "L10",
       "id": "ui_select_selecttrigger",
-      "community": 1,
+      "community": 17,
       "norm_label": "selecttrigger"
     },
     {
@@ -13770,7 +13770,7 @@
       "source_file": "lms/frontend/src/components/ui/select.tsx",
       "source_location": "L30",
       "id": "ui_select_selectscrollupbutton",
-      "community": 1,
+      "community": 17,
       "norm_label": "selectscrollupbutton"
     },
     {
@@ -13779,7 +13779,7 @@
       "source_file": "lms/frontend/src/components/ui/select.tsx",
       "source_location": "L44",
       "id": "ui_select_selectscrolldownbutton",
-      "community": 1,
+      "community": 17,
       "norm_label": "selectscrolldownbutton"
     },
     {
@@ -13788,7 +13788,7 @@
       "source_file": "lms/frontend/src/components/ui/select.tsx",
       "source_location": "L58",
       "id": "ui_select_selectcontent",
-      "community": 1,
+      "community": 17,
       "norm_label": "selectcontent"
     },
     {
@@ -13797,7 +13797,7 @@
       "source_file": "lms/frontend/src/components/ui/select.tsx",
       "source_location": "L90",
       "id": "ui_select_selectlabel",
-      "community": 1,
+      "community": 17,
       "norm_label": "selectlabel"
     },
     {
@@ -13806,7 +13806,7 @@
       "source_file": "lms/frontend/src/components/ui/select.tsx",
       "source_location": "L98",
       "id": "ui_select_selectitem",
-      "community": 1,
+      "community": 17,
       "norm_label": "selectitem"
     },
     {
@@ -13815,7 +13815,7 @@
       "source_file": "lms/frontend/src/components/ui/select.tsx",
       "source_location": "L120",
       "id": "ui_select_selectseparator",
-      "community": 1,
+      "community": 17,
       "norm_label": "selectseparator"
     },
     {
@@ -13959,7 +13959,7 @@
       "source_file": "lms/frontend/src/components/ui/switch.tsx",
       "source_location": "L1",
       "id": "ui_switch",
-      "community": 8,
+      "community": 1,
       "norm_label": "switch.tsx"
     },
     {
@@ -13968,7 +13968,7 @@
       "source_file": "lms/frontend/src/components/ui/switch.tsx",
       "source_location": "L5",
       "id": "ui_switch_switch",
-      "community": 8,
+      "community": 1,
       "norm_label": "switch"
     },
     {
@@ -15219,7 +15219,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L1",
       "id": "services_dataservice",
-      "community": 3,
+      "community": 98,
       "norm_label": "dataservice.ts"
     },
     {
@@ -15237,7 +15237,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L19",
       "id": "services_dataservice_enrollment",
-      "community": 3,
+      "community": 98,
       "norm_label": "enrollment"
     },
     {
@@ -15264,7 +15264,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L57",
       "id": "services_dataservice_notificationitem",
-      "community": 3,
+      "community": 98,
       "norm_label": "notificationitem"
     },
     {
@@ -15273,7 +15273,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L78",
       "id": "services_dataservice_getallsubjects",
-      "community": 3,
+      "community": 8,
       "norm_label": "getallsubjects()"
     },
     {
@@ -15309,7 +15309,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L120",
       "id": "services_dataservice_getenrollmentsbystudent",
-      "community": 3,
+      "community": 8,
       "norm_label": "getenrollmentsbystudent()"
     },
     {
@@ -15318,7 +15318,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L127",
       "id": "services_dataservice_getclassesbyids",
-      "community": 3,
+      "community": 98,
       "norm_label": "getclassesbyids()"
     },
     {
@@ -15345,7 +15345,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L149",
       "id": "services_dataservice_getallenrollments",
-      "community": 3,
+      "community": 98,
       "norm_label": "getallenrollments()"
     },
     {
@@ -15381,7 +15381,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L178",
       "id": "services_dataservice_getunreadnotificationscount",
-      "community": 3,
+      "community": 98,
       "norm_label": "getunreadnotificationscount()"
     },
     {
@@ -15390,7 +15390,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L189",
       "id": "services_dataservice_marknotificationread",
-      "community": 3,
+      "community": 98,
       "norm_label": "marknotificationread()"
     },
     {
@@ -15399,7 +15399,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L195",
       "id": "services_dataservice_markallnotificationsread",
-      "community": 3,
+      "community": 98,
       "norm_label": "markallnotificationsread()"
     },
     {
@@ -15426,7 +15426,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L233",
       "id": "services_dataservice_getassignment",
-      "community": 3,
+      "community": 8,
       "norm_label": "getassignment()"
     },
     {
@@ -15435,7 +15435,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L240",
       "id": "services_dataservice_submissionitem",
-      "community": 3,
+      "community": 98,
       "norm_label": "submissionitem"
     },
     {
@@ -15480,7 +15480,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L287",
       "id": "services_dataservice_correctionitem",
-      "community": 3,
+      "community": 98,
       "norm_label": "correctionitem"
     },
     {
@@ -15489,7 +15489,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L300",
       "id": "services_dataservice_getcorrectionsbystudent",
-      "community": 3,
+      "community": 98,
       "norm_label": "getcorrectionsbystudent()"
     },
     {
@@ -15516,7 +15516,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L328",
       "id": "services_dataservice_getquiz",
-      "community": 3,
+      "community": 8,
       "norm_label": "getquiz()"
     },
     {
@@ -15597,7 +15597,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L429",
       "id": "services_dataservice_getlessonsbychapter",
-      "community": 3,
+      "community": 98,
       "norm_label": "getlessonsbychapter()"
     },
     {
@@ -15606,7 +15606,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L436",
       "id": "services_dataservice_getlesson",
-      "community": 3,
+      "community": 8,
       "norm_label": "getlesson()"
     },
     {
@@ -15984,7 +15984,7 @@
       "source_file": "lms/frontend/src/services/textbookService.ts",
       "source_location": "L56",
       "id": "services_textbookservice_getalltextbooks",
-      "community": 17,
+      "community": 8,
       "norm_label": "getalltextbooks()"
     },
     {
@@ -20753,7 +20753,7 @@
       "file_type": "code",
       "source_file": "lms/frontend/package.json",
       "source_location": "L1",
-      "community": 96,
+      "community": 34,
       "norm_label": "package.json",
       "id": "lms_frontend_package_json_frontend_package"
     },
@@ -20762,7 +20762,7 @@
       "file_type": "code",
       "source_file": "lms/frontend/package.json",
       "source_location": "L2",
-      "community": 96,
+      "community": 34,
       "norm_label": "name",
       "id": "lms_frontend_package_json_frontend_package_name"
     },
@@ -20771,7 +20771,7 @@
       "file_type": "code",
       "source_file": "lms/frontend/package.json",
       "source_location": "L3",
-      "community": 96,
+      "community": 34,
       "norm_label": "private",
       "id": "lms_frontend_package_json_frontend_package_private"
     },
@@ -20780,7 +20780,7 @@
       "file_type": "code",
       "source_file": "lms/frontend/package.json",
       "source_location": "L4",
-      "community": 96,
+      "community": 34,
       "norm_label": "version",
       "id": "lms_frontend_package_json_frontend_package_version"
     },
@@ -20789,7 +20789,7 @@
       "file_type": "code",
       "source_file": "lms/frontend/package.json",
       "source_location": "L5",
-      "community": 96,
+      "community": 34,
       "norm_label": "type",
       "id": "lms_frontend_package_json_frontend_package_type"
     },
@@ -49503,9 +49503,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminClassesPage.tsx",
       "source_location": "L42",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminclassespage",
-      "target": "admin_adminclassespage_subjectcategoryoptions",
-      "confidence_score": 1.0
+      "target": "admin_adminclassespage_subjectcategoryoptions"
     },
     {
       "relation": "contains",
@@ -49513,9 +49513,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminClassesPage.tsx",
       "source_location": "L50",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminclassespage",
-      "target": "admin_adminclassespage_subjecticonoptions",
-      "confidence_score": 1.0
+      "target": "admin_adminclassespage_subjecticonoptions"
     },
     {
       "relation": "contains",
@@ -49831,9 +49831,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminClassesPage.tsx",
       "source_location": "L29",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminclassespage",
-      "target": "services_dependencyservice_getuserdependencies",
-      "confidence_score": 1.0
+      "target": "services_dependencyservice_getuserdependencies"
     },
     {
       "relation": "imports_from",
@@ -49864,9 +49864,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminClassesPage.tsx",
       "source_location": "L32",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminclassespage",
-      "target": "services_userservice",
-      "confidence_score": 1.0
+      "target": "services_userservice"
     },
     {
       "relation": "imports",
@@ -49875,9 +49875,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminClassesPage.tsx",
       "source_location": "L32",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminclassespage",
-      "target": "services_userservice_userservice",
-      "confidence_score": 1.0
+      "target": "services_userservice_userservice"
     },
     {
       "relation": "imports_from",
@@ -49963,9 +49963,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminClassesPage.tsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminclassespage",
-      "target": "ui_card_carddescription",
-      "confidence_score": 1.0
+      "target": "ui_card_carddescription"
     },
     {
       "relation": "imports",
@@ -50128,9 +50128,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminClassesPage.tsx",
       "source_location": "L23",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminclassespage",
-      "target": "ui_select",
-      "confidence_score": 1.0
+      "target": "ui_select"
     },
     {
       "relation": "imports",
@@ -50139,9 +50139,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminClassesPage.tsx",
       "source_location": "L23",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminclassespage",
-      "target": "ui_select_optionsselect",
-      "confidence_score": 1.0
+      "target": "ui_select_optionsselect"
     },
     {
       "relation": "imports_from",
@@ -50150,9 +50150,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminClassesPage.tsx",
       "source_location": "L22",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminclassespage",
-      "target": "ui_tabs",
-      "confidence_score": 1.0
+      "target": "ui_tabs"
     },
     {
       "relation": "imports",
@@ -50161,9 +50161,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminClassesPage.tsx",
       "source_location": "L22",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminclassespage",
-      "target": "ui_tabs_tabscontent",
-      "confidence_score": 1.0
+      "target": "ui_tabs_tabscontent"
     },
     {
       "relation": "imports",
@@ -50172,9 +50172,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminClassesPage.tsx",
       "source_location": "L22",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminclassespage",
-      "target": "ui_tabs_tabslist",
-      "confidence_score": 1.0
+      "target": "ui_tabs_tabslist"
     },
     {
       "relation": "imports",
@@ -50183,9 +50183,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminClassesPage.tsx",
       "source_location": "L22",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminclassespage",
-      "target": "ui_tabs_tabstrigger",
-      "confidence_score": 1.0
+      "target": "ui_tabs_tabstrigger"
     },
     {
       "relation": "imports_from",
@@ -51080,9 +51080,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L61",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "admin_adminsettingspage_action_colors",
-      "confidence_score": 1.0
+      "target": "admin_adminsettingspage_action_colors"
     },
     {
       "relation": "contains",
@@ -51100,9 +51100,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L37",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "admin_adminsettingspage_auditlog",
-      "confidence_score": 1.0
+      "target": "admin_adminsettingspage_auditlog"
     },
     {
       "relation": "contains",
@@ -51110,9 +51110,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L52",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "admin_adminsettingspage_auditpagination",
-      "confidence_score": 1.0
+      "target": "admin_adminsettingspage_auditpagination"
     },
     {
       "relation": "contains",
@@ -51120,9 +51120,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L70",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "admin_adminsettingspage_getactionbadge",
-      "confidence_score": 1.0
+      "target": "admin_adminsettingspage_getactionbadge"
     },
     {
       "relation": "contains",
@@ -51249,9 +51249,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L25",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "lib_utils",
-      "confidence_score": 1.0
+      "target": "lib_utils"
     },
     {
       "relation": "imports",
@@ -51260,9 +51260,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L25",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "lib_utils_formatdate",
-      "confidence_score": 1.0
+      "target": "lib_utils_formatdate"
     },
     {
       "relation": "imports",
@@ -51271,9 +51271,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L25",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "lib_utils_getinitials",
-      "confidence_score": 1.0
+      "target": "lib_utils_getinitials"
     },
     {
       "relation": "imports_from",
@@ -51293,9 +51293,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L31",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "services_api",
-      "confidence_score": 1.0
+      "target": "services_api"
     },
     {
       "relation": "imports_from",
@@ -51304,9 +51304,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L30",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "services_auditservice",
-      "confidence_score": 1.0
+      "target": "services_auditservice"
     },
     {
       "relation": "imports",
@@ -51315,9 +51315,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L30",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "services_auditservice_logaudit",
-      "confidence_score": 1.0
+      "target": "services_auditservice_logaudit"
     },
     {
       "relation": "imports_from",
@@ -51359,9 +51359,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L32",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "services_dataservice_userdoc",
-      "confidence_score": 1.0
+      "target": "services_dataservice_userdoc"
     },
     {
       "relation": "imports_from",
@@ -51370,9 +51370,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L33",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "services_dependencyservice",
-      "confidence_score": 1.0
+      "target": "services_dependencyservice"
     },
     {
       "relation": "imports",
@@ -51381,9 +51381,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L33",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "services_dependencyservice_dependencyreport",
-      "confidence_score": 1.0
+      "target": "services_dependencyservice_dependencyreport"
     },
     {
       "relation": "imports",
@@ -51392,9 +51392,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L29",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "services_dependencyservice_getuserdependencies",
-      "confidence_score": 1.0
+      "target": "services_dependencyservice_getuserdependencies"
     },
     {
       "relation": "imports_from",
@@ -51425,9 +51425,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L28",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "services_userservice",
-      "confidence_score": 1.0
+      "target": "services_userservice"
     },
     {
       "relation": "imports",
@@ -51436,9 +51436,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L28",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "services_userservice_userservice",
-      "confidence_score": 1.0
+      "target": "services_userservice_userservice"
     },
     {
       "relation": "imports_from",
@@ -51447,9 +51447,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L34",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "types_index",
-      "confidence_score": 1.0
+      "target": "types_index"
     },
     {
       "relation": "imports",
@@ -51458,9 +51458,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L34",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "types_index_user",
-      "confidence_score": 1.0
+      "target": "types_index_user"
     },
     {
       "relation": "imports_from",
@@ -51469,9 +51469,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "ui_avatar",
-      "confidence_score": 1.0
+      "target": "ui_avatar"
     },
     {
       "relation": "imports",
@@ -51480,9 +51480,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "ui_avatar_avatar",
-      "confidence_score": 1.0
+      "target": "ui_avatar_avatar"
     },
     {
       "relation": "imports",
@@ -51491,9 +51491,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "ui_avatar_avatarfallback",
-      "confidence_score": 1.0
+      "target": "ui_avatar_avatarfallback"
     },
     {
       "relation": "imports_from",
@@ -51612,9 +51612,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "ui_dialog",
-      "confidence_score": 1.0
+      "target": "ui_dialog"
     },
     {
       "relation": "imports",
@@ -51623,9 +51623,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "ui_dialog_dialogcontent",
-      "confidence_score": 1.0
+      "target": "ui_dialog_dialogcontent"
     },
     {
       "relation": "imports",
@@ -51634,9 +51634,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "ui_dialog_dialogdescription",
-      "confidence_score": 1.0
+      "target": "ui_dialog_dialogdescription"
     },
     {
       "relation": "imports",
@@ -51645,9 +51645,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "ui_dialog_dialogfooter",
-      "confidence_score": 1.0
+      "target": "ui_dialog_dialogfooter"
     },
     {
       "relation": "imports",
@@ -51656,9 +51656,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "ui_dialog_dialogheader",
-      "confidence_score": 1.0
+      "target": "ui_dialog_dialogheader"
     },
     {
       "relation": "imports",
@@ -51667,9 +51667,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "ui_dialog_dialogtitle",
-      "confidence_score": 1.0
+      "target": "ui_dialog_dialogtitle"
     },
     {
       "relation": "imports_from",
@@ -51744,9 +51744,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "ui_select",
-      "confidence_score": 1.0
+      "target": "ui_select"
     },
     {
       "relation": "imports",
@@ -51755,9 +51755,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "ui_select_optionsselect",
-      "confidence_score": 1.0
+      "target": "ui_select_optionsselect"
     },
     {
       "relation": "imports_from",
@@ -51766,9 +51766,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L23",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "ui_tabs",
-      "confidence_score": 1.0
+      "target": "ui_tabs"
     },
     {
       "relation": "imports",
@@ -51777,9 +51777,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L23",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "ui_tabs_tabscontent",
-      "confidence_score": 1.0
+      "target": "ui_tabs_tabscontent"
     },
     {
       "relation": "imports",
@@ -51788,9 +51788,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L23",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "ui_tabs_tabslist",
-      "confidence_score": 1.0
+      "target": "ui_tabs_tabslist"
     },
     {
       "relation": "imports",
@@ -51799,9 +51799,9 @@
       "source_file": "lms/frontend/src/app/pages/admin/AdminSettingsPage.tsx",
       "source_location": "L23",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "admin_adminsettingspage",
-      "target": "ui_tabs_tabstrigger",
-      "confidence_score": 1.0
+      "target": "ui_tabs_tabstrigger"
     },
     {
       "relation": "imports_from",
@@ -93992,5 +93992,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "9cc0a8fa37bd209d203385c4212454eeccd0ebe7"
+  "built_at_commit": "fa0d6e71f044cc1d6a9a5261f3899502efd07a78"
 }
