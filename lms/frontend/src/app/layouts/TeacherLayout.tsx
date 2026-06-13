@@ -10,11 +10,10 @@ import GlobalSearchDialog from '@/components/common/GlobalSearchDialog';
 import { TutorialGuide } from '@/components/common/TutorialGuide';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { UserAvatar } from '@/components/layout/UserAvatar';
-import { TeacherHierarchyNav } from '@/components/teacher/TeacherHierarchyNav';
+
 import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/lib/constants';
-import { useLocation } from 'react-router-dom';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 
 interface NavItem {
@@ -33,6 +32,7 @@ const navGroups: NavGroup[] = [
     label: 'Main',
     items: [
       { label: 'Home', href: ROUTES.TEACHER_DASHBOARD, icon: 'home' },
+      { label: 'My Classes', href: ROUTES.TEACHER_DASHBOARD, icon: 'school' },
       { label: 'Teaching Space', href: ROUTES.TEACHER_TEXTBOOKS, icon: 'menu_book' },
       { label: 'Manage Tests & Review', href: ROUTES.TEACHER_TEST_SCHEDULE, icon: 'analytics' },
     ],
@@ -50,8 +50,6 @@ export default function TeacherLayout() {
   const { sidebarCollapsed, setSidebarCollapsed } = useUIStore();
   const [searchOpen, setSearchOpen] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
-  const location = useLocation();
-  const hideNav = location.pathname.includes('/concept/') && location.pathname.split('/').length > 6;
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -278,11 +276,6 @@ export default function TeacherLayout() {
           </div>
         </header>
 
-        {!hideNav && (
-          <div className="px-4 py-2 border-b border-outline-variant bg-surface/50 overflow-x-auto">
-            <TeacherHierarchyNav />
-          </div>
-        )}
         <main id="main-content" className="min-h-[calc(100vh-8rem)]">
           <Outlet />
         </main>

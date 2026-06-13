@@ -1,7 +1,8 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link } from 'react-router-dom';
+
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +12,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -109,14 +109,7 @@ export function LoginForm() {
           </Button>
         </form>
       </CardContent>
-      <CardFooter className="justify-center">
-        <p className="text-sm text-muted-foreground">
-          Don&apos;t have an account?{' '}
-          <Link to={ROUTES.REGISTER} className="text-primary hover:underline font-medium">
-            Sign up
-          </Link>
-        </p>
-      </CardFooter>
+
     </Card>
   );
 }

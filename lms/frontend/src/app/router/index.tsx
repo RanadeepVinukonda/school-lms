@@ -8,15 +8,11 @@ import { ProtectedRoute } from '@/app/router/ProtectedRoute';
 import { RouteErrorFallback } from '@/components/common/RouteErrorFallback';
 import { ROUTES } from '@/lib/constants';
 
-import { LoginForm } from '@/features/auth/components/LoginForm';
-import { RegisterForm } from '@/features/auth/components/RegisterForm';
 import { ForgotPasswordForm } from '@/features/auth/components/ForgotPasswordForm';
 import { ResetPasswordForm } from '@/features/auth/components/ResetPasswordForm';
 
 import WelcomePage from '@/app/pages/WelcomePage';
-import LoginSelectorPage from '@/app/pages/auth/LoginSelectorPage';
-import StudentLoginPage from '@/app/pages/auth/StudentLoginPage';
-import TeacherLoginPage from '@/app/pages/auth/TeacherLoginPage';
+import LoginPage from '@/app/pages/auth/LoginPage';
 
 import StudentDashboardPage from '@/app/pages/student/StudentDashboardPage';
 import StudentExamsPage from '@/app/pages/student/StudentExamsPage';
@@ -40,6 +36,8 @@ import TeacherTextbookUploadPage from '@/app/pages/teacher/TeacherTextbookUpload
 import TeacherConceptViewPage from '@/app/pages/teacher/TeacherConceptViewPage';
 import TeacherAssessmentCreatePage from '@/app/pages/teacher/TeacherAssessmentCreatePage';
 import TeacherExamCreatePage from '@/app/pages/teacher/TeacherExamCreatePage';
+import TeacherClassDetailPage from '@/app/pages/teacher/TeacherClassDetailPage';
+import TeacherSubjectDetailPage from '@/app/pages/teacher/TeacherSubjectDetailPage';
 import TeacherProfilePage from '@/app/pages/teacher/TeacherProfilePage';
 import TeacherProfileEditPage from '@/app/pages/teacher/TeacherProfileEditPage';
 import TeacherVideoLibraryPage from '@/app/pages/teacher/TeacherVideoLibraryPage';
@@ -77,10 +75,7 @@ export const router = createBrowserRouter([
     element: <AuthLayout />,
     errorElement: <RouteErrorFallback />,
     children: [
-      { path: ROUTES.LOGIN, element: <LoginSelectorPage /> },
-      { path: ROUTES.LOGIN_STUDENT, element: <StudentLoginPage /> },
-      { path: ROUTES.LOGIN_TEACHER, element: <TeacherLoginPage /> },
-      { path: ROUTES.REGISTER, element: <RegisterForm /> },
+      { path: ROUTES.LOGIN, element: <LoginPage /> },
       { path: ROUTES.FORGOT_PASSWORD, element: <ForgotPasswordForm /> },
       { path: ROUTES.RESET_PASSWORD, element: <ResetPasswordForm /> },
     ],
@@ -131,6 +126,8 @@ export const router = createBrowserRouter([
       { path: ROUTES.TEACHER_EXAMS, element: <TeacherExamsPage /> },
       { path: ROUTES.TEACHER_EXAM_CREATE, element: <TeacherExamCreatePage /> },
       { path: ROUTES.TEACHER_EXAM_CORRECT(':id'), element: <TeacherExamCorrectionPage /> },
+      { path: ROUTES.TEACHER_CLASS(':id'), element: <TeacherClassDetailPage /> },
+      { path: ROUTES.TEACHER_SUBJECT(':classId', ':subjectId'), element: <TeacherSubjectDetailPage /> },
       { path: ROUTES.TEACHER_TEXTBOOKS, element: <TeacherTextbooksPage /> },
       { path: ROUTES.TEACHER_TEXTBOOK(':textbookId'), element: <TeacherTextbookDetailPage /> },
       { path: ROUTES.TEACHER_TEXTBOOK_UPLOAD, element: <TeacherTextbookUploadPage /> },

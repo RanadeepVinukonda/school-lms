@@ -23,7 +23,7 @@ import {
 } from '@/services/dataService';
 import { getTextbooksBySubject } from '@/services/textbookService';
 import { pageTransition, listItem, listContainer } from '@/lib/motion';
-import { TeacherHierarchyNav } from '@/components/teacher/TeacherHierarchyNav';
+
 
 interface NeedsAttentionItem {
   icon: string; label: string; count: number;
@@ -183,10 +183,7 @@ export default function TeacherDashboardPage() {
                 <p className="text-sm text-muted-foreground">Here&apos;s what needs your attention today</p>
               </motion.div>
 
-              <motion.div variants={listItem} initial="hidden" animate="show" className="bg-card border rounded-xl p-4">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Navigate to Concept</p>
-                <TeacherHierarchyNav />
-              </motion.div>
+
 
               <section>
                 <div className="flex items-center gap-2 mb-3">
@@ -235,35 +232,42 @@ export default function TeacherDashboardPage() {
 
                 {(d.teaching.classes.length > 0 || d.teaching.textbooks.length > 0 || (d.teaching.subjects?.length ?? 0) > 0) && (
                   <motion.div variants={listItem} initial="hidden" animate="show">
-                    <h2 className="text-title-md font-semibold mb-3">My Teaching</h2>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Icon name="school" size={20} className="text-primary" aria-hidden />
+                      <h2 className="text-title-md font-semibold">My Teaching</h2>
+                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {d.teaching.classes.length > 0 && (
-                        <Card>
-                          <CardContent className="p-4">
-                            <div className="flex items-start gap-3">
-                              <div className="h-9 w-9 rounded-lg bg-primary-container flex items-center justify-center flex-shrink-0">
-                                <Icon name="school" size={18} className="text-on-primary-container" />
+                      {d.teaching.classes.map((cls) => (
+                        <Link
+                          key={cls.id}
+                          to={ROUTES.TEACHER_CLASS(cls.id)}
+                          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl"
+                        >
+                          <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                            <CardContent className="p-4">
+                              <div className="flex items-start gap-3">
+                                <div className="h-10 w-10 rounded-lg bg-primary-container flex items-center justify-center flex-shrink-0">
+                                  <Icon name="school" size={20} className="text-on-primary-container" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold">{cls.name}</p>
+                                  <p className="text-xs text-muted-foreground">View subjects &rarr;</p>
+                                </div>
                               </div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-semibold">Classes</p>
-                                {d.teaching.classes.map((cls) => (
-                                  <p key={cls.id} className="text-xs text-muted-foreground">{cls.name}</p>
-                                ))}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
+                            </CardContent>
+                          </Card>
+                        </Link>
+                      ))}
                       {d.teaching.textbooks.length > 0 && (
                         <Link to={ROUTES.TEACHER_TEXTBOOKS} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl">
                           <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
                             <CardContent className="p-4">
                               <div className="flex items-start gap-3">
-                                <div className="h-9 w-9 rounded-lg bg-secondary-container flex items-center justify-center flex-shrink-0">
-                                  <Icon name="menu_book" size={18} className="text-on-secondary-container" />
+                                <div className="h-10 w-10 rounded-lg bg-secondary-container flex items-center justify-center flex-shrink-0">
+                                  <Icon name="menu_book" size={20} className="text-on-secondary-container" />
                                 </div>
                                 <div className="min-w-0">
-                                  <p className="text-sm font-semibold">Textbooks</p>
+                                  <p className="text-sm font-semibold">All Textbooks</p>
                                   <p className="text-xs text-muted-foreground">{d.teaching.textbooks.length} textbook{d.teaching.textbooks.length > 1 ? 's' : ''}</p>
                                 </div>
                               </div>
@@ -271,33 +275,13 @@ export default function TeacherDashboardPage() {
                           </Card>
                         </Link>
                       )}
-                      {(d.teaching.subjects?.length ?? 0) > 0 && (
-                        <Card>
-                          <CardContent className="p-4">
-                            <div className="flex items-start gap-3">
-                              <div className="h-9 w-9 rounded-lg bg-secondary-container flex items-center justify-center flex-shrink-0">
-                                <Icon name="book" size={18} className="text-on-secondary-container" />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-semibold">Subjects</p>
-                                {d.teaching.subjects?.map((sub) => (
-                                  <p key={sub.id} className="text-xs text-muted-foreground flex items-center justify-between">
-                                    <span>{sub.name}</span>
-                                    <Link to={`/teacher/students?subject=${sub.id}`} className="text-primary underline">View Students</Link>
-                                  </p>
-                                ))}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
                       {d.teaching.studentCount > 0 && (
                         <Link to={ROUTES.TEACHER_STUDENTS} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl">
                           <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
                             <CardContent className="p-4">
                               <div className="flex items-start gap-3">
-                                <div className="h-9 w-9 rounded-lg bg-success-container flex items-center justify-center flex-shrink-0">
-                                  <Icon name="group" size={18} className="text-on-success-container" />
+                                <div className="h-10 w-10 rounded-lg bg-success-container flex items-center justify-center flex-shrink-0">
+                                  <Icon name="group" size={20} className="text-on-success-container" />
                                 </div>
                                 <div className="min-w-0">
                                   <p className="text-sm font-semibold">Enrolled Students</p>
