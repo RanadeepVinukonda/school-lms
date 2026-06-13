@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import {
   Clock, AlertCircle, CheckCircle, XCircle, Loader2,
   ChevronLeft, ChevronRight, Send, Play, ArrowLeft
-} from 'phosphor-react';
+} from 'lucide-react';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

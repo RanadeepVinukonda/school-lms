@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { Clock, AlertCircle, CheckCircle, XCircle, Send, Play, ChevronLeft, ChevronRight, FileText, CheckCheck, TrendingUp, TrendingDown, BookOpen, Lightbulb, MessageSquareText, AlertTriangle } from 'phosphor-react';
+import { Clock, AlertCircle, CheckCircle, XCircle, Send, Play, ChevronLeft, ChevronRight, FileText, CheckCheck, TrendingUp, TrendingDown, BookOpen, Lightbulb, MessageSquareText, AlertTriangle } from 'lucide-react';
 import { pageTransition } from '@/lib/motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';

@@ -8,7 +8,7 @@ import {
   ChevronLeft, ChevronRight, Send, Play, ArrowLeft,
   AlertTriangle, Trophy, Brain, Layers,
   BarChart3, Timer, Bookmark, HelpCircle
-} from 'phosphor-react';
+} from 'lucide-react';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

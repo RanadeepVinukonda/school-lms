@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Home, Search } from 'phosphor-react';
+import { Home, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SEOHead } from '@/components/common/SEOHead';
 
