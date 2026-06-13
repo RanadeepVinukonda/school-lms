@@ -1364,6 +1364,30 @@ export default function AdminClassesPage() {
         </DialogContent>
       </Dialog>
 
+      {/* REGISTER TEACHER DIALOG */}
+      <Dialog open={showCreateTeacher} onOpenChange={(o) => { if (!o) { setShowCreateTeacher(false); setTeacherForm({ displayName: '', email: '' }); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Register Teacher</DialogTitle>
+            <DialogDescription>Create a new teacher profile.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Teacher Name</Label>
+              <Input placeholder="Jane Doe" value={teacherForm.displayName} onChange={(e) => setTeacherForm((f) => ({ ...f, displayName: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Email Address (Optional)</Label>
+              <Input placeholder="jane.doe@school.edu" value={teacherForm.email} onChange={(e) => setTeacherForm((f) => ({ ...f, email: e.target.value }))} />
+              <p className="text-[11px] text-muted-foreground">If left blank, a default email will be generated automatically.</p>
+            </div>
+            <Button className="w-full" onClick={handleCreateTeacher} disabled={teacherRegisterLoading || !teacherForm.displayName}>
+              {teacherRegisterLoading ? 'Registering...' : 'Register Teacher'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* USER DEPENDENCY & DELETE DIALOG (for teacher) */}
       <Dialog open={showUserDependencyDialog} onOpenChange={(o) => { if (!o) { setShowUserDependencyDialog(false); setUserDeleteTarget(null); } }}>
         <DialogContent className="sm:max-w-[480px]">
