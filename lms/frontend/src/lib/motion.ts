@@ -31,12 +31,20 @@ export const pageTransition: Variants = {
 
 export const listContainer: Variants = {
   hidden: {},
+  initial: {},
   show: { transition: { staggerChildren: 0.05 } },
+  animate: { transition: { staggerChildren: 0.05 } },
 };
 
 export const listItem: Variants = {
   hidden: { opacity: 0, y: 16 },
+  initial: { opacity: 0, y: 16 },
   show: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring', stiffness: 300, damping: 25, mass: 0.8 },
+  },
+  animate: {
     opacity: 1,
     y: 0,
     transition: { type: 'spring', stiffness: 300, damping: 25, mass: 0.8 },
@@ -50,17 +58,27 @@ export const cardHover = {
 
 export const fadeIn: Variants = {
   hidden: { opacity: 0 },
+  initial: { opacity: 0 },
   show: { opacity: 1, transition: { duration: 0.3, ease: standardEasing } },
+  animate: { opacity: 1, transition: { duration: 0.3, ease: standardEasing } },
 };
 
 export const scaleIn: Variants = {
   hidden: { opacity: 0, scale: 0.95 },
+  initial: { opacity: 0, scale: 0.95 },
   show: { opacity: 1, scale: 1, transition: { duration: 0.3, ease: emphasizedEasing } },
+  animate: { opacity: 1, scale: 1, transition: { duration: 0.3, ease: emphasizedEasing } },
 };
 
 export const scrollReveal: Variants = {
   hidden: { opacity: 0, y: 48 },
+  initial: { opacity: 0, y: 48 },
   show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.7, ease: emphasizedEasing },
+  },
+  animate: {
     opacity: 1,
     y: 0,
     transition: { duration: 0.7, ease: emphasizedEasing },
@@ -69,14 +87,25 @@ export const scrollReveal: Variants = {
 
 export const staggerContainer: Variants = {
   hidden: {},
+  initial: {},
   show: {
+    transition: { staggerChildren: 0.08, delayChildren: 0.15 },
+  },
+  animate: {
     transition: { staggerChildren: 0.08, delayChildren: 0.15 },
   },
 };
 
 export const scaleFadeIn: Variants = {
   hidden: { opacity: 0, scale: 0.85, filter: 'brightness(0.7)' },
+  initial: { opacity: 0, scale: 0.85, filter: 'brightness(0.7)' },
   show: {
+    opacity: 1,
+    scale: 1,
+    filter: 'brightness(1)',
+    transition: { duration: 0.9, ease: emphasizedEasing },
+  },
+  animate: {
     opacity: 1,
     scale: 1,
     filter: 'brightness(1)',
@@ -86,7 +115,13 @@ export const scaleFadeIn: Variants = {
 
 export const slideUpReveal: Variants = {
   hidden: { opacity: 0, y: 60 },
+  initial: { opacity: 0, y: 60 },
   show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: emphasizedEasing },
+  },
+  animate: {
     opacity: 1,
     y: 0,
     transition: { duration: 0.6, ease: emphasizedEasing },
@@ -95,7 +130,18 @@ export const slideUpReveal: Variants = {
 
 export const cardStackReveal: Variants = {
   hidden: { opacity: 0, y: 80, scale: 0.95 },
+  initial: { opacity: 0, y: 80, scale: 0.95 },
   show: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      delay: i * 0.12,
+      duration: 0.6,
+      ease: emphasizedEasing,
+    },
+  }),
+  animate: (i: number) => ({
     opacity: 1,
     y: 0,
     scale: 1,
