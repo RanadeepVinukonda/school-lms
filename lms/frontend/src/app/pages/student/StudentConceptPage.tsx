@@ -159,7 +159,7 @@ export default function StudentConceptPage() {
         if (c) {
           const [progress, release] = await Promise.all([
             userId ? getConceptProgress(userId, conceptId) : null,
-            getConceptRelease(textbookId, conceptId),
+            getConceptRelease(fb.classId, textbookId, conceptId),
           ]);
           return { concept: c, chapter: ch, textbook: fb, progress, release };
         }

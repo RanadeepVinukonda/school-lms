@@ -36,12 +36,13 @@ export default function StudentTasksPage() {
       const enrollments = await getEnrollmentsByStudent(studentId);
       const enrolledSubjectIds = new Set(enrollments.map((e) => e.courseId));
 
-      // Fetch assignments for enrolled subjects only
-      const assignmentPromises = [...enrolledSubjectIds].map((sid) =>
-        getAssignmentsBySubject(sid).catch(() => [] as AssignmentItem[]),
-      );
-      const assignmentResults = await Promise.all(assignmentPromises);
-      const allAssignments = assignmentResults.flat();
+      // Fetch assignments for the student's class using the newer assignment-v2 API (class-scoped)
+      const assignmentsResponse = classId
+        ? await api.get(`/assignments-v2/class/${classId}`).then((r) => r.data.data?.items ?? r.data.data ?? [])
+        : [];
+      const allAssignments = assignmentsResponse
+        .filter((a: any) => !!a.releasedAt)
+        .map((a: any) => ({ id: a.id, ...a })) as AssignmentItem[];
 
       // Fetch quizzes for the student's class using the newer quiz‑v2 API (class‑scoped)
       const quizzesResponse = classId
@@ -51,10 +52,13 @@ export default function StudentTasksPage() {
         .filter((q: any) => !!q.releasedAt)
         .map((q: any) => ({ id: q.id, ...q })) as QuizItem[];
 
-      // Fetch exams for enrolled subjects only
-      const examPromises = [...enrolledSubjectIds].map((sid) => getExamsBySubject(sid));
-      const examResults = await Promise.all(examPromises);
-      const allExams = examResults.flat();
+      // Fetch exams for the student's class using the newer exam‑v2 API (class‑scoped)
+      const examsResponse = classId
+        ? await api.get(`/exams-v2/class/${classId}`).then((r) => r.data.data ?? [])
+        : [];
+      const allExams = examsResponse
+        .filter((e: any) => !!e.releasedAt)
+        .map((e: any) => ({ id: e.id, ...e })) as ExamItem[];
 
       return buildTasks(allAssignments, allQuizzes, allExams, allSubjects as Subject[]);
     },

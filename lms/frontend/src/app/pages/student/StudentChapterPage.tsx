@@ -13,6 +13,7 @@ import { pageTransition, listContainer, listItem } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import { getTextbook, getChaptersForTextbook, getConceptsForChapter, getAllConceptReleases } from '@/services/textbookService';
 import { getSubject } from '@/services/dataService';
+import { useAuthStore } from '@/store/authStore';
 import type { ConceptRelease } from '@/types/textbook';
 
 export default function StudentChapterPage() {
@@ -22,12 +23,16 @@ export default function StudentChapterPage() {
     queryKey: ['student-chapter', textbookId, chapterId],
     queryFn: async () => {
       if (!textbookId || !chapterId) throw new Error('Missing params');
-      const [fb, chapters, releases] = await Promise.all([
-        getTextbook(textbookId),
-        getChaptersForTextbook(textbookId),
-        getAllConceptReleases(textbookId),
-      ]);
+      const fb = await getTextbook(textbookId);
       if (!fb) throw new Error('Textbook not found');
+      
+      const userClassId = useAuthStore.getState().user?.classId || '';
+      const classId = userClassId || fb.classId || '';
+
+      const [chapters, releases] = await Promise.all([
+        getChaptersForTextbook(textbookId),
+        getAllConceptReleases(classId, textbookId),
+      ]);
       const subject = await getSubject(fb.subjectId);
       const ch = chapters.find((c) => c.id === chapterId);
       if (!ch) throw new Error('Chapter not found');

@@ -238,7 +238,7 @@ export default function TeacherConceptViewPage() {
         const concepts = await getConceptsForChapter(textbookId, ch.id);
         const c = concepts.find((co) => co.id === conceptId);
         if (c) {
-          const release = await getConceptRelease(textbookId, conceptId);
+          const release = await getConceptRelease(tb.classId, textbookId, conceptId);
           return { concept: c, chapter: ch, textbook: tb, release };
         }
       }
@@ -371,7 +371,7 @@ export default function TeacherConceptViewPage() {
     mutationFn: async (field: 'questionBankReleased' | 'assignmentsReleased' | 'mindMapReleased') => {
       if (!data) return;
       const currentVal = data.release?.[field] ?? false;
-      await setConceptRelease(textbookId!, conceptId!, chapterId!, teacherId, {
+      await setConceptRelease(data.textbook.classId, textbookId!, conceptId!, chapterId!, teacherId, {
         [field]: !currentVal,
       });
     },

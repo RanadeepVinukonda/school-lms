@@ -43,7 +43,9 @@ export default function SubjectDetailPage() {
 
       if (!subject) return null;
 
-      const textbooks = firestoreTextbooks.filter((tb) => tb.status !== 'processing').map((tb) => ({ ...tb, chapterCount: tb.chapterCount ?? 0 }));
+      const textbooks = firestoreTextbooks
+        .filter((tb) => tb.status !== 'processing' && (!authUser?.classId || tb.classId === authUser.classId))
+        .map((tb) => ({ ...tb, chapterCount: tb.chapterCount ?? 0 }));
       const enrollment = enrollments.find((e) => e.courseId === id);
       const firstTb = textbooks[0];
       let currentChapter = null;

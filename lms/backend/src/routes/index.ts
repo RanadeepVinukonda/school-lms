@@ -32,6 +32,7 @@ import questionPaperRoutes from './question-paper.routes';
 import testTemplateRoutes from './test-template.routes';
 import testScheduleRoutes from './test-schedule.routes';
 import academicYearRoutes from './academic-year.routes';
+import enrollmentRoutes from './enrollment.routes';
 
 const router = Router();
 
@@ -68,6 +69,7 @@ router.use('/question-papers', questionPaperRoutes);
 router.use('/test-templates', testTemplateRoutes);
 router.use('/test-schedule', testScheduleRoutes);
 router.use('/academic-years', academicYearRoutes);
+router.use('/enrollments', enrollmentRoutes);
 
 router.get('/health', (_req, res) => {
   res.json({

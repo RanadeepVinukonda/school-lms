@@ -174,10 +174,11 @@ export async function getAllConceptProgress(userId: string): Promise<ConceptProg
   return snap.docs.map((d) => d.data() as ConceptProgress);
 }
 
-/** Fetch all concept releases for a textbook. */
-export async function getAllConceptReleases(textbookId: string): Promise<ConceptRelease[]> {
+/** Fetch all concept releases for a textbook and class. */
+export async function getAllConceptReleases(classId: string, textbookId: string): Promise<ConceptRelease[]> {
   const q = query(
     collection(db, CONCEPT_RELEASES_COLLECTION),
+    where('classId', '==', classId),
     where('textbookId', '==', textbookId),
   );
   const snap = await getDocs(q);
@@ -185,8 +186,8 @@ export async function getAllConceptReleases(textbookId: string): Promise<Concept
 }
 
 /** Fetch the release status for a concept. Returns default (all false) if not found. */
-export async function getConceptRelease(textbookId: string, conceptId: string): Promise<ConceptRelease | null> {
-  const docRef = doc(db, CONCEPT_RELEASES_COLLECTION, `${textbookId}_${conceptId}`);
+export async function getConceptRelease(classId: string, textbookId: string, conceptId: string): Promise<ConceptRelease | null> {
+  const docRef = doc(db, CONCEPT_RELEASES_COLLECTION, `${classId}_${textbookId}_${conceptId}`);
   const snap = await getDoc(docRef);
   if (!snap.exists()) return null;
   return { id: snap.id, ...snap.data() } as ConceptRelease;
@@ -222,15 +223,17 @@ export async function getConceptsForChapter(textbookId: string, chapterId: strin
 
 /** Set or update concept release status (which content is pushed to students). */
 export async function setConceptRelease(
+  classId: string,
   textbookId: string,
   conceptId: string,
   chapterId: string,
   teacherId: string,
   data: Partial<Pick<ConceptRelease, 'questionBankReleased' | 'assignmentsReleased' | 'mindMapReleased'>>,
 ): Promise<void> {
-  const docRef = doc(db, CONCEPT_RELEASES_COLLECTION, `${textbookId}_${conceptId}`);
+  const docRef = doc(db, CONCEPT_RELEASES_COLLECTION, `${classId}_${textbookId}_${conceptId}`);
   const snap = await getDoc(docRef);
   const payload = {
+    classId,
     textbookId,
     chapterId,
     conceptId,
@@ -251,10 +254,10 @@ export async function setConceptRelease(
   }
   logAudit({
     action: 'concept.release',
-    targetId: `${textbookId}_${conceptId}`,
+    targetId: `${classId}_${textbookId}_${conceptId}`,
     targetType: 'conceptRelease',
     targetName: `Concept ${conceptId}`,
-    summary: `Updated release settings for concept ${conceptId} in textbook ${textbookId}`,
+    summary: `Updated release settings for concept ${conceptId} in textbook ${textbookId} for class ${classId}`,
     newValue: data,
   });
 }
