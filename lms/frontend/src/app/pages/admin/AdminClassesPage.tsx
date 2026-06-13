@@ -127,10 +127,7 @@ export default function AdminClassesPage() {
 
   const { data: tcAssignments = [] } = useQuery({
     queryKey: ['admin-tc-assignments'],
-    queryFn: async () => {
-      const snap = await getDocs(collection(db, 'teacherClassSubject'));
-      return snap.docs.map((d) => ({ id: d.id, ...d.data() } as TeacherClassSubject));
-    },
+    queryFn: () => teacherClassSubjectService.getAll().then((res) => res.data),
   });
 
   useEffect(() => {

@@ -15,6 +15,7 @@ import { useAuthStore } from '@/store/authStore';
 import { db } from '@/firebase/config';
 import { getAllSubjects, getAllClasses } from '@/services/dataService';
 import api from '@/services/api';
+import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
 
 interface TeacherAssignment {
   id: string;
@@ -39,17 +40,15 @@ export default function TeacherTextbookUploadPage() {
     queryKey: ['teacher-assignments', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const q = query(collection(db, 'teacherClassSubject'), where('teacherId', '==', user.id));
-      const snapshot = await getDocs(q);
+      const myAssignments = await teacherClassSubjectService.getMyAssignments().then((res) => res.data);
       const [allSubjects, allClasses] = await Promise.all([getAllSubjects(), getAllClasses()]);
       const subjectMap = new Map(allSubjects.map((s) => [s.id, s]));
       const classMap = new Map(allClasses.map((c) => [c.id, c]));
-      return snapshot.docs.map((doc) => {
-        const data = doc.data();
+      return myAssignments.map((data) => {
         const subject = subjectMap.get(data.subjectId);
         const cls = classMap.get(data.classId);
         return {
-          id: doc.id,
+          id: data.id,
           classId: data.classId,
           className: cls?.name ?? 'Unknown Class',
           subjectId: data.subjectId,
