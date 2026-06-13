@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { RouterProvider } from 'react-router-dom';
+import { MotionConfig } from 'framer-motion';
 import { router } from '@/app/router';
 import SplashScreen from '@/components/common/SplashScreen';
 import UploadProgressBanner from '@/components/textbook/UploadProgressBanner';
@@ -29,9 +30,13 @@ export default function App() {
 
   return (
     <AuthGate>
-      <SplashScreen isLoading={showSplash} onFinish={() => setShowSplash(false)} />
-      <UploadProgressBanner />
-      <div className="container mx-auto px-4"><RouterProvider router={router} /></div>
+      <MotionConfig reducedMotion="always" transition={{ duration: 0 }}>
+        <SplashScreen isLoading={showSplash} onFinish={() => setShowSplash(false)} />
+        <UploadProgressBanner />
+        <div className="container mx-auto px-4">
+          <RouterProvider router={router} />
+        </div>
+      </MotionConfig>
     </AuthGate>
   );
 }

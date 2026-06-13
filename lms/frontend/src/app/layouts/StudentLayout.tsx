@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useAuthStore } from '@/store/authStore';
@@ -15,7 +14,6 @@ import { StudentHierarchyNav } from '@/components/student/StudentHierarchyNav';
 import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/lib/constants';
-import { pageTransition } from '@/lib/motion';
 
 interface NavItem {
   label: string;
@@ -181,11 +179,7 @@ export default function StudentLayout() {
           <StudentHierarchyNav />
         </div>
         <main id="main-content" className="min-h-[calc(100vh-8rem)]">
-          <AnimatePresence mode="wait">
-            <motion.div key={useLocation().pathname} variants={pageTransition} initial="initial" animate="animate" exit="exit">
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
+          <Outlet />
         </main>
 
         {/* Bottom navigation (mobile only) */}

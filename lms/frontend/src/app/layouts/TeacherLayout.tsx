@@ -278,11 +278,7 @@ export default function TeacherLayout() {
         </header>
 
         <main id="main-content" className="min-h-[calc(100vh-8rem)]">
-          <AnimatePresence mode="wait">
-            <motion.div key={useLocation().pathname} variants={pageTransition} initial="initial" animate="animate" exit="exit">
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
+          <Outlet />
         </main>
       </div>
       <GlobalSearchDialog isOpen={searchOpen} onClose={() => setSearchOpen(false)} />

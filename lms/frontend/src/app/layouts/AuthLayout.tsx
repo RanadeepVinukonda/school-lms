@@ -1,6 +1,4 @@
-import { Outlet, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
-import { pageTransition } from '@/lib/motion';
+import { Outlet } from 'react-router-dom';
 
 export function AuthLayout() {
   return (
@@ -25,11 +23,7 @@ export function AuthLayout() {
         </div>
 
         <div id="main-content" className="w-full max-w-md relative z-10">
-          <AnimatePresence mode="wait">
-            <motion.div key={useLocation().pathname} variants={pageTransition} initial="initial" animate="animate" exit="exit">
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
+          <Outlet />
         </div>
 
         <div className="mt-8 flex items-center gap-4 text-label-sm text-muted-foreground relative z-10">

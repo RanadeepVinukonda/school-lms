@@ -1,87 +1,83 @@
 import { type Variants, type Transition } from 'framer-motion';
 
-export const emphasizedEasing = [0.05, 0, 0.133333, 0.06] as const;
+export const emphasizedEasing = [0.2, 0, 0, 1] as const;
 export const standardEasing = [0.2, 0, 0, 1] as const;
 export const decelerateEasing = [0, 0, 0, 1] as const;
 export const accelerateEasing = [0.3, 0, 1, 1] as const;
 
 export const springTransition: Transition = {
-  type: 'spring',
-  stiffness: 700,
-  damping: 0.9,
-  mass: 1,
+  type: 'tween',
+  duration: 0,
 };
 
 export const springSlow: Transition = {
-  type: 'spring',
-  stiffness: 300,
-  damping: 0.8,
-  mass: 1,
+  type: 'tween',
+  duration: 0,
 };
 
 export const pageTransition: Variants = {
-  initial: { opacity: 0, y: 12 },
+  initial: { opacity: 1, y: 0 },
   animate: {
     opacity: 1,
     y: 0,
-    transition: { type: 'spring', stiffness: 400, damping: 28, mass: 0.8 },
+    transition: { duration: 0 },
   },
-  exit: { opacity: 0, y: -12, transition: { duration: 0.15, ease: accelerateEasing } },
+  exit: { opacity: 1, y: 0, transition: { duration: 0 } },
 };
 
 export const listContainer: Variants = {
   hidden: {},
   initial: {},
-  show: { transition: { staggerChildren: 0.05 } },
-  animate: { transition: { staggerChildren: 0.05 } },
+  show: { transition: { staggerChildren: 0 } },
+  animate: { transition: { staggerChildren: 0 } },
 };
 
 export const listItem: Variants = {
-  hidden: { opacity: 0, y: 16 },
-  initial: { opacity: 0, y: 16 },
+  hidden: { opacity: 1, y: 0 },
+  initial: { opacity: 1, y: 0 },
   show: {
     opacity: 1,
     y: 0,
-    transition: { type: 'spring', stiffness: 300, damping: 25, mass: 0.8 },
+    transition: { duration: 0 },
   },
   animate: {
     opacity: 1,
     y: 0,
-    transition: { type: 'spring', stiffness: 300, damping: 25, mass: 0.8 },
+    transition: { duration: 0 },
   },
 };
 
 export const cardHover = {
-  whileHover: { y: -2, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
-  transition: { type: 'spring', stiffness: 700, damping: 0.9 } as Transition,
+  whileHover: {},
+  transition: { duration: 0 } as Transition,
 };
 
 export const fadeIn: Variants = {
-  hidden: { opacity: 0 },
-  initial: { opacity: 0 },
-  show: { opacity: 1, transition: { duration: 0.3, ease: standardEasing } },
-  animate: { opacity: 1, transition: { duration: 0.3, ease: standardEasing } },
+  hidden: { opacity: 1 },
+  initial: { opacity: 1 },
+  show: { opacity: 1, transition: { duration: 0 } },
+  animate: { opacity: 1, transition: { duration: 0 } },
 };
 
 export const scaleIn: Variants = {
-  hidden: { opacity: 0, scale: 0.95 },
-  initial: { opacity: 0, scale: 0.95 },
-  show: { opacity: 1, scale: 1, transition: { duration: 0.3, ease: emphasizedEasing } },
-  animate: { opacity: 1, scale: 1, transition: { duration: 0.3, ease: emphasizedEasing } },
+  hidden: { opacity: 1, scale: 1 },
+  initial: { opacity: 1, scale: 1 },
+  show: { opacity: 1, scale: 1, transition: { duration: 0 } },
+  animate: { opacity: 1, scale: 1, transition: { duration: 0 } },
 };
 
 export const scrollReveal: Variants = {
-  hidden: { opacity: 0, y: 48 },
-  initial: { opacity: 0, y: 48 },
+  hidden: { opacity: 1, y: 0 },
+  initial: { opacity: 1, y: 0 },
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.7, ease: emphasizedEasing },
+    transition: { duration: 0 },
   },
   animate: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.7, ease: emphasizedEasing },
+    transition: { duration: 0 },
   },
 };
 
@@ -89,66 +85,62 @@ export const staggerContainer: Variants = {
   hidden: {},
   initial: {},
   show: {
-    transition: { staggerChildren: 0.08, delayChildren: 0.15 },
+    transition: { staggerChildren: 0 },
   },
   animate: {
-    transition: { staggerChildren: 0.08, delayChildren: 0.15 },
+    transition: { staggerChildren: 0 },
   },
 };
 
 export const scaleFadeIn: Variants = {
-  hidden: { opacity: 0, scale: 0.85, filter: 'brightness(0.7)' },
-  initial: { opacity: 0, scale: 0.85, filter: 'brightness(0.7)' },
+  hidden: { opacity: 1, scale: 1, filter: 'brightness(1)' },
+  initial: { opacity: 1, scale: 1, filter: 'brightness(1)' },
   show: {
     opacity: 1,
     scale: 1,
     filter: 'brightness(1)',
-    transition: { duration: 0.9, ease: emphasizedEasing },
+    transition: { duration: 0 },
   },
   animate: {
     opacity: 1,
     scale: 1,
     filter: 'brightness(1)',
-    transition: { duration: 0.9, ease: emphasizedEasing },
+    transition: { duration: 0 },
   },
 };
 
 export const slideUpReveal: Variants = {
-  hidden: { opacity: 0, y: 60 },
-  initial: { opacity: 0, y: 60 },
+  hidden: { opacity: 1, y: 0 },
+  initial: { opacity: 1, y: 0 },
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, ease: emphasizedEasing },
+    transition: { duration: 0 },
   },
   animate: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, ease: emphasizedEasing },
+    transition: { duration: 0 },
   },
 };
 
 export const cardStackReveal: Variants = {
-  hidden: { opacity: 0, y: 80, scale: 0.95 },
-  initial: { opacity: 0, y: 80, scale: 0.95 },
-  show: (i: number) => ({
+  hidden: { opacity: 1, y: 0, scale: 1 },
+  initial: { opacity: 1, y: 0, scale: 1 },
+  show: () => ({
     opacity: 1,
     y: 0,
     scale: 1,
     transition: {
-      delay: i * 0.12,
-      duration: 0.6,
-      ease: emphasizedEasing,
+      duration: 0,
     },
   }),
-  animate: (i: number) => ({
+  animate: () => ({
     opacity: 1,
     y: 0,
     scale: 1,
     transition: {
-      delay: i * 0.12,
-      duration: 0.6,
-      ease: emphasizedEasing,
+      duration: 0,
     },
   }),
 };
