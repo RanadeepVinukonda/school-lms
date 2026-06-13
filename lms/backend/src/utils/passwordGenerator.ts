@@ -6,7 +6,7 @@ import { randomBytes } from "crypto";
 const UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
 const DIGITS = "0123456789";
-const SPECIAL = "!@#$%^&*()-_=+[]{}|;:,.<>?";
+const SPECIAL = "@$!%*?&";
 const ALL_CHARS = UPPERCASE + LOWERCASE + DIGITS + SPECIAL;
 
 /**
@@ -45,22 +45,15 @@ function shuffle(chars: string[]): string[] {
  *   - At least 1 uppercase letter
  *   - At least 1 lowercase letter
  *   - At least 1 digit
- *   - At least 1 special character
+ *   - At least 1 special character from the allowed set (@$!%*?&)
  *
  * Strategy:
- *   1. Use crypto.randomBytes(16) as the entropy source.
- *   2. Guarantee each required character class by injecting one representative.
- *   3. Fill remaining positions from the full character pool.
- *   4. Shuffle so mandatory characters are not at predictable positions.
- *
- * SECURITY: The returned password MUST NOT be logged. It is returned exactly
- * once and delivered to the Admin via the one-time credentials modal.
+ *   1. Guarantee each required character class by injecting one representative.
+ *   2. Fill remaining positions from the full character pool.
+ *   3. Shuffle so mandatory characters are not at predictable positions.
  */
 export function generatePassword(): string {
   const TARGET_LENGTH = 12;
-
-  // Cryptographically-random base for additional entropy on fill positions
-  const base = randomBytes(16).toString("base64").slice(0, TARGET_LENGTH);
 
   // One character guaranteed from each required class
   const mandatoryChars: string[] = [
@@ -70,16 +63,11 @@ export function generatePassword(): string {
     pickRandom(SPECIAL),
   ];
 
-  // Fill remaining slots from ALL_CHARS, preferring the random base chars
+  // Fill remaining slots from ALL_CHARS
   const remaining: string[] = [];
   const remainingCount = TARGET_LENGTH - mandatoryChars.length;
   for (let i = 0; i < remainingCount; i++) {
-    const baseChar = base[i];
-    remaining.push(
-      baseChar !== undefined && ALL_CHARS.includes(baseChar)
-        ? baseChar
-        : pickRandom(ALL_CHARS)
-    );
+    remaining.push(pickRandom(ALL_CHARS));
   }
 
   // Shuffle so mandatory chars land at random positions
