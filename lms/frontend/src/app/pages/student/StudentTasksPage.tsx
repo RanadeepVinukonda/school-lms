@@ -123,7 +123,7 @@ export default function StudentTasksPage() {
         exit="exit"
         className="p-4 max-w-4xl mx-auto space-y-6 pb-20"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-4">
           <div>
             <h1 className="text-headline-sm font-bold flex items-center gap-3">
               Tasks
@@ -136,20 +136,36 @@ export default function StudentTasksPage() {
             <p className="text-body-md text-muted-foreground">Stay on top of your upcoming work</p>
           </div>
           {subjectsData && subjectsData.length > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Filter Subject:</span>
-              <select
-                value={selectedSubjectId}
-                onChange={(e) => setSelectedSubjectId(e.target.value)}
-                className="h-9 rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring w-full sm:w-auto"
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <button
+                onClick={() => setSelectedSubjectId('')}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border shrink-0 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                  selectedSubjectId === ''
+                    ? "bg-primary text-white border-primary shadow-sm"
+                    : "bg-surface text-on-surface hover:bg-surface-variant/40 border-outline-variant/60"
+                }`}
               >
-                <option value="">All Subjects</option>
-                {subjectsData.map((sub: any) => (
-                  <option key={sub.id} value={sub.id}>
+                <Icon name="select_all" size={14} />
+                All Subjects
+              </button>
+              {subjectsData.map((sub: any) => {
+                const isSelected = selectedSubjectId === sub.id;
+                return (
+                  <button
+                    key={sub.id}
+                    onClick={() => setSelectedSubjectId(sub.id)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border shrink-0 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                      isSelected
+                        ? "text-white shadow-sm"
+                        : "bg-surface text-on-surface hover:bg-surface-variant/40 border-outline-variant/60"
+                    }`}
+                    style={isSelected ? { backgroundColor: sub.color || '#6366f1', borderColor: sub.color || '#6366f1' } : {}}
+                  >
+                    <Icon name={sub.icon || 'menu_book'} size={14} style={!isSelected ? { color: sub.color } : undefined} />
                     {sub.name}
-                  </option>
-                ))}
-              </select>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
