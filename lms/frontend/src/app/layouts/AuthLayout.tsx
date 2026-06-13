@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import { GraduationCap } from 'lucide-react';
+import { GraduationCap } from 'phosphor-react';
 
 export function AuthLayout() {
   return (

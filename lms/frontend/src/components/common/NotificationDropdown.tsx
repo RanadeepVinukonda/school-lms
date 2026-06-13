@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bell, BellOff, CheckCheck, Star, FileText, HelpCircle,
   MessageSquare, Calendar, Info, AlertTriangle, ChevronRight,
-} from 'lucide-react';
+} from 'phosphor-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';

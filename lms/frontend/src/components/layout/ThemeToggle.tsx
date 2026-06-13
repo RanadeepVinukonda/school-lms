@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Moon, Sun, Monitor } from 'lucide-react';
+import { Moon, Sun, Monitor } from 'phosphor-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,

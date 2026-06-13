@@ -7,6 +7,11 @@ const config: Config = {
     './src/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
+  fontFamily: {
+    sans: ['SF Pro Display', 'Geist Sans', 'Helvetica Neue', 'sans-serif'],
+    serif: ['Lyon Text', 'Newsreader', 'Playfair Display', 'serif'],
+    mono: ['Geist Mono', 'SF Mono', 'JetBrains Mono', 'monospace'],
+  },
     extend: {
       colors: {
         border: 'hsl(var(--border))',
