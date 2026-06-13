@@ -9,23 +9,25 @@ import { Icon } from '@/components/ui/Icon';
 import { useQuery } from '@tanstack/react-query';
 import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
-import { getAllSubjects, getEnrollmentsByStudent } from '@/services/dataService';
+import { getAllSubjects, getClass } from '@/services/dataService';
 
 export default function SubjectsPage() {
   const user = useAuthStore((s) => s.user);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['student-subjects', user?.id],
+    queryKey: ['student-subjects', user?.id, user?.classId],
     queryFn: async () => {
-      const [allSubjects, enrollments] = await Promise.all([
+      if (!user?.classId) return [];
+      const [allSubjects, studentClass] = await Promise.all([
         getAllSubjects(),
-        getEnrollmentsByStudent(user!.id),
+        getClass(user.classId),
       ]);
-      const subjects = enrollments
-        .map((enrollment) => {
-          const subject = allSubjects.find((s) => s.id === enrollment.courseId);
+      if (!studentClass || !studentClass.subjectIds) return [];
+      const subjects = studentClass.subjectIds
+        .map((subId) => {
+          const subject = allSubjects.find((s) => s.id === subId);
           if (!subject) return null;
-          return { ...subject, status: enrollment.status };
+          return { ...subject, status: 'active' };
         })
         .filter((s): s is NonNullable<typeof s> => s !== null);
       return subjects;

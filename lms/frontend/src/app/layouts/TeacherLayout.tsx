@@ -33,7 +33,6 @@ const navGroups: NavGroup[] = [
     label: 'Main',
     items: [
       { label: 'Home', href: ROUTES.TEACHER_DASHBOARD, icon: 'home' },
-      { label: 'My Classes', href: ROUTES.TEACHER_DASHBOARD, icon: 'school' },
       { label: 'Teaching Space', href: ROUTES.TEACHER_TEXTBOOKS, icon: 'menu_book' },
       { label: 'Manage Tests & Review', href: ROUTES.TEACHER_TEST_SCHEDULE, icon: 'analytics' },
     ],

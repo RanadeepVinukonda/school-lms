@@ -12,7 +12,7 @@ import { useAuthStore } from '@/store/authStore';
 import { cn, getTimeGreeting } from '@/lib/utils';
 import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
-import { getGradesByStudent, getEnrollmentsByStudent, getClass } from '@/services/dataService';
+import { getGradesByStudent, getClass } from '@/services/dataService';
 
 const motivationalMessages = [
   'Every expert was once a beginner. Keep going!',
@@ -63,9 +63,8 @@ export default function StudentDashboardPage() {
       const greeting = getTimeGreeting();
       const authUserData = useAuthStore.getState().user;
 
-      const [grades, enrollments, classDoc] = await Promise.all([
+      const [grades, classDoc] = await Promise.all([
         getGradesByStudent(studentId),
-        getEnrollmentsByStudent(studentId),
         authUserData?.classId ? getClass(authUserData.classId) : Promise.resolve(null),
       ]);
 
@@ -83,7 +82,7 @@ export default function StudentDashboardPage() {
       return {
         displayName, greeting, motivationalMessage: motivationalMessages[messageIndex],
         todayDate: now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
-        recentResults, enrolledCount: enrollments.length,
+        recentResults, enrolledCount: classDoc?.subjectIds?.length ?? 0,
         className: classDoc?.name ?? null, classGrade: classDoc?.grade ?? null,
         avgGrade, totalAssessments: grades.length,
       } satisfies DashboardData;

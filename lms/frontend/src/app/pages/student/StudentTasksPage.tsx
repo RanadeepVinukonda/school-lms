@@ -9,7 +9,7 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import api from '@/services/api';
 import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/lib/motion';
-import { getAllSubjects, getExamsBySubject, getEnrollmentsByStudent, getAssignmentsBySubject } from '@/services/dataService';
+import { getAllSubjects, getClass } from '@/services/dataService';
 import { useAuthStore } from '@/store/authStore';
 import type { AssignmentItem, ExamItem, QuizItem } from '@/services/dataService';
 import type { Subject } from '@/types';
@@ -32,9 +32,11 @@ export default function StudentTasksPage() {
     queryKey: ['student-tasks', studentId, classId],
     queryFn: async () => {
       if (!studentId) return [];
-      const allSubjects = await getAllSubjects();
-      const enrollments = await getEnrollmentsByStudent(studentId);
-      const enrolledSubjectIds = new Set(enrollments.map((e) => e.courseId));
+      const [allSubjects, classDoc] = await Promise.all([
+        getAllSubjects(),
+        classId ? getClass(classId) : Promise.resolve(null),
+      ]);
+      const classSubjects = allSubjects.filter((sub) => classDoc?.subjectIds?.includes(sub.id));
 
       // Fetch assignments for the student's class using the newer assignment-v2 API (class-scoped)
       const assignmentsResponse = classId
@@ -60,14 +62,22 @@ export default function StudentTasksPage() {
         .filter((e: any) => !!e.releasedAt)
         .map((e: any) => ({ id: e.id, ...e })) as ExamItem[];
 
-      return buildTasks(allAssignments, allQuizzes, allExams, allSubjects as Subject[]);
+      return buildTasks(allAssignments, allQuizzes, allExams, classSubjects as Subject[]);
     },
     enabled: !!studentId,
   });
 
   const { data: subjectsData } = useQuery({
-    queryKey: ['student-subjects', studentId],
-    queryFn: () => getAllSubjects(),
+    queryKey: ['student-subjects', studentId, classId],
+    queryFn: async () => {
+      if (!classId) return [];
+      const [allSubjects, classDoc] = await Promise.all([
+        getAllSubjects(),
+        getClass(classId),
+      ]);
+      if (!classDoc || !classDoc.subjectIds) return [];
+      return allSubjects.filter((sub) => classDoc.subjectIds?.includes(sub.id));
+    },
     enabled: !!studentId,
   });
 

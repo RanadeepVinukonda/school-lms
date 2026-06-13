@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
-import { getEnrollmentsByStudent, getSubject } from '@/services/dataService';
+import { getClass, getSubject } from '@/services/dataService';
 import { getTextbooksBySubject, getChaptersForTextbook } from '@/services/textbookService';
 import type { Subject } from '@/services/dataService';
 
@@ -13,22 +13,18 @@ export function StudentHierarchyNav() {
   const [textbookId, setTextbookId] = useState('');
   const [chapterId, setChapterId] = useState('');
 
-  const { data: enrollments } = useQuery({
-    queryKey: ['student-enrollments', user?.id],
-    queryFn: () => user?.id ? getEnrollmentsByStudent(user.id) : Promise.resolve([]),
-    enabled: !!user?.id,
-  });
-
   const { data: enrolledSubjects } = useQuery({
-    queryKey: ['student-enrolled-subjects', enrollments],
+    queryKey: ['student-enrolled-subjects', user?.classId],
     queryFn: async () => {
-      if (!enrollments || enrollments.length === 0) return [];
+      if (!user?.classId) return [];
+      const classDoc = await getClass(user.classId);
+      if (!classDoc || !classDoc.subjectIds || classDoc.subjectIds.length === 0) return [];
       const results = await Promise.all(
-        enrollments.map((e) => getSubject(e.courseId)),
+        classDoc.subjectIds.map((id) => getSubject(id)),
       );
       return results.filter(Boolean) as Subject[];
     },
-    enabled: !!enrollments,
+    enabled: !!user?.classId,
   });
 
   const uniqueSubjects: { id: string; label: string }[] = enrolledSubjects
