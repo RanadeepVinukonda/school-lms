@@ -1,39 +1,49 @@
 import type { Request, Response } from 'express';
-import { getEnrollmentsByStudent } from '../services/course.service';
-import { getTextbooksBySubject } from '../services/textbook.service';
-import { getAllConceptReleases } from '../services/textbook.service';
-import { collections } from '../firebase/firestore';
+import { collections, getCollection } from '../firebase/firestore';
 
 /**
  * Get current student's enrollments and a consolidated list of concept release statuses 
  * for all textbooks they have access to.
  */
 export async function getMyEnrollments(req: Request, res: Response) {
-  const studentId = req.user.id;
-  const studentClassId = req.user.classId;
-  const classId = studentClassId;
-
-  // Fetch user enrollments
-  const enrollments = await getEnrollmentsByStudent(studentId);
-
-  // Extract course IDs from enrollments
-  const courseIds = enrollments.map((e) => e.courseId);
-
-  // Fetch class document to get subjectIds
-  const classDoc = classId ? await collections.classes().doc(classId).get() : null;
-  const subjectIds = classDoc?.data()?.subjectIds || [];
-
-  // Fetch textbooks for all subjects
-  const textbooks = [];
-  for (const subjectId of subjectIds) {
-    const subjectTextbooks = await getTextbooksBySubject(subjectId);
-    textbooks.push(...subjectTextbooks);
+  if (!req.user) {
+    res.status(401).json({ success: false, error: 'Unauthorized' });
+    return;
   }
 
-  // Fetch concept release status for all textbooks
-  const releasePromises = textbooks.map((tb) => getAllConceptReleases(tb.id));
-  const releaseArrays = await Promise.all(releasePromises);
-  const conceptReleases = releaseArrays.flat();
+  const studentId = req.user.uid;
+  
+  // Fetch student user doc to get classId
+  const userDoc = await collections.users().doc(studentId).get();
+  const studentClassId = userDoc.exists ? (userDoc.data()?.classId as string | undefined) : undefined;
+
+  // Fetch student enrollments
+  const enrollmentsSnap = await collections.enrollment()
+    .where('studentId', '==', studentId)
+    .where('status', '==', 'active')
+    .get();
+  const enrollments = enrollmentsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+  // Fetch textbooks for the student's class
+  const textbooks: any[] = [];
+  if (studentClassId) {
+    const textbooksSnap = await collections.textbooks()
+      .where('classId', '==', studentClassId)
+      .get();
+    textbooks.push(...textbooksSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+  }
+
+  // Fetch concept release statuses for all textbooks
+  const conceptReleases: any[] = [];
+  if (studentClassId && textbooks.length > 0) {
+    for (const tb of textbooks) {
+      const releasesSnap = await getCollection('conceptReleases')
+        .where('textbookId', '==', tb.id)
+        .where('classId', '==', studentClassId)
+        .get();
+      conceptReleases.push(...releasesSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+    }
+  }
 
   res.json({
     success: true,
