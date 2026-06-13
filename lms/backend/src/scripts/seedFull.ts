@@ -20,6 +20,13 @@ interface ChapterDef { title: string; description: string; concepts: ConceptDef[
 // ── Helpers ──
 function uid() { return uuidv4().replace(/-/g, '').slice(0, 20); }
 
+function generateStudentId(academicYear: string, classCode: string, rollNo: number): string {
+  const paddedRoll = String(rollNo).padStart(2, '0');
+  const cleanYear = academicYear.match(/\d{4}/)?.[0] || academicYear.replace(/[^0-9]/g, '');
+  const cleanClass = classCode.toLowerCase().replace(/[^a-z0-9]/g, '');
+  return `${cleanClass}${paddedRoll}${cleanYear}`;
+}
+
 async function deleteCollection(name: string) {
   const snap = await db.collection(name).get();
   if (snap.empty) return;
@@ -29,42 +36,30 @@ async function deleteCollection(name: string) {
   console.log(`  Deleted ${snap.size} docs from ${name}`);
 }
 
-async function deleteSubcollections(ref: FirebaseFirestore.DocumentReference) {
-  const subcollections = await ref.listCollections();
-  for (const sub of subcollections) {
-    const snap = await sub.get();
-    if (!snap.empty) {
-      const batch = db.batch();
-      snap.docs.forEach((d) => batch.delete(d.ref));
-      await batch.commit();
-    }
-  }
-}
-
 async function createUser(email: string, password: string, displayName: string, role: Role, extra: Record<string, any> = {}) {
-  let uid: string;
+  let uidVal: string;
   try {
     const existing = await auth.getUserByEmail(email);
-    uid = existing.uid;
-    await auth.updateUser(uid, { displayName, password });
+    uidVal = existing.uid;
+    await auth.updateUser(uidVal, { displayName, password });
     console.log(`  Updated existing user: ${email} (${role})`);
   } catch (err: any) {
     if (err.code === 'auth/user-not-found') {
       const record = await auth.createUser({ email, password, displayName });
-      uid = record.uid;
+      uidVal = record.uid;
       console.log(`  Created user: ${email} (${role})`);
     } else {
       throw err;
     }
   }
-  await auth.setCustomUserClaims(uid, { role });
-  await db.collection('users').doc(uid).set({
-    uid, email, displayName, role, isActive: true,
+  await auth.setCustomUserClaims(uidVal, { role });
+  await db.collection('users').doc(uidVal).set({
+    uid: uidVal, email, displayName, role, isActive: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     ...extra,
   }, { merge: true });
-  return uid;
+  return uidVal;
 }
 
 function pick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
@@ -316,7 +311,7 @@ function getChapterDefs(subject: string, grade: number): ChapterDef[] {
       { title: 'Writing', description: 'Writing sentences and short compositions.',
         concepts: [
           { title: 'Sentence Writing', summary: 'Writing clear and complete sentences.', notes: 'Students practice writing sentences with correct grammar, spelling, and punctuation.', objectives: ['Write complete sentences', 'Use descriptive words', 'Check for errors', 'Write with purpose'], keywords: ['sentence', 'describe', 'revise', 'publish'], difficulty: 'medium', mins: 30 },
-          { title: 'Creative Writing', summary: 'Writing stories and expressing ideas.', notes: 'Students use their imagination to write short stories, descriptions, and personal narratives.', objectives: ['Brainstorm ideas', 'Write a short story', 'Add details', 'Organize thoughts'], keywords: ['story', 'imagination', 'details', 'organize'], difficulty: 'medium', mins: 30 },
+          { title: 'Creative Writing', summary: 'Writing stories and expressing ideas.', notes: 'Students use their imagination to write short stories, descriptions, and personal narratives.', objectives: ['Creative writing', 'Write short stories', 'Self-express', 'Structure ideas'], keywords: ['story', 'writing', 'narrative', 'imagination'], difficulty: 'medium', mins: 30 },
         ]},
       { title: 'Vocabulary', description: 'Building word knowledge and usage.',
         concepts: [
@@ -391,35 +386,70 @@ async function main() {
   // Step 1: Clean existing data
   console.log('Cleaning existing data...');
   const cleanCollections = [
-    'classes', 'subjects', 'teacherClassSubject', 'teacherVideos', 'grade',
+    'classes', 'subjects', 'teacherClassSubject', 'teacherVideos', 'grades', 'grade',
     'quizV2', 'quizAttemptV2', 'assignmentV2', 'assignmentSubmissionV2',
-    'examV2', 'examAttemptV2', 'enrollment', 'grades', 'courses', 'lessons',
+    'examV2', 'examAttemptV2', 'enrollment', 'courses', 'lessons',
     'questionBank', 'questionPapers', 'testTemplates', 'testSchedule', 'whiteboards', 'timetable',
-    'activityLogs', 'auditLogs',
+    'activityLogs', 'auditLogs', 'academicYears', 'conceptReleases',
+    'conversations', 'messages', 'notifications', 'settings', 'uploads', 'tokens'
   ];
   for (const name of cleanCollections) {
     await deleteCollection(name);
   }
-  // Clean textbooks and subcollections
-  const tbSnap = await db.collection('textbooks').get();
-  for (const doc of tbSnap.docs) {
-    await deleteSubcollections(doc.ref);
-  }
-  await deleteCollection('textbooks');
 
-  // Clean users except keep current admin if exists
-  const userSnap = await db.collection('users').get();
-  for (const doc of userSnap.docs) {
-    await doc.ref.delete();
-    try { await auth.deleteUser(doc.id); } catch {}
+  // Clean textbooks and subcollections recursively
+  console.log('Clearing textbooks and nested chapters/concepts/questions...');
+  const tbSnap = await db.collection('textbooks').get();
+  for (const tbDoc of tbSnap.docs) {
+    const chaptersSnap = await tbDoc.ref.collection('chapters').get();
+    for (const chapDoc of chaptersSnap.docs) {
+      const conceptsSnap = await chapDoc.ref.collection('concepts').get();
+      for (const conceptDoc of conceptsSnap.docs) {
+        const questionsSnap = await conceptDoc.ref.collection('questions').get();
+        if (!questionsSnap.empty) {
+          const batch = db.batch();
+          questionsSnap.docs.forEach((qDoc) => batch.delete(qDoc.ref));
+          await batch.commit();
+        }
+        await conceptDoc.ref.delete();
+      }
+      await chapDoc.ref.delete();
+    }
+    await tbDoc.ref.delete();
+  }
+  console.log('  Cleared textbooks.');
+
+  // Clean Firebase Auth users
+  console.log('Clearing Firebase Auth users...');
+  let listUsersResult = await auth.listUsers(1000);
+  while (listUsersResult.users.length > 0) {
+    const uids = listUsersResult.users.map((u) => u.uid);
+    await auth.deleteUsers(uids);
+    console.log(`  Deleted ${uids.length} Auth users.`);
+    listUsersResult = await auth.listUsers(1000);
   }
   console.log('  All existing users removed.\n');
+
+  // Step 1.5: Create Academic Year Document
+  console.log('Creating academic year document...');
+  const academicYearId = uid();
+  await db.collection('academicYears').doc(academicYearId).set({
+    id: academicYearId,
+    name: 'Academic Year 2025',
+    code: '2025',
+    startDate: '2025-01-01T00:00:00.000Z',
+    endDate: '2025-12-31T23:59:59.999Z',
+    isCurrent: true,
+    status: 'active',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  });
 
   // Step 2: Create Classes
   console.log('Creating classes...');
   const classes = [
-    { name: 'Class 1', code: 'GR1-2025', grade: '1', section: 'A', academicYear: '2025-2026' },
-    { name: 'Class 3', code: 'GR3-2025', grade: '3', section: 'A', academicYear: '2025-2026' },
+    { name: 'Grade 1 - Section A', code: '1A', grade: '1', section: 'A', academicYear: '2025' },
+    { name: 'Grade 3 - Section A', code: '3A', grade: '3', section: 'A', academicYear: '2025' },
   ];
   const classRefs: { [key: string]: string } = {};
   for (const cls of classes) {
@@ -461,12 +491,12 @@ async function main() {
 
   // Step 4: Create Users
   console.log('\nCreating users...');
-  const adminId = await createUser('admin@genesis.edu', 'admin123', 'Admin User', 'admin');
-  console.log(`  Admin: admin@genesis.edu / admin123`);
+  const adminId = await createUser('admin@school.edu', 'admin123', 'Admin User', 'admin');
+  console.log(`  Admin: admin@school.edu / admin123`);
 
   const teachers = [
-    { email: 'teacher1@genesis.edu', displayName: 'Sarah Johnson', classId: classRefs['1'] },
-    { email: 'teacher2@genesis.edu', displayName: 'Michael Chen', classId: classRefs['3'] },
+    { email: 'teacher1@school.edu', displayName: 'Sarah Johnson', classId: classRefs['1'] },
+    { email: 'teacher2@school.edu', displayName: 'Michael Chen', classId: classRefs['3'] },
   ];
   const teacherIds: string[] = [];
   for (const t of teachers) {
@@ -475,18 +505,29 @@ async function main() {
     console.log(`  Teacher: ${t.email} / teacher123`);
   }
 
-  const studentData = [
-    { email: 'student1@genesis.edu', displayName: 'Alice Wonder', classId: classRefs['1'], studentId: 'STU001' },
-    { email: 'student2@genesis.edu', displayName: 'Bob Builder', classId: classRefs['1'], studentId: 'STU002' },
-    { email: 'student3@genesis.edu', displayName: 'Charlie Brown', classId: classRefs['1'], studentId: 'STU003' },
-    { email: 'student4@genesis.edu', displayName: 'Diana Prince', classId: classRefs['3'], studentId: 'STU004' },
-    { email: 'student5@genesis.edu', displayName: 'Evan Wright', classId: classRefs['3'], studentId: 'STU005' },
+  const studentDataInput = [
+    { displayName: 'Alice Wonder', grade: '1', rollNo: 1, classCode: '1A', academicYear: '2025' },
+    { displayName: 'Bob Builder', grade: '1', rollNo: 2, classCode: '1A', academicYear: '2025' },
+    { displayName: 'Charlie Brown', grade: '1', rollNo: 3, classCode: '1A', academicYear: '2025' },
+    { displayName: 'Diana Prince', grade: '3', rollNo: 1, classCode: '3A', academicYear: '2025' },
+    { displayName: 'Evan Wright', grade: '3', rollNo: 2, classCode: '3A', academicYear: '2025' },
   ];
+  const studentData: { email: string; displayName: string; classId: string; studentId: string }[] = [];
   const studentIds: string[] = [];
-  for (const s of studentData) {
-    const id = await createUser(s.email, 'student123', s.displayName, 'student', { classId: s.classId, studentId: s.studentId, classIds: [s.classId] });
+  for (const s of studentDataInput) {
+    const classId = classRefs[s.grade];
+    const studentId = generateStudentId(s.academicYear, s.classCode, s.rollNo);
+    const email = `${studentId}@school.edu`;
+    const id = await createUser(email, 'student123', s.displayName, 'student', {
+      classId,
+      studentId,
+      rollNo: s.rollNo,
+      academicYear: s.academicYear,
+      classIds: [classId],
+    });
     studentIds.push(id);
-    console.log(`  Student: ${s.email} / student123`);
+    studentData.push({ email, displayName: s.displayName, classId, studentId });
+    console.log(`  Student: ${email} / student123 (studentId: ${studentId})`);
   }
 
   // Step 5: Assign teachers to subjects
@@ -646,10 +687,11 @@ async function main() {
   console.log(`\n=== SEED COMPLETE ===`);
   console.log(`Total questions generated: ~${totalQuestions}`);
   console.log(`\nLogin Credentials:`);
-  console.log(`  Admin:    admin@genesis.edu / admin123`);
-  console.log(`  Teacher 1 (Grade 1): teacher1@genesis.edu / teacher123`);
-  console.log(`  Teacher 2 (Grade 3): teacher2@genesis.edu / teacher123`);
-  console.log(`  Students: student1@genesis.edu through student5@genesis.edu / student123`);
+  console.log(`  Admin:    admin@school.edu / admin123`);
+  console.log(`  Teacher 1 (Grade 1): teacher1@school.edu / teacher123`);
+  console.log(`  Teacher 2 (Grade 3): teacher2@school.edu / teacher123`);
+  console.log(`  Students (Grade 1): 1a012025@school.edu, 1a022025@school.edu, 1a032025@school.edu / student123`);
+  console.log(`  Students (Grade 3): 3a012025@school.edu, 3a022025@school.edu / student123`);
   console.log(`\nData Created:`);
   console.log(`  ${classes.length} classes (Grade 1 & 3)`);
   console.log(`  ${subjectData.length * 2} subjects (3 per class)`);
