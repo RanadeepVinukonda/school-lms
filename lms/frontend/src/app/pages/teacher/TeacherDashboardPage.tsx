@@ -22,6 +22,7 @@ import {
   getNotificationsByUser,
 } from '@/services/dataService';
 import { getTextbooksBySubject } from '@/services/textbookService';
+import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
 import { pageTransition, listItem, listContainer } from '@/lib/motion';
 
 
@@ -80,17 +81,19 @@ export default function TeacherDashboardPage() {
   const { isLoading, error, refetch, data } = useQuery({
     queryKey: ['teacher-dashboard', user?.id],
     queryFn: async (): Promise<DashboardData> => {
-      const [allSubjects, allClasses, allEnrollments, allGrades] = await Promise.all([
+      const [allSubjects, allClasses, allEnrollments, allGrades, assignmentsRes] = await Promise.all([
         getAllSubjects(),
         getAllClasses(),
         getAllEnrollments(),
         getAllGrades(),
+        teacherClassSubjectService.getMyAssignments().catch(() => ({ data: [] })),
       ]);
 
-      const myClassIds = user?.classIds?.length ? user.classIds : (user?.classId ? [user.classId] : []);
+      const myAssignments = assignmentsRes?.data ?? [];
+      const myClassIds = [...new Set(myAssignments.map((a) => a.classId))];
       const myClasses = allClasses.filter((c) => myClassIds.includes(c.id));
       const classId = myClasses[0]?.id;
-      const subjectIds = [...new Set(myClasses.flatMap((c) => c.subjectIds ?? []))];
+      const subjectIds = [...new Set(myAssignments.map((a) => a.subjectId))];
 
       const [examArrays, assignmentArrays, timetable] = await Promise.all([
         Promise.all(subjectIds.map((sid) => getExamsBySubject(sid))),

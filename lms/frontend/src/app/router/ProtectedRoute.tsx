@@ -53,9 +53,6 @@ export function ProtectedRoute({ children, roles, permission, checkSetup }: Prot
     if (user.role === 'student' && !user.classId) {
       return <Navigate to={ROUTES.STUDENT_ROLL_NUMBER} replace />;
     }
-    if (user.role === 'teacher' && !(user.classIds && user.classIds.length > 0)) {
-      return <Navigate to={ROUTES.TEACHER_SELECT_CLASS} replace />;
-    }
   }
 
   return <>{children}</>;

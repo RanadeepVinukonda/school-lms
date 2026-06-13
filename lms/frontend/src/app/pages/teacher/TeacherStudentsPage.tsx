@@ -19,6 +19,7 @@ import {
   getAllEnrollments,
   getAllGrades,
 } from '@/services/dataService';
+import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
 
 interface StudentRow {
   id: string;
@@ -35,14 +36,15 @@ export default function TeacherStudentsPage() {
   const { isLoading, error, refetch, data } = useQuery({
     queryKey: ['teacher-students'],
     queryFn: async () => {
-      const [students, classes, subjects, enrollments, grades] = await Promise.all([
+      const [students, classes, subjects, enrollments, grades, assignmentsRes] = await Promise.all([
         getUserByRole('student'),
         getAllClasses(),
         getAllSubjects(),
         getAllEnrollments(),
         getAllGrades(),
+        teacherClassSubjectService.getMyAssignments().catch(() => ({ data: [] })),
       ]);
-      return { students, classes, subjects, enrollments, grades };
+      return { students, classes, subjects, enrollments, grades, assignments: assignmentsRes?.data ?? [] };
     },
   });
 
@@ -51,23 +53,35 @@ export default function TeacherStudentsPage() {
   const allSubjects = data?.subjects ?? [];
   const allEnrollments = data?.enrollments ?? [];
   const allGrades = data?.grades ?? [];
+  const myAssignments = data?.assignments ?? [];
+
+  const myClassIds = useMemo(() => [...new Set(myAssignments.map((a) => a.classId))], [myAssignments]);
+  const mySubjectIds = useMemo(() => [...new Set(myAssignments.map((a) => a.subjectId))], [myAssignments]);
+
+  const teacherSubjects = useMemo(
+    () => allSubjects.filter((s) => mySubjectIds.includes(s.id)),
+    [allSubjects, mySubjectIds],
+  );
 
   const subjectOptions = useMemo(
     () => [
       { value: 'all', label: 'All Subjects' },
-      ...allSubjects.map((s) => ({ value: s.id, label: s.name })),
+      ...teacherSubjects.map((s) => ({ value: s.id, label: s.name })),
     ],
-    [allSubjects],
+    [teacherSubjects],
   );
 
   const students = useMemo((): StudentRow[] => {
+    const allowedStudentIds = allStudents.filter(u => myClassIds.includes(u.classId || '')).map(u => u.id);
+
     const studentIds =
       selectedSubjectId === 'all'
-        ? [...new Set(allEnrollments.map((e) => e.studentId))]
+        ? [...new Set(allEnrollments.filter((e) => mySubjectIds.includes(e.courseId || (e as any).subjectId) && allowedStudentIds.includes(e.studentId)).map((e) => e.studentId))]
         : allEnrollments
             .filter(
               (e) =>
-                (e as unknown as { subjectId: string }).subjectId === selectedSubjectId,
+                (e.courseId || (e as unknown as { subjectId: string }).subjectId) === selectedSubjectId &&
+                allowedStudentIds.includes(e.studentId),
             )
             .map((e) => e.studentId);
 
@@ -99,7 +113,7 @@ export default function TeacherStudentsPage() {
       })
       .filter((s): s is StudentRow => s !== null)
       .sort((a, b) => b.overallPercentage - a.overallPercentage);
-  }, [selectedSubjectId, allStudents, allClasses, allEnrollments, allGrades]);
+  }, [selectedSubjectId, allStudents, allClasses, allEnrollments, allGrades, myClassIds, mySubjectIds]);
 
   return (
     <>

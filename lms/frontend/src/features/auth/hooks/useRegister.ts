@@ -15,7 +15,7 @@ function setupDashboard(role: UserRole): string {
     case 'super_admin':
       return ROUTES.ADMIN_DASHBOARD;
     case 'teacher':
-      return ROUTES.TEACHER_SELECT_CLASS;
+      return ROUTES.TEACHER_DASHBOARD;
     case 'student':
     default:
       return ROUTES.STUDENT_ROLL_NUMBER;

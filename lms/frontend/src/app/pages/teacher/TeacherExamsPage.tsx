@@ -17,6 +17,7 @@ import {
   getExamsBySubject,
   getCorrectionsByExam,
 } from '@/services/dataService';
+import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
 
 const NOW = new Date();
 
@@ -156,13 +157,18 @@ export default function TeacherExamsPage() {
   const { isLoading, error, refetch, data } = useQuery({
     queryKey: ['teacher-exams'],
     queryFn: async () => {
-      const [allSubjects, allEnrollments] = await Promise.all([
+      const [allSubjects, allEnrollments, assignmentsRes] = await Promise.all([
         getAllSubjects(),
         getAllEnrollments(),
+        teacherClassSubjectService.getMyAssignments().catch(() => ({ data: [] })),
       ]);
 
+      const myAssignments = assignmentsRes?.data ?? [];
+      const mySubjectIds = [...new Set(myAssignments.map((a) => a.subjectId))];
+      const teacherSubjects = allSubjects.filter((s) => mySubjectIds.includes(s.id));
+
       const examsArrays = await Promise.all(
-        allSubjects.map((s) => getExamsBySubject(s.id)),
+        teacherSubjects.map((s) => getExamsBySubject(s.id)),
       );
       const allExams = examsArrays.flat();
 
