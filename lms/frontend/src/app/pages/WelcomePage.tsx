@@ -105,7 +105,6 @@ export default function WelcomePage() {
             </motion.p>
 
             <motion.div
-              className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
@@ -115,25 +114,7 @@ export default function WelcomePage() {
                 onClick={() => navigate('/login')}
                 className="group relative overflow-hidden px-12 text-base font-semibold shadow-lg shadow-primary/25 transition-shadow hover:shadow-xl hover:shadow-primary/30"
               >
-                <span className="relative z-10">Get Started</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="xl"
-                onClick={() => navigate('/login/student')}
-                className="px-10 text-base font-semibold"
-              >
-                <Icon name="school" size={18} className="mr-2" />
-                Student Login
-              </Button>
-              <Button
-                variant="outline"
-                size="xl"
-                onClick={() => navigate('/login/teacher')}
-                className="px-10 text-base font-semibold"
-              >
-                <Icon name="badge" size={18} className="mr-2" />
-                Teacher Login
+                <span className="relative z-10">Sign In</span>
               </Button>
             </motion.div>
           </motion.div>
