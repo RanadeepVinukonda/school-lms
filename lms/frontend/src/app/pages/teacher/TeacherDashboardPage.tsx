@@ -163,6 +163,7 @@ export default function TeacherDashboardPage() {
           classes: myClasses.map((c) => ({ id: c.id, name: c.name })),
           textbooks: allTextbooks.map((tb) => ({ id: tb.id, title: tb.title, subjectId: tb.subjectId })),
           studentCount: teachingStudentCount,
+          subjects: allSubjects.filter(s => subjectIds.includes(s.id)).map(s => ({ id: s.id, name: s.name })),
         },
       };
     },
@@ -232,68 +233,84 @@ export default function TeacherDashboardPage() {
                   </Card>
               </motion.div>
 
-              {(d.teaching.classes.length > 0 || d.teaching.textbooks.length > 0) && (
-                <motion.div variants={listItem} initial="hidden" animate="show">
-                  <h2 className="text-title-md font-semibold mb-3">My Teaching</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3">
-                    {d.teaching.classes.length > 0 && (
-                      <Card>
-                        <CardContent className="p-4">
-                          <div className="flex items-start gap-3">
-                            <div className="h-9 w-9 rounded-lg bg-primary-container flex items-center justify-center flex-shrink-0">
-                              <Icon name="school" size={18} className="text-on-primary-container" />
+                {(d.teaching.classes.length > 0 || d.teaching.textbooks.length > 0 || d.teaching.subjects?.length > 0) && (
+                  <motion.div variants={listItem} initial="hidden" animate="show">
+                    <h2 className="text-title-md font-semibold mb-3">My Teaching</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {d.teaching.classes.length > 0 && (
+                        <Card>
+                          <CardContent className="p-4">
+                            <div className="flex items-start gap-3">
+                              <div className="h-9 w-9 rounded-lg bg-primary-container flex items-center justify-center flex-shrink-0">
+                                <Icon name="school" size={18} className="text-on-primary-container" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold">Classes</p>
+                                {d.teaching.classes.map((cls) => (
+                                  <p key={cls.id} className="text-xs text-muted-foreground">{cls.name}</p>
+                                ))}
+                              </div>
                             </div>
-                            <div className="min-w-0">
-                              <p className="text-sm font-semibold">Classes</p>
-                              {d.teaching.classes.map((cls) => (
-                                <p key={cls.id} className="text-xs text-muted-foreground">{cls.name}</p>
-                              ))}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
-                    {d.teaching.textbooks.length > 0 && (
-                      <Link to={ROUTES.TEACHER_TEXTBOOKS} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl">
-                        <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                          </CardContent>
+                        </Card>
+                      )}
+                      {d.teaching.textbooks.length > 0 && (
+                        <Link to={ROUTES.TEACHER_TEXTBOOKS} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl">
+                          <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                            <CardContent className="p-4">
+                              <div className="flex items-start gap-3">
+                                <div className="h-9 w-9 rounded-lg bg-secondary-container flex items-center justify-center flex-shrink-0">
+                                  <Icon name="menu_book" size={18} className="text-on-secondary-container" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold">Textbooks</p>
+                                  <p className="text-xs text-muted-foreground">{d.teaching.textbooks.length} textbook{d.teaching.textbooks.length > 1 ? 's' : ''}</p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </Link>
+                      )}
+                      {d.teaching.subjects?.length > 0 && (
+                        <Card>
                           <CardContent className="p-4">
                             <div className="flex items-start gap-3">
                               <div className="h-9 w-9 rounded-lg bg-secondary-container flex items-center justify-center flex-shrink-0">
-                                <Icon name="menu_book" size={18} className="text-on-secondary-container" />
+                                <Icon name="book" size={18} className="text-on-secondary-container" />
                               </div>
                               <div className="min-w-0">
-                                <p className="text-sm font-semibold">Textbooks</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {d.teaching.textbooks.length} textbook{d.teaching.textbooks.length > 1 ? 's' : ''}
-                                </p>
+                                <p className="text-sm font-semibold">Subjects</p>
+                                {d.teaching.subjects.map((sub) => (
+                                  <p key={sub.id} className="text-xs text-muted-foreground flex items-center justify-between">
+                                    <span>{sub.name}</span>
+                                    <Link to={`/teacher/students?subject=${sub.id}`} className="text-primary underline">View Students</Link>
+                                  </p>
+                                ))}
                               </div>
                             </div>
                           </CardContent>
                         </Card>
-                      </Link>
-                    )}
-                    {d.teaching.studentCount > 0 && (
-                      <Link to={ROUTES.TEACHER_STUDENTS} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl">
-                        <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                          <CardContent className="p-4">
-                            <div className="flex items-start gap-3">
-                              <div className="h-9 w-9 rounded-lg bg-success-container flex items-center justify-center flex-shrink-0">
-                                <Icon name="group" size={18} className="text-on-success-container" />
+                      )}
+                      {d.teaching.studentCount > 0 && (
+                        <Link to={ROUTES.TEACHER_STUDENTS} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl">
+                          <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                            <CardContent className="p-4">
+                              <div className="flex items-start gap-3">
+                                <div className="h-9 w-9 rounded-lg bg-success-container flex items-center justify-center flex-shrink-0">
+                                  <Icon name="group" size={18} className="text-on-success-container" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold">Enrolled Students</p>
+                                  <p className="text-xs text-muted-foreground">{d.teaching.studentCount} student{d.teaching.studentCount > 1 ? 's' : ''}</p>
+                                </div>
                               </div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-semibold">Enrolled Students</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {d.teaching.studentCount} student{d.teaching.studentCount > 1 ? 's' : ''}
-                                </p>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </Link>
-                    )}
-                  </div>
-                </motion.div>
-              )}
+                            </CardContent>
+                          </Card>
+                        </Link>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
 
               <motion.div variants={listItem} initial="hidden" animate="show">
                   <Card className="h-full">
