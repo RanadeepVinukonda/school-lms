@@ -359,6 +359,8 @@ export interface UserDoc {
   classId?: string;
   classIds?: string[];
   teacherId?: string;
+  rollNo?: number;
+  academicYear?: string;
   avatar?: string;
   phone?: string;
   bio?: string;

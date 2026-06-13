@@ -33,29 +33,8 @@ const navGroups: NavGroup[] = [
     label: 'Main',
     items: [
       { label: 'Home', href: ROUTES.TEACHER_DASHBOARD, icon: 'home' },
-      { label: 'Teaching', href: ROUTES.TEACHER_TEXTBOOKS, icon: 'menu_book' },
-    ],
-  },
-  {
-    label: 'Assessments',
-    items: [
-      { label: 'Question Bank', href: ROUTES.TEACHER_QUESTION_BANK, icon: 'question_answer' },
-      { label: 'Manage Tests', href: ROUTES.TEACHER_TEST_SCHEDULE, icon: 'calendar_month' },
-    ],
-  },
-  {
-    label: 'Review',
-    items: [
-      { label: 'Students', href: ROUTES.TEACHER_STUDENTS, icon: 'group' },
-      { label: 'Results', href: ROUTES.TEACHER_RESULTS_PUSH, icon: 'send' },
-      { label: 'Analytics', href: ROUTES.TEACHER_ANALYTICS, icon: 'analytics' },
-    ],
-  },
-  {
-    label: 'More',
-    items: [
-      { label: 'Videos', href: ROUTES.TEACHER_VIDEOS, icon: 'video_library' },
-      { label: 'Profile', href: ROUTES.TEACHER_PROFILE, icon: 'person' },
+      { label: 'Teaching Space', href: ROUTES.TEACHER_TEXTBOOKS, icon: 'menu_book' },
+      { label: 'Manage Tests & Review', href: ROUTES.TEACHER_TEST_SCHEDULE, icon: 'analytics' },
     ],
   },
 ];
@@ -63,8 +42,7 @@ const navGroups: NavGroup[] = [
 const mobileNavItems: NavItem[] = [
   { label: 'Home', href: ROUTES.TEACHER_DASHBOARD, icon: 'home' },
   { label: 'Teaching', href: ROUTES.TEACHER_TEXTBOOKS, icon: 'menu_book' },
-  { label: 'Tests', href: ROUTES.TEACHER_TEST_SCHEDULE, icon: 'calendar_month' },
-  { label: 'Profile', href: ROUTES.TEACHER_PROFILE, icon: 'person' },
+  { label: 'Tests', href: ROUTES.TEACHER_TEST_SCHEDULE, icon: 'analytics' },
 ];
 
 export default function TeacherLayout() {

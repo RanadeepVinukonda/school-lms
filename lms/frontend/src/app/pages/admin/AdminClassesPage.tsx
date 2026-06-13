@@ -1,11 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -19,23 +19,19 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { OptionsSelect } from '@/components/ui/select';
 import { pageTransition, listContainer, listItem } from '@/lib/motion';
 import { cn } from '@/lib/utils';
-import { collection, addDoc, deleteDoc, doc, updateDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { getAllClasses, getAllUsers, getAllSubjects } from '@/services/dataService';
-import { getClassDependencies } from '@/services/dependencyService';
+import { getClassDependencies, getUserDependencies } from '@/services/dependencyService';
 import { logAudit } from '@/services/auditService';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
+import { userService } from '@/services/userService';
 import type { ClassEntry, UserDoc, Subject } from '@/services/dataService';
 import type { DependencyReport } from '@/services/dependencyService';
-
-interface TeacherClassSubject {
-  id: string;
-  teacherId: string;
-  classId: string;
-  subjectId: string;
-}
 
 function ordinal(n: number): string {
   const s = ['th', 'st', 'nd', 'rd'];
@@ -43,128 +39,115 @@ function ordinal(n: number): string {
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
+const subjectCategoryOptions = [
+  { value: 'STEM', label: 'STEM' },
+  { value: 'Humanities', label: 'Humanities' },
+  { value: 'Arts', label: 'Arts' },
+  { value: 'Languages', label: 'Languages' },
+  { value: 'Physical Education', label: 'Physical Education' },
+];
+
+const subjectIconOptions = [
+  { value: 'calculate', label: 'calculate' },
+  { value: 'science', label: 'science' },
+  { value: 'menu_book', label: 'menu_book' },
+  { value: 'history', label: 'history' },
+  { value: 'palette', label: 'palette' },
+  { value: 'language', label: 'language' },
+  { value: 'fitness_center', label: 'fitness_center' },
+  { value: 'computer', label: 'computer' },
+  { value: 'music_note', label: 'music_note' },
+];
+
 export default function AdminClassesPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [search, setSearch] = useState('');
-  const [showCreate, setShowCreate] = useState(false);
-  const [grade, setGrade] = useState('');
-  const [code, setCode] = useState('');
-  const [section, setSection] = useState('');
-  const [roomNumber, setRoomNumber] = useState('');
-  const [classes, setClasses] = useState<ClassEntry[]>([]);
-  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [dependencyReport, setDependencyReport] = useState<DependencyReport | null>(null);
-  const [showDependencyDialog, setShowDependencyDialog] = useState(false);
-  const [showEdit, setShowEdit] = useState(false);
-  const [editTarget, setEditTarget] = useState<ClassEntry | null>(null);
-  const [editForm, setEditForm] = useState({ name: '', code: '', grade: '', section: '', roomNumber: '' });
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('classes');
 
-  // Teacher Assignment states
-  const [showAssign, setShowAssign] = useState(false);
-  const [assignClassId, setAssignClassId] = useState('');
-  const [assignSubjectId, setAssignSubjectId] = useState('');
-  const [selectedTeacherId, setSelectedTeacherId] = useState('');
-  const [assignLoading, setAssignLoading] = useState(false);
-
-  const handleAssignClick = (classId: string, subjectId: string) => {
-    setAssignClassId(classId);
-    setAssignSubjectId(subjectId);
-    setSelectedTeacherId('');
-    setShowAssign(true);
-  };
-
-  const handleAssignTeacher = async () => {
-    if (!selectedTeacherId) {
-      toast.error('Please select a teacher');
-      return;
-    }
-    setAssignLoading(true);
-    try {
-      await teacherClassSubjectService.assign({
-        teacherId: selectedTeacherId,
-        classId: assignClassId,
-        subjectId: assignSubjectId,
-      });
-      toast.success('Teacher assigned successfully');
-      setShowAssign(false);
-      queryClient.invalidateQueries({ queryKey: ['admin-tc-assignments'] });
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to assign teacher');
-    } finally {
-      setAssignLoading(false);
-    }
-  };
-
-  const handleRemoveTeacherAssignment = async (classId: string, subjectId: string) => {
-    const assignment = tcAssignments.find((a) => a.classId === classId && a.subjectId === subjectId);
-    if (!assignment) return;
-    try {
-      await teacherClassSubjectService.remove(assignment.id);
-      toast.success('Teacher assignment removed');
-      queryClient.invalidateQueries({ queryKey: ['admin-tc-assignments'] });
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to remove assignment');
-    }
-  };
-
-  const { data: fetchedClasses, isLoading, isError, refetch } = useQuery({
+  // Queries
+  const { data: fetchedClasses = [], isLoading: classesLoading, isError: classesError, refetch: refetchClasses } = useQuery({
     queryKey: ['admin-classes'],
     queryFn: getAllClasses,
   });
 
-  const { data: users = [] } = useQuery({
+  const { data: users = [], refetch: refetchUsers } = useQuery({
     queryKey: ['admin-users-list'],
     queryFn: getAllUsers,
   });
 
-  const { data: subjects = [] } = useQuery({
+  const { data: subjects = [], refetch: refetchSubjects } = useQuery({
     queryKey: ['admin-subjects'],
     queryFn: getAllSubjects,
   });
 
-  const { data: tcAssignments = [] } = useQuery({
+  const { data: tcAssignments = [], refetch: refetchTCAssignments } = useQuery({
     queryKey: ['admin-tc-assignments'],
     queryFn: () => teacherClassSubjectService.getAll().then((res) => res.data),
   });
 
-  useEffect(() => {
-    if (fetchedClasses) {
-      setClasses(fetchedClasses);
-    }
-  }, [fetchedClasses]);
+  const handleRefreshAll = () => {
+    refetchClasses();
+    refetchUsers();
+    refetchSubjects();
+    refetchTCAssignments();
+  };
 
-  const filtered = useMemo(
-    () =>
-      classes.filter((c) => {
-        const q = search.toLowerCase();
-        return c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q);
-      }),
-    [classes, search]
-  );
+  // Shared Credential Dialog State
+  const [createdCredentials, setCreatedCredentials] = useState<{
+    displayName: string;
+    email: string;
+    generatedPassword?: string;
+    studentId?: string;
+  } | null>(null);
 
-  const handleGradeChange = (val: string) => {
-    setGrade(val);
+  // -------------------------------------------------------------
+  // TAB 1: CLASSES
+  // -------------------------------------------------------------
+  const [classSearch, setClassSearch] = useState('');
+  const [showCreateClass, setShowCreateClass] = useState(false);
+  const [classGrade, setClassGrade] = useState('');
+  const [classCode, setClassCode] = useState('');
+  const [classSection, setClassSection] = useState('');
+  const [classRoomNumber, setClassRoomNumber] = useState('');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const [classDeleteTarget, setClassDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [classDeleteLoading, setClassDeleteLoading] = useState(false);
+  const [classDependencyReport, setClassDependencyReport] = useState<DependencyReport | null>(null);
+  const [showClassDependencyDialog, setShowClassDependencyDialog] = useState(false);
+
+  const [showEditClass, setShowEditClass] = useState(false);
+  const [editClassTarget, setEditClassTarget] = useState<ClassEntry | null>(null);
+  const [editClassForm, setEditClassForm] = useState({ name: '', code: '', grade: '', section: '', roomNumber: '' });
+
+  // Class Search Filtering
+  const filteredClasses = useMemo(() => {
+    return fetchedClasses.filter((c) => {
+      const q = classSearch.toLowerCase();
+      return c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q);
+    });
+  }, [fetchedClasses, classSearch]);
+
+  const handleClassGradeChange = (val: string) => {
+    setClassGrade(val);
     if (/^\d+$/.test(val.trim())) {
-      setCode(`G${val.trim()}`);
+      setClassCode(`G${val.trim()}`);
     } else {
-      setCode('');
+      setClassCode('');
     }
   };
 
-  const handleCreate = async () => {
-    const g = grade.trim();
+  const handleCreateClass = async () => {
+    const g = classGrade.trim();
     if (!g || !/^\d+$/.test(g)) {
       toast.error('Enter a valid grade number');
       return;
     }
     const num = parseInt(g, 10);
     const className = `${ordinal(num)} class`;
-    const finalCode = code.trim().toUpperCase() || `G${num}`;
+    const finalCode = classCode.trim().toUpperCase() || `G${num}`;
 
-    const duplicate = classes.find((c) => c.code === finalCode);
+    const duplicate = fetchedClasses.find((c) => c.code === finalCode);
     if (duplicate) {
       toast.error(`Class code "${finalCode}" is already in use by "${duplicate.name}"`);
       return;
@@ -175,8 +158,8 @@ export default function AdminClassesPage() {
         name: className,
         code: finalCode,
         grade: g,
-        section: section.trim() || '',
-        roomNumber: roomNumber.trim() || '',
+        section: classSection.trim() || '',
+        roomNumber: classRoomNumber.trim() || '',
         academicYear: new Date().getFullYear().toString(),
         teacherIds: [],
         subjectIds: [],
@@ -192,456 +175,1112 @@ export default function AdminClassesPage() {
         targetType: 'class',
         targetName: className,
         summary: `Created class "${className}" (${finalCode})`,
-        newValue: { name: className, code: finalCode, grade: g, section: section.trim(), roomNumber: roomNumber.trim() },
+        newValue: { name: className, code: finalCode, grade: g, section: classSection.trim(), roomNumber: classRoomNumber.trim() },
       });
-      setGrade('');
-      setCode('');
-      setSection('');
-      setRoomNumber('');
-      setShowCreate(false);
+      setClassGrade('');
+      setClassCode('');
+      setClassSection('');
+      setClassRoomNumber('');
+      setShowCreateClass(false);
       toast.success(`${className} created`);
-      refetch();
+      refetchClasses();
     } catch {
       toast.error('Failed to create class');
     }
   };
 
-  const handleEditClick = (cls: ClassEntry) => {
-    setEditTarget(cls);
-    setEditForm({
+  const handleEditClassClick = (cls: ClassEntry) => {
+    setEditClassTarget(cls);
+    setEditClassForm({
       name: cls.name,
       code: cls.code,
       grade: cls.grade || '',
       section: cls.section || '',
       roomNumber: cls.roomNumber || '',
     });
-    setShowEdit(true);
+    setShowEditClass(true);
   };
 
   const handleUpdateClass = async () => {
-    if (!editTarget || !editForm.name || !editForm.code) {
+    if (!editClassTarget || !editClassForm.name || !editClassForm.code) {
       toast.error('Please fill in all required fields');
       return;
     }
-    const duplicate = classes.find((c) => c.code === editForm.code.toUpperCase() && c.id !== editTarget.id);
+    const duplicate = fetchedClasses.find((c) => c.code === editClassForm.code.toUpperCase() && c.id !== editClassTarget.id);
     if (duplicate) {
-      toast.error(`Class code "${editForm.code.toUpperCase()}" is already in use by "${duplicate.name}"`);
+      toast.error(`Class code "${editClassForm.code.toUpperCase()}" is already in use by "${duplicate.name}"`);
       return;
     }
     try {
-      await updateDoc(doc(db, 'classes', editTarget.id), {
-        name: editForm.name,
-        code: editForm.code.toUpperCase(),
-        grade: editForm.grade || null,
-        section: editForm.section || null,
-        roomNumber: editForm.roomNumber || null,
+      await updateDoc(doc(db, 'classes', editClassTarget.id), {
+        name: editClassForm.name,
+        code: editClassForm.code.toUpperCase(),
+        grade: editClassForm.grade || null,
+        section: editClassForm.section || null,
+        roomNumber: editClassForm.roomNumber || null,
         updatedAt: new Date().toISOString(),
       });
       logAudit({
         action: 'class.update',
-        targetId: editTarget.id,
+        targetId: editClassTarget.id,
         targetType: 'class',
-        targetName: editTarget.name,
-        summary: `Updated class "${editTarget.name}"`,
-        oldValue: { name: editTarget.name, code: editTarget.code, grade: editTarget.grade, section: editTarget.section },
-        newValue: { name: editForm.name, code: editForm.code.toUpperCase(), grade: editForm.grade, section: editForm.section },
+        targetName: editClassTarget.name,
+        summary: `Updated class "${editClassTarget.name}"`,
+        oldValue: { name: editClassTarget.name, code: editClassTarget.code, grade: editClassTarget.grade, section: editClassTarget.section },
+        newValue: { name: editClassForm.name, code: editClassForm.code.toUpperCase(), grade: editClassForm.grade, section: editClassForm.section },
       });
-      setShowEdit(false);
-      setEditTarget(null);
-      toast.success(`Class ${editForm.name} updated`);
-      refetch();
+      setShowEditClass(false);
+      setEditClassTarget(null);
+      toast.success(`Class ${editClassForm.name} updated`);
+      refetchClasses();
     } catch {
       toast.error('Failed to update class');
     }
   };
 
-  const handleDeleteClick = async (id: string, name: string) => {
-    setDeleteTarget({ id, name });
-    setDeleteLoading(true);
-    setDependencyReport(null);
-    setShowDependencyDialog(true);
+  const handleDeleteClassClick = async (id: string, name: string) => {
+    setClassDeleteTarget({ id, name });
+    setClassDeleteLoading(true);
+    setClassDependencyReport(null);
+    setShowClassDependencyDialog(true);
     try {
       const report = await getClassDependencies(id);
-      setDependencyReport(report);
+      setClassDependencyReport(report);
     } catch {
-      setDependencyReport(null);
+      setClassDependencyReport(null);
     }
-    setDeleteLoading(false);
+    setClassDeleteLoading(false);
   };
 
   const handleArchiveClass = async () => {
-    if (!deleteTarget) return;
-    setDeleteLoading(true);
+    if (!classDeleteTarget) return;
+    setClassDeleteLoading(true);
     try {
-      await updateDoc(doc(db, 'classes', deleteTarget.id), { isActive: false, updatedAt: new Date().toISOString() });
+      await updateDoc(doc(db, 'classes', classDeleteTarget.id), { isActive: false, updatedAt: new Date().toISOString() });
       logAudit({
         action: 'class.archive',
-        targetId: deleteTarget.id,
+        targetId: classDeleteTarget.id,
         targetType: 'class',
-        targetName: deleteTarget.name,
-        summary: `Archived class "${deleteTarget.name}"`,
+        targetName: classDeleteTarget.name,
+        summary: `Archived class "${classDeleteTarget.name}"`,
         newValue: { isActive: false },
       });
-      toast.success(`Class ${deleteTarget.name} archived`);
-      setShowDependencyDialog(false);
-      setDeleteTarget(null);
-      refetch();
+      toast.success(`Class ${classDeleteTarget.name} archived`);
+      setShowClassDependencyDialog(false);
+      setClassDeleteTarget(null);
+      refetchClasses();
     } catch {
       toast.error('Failed to archive class');
     } finally {
-      setDeleteLoading(false);
+      setClassDeleteLoading(false);
     }
   };
 
-  const handleConfirmDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleteLoading(true);
+  const handleConfirmDeleteClass = async () => {
+    if (!classDeleteTarget) return;
+    setClassDeleteLoading(true);
     try {
-      await deleteDoc(doc(db, 'classes', deleteTarget.id));
-      setClasses((prev) => prev.filter((c) => c.id !== deleteTarget.id));
+      await deleteDoc(doc(db, 'classes', classDeleteTarget.id));
       logAudit({
         action: 'class.delete',
-        targetId: deleteTarget.id,
+        targetId: classDeleteTarget.id,
         targetType: 'class',
-        targetName: deleteTarget.name,
-        summary: `Permanently deleted class "${deleteTarget.name}"`,
+        targetName: classDeleteTarget.name,
+        summary: `Permanently deleted class "${classDeleteTarget.name}"`,
       });
-      toast.success(`Class ${deleteTarget.name} permanently deleted`);
-      setShowDependencyDialog(false);
-      setDeleteTarget(null);
-      refetch();
+      toast.success(`Class ${classDeleteTarget.name} permanently deleted`);
+      setShowClassDependencyDialog(false);
+      setClassDeleteTarget(null);
+      refetchClasses();
     } catch {
       toast.error('Failed to delete class');
     } finally {
-      setDeleteLoading(false);
+      setClassDeleteLoading(false);
     }
   };
 
-  const getClassSubjects = (classId: string) =>
-    subjects.filter((s) => s.classId === classId);
+  // INLINE SUBJECT CREATION IN CLASS CARD
+  const [showAddSubject, setShowAddSubject] = useState(false);
+  const [addSubjectClassId, setAddSubjectClassId] = useState('');
+  const [subjectForm, setSubjectForm] = useState({ name: '', code: '', category: 'STEM', icon: 'menu_book' });
 
+  const handleAddSubjectClick = (classId: string) => {
+    setAddSubjectClassId(classId);
+    setSubjectForm({ name: '', code: '', category: 'STEM', icon: 'menu_book' });
+    setShowAddSubject(true);
+  };
+
+  const handleAddSubject = async () => {
+    if (!subjectForm.name || !subjectForm.code) {
+      toast.error('Please fill in subject name and code');
+      return;
+    }
+    const code = subjectForm.code.toUpperCase();
+    const duplicate = subjects.find((s) => s.code === code && s.classId === addSubjectClassId && s.isActive !== false);
+    if (duplicate) {
+      toast.error(`Subject code "${code}" is already in use in this class`);
+      return;
+    }
+    try {
+      const docRef = await addDoc(collection(db, 'subjects'), {
+        name: subjectForm.name,
+        code,
+        icon: subjectForm.icon,
+        color: '#6366f1',
+        category: subjectForm.category,
+        classId: addSubjectClassId,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      // Update class subjectIds
+      const classDocRef = doc(db, 'classes', addSubjectClassId);
+      const classSnap = await getDoc(classDocRef);
+      if (classSnap.exists()) {
+        const classData = classSnap.data();
+        const currentSubjectIds = classData.subjectIds || [];
+        await updateDoc(classDocRef, {
+          subjectIds: [...currentSubjectIds, docRef.id],
+          updatedAt: new Date().toISOString(),
+        });
+      }
+
+      logAudit({
+        action: 'subject.create',
+        targetId: docRef.id,
+        targetType: 'subject',
+        targetName: subjectForm.name,
+        summary: `Created subject "${subjectForm.name}" (${code})`,
+        newValue: { name: subjectForm.name, code, category: subjectForm.category, icon: subjectForm.icon, classId: addSubjectClassId },
+      });
+
+      setShowAddSubject(false);
+      toast.success(`Subject ${subjectForm.name} added`);
+      refetchSubjects();
+      refetchClasses();
+    } catch {
+      toast.error('Failed to add subject');
+    }
+  };
+
+  // INLINE ASSIGN & REGISTER TEACHER
+  const [showAssign, setShowAssign] = useState(false);
+  const [assignClassId, setAssignClassId] = useState('');
+  const [assignSubjectId, setAssignSubjectId] = useState('');
+  const [selectedTeacherId, setSelectedTeacherId] = useState('');
+  const [registerNewTeacherInline, setRegisterNewTeacherInline] = useState(false);
+  const [newTeacherName, setNewTeacherName] = useState('');
+  const [assignLoading, setAssignLoading] = useState(false);
+
+  const handleAssignClick = (classId: string, subjectId: string) => {
+    setAssignClassId(classId);
+    setAssignSubjectId(subjectId);
+    setSelectedTeacherId('');
+    setRegisterNewTeacherInline(false);
+    setNewTeacherName('');
+    setShowAssign(true);
+  };
+
+  const handleAssignTeacher = async () => {
+    setAssignLoading(true);
+    try {
+      let teacherId = selectedTeacherId;
+
+      if (registerNewTeacherInline) {
+        if (!newTeacherName.trim()) {
+          toast.error('Please enter teacher name');
+          setAssignLoading(false);
+          return;
+        }
+
+        const cleanTeacher = newTeacherName.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const subject = subjects.find((s) => s.id === assignSubjectId);
+        const cleanSub = subject ? subject.name.toLowerCase().replace(/[^a-z0-9]/g, '') : 'sub';
+        const generatedEmail = `${cleanTeacher}+${cleanSub}@school.edu`;
+
+        const registerRes = await userService.create({
+          displayName: newTeacherName,
+          email: generatedEmail,
+          role: 'teacher',
+        });
+
+        const teacherData = registerRes.data as any;
+        teacherId = teacherData.uid || teacherData.id;
+
+        setCreatedCredentials({
+          displayName: teacherData.displayName,
+          email: teacherData.email,
+          generatedPassword: teacherData.generatedPassword,
+        });
+      }
+
+      if (!teacherId) {
+        toast.error('Please select or register a teacher');
+        setAssignLoading(false);
+        return;
+      }
+
+      await teacherClassSubjectService.assign({
+        teacherId,
+        classId: assignClassId,
+        subjectId: assignSubjectId,
+      });
+
+      toast.success('Teacher assigned successfully');
+      setShowAssign(false);
+      refetchTCAssignments();
+      refetchUsers();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to assign teacher');
+    } finally {
+      setAssignLoading(false);
+    }
+  };
+
+  const handleRemoveTeacherAssignment = async (classId: string, subjectId: string) => {
+    const assignment = tcAssignments.find((a) => a.classId === classId && a.subjectId === subjectId);
+    if (!assignment) return;
+    try {
+      await teacherClassSubjectService.remove(assignment.id);
+      toast.success('Teacher assignment removed');
+      refetchTCAssignments();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to remove assignment');
+    }
+  };
+
+  // INLINE REGISTER STUDENT FOR A CLASS
+  const [showAddStudent, setShowAddStudent] = useState(false);
+  const [addStudentClassId, setAddStudentClassId] = useState('');
+  const [studentForm, setStudentForm] = useState({ displayName: '', rollNo: '', academicYear: '' });
+  const [studentRegisterLoading, setStudentRegisterLoading] = useState(false);
+
+  const getNextRollNo = (classId: string) => {
+    const classStudents = users.filter((u: UserDoc) => u.role === 'student' && u.classId === classId);
+    if (classStudents.length === 0) return 1;
+    const rolls = classStudents.map((s: UserDoc) => s.rollNo).filter((r): r is number => typeof r === 'number');
+    if (rolls.length === 0) return 1;
+    return Math.max(...rolls) + 1;
+  };
+
+  const handleAddStudentClick = (cls: ClassEntry) => {
+    setAddStudentClassId(cls.id);
+    const nextRoll = getNextRollNo(cls.id);
+    setStudentForm({
+      displayName: '',
+      rollNo: String(nextRoll),
+      academicYear: cls.academicYear || new Date().getFullYear().toString(),
+    });
+    setShowAddStudent(true);
+  };
+
+  const handleRegisterStudent = async () => {
+    if (!studentForm.displayName || !studentForm.rollNo) {
+      toast.error('Please enter name and roll number');
+      return;
+    }
+    setStudentRegisterLoading(true);
+    try {
+      const res = await userService.create({
+        displayName: studentForm.displayName,
+        role: 'student',
+        classId: addStudentClassId,
+        rollNo: parseInt(studentForm.rollNo, 10),
+        academicYear: studentForm.academicYear,
+      });
+
+      const studentData = res.data as any;
+      setCreatedCredentials({
+        displayName: studentData.displayName,
+        email: studentData.email,
+        generatedPassword: studentData.generatedPassword,
+        studentId: studentData.studentId,
+      });
+
+      setShowAddStudent(false);
+      toast.success(`Student ${studentForm.displayName} registered`);
+      refetchUsers();
+      refetchClasses();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to register student');
+    } finally {
+      setStudentRegisterLoading(false);
+    }
+  };
+
+  // Helpers
+  const getClassSubjects = (classId: string) => subjects.filter((s) => s.classId === classId);
+  const getClassStudents = (classId: string) => users.filter((u) => u.role === 'student' && u.classId === classId);
   const getSubjectTeacher = (classId: string, subjectId: string): UserDoc | undefined => {
     const assignment = tcAssignments.find((a) => a.classId === classId && a.subjectId === subjectId);
     if (!assignment) return undefined;
     return users.find((u) => u.id === assignment.teacherId);
   };
 
-  const getClassStudents = (classId: string) =>
-    users.filter((u) => u.role === 'student' && u.classId === classId);
+  // -------------------------------------------------------------
+  // TAB 2: TEACHERS
+  // -------------------------------------------------------------
+  const [teacherSearch, setTeacherSearch] = useState('');
+  const [showCreateTeacher, setShowCreateTeacher] = useState(false);
+  const [teacherForm, setTeacherForm] = useState({ displayName: '', email: '' });
+  const [teacherRegisterLoading, setTeacherRegisterLoading] = useState(false);
+  const [userDeleteTarget, setUserDeleteTarget] = useState<UserDoc | null>(null);
+  const [userDeleteLoading, setUserDeleteLoading] = useState(false);
+  const [userDependencyReport, setUserDependencyReport] = useState<DependencyReport | null>(null);
+  const [showUserDependencyDialog, setShowUserDependencyDialog] = useState(false);
+
+  const teachers = useMemo(() => users.filter((u) => u.role === 'teacher'), [users]);
+  const filteredTeachers = useMemo(() => {
+    return teachers.filter((t) => {
+      const q = teacherSearch.toLowerCase();
+      return t.displayName.toLowerCase().includes(q) || t.email.toLowerCase().includes(q);
+    });
+  }, [teachers, teacherSearch]);
+
+  const handleCreateTeacher = async () => {
+    if (!teacherForm.displayName) {
+      toast.error('Please enter teacher name');
+      return;
+    }
+    setTeacherRegisterLoading(true);
+    try {
+      const cleanName = teacherForm.displayName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const defaultEmail = teacherForm.email.trim() || `${cleanName}@school.edu`;
+
+      const res = await userService.create({
+        displayName: teacherForm.displayName,
+        email: defaultEmail,
+        role: 'teacher',
+      });
+
+      const teacherData = res.data as any;
+      setCreatedCredentials({
+        displayName: teacherData.displayName,
+        email: teacherData.email,
+        generatedPassword: teacherData.generatedPassword,
+      });
+
+      setShowCreateTeacher(false);
+      setTeacherForm({ displayName: '', email: '' });
+      toast.success('Teacher registered successfully');
+      refetchUsers();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to create teacher');
+    } finally {
+      setTeacherRegisterLoading(false);
+    }
+  };
+
+  const handleToggleUserActive = async (user: UserDoc) => {
+    try {
+      await userService.toggleActive(user.id);
+      toast.success(`User status updated`);
+      refetchUsers();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to toggle status');
+    }
+  };
+
+  const handleUserDeleteClick = async (u: UserDoc) => {
+    setUserDeleteTarget(u);
+    setUserDeleteLoading(true);
+    setUserDependencyReport(null);
+    setShowUserDependencyDialog(true);
+    try {
+      const report = await getUserDependencies(u.id);
+      setUserDependencyReport(report);
+    } catch {
+      setUserDependencyReport(null);
+    }
+    setUserDeleteLoading(false);
+  };
+
+  const handleConfirmUserDelete = async () => {
+    if (!userDeleteTarget) return;
+    setUserDeleteLoading(true);
+    try {
+      await userService.delete(userDeleteTarget.id);
+      toast.success('User permanently deleted');
+      setShowUserDependencyDialog(false);
+      setUserDeleteTarget(null);
+      refetchUsers();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete user');
+    } finally {
+      setUserDeleteLoading(false);
+    }
+  };
+
+  // -------------------------------------------------------------
+  // TAB 3: STUDENTS
+  // -------------------------------------------------------------
+  const [studentSearch, setStudentSearch] = useState('');
+  const [studentClassFilter, setStudentClassFilter] = useState('all');
+  const [studentPage, setStudentPage] = useState(1);
+  const [showEditStudent, setShowEditStudent] = useState(false);
+  const [editStudentTarget, setEditStudentTarget] = useState<UserDoc | null>(null);
+  const [editStudentForm, setEditStudentForm] = useState({ displayName: '', rollNo: '', classId: '', academicYear: '' });
+  const [studentSaveLoading, setStudentSaveLoading] = useState(false);
+
+  const students = useMemo(() => users.filter((u) => u.role === 'student'), [users]);
+  const classOptions = useMemo(() => fetchedClasses.map((c) => ({ value: c.id, label: c.name })), [fetchedClasses]);
+
+  const filteredStudents = useMemo(() => {
+    return students.filter((s) => {
+      const nameMatch = s.displayName.toLowerCase().includes(studentSearch.toLowerCase());
+      const emailMatch = s.email.toLowerCase().includes(studentSearch.toLowerCase());
+      const classMatch = studentClassFilter === 'all' || s.classId === studentClassFilter;
+      return (nameMatch || emailMatch) && classMatch;
+    });
+  }, [students, studentSearch, studentClassFilter]);
+
+  const paginatedStudents = useMemo(() => {
+    const limit = 10;
+    const offset = (studentPage - 1) * limit;
+    return filteredStudents.slice(offset, offset + limit);
+  }, [filteredStudents, studentPage]);
+
+  const studentTotalPages = Math.ceil(filteredStudents.length / 10);
+
+  useEffect(() => {
+    setStudentPage(1);
+  }, [studentSearch, studentClassFilter]);
+
+  const handleEditStudentClick = (student: UserDoc) => {
+    setEditStudentTarget(student);
+    setEditStudentForm({
+      displayName: student.displayName || '',
+      rollNo: student.rollNo ? String(student.rollNo) : '',
+      classId: student.classId || '',
+      academicYear: student.academicYear || '',
+    });
+    setShowEditStudent(true);
+  };
+
+  const handleUpdateStudent = async () => {
+    if (!editStudentTarget || !editStudentForm.displayName || !editStudentForm.classId || !editStudentForm.rollNo) {
+      toast.error('Please fill in displayName, class and roll number');
+      return;
+    }
+    setStudentSaveLoading(true);
+    try {
+      await userService.update(editStudentTarget.id, {
+        displayName: editStudentForm.displayName,
+        classId: editStudentForm.classId,
+        rollNo: parseInt(editStudentForm.rollNo, 10),
+        academicYear: editStudentForm.academicYear,
+      });
+      toast.success('Student updated successfully');
+      setShowEditStudent(false);
+      setEditStudentTarget(null);
+      refetchUsers();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update student');
+    } finally {
+      setStudentSaveLoading(false);
+    }
+  };
 
   return (
     <>
-      <SEOHead title="Classes" description="Manage classes" canonical="/admin/classes" />
-      <DataFetchWrapper
-        data={classes}
-        isLoading={isLoading}
-        error={isError ? new Error('Failed to load classes') : null}
-        onRetry={() => refetch()}
-        loadingType="card"
-        emptyMessage="No classes yet"
-        emptyAction={
-          <Button onClick={() => setShowCreate(true)}>
-            <Icon name="add" size={18} className="mr-2" />
-            Create Class
+      <SEOHead title="Classes Hub" description="Unified classes, teachers, and student rosters" canonical="/admin/classes" />
+      <div className="p-4 max-w-7xl mx-auto pb-20 space-y-6">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-headline-sm font-bold">Classes Hub</h1>
+            <p className="text-sm text-on-surface-variant">Manage classes, subjects, teacher assignments, and rosters</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleRefreshAll}>
+            <Icon name="refresh" size={16} className="mr-1" />
+            Refresh
           </Button>
-        }
-      >
-        {() => (
-          <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit">
-            <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
-              <motion.div variants={listItem} className="flex items-center justify-between flex-wrap gap-3">
-                <div>
-                  <h1 className="text-headline-sm">Classes</h1>
-                  <p className="text-sm text-on-surface-variant">{classes.length} total classes</p>
-                </div>
-                <Button onClick={() => setShowCreate(true)}>
-                  <Icon name="add" size={18} className="mr-2" />
-                  Create Class
-                </Button>
-              </motion.div>
+        </div>
 
-              <motion.div variants={listItem}>
-                <div className="relative max-w-sm">
-                  <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
-                  <Input
-                    placeholder="Search classes..."
-                    className="pl-10"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
-                </div>
-              </motion.div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-3">
+            <TabsTrigger value="classes">Classes</TabsTrigger>
+            <TabsTrigger value="teachers">Teachers</TabsTrigger>
+            <TabsTrigger value="students">Students</TabsTrigger>
+          </TabsList>
 
-              {filtered.length === 0 ? (
-                <motion.div variants={listItem}>
-                  {classes.length === 0 ? (
-                    <Card>
-                      <CardContent className="flex flex-col items-center gap-4 py-16">
-                        <Icon name="class" size={48} className="text-on-surface-variant/50" />
-                        <p className="font-medium">No classes yet</p>
-                        <p className="text-sm text-on-surface-variant">Create your first class to get started.</p>
-                        <Button onClick={() => setShowCreate(true)}>
-                          <Icon name="add" size={18} className="mr-2" />
-                          Create Class
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ) : (
+          {/* -------------------------------------------------------------
+              TABS CONTENT: CLASSES
+             ------------------------------------------------------------- */}
+          <TabsContent value="classes" className="mt-4 space-y-6">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="relative max-w-sm flex-1">
+                <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
+                <Input
+                  placeholder="Search classes..."
+                  className="pl-10"
+                  value={classSearch}
+                  onChange={(e) => setClassSearch(e.target.value)}
+                />
+              </div>
+              <Button onClick={() => setShowCreateClass(true)}>
+                <Icon name="add" size={18} className="mr-2" />
+                Create Class
+              </Button>
+            </div>
+
+            <DataFetchWrapper
+              data={fetchedClasses}
+              isLoading={classesLoading}
+              error={classesError ? new Error('Failed to load classes') : null}
+              onRetry={refetchClasses}
+              loadingType="card"
+              emptyMessage="No classes yet"
+            >
+              {() => (
+                <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit">
+                  {filteredClasses.length === 0 ? (
                     <Card>
                       <CardContent className="flex flex-col items-center gap-4 py-16">
                         <Icon name="search_off" size={48} className="text-on-surface-variant/50" />
                         <p className="font-medium">No classes match your search</p>
-                        <p className="text-sm text-on-surface-variant">Try a different search term.</p>
-                        <Button variant="outline" onClick={() => setSearch('')}>
-                          <Icon name="close" size={16} className="mr-2" />
-                          Clear Search
-                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => setClassSearch('')}>Clear Search</Button>
                       </CardContent>
                     </Card>
+                  ) : (
+                    <motion.div variants={listContainer} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                      {filteredClasses.map((cls) => {
+                        const isExpanded = expandedId === cls.id;
+                        const classSubjects = getClassSubjects(cls.id);
+                        const classStudents = getClassStudents(cls.id);
+
+                        return (
+                          <Card key={cls.id} variant="elevated" className="hover:shadow-elevation-2 transition-all">
+                            <div className="cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : cls.id)}>
+                              <CardHeader className="pb-3">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-lg bg-primary-container flex items-center justify-center">
+                                      <Icon name="class" size={20} className="text-on-primary-container" />
+                                    </div>
+                                    <div>
+                                      <CardTitle className="text-title-md">{cls.name}</CardTitle>
+                                      <Badge variant="outline" className="text-[10px] mt-0.5">{cls.code}</Badge>
+                                    </div>
+                                  </div>
+                                  <Icon name={isExpanded ? 'expand_less' : 'expand_more'} size={20} className="text-on-surface-variant" />
+                                </div>
+                              </CardHeader>
+
+                              <CardContent className="space-y-3">
+                                <div className="grid grid-cols-2 gap-2 text-body-md">
+                                  <div className="flex items-center gap-2 text-on-surface-variant">
+                                    <Icon name="school" size={16} />
+                                    <span>Grade {cls.grade || '\u2014'}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-on-surface-variant">
+                                    <Icon name="people" size={16} />
+                                    <span>{classStudents.length} students</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-on-surface-variant">
+                                    <Icon name="menu_book" size={16} />
+                                    <span>{classSubjects.length} subjects</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-on-surface-variant">
+                                    <Icon name="meeting_room" size={16} />
+                                    <span>Room {cls.roomNumber || '\u2014'}</span>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </div>
+
+                            {isExpanded && (
+                              <div className="border-t border-outline-variant px-4 pb-4 pt-3 space-y-4 bg-surface-variant/10">
+                                {/* Subjects & Teachers Assignment */}
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <h4 className="text-label-sm font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5">
+                                      <Icon name="menu_book" size={14} />
+                                      Subjects
+                                    </h4>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-7 text-xs text-primary px-2 hover:bg-primary/10"
+                                      onClick={(e) => { e.stopPropagation(); handleAddSubjectClick(cls.id); }}
+                                    >
+                                      <Icon name="add" size={14} className="mr-1" />
+                                      Add Subject
+                                    </Button>
+                                  </div>
+                                  {classSubjects.length === 0 ? (
+                                    <p className="text-xs text-on-surface-variant/60 ml-6 py-1">No subjects created yet</p>
+                                  ) : (
+                                    <ul className="space-y-1.5">
+                                      {classSubjects.map((subject) => {
+                                        const teacher = getSubjectTeacher(cls.id, subject.id);
+                                        return (
+                                          <li key={subject.id} className="flex items-center justify-between text-sm py-1.5 px-3 rounded-lg bg-surface-variant/40 border border-outline-variant/20">
+                                            <span className="font-medium">{subject.name} ({subject.code})</span>
+                                            <div className="flex items-center gap-2">
+                                              {teacher ? (
+                                                <div className="flex items-center gap-1 bg-surface px-2 py-0.5 rounded border border-outline-variant">
+                                                  <span className="text-on-surface-variant text-xs flex items-center gap-1 font-semibold">
+                                                    <Icon name="person" size={12} className="text-primary" />
+                                                    {teacher.displayName}
+                                                  </span>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-5 w-5 p-0 text-error hover:bg-error/15 rounded-full"
+                                                    title="Remove Teacher Assignment"
+                                                    onClick={(e) => { e.stopPropagation(); handleRemoveTeacherAssignment(cls.id, subject.id); }}
+                                                  >
+                                                    <Icon name="close" size={12} />
+                                                  </Button>
+                                                </div>
+                                              ) : (
+                                                <Button
+                                                  variant="outline"
+                                                  size="sm"
+                                                  className="h-6 text-[10px] py-0 px-2 flex items-center gap-0.5 font-bold text-primary border-primary/30 hover:bg-primary/5 bg-background"
+                                                  onClick={(e) => { e.stopPropagation(); handleAssignClick(cls.id, subject.id); }}
+                                                >
+                                                  <Icon name="person_add" size={10} />
+                                                  Assign Teacher
+                                                </Button>
+                                              )}
+                                            </div>
+                                          </li>
+                                        );
+                                      })}
+                                    </ul>
+                                  )}
+                                </div>
+
+                                {/* Student Roster inside class card */}
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <h4 className="text-label-sm font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5">
+                                      <Icon name="people" size={14} />
+                                      Students ({classStudents.length})
+                                    </h4>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-7 text-xs text-primary px-2 hover:bg-primary/10"
+                                      onClick={(e) => { e.stopPropagation(); handleAddStudentClick(cls); }}
+                                    >
+                                      <Icon name="person_add" size={14} className="mr-1" />
+                                      Register Student
+                                    </Button>
+                                  </div>
+                                  {classStudents.length === 0 ? (
+                                    <p className="text-xs text-on-surface-variant/60 ml-6 py-1">No students enrolled yet</p>
+                                  ) : (
+                                    <ul className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                                      {classStudents.map((student) => (
+                                        <li key={student.id} className="flex items-center justify-between text-xs py-1 px-3 rounded-lg bg-surface-variant/30">
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-semibold text-on-surface-variant">Roll #{student.rollNo ?? '\u2014'}</span>
+                                            <span className="font-medium">{student.displayName}</span>
+                                          </div>
+                                          {student.studentId && (
+                                            <Badge variant="outline" className="text-[9px] font-mono select-all bg-background">{student.studentId}</Badge>
+                                          )}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Card Footer Actions */}
+                            <div className="px-4 pb-4 flex items-center gap-2 pt-2 border-t border-outline-variant/10">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => navigate(`/admin/classes/${cls.id}/timetable`)}
+                                title="Timetable Management"
+                              >
+                                <Icon name="calendar_month" size={16} className="text-primary mr-1" />
+                                Timetable
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleClassGradeChange} className="ml-auto opacity-0 pointer-events-none" />
+                              <Button variant="ghost" size="sm" onClick={() => handleEditClassClick(cls)} title="Edit Class Details">
+                                <Icon name="edit" size={16} />
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleDeleteClassClick(cls.id, cls.name)} title="Archive/Delete Class">
+                                <Icon name="delete" size={16} className="text-error" />
+                              </Button>
+                            </div>
+                          </Card>
+                        );
+                      })}
+                    </motion.div>
                   )}
                 </motion.div>
-              ) : (
-                <motion.div
-                  variants={listItem}
-                  className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
-                >
-                  {filtered.map((cls) => {
-                    const classTeacher = users.find(
-                      (u: UserDoc) => cls.teacherIds?.includes(u.id)
-                    );
-                    const subjectCount = cls.subjectIds?.length ?? 0;
-                    const isExpanded = expandedId === cls.id;
-                    const classSubjects = getClassSubjects(cls.id);
-                    const classStudents = getClassStudents(cls.id);
-
-                    return (
-                      <Card key={cls.id} variant="elevated" className="hover:shadow-elevation-2 transition-shadow">
-                        <div
-                          className="cursor-pointer"
-                          onClick={() => setExpandedId(isExpanded ? null : cls.id)}
-                        >
-                          <CardHeader className="pb-3">
-                            <div className="flex items-start justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-lg bg-primary-container flex items-center justify-center">
-                                  <Icon name="class" size={20} className="text-on-primary-container" />
-                                </div>
-                                <div>
-                                  <CardTitle className="text-title-md">{cls.name}</CardTitle>
-                                  <Badge variant="outline" className="text-[10px] mt-0.5">
-                                    {cls.code}
-                                  </Badge>
-                                </div>
-                              </div>
-                              <Icon
-                                name={isExpanded ? 'expand_less' : 'expand_more'}
-                                size={20}
-                                className="text-on-surface-variant"
-                              />
-                            </div>
-                          </CardHeader>
-                          <CardContent className="space-y-3">
-                            <div className="grid grid-cols-2 gap-3 text-body-md">
-                              <div className="flex items-center gap-2 text-on-surface-variant">
-                                <Icon name="school" size={16} />
-                                <span>Grade {cls.grade || '\u2014'}</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-on-surface-variant">
-                                <Icon name="people" size={16} />
-                                <span>{cls.studentCount ?? 0} students</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-on-surface-variant">
-                                <Icon name="badge" size={16} />
-                                <span className="truncate">
-                                  {classTeacher ? classTeacher.displayName : 'No teacher'}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2 text-on-surface-variant">
-                                <Icon name="menu_book" size={16} />
-                                <span>{subjectCount} subjects</span>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </div>
-
-                        {isExpanded && (
-                          <div className="border-t border-outline-variant px-4 pb-4 pt-3 space-y-4">
-                            <div>
-                              <h4 className="text-label-sm font-medium text-on-surface-variant uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                <Icon name="menu_book" size={14} />
-                                Subjects
-                              </h4>
-                              {classSubjects.length === 0 ? (
-                                <p className="text-sm text-on-surface-variant/60 ml-6">No subjects assigned</p>
-                              ) : (
-                                <ul className="space-y-1.5">
-                                  {classSubjects.map((subject) => {
-                                    const teacher = getSubjectTeacher(cls.id, subject.id);
-                                    return (
-                                      <li key={subject.id} className="flex items-center justify-between text-sm py-1 px-3 rounded-lg bg-surface-variant/40">
-                                        <span className="font-medium">{subject.name}</span>
-                                        <div className="flex items-center gap-2">
-                                          {teacher ? (
-                                            <div className="flex items-center gap-1 bg-surface/60 px-2 py-0.5 rounded border border-outline-variant/30">
-                                              <span className="text-on-surface-variant text-xs flex items-center gap-1 font-medium">
-                                                <Icon name="person" size={12} className="text-primary" />
-                                                {teacher.displayName}
-                                              </span>
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-5 w-5 p-0 text-error hover:bg-error/15 rounded-full"
-                                                title="Remove Teacher Assignment"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  handleRemoveTeacherAssignment(cls.id, subject.id);
-                                                }}
-                                              >
-                                                <Icon name="close" size={12} />
-                                              </Button>
-                                            </div>
-                                          ) : (
-                                            <Button
-                                              variant="outline"
-                                              size="sm"
-                                              className="h-6 text-[10px] py-0 px-2 flex items-center gap-0.5 font-semibold text-primary border-primary/30 hover:bg-primary/5"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleAssignClick(cls.id, subject.id);
-                                              }}
-                                            >
-                                              <Icon name="person_add" size={10} />
-                                              Assign
-                                            </Button>
-                                          )}
-                                        </div>
-                                      </li>
-                                    );
-                                  })}
-                                </ul>
-                              )}
-                            </div>
-
-                            <div>
-                              <h4 className="text-label-sm font-medium text-on-surface-variant uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                <Icon name="people" size={14} />
-                                Students ({classStudents.length})
-                              </h4>
-                              {classStudents.length === 0 ? (
-                                <p className="text-sm text-on-surface-variant/60 ml-6">No students enrolled</p>
-                              ) : (
-                                <ul className="space-y-1 max-h-48 overflow-y-auto">
-                                  {classStudents.map((student) => (
-                                    <li key={student.id} className="flex items-center justify-between text-sm py-1 px-3 rounded-lg bg-surface-variant/40">
-                                      <span className="font-medium">{student.displayName}</span>
-                                      {student.studentId && (
-                                        <Badge variant="outline" className="text-[10px]">
-                                          {student.studentId}
-                                        </Badge>
-                                      )}
-                                    </li>
-                                  ))}
-                                </ul>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className={cn('px-4 pb-4 flex items-center gap-2', isExpanded && 'pt-1')}>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate(`/admin/classes/${cls.id}/timetable`)}
-                            title="Timetable"
-                          >
-                            <Icon name="calendar_month" size={16} className="text-primary" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditClick(cls)}
-                            title="Edit"
-                          >
-                            <Icon name="edit" size={16} />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteClick(cls.id, cls.name)}
-                            title="Delete"
-                          >
-                            <Icon name="delete" size={16} className="text-error" />
-                          </Button>
-                        </div>
-                      </Card>
-                    );
-                  })}
-                </motion.div>
               )}
-            </motion.div>
-          </motion.div>
-        )}
-      </DataFetchWrapper>
+            </DataFetchWrapper>
+          </TabsContent>
 
-      <Dialog open={showEdit} onOpenChange={(open) => { if (!open) { setShowEdit(false); setEditTarget(null); } }}>
+          {/* -------------------------------------------------------------
+              TABS CONTENT: TEACHERS
+             ------------------------------------------------------------- */}
+          <TabsContent value="teachers" className="mt-4 space-y-6">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="relative max-w-sm flex-1">
+                <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
+                <Input
+                  placeholder="Search teachers..."
+                  className="pl-10"
+                  value={teacherSearch}
+                  onChange={(e) => setTeacherSearch(e.target.value)}
+                />
+              </div>
+              <Button onClick={() => setShowCreateTeacher(true)}>
+                <Icon name="add" size={16} className="mr-2" />
+                Register Teacher
+              </Button>
+            </div>
+
+            {filteredTeachers.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center gap-4 py-16">
+                  <Icon name="badge" size={48} className="text-on-surface-variant/50" />
+                  <p className="font-medium">No teachers found</p>
+                  <Button variant="outline" size="sm" onClick={() => setTeacherSearch('')}>Clear Search</Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="border border-outline-variant rounded-xl overflow-x-auto bg-surface">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-outline-variant bg-surface-variant/30 text-body-sm font-semibold text-on-surface-variant">
+                      <th className="text-left px-4 py-3">Name</th>
+                      <th className="text-left px-4 py-3">Email Login</th>
+                      <th className="text-left px-4 py-3">Assigned Classes</th>
+                      <th className="text-left px-4 py-3">Status</th>
+                      <th className="text-right px-4 py-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-outline-variant/60">
+                    {filteredTeachers.map((teacher) => {
+                      const teacherAssignments = tcAssignments.filter((a) => a.teacherId === teacher.id);
+                      return (
+                        <tr key={teacher.id} className="hover:bg-surface-variant/20 transition-colors text-body-md">
+                          <td className="px-4 py-3 font-semibold">{teacher.displayName}</td>
+                          <td className="px-4 py-3 font-mono text-sm select-all">{teacher.email}</td>
+                          <td className="px-4 py-3">
+                            {teacherAssignments.length === 0 ? (
+                              <span className="text-xs text-on-surface-variant/60">No assignments</span>
+                            ) : (
+                              <div className="flex flex-wrap gap-1">
+                                {teacherAssignments.map((a) => {
+                                  const c = fetchedClasses.find((cls) => cls.id === a.classId);
+                                  const s = subjects.find((sub) => sub.id === a.subjectId);
+                                  return (
+                                    <Badge key={a.id} variant="secondary" className="text-[10px] py-0 px-1.5 font-medium">
+                                      {c ? c.code : 'Class'} - {s ? s.name : 'Subject'}
+                                    </Badge>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <Badge variant={teacher.isActive === false ? 'destructive' : 'success'} className="text-[10px]">
+                              {teacher.isActive === false ? 'Inactive' : 'Active'}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3 text-right flex items-center justify-end gap-1.5">
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => handleToggleUserActive(teacher)}
+                              title={teacher.isActive === false ? 'Enable Account' : 'Disable Account'}
+                            >
+                              <Icon name={teacher.isActive === false ? 'toggle_off' : 'toggle_on'} size={18} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="text-error hover:bg-error/10"
+                              onClick={() => handleUserDeleteClick(teacher)}
+                              title="Delete Teacher"
+                            >
+                              <Icon name="delete" size={16} />
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* -------------------------------------------------------------
+              TABS CONTENT: STUDENTS
+             ------------------------------------------------------------- */}
+          <TabsContent value="students" className="mt-4 space-y-6">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="relative flex-1 min-w-[200px]">
+                <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
+                <Input
+                  placeholder="Search students..."
+                  className="pl-10"
+                  value={studentSearch}
+                  onChange={(e) => setStudentSearch(e.target.value)}
+                />
+              </div>
+              <OptionsSelect
+                options={[{ value: 'all', label: 'All Classes' }, ...classOptions]}
+                value={studentClassFilter}
+                onChange={setStudentClassFilter}
+                className="w-44 bg-surface"
+              />
+              <button
+                className="text-sm text-primary hover:underline font-semibold"
+                onClick={() => { setStudentSearch(''); setStudentClassFilter('all'); }}
+              >
+                Reset
+              </button>
+            </div>
+
+            {filteredStudents.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center gap-4 py-16">
+                  <Icon name="person_off" size={48} className="text-on-surface-variant/50" />
+                  <p className="font-medium">No students found</p>
+                  <Button variant="outline" size="sm" onClick={() => { setStudentSearch(''); setStudentClassFilter('all'); }}>Clear Filters</Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                <div className="border border-outline-variant rounded-xl overflow-x-auto bg-surface">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-outline-variant bg-surface-variant/30 text-body-sm font-semibold text-on-surface-variant">
+                        <th className="text-left px-4 py-3">Name</th>
+                        <th className="text-left px-4 py-3">Student ID</th>
+                        <th className="text-left px-4 py-3">Class</th>
+                        <th className="text-left px-4 py-3">Roll No</th>
+                        <th className="text-left px-4 py-3">Email Login</th>
+                        <th className="text-left px-4 py-3">Status</th>
+                        <th className="text-right px-4 py-3">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-outline-variant/60 text-body-md">
+                      {paginatedStudents.map((student) => {
+                        const classObj = fetchedClasses.find((c) => c.id === student.classId);
+                        return (
+                          <tr key={student.id} className="hover:bg-surface-variant/20 transition-colors">
+                            <td className="px-4 py-3 font-semibold">{student.displayName}</td>
+                            <td className="px-4 py-3 font-mono text-sm font-semibold text-primary">{student.studentId || '\u2014'}</td>
+                            <td className="px-4 py-3">{classObj ? classObj.name : '\u2014'}</td>
+                            <td className="px-4 py-3 font-semibold">{student.rollNo ?? '\u2014'}</td>
+                            <td className="px-4 py-3 font-mono text-xs text-on-surface-variant select-all">{student.email}</td>
+                            <td className="px-4 py-3">
+                              <Badge variant={student.isActive === false ? 'destructive' : 'success'} className="text-[10px]">
+                                {student.isActive === false ? 'Inactive' : 'Active'}
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-3 text-right flex items-center justify-end gap-1.5">
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={() => handleEditStudentClick(student)}
+                                title="Edit Student details"
+                              >
+                                <Icon name="edit" size={16} />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={() => handleToggleUserActive(student)}
+                                title={student.isActive === false ? 'Enable student account' : 'Disable student account'}
+                              >
+                                <Icon name={student.isActive === false ? 'toggle_off' : 'toggle_on'} size={18} />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                className="text-error hover:bg-error/10"
+                                onClick={() => handleUserDeleteClick(student)}
+                                title="Delete student"
+                              >
+                                <Icon name="delete" size={16} />
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {studentTotalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-4">
+                    <Button variant="outline" size="icon" disabled={studentPage <= 1} onClick={() => setStudentPage((p) => p - 1)}>
+                      <Icon name="chevron_left" size={18} />
+                    </Button>
+                    {Array.from({ length: studentTotalPages }, (_, i) => (
+                      <Button
+                        key={i + 1}
+                        variant={studentPage === i + 1 ? 'default' : 'outline'}
+                        size="icon"
+                        className="h-8 w-8 text-xs font-semibold"
+                        onClick={() => setStudentPage(i + 1)}
+                      >
+                        {i + 1}
+                      </Button>
+                    ))}
+                    <Button variant="outline" size="icon" disabled={studentPage >= studentTotalPages} onClick={() => setStudentPage((p) => p + 1)}>
+                      <Icon name="chevron_right" size={18} />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* -------------------------------------------------------------
+          SHARED DIALOGS & MODALS
+         ------------------------------------------------------------- */}
+
+      {/* CREDENTIALS GENERATED DIALOG */}
+      <Dialog open={!!createdCredentials} onOpenChange={(open) => { if (!open) setCreatedCredentials(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-success">
+              <Icon name="check_circle" size={24} />
+              User Credentials Generated
+            </DialogTitle>
+            <DialogDescription>
+              Please copy these credentials and share them with the user. This is the only time the password is shown.
+            </DialogDescription>
+          </DialogHeader>
+          {createdCredentials && (
+            <div className="space-y-4 bg-surface-variant/40 p-4 rounded-lg border border-outline-variant font-mono text-sm">
+              <div className="grid grid-cols-3 gap-2 border-b border-outline-variant/60 pb-2">
+                <span className="font-bold text-on-surface-variant">Name:</span>
+                <span className="col-span-2 select-all font-sans font-medium">{createdCredentials.displayName}</span>
+              </div>
+              {createdCredentials.studentId && (
+                <div className="grid grid-cols-3 gap-2 border-b border-outline-variant/60 pb-2">
+                  <span className="font-bold text-on-surface-variant">Student ID:</span>
+                  <span className="col-span-2 select-all text-primary font-bold">{createdCredentials.studentId}</span>
+                </div>
+              )}
+              <div className="grid grid-cols-3 gap-2 border-b border-outline-variant/60 pb-2">
+                <span className="font-bold text-on-surface-variant">Email Login:</span>
+                <span className="col-span-2 select-all font-bold">{createdCredentials.email}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <span className="font-bold text-on-surface-variant">Password:</span>
+                <span className="col-span-2 select-all text-error font-bold bg-error-container/50 px-2 py-0.5 rounded">{createdCredentials.generatedPassword}</span>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="flex gap-2">
+            <Button
+              className="flex-1"
+              variant="outline"
+              onClick={() => {
+                if (createdCredentials) {
+                  const sId = createdCredentials.studentId ? `Student ID: ${createdCredentials.studentId}\n` : '';
+                  const text = `Name: ${createdCredentials.displayName}\n${sId}Email: ${createdCredentials.email}\nPassword: ${createdCredentials.generatedPassword}`;
+                  navigator.clipboard.writeText(text);
+                  toast.success('Credentials copied to clipboard');
+                }
+              }}
+            >
+              <Icon name="content_copy" size={16} className="mr-2" />
+              Copy Credentials
+            </Button>
+            <Button className="flex-1" onClick={() => setCreatedCredentials(null)}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* CREATE CLASS DIALOG */}
+      <Dialog open={showCreateClass} onOpenChange={setShowCreateClass}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Class</DialogTitle>
+            <DialogDescription>Fill in class details. Class name will be auto-generated based on the grade number.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Grade</Label>
+              <Input
+                placeholder="e.g. 1, 2, 3..."
+                value={classGrade}
+                onChange={(e) => handleClassGradeChange(e.target.value)}
+                autoFocus
+              />
+              {classGrade && /^\d+$/.test(classGrade.trim()) && (
+                <p className="text-sm text-muted-foreground">
+                  Will be named: <span className="font-medium">{ordinal(parseInt(classGrade, 10))} class</span>
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>Class Code</Label>
+              <Input placeholder="e.g. G1-A" value={classCode} onChange={(e) => setClassCode(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Section</Label>
+                <Input placeholder="e.g. A, B" value={classSection} onChange={(e) => setClassSection(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Room Number</Label>
+                <Input placeholder="e.g. 101" value={classRoomNumber} onChange={(e) => setClassRoomNumber(e.target.value)} />
+              </div>
+            </div>
+            <Button className="w-full" onClick={handleCreateClass}>
+              <Icon name="add" size={16} className="mr-2" />
+              Create Class
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* EDIT CLASS DIALOG */}
+      <Dialog open={showEditClass} onOpenChange={(open) => { if (!open) { setShowEditClass(false); setEditClassTarget(null); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Class</DialogTitle>
             <DialogDescription>
-              {editTarget && `Updating "${editTarget.name}". Changes affect student enrollments and timetable.`}
+              {editClassTarget && `Updating "${editClassTarget.name}". Changes affect student enrollments and timetable.`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Class Name</Label>
-                <Input
-                  placeholder="e.g. 1st class"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                />
+                <Input value={editClassForm.name} onChange={(e) => setEditClassForm((f) => ({ ...f, name: e.target.value }))} />
               </div>
               <div className="space-y-2">
                 <Label>Code</Label>
-                <Input
-                  placeholder="e.g. 1-A"
-                  value={editForm.code}
-                  onChange={(e) => setEditForm((f) => ({ ...f, code: e.target.value }))}
-                />
+                <Input value={editClassForm.code} onChange={(e) => setEditClassForm((f) => ({ ...f, code: e.target.value }))} />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2">
                 <Label>Grade</Label>
-                <Input
-                  placeholder="e.g. 1"
-                  value={editForm.grade}
-                  onChange={(e) => setEditForm((f) => ({ ...f, grade: e.target.value }))}
-                />
+                <Input value={editClassForm.grade} onChange={(e) => setEditClassForm((f) => ({ ...f, grade: e.target.value }))} />
               </div>
               <div className="space-y-2">
                 <Label>Section</Label>
-                <Input
-                  placeholder="e.g. A"
-                  value={editForm.section}
-                  onChange={(e) => setEditForm((f) => ({ ...f, section: e.target.value }))}
-                />
+                <Input value={editClassForm.section} onChange={(e) => setEditClassForm((f) => ({ ...f, section: e.target.value }))} />
               </div>
               <div className="space-y-2">
                 <Label>Room</Label>
-                <Input
-                  placeholder="e.g. 101"
-                  value={editForm.roomNumber}
-                  onChange={(e) => setEditForm((f) => ({ ...f, roomNumber: e.target.value }))}
-                />
+                <Input value={editClassForm.roomNumber} onChange={(e) => setEditClassForm((f) => ({ ...f, roomNumber: e.target.value }))} />
               </div>
             </div>
-            {editTarget && (
-              <p className="text-xs text-on-surface-variant flex items-center gap-1">
-                <Icon name="info" size={14} />
-                Editing this class affects timetables and student enrollments.
-              </p>
-            )}
             <Button className="w-full" onClick={handleUpdateClass}>
               <Icon name="save" size={16} className="mr-2" />
               Save Changes
@@ -650,22 +1289,23 @@ export default function AdminClassesPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showDependencyDialog} onOpenChange={(open) => { if (!open) { setShowDependencyDialog(false); setDeleteTarget(null); } }}>
+      {/* CLASS DEPENDENCY & DELETE DIALOG */}
+      <Dialog open={showClassDependencyDialog} onOpenChange={(open) => { if (!open) { setShowClassDependencyDialog(false); setClassDeleteTarget(null); } }}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>Delete {deleteTarget?.name || 'Class'}</DialogTitle>
+            <DialogTitle>Delete {classDeleteTarget?.name || 'Class'}</DialogTitle>
             <DialogDescription>
-              {deleteLoading ? (
+              {classDeleteLoading ? (
                 <span className="flex items-center gap-2">
                   <Icon name="sync" size={16} className="animate-spin" />
                   Analyzing dependencies...
                 </span>
-              ) : dependencyReport && dependencyReport.totalDependents > 0 ? (
+              ) : classDependencyReport && classDependencyReport.totalDependents > 0 ? (
                 <span className="text-destructive font-medium">
-                  {dependencyReport.totalDependents} dependenc{dependencyReport.totalDependents === 1 ? 'y' : 'ies'} found.
+                  {classDependencyReport.totalDependents} dependenc{classDependencyReport.totalDependents === 1 ? 'y' : 'ies'} found.
                   Deleting this class will affect linked records.
                 </span>
-              ) : dependencyReport ? (
+              ) : classDependencyReport ? (
                 <span className="text-success font-medium">No dependencies found. Safe to delete.</span>
               ) : (
                 'Unable to analyze dependencies.'
@@ -673,12 +1313,259 @@ export default function AdminClassesPage() {
             </DialogDescription>
           </DialogHeader>
 
-          {dependencyReport && dependencyReport.categories.length > 0 && (
+          {classDependencyReport && classDependencyReport.categories.length > 0 && (
             <div className="space-y-2 rounded-lg border border-outline-variant p-4">
-              <p className="text-label-sm font-medium text-on-surface-variant uppercase tracking-wider">
-                Impact Summary
-              </p>
-              {dependencyReport.categories.map((cat) => (
+              <p className="text-label-sm font-medium text-on-surface-variant uppercase tracking-wider">Impact Summary</p>
+              {classDependencyReport.categories.map((cat) => (
+                <div key={cat.label} className="flex items-center justify-between text-body-md">
+                  <span>{cat.label}</span>
+                  <Badge variant="outline">{cat.count}</Badge>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2 pt-2">
+            <Button variant="tonal" className="w-full justify-start" onClick={handleArchiveClass} disabled={classDeleteLoading}>
+              <Icon name="archive" size={16} className="mr-2" />
+              Archive Class
+              <span className="ml-auto text-xs text-on-surface-variant">Preserves all records</span>
+            </Button>
+            <Button
+              variant="destructive"
+              className="w-full justify-start"
+              onClick={handleConfirmDeleteClass}
+              disabled={classDeleteLoading || (classDependencyReport?.totalDependents ?? 0) > 0}
+            >
+              <Icon name="delete_forever" size={16} className="mr-2" />
+              Permanently Delete
+              <span className="ml-auto text-xs text-on-surface-variant">
+                {(classDependencyReport?.totalDependents ?? 0) > 0 ? 'Has dependencies' : 'Irreversible'}
+              </span>
+            </Button>
+            <Button variant="ghost" className="w-full" onClick={() => { setShowClassDependencyDialog(false); setClassDeleteTarget(null); }}>Cancel</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* INLINE ADD SUBJECT DIALOG */}
+      <Dialog open={showAddSubject} onOpenChange={setShowAddSubject}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Subject to Class</DialogTitle>
+            <DialogDescription>Create a new subject for this class.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Subject Name</Label>
+              <Input
+                placeholder="e.g. Mathematics"
+                value={subjectForm.name}
+                onChange={(e) => setSubjectForm((f) => ({ ...f, name: e.target.value }))}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Code</Label>
+                <Input
+                  placeholder="e.g. MATH"
+                  value={subjectForm.code}
+                  onChange={(e) => setSubjectForm((f) => ({ ...f, code: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Icon</Label>
+                <OptionsSelect
+                  options={subjectIconOptions}
+                  value={subjectForm.icon}
+                  onChange={(v: string) => setSubjectForm((f) => ({ ...f, icon: v }))}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <OptionsSelect
+                options={subjectCategoryOptions}
+                value={subjectForm.category}
+                onChange={(v: string) => setSubjectForm((f) => ({ ...f, category: v }))}
+              />
+            </div>
+            <Button className="w-full mt-2" onClick={handleAddSubject}>
+              <Icon name="add" size={16} className="mr-2" />
+              Add Subject
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ASSIGN / INLINE REGISTER TEACHER DIALOG */}
+      <Dialog open={showAssign} onOpenChange={setShowAssign}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Teacher</DialogTitle>
+            <DialogDescription>Assign a teacher to this subject.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="flex items-center gap-2 mb-2">
+              <input
+                type="checkbox"
+                id="inline-register"
+                checked={registerNewTeacherInline}
+                onChange={(e) => setRegisterNewTeacherInline(e.target.checked)}
+                className="h-4 w-4 rounded border-outline-variant bg-surface text-primary focus:ring-primary"
+              />
+              <Label htmlFor="inline-register" className="cursor-pointer font-semibold">Register new teacher inline</Label>
+            </div>
+
+            {registerNewTeacherInline ? (
+              <div className="space-y-2 border border-outline-variant/60 p-4 rounded-lg bg-surface-variant/20">
+                <p className="text-xs text-on-surface-variant font-medium mb-1">
+                  New credentials will be generated automatically in the format: <span className="font-mono font-bold text-primary">teachername+subname@school.edu</span>.
+                </p>
+                <Label>Teacher Full Name</Label>
+                <Input
+                  placeholder="e.g. Sarah Connor"
+                  value={newTeacherName}
+                  onChange={(e) => setNewTeacherName(e.target.value)}
+                />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>Select Existing Teacher</Label>
+                <select
+                  className="w-full h-10 px-3 rounded-lg border border-outline-variant bg-surface text-on-surface focus:outline-none focus:ring-2 focus:ring-primary font-medium"
+                  value={selectedTeacherId}
+                  onChange={(e) => setSelectedTeacherId(e.target.value)}
+                >
+                  <option value="">-- Choose a teacher --</option>
+                  {teachers.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.displayName} ({t.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAssign(false)}>Cancel</Button>
+            <Button onClick={handleAssignTeacher} disabled={assignLoading}>
+              {assignLoading ? (
+                <><Icon name="sync" size={16} className="mr-2 animate-spin" />Assigning...</>
+              ) : (
+                <><Icon name="check" size={16} className="mr-2" />Assign</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* REGISTER STUDENT DIALOG */}
+      <Dialog open={showAddStudent} onOpenChange={setShowAddStudent}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Register Student to Class</DialogTitle>
+            <DialogDescription>Create student credentials and add them to this class roster.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Student Full Name</Label>
+              <Input
+                placeholder="e.g. John Doe"
+                value={studentForm.displayName}
+                onChange={(e) => setStudentForm((f) => ({ ...f, displayName: e.target.value }))}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Roll Number</Label>
+                <Input
+                  type="number"
+                  value={studentForm.rollNo}
+                  onChange={(e) => setStudentForm((f) => ({ ...f, rollNo: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Academic Year</Label>
+                <Input
+                  placeholder="e.g. 2026"
+                  value={studentForm.academicYear}
+                  onChange={(e) => setStudentForm((f) => ({ ...f, academicYear: e.target.value }))}
+                />
+              </div>
+            </div>
+            <Button className="w-full mt-2" onClick={handleRegisterStudent} disabled={studentRegisterLoading}>
+              {studentRegisterLoading ? (
+                <><Icon name="sync" size={16} className="mr-2 animate-spin" />Registering...</>
+              ) : (
+                <><Icon name="add" size={16} className="mr-2" />Register Student</>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* GLOBAL REGISTER TEACHER DIALOG (TAB 2) */}
+      <Dialog open={showCreateTeacher} onOpenChange={setShowCreateTeacher}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Register Teacher</DialogTitle>
+            <DialogDescription>Create a new teacher account. Standard credentials will be generated automatically.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Full Name</Label>
+              <Input
+                placeholder="Jane Doe"
+                value={teacherForm.displayName}
+                onChange={(e) => setTeacherForm((f) => ({ ...f, displayName: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Email (Optional)</Label>
+              <Input
+                type="email"
+                placeholder="jane@school.edu"
+                value={teacherForm.email}
+                onChange={(e) => setTeacherForm((f) => ({ ...f, email: e.target.value }))}
+              />
+            </div>
+            <Button className="w-full mt-2" onClick={handleCreateTeacher} disabled={teacherRegisterLoading}>
+              {teacherRegisterLoading ? (
+                <><Icon name="sync" size={16} className="mr-2 animate-spin" />Registering...</>
+              ) : (
+                <><Icon name="add" size={16} className="mr-2" />Register Teacher</>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* USER DEPENDENCY & DELETE DIALOG (SHARED TEACHER/STUDENT DELETE) */}
+      <Dialog open={showUserDependencyDialog} onOpenChange={(open) => { if (!open) { setShowUserDependencyDialog(false); setUserDeleteTarget(null); } }}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Delete User: {userDeleteTarget?.displayName}</DialogTitle>
+            <DialogDescription>
+              {userDeleteLoading ? (
+                <span className="flex items-center gap-2">
+                  <Icon name="sync" size={16} className="animate-spin" />
+                  Checking dependencies...
+                </span>
+              ) : userDependencyReport && userDependencyReport.totalDependents > 0 ? (
+                <span className="text-destructive font-medium">
+                  {userDependencyReport.totalDependents} active dependencies found. Deactivating is highly recommended.
+                </span>
+              ) : (
+                <span className="text-success font-medium">No dependencies found. Safe to delete.</span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          {userDependencyReport && userDependencyReport.categories.length > 0 && (
+            <div className="space-y-2 rounded-lg border border-outline-variant p-4">
+              <p className="text-label-sm font-medium text-on-surface-variant uppercase tracking-wider">Impact Details</p>
+              {userDependencyReport.categories.map((cat) => (
                 <div key={cat.label} className="flex items-center justify-between text-body-md">
                   <span>{cat.label}</span>
                   <Badge variant="outline">{cat.count}</Badge>
@@ -691,136 +1578,79 @@ export default function AdminClassesPage() {
             <Button
               variant="tonal"
               className="w-full justify-start"
-              onClick={handleArchiveClass}
-              disabled={deleteLoading}
-              loading={deleteLoading}
+              onClick={() => { if (userDeleteTarget) { handleToggleUserActive(userDeleteTarget); setShowUserDependencyDialog(false); } }}
             >
-              <Icon name="archive" size={16} className="mr-2" />
-              Archive Class
-              <span className="ml-auto text-xs text-on-surface-variant">Preserves all records</span>
+              <Icon name="toggle_off" size={16} className="mr-2" />
+              Toggle Active Status (Recommended)
+              <span className="ml-auto text-xs text-on-surface-variant">Disable login, preserve records</span>
             </Button>
             <Button
               variant="destructive"
               className="w-full justify-start"
-              onClick={handleConfirmDelete}
-              disabled={deleteLoading || (dependencyReport?.totalDependents ?? 0) > 0}
-              loading={deleteLoading}
+              onClick={handleConfirmUserDelete}
+              disabled={userDeleteLoading || (userDependencyReport?.totalDependents ?? 0) > 0}
             >
               <Icon name="delete_forever" size={16} className="mr-2" />
               Permanently Delete
               <span className="ml-auto text-xs text-on-surface-variant">
-                {(dependencyReport?.totalDependents ?? 0) > 0 ? 'Has dependencies' : 'Irreversible'}
+                {(userDependencyReport?.totalDependents ?? 0) > 0 ? 'Disabled (has dependencies)' : 'Irreversible'}
               </span>
             </Button>
-            <Button variant="ghost" className="w-full" onClick={() => { setShowDependencyDialog(false); setDeleteTarget(null); }}>
-              Cancel
-            </Button>
+            <Button variant="ghost" className="w-full" onClick={() => { setShowUserDependencyDialog(false); setUserDeleteTarget(null); }}>Cancel</Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showCreate} onOpenChange={(open) => {
-        if (!open) {
-          setShowCreate(false);
-          setGrade('');
-          setCode('');
-          setSection('');
-          setRoomNumber('');
-        }
-      }}>
+      {/* EDIT STUDENT PROFILE DIALOG (TAB 3) */}
+      <Dialog open={showEditStudent} onOpenChange={(open) => { if (!open) { setShowEditStudent(false); setEditStudentTarget(null); } }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create Class</DialogTitle>
-            <DialogDescription>Fill in class details. Class name will be auto-generated based on the grade number.</DialogDescription>
+            <DialogTitle>Edit Student Profile</DialogTitle>
+            <DialogDescription>Update name, class, roll number, or academic year.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Grade</Label>
+              <Label>Student Full Name</Label>
               <Input
-                placeholder="e.g. 1, 2, 3..."
-                value={grade}
-                onChange={(e) => handleGradeChange(e.target.value)}
-                autoFocus
-              />
-              {grade && /^\d+$/.test(grade.trim()) && (
-                <p className="text-sm text-muted-foreground">
-                  Will be named: <span className="font-medium">{ordinal(parseInt(grade, 10))} class</span>
-                </p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label>Class Code</Label>
-              <Input
-                placeholder="e.g. G1-A"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
+                placeholder="Jane Doe"
+                value={editStudentForm.displayName}
+                onChange={(e) => setEditStudentForm((f) => ({ ...f, displayName: e.target.value }))}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Section</Label>
-                <Input
-                  placeholder="e.g. A, B"
-                  value={section}
-                  onChange={(e) => setSection(e.target.value)}
+                <Label>Class</Label>
+                <OptionsSelect
+                  options={classOptions}
+                  value={editStudentForm.classId}
+                  onChange={(v: string) => setEditStudentForm((f) => ({ ...f, classId: v }))}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Room Number</Label>
+                <Label>Roll Number</Label>
                 <Input
-                  placeholder="e.g. 101"
-                  value={roomNumber}
-                  onChange={(e) => setRoomNumber(e.target.value)}
+                  type="number"
+                  value={editStudentForm.rollNo}
+                  onChange={(e) => setEditStudentForm((f) => ({ ...f, rollNo: e.target.value }))}
                 />
               </div>
             </div>
-            <Button className="w-full" onClick={handleCreate}>
-              <Icon name="add" size={16} className="mr-2" />
-              Create Class
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* ASSIGN TEACHER DIALOG */}
-      <Dialog open={showAssign} onOpenChange={setShowAssign}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Assign Teacher</DialogTitle>
-            <DialogDescription>
-              Assign a teacher to the selected subject in this class. Each class subject can only have one active teacher assignment.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Select Teacher</Label>
-              <select
-                className="w-full h-10 px-3 rounded-lg border border-outline-variant bg-surface text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-                value={selectedTeacherId}
-                onChange={(e) => setSelectedTeacherId(e.target.value)}
-              >
-                <option value="">-- Choose a teacher --</option>
-                {users.filter((u: UserDoc) => u.role === 'teacher').map((t: UserDoc) => (
-                  <option key={t.id} value={t.id}>
-                    {t.displayName} ({t.email})
-                  </option>
-                ))}
-              </select>
+              <Label>Academic Year</Label>
+              <Input
+                placeholder="e.g. 2026"
+                value={editStudentForm.academicYear}
+                onChange={(e) => setEditStudentForm((f) => ({ ...f, academicYear: e.target.value }))}
+              />
             </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAssign(false)}>Cancel</Button>
-            <Button
-              onClick={handleAssignTeacher}
-              disabled={!selectedTeacherId || assignLoading}
-            >
-              {assignLoading ? (
-                <><Icon name="sync" size={16} className="mr-2 animate-spin" />Assigning...</>
+            <Button className="w-full mt-2" onClick={handleUpdateStudent} disabled={studentSaveLoading}>
+              {studentSaveLoading ? (
+                <><Icon name="sync" size={16} className="mr-2 animate-spin" />Saving...</>
               ) : (
-                <><Icon name="check" size={16} className="mr-2" />Assign Teacher</>
+                <><Icon name="save" size={16} className="mr-2" />Save Changes</>
               )}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </>
