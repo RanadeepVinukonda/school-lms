@@ -5,7 +5,7 @@ import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
-import { pageTransition, listItem } from '@/lib/motion';
+import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useQuery } from '@tanstack/react-query';
 import { getLesson } from '@/services/dataService';
 import { getQuiz, getSubject } from '@/services/dataService';
@@ -83,11 +83,10 @@ export default function LessonViewPage() {
         description={`${data?.subject?.name ?? ''}: ${data?.lesson?.title ?? ''} — ${data?.lesson?.contentType === 'video' ? 'Video lesson' : 'Article lesson'} from ${data?.textbook?.title ?? ''}`}
       />
       <motion.div
-        variants={pageTransition}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        className="max-w-3xl mx-auto pb-24 space-y-8"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="p-6 max-w-6xl mx-auto pb-32 space-y-16"
       >
         <DataFetchWrapper
           data={data}
@@ -105,210 +104,224 @@ export default function LessonViewPage() {
           errorTitle="Failed to load lesson"
         >
           {(d) => (
-            <motion.div variants={listItem} className="space-y-8">
+            <>
               {/* 1. Lesson Header */}
-              <section>
-                <Button variant="ghost" size="sm" asChild className="mb-3 -ml-2">
-                  <Link to={d.textbook ? ROUTES.STUDENT_TEXTBOOK(d.textbook.id) : ROUTES.STUDENT_SUBJECTS} className="gap-1.5">
-                    <Icon name="arrow_back" size={16} />
-                    {d.textbook?.title ?? 'Back'}
-                  </Link>
-                </Button>
-                <div className="space-y-1">
-                  <p className="text-body-sm text-muted-foreground">
-                    {d.subject?.name} &middot; {d.chapter?.title ?? 'Chapter'} &middot; Lesson {d.lesson.order}
-                  </p>
-                  <h1 className="text-headline-sm font-bold text-on-surface">{d.lesson.title}</h1>
-                  <div className="flex items-center gap-4 text-body-md text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Icon name="schedule" size={16} />{d.lesson.duration} min
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Icon name={d.lesson.contentType === 'video' ? 'smart_display' : 'article'} size={16} />
-                      {d.lesson.contentType === 'video' ? 'Video' : 'Article'}
-                    </span>
+              <motion.div variants={cardStackReveal} custom={0}>
+                <section>
+                  <Button variant="ghost" size="sm" asChild className="mb-3 -ml-2">
+                    <Link to={d.textbook ? ROUTES.STUDENT_TEXTBOOK(d.textbook.id) : ROUTES.STUDENT_SUBJECTS} className="gap-1.5">
+                      <Icon name="arrow_back" size={16} />
+                      {d.textbook?.title ?? 'Back'}
+                    </Link>
+                  </Button>
+                  <div className="space-y-1">
+                    <p className="text-body-md text-muted-foreground">
+                      {d.subject?.name} &middot; {d.chapter?.title ?? 'Chapter'} &middot; Lesson {d.lesson.order}
+                    </p>
+                    <h1 className="text-headline-sm font-bold text-on-surface">{d.lesson.title}</h1>
+                    <div className="flex items-center gap-4 text-body-md text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Icon name="schedule" size={16} />{d.lesson.duration} min
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Icon name={d.lesson.contentType === 'video' ? 'smart_display' : 'article'} size={16} />
+                        {d.lesson.contentType === 'video' ? 'Video' : 'Article'}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </section>
+                </section>
+              </motion.div>
 
               {/* 2. Video / Article Content */}
-              {d.lesson.contentType === 'video' && d.lesson.videoUrl ? (
-                <section>
-                  <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-surface-container-high shadow-elevation-2">
-                    <iframe
-                      src={d.lesson.videoUrl}
-                      title={d.lesson.title}
-                      className="absolute inset-0 w-full h-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  </div>
-                </section>
-              ) : d.lesson.contentType === 'article' && d.lesson.content ? (
-                <section>
-                  <h2 className="text-headline-xs font-semibold text-on-surface flex items-center gap-2 mb-3">
-                    <Icon name="article" size={20} className="text-primary" />Lesson Content
-                  </h2>
-                  <div className="prose prose-neutral dark:prose-invert max-w-none bg-surface-container-high/50 rounded-xl p-5 text-body-md leading-relaxed whitespace-pre-wrap">
-                    {d.lesson.content}
-                  </div>
-                </section>
-              ) : null}
+              <motion.div variants={cardStackReveal} custom={0}>
+                {d.lesson.contentType === 'video' && d.lesson.videoUrl ? (
+                  <section>
+                    <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-surface-container-high shadow-elevation-2">
+                      <iframe
+                        src={d.lesson.videoUrl}
+                        title={d.lesson.title}
+                        className="absolute inset-0 w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                  </section>
+                ) : d.lesson.contentType === 'article' && d.lesson.content ? (
+                  <section>
+                    <h2 className="text-title-sm font-semibold text-on-surface flex items-center gap-2 mb-3">
+                      <Icon name="article" size={20} className="text-primary" />Lesson Content
+                    </h2>
+                    <div className="prose prose-neutral dark:prose-invert max-w-none bg-surface-container-high/50 rounded-xl p-5 text-body-md leading-relaxed whitespace-pre-wrap">
+                      {d.lesson.content}
+                    </div>
+                  </section>
+                ) : null}
+              </motion.div>
 
               {/* 3. Key Concepts */}
-              <section>
-                <h2 className="text-headline-xs font-semibold text-on-surface flex items-center gap-2 mb-3">
-                  <Icon name="lightbulb" size={20} className="text-primary" />Key Concepts
-                </h2>
-                <div className="bg-primary-container/30 rounded-xl p-4">
-                  <ul className="space-y-2.5">
-                    {concepts.map((c, i) => (
-                      <li key={i} className="flex items-start gap-3 text-body-md">
-                        <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
-                          {i + 1}
-                        </span>
-                        <span>{c}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </section>
+              <motion.div variants={cardStackReveal} custom={0}>
+                <section>
+                  <h2 className="text-title-sm font-semibold text-on-surface flex items-center gap-2 mb-3">
+                    <Icon name="lightbulb" size={20} className="text-primary" />Key Concepts
+                  </h2>
+                  <div className="bg-primary-container/30 rounded-xl p-4">
+                    <ul className="space-y-2.5">
+                      {concepts.map((c, i) => (
+                        <li key={i} className="flex items-start gap-3 text-body-md">
+                          <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-label-xs font-bold text-primary">
+                            {i + 1}
+                          </span>
+                          <span>{c}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </section>
+              </motion.div>
 
               {/* 4. Summary Notes */}
-              <section>
-                <h2 className="text-headline-xs font-semibold text-on-surface flex items-center gap-2 mb-3">
-                  <Icon name="notes" size={20} className="text-primary" />Summary Notes
-                </h2>
-                <div className="bg-surface-variant/40 rounded-xl p-4 text-body-md leading-relaxed text-on-surface-variant">
-                  {summary}
-                </div>
-              </section>
+              <motion.div variants={cardStackReveal} custom={0}>
+                <section>
+                  <h2 className="text-title-sm font-semibold text-on-surface flex items-center gap-2 mb-3">
+                    <Icon name="notes" size={20} className="text-primary" />Summary Notes
+                  </h2>
+                  <div className="bg-surface-variant/40 rounded-xl p-4 text-body-md leading-relaxed text-on-surface-variant">
+                    {summary}
+                  </div>
+                </section>
+              </motion.div>
 
               {/* 5. Interactive Examples */}
               {examples.length > 0 && (
-                <section>
-                  <h2 className="text-headline-xs font-semibold text-on-surface flex items-center gap-2 mb-3">
-                    <Icon name="psychology" size={20} className="text-primary" />Interactive Examples
-                  </h2>
-                  <div className="space-y-3">
-                    {examples.map(([problem, solution], i) => (
-                      <div key={i} className="bg-surface-variant/50 rounded-xl p-4 border border-outline-variant/30">
-                        <div className="flex items-start gap-3">
-                          <span className="flex-shrink-0 w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center text-sm font-bold text-primary">
-                            {i + 1}
-                          </span>
-                          <div className="space-y-2 min-w-0">
-                            <p className="font-medium text-body-md text-on-surface">Problem:</p>
-                            <p className="text-body-md text-on-surface-variant">{problem}</p>
-                            <details className="group">
-                              <summary className="cursor-pointer text-body-sm font-medium text-primary hover:text-primary/80 transition-colors list-none flex items-center gap-1">
-                                <Icon name="expand_more" size={16} className="group-open:rotate-180 transition-transform" />
-                                Show Solution
-                              </summary>
-                              <div className="mt-2 p-3 rounded-lg bg-primary-container/25 text-body-md text-on-surface">
-                                {solution}
-                              </div>
-                            </details>
+                <motion.div variants={cardStackReveal} custom={0}>
+                  <section>
+                    <h2 className="text-title-sm font-semibold text-on-surface flex items-center gap-2 mb-3">
+                      <Icon name="psychology" size={20} className="text-primary" />Interactive Examples
+                    </h2>
+                    <div className="space-y-3">
+                      {examples.map(([problem, solution], i) => (
+                        <div key={i} className="bg-surface-variant/50 rounded-xl p-4 border border-outline-variant/30">
+                          <div className="flex items-start gap-3">
+                            <span className="flex-shrink-0 w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center text-label-sm font-bold text-primary">
+                              {i + 1}
+                            </span>
+                            <div className="space-y-2 min-w-0">
+                              <p className="font-medium text-body-md text-on-surface">Problem:</p>
+                              <p className="text-body-md text-on-surface-variant">{problem}</p>
+                              <details className="group">
+                                <summary className="cursor-pointer text-body-md font-medium text-primary hover:text-primary/80 transition-colors list-none flex items-center gap-1">
+                                  <Icon name="expand_more" size={16} className="group-open:rotate-180 transition-transform" />
+                                  Show Solution
+                                </summary>
+                                <div className="mt-2 p-3 rounded-lg bg-primary-container/25 text-body-md text-on-surface">
+                                  {solution}
+                                </div>
+                              </details>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
+                      ))}
+                    </div>
+                  </section>
+                </motion.div>
               )}
 
               {/* 6. Practice Questions */}
               {questions.length > 0 && (
-                <section>
-                  <h2 className="text-headline-xs font-semibold text-on-surface flex items-center gap-2 mb-3">
-                    <Icon name="quiz" size={20} className="text-primary" />Practice Questions
-                  </h2>
-                  <div className="space-y-3">
-                    {questions.map(([question, answer], i) => (
-                      <div key={i} className="bg-surface-container-high/40 rounded-xl border border-outline-variant/20 overflow-hidden">
-                        <button
-                          onClick={() => toggleAnswer(i)}
-                          className="w-full flex items-center justify-between p-4 text-left hover:bg-surface-container-high/60 transition-colors"
-                        >
-                          <span className="flex items-center gap-3 text-body-md font-medium text-on-surface">
-                            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-secondary-container/50 flex items-center justify-center text-xs font-bold text-on-secondary-container">
-                              {i + 1}
-                            </span>
-                            {question}
-                          </span>
-                          <Icon name={answersVisible[i] ? 'expand_less' : 'expand_more'} size={20} className="text-muted-foreground flex-shrink-0" />
-                        </button>
-                        {answersVisible[i] && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            className="px-4 pb-4"
+                <motion.div variants={cardStackReveal} custom={0}>
+                  <section>
+                    <h2 className="text-title-sm font-semibold text-on-surface flex items-center gap-2 mb-3">
+                      <Icon name="quiz" size={20} className="text-primary" />Practice Questions
+                    </h2>
+                    <div className="space-y-3">
+                      {questions.map(([question, answer], i) => (
+                        <div key={i} className="bg-surface-container-high/40 rounded-xl border border-outline-variant/20 overflow-hidden">
+                          <button
+                            onClick={() => toggleAnswer(i)}
+                            className="w-full flex items-center justify-between p-4 text-left hover:bg-surface-container-high/60 transition-colors"
                           >
-                            <div className="p-3 rounded-lg bg-success-container/30 border border-success/20 text-body-md text-on-success-container flex items-start gap-2">
-                              <Icon name="check_circle" size={18} className="text-success flex-shrink-0 mt-0.5" />
-                              {answer}
-                            </div>
-                          </motion.div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </section>
+                            <span className="flex items-center gap-3 text-body-md font-medium text-on-surface">
+                              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-secondary-container/50 flex items-center justify-center text-label-xs font-bold text-on-secondary-container">
+                                {i + 1}
+                              </span>
+                              {question}
+                            </span>
+                            <Icon name={answersVisible[i] ? 'expand_less' : 'expand_more'} size={20} className="text-muted-foreground flex-shrink-0" />
+                          </button>
+                          {answersVisible[i] && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              className="px-4 pb-4"
+                            >
+                              <div className="p-3 rounded-lg bg-success-container/30 border border-success/20 text-body-md text-on-success-container flex items-start gap-2">
+                                <Icon name="check_circle" size={18} className="text-success flex-shrink-0 mt-0.5" />
+                                {answer}
+                              </div>
+                            </motion.div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </motion.div>
               )}
 
               {/* 7. Mini Quiz */}
               {d.quiz && (
-                <section>
-                  <h2 className="text-headline-xs font-semibold text-on-surface flex items-center gap-2 mb-3">
-                    <Icon name="assignment" size={20} className="text-success" />Mini Quiz
-                  </h2>
-                  <div className="bg-surface-container-high/50 rounded-xl p-5 border border-success/20 space-y-3">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-body-md font-medium text-on-surface">{d.quiz.title}</p>
-                        <p className="text-body-sm text-muted-foreground mt-0.5">{d.quiz.description}</p>
+                <motion.div variants={cardStackReveal} custom={0}>
+                  <section>
+                    <h2 className="text-title-sm font-semibold text-on-surface flex items-center gap-2 mb-3">
+                      <Icon name="assignment" size={20} className="text-success" />Mini Quiz
+                    </h2>
+                    <div className="bg-surface-container-high/50 rounded-xl p-5 border border-success/20 space-y-3">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-body-md font-medium text-on-surface">{d.quiz.title}</p>
+                          <p className="text-body-md text-muted-foreground mt-0.5">{d.quiz.description}</p>
+                        </div>
+                        <div className="flex items-center gap-3 text-body-md text-muted-foreground flex-shrink-0">
+                          <span className="flex items-center gap-1"><Icon name="schedule" size={14} />{d.quiz.timeLimit} min</span>
+                          <span className="flex items-center gap-1"><Icon name="help" size={14} />{Array.isArray(d.quiz.questions) ? d.quiz.questions.length : 0} Qs</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3 text-body-sm text-muted-foreground flex-shrink-0">
-                        <span className="flex items-center gap-1"><Icon name="schedule" size={14} />{d.quiz.timeLimit} min</span>
-                        <span className="flex items-center gap-1"><Icon name="help" size={14} />{Array.isArray(d.quiz.questions) ? d.quiz.questions.length : 0} Qs</span>
-                      </div>
+                      <Button asChild className="w-full gap-2" variant="success">
+                        <Link to={ROUTES.QUIZ_ATTEMPT(d.quiz.id)}>
+                          <Icon name="play_arrow" size={18} />Take Quiz &rarr;
+                        </Link>
+                      </Button>
                     </div>
-                    <Button asChild className="w-full gap-2" variant="success">
-                      <Link to={ROUTES.QUIZ_ATTEMPT(d.quiz.id)}>
-                        <Icon name="play_arrow" size={18} />Take Quiz &rarr;
-                      </Link>
-                    </Button>
-                  </div>
-                </section>
+                  </section>
+                </motion.div>
               )}
 
               {/* 8. Assignment */}
               {d.assignment && (
-                <section>
-                  <h2 className="text-headline-xs font-semibold text-on-surface flex items-center gap-2 mb-3">
-                    <Icon name="description" size={20} className="text-warning" />Assignment
-                  </h2>
-                  <div className="bg-surface-container-high/50 rounded-xl p-5 border border-warning/20 space-y-3">
-                    <div>
-                      <p className="text-body-md font-medium text-on-surface">{d.assignment.title}</p>
-                      <p className="text-body-sm text-muted-foreground mt-0.5">{d.assignment.description}</p>
+                <motion.div variants={cardStackReveal} custom={0}>
+                  <section>
+                    <h2 className="text-title-sm font-semibold text-on-surface flex items-center gap-2 mb-3">
+                      <Icon name="description" size={20} className="text-warning" />Assignment
+                    </h2>
+                    <div className="bg-surface-container-high/50 rounded-xl p-5 border border-warning/20 space-y-3">
+                      <div>
+                        <p className="text-body-md font-medium text-on-surface">{d.assignment.title}</p>
+                        <p className="text-body-md text-muted-foreground mt-0.5">{d.assignment.description}</p>
+                      </div>
+                      <div className="flex items-center gap-4 text-body-md text-muted-foreground">
+                        <span className="flex items-center gap-1"><Icon name="event" size={14} />Due {d.assignment.dueDate ? new Date(d.assignment.dueDate).toLocaleDateString() : 'N/A'}</span>
+                        <span className="flex items-center gap-1"><Icon name="score" size={14} />{d.assignment.points} pts</span>
+                      </div>
+                      <Button asChild className="w-full gap-2" variant={d.assignment.status === 'published' ? 'default' : 'secondary'}>
+                        <Link to={ROUTES.ASSIGNMENT_DETAIL(d.assignment.id)}>
+                          <Icon name="send" size={16} />
+                          {d.assignment.status === 'published' ? 'Submit Assignment' : 'View Assignment'}
+                        </Link>
+                      </Button>
                     </div>
-                    <div className="flex items-center gap-4 text-body-sm text-muted-foreground">
-                      <span className="flex items-center gap-1"><Icon name="event" size={14} />Due {d.assignment.dueDate ? new Date(d.assignment.dueDate).toLocaleDateString() : 'N/A'}</span>
-                      <span className="flex items-center gap-1"><Icon name="score" size={14} />{d.assignment.points} pts</span>
-                    </div>
-                    <Button asChild className="w-full gap-2" variant={d.assignment.status === 'published' ? 'default' : 'secondary'}>
-                      <Link to={ROUTES.ASSIGNMENT_DETAIL(d.assignment.id)}>
-                        <Icon name="send" size={16} />
-                        {d.assignment.status === 'published' ? 'Submit Assignment' : 'View Assignment'}
-                      </Link>
-                    </Button>
-                  </div>
-                </section>
+                  </section>
+                </motion.div>
               )}
-
-              {/* 9. Next Lesson — requires fetching sibling lessons */}
-            </motion.div>
+            </>
           )}
         </DataFetchWrapper>
       </motion.div>

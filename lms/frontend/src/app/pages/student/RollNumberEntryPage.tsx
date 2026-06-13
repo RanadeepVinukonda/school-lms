@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { doc, updateDoc, getDoc, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useAuthStore } from '@/store/authStore';
@@ -9,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ROUTES } from '@/lib/constants';
+import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 
 export default function RollNumberEntryPage() {
   const [rollNumber, setRollNumber] = useState('');
@@ -112,29 +114,36 @@ export default function RollNumberEntryPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-6">
-        <div className="text-center space-y-2">
-          <img src="/genesis_icon.png" alt="Genesis" className="mx-auto h-16 w-auto" />
-          <h1 className="text-2xl font-bold">Welcome, {user?.displayName}</h1>
-          <p className="text-muted-foreground">Enter your roll number to get started</p>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="roll">Roll Number</Label>
-          <Input
-            id="roll"
-            placeholder="e.g. 501"
-            value={rollNumber}
-            onChange={(e) => setRollNumber(e.target.value)}
-            disabled={loading}
-            autoFocus
-          />
-          {error && <p className="text-sm text-destructive">{error}</p>}
-        </div>
-        <Button type="submit" className="w-full" size="lg" disabled={loading} loading={loading}>
-          Continue
-        </Button>
-      </form>
-    </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="flex min-h-screen items-center justify-center bg-background px-6"
+    >
+      <motion.div variants={cardStackReveal} custom={0} className="w-full max-w-sm">
+        <form onSubmit={handleSubmit} className="w-full space-y-6">
+          <div className="text-center space-y-2">
+            <img src="/genesis_icon.png" alt="Genesis" className="mx-auto h-16 w-auto" />
+            <h1 className="text-headline-sm font-bold">Welcome, {user?.displayName}</h1>
+            <p className="text-body-md text-muted-foreground">Enter your roll number to get started</p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="roll" className="text-body-md">Roll Number</Label>
+            <Input
+              id="roll"
+              placeholder="e.g. 501"
+              value={rollNumber}
+              onChange={(e) => setRollNumber(e.target.value)}
+              disabled={loading}
+              autoFocus
+            />
+            {error && <p className="text-body-md text-destructive">{error}</p>}
+          </div>
+          <Button type="submit" className="w-full" size="lg" disabled={loading} loading={loading}>
+            Continue
+          </Button>
+        </form>
+      </motion.div>
+    </motion.div>
   );
 }

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { useQuery } from '@tanstack/react-query';
-import { pageTransition, listContainer, listItem } from '@/lib/motion';
+import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { getAllSubjects, getEnrollmentsByStudent } from '@/services/dataService';
 
@@ -37,18 +37,19 @@ export default function SubjectsPage() {
     <>
       <SEOHead title="My Subjects" description="View your enrolled subjects" />
       <motion.div
-        variants={pageTransition}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        className="p-4 max-w-5xl mx-auto space-y-4 pb-20"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="p-6 max-w-6xl mx-auto pb-32 space-y-16"
       >
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-headline-sm font-bold">My Subjects</h1>
-            <p className="text-body-md text-muted-foreground">Subjects you are currently enrolled in</p>
+        <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-headline-sm md:text-headline-md font-bold tracking-tight">My Subjects</h1>
+              <p className="text-body-md text-muted-foreground">Subjects you are currently enrolled in</p>
+            </div>
           </div>
-        </div>
+        </motion.div>
 
         <DataFetchWrapper
           data={data}
@@ -70,15 +71,16 @@ export default function SubjectsPage() {
         >
           {(subjects) => (
             <motion.div
-              variants={listContainer}
+              variants={staggerContainer}
               initial="hidden"
-              animate="show"
+              whileInView="show"
+              viewport={{ once: true, margin: '-60px' }}
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4"
             >
               {subjects.map((subject) => (
-                <motion.div key={subject.id} variants={listItem}>
+                <motion.div key={subject.id} variants={cardStackReveal} custom={0}>
                   <Link to={`/student/subjects/${subject.id}`} className="block h-full">
-                    <Card variant="elevated" className="overflow-hidden transition-all duration-300 h-full group">
+                    <Card className="overflow-hidden transition-all duration-300 h-full border-border/60 group">
                       <div
                         className="h-32 flex items-end p-5 relative"
                         style={{ backgroundColor: `${subject.color}20` }}
@@ -95,14 +97,14 @@ export default function SubjectsPage() {
                             <Icon name={subject.icon ?? 'menu_book'} size={24} className="text-white" />
                           </div>
                           <div>
-                            <h3 className="text-lg font-bold" style={{ color: subject.color }}>
+                            <h3 className="text-title-md font-bold" style={{ color: subject.color }}>
                               {subject.name}
                             </h3>
                             <p className="text-body-sm text-muted-foreground">{subject.code}</p>
                           </div>
                         </div>
                       </div>
-                      <CardContent className="p-4 space-y-3">
+                      <CardContent className="p-5 space-y-3">
                         <div className="flex items-center justify-between">
                           <Badge variant="secondary" className="text-[10px]">
                             {subject.category}

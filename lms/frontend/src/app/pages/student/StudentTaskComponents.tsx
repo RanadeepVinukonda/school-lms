@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
 import { formatDate, cn } from '@/lib/utils';
-import { listContainer, listItem } from '@/lib/motion';
+import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { formatTime } from '@/lib/format';
 import type { AssignmentItem, ExamItem, QuizItem } from '@/services/dataService';
 import type { Subject } from '@/types';
@@ -225,22 +225,21 @@ function TaskCard({ item }: { item: TaskItem }) {
   return (
     <Link to={item.linkTo}>
       <Card
-        variant="elevated"
-        className={cn('transition-all duration-300 group', isUrgent && style.containerClass)}
+        className={cn('border-border/60 transition-all duration-300 group', isUrgent && style.containerClass)}
       >
-        <CardContent className="p-4">
+        <CardContent className="p-5">
           <div className="flex items-start gap-4">
             <div className={cn('h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0', iconStyle.bg)}>
               <Icon name={iconStyle.name} size={24} className={iconStyle.color} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2">
-                <p className="font-semibold truncate">{item.title}</p>
+                <p className="font-semibold text-title-sm truncate">{item.title}</p>
                 <UrgencyBadge urgency={item.urgency} date={item.date} />
               </div>
-              <p className="text-body-sm text-muted-foreground mt-0.5">{item.subjectName}</p>
-              <p className="text-body-sm text-muted-foreground mt-1 line-clamp-1">{item.description}</p>
-              <div className="flex items-center gap-4 mt-2 text-body-sm text-muted-foreground flex-wrap">
+              <p className="text-body-md text-muted-foreground mt-0.5">{item.subjectName}</p>
+              <p className="text-body-md text-muted-foreground mt-1 line-clamp-1">{item.description}</p>
+              <div className="flex items-center gap-4 mt-2 text-body-md text-muted-foreground flex-wrap">
                 {item.type === 'assignment' && (
                   <>
                     {item.points !== undefined && (
@@ -319,20 +318,22 @@ export function TaskSection({ level, tasks }: { level: UrgencyLevel; tasks: Task
   const isNonUrgent = level === 'later';
 
   return (
-    <motion.section variants={listItem} initial="hidden" animate="show">
-      <h2 className={cn('text-title-sm font-semibold mb-3 flex items-center gap-2', isNonUrgent && 'text-muted-foreground')}>
-        <Icon name={section.icon} size={20} className={isNonUrgent ? 'text-muted-foreground' : 'text-primary'} />
-        {section.title}
-        <span className="text-body-sm text-muted-foreground font-normal ml-1">({tasks.length})</span>
-      </h2>
-      <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-3">
-        {tasks.map((item) => (
-          <motion.div key={`${item.type}-${item.id}`} variants={listItem}>
-            <TaskCard item={item} />
-          </motion.div>
-        ))}
-      </motion.div>
-    </motion.section>
+    <motion.div variants={cardStackReveal} custom={0}>
+      <section>
+        <h2 className={cn('text-title-sm font-semibold mb-3 flex items-center gap-2', isNonUrgent && 'text-muted-foreground')}>
+          <Icon name={section.icon} size={20} className={isNonUrgent ? 'text-muted-foreground' : 'text-primary'} />
+          {section.title}
+          <span className="text-body-md text-muted-foreground font-normal ml-1">({tasks.length})</span>
+        </h2>
+        <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3">
+          {tasks.map((item) => (
+            <motion.div key={`${item.type}-${item.id}`} variants={scrollReveal}>
+              <TaskCard item={item} />
+            </motion.div>
+          ))}
+        </motion.div>
+      </section>
+    </motion.div>
   );
 }
 
@@ -348,7 +349,7 @@ export function EmptyFilterState({ filter }: { filter: FilterTab }) {
   const m = messages[filter];
 
   return (
-    <Card variant="elevated">
+    <Card className="border-border/60">
       <CardContent className="flex flex-col items-center gap-3 py-10">
         <Icon name={m.icon} size={40} className="text-muted-foreground/50" />
         <p className="text-body-md text-muted-foreground">{m.message}</p>

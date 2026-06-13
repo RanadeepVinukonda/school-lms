@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent } from '@/components/ui/card';
-import { pageTransition, listContainer, listItem } from '@/lib/motion';
+import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
 
@@ -74,6 +74,19 @@ const academicPrograms = [
   },
 ];
 
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-secondary/5 p-4 transition-colors duration-200 hover:bg-secondary/10">
+      <p className="text-label-xs uppercase tracking-wider text-muted-foreground mb-1">
+        {label}
+      </p>
+      <p className="text-body-md font-medium text-foreground">
+        {value}
+      </p>
+    </div>
+  );
+}
+
 export default function AboutSchoolPage() {
   return (
     <>
@@ -90,13 +103,17 @@ export default function AboutSchoolPage() {
           <div className="absolute top-1/2 right-1/4 h-48 w-48 rounded-full bg-tertiary/5 blur-3xl" />
         </div>
 
-        <div className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:py-20 lg:py-24">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="relative z-10 p-6 max-w-6xl mx-auto pb-32"
+        >
           {/* Hero Section */}
-          <motion.section
-            className="mb-20 text-center"
-            initial="initial"
-            animate="animate"
-            variants={pageTransition}
+          <motion.div
+            variants={cardStackReveal}
+            custom={0}
+            className="text-center mb-16"
           >
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -112,7 +129,7 @@ export default function AboutSchoolPage() {
             </motion.div>
 
             <motion.h1
-              className="mb-4 text-4xl font-extrabold tracking-tight text-primary sm:text-5xl md:text-6xl"
+              className="text-headline-md md:text-headline-lg font-bold tracking-tight text-primary mb-4"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
@@ -121,7 +138,7 @@ export default function AboutSchoolPage() {
             </motion.h1>
 
             <motion.p
-              className="mb-6 text-base font-medium tracking-widest text-tertiary uppercase sm:text-lg"
+              className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
@@ -130,7 +147,7 @@ export default function AboutSchoolPage() {
             </motion.p>
 
             <motion.p
-              className="mx-auto max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg"
+              className="mx-auto max-w-3xl text-body-lg text-muted-foreground"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.25 }}
@@ -140,76 +157,90 @@ export default function AboutSchoolPage() {
               STEM education, creating an environment where students don&apos;t just learn — they thrive,
               lead, and achieve their fullest potential.
             </motion.p>
-          </motion.section>
+          </motion.div>
 
           {/* Mission & Vision Section */}
-          <motion.section
-            className="mb-20 grid gap-6 md:grid-cols-2"
-            variants={listContainer}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, amount: 0.2 }}
+          <motion.div
+            variants={cardStackReveal}
+            custom={1}
+            className="mb-16"
           >
-            <motion.div variants={listItem}>
-              <Card className="h-full rounded-xl border border-primary/10 p-8">
-                <CardContent className="p-0">
-                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                    <Icon name="visibility" size={24} className="text-primary" />
-                  </div>
-                  <h2 className="mb-3 text-2xl font-bold text-primary">Our Mission</h2>
-                  <p className="text-base leading-relaxed text-muted-foreground">
-                    To nurture lifelong learners who excel academically, lead with integrity,
-                    and achieve their fullest potential in a globally connected world.
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true, amount: 0.2 }}
+              className="grid gap-6 md:grid-cols-2"
+            >
+              <motion.div variants={cardStackReveal} custom={0}>
+                <Card className="h-full border-border/60 p-8">
+                  <CardContent className="p-0">
+                    <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+                      <Icon name="visibility" size={24} className="text-primary" />
+                    </div>
+                    <h2 className="text-title-md font-bold text-primary mb-3">Our Mission</h2>
+                    <p className="text-body-md text-muted-foreground leading-relaxed">
+                      To nurture lifelong learners who excel academically, lead with integrity,
+                      and achieve their fullest potential in a globally connected world.
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
 
-            <motion.div variants={listItem}>
-              <Card className="h-full rounded-xl border border-tertiary/10 p-8">
-                <CardContent className="p-0">
-                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-tertiary/10">
-                    <Icon name="explore" size={24} className="text-tertiary" />
-                  </div>
-                  <h2 className="mb-3 text-2xl font-bold text-tertiary">Our Vision</h2>
-                  <p className="text-base leading-relaxed text-muted-foreground">
-                    To be a world-class institution that sets the standard for holistic education,
-                    blending Montessori principles with STEM innovation.
-                  </p>
-                </CardContent>
-              </Card>
+              <motion.div variants={cardStackReveal} custom={1}>
+                <Card className="h-full border-border/60 p-8">
+                  <CardContent className="p-0">
+                    <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-tertiary/10">
+                      <Icon name="explore" size={24} className="text-tertiary" />
+                    </div>
+                    <h2 className="text-title-md font-bold text-tertiary mb-3">Our Vision</h2>
+                    <p className="text-body-md text-muted-foreground leading-relaxed">
+                      To be a world-class institution that sets the standard for holistic education,
+                      blending Montessori principles with STEM innovation.
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
             </motion.div>
-          </motion.section>
+          </motion.div>
 
           {/* Core Values Section */}
-          <motion.section
-            className="mb-20"
-            variants={listContainer}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, amount: 0.1 }}
+          <motion.div
+            variants={cardStackReveal}
+            custom={2}
+            className="mb-16"
           >
             <motion.h2
-              className="mb-12 text-center text-3xl font-bold text-primary sm:text-4xl"
-              variants={listItem}
+              className="text-headline-sm md:text-headline-md font-bold text-primary text-center mb-12"
+              variants={scrollReveal}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true }}
             >
               Our Core Values
             </motion.h2>
 
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-5">
-              {coreValues.map((value) => (
-                <motion.div key={value.title} variants={listItem}>
+              {coreValues.map((value, i) => (
+                <motion.div
+                  key={value.title}
+                  variants={cardStackReveal}
+                  custom={i}
+                  initial="hidden"
+                  whileInView="show"
+                  viewport={{ once: true, margin: '-40px' }}
+                >
                   <Card
                     className={cn(
-                      'group h-full rounded-xl border border-border/50 p-6 text-center transition-all duration-300',
+                      'group h-full border-border/60 p-6 text-center transition-all duration-300',
                     )}
                   >
                     <CardContent className="p-0">
-                      <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 transition-colors duration-300 group-hover:bg-primary/20">
-                        <Icon name={value.icon} size={28} className="text-primary" />
+                      <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 transition-colors duration-300 group-hover:bg-primary/20 mx-auto">
+                        <Icon name={value.icon} size={24} className="text-primary" />
                       </div>
-                      <h3 className="mb-2 text-lg font-bold">{value.title}</h3>
-                      <p className="text-sm leading-relaxed text-muted-foreground">
+                      <h3 className="text-title-sm font-bold mb-2">{value.title}</h3>
+                      <p className="text-body-md text-muted-foreground leading-relaxed">
                         {value.description}
                       </p>
                     </CardContent>
@@ -217,71 +248,76 @@ export default function AboutSchoolPage() {
                 </motion.div>
               ))}
             </div>
-          </motion.section>
+          </motion.div>
 
           {/* School Information Section */}
-          <motion.section
-            className="mb-20"
-            variants={listContainer}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, amount: 0.2 }}
+          <motion.div
+            variants={cardStackReveal}
+            custom={3}
+            className="mb-16"
           >
             <motion.h2
-              className="mb-12 text-center text-3xl font-bold text-primary sm:text-4xl"
-              variants={listItem}
+              className="text-headline-sm md:text-headline-md font-bold text-primary text-center mb-12"
+              variants={scrollReveal}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true }}
             >
               School Information
             </motion.h2>
 
-            <motion.div variants={listItem}>
-              <Card className="mx-auto max-w-4xl rounded-xl border border-border/50 p-8 sm:p-10">
+            <motion.div
+              variants={cardStackReveal}
+              custom={0}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true }}
+            >
+              <Card className="mx-auto max-w-4xl border-border/60 p-8 sm:p-10">
                 <CardContent className="p-0">
                   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
                     {schoolFacts.map((fact) => (
-                      <div
-                        key={fact.label}
-                        className="rounded-xl bg-secondary/5 p-4 transition-colors duration-200 hover:bg-secondary/10"
-                      >
-                        <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                          {fact.label}
-                        </p>
-                        <p className="text-sm font-medium text-foreground sm:text-base">
-                          {fact.value}
-                        </p>
-                      </div>
+                      <StatCard key={fact.label} label={fact.label} value={fact.value} />
                     ))}
                   </div>
                 </CardContent>
               </Card>
             </motion.div>
-          </motion.section>
+          </motion.div>
 
           {/* Academic Programs Section */}
-          <motion.section
-            className="mb-20"
-            variants={listContainer}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, amount: 0.1 }}
+          <motion.div
+            variants={cardStackReveal}
+            custom={4}
+            className="mb-16"
           >
             <motion.h2
-              className="mb-12 text-center text-3xl font-bold text-primary sm:text-4xl"
-              variants={listItem}
+              className="text-headline-sm md:text-headline-md font-bold text-primary text-center mb-12"
+              variants={scrollReveal}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true }}
             >
               Academic Programs
             </motion.h2>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              {academicPrograms.map((program) => (
-                <motion.div key={program.title} variants={listItem}>
-                  <Card className="group h-full rounded-xl border border-border/50 p-6 transition-all duration-300">
+              {academicPrograms.map((program, i) => (
+                <motion.div
+                  key={program.title}
+                  variants={cardStackReveal}
+                  custom={i}
+                  initial="hidden"
+                  whileInView="show"
+                  viewport={{ once: true, margin: '-40px' }}
+                >
+                  <Card className="group h-full border-border/60 p-6 transition-all duration-300">
                     <CardContent className="p-0">
-                      <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 transition-colors duration-300 group-hover:bg-primary/20">
-                        <Icon name={program.icon} size={28} className="text-primary" />
+                      <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 transition-colors duration-300 group-hover:bg-primary/20">
+                        <Icon name={program.icon} size={24} className="text-primary" />
                       </div>
-                      <h3 className="mb-3 text-lg font-bold">{program.title}</h3>
-                      <p className="text-sm leading-relaxed text-muted-foreground">
+                      <h3 className="text-title-sm font-bold mb-3">{program.title}</h3>
+                      <p className="text-body-md text-muted-foreground leading-relaxed">
                         {program.description}
                       </p>
                     </CardContent>
@@ -289,26 +325,25 @@ export default function AboutSchoolPage() {
                 </motion.div>
               ))}
             </div>
-          </motion.section>
+          </motion.div>
 
           {/* School Motto Section */}
-          <motion.section
-            className="text-center"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, ease: [0.05, 0, 0.133333, 0.06] }}
+          <motion.div
+            variants={cardStackReveal}
+            custom={5}
           >
-            <div className="mx-auto mb-6 h-px max-w-xs bg-gradient-to-r from-transparent via-tertiary/40 to-transparent" />
-            <p className="mb-2 text-4xl font-extrabold tracking-widest text-tertiary sm:text-5xl">
-              Learn &bull; Lead &bull; Achieve
-            </p>
-            <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
-              — School Motto —
-            </p>
-            <div className="mx-auto mt-6 h-px max-w-xs bg-gradient-to-r from-transparent via-tertiary/40 to-transparent" />
-          </motion.section>
-        </div>
+            <div className="text-center">
+              <div className="mx-auto mb-6 h-px max-w-xs bg-gradient-to-r from-transparent via-tertiary/40 to-transparent" />
+              <p className="text-display-xs md:text-display-sm font-extrabold tracking-widest text-tertiary">
+                Learn &bull; Lead &bull; Achieve
+              </p>
+              <p className="text-label-sm font-medium uppercase tracking-widest text-muted-foreground">
+                School Motto
+              </p>
+              <div className="mx-auto mt-6 h-px max-w-xs bg-gradient-to-r from-transparent via-tertiary/40 to-transparent" />
+            </div>
+          </motion.div>
+        </motion.div>
       </div>
     </>
   );

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { collection, getDocs, doc, getDoc, addDoc, query, where } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useAuthStore } from '@/store/authStore';
@@ -10,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import type { Class, UserRole } from '@/types';
 
@@ -228,65 +230,76 @@ export default function ClassSelectionPage() {
     );
 
   return (
-    <div className="flex min-h-screen items-start justify-center bg-background px-4 py-8">
-      <div className="w-full max-w-2xl space-y-6">
-        <div className="text-center space-y-2">
-          <img src="/genesis_icon.png" alt="Genesis" className="mx-auto h-16 w-auto" />
-          <h1 className="text-2xl font-bold">Welcome, {user?.displayName}</h1>
-          <p className="text-muted-foreground">Select the classes you teach and your subjects</p>
-        </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="p-6 max-w-2xl mx-auto pb-32"
+    >
+      <div className="space-y-16">
+        <motion.div variants={cardStackReveal} custom={0}>
+          <div className="text-center space-y-2">
+            <img src="/genesis_icon.png" alt="Genesis" className="mx-auto h-16 w-auto" />
+            <h1 className="text-2xl font-bold">Welcome, {user?.displayName}</h1>
+            <p className="text-muted-foreground">Select the classes you teach and your subjects</p>
+          </div>
+        </motion.div>
 
         {error && (
-          <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive text-center">
-            {error}
-          </div>
+          <motion.div variants={cardStackReveal} custom={0}>
+            <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive text-center">
+              {error}
+            </div>
+          </motion.div>
         )}
 
         {/* Step 1: Class selection */}
-        <div>
-          <h2 className="text-lg font-semibold mb-3">Choose your classes</h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {activeClasses.map((cls) => {
-              const checked = selectedIds.has(cls.id);
-              return (
-                <button
-                  key={cls.id}
-                  type="button"
-                  onClick={() => toggle(cls.id)}
-                  disabled={saving}
-                  className={`rounded-xl border p-4 text-left transition-colors disabled:opacity-50 ${
-                    checked
-                      ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                      : 'border-border bg-card hover:border-primary hover:bg-accent'
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <Checkbox checked={checked} onCheckedChange={() => toggle(cls.id)} />
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-lg font-semibold">{cls.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Grade {cls.grade}{cls.code ? ` · ${cls.code}` : ''}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {cls.studentCount ?? 0} students
-                      </p>
+        <motion.div variants={cardStackReveal} custom={0}>
+          <div>
+            <h2 className="text-lg font-semibold mb-3">Choose your classes</h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {activeClasses.map((cls) => {
+                const checked = selectedIds.has(cls.id);
+                return (
+                  <button
+                    key={cls.id}
+                    type="button"
+                    onClick={() => toggle(cls.id)}
+                    disabled={saving}
+                    className={`rounded-xl border p-4 text-left transition-colors disabled:opacity-50 ${
+                      checked
+                        ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                        : 'border-border bg-card hover:border-primary hover:bg-accent'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Checkbox checked={checked} onCheckedChange={() => toggle(cls.id)} />
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-lg font-semibold">{cls.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Grade {cls.grade}{cls.code ? ` · ${cls.code}` : ''}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {cls.studentCount ?? 0} students
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+                  </button>
+                );
+              })}
+            </div>
 
-          {activeClasses.length === 0 && (
-            <p className="text-center text-muted-foreground">
-              No classes available yet. Ask an admin to create one.
-            </p>
-          )}
-        </div>
+            {activeClasses.length === 0 && (
+              <p className="text-center text-muted-foreground">
+                No classes available yet. Ask an admin to create one.
+              </p>
+            )}
+          </div>
+        </motion.div>
 
         {/* Step 2: Subject selection per selected class */}
         {selectedIds.size > 0 && (
-          <div className="space-y-6">
+          <motion.div variants={cardStackReveal} custom={0} className="space-y-6">
             <hr className="border-border" />
             <div>
               <h2 className="text-lg font-semibold">Choose your subject per class</h2>
@@ -362,25 +375,27 @@ export default function ClassSelectionPage() {
                 </div>
               );
             })}
-          </div>
+          </motion.div>
         )}
 
         {/* Submit */}
-        <div className="flex justify-center pt-2">
-          <Button
-            size="lg"
-            onClick={handleSubmit}
-            disabled={saving || selectedIds.size === 0 || missingSubjectSelection}
-            loading={saving}
-          >
-            {selectedIds.size === 0
-              ? 'Select at least one class'
-              : missingSubjectSelection
-                ? 'Choose a subject for each class'
-                : `Continue with ${selectedIds.size} class${selectedIds.size !== 1 ? 'es' : ''} and ${totalSubjectsSelected} subject${totalSubjectsSelected !== 1 ? 's' : ''}`}
-          </Button>
-        </div>
+        <motion.div variants={cardStackReveal} custom={0}>
+          <div className="flex justify-center pt-2">
+            <Button
+              size="lg"
+              onClick={handleSubmit}
+              disabled={saving || selectedIds.size === 0 || missingSubjectSelection}
+              loading={saving}
+            >
+              {selectedIds.size === 0
+                ? 'Select at least one class'
+                : missingSubjectSelection
+                  ? 'Choose a subject for each class'
+                  : `Continue with ${selectedIds.size} class${selectedIds.size !== 1 ? 'es' : ''} and ${totalSubjectsSelected} subject${totalSubjectsSelected !== 1 ? 's' : ''}`}
+            </Button>
+          </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }

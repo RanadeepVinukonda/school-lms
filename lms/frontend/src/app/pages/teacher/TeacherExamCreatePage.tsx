@@ -14,7 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/skeleton';
-import { pageTransition, listItem } from '@/lib/motion';
+import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { formatDate } from '@/lib/format';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
@@ -74,12 +74,12 @@ function ExamCard({
   isTogglingGrades: boolean;
 }) {
   return (
-    <motion.div variants={listItem}>
-      <Card className="hover:shadow-md transition-all duration-200">
-        <CardContent className="p-4">
+    <motion.div variants={cardStackReveal} custom={0}>
+      <Card className="border-border/60 hover:shadow-md transition-all duration-200">
+        <CardContent className="p-5">
           <div className="flex items-start gap-4">
             <div
-              className={`h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+              className={`h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
                 exam.isReleased
                   ? 'bg-success-container'
                   : 'bg-secondary-container'
@@ -105,10 +105,10 @@ function ExamCard({
                   {exam.isReleased ? 'Released' : 'Draft'}
                 </Badge>
               </div>
-              <p className="text-xs text-muted-foreground line-clamp-1">
+              <p className="text-label-xs text-muted-foreground line-clamp-1">
                 {exam.description}
               </p>
-              <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
+              <div className="flex items-center gap-3 mt-1.5 text-label-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Icon name="schedule" size={14} />
                   {exam.timeLimitMinutes} min
@@ -142,7 +142,7 @@ function ExamCard({
               )}
               {exam.isReleased && (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Grades</span>
+                  <span className="text-label-xs text-muted-foreground">Grades</span>
                   <Switch
                     checked={exam.gradesReleased}
                     onCheckedChange={onToggleGrades}
@@ -305,7 +305,7 @@ export default function TeacherExamCreatePage() {
     return (
       <>
         <SEOHead title="Create Exam" description="Create chapter-level exams for your class" />
-        <div className="p-4 max-w-4xl mx-auto space-y-6 pb-20">
+        <div className="p-6 max-w-4xl mx-auto pb-32 space-y-16">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-4 w-72 mt-2" />
           <Skeleton className="h-40 w-full mt-6" />
@@ -319,14 +319,14 @@ export default function TeacherExamCreatePage() {
     return (
       <>
         <SEOHead title="Create Exam" description="Create chapter-level exams for your class" />
-        <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-4xl mx-auto space-y-6 pb-20">
-          <motion.div variants={listItem}>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-4xl mx-auto pb-32 space-y-16">
+          <motion.div variants={cardStackReveal} custom={0}>
             <h1 className="text-headline-sm">Create Exam</h1>
-            <p className="text-sm text-muted-foreground">Something went wrong loading your assignments</p>
+            <p className="text-body-md text-muted-foreground">Something went wrong loading your assignments</p>
           </motion.div>
-          <motion.div variants={listItem}>
-            <Card>
-              <CardContent className="p-12 text-center space-y-4">
+          <motion.div variants={cardStackReveal} custom={0}>
+            <Card className="border-border/60">
+              <CardContent className="p-5 text-center space-y-4">
                 <Icon name="error" size={48} className="text-destructive mx-auto" />
                 <p className="text-muted-foreground">Failed to load your class assignments. Please try again.</p>
                 <Button variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: ['teacher-assignments', user?.id] })}>
@@ -345,14 +345,14 @@ export default function TeacherExamCreatePage() {
     return (
       <>
         <SEOHead title="Create Exam" description="Create chapter-level exams for your class" />
-        <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-4xl mx-auto space-y-6 pb-20">
-          <motion.div variants={listItem}>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-4xl mx-auto pb-32 space-y-16">
+          <motion.div variants={cardStackReveal} custom={0}>
             <h1 className="text-headline-sm">Create Exam</h1>
-            <p className="text-sm text-muted-foreground">Create chapter-level exams for your students</p>
+            <p className="text-body-md text-muted-foreground">Create chapter-level exams for your students</p>
           </motion.div>
-          <motion.div variants={listItem}>
-            <Card>
-              <CardContent className="p-12 text-center space-y-4">
+          <motion.div variants={cardStackReveal} custom={0}>
+            <Card className="border-border/60">
+              <CardContent className="p-5 text-center space-y-4">
                 <Icon name="school" size={48} className="text-muted-foreground mx-auto" />
                 <p className="text-muted-foreground">
                   You haven't been assigned to any class yet. Contact your administrator to get started.
@@ -368,23 +368,28 @@ export default function TeacherExamCreatePage() {
   return (
     <>
       <SEOHead title="Create Exam" description="Create chapter-level exams for your class" />
-      <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-4xl mx-auto space-y-6 pb-20">
-        <motion.div variants={listItem}>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="p-6 max-w-4xl mx-auto pb-32 space-y-16"
+      >
+        <motion.div variants={cardStackReveal} custom={0}>
           <h1 className="text-headline-sm">Create Exam</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body-md text-muted-foreground">
             Create chapter-level exams from all concepts in a chapter
           </p>
         </motion.div>
 
-        <motion.div variants={listItem}>
-          <Card>
+        <motion.div variants={cardStackReveal} custom={0}>
+          <Card className="border-border/60">
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
+              <CardTitle className="text-title-sm flex items-center gap-2">
                 <Icon name="class" size={18} className="text-primary" />
                 Teacher Assignment
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-5 space-y-4">
               <div>
                 <Label htmlFor="class-select">Class</Label>
                 <select
@@ -437,7 +442,7 @@ export default function TeacherExamCreatePage() {
                   ))}
                 </select>
                 {textbooks.length === 0 && selectedAssignment && !textbooksLoading && (
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-label-xs text-muted-foreground mt-1">
                     No textbooks available for this subject
                   </p>
                 )}
@@ -462,7 +467,7 @@ export default function TeacherExamCreatePage() {
                   ))}
                 </select>
                 {chapters.length === 0 && selectedTextbookId && !chaptersLoading && (
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-label-xs text-muted-foreground mt-1">
                     No chapters found in this textbook
                   </p>
                 )}
@@ -471,15 +476,15 @@ export default function TeacherExamCreatePage() {
           </Card>
         </motion.div>
 
-        <motion.div variants={listItem}>
-          <Card>
+        <motion.div variants={cardStackReveal} custom={0}>
+          <Card className="border-border/60">
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
+              <CardTitle className="text-title-sm flex items-center gap-2">
                 <Icon name="edit_note" size={18} className="text-primary" />
                 Exam Details
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-5">
+            <CardContent className="p-5 space-y-5">
               <div className="space-y-1.5">
                 <Label htmlFor="exam-title">Title</Label>
                 <Input
@@ -572,7 +577,7 @@ export default function TeacherExamCreatePage() {
                   ))}
                 </div>
                 {selectedModels.length === 0 && (
-                  <p className="text-xs text-error">Select at least one question model</p>
+                  <p className="text-label-xs text-error">Select at least one question model</p>
                 )}
               </div>
 
@@ -591,15 +596,15 @@ export default function TeacherExamCreatePage() {
         </motion.div>
 
         {selectedClassId && (
-          <motion.div variants={listItem}>
-            <Card>
+          <motion.div variants={cardStackReveal} custom={0}>
+            <Card className="border-border/60">
               <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
+                <CardTitle className="text-title-sm flex items-center gap-2">
                   <Icon name="fact_check" size={18} className="text-primary" />
                   Existing Exams
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-5">
                 <DataFetchWrapper
                   data={examsList}
                   isLoading={examsLoading}

@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Icon } from '@/components/ui/Icon';
-import { pageTransition, listItem } from '@/lib/motion';
+import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import {
   getExam,
   getSubject,
@@ -213,7 +213,7 @@ export default function TeacherExamCorrectionPage() {
                 <span className={`flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-bold shrink-0 ${active ? 'bg-primary text-primary-foreground' : graded ? 'bg-success-container text-on-success-container' : 'bg-muted text-muted-foreground'}`}>
                   {graded ? <Icon name="check" size={14} /> : i + 1}
                 </span>
-                <span className="flex-1 truncate text-xs">
+                <span className="flex-1 truncate text-label-xs">
                   <Icon name={q.type === 'multiple_choice' ? 'radio_button_checked' : 'text_fields'} size={13} className="inline mr-1 -mt-0.5 text-muted-foreground/60" />
                   Q{i + 1}
                 </span>
@@ -241,11 +241,11 @@ export default function TeacherExamCorrectionPage() {
                 {question.type === 'multiple_choice' ? 'Multiple Choice' : 'Essay'} &middot; {question.points} pts
               </Badge>
             </div>
-            <h3 className="text-lg font-semibold leading-relaxed">{question.question}</h3>
+            <h3 className="text-title-md font-semibold leading-relaxed">{question.question}</h3>
           </div>
           <Separator />
           <div>
-            <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Student Answer</p>
+            <p className="text-label-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Student Answer</p>
             {question.type === 'multiple_choice' ? (
               <div className="space-y-2">
                 {question.options?.map((opt) => {
@@ -266,13 +266,13 @@ export default function TeacherExamCorrectionPage() {
               </div>
             ) : (
               <div className="rounded-lg border bg-card p-4 max-h-80 overflow-y-auto">
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">{answer}</p>
+                <p className="text-body-md leading-relaxed whitespace-pre-wrap">{answer}</p>
               </div>
             )}
           </div>
           {question.type === 'multiple_choice' && (
             <div className="rounded-lg bg-success/5 border border-success/20 p-3">
-              <p className="text-xs text-on-success-container"><span className="font-semibold">Correct answer: </span>{question.correctAnswer}</p>
+              <p className="text-label-xs text-on-success-container"><span className="font-semibold">Correct answer: </span>{question.correctAnswer}</p>
             </div>
           )}
         </div>
@@ -284,9 +284,9 @@ export default function TeacherExamCorrectionPage() {
     if (!question) return null;
     return (
       <div className="lg:w-80 border-l border-border p-4 lg:p-6 space-y-5 shrink-0">
-        <h4 className="text-sm font-semibold">Marking Tools</h4>
+        <h4 className="text-title-sm font-semibold">Marking Tools</h4>
         <div className="space-y-1.5">
-          <label className="text-xs text-muted-foreground font-medium">Score (max {question.points})</label>
+          <label className="text-label-xs text-muted-foreground font-medium">Score (max {question.points})</label>
           <Input type="number" min={0} max={question.points}
             value={marks[question.id] ?? ''}
             placeholder={`0 \u2013 ${question.points}`}
@@ -300,7 +300,7 @@ export default function TeacherExamCorrectionPage() {
             className="h-10 tabular-nums" />
         </div>
         <div className="space-y-1.5">
-          <label className="text-xs text-muted-foreground font-medium">Feedback</label>
+          <label className="text-label-xs text-muted-foreground font-medium">Feedback</label>
           <Textarea value={feedback[question.id] ?? ''}
             onChange={(e) => { setFeedback((p) => ({ ...p, [question.id]: e.target.value })); markUnsaved(); }}
             placeholder="Write feedback for this question..." className="min-h-[120px] resize-y" />
@@ -324,7 +324,7 @@ export default function TeacherExamCorrectionPage() {
         {/* Proctoring Violations Card */}
         <div className="border-t border-border pt-4 mt-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h5 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Proctoring Log</h5>
+            <h5 className="text-label-xs font-bold uppercase tracking-wider text-muted-foreground">Proctoring Log</h5>
             {proctoringLogs.length > 0 && (
               <Badge variant="destructive" className="text-[10px] gap-1 px-1.5 py-0.5">
                 <Icon name="gavel" size={11} />
@@ -334,11 +334,11 @@ export default function TeacherExamCorrectionPage() {
           </div>
           
           {loadingLogs ? (
-            <p className="text-xs text-muted-foreground animate-pulse">Loading proctoring logs...</p>
+            <p className="text-label-xs text-muted-foreground animate-pulse">Loading proctoring logs...</p>
           ) : proctoringLogs.length === 0 ? (
             <div className="rounded-lg bg-success-container/10 border border-success/30 p-2.5 flex items-center gap-2 text-success">
               <Icon name="check_circle" size={14} />
-              <span className="text-xs font-medium">Clean attempt. No violations.</span>
+              <span className="text-label-xs font-medium">Clean attempt. No violations.</span>
             </div>
           ) : (
             <div className="space-y-2 max-h-48 overflow-y-auto pr-1 border rounded-lg bg-muted/20 p-2.5">
@@ -373,9 +373,9 @@ export default function TeacherExamCorrectionPage() {
 
   if (examLoading) {
     return (
-      <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-5xl mx-auto">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-5xl mx-auto pb-32">
         <SEOHead title="Exam Correction" description="Grade student exam submissions" />
-        <Card>
+        <Card className="border-border/60">
           <CardContent className="flex items-center justify-center py-12">
             <p className="text-muted-foreground">Loading exam...</p>
           </CardContent>
@@ -385,24 +385,24 @@ export default function TeacherExamCorrectionPage() {
   }
 
   if (!exam) return (
-    <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-5xl mx-auto">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-5xl mx-auto pb-32">
       <SEOHead title="Exam Correction" description="Grade student exam submissions" />
-      <Card><CardContent className="flex flex-col items-center gap-3 py-12">
+      <Card className="border-border/60"><CardContent className="flex flex-col items-center gap-3 py-12">
         <Icon name="fact_check" size={48} className="text-muted-foreground/40" />
-        <p className="text-lg font-medium">Exam not found</p>
-        <p className="text-sm text-muted-foreground">The exam you&apos;re looking for doesn&apos;t exist.</p>
+        <p className="text-title-md font-medium">Exam not found</p>
+        <p className="text-body-md text-muted-foreground">The exam you&apos;re looking for doesn&apos;t exist.</p>
         <Button asChild><Link to="/teacher/exams"><Icon name="arrow_back" size={16} className="mr-1" /> Back to Exams</Link></Button>
       </CardContent></Card>
     </motion.div>
   );
 
   if (enrolled.length === 0) return (
-    <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-5xl mx-auto">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-5xl mx-auto pb-32">
       <SEOHead title={`Correcting: ${exam.title}`} description={`Grade submissions for ${exam.title}`} />
       <div className="flex flex-col items-center gap-3 py-12">
         <Icon name="group_off" size={48} className="text-muted-foreground/40" />
-        <p className="text-lg font-medium">No students enrolled</p>
-        <p className="text-sm text-muted-foreground">There are no students enrolled in {subject?.name ?? 'this subject'}.</p>
+        <p className="text-title-md font-medium">No students enrolled</p>
+        <p className="text-body-md text-muted-foreground">There are no students enrolled in {subject?.name ?? 'this subject'}.</p>
         <Button asChild><Link to="/teacher/exams"><Icon name="arrow_back" size={16} className="mr-1" /> Back to Exams</Link></Button>
       </div>
     </motion.div>
@@ -411,15 +411,20 @@ export default function TeacherExamCorrectionPage() {
   return (
     <>
       <SEOHead title={`Correcting: ${exam.title}`} description={`Grade submissions for ${exam.title}`} />
-      <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="min-h-screen flex flex-col">
-        <motion.div variants={listItem} className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="min-h-screen flex flex-col"
+      >
+        <motion.div variants={cardStackReveal} custom={0} className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
           <div className="flex items-center justify-between px-4 lg:px-6 py-3">
             <div className="flex items-center gap-3 min-w-0">
               <Button variant="ghost" size="icon-sm" asChild><Link to="/teacher/exams"><Icon name="arrow_back" size={20} /></Link></Button>
               <Separator orientation="vertical" className="h-6" />
               <div className="min-w-0">
-                <h1 className="text-sm font-semibold truncate">{exam.title}</h1>
-                <p className="text-[11px] text-muted-foreground">{subject?.name ?? 'Unknown'} &middot; {questions.length} questions &middot; {totalMax} pts</p>
+                <h1 className="text-title-sm font-semibold truncate">{exam.title}</h1>
+                <p className="text-label-xs text-muted-foreground">{subject?.name ?? 'Unknown'} &middot; {questions.length} questions &middot; {totalMax} pts</p>
               </div>
             </div>
             <select value={studentId} onChange={(e) => setStudentId(e.target.value)}
@@ -429,21 +434,21 @@ export default function TeacherExamCorrectionPage() {
           </div>
         </motion.div>
 
-        <motion.div variants={listItem} className="flex-1 flex flex-col lg:flex-row">
+        <div className="flex-1 flex flex-col lg:flex-row">
           {renderNav()}
           {renderAnswer()}
           {renderTools()}
-        </motion.div>
+        </div>
 
-        <motion.div variants={listItem} className="border-t bg-card/80 backdrop-blur-sm px-4 lg:px-6 py-3">
+        <motion.div variants={cardStackReveal} custom={0} className="border-t bg-card/80 backdrop-blur-sm px-4 lg:px-6 py-3">
           <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3 lg:gap-6">
             <div className="flex items-center gap-3 shrink-0">
-              <span className="text-sm font-semibold tabular-nums">{totalGiven}/{totalMax}</span>
-              <span className="text-xs text-muted-foreground">({totalMax > 0 ? Math.round((totalGiven / totalMax) * 100) : 0}%)</span>
+              <span className="text-title-sm font-semibold tabular-nums">{totalGiven}/{totalMax}</span>
+              <span className="text-label-xs text-muted-foreground">({totalMax > 0 ? Math.round((totalGiven / totalMax) * 100) : 0}%)</span>
               <Badge variant={saveVariant} className="text-[10px] gap-1"><Icon name={saveIcon} size={12} />{saveLabel}</Badge>
             </div>
             <div className="flex-1 w-full lg:w-auto">
-              <label className="text-[11px] text-muted-foreground font-medium mb-1 block">Overall Feedback</label>
+              <label className="text-label-xs text-muted-foreground font-medium mb-1 block">Overall Feedback</label>
               <Textarea value={overallFb} onChange={(e) => { setOverallFb(e.target.value); markUnsaved(); }}
                 placeholder="Write overall feedback for this student..." className="min-h-[48px] h-10 resize-none text-sm" />
             </div>
@@ -457,9 +462,9 @@ export default function TeacherExamCorrectionPage() {
           </div>
         </motion.div>
 
-        <motion.div variants={listItem} className="border-t bg-muted/30 px-4 lg:px-6 py-2">
+        <motion.div variants={cardStackReveal} custom={0} className="border-t bg-muted/30 px-4 lg:px-6 py-2">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            <span className="text-[11px] text-muted-foreground font-medium">Shortcuts:</span>
+            <span className="text-label-xs text-muted-foreground font-medium">Shortcuts:</span>
             {shortcuts.map((s) => (
               <kbd key={s.k} className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                 <span className="inline-flex rounded border bg-background px-1.5 py-0.5 font-mono text-[10px] shadow-sm">{s.k}</span>

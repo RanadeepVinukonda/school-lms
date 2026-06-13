@@ -57,3 +57,52 @@ export const scaleIn: Variants = {
   hidden: { opacity: 0, scale: 0.95 },
   show: { opacity: 1, scale: 1, transition: { duration: 0.3, ease: emphasizedEasing } },
 };
+
+export const scrollReveal: Variants = {
+  hidden: { opacity: 0, y: 48 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.7, ease: emphasizedEasing },
+  },
+};
+
+export const staggerContainer: Variants = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.08, delayChildren: 0.15 },
+  },
+};
+
+export const scaleFadeIn: Variants = {
+  hidden: { opacity: 0, scale: 0.85, filter: 'brightness(0.7)' },
+  show: {
+    opacity: 1,
+    scale: 1,
+    filter: 'brightness(1)',
+    transition: { duration: 0.9, ease: emphasizedEasing },
+  },
+};
+
+export const slideUpReveal: Variants = {
+  hidden: { opacity: 0, y: 60 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: emphasizedEasing },
+  },
+};
+
+export const cardStackReveal: Variants = {
+  hidden: { opacity: 0, y: 80, scale: 0.95 },
+  show: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      delay: i * 0.12,
+      duration: 0.6,
+      ease: emphasizedEasing,
+    },
+  }),
+};

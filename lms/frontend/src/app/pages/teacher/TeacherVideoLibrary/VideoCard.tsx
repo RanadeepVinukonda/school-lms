@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
-import { listItem } from '@/lib/motion';
+import { cardStackReveal } from '@/lib/motion';
 import type { TeacherVideo, YouTubeSearchResult } from './types';
 
 interface VideoCardProps {
@@ -16,8 +16,8 @@ interface VideoCardProps {
 
 export function VideoCard({ video, onDelete, onAttach, onSave, saved }: VideoCardProps) {
   return (
-    <motion.div variants={listItem}>
-      <Card className="overflow-hidden hover:shadow-md transition-shadow group h-full">
+    <motion.div variants={cardStackReveal} custom={0}>
+      <Card className="border-border/60 overflow-hidden hover:shadow-md transition-shadow group h-full">
         <div className="aspect-video bg-muted relative overflow-hidden">
           <img src={video.thumbnail} alt={video.title} className="w-full h-full object-cover" loading="lazy" />
           <Badge className="absolute bottom-2 right-2 bg-background/80 text-foreground backdrop-blur-sm border-0">

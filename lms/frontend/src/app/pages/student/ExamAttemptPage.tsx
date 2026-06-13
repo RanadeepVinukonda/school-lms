@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { Clock, AlertCircle, CheckCircle, XCircle, Send, Play, ChevronLeft, ChevronRight, FileText, CheckCheck, TrendingUp, TrendingDown, BookOpen, Lightbulb, MessageSquareText, AlertTriangle } from 'lucide-react';
-import { pageTransition } from '@/lib/motion';
+import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -99,11 +99,11 @@ export default function ExamAttemptPage() {
   if (isLoading) return <ExamSkeleton />;
   if (isError || !exam) return (
     <div className="flex items-center justify-center min-h-screen p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md border-border/60">
         <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
           <AlertCircle className="h-10 w-10 text-destructive" />
-          <p className="font-semibold text-lg">Failed to load exam</p>
-          <p className="text-sm text-muted-foreground">The exam you are looking for does not exist or has been removed.</p>
+          <p className="font-semibold text-headline-sm">Failed to load exam</p>
+          <p className="text-body-md text-muted-foreground">The exam you are looking for does not exist or has been removed.</p>
           <Button variant="outline" onClick={() => navigate('/student/exams')}>Back to Exams</Button>
         </CardContent>
       </Card>
@@ -118,26 +118,28 @@ export default function ExamAttemptPage() {
   if (phase === 'intro') return (
     <>
       <SEOHead title={exam.title} description={exam.description} canonical={`/exams/${examId}`} />
-      <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="flex items-center justify-center min-h-[80vh] p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-6 text-center space-y-6">
-            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto"><FileText className="h-8 w-8 text-primary" /></div>
-            <div><CardTitle className="text-2xl">{exam.title}</CardTitle><CardDescription className="text-base">{exam.description}</CardDescription></div>
-            <div className="grid grid-cols-2 gap-3">
-              {[{ l: 'Questions', v: qs }, { l: 'Duration', v: `${exam.duration}m` }, { l: 'Points', v: totalPts }].map(s => (
-                <div key={s.l} className="bg-muted rounded-xl p-3"><p className="text-2xl font-bold">{s.v}</p><p className="text-xs text-muted-foreground">{s.l}</p></div>
-              ))}
-            </div>
-            <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 text-left text-sm space-y-2">
-              <div className="flex items-center gap-2 font-semibold text-amber-600 dark:text-amber-400"><AlertTriangle className="h-4 w-4" /><span>Important</span></div>
-              <p className="text-muted-foreground">{exam.instructions || 'Read each question carefully. You can navigate between questions freely.'}</p>
-              <p className="text-muted-foreground">Your exam will be auto-submitted when time expires.</p>
-            </div>
-            <Button size="lg" className="w-full text-base" onClick={() => { setTimeLeft((exam.duration || 30) * 60); setPhase('taking'); }}>
-              <Play className="h-5 w-5 mr-2" /> Start Exam
-            </Button>
-          </CardContent>
-        </Card>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center justify-center min-h-[80vh] p-6">
+        <motion.div variants={cardStackReveal} custom={0} className="w-full max-w-md">
+          <Card className="border-border/60">
+            <CardContent className="p-6 text-center space-y-6">
+              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto"><FileText className="h-6 w-6 text-primary" /></div>
+              <div><CardTitle className="text-headline-sm">{exam.title}</CardTitle><CardDescription className="text-body-lg">{exam.description}</CardDescription></div>
+              <div className="grid grid-cols-2 gap-3">
+                {[{ l: 'Questions', v: qs }, { l: 'Duration', v: `${exam.duration}m` }, { l: 'Points', v: totalPts }].map(s => (
+                  <div key={s.l} className="bg-muted rounded-xl p-3"><p className="text-display-xs font-bold">{s.v}</p><p className="text-label-xs text-muted-foreground">{s.l}</p></div>
+                ))}
+              </div>
+              <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 text-left text-body-md space-y-2">
+                <div className="flex items-center gap-2 font-semibold text-amber-600 dark:text-amber-400"><AlertTriangle className="h-4 w-4" /><span>Important</span></div>
+                <p className="text-muted-foreground">{exam.instructions || 'Read each question carefully. You can navigate between questions freely.'}</p>
+                <p className="text-muted-foreground">Your exam will be auto-submitted when time expires.</p>
+              </div>
+              <Button size="lg" className="w-full text-body-lg" onClick={() => { setTimeLeft((exam.duration || 30) * 60); setPhase('taking'); }}>
+                <Play className="h-5 w-5 mr-2" /> Start Exam
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
       </motion.div>
     </>
   );
@@ -165,65 +167,73 @@ export default function ExamAttemptPage() {
     return (
       <>
         <SEOHead title={`${exam.title} - Results`} description="Exam results" />
-        <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="max-w-2xl mx-auto p-4 space-y-6">
-          <Card>
-            <CardContent className="p-6 text-center space-y-4">
-              <div className={cn('h-20 w-20 rounded-full mx-auto flex items-center justify-center', passed ? 'bg-success-container' : 'bg-error-container')}>
-                {passed ? <CheckCircle className="h-10 w-10 text-success" /> : <XCircle className="h-10 w-10 text-error" />}
-              </div>
-              <div><CardTitle className="text-2xl">{passed ? 'Congratulations!' : 'Keep Practicing'}</CardTitle><p className="text-muted-foreground mt-1">{exam.title}</p></div>
-              <div className="flex items-center justify-center gap-4 flex-wrap">
-                <div className="text-center"><p className="text-4xl font-bold">{score}/{totalPts}</p><p className="text-sm text-muted-foreground">Final Score</p></div>
-                <Separator orientation="vertical" className="h-12 hidden sm:block" />
-                <div className="text-center"><p className={cn('text-4xl font-bold', passed ? 'text-success' : 'text-error')}>{pct}%</p><p className="text-sm text-muted-foreground">Percentage</p></div>
-                <Separator orientation="vertical" className="h-12 hidden sm:block" />
-                <div className="text-center"><Badge variant={passed ? 'success' : 'destructive'} className="text-sm px-4 py-1">{passed ? 'PASSED' : 'FAILED'}</Badge><p className="text-sm text-muted-foreground mt-1">Status</p></div>
-              </div>
-            </CardContent>
-          </Card>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Card><CardContent className="p-4 space-y-2">
-              <div className="flex items-center gap-2 text-success"><TrendingUp className="h-5 w-5" /><h3 className="font-semibold">Strengths</h3></div>
-              {str.length ? <ul className="space-y-1">{str.map(s => <li key={s} className="text-sm text-muted-foreground flex items-center gap-2"><CheckCircle className="h-3.5 w-3.5 text-success flex-shrink-0" />{s}</li>)}</ul> : <p className="text-sm text-muted-foreground">No strengths yet.</p>}
-            </CardContent></Card>
-            <Card><CardContent className="p-4 space-y-2">
-              <div className="flex items-center gap-2 text-error"><TrendingDown className="h-5 w-5" /><h3 className="font-semibold">Areas to Improve</h3></div>
-              {wk.length ? <ul className="space-y-1">{wk.map(w => <li key={w} className="text-sm text-muted-foreground flex items-center gap-2"><AlertCircle className="h-3.5 w-3.5 text-error flex-shrink-0" />{w}</li>)}</ul> : <p className="text-sm text-muted-foreground">Great job — keep maintaining your skills!</p>}
-            </CardContent></Card>
-          </div>
-          <Card>
-            <CardHeader><CardTitle className="text-lg">Question Review</CardTitle><CardDescription>Review your answers with the correct solutions</CardDescription></CardHeader>
-            <CardContent className="space-y-3">
-              {exam.questions?.map((q, i) => { const u = answers[q.id]; const ok = u === q.correctAnswer; return (
-                <div key={q.id} className={cn('p-4 rounded-xl border text-sm space-y-2', ok ? 'bg-success-container/30 border-success/30' : 'bg-error-container/30 border-error/30')}>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2 font-medium">
-                      {ok ? <CheckCircle className="h-4 w-4 text-success flex-shrink-0" /> : <XCircle className="h-4 w-4 text-error flex-shrink-0" />}
-                      <span>Q{i + 1}. {qText(q)}</span>
-                    </div>
-                    <Badge variant="outline" className="flex-shrink-0">{q.points} pts</Badge>
-                  </div>
-                  <div className="pl-6 space-y-1">
-                    <p className="text-muted-foreground">Your answer: <span className={cn('font-medium', ok ? 'text-success' : 'text-error')}>{u || 'Not answered'}</span></p>
-                    {!ok && q.correctAnswer && <p className="text-success font-medium">Correct answer: {q.correctAnswer}</p>}
-                  </div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-6xl mx-auto pb-32 space-y-16">
+          <motion.div variants={cardStackReveal} custom={0}>
+            <Card className="border-border/60">
+              <CardContent className="p-6 text-center space-y-4">
+                <div className={cn('h-12 w-12 rounded-xl mx-auto flex items-center justify-center', passed ? 'bg-success-container' : 'bg-error-container')}>
+                  {passed ? <CheckCircle className="h-6 w-6 text-success" /> : <XCircle className="h-6 w-6 text-error" />}
                 </div>
-              );})}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader><CardTitle className="text-lg flex items-center gap-2"><MessageSquareText className="h-5 w-5" /> Teacher Feedback</CardTitle></CardHeader>
-            <CardContent><p className="text-sm text-muted-foreground leading-relaxed">{fb}</p></CardContent>
-          </Card>
-          <Card>
-            <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Lightbulb className="h-5 w-5" /> Suggested Topics to Study</CardTitle><CardDescription>Based on your performance, focus on these areas</CardDescription></CardHeader>
-            <CardContent className="space-y-2">{sug.map((t, i) => (
-              <div key={i} className="flex items-center gap-3 p-3 bg-muted rounded-xl">
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0"><BookOpen className="h-4 w-4 text-primary" /></div>
-                <span className="text-sm font-medium">{t}</span>
-              </div>
-            ))}</CardContent>
-          </Card>
+                <div><CardTitle className="text-headline-sm">{passed ? 'Congratulations!' : 'Keep Practicing'}</CardTitle><p className="text-muted-foreground mt-1">{exam.title}</p></div>
+                <div className="flex items-center justify-center gap-4 flex-wrap">
+                  <div className="text-center"><p className="text-display-xs font-bold">{score}/{totalPts}</p><p className="text-label-xs text-muted-foreground">Final Score</p></div>
+                  <Separator orientation="vertical" className="h-12 hidden sm:block" />
+                  <div className="text-center"><p className={cn('text-display-xs font-bold', passed ? 'text-success' : 'text-error')}>{pct}%</p><p className="text-label-xs text-muted-foreground">Percentage</p></div>
+                  <Separator orientation="vertical" className="h-12 hidden sm:block" />
+                  <div className="text-center"><Badge variant={passed ? 'success' : 'destructive'} className="text-body-md px-4 py-1">{passed ? 'PASSED' : 'FAILED'}</Badge><p className="text-label-xs text-muted-foreground mt-1">Status</p></div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+          <motion.div variants={cardStackReveal} custom={0} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Card className="border-border/60"><CardContent className="p-5 space-y-2">
+              <div className="flex items-center gap-2 text-success"><TrendingUp className="h-5 w-5" /><h3 className="font-semibold text-title-sm">Strengths</h3></div>
+              {str.length ? <ul className="space-y-1">{str.map(s => <li key={s} className="text-body-md text-muted-foreground flex items-center gap-2"><CheckCircle className="h-3.5 w-3.5 text-success flex-shrink-0" />{s}</li>)}</ul> : <p className="text-body-md text-muted-foreground">No strengths yet.</p>}
+            </CardContent></Card>
+            <Card className="border-border/60"><CardContent className="p-5 space-y-2">
+              <div className="flex items-center gap-2 text-error"><TrendingDown className="h-5 w-5" /><h3 className="font-semibold text-title-sm">Areas to Improve</h3></div>
+              {wk.length ? <ul className="space-y-1">{wk.map(w => <li key={w} className="text-body-md text-muted-foreground flex items-center gap-2"><AlertCircle className="h-3.5 w-3.5 text-error flex-shrink-0" />{w}</li>)}</ul> : <p className="text-body-md text-muted-foreground">Great job — keep maintaining your skills!</p>}
+            </CardContent></Card>
+          </motion.div>
+          <motion.div variants={cardStackReveal} custom={0}>
+            <Card className="border-border/60">
+              <CardHeader><CardTitle className="text-title-md">Question Review</CardTitle><CardDescription>Review your answers with the correct solutions</CardDescription></CardHeader>
+              <CardContent className="p-5 space-y-3">
+                {exam.questions?.map((q, i) => { const u = answers[q.id]; const ok = u === q.correctAnswer; return (
+                  <div key={q.id} className={cn('p-4 rounded-xl border text-body-md space-y-2', ok ? 'bg-success-container/30 border-success/30' : 'bg-error-container/30 border-error/30')}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 font-medium">
+                        {ok ? <CheckCircle className="h-4 w-4 text-success flex-shrink-0" /> : <XCircle className="h-4 w-4 text-error flex-shrink-0" />}
+                        <span>Q{i + 1}. {qText(q)}</span>
+                      </div>
+                      <Badge variant="outline" className="flex-shrink-0">{q.points} pts</Badge>
+                    </div>
+                    <div className="pl-6 space-y-1">
+                      <p className="text-muted-foreground">Your answer: <span className={cn('font-medium', ok ? 'text-success' : 'text-error')}>{u || 'Not answered'}</span></p>
+                      {!ok && q.correctAnswer && <p className="text-success font-medium">Correct answer: {q.correctAnswer}</p>}
+                    </div>
+                  </div>
+                );})}
+              </CardContent>
+            </Card>
+          </motion.div>
+          <motion.div variants={cardStackReveal} custom={0}>
+            <Card className="border-border/60">
+              <CardHeader><CardTitle className="text-title-md flex items-center gap-2"><MessageSquareText className="h-5 w-5" /> Teacher Feedback</CardTitle></CardHeader>
+              <CardContent className="p-5"><p className="text-body-md text-muted-foreground leading-relaxed">{fb}</p></CardContent>
+            </Card>
+          </motion.div>
+          <motion.div variants={cardStackReveal} custom={0}>
+            <Card className="border-border/60">
+              <CardHeader><CardTitle className="text-title-md flex items-center gap-2"><Lightbulb className="h-5 w-5" /> Suggested Topics to Study</CardTitle><CardDescription>Based on your performance, focus on these areas</CardDescription></CardHeader>
+              <CardContent className="p-5 space-y-2">{sug.map((t, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 bg-muted rounded-xl">
+                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0"><BookOpen className="h-4 w-4 text-primary" /></div>
+                  <span className="text-body-md font-medium">{t}</span>
+                </div>
+              ))}</CardContent>
+            </Card>
+          </motion.div>
           <Button className="w-full" size="lg" onClick={() => navigate('/student/exams')}>Back to Exams</Button>
         </motion.div>
       </>
@@ -241,14 +251,14 @@ export default function ExamAttemptPage() {
       <div className="fixed inset-0 bg-background z-50 flex flex-col">
         <div className={cn('px-4 py-3 flex items-center justify-between border-b transition-colors', warn ? 'bg-error-container text-on-error-container' : 'bg-card')}>
           <div className="flex items-center gap-3">
-            <div className={cn('flex items-center gap-2 font-mono text-xl font-bold', warn && 'animate-pulse')}>
+            <div className={cn('flex items-center gap-2 font-mono text-title-md font-bold', warn && 'animate-pulse')}>
               <Clock className="h-5 w-5" />{fmt(timeLeft)}
             </div>
-            {warn && <Badge variant="destructive" className="animate-pulse text-xs"><AlertTriangle className="h-3 w-3 mr-1" />Time running out</Badge>}
+            {warn && <Badge variant="destructive" className="animate-pulse text-label-xs"><AlertTriangle className="h-3 w-3 mr-1" />Time running out</Badge>}
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm font-medium"><span className="text-base">{cur + 1}</span>/{qs}</span>
-            <div className="text-xs font-medium">{saveSt === 'saved'
+            <span className="text-body-md font-medium"><span className="text-title-sm">{cur + 1}</span>/{qs}</span>
+            <div className="text-label-xs font-medium">{saveSt === 'saved'
               ? <span className="flex items-center gap-1 text-success"><CheckCheck className="h-3.5 w-3.5" /> Saved</span>
               : <span className="flex items-center gap-1 text-warning"><Clock className="h-3.5 w-3.5" /> Unsaved</span>}</div>
           </div>
@@ -257,8 +267,8 @@ export default function ExamAttemptPage() {
           <div className="flex-1 flex items-center justify-center p-4">
             <div className="text-center space-y-3">
               <AlertCircle className="h-10 w-10 text-muted-foreground mx-auto" />
-              <p className="font-medium text-lg">No questions available</p>
-              <p className="text-sm text-muted-foreground">This exam has no questions yet. Please contact your teacher.</p>
+              <p className="font-medium text-headline-sm">No questions available</p>
+              <p className="text-body-md text-muted-foreground">This exam has no questions yet. Please contact your teacher.</p>
               <Button variant="outline" onClick={() => navigate('/student/exams')}>Back to Exams</Button>
             </div>
           </div>
@@ -271,19 +281,19 @@ export default function ExamAttemptPage() {
                     transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}>
                     <div className="space-y-6">
                       <div className="flex items-center justify-between">
-                        <Badge variant="outline" className="text-sm px-3 py-1">Question {cur + 1} of {qs}</Badge>
-                        <span className="text-sm text-muted-foreground font-medium">{q?.points} pts</span>
+                        <Badge variant="outline" className="text-body-md px-3 py-1">Question {cur + 1} of {qs}</Badge>
+                        <span className="text-body-md text-muted-foreground font-medium">{q?.points} pts</span>
                       </div>
-                      <p className="text-xl md:text-2xl font-semibold leading-relaxed">{q ? qText(q) : ''}</p>
+                      <p className="text-headline-sm font-semibold leading-relaxed">{q ? qText(q) : ''}</p>
                       {q?.type === 'essay' || q?.type === 'short_answer' || q?.type === 'problem_solving' ? (
-                        <Textarea placeholder="Type your answer here..." className="min-h-[220px] text-base leading-relaxed" value={answers[q.id] ?? ''} onChange={e => onAnswer(e.target.value)} />
+                        <Textarea placeholder="Type your answer here..." className="min-h-[220px] text-body-lg leading-relaxed" value={answers[q.id] ?? ''} onChange={e => onAnswer(e.target.value)} />
                       ) : (
                         <RadioGroup value={answers[q?.id ?? ''] ?? ''} onValueChange={onAnswer} className="space-y-3">
                           {q?.options?.map(opt => (
                             <div key={opt}>
                               <RadioGroupItem value={opt} id={`${q.id}-${opt}`} className="peer sr-only" />
                               <Label htmlFor={`${q.id}-${opt}`}
-                                className={cn('flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all text-base', 'hover:bg-accent hover:border-primary/50',
+                                className={cn('flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all text-body-lg', 'hover:bg-accent hover:border-primary/50',
                                   'peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 peer-data-[state=checked]:ring-2 peer-data-[state=checked]:ring-primary/20')}>
                                 <div className={cn('h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0', answers[q.id] === opt ? 'border-primary bg-primary' : 'border-muted-foreground/30')}>
                                   {answers[q.id] === opt && <div className="h-2 w-2 rounded-full bg-white" />}
@@ -304,7 +314,7 @@ export default function ExamAttemptPage() {
                 <div className="flex items-center justify-center gap-1.5 flex-wrap">
                   {exam.questions?.map((question, i) => (
                     <button key={question.id} onClick={() => goTo(i)}
-                      className={cn('h-8 w-8 rounded-full text-xs font-medium transition-all flex items-center justify-center',
+                      className={cn('h-8 w-8 rounded-full text-label-xs font-medium transition-all flex items-center justify-center',
                         cur === i ? 'bg-primary text-primary-foreground ring-2 ring-primary/30 scale-110'
                           : answers[question.id] ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground hover:bg-accent')}>
                       {i + 1}
@@ -329,9 +339,9 @@ export default function ExamAttemptPage() {
       {confirm && (
         <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 30 }}>
-            <Card className="w-full max-w-sm">
-              <CardHeader><CardTitle>Submit Exam</CardTitle><CardDescription>You answered {ans} of {qs} questions.{ans < qs && ` ${qs - ans} unanswered.`} This action cannot be undone.</CardDescription></CardHeader>
-              <CardContent className="flex gap-3">
+            <Card className="w-full max-w-sm border-border/60">
+              <CardHeader><CardTitle className="text-title-sm">Submit Exam</CardTitle><CardDescription>You answered {ans} of {qs} questions.{ans < qs && ` ${qs - ans} unanswered.`} This action cannot be undone.</CardDescription></CardHeader>
+              <CardContent className="p-5 flex gap-3">
                 <Button variant="outline" className="flex-1" onClick={() => setConfirm(false)}>Review</Button>
                 <Button className="flex-1" onClick={onSubmit}><Send className="h-4 w-4 mr-1" /> Submit</Button>
               </CardContent>

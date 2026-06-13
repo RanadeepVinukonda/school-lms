@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { pageTransition } from '@/lib/motion';
+import { scrollReveal, cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
 
@@ -153,55 +153,56 @@ export default function TeacherTestTemplatesPage() {
   return (
     <>
       <SEOHead title="Test Templates" description="Create reusable test templates" canonical="/teacher/test-templates" />
-      <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-6xl mx-auto space-y-6 pb-20">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-6xl mx-auto space-y-16 pb-32">
+        <motion.div variants={cardStackReveal} custom={0} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-headline-sm">Test Templates</h1>
-            <p className="text-sm text-muted-foreground">Reusable assessment blueprints</p>
           </div>
           <Button onClick={() => setShowCreate(true)}><Icon name="add" size={16} className="mr-1" />New Template</Button>
-        </div>
+        </motion.div>
 
-        <DataFetchWrapper data={templates} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="list">
-          {() => (
-            <div className="space-y-2">
-              {templates.length === 0 ? (
-                <Card><CardContent className="p-8 text-center text-muted-foreground"><Icon name="description" size={48} className="mx-auto mb-3 opacity-40" /><p>No templates yet.</p></CardContent></Card>
-              ) : (
-                templates.map((t: any) => (
-                  <Card key={t.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold">{t.title}</h3>
-                            <Badge variant={t.status === 'active' ? 'default' : t.status === 'archived' ? 'secondary' : 'outline'} className="text-xs">{t.status}</Badge>
+        <motion.div variants={cardStackReveal} custom={0}>
+          <DataFetchWrapper data={templates} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="list">
+            {() => (
+              <div className="space-y-2">
+                {templates.length === 0 ? (
+                  <Card className="border-border/60"><CardContent className="p-8 text-center text-muted-foreground"><Icon name="description" size={48} className="mx-auto mb-3 opacity-40" /><p>No templates yet.</p></CardContent></Card>
+                ) : (
+                  templates.map((t: any) => (
+                    <Card key={t.id} className="border-border/60">
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-semibold">{t.title}</h3>
+                              <Badge variant={t.status === 'active' ? 'default' : t.status === 'archived' ? 'secondary' : 'outline'} className="text-xs">{t.status}</Badge>
+                            </div>
+                            {t.description && <p className="text-sm text-muted-foreground">{t.description}</p>}
+                            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                              <span>{t.config?.timeLimitMinutes} min</span>
+                              <span>Pass: {t.config?.passingScore}%</span>
+                              <span>Max: {t.config?.maxAttempts} attempts</span>
+                              <span>{t.config?.shuffleQuestions ? 'Shuffled' : 'Ordered'}</span>
+                            </div>
                           </div>
-                          {t.description && <p className="text-sm text-muted-foreground">{t.description}</p>}
-                          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                            <span>{t.config?.timeLimitMinutes} min</span>
-                            <span>Pass: {t.config?.passingScore}%</span>
-                            <span>Max: {t.config?.maxAttempts} attempts</span>
-                            <span>{t.config?.shuffleQuestions ? 'Shuffled' : 'Ordered'}</span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Button size="sm" variant="outline" onClick={() => {
+                              setCompilingId(t.id);
+                              compileMutation.mutate({ id: t.id, textbookId: t.selectionConfig?.textbookId, chapterId: t.selectionConfig?.chapterId, conceptId: t.selectionConfig?.conceptId });
+                            }} disabled={compileMutation.isPending}>
+                              <Icon name="visibility" size={14} className="mr-1" />Preview
+                            </Button>
+                            <Button variant="ghost" size="icon-sm" onClick={() => { if (confirm('Delete this template?')) deleteMutation.mutate(t.id); }}><Icon name="delete" size={16} /></Button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <Button size="sm" variant="outline" onClick={() => {
-                            setCompilingId(t.id);
-                            compileMutation.mutate({ id: t.id, textbookId: t.selectionConfig?.textbookId, chapterId: t.selectionConfig?.chapterId, conceptId: t.selectionConfig?.conceptId });
-                          }} disabled={compileMutation.isPending}>
-                            <Icon name="visibility" size={14} className="mr-1" />Preview
-                          </Button>
-                          <Button variant="ghost" size="icon-sm" onClick={() => { if (confirm('Delete this template?')) deleteMutation.mutate(t.id); }}><Icon name="delete" size={16} /></Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          )}
-        </DataFetchWrapper>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            )}
+          </DataFetchWrapper>
+        </motion.div>
 
         <Dialog open={showCreate} onOpenChange={(o) => { if (!o) resetForm(); setShowCreate(o); }}>
           <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
@@ -298,7 +299,7 @@ export default function TeacherTestTemplatesPage() {
                 <p className="text-center text-muted-foreground py-8">No questions matched the criteria. Adjust your template settings.</p>
               ) : (
                 previewQuestions.map((q, i) => (
-                  <Card key={q.id || i}>
+                  <Card key={q.id || i} className="border-border/60">
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3">
                         <span className="text-sm font-bold text-muted-foreground mt-0.5 min-w-[24px]">{i + 1}.</span>

@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { formatDate } from '@/lib/utils';
 import { getLetterGrade } from '@/lib/format';
-import { pageTransition, listContainer, listItem } from '@/lib/motion';
+import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/lib/motion';
 import { useQuery } from '@tanstack/react-query';
 import { getAllSubjects, getExamsBySubject, getCorrectionsByStudent } from '@/services/dataService';
 import { useAuthStore } from '@/store/authStore';
@@ -113,51 +113,52 @@ export default function StudentExamsPage() {
     <>
       <SEOHead title="Exams" description="View upcoming and past exam results" />
       <motion.div
-        variants={pageTransition}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        className="p-4 max-w-4xl mx-auto space-y-6 pb-20"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="p-6 max-w-6xl mx-auto pb-32 space-y-16"
       >
-        <div className="flex flex-col gap-4">
-          <div>
-            <h1 className="text-headline-sm font-bold">Exams</h1>
-            <p className="text-body-md text-muted-foreground">Track upcoming exams and past results</p>
-          </div>
-          {data?.subjects && data.subjects.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5 pt-1">
-              <button
-                onClick={() => setSelectedSubjectId('')}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border shrink-0 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                  selectedSubjectId === ''
-                    ? "bg-primary text-white border-primary shadow-sm"
-                    : "bg-surface text-on-surface hover:bg-surface-variant/40 border-outline-variant/60"
-                }`}
-              >
-                <Icon name="select_all" size={14} />
-                All Subjects
-              </button>
-              {data.subjects.map((sub: any) => {
-                const isSelected = selectedSubjectId === sub.id;
-                return (
-                  <button
-                    key={sub.id}
-                    onClick={() => setSelectedSubjectId(sub.id)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border shrink-0 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                      isSelected
-                        ? "text-white shadow-sm"
-                        : "bg-surface text-on-surface hover:bg-surface-variant/40 border-outline-variant/60"
-                    }`}
-                    style={isSelected ? { backgroundColor: sub.color || '#6366f1', borderColor: sub.color || '#6366f1' } : {}}
-                  >
-                    <Icon name={sub.icon || 'menu_book'} size={14} style={!isSelected ? { color: sub.color } : undefined} />
-                    {sub.name}
-                  </button>
-                );
-              })}
+        <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+          <div className="flex flex-col gap-4">
+            <div>
+              <h1 className="text-headline-sm font-bold">Exams</h1>
+              <p className="text-body-md text-muted-foreground">Track upcoming exams and past results</p>
             </div>
-          )}
-        </div>
+            {data?.subjects && data.subjects.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <button
+                  onClick={() => setSelectedSubjectId('')}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border shrink-0 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                    selectedSubjectId === ''
+                      ? "bg-primary text-white border-primary shadow-sm"
+                      : "bg-surface text-on-surface hover:bg-surface-variant/40 border-border/60"
+                  }`}
+                >
+                  <Icon name="select_all" size={14} />
+                  All Subjects
+                </button>
+                {data.subjects.map((sub: any) => {
+                  const isSelected = selectedSubjectId === sub.id;
+                  return (
+                    <button
+                      key={sub.id}
+                      onClick={() => setSelectedSubjectId(sub.id)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border shrink-0 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                        isSelected
+                          ? "text-white shadow-sm"
+                          : "bg-surface text-on-surface hover:bg-surface-variant/40 border-border/60"
+                      }`}
+                      style={isSelected ? { backgroundColor: sub.color || '#6366f1', borderColor: sub.color || '#6366f1' } : {}}
+                    >
+                      <Icon name={sub.icon || 'menu_book'} size={14} style={!isSelected ? { color: sub.color } : undefined} />
+                      {sub.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </motion.div>
 
         <DataFetchWrapper
           data={data}
@@ -176,14 +177,14 @@ export default function StudentExamsPage() {
               : d.past;
 
             return (
-              <>
-                <motion.section variants={listItem} initial="hidden" animate="show">
-                  <h2 className="text-title-sm font-semibold mb-3 flex items-center gap-2">
-                    <Icon name="calendar_month" size={20} className="text-primary" />
-                    Upcoming Exams
-                  </h2>
+              <div className="space-y-16">
+                <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                  <div className="mb-6">
+                    <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">SCHEDULED</p>
+                    <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">Upcoming Exams</h2>
+                  </div>
                   {filteredUpcoming.length === 0 ? (
-                    <Card variant="elevated">
+                    <Card className="border-border/60">
                       <CardContent className="flex flex-col items-center gap-3 py-10">
                         <Icon name="fact_check" size={40} className="text-muted-foreground/50" />
                         <p className="text-body-md text-muted-foreground">No upcoming exams scheduled</p>
@@ -191,16 +192,17 @@ export default function StudentExamsPage() {
                     </Card>
                   ) : (
                     <motion.div
-                      variants={listContainer}
+                      variants={staggerContainer}
                       initial="hidden"
-                      animate="show"
+                      whileInView="show"
+                      viewport={{ once: true, margin: '-60px' }}
                       className="space-y-3"
                     >
                       {filteredUpcoming.map((exam) => (
-                        <motion.div key={exam.id} variants={listItem}>
+                        <motion.div key={exam.id} variants={cardStackReveal} custom={0}>
                           <Link to={`/exams/${exam.id}`}>
-                            <Card variant="elevated" className="transition-all duration-300 group">
-                              <CardContent className="p-4">
+                            <Card className="border-border/60 transition-all duration-300 group">
+                              <CardContent className="p-5">
                                 <div className="flex items-start gap-4">
                                   <div className="h-12 w-12 rounded-xl bg-error-container flex items-center justify-center flex-shrink-0">
                                     <Icon name="fact_check" size={24} className="text-error" />
@@ -250,15 +252,15 @@ export default function StudentExamsPage() {
                       ))}
                     </motion.div>
                   )}
-                </motion.section>
+                </motion.div>
 
-                <motion.section variants={listItem} initial="hidden" animate="show">
-                  <h2 className="text-title-sm font-semibold mb-3 flex items-center gap-2">
-                    <Icon name="history" size={20} className="text-muted-foreground" />
-                    Past Results
-                  </h2>
+                <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                  <div className="mb-6">
+                    <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">HISTORY</p>
+                    <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">Past Results</h2>
+                  </div>
                   {filteredPast.length === 0 ? (
-                    <Card variant="elevated">
+                    <Card className="border-border/60">
                       <CardContent className="flex flex-col items-center gap-3 py-10">
                         <Icon name="fact_check" size={40} className="text-muted-foreground/50" />
                         <p className="text-body-md text-muted-foreground">No past exam results yet</p>
@@ -266,16 +268,17 @@ export default function StudentExamsPage() {
                     </Card>
                   ) : (
                     <motion.div
-                      variants={listContainer}
+                      variants={staggerContainer}
                       initial="hidden"
-                      animate="show"
+                      whileInView="show"
+                      viewport={{ once: true, margin: '-60px' }}
                       className="space-y-3"
                     >
                       {filteredPast.map((exam) => (
-                        <motion.div key={exam.id} variants={listItem}>
+                        <motion.div key={exam.id} variants={cardStackReveal} custom={0}>
                           {exam.correction ? (
-                            <Card variant="elevated" className="transition-all duration-300 group">
-                              <CardContent className="p-4">
+                            <Card className="border-border/60 transition-all duration-300 group">
+                              <CardContent className="p-5">
                                 <div className="flex items-start gap-4">
                                   <div className="h-12 w-12 rounded-xl bg-success-container flex items-center justify-center flex-shrink-0">
                                     <Icon name="check_circle" size={24} className="text-success" />
@@ -324,8 +327,8 @@ export default function StudentExamsPage() {
                               </CardContent>
                             </Card>
                           ) : (
-                            <Card variant="elevated" className="opacity-70">
-                              <CardContent className="p-4">
+                            <Card className="border-border/60 opacity-70">
+                              <CardContent className="p-5">
                                 <div className="flex items-start gap-4">
                                   <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
                                     <Icon name="fact_check" size={24} className="text-muted-foreground" />
@@ -350,8 +353,8 @@ export default function StudentExamsPage() {
                       ))}
                     </motion.div>
                   )}
-                </motion.section>
-              </>
+                </motion.div>
+              </div>
             );
           }}
         </DataFetchWrapper>

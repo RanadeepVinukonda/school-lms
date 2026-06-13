@@ -8,9 +8,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { pageTransition } from '@/lib/motion';
+import { cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
 
@@ -132,61 +132,77 @@ export default function TeacherQuestionBankPage() {
   return (
     <>
       <SEOHead title="Question Bank" description="Create and manage your question bank" canonical="/teacher/question-bank" />
-      <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-6xl mx-auto space-y-6 pb-20">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-headline-sm">Question Bank</h1>
-            <p className="text-sm text-muted-foreground">Create, manage, and organize your questions</p>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="p-6 max-w-6xl mx-auto pb-32 space-y-16"
+      >
+        <motion.div variants={cardStackReveal} custom={0}>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-headline-sm">Question Bank</h1>
+              <p className="text-body-md text-muted-foreground">Create, manage, and organize your questions</p>
+            </div>
+            <Button onClick={() => { setEditing(null); setShowCreate(true); }}>
+              <Icon name="add" size={16} className="mr-1" />New Question
+            </Button>
           </div>
-          <Button onClick={() => { setEditing(null); setShowCreate(true); }}>
-            <Icon name="add" size={16} className="mr-1" />New Question
-          </Button>
-        </div>
+        </motion.div>
 
-        <div className="flex flex-wrap gap-2">
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search questions..." className="max-w-xs" />
-          <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background">
-            <option value="">All Types</option>
-            {QUESTION_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
-          <select value={diffFilter} onChange={(e) => setDiffFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background">
-            <option value="">All Difficulties</option>
-            {DIFFICULTIES.map((d) => <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>)}
-          </select>
-        </div>
+        <motion.div variants={cardStackReveal} custom={0}>
+          <div className="flex flex-wrap gap-2">
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search questions..." className="max-w-xs" />
+            <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background">
+              <option value="">All Types</option>
+              {QUESTION_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+            <select value={diffFilter} onChange={(e) => setDiffFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background">
+              <option value="">All Difficulties</option>
+              {DIFFICULTIES.map((d) => <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>)}
+            </select>
+          </div>
+        </motion.div>
 
-        <DataFetchWrapper data={data} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="list">
-          {() => (
-            <div className="space-y-2">
-              {items.length === 0 ? (
-                <Card><CardContent className="p-8 text-center text-muted-foreground"><Icon name="quiz" size={48} className="mx-auto mb-3 opacity-40" /><p>No questions found. Create your first question!</p></CardContent></Card>
-              ) : (
-                items.map((q: any) => (
-                  <Card key={q.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge variant="outline" className={`text-xs ${typeColors[q.type] || 'bg-gray-500'} text-white`}>{q.type.replace('_', ' ')}</Badge>
-                            <Badge variant="outline" className={`text-xs ${diffColors[q.difficulty] || ''}`}>{q.difficulty}</Badge>
-                            {q.isPreviousYear && <Badge variant="secondary" className="text-xs">PYQ {q.year || ''}</Badge>}
-                          </div>
-                          <p className="text-sm font-medium line-clamp-2">{q.text}</p>
-                          {q.explanation && <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{q.explanation}</p>}
-                          <p className="text-xs text-muted-foreground mt-1">{q.points} pt{q.points !== 1 ? 's' : ''}</p>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <Button variant="ghost" size="icon-sm" onClick={() => { setEditing(q); setShowCreate(true); }}><Icon name="edit" size={16} /></Button>
-                          <Button variant="ghost" size="icon-sm" onClick={() => { if (confirm('Delete this question?')) deleteMutation.mutate(q.id); }}><Icon name="delete" size={16} /></Button>
-                        </div>
-                      </div>
+        <motion.div variants={cardStackReveal} custom={0}>
+          <DataFetchWrapper data={data} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="list">
+            {() => (
+              <div className="space-y-2">
+                {items.length === 0 ? (
+                  <Card className="border-border/60">
+                    <CardContent className="p-8 text-center text-muted-foreground">
+                      <Icon name="quiz" size={48} className="mx-auto mb-3 opacity-40" />
+                      <p className="text-body-md">No questions found. Create your first question!</p>
                     </CardContent>
                   </Card>
-                ))
-              )}
-            </div>
-          )}
-        </DataFetchWrapper>
+                ) : (
+                  items.map((q: any) => (
+                    <Card key={q.id} className="border-border/60">
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge variant="outline" className={`text-label-xs ${typeColors[q.type] || 'bg-gray-500'} text-white`}>{q.type.replace('_', ' ')}</Badge>
+                              <Badge variant="outline" className={`text-label-xs ${diffColors[q.difficulty] || ''}`}>{q.difficulty}</Badge>
+                              {q.isPreviousYear && <Badge variant="secondary" className="text-label-xs">PYQ {q.year || ''}</Badge>}
+                            </div>
+                            <p className="text-title-sm font-medium line-clamp-2">{q.text}</p>
+                            {q.explanation && <p className="text-label-xs text-muted-foreground mt-1 line-clamp-1">{q.explanation}</p>}
+                            <p className="text-label-xs text-muted-foreground mt-1">{q.points} pt{q.points !== 1 ? 's' : ''}</p>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Button variant="ghost" size="icon-sm" onClick={() => { setEditing(q); setShowCreate(true); }}><Icon name="edit" size={16} /></Button>
+                            <Button variant="ghost" size="icon-sm" onClick={() => { if (confirm('Delete this question?')) deleteMutation.mutate(q.id); }}><Icon name="delete" size={16} /></Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            )}
+          </DataFetchWrapper>
+        </motion.div>
 
         <Dialog open={showCreate} onOpenChange={(o) => { if (!o) { setShowCreate(false); setEditing(null); } }}>
           <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">

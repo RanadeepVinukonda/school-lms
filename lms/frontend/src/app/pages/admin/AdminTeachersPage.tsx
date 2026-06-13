@@ -16,7 +16,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Icon } from '@/components/ui/Icon';
-import { pageTransition, listContainer, listItem } from '@/lib/motion';
+import { cardStackReveal } from '@/lib/motion';
 import { getUserByRole } from '@/services/dataService';
 
 export default function AdminTeachersPage() {
@@ -75,25 +75,32 @@ export default function AdminTeachersPage() {
       ) : isError ? (
         <ErrorState title="Failed to load teachers" message="Could not fetch teacher data" onRetry={() => refetch()} />
       ) : (
-        <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit">
-          <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
-            <motion.div variants={listItem} className="flex items-center justify-between flex-wrap gap-3">
-              <div>
-                <h1 className="text-headline-sm">Teachers</h1>
-                <p className="text-sm text-on-surface-variant">{teachers.length} total teachers</p>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="p-6 max-w-6xl mx-auto pb-32"
+        >
+          <motion.div variants={cardStackReveal} custom={0} className="space-y-16">
+            <motion.div variants={cardStackReveal} custom={1}>
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <h1 className="text-headline-sm font-bold">Teachers</h1>
+                  <p className="text-body-md text-muted-foreground">{teachers.length} total teachers</p>
+                </div>
+                <Button onClick={() => setShowCreate(true)}>
+                  <Icon name="add" size={16} className="mr-2" />
+                  Register Teacher
+                </Button>
               </div>
-              <Button onClick={() => setShowCreate(true)}>
-                <Icon name="add" size={16} className="mr-2" />
-                Register Teacher
-              </Button>
             </motion.div>
 
-            <motion.div variants={listItem}>
+            <motion.div variants={cardStackReveal} custom={2}>
               <div className="relative max-w-sm">
-                <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
+                <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                 <Input
                   placeholder="Search teachers..."
-                  className="pl-10"
+                  className="pl-10 border-border/60 placeholder:text-muted-foreground"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
@@ -101,13 +108,13 @@ export default function AdminTeachersPage() {
             </motion.div>
 
             {filtered.length === 0 ? (
-              <motion.div variants={listItem}>
+              <motion.div variants={cardStackReveal} custom={3}>
                 {teachers.length === 0 ? (
-                  <Card>
+                  <Card className="border-border/60">
                     <CardContent className="flex flex-col items-center gap-4 py-16">
-                      <Icon name="badge" size={48} className="text-on-surface-variant/50" />
-                      <p className="font-medium">No teachers yet</p>
-                      <p className="text-sm text-on-surface-variant">Register the first teacher to get started.</p>
+                      <Icon name="badge" size={48} className="text-muted-foreground/50" />
+                      <p className="text-title-sm font-medium">No teachers yet</p>
+                      <p className="text-body-md text-muted-foreground">Register the first teacher to get started.</p>
                       <Button onClick={() => setShowCreate(true)}>
                         <Icon name="add" size={16} className="mr-2" />
                         Register Teacher
@@ -115,12 +122,12 @@ export default function AdminTeachersPage() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <Card>
+                  <Card className="border-border/60">
                     <CardContent className="flex flex-col items-center gap-4 py-16">
-                      <Icon name="search_off" size={48} className="text-on-surface-variant/50" />
-                      <p className="font-medium">No teachers match your search</p>
-                      <p className="text-sm text-on-surface-variant">Try a different search term.</p>
-                      <button className="text-sm text-primary hover:underline" onClick={() => setSearch('')}>
+                      <Icon name="search_off" size={48} className="text-muted-foreground/50" />
+                      <p className="text-title-sm font-medium">No teachers match your search</p>
+                      <p className="text-body-md text-muted-foreground">Try a different search term.</p>
+                      <button className="text-label-sm text-muted-foreground hover:text-foreground transition-colors" onClick={() => setSearch('')}>
                         Clear Search
                       </button>
                     </CardContent>
@@ -128,26 +135,26 @@ export default function AdminTeachersPage() {
                 )}
               </motion.div>
             ) : (
-              <motion.div variants={listItem}>
-                <div className="border-outline-variant rounded-lg overflow-x-auto border">
+              <motion.div variants={cardStackReveal} custom={3}>
+                <div className="border border-border/60 rounded-lg overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b-outline-variant border-b bg-surface-variant/50">
-                        <th className="text-left text-label-sm font-medium text-on-surface-variant uppercase tracking-wider px-4 py-3">Name</th>
-                        <th className="text-left text-label-sm font-medium text-on-surface-variant uppercase tracking-wider px-4 py-3">Email</th>
-                        <th className="text-left text-label-sm font-medium text-on-surface-variant uppercase tracking-wider px-4 py-3">Teacher ID</th>
-                        <th className="text-left text-label-sm font-medium text-on-surface-variant uppercase tracking-wider px-4 py-3">Status</th>
+                      <tr className="border-b border-border/60 bg-muted/30">
+                        <th className="text-left text-label-sm font-bold text-muted-foreground uppercase tracking-wider px-4 py-3">Name</th>
+                        <th className="text-left text-label-sm font-bold text-muted-foreground uppercase tracking-wider px-4 py-3">Email</th>
+                        <th className="text-left text-label-sm font-bold text-muted-foreground uppercase tracking-wider px-4 py-3">Teacher ID</th>
+                        <th className="text-left text-label-sm font-bold text-muted-foreground uppercase tracking-wider px-4 py-3">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y-outline-variant divide-y">
+                    <tbody className="divide-y divide-border/40">
                       {filtered.map((teacher) => {
                         return (
-                          <tr key={teacher.id} className="hover:bg-surface-variant/40 transition-colors">
+                          <tr key={teacher.id} className="hover:bg-muted/20 transition-colors">
                             <td className="px-4 py-3">
                               <span className="text-body-md font-medium">{teacher.displayName}</span>
                             </td>
-                            <td className="px-4 py-3 text-body-md text-on-surface-variant">{teacher.email}</td>
-                            <td className="px-4 py-3 text-body-md text-on-surface-variant font-mono">{teacher.teacherId || '\u2014'}</td>
+                            <td className="px-4 py-3 text-body-md text-muted-foreground">{teacher.email}</td>
+                            <td className="px-4 py-3 text-body-md text-muted-foreground font-mono">{teacher.teacherId || '\u2014'}</td>
                             <td className="px-4 py-3">
                               <Badge variant={teacher.isActive === false ? 'destructive' : 'success'} className="text-[10px]">
                                 {teacher.isActive === false ? 'Inactive' : 'Active'}
@@ -161,8 +168,8 @@ export default function AdminTeachersPage() {
                 </div>
               </motion.div>
             )}
-            </motion.div>
           </motion.div>
+        </motion.div>
       )}
 
       {/* CREATE TEACHER DIALOG */}
@@ -177,6 +184,7 @@ export default function AdminTeachersPage() {
               <Label>Full Name</Label>
               <Input
                 placeholder="Jane Doe"
+                className="border-border/60 placeholder:text-muted-foreground"
                 value={createForm.displayName}
                 onChange={(e) => setCreateForm((f) => ({ ...f, displayName: e.target.value }))}
               />
@@ -186,6 +194,7 @@ export default function AdminTeachersPage() {
               <Input
                 type="email"
                 placeholder="jane@school.edu"
+                className="border-border/60 placeholder:text-muted-foreground"
                 value={createForm.email}
                 onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
               />
@@ -220,18 +229,18 @@ export default function AdminTeachersPage() {
             </DialogDescription>
           </DialogHeader>
           {createdCredentials && (
-            <div className="space-y-4 bg-surface-variant/40 p-4 rounded-lg border border-outline-variant font-mono text-sm">
-              <div className="grid grid-cols-2 gap-2 border-b border-outline-variant/60 pb-2">
-                <span className="font-bold text-on-surface-variant">Name:</span>
+            <div className="space-y-4 bg-muted/30 p-4 rounded-lg border border-border/60 font-mono text-sm">
+              <div className="grid grid-cols-2 gap-2 border-b border-border/60 pb-2">
+                <span className="font-bold text-muted-foreground">Name:</span>
                 <span className="col-span-2 select-all font-sans font-medium">{createdCredentials.displayName}</span>
               </div>
-              <div className="grid grid-cols-2 gap-2 border-b border-outline-variant/60 pb-2">
-                <span className="font-bold text-on-surface-variant">Email:</span>
+              <div className="grid grid-cols-2 gap-2 border-b border-border/60 pb-2">
+                <span className="font-bold text-muted-foreground">Email:</span>
                 <span className="col-span-2 select-all">{createdCredentials.email}</span>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <span className="font-bold text-on-surface-variant">Password:</span>
-                <span className="col-span-2 select-all text-error font-bold bg-error-container/50 px-2 py-0.5 rounded">{createdCredentials.generatedPassword}</span>
+                <span className="font-bold text-muted-foreground">Password:</span>
+                <span className="col-span-2 select-all text-error font-bold bg-destructive/10 px-2 py-0.5 rounded">{createdCredentials.generatedPassword}</span>
               </div>
             </div>
           )}

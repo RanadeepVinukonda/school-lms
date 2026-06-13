@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { pageTransition } from '@/lib/motion';
+import { cardStackReveal } from '@/lib/motion';
 import api from '@/services/api';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 
@@ -77,89 +77,96 @@ export default function AdminAcademicYearsPage() {
   return (
     <>
       <SEOHead title="Academic Years" description="Manage academic years" />
-      <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-5xl mx-auto space-y-6 pb-20">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-headline-sm">Academic Years</h1>
-            <p className="text-sm text-muted-foreground">Create and manage academic years</p>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="p-6 max-w-6xl mx-auto pb-32"
+      >
+        <motion.div variants={cardStackReveal} custom={0} className="space-y-16">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-headline-sm">Academic Years</h1>
+              <p className="text-body-md text-muted-foreground">Create and manage academic years</p>
+            </div>
+            <Button onClick={() => { setEditing(null); setShowCreate(true); }}><Icon name="add" size={16} className="mr-1" />Add Year</Button>
           </div>
-          <Button onClick={() => { setEditing(null); setShowCreate(true); }}><Icon name="add" size={16} className="mr-1" />Add Year</Button>
-        </div>
 
-        <DataFetchWrapper data={items} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="list" emptyMessage="No academic years yet">
-          {() => (
-            <div className="space-y-2">
-              {items.length === 0 ? (
-                <Card><CardContent className="p-8 text-center text-muted-foreground"><Icon name="calendar_month" size={48} className="mx-auto mb-3 opacity-40" /><p>No academic years</p></CardContent></Card>
-              ) : (
-                items.map((y: any) => (
-                  <Card key={y.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold">{y.name}</h3>
-                            <Badge variant={y.status === 'active' ? 'default' : y.status === 'archived' ? 'secondary' : 'outline'} className="text-xs">{y.status}</Badge>
-                            {y.isCurrent && <Badge variant="success" className="text-xs">Current</Badge>}
+          <DataFetchWrapper data={items} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="list" emptyMessage="No academic years yet">
+            {() => (
+              <div className="space-y-3">
+                {items.length === 0 ? (
+                  <Card className="border-border/60"><CardContent className="p-8 text-center text-muted-foreground"><Icon name="calendar_month" size={48} className="mx-auto mb-3 opacity-40" /><p>No academic years</p></CardContent></Card>
+                ) : (
+                  items.map((y: any) => (
+                    <Card key={y.id} className="border-border/60">
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="text-title-sm font-semibold">{y.name}</h3>
+                              <Badge variant={y.status === 'active' ? 'default' : y.status === 'archived' ? 'secondary' : 'outline'} className="text-xs">{y.status}</Badge>
+                              {y.isCurrent && <Badge variant="success" className="text-xs">Current</Badge>}
+                            </div>
+                            <p className="text-label-sm text-muted-foreground">Code: {y.code}</p>
+                            <div className="flex items-center gap-3 mt-1 text-label-xs text-muted-foreground">
+                              <span>Start: {y.startDate ? new Date(y.startDate).toLocaleDateString() : '-'}</span>
+                              <span>End: {y.endDate ? new Date(y.endDate).toLocaleDateString() : '-'}</span>
+                            </div>
                           </div>
-                          <p className="text-sm text-muted-foreground">Code: {y.code}</p>
-                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                            <span>Start: {y.startDate ? new Date(y.startDate).toLocaleDateString() : '-'}</span>
-                            <span>End: {y.endDate ? new Date(y.endDate).toLocaleDateString() : '-'}</span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Button variant="ghost" size="icon-sm" onClick={() => openEdit(y)}><Icon name="edit" size={16} /></Button>
+                            <Button variant="ghost" size="icon-sm" onClick={() => setDeleteConfirm(y)}><Icon name="delete" size={16} /></Button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <Button variant="ghost" size="icon-sm" onClick={() => openEdit(y)}><Icon name="edit" size={16} /></Button>
-                          <Button variant="ghost" size="icon-sm" onClick={() => setDeleteConfirm(y)}><Icon name="delete" size={16} /></Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          )}
-        </DataFetchWrapper>
-
-        <Dialog open={showCreate} onOpenChange={(o) => { if (!o) closeDialog(); }}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>{editing ? 'Edit' : 'Create'} Academic Year</DialogTitle>
-              <DialogDescription>Set up a new academic year period.</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. 2025-2026" />
-              <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. 2025-26" />
-              <div className="grid grid-cols-2 gap-3">
-                <div><label className="text-sm font-medium">Start Date</label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
-                <div><label className="text-sm font-medium">End Date</label><Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
               </div>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={isCurrent} onChange={(e) => setIsCurrent(e.target.checked)} />
-                Set as current academic year
-              </label>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={closeDialog}>Cancel</Button>
-              <Button onClick={handleSave} disabled={!name.trim() || !code.trim() || createMutation.isPending || updateMutation.isPending}>Save</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            )}
+          </DataFetchWrapper>
 
-        <ConfirmDialog
-          open={!!deleteConfirm}
-          onOpenChange={(o) => { if (!o) setDeleteConfirm(null); }}
-          title="Delete Academic Year"
-          description={deleteConfirm ? `Are you sure you want to delete the academic year "${deleteConfirm.name}"? This action is permanent and cannot be undone.` : ''}
-          confirmText="Delete"
-          destructive
-          onConfirm={() => {
-            if (deleteConfirm) {
-              deleteMutation.mutate(deleteConfirm.id);
-              setDeleteConfirm(null);
-            }
-          }}
-        />
+          <Dialog open={showCreate} onOpenChange={(o) => { if (!o) closeDialog(); }}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>{editing ? 'Edit' : 'Create'} Academic Year</DialogTitle>
+                <DialogDescription>Set up a new academic year period.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. 2025-2026" />
+                <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. 2025-26" />
+                <div className="grid grid-cols-2 gap-3">
+                  <div><label className="text-sm font-medium">Start Date</label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
+                  <div><label className="text-sm font-medium">End Date</label><Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
+                </div>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={isCurrent} onChange={(e) => setIsCurrent(e.target.checked)} />
+                  Set as current academic year
+                </label>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={closeDialog}>Cancel</Button>
+                <Button onClick={handleSave} disabled={!name.trim() || !code.trim() || createMutation.isPending || updateMutation.isPending}>Save</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <ConfirmDialog
+            open={!!deleteConfirm}
+            onOpenChange={(o) => { if (!o) setDeleteConfirm(null); }}
+            title="Delete Academic Year"
+            description={deleteConfirm ? `Are you sure you want to delete the academic year "${deleteConfirm.name}"? This action is permanent and cannot be undone.` : ''}
+            confirmText="Delete"
+            destructive
+            onConfirm={() => {
+              if (deleteConfirm) {
+                deleteMutation.mutate(deleteConfirm.id);
+                setDeleteConfirm(null);
+              }
+            }}
+          />
+        </motion.div>
       </motion.div>
     </>
   );

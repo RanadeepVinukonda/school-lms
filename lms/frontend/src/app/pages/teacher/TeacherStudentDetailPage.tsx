@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Icon } from '@/components/ui/Icon';
 import { getInitials } from '@/lib/utils';
 import { formatDate, getLetterGrade } from '@/lib/format';
-import { pageTransition, listContainer, listItem } from '@/lib/motion';
+import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import type { UserDoc, Subject, GradeEntry } from '@/services/dataService';
 import { getUser, getClass, getAllSubjects, getGradesByStudent } from '@/services/dataService';
 
@@ -118,14 +118,13 @@ export default function TeacherStudentDetailPage() {
         description={data ? `Performance and grades for ${data.student.displayName}` : 'View student details'}
       />
       <motion.div
-        variants={pageTransition}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        className="p-4 max-w-5xl mx-auto space-y-6 pb-20"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="p-6 max-w-6xl mx-auto space-y-16 pb-32"
       >
         {notFound ? (
-          <Card>
+          <Card className="border-border/60">
             <CardContent className="flex flex-col items-center gap-3 py-12">
               <Icon name="person_off" size={48} className="text-muted-foreground/40" />
               <p className="text-lg font-medium">Student not found</p>
@@ -150,7 +149,7 @@ export default function TeacherStudentDetailPage() {
           >
             {(d) => (
               <>
-                <motion.div variants={listItem}>
+                <motion.div variants={cardStackReveal} custom={0}>
                   <Button variant="ghost" size="sm" asChild className="gap-1 -ml-2">
                     <Link to="/teacher/students">
                       <Icon name="arrow_back" size={16} />
@@ -159,9 +158,9 @@ export default function TeacherStudentDetailPage() {
                   </Button>
                 </motion.div>
 
-                <motion.div variants={listItem}>
-                  <Card variant="elevated">
-                    <CardContent className="p-6">
+                <motion.div variants={cardStackReveal} custom={0}>
+                  <Card className="border-border/60">
+                    <CardContent className="p-5">
                       <div className="flex items-center gap-5">
                         <Avatar className="h-16 w-16">
                           <AvatarFallback className="text-lg">{getInitials(d.student.displayName)}</AvatarFallback>
@@ -188,15 +187,15 @@ export default function TeacherStudentDetailPage() {
                   </Card>
                 </motion.div>
 
-                <motion.div variants={listItem}>
-                  <Card variant="elevated">
+                <motion.div variants={cardStackReveal} custom={0}>
+                  <Card className="border-border/60">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-title-md flex items-center gap-2">
                         <Icon name="menu_book" size={18} className="text-muted-foreground" />
                         Subject Performance
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-5">
                       {d.subjectPerformance.length === 0 ? (
                         <div className="flex flex-col items-center gap-2 py-6 text-center">
                           <Icon name="graded" size={32} className="text-muted-foreground/40" />
@@ -228,8 +227,8 @@ export default function TeacherStudentDetailPage() {
                   </Card>
                 </motion.div>
 
-                <motion.div variants={listItem}>
-                  <Card variant="elevated">
+                <motion.div variants={cardStackReveal} custom={0}>
+                  <Card className="border-border/60">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-title-md flex items-center gap-2">
                         <Icon name="graded" size={18} className="text-muted-foreground" />
@@ -285,15 +284,15 @@ export default function TeacherStudentDetailPage() {
                   </Card>
                 </motion.div>
 
-                <motion.div variants={listItem}>
-                  <Card variant="elevated">
+                <motion.div variants={cardStackReveal} custom={0}>
+                  <Card className="border-border/60">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-title-md flex items-center gap-2">
                         <Icon name="trending_up" size={18} className="text-muted-foreground" />
                         Performance Trend
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-5">
                       {d.performanceTrend.length < 2 ? (
                         <div className="flex flex-col items-center gap-2 py-6 text-center">
                           <Icon name="show_chart" size={32} className="text-muted-foreground/40" />
@@ -302,14 +301,14 @@ export default function TeacherStudentDetailPage() {
                           </p>
                         </div>
                       ) : (
-                        <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-2">
+                        <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-2">
                           {d.performanceTrend.map((grade, idx) => {
                             const prevGrade = idx > 0 ? d.performanceTrend[idx - 1] : null;
                             const diff = prevGrade != null ? grade.percentage - prevGrade.percentage : null;
                             return (
                               <motion.div
                                 key={grade.id}
-                                variants={listItem}
+                                variants={scrollReveal}
                                 className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors"
                               >
                                 <div className="flex-1 min-w-0">
@@ -338,15 +337,15 @@ export default function TeacherStudentDetailPage() {
                   </Card>
                 </motion.div>
 
-                <motion.div variants={listItem}>
-                  <Card variant="elevated">
+                <motion.div variants={cardStackReveal} custom={0}>
+                  <Card className="border-border/60">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-title-md flex items-center gap-2">
                         <Icon name="notes" size={18} className="text-muted-foreground" />
                         Feedback &amp; Notes
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-5">
                       <div className="space-y-4">
                         <p className="text-sm text-muted-foreground">
                           Add private notes about this student. These are only visible to you.

@@ -21,7 +21,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { pageTransition, listContainer, listItem } from '@/lib/motion';
+import { cardStackReveal } from '@/lib/motion';
 import { getInitials, formatDate } from '@/lib/utils';
 import { settingsService } from '@/services/settingsService';
 import { getAllUsers, getAllClasses } from '@/services/dataService';
@@ -74,9 +74,7 @@ function getActionBadge(action: string) {
 }
 
 export default function AdminSettingsPage() {
-  const queryClient = queryClientHook();
-  function queryClientHook() { return useQueryClient(); }
-  
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('general');
 
   // -------------------------------------------------------------
@@ -276,329 +274,332 @@ export default function AdminSettingsPage() {
   return (
     <>
       <SEOHead title="Settings & Logs" description="System configuration, administrators, and audit trails" canonical="/admin/settings" />
-      <div className="p-4 max-w-6xl mx-auto space-y-6 pb-20">
-        <div>
-          <h1 className="text-headline-sm font-bold flex items-center gap-2">
-            <Icon name="settings" size={24} className="text-primary" />
-            Settings & Audit Hub
-          </h1>
-          <p className="text-sm text-on-surface-variant">General configurations, admin settings, and full system audit logs</p>
-        </div>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="p-6 max-w-6xl mx-auto pb-32"
+      >
+        <motion.div variants={cardStackReveal} custom={0} className="space-y-16">
+          <div>
+            <h1 className="text-headline-sm font-bold">Settings & Audit Hub</h1>
+            <p className="text-body-md text-muted-foreground">General configurations, admin settings, and full system audit logs</p>
+          </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="general">General Settings</TabsTrigger>
-            <TabsTrigger value="admins">Admin Users</TabsTrigger>
-            <TabsTrigger value="audit">Audit Logs</TabsTrigger>
-          </TabsList>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full max-w-md grid-cols-3">
+              <TabsTrigger value="general">General Settings</TabsTrigger>
+              <TabsTrigger value="admins">Admin Users</TabsTrigger>
+              <TabsTrigger value="audit">Audit Logs</TabsTrigger>
+            </TabsList>
 
-          {/* -------------------------------------------------------------
-              TAB CONTENT: GENERAL SETTINGS
-             ------------------------------------------------------------- */}
-          <TabsContent value="general" className="mt-4 space-y-6">
-            <DataFetchWrapper
-              data={settings}
-              isLoading={settingsLoading}
-              error={settingsError ? new Error('Failed to load settings') : null}
-              onRetry={refetchSettings}
-              loadingType="card"
-            >
-              {() => (
-                <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="space-y-6">
-                  {/* System Stats Cards */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    {statsConfig.map((stat) => (
-                      <Card key={stat.label} variant="elevated">
-                        <CardContent className="p-4 flex items-center gap-3">
-                          <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${stat.bg}`}>
-                            <Icon name={stat.icon} size={20} />
-                          </div>
-                          <div>
-                            <p className="text-lg font-bold">{stat.value}</p>
-                            <p className="text-xs text-on-surface-variant">{stat.label}</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* School Info Card */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-title-md flex items-center gap-2">
-                          <Icon name="school" size={18} className="text-on-surface-variant" />
-                          School Information
-                        </CardTitle>
-                        <CardDescription>Configure basic branding and details</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                          <Label>School Name</Label>
-                          <Input value={schoolName} onChange={(e) => setSchoolName(e.target.value)} />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label>Academic Year</Label>
-                            <Input value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Semester</Label>
-                            <Input value={semester} onChange={(e) => setSemester(e.target.value)} />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* Flagging Policy Card */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-title-md flex items-center gap-2">
-                          <Icon name="flag" size={18} className="text-on-surface-variant" />
-                          Performance Flagging Policy
-                        </CardTitle>
-                        <CardDescription>Oversight warning thresholds for low-performing concepts</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center">
-                            <Label className="text-body-md font-semibold text-on-surface-variant">Warning Threshold Percent</Label>
-                            <span className={`text-lg font-bold font-mono ${getThresholdColor(threshold)}`}>
-                              {threshold}%
-                            </span>
-                          </div>
-                          <p className="text-xs text-on-surface-variant leading-relaxed">
-                            Concepts with average assessment performance below this trigger will flag warning indicators on the administrator dashboard, indicating student comprehension gaps.
-                          </p>
-                          <div className="flex items-center gap-4 py-2">
-                            <input
-                              type="range"
-                              min="10"
-                              max="95"
-                              step="5"
-                              value={threshold}
-                              onChange={(e) => setThreshold(parseInt(e.target.value, 10))}
-                              className="flex-1 h-2 bg-secondary-container rounded-lg appearance-none cursor-pointer accent-primary"
-                            />
-                          </div>
-                          <div className="flex justify-between text-[10px] text-on-surface-variant font-medium font-mono px-1">
-                            <span>10% (Low)</span>
-                            <span>50% (Medium)</span>
-                            <span>95% (High)</span>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  <div className="flex justify-end gap-3 pt-2">
-                    <Button variant="outline" onClick={() => refetchSettings()}>Discard Changes</Button>
-                    <Button onClick={handleSaveSettings} disabled={updateSettingsMutation.isPending}>
-                      {updateSettingsMutation.isPending ? 'Saving...' : 'Save Settings'}
-                    </Button>
-                  </div>
-                </motion.div>
-              )}
-            </DataFetchWrapper>
-          </TabsContent>
-
-          {/* -------------------------------------------------------------
-              TAB CONTENT: ADMIN USERS
-             ------------------------------------------------------------- */}
-          <TabsContent value="admins" className="mt-4 space-y-6">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <div className="relative max-w-sm flex-1">
-                <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
-                <Input
-                  placeholder="Search administrators..."
-                  className="pl-10"
-                  value={adminSearch}
-                  onChange={(e) => setAdminSearch(e.target.value)}
-                />
-              </div>
-              <Button onClick={() => setShowCreateAdmin(true)}>
-                <Icon name="add" size={16} className="mr-2" />
-                Add Admin
-              </Button>
-            </div>
-
-            {filteredAdminUsers.length === 0 ? (
-              <Card>
-                <CardContent className="flex flex-col items-center gap-4 py-16">
-                  <Icon name="groups" size={48} className="text-on-surface-variant/50" />
-                  <p className="font-medium">No admin users found</p>
-                  <Button variant="outline" size="sm" onClick={() => setAdminSearch('')}>Clear Search</Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="border border-outline-variant rounded-xl overflow-x-auto bg-surface">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-outline-variant bg-surface-variant/30 text-body-sm font-semibold text-on-surface-variant">
-                      <th className="text-left px-4 py-3">User</th>
-                      <th className="text-left px-4 py-3">Email</th>
-                      <th className="text-left px-4 py-3">Role</th>
-                      <th className="text-left px-4 py-3">Status</th>
-                      <th className="text-right px-4 py-3">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-outline-variant/60">
-                    {filteredAdminUsers.map((u) => (
-                      <tr key={u.id} className="hover:bg-surface-variant/20 transition-colors text-body-md">
-                        <td className="px-4 py-3 flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="text-xs">{getInitials(u.displayName)}</AvatarFallback>
-                          </Avatar>
-                          <span className="font-semibold">{u.displayName}</span>
-                        </td>
-                        <td className="px-4 py-3 font-mono text-sm select-all">{u.email}</td>
-                        <td className="px-4 py-3 uppercase text-xs font-bold text-primary">{u.role.replace('_', ' ')}</td>
-                        <td className="px-4 py-3">
-                          <Badge variant={u.isActive === false ? 'destructive' : 'success'} className="text-[10px]">
-                            {u.isActive === false ? 'Inactive' : 'Active'}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3 text-right flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => toggleAdminMutation.mutate(u.id)}
-                            title={u.isActive === false ? 'Enable user login' : 'Disable user login'}
-                          >
-                            <Icon name={u.isActive === false ? 'toggle_off' : 'toggle_on'} size={18} />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            className="text-error hover:bg-error/10"
-                            onClick={() => handleDeleteAdminClick(u)}
-                            title="Delete administrator account"
-                          >
-                            <Icon name="delete" size={16} />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </TabsContent>
-
-          {/* -------------------------------------------------------------
-              TAB CONTENT: AUDIT LOGS
-             ------------------------------------------------------------- */}
-          <TabsContent value="audit" className="mt-4 space-y-6">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <h3 className="text-title-md font-bold flex items-center gap-2">
-                <Icon name="history" size={20} className="text-on-surface-variant" />
-                System Audit Trail
-              </h3>
-              <Input
-                placeholder="Search audit actions (e.g. class.create)..."
-                value={auditActionFilter}
-                onChange={(e) => { setAuditActionFilter(e.target.value); setAuditPage(1); }}
-                className="max-w-xs bg-surface"
-              />
-            </div>
-
-            <DataFetchWrapper
-              data={auditLogsQuery.data?.items}
-              isLoading={auditLogsQuery.isLoading}
-              error={auditLogsQuery.error}
-              loadingType="list"
-            >
-              {(items) => (
-                <div className="space-y-3">
-                  {items.length === 0 ? (
-                    <p className="text-muted-foreground text-sm text-center py-8">No audit trail records found.</p>
-                  ) : (
-                    items.map((log) => (
-                      <Card
-                        key={log.id}
-                        variant="elevated"
-                        className="cursor-pointer hover:border-primary/20 hover:shadow-elevation-1"
-                        onClick={() => setSelectedLog(selectedLog?.id === log.id ? null : log)}
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between gap-4">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                {getActionBadge(log.action)}
-                                <span className="text-sm font-semibold truncate text-on-surface">{log.summary}</span>
-                              </div>
-                              <div className="flex items-center gap-3 mt-1.5 text-xs text-on-surface-variant font-medium">
-                                <span>Performed by: <span className="text-primary">{log.performedByName}</span> ({log.performedByRole})</span>
-                                <span>•</span>
-                                <span>{formatDate(log.timestamp)}</span>
-                              </div>
+            {/* -------------------------------------------------------------
+                TAB CONTENT: GENERAL SETTINGS
+               ------------------------------------------------------------- */}
+            <TabsContent value="general" className="mt-4 space-y-6">
+              <DataFetchWrapper
+                data={settings}
+                isLoading={settingsLoading}
+                error={settingsError ? new Error('Failed to load settings') : null}
+                onRetry={refetchSettings}
+                loadingType="card"
+              >
+                {() => (
+                  <div className="space-y-6">
+                    {/* System Stats Cards */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      {statsConfig.map((stat) => (
+                        <Card key={stat.label} className="border-border/60">
+                          <CardContent className="p-5 flex items-center gap-3">
+                            <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${stat.bg}`}>
+                              <Icon name={stat.icon} size={20} />
                             </div>
-                            <Icon name={selectedLog?.id === log.id ? 'expand_less' : 'expand_more'} size={18} className="text-on-surface-variant" />
-                          </div>
+                            <div>
+                              <p className="text-display-xs font-bold">{stat.value}</p>
+                              <p className="text-label-xs text-muted-foreground">{stat.label}</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
 
-                          {selectedLog?.id === log.id && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              className="mt-3 pt-3 border-t border-outline-variant space-y-3 text-xs"
-                            >
-                              <div className="grid grid-cols-2 gap-2 text-on-surface-variant font-medium">
-                                <div><span className="text-muted-foreground font-semibold">Target Object:</span> {log.targetType} "{log.targetName}"</div>
-                                <div><span className="text-muted-foreground font-semibold">Performed ID:</span> {log.performedBy}</div>
-                              </div>
-                              {log.oldValue && (
-                                <div>
-                                  <span className="text-muted-foreground font-semibold block mb-1">Old State:</span>
-                                  <pre className="p-2.5 rounded bg-surface-variant/40 border border-outline-variant font-mono overflow-x-auto text-[11px]">{JSON.stringify(log.oldValue, null, 2)}</pre>
-                                </div>
-                              )}
-                              {log.newValue && (
-                                <div>
-                                  <span className="text-muted-foreground font-semibold block mb-1">New State:</span>
-                                  <pre className="p-2.5 rounded bg-surface-variant/40 border border-outline-variant font-mono overflow-x-auto text-[11px]">{JSON.stringify(log.newValue, null, 2)}</pre>
-                                </div>
-                              )}
-                              {log.action.includes('delete') && log.oldValue && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={(e) => { e.stopPropagation(); recoverMutation.mutate(log.id); }}
-                                  disabled={recoverMutation.isPending}
-                                >
-                                  <Icon name="restore" size={14} className="mr-1" />
-                                  Recover Deleted Entity
-                                </Button>
-                              )}
-                            </motion.div>
-                          )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* School Info Card */}
+                      <Card className="border-border/60">
+                        <CardHeader>
+                          <CardTitle className="text-title-md flex items-center gap-2">
+                            <Icon name="school" size={18} className="text-muted-foreground" />
+                            School Information
+                          </CardTitle>
+                          <CardDescription>Configure basic branding and details</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="space-y-2">
+                            <Label>School Name</Label>
+                            <Input className="border-border/60 placeholder:text-muted-foreground" value={schoolName} onChange={(e) => setSchoolName(e.target.value)} />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>Academic Year</Label>
+                              <Input className="border-border/60 placeholder:text-muted-foreground" value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Semester</Label>
+                              <Input className="border-border/60 placeholder:text-muted-foreground" value={semester} onChange={(e) => setSemester(e.target.value)} />
+                            </div>
+                          </div>
                         </CardContent>
                       </Card>
-                    ))
-                  )}
 
-                  {auditLogsQuery.data?.pagination && (
-                    <div className="flex items-center justify-between pt-2">
-                      <span className="text-xs text-on-surface-variant font-medium">
-                        Page {auditLogsQuery.data.pagination.page} of {auditLogsQuery.data.pagination.totalPages} ({auditLogsQuery.data.pagination.total} total logs)
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" disabled={!auditLogsQuery.data.pagination.hasPrev} onClick={handleAuditPrev}>
-                          <Icon name="chevron_left" size={14} className="mr-1" />
-                          Previous
-                        </Button>
-                        <Button variant="outline" size="sm" disabled={!auditLogsQuery.data.pagination.hasNext} onClick={handleAuditNext}>
-                          Next
-                          <Icon name="chevron_right" size={14} className="ml-1" />
-                        </Button>
-                      </div>
+                      {/* Flagging Policy Card */}
+                      <Card className="border-border/60">
+                        <CardHeader>
+                          <CardTitle className="text-title-md flex items-center gap-2">
+                            <Icon name="flag" size={18} className="text-muted-foreground" />
+                            Performance Flagging Policy
+                          </CardTitle>
+                          <CardDescription>Oversight warning thresholds for low-performing concepts</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <Label className="text-body-md font-semibold text-muted-foreground">Warning Threshold Percent</Label>
+                              <span className={`text-lg font-bold font-mono ${getThresholdColor(threshold)}`}>
+                                {threshold}%
+                              </span>
+                            </div>
+                            <p className="text-label-xs text-muted-foreground leading-relaxed">
+                              Concepts with average assessment performance below this trigger will flag warning indicators on the administrator dashboard, indicating student comprehension gaps.
+                            </p>
+                            <div className="flex items-center gap-4 py-2">
+                              <input
+                                type="range"
+                                min="10"
+                                max="95"
+                                step="5"
+                                value={threshold}
+                                onChange={(e) => setThreshold(parseInt(e.target.value, 10))}
+                                className="flex-1 h-2 bg-secondary-container rounded-lg appearance-none cursor-pointer accent-primary"
+                              />
+                            </div>
+                            <div className="flex justify-between text-[10px] text-muted-foreground font-medium font-mono px-1">
+                              <span>10% (Low)</span>
+                              <span>50% (Medium)</span>
+                              <span>95% (High)</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </div>
-                  )}
+
+                    <div className="flex justify-end gap-3 pt-2">
+                      <Button variant="outline" onClick={() => refetchSettings()}>Discard Changes</Button>
+                      <Button onClick={handleSaveSettings} disabled={updateSettingsMutation.isPending}>
+                        {updateSettingsMutation.isPending ? 'Saving...' : 'Save Settings'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </DataFetchWrapper>
+            </TabsContent>
+
+            {/* -------------------------------------------------------------
+                TAB CONTENT: ADMIN USERS
+               ------------------------------------------------------------- */}
+            <TabsContent value="admins" className="mt-4 space-y-6">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="relative max-w-sm flex-1">
+                  <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                  <Input
+                    placeholder="Search administrators..."
+                    className="pl-10 border-border/60 placeholder:text-muted-foreground"
+                    value={adminSearch}
+                    onChange={(e) => setAdminSearch(e.target.value)}
+                  />
+                </div>
+                <Button onClick={() => setShowCreateAdmin(true)}>
+                  <Icon name="add" size={16} className="mr-2" />
+                  Add Admin
+                </Button>
+              </div>
+
+              {filteredAdminUsers.length === 0 ? (
+                <Card className="border-border/60">
+                  <CardContent className="flex flex-col items-center gap-4 py-16">
+                    <Icon name="groups" size={48} className="text-muted-foreground/50" />
+                    <p className="text-title-sm font-medium">No admin users found</p>
+                    <Button variant="outline" size="sm" onClick={() => setAdminSearch('')}>Clear Search</Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="border border-border/60 rounded-xl overflow-x-auto bg-surface">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
+                        <th className="text-left px-4 py-3">User</th>
+                        <th className="text-left px-4 py-3">Email</th>
+                        <th className="text-left px-4 py-3">Role</th>
+                        <th className="text-left px-4 py-3">Status</th>
+                        <th className="text-right px-4 py-3">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/40">
+                      {filteredAdminUsers.map((u) => (
+                        <tr key={u.id} className="hover:bg-muted/20 transition-colors text-body-md">
+                          <td className="px-4 py-3 flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="text-xs">{getInitials(u.displayName)}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-semibold">{u.displayName}</span>
+                          </td>
+                          <td className="px-4 py-3 font-mono text-sm select-all">{u.email}</td>
+                          <td className="px-4 py-3 uppercase text-label-xs font-bold text-primary">{u.role.replace('_', ' ')}</td>
+                          <td className="px-4 py-3">
+                            <Badge variant={u.isActive === false ? 'destructive' : 'success'} className="text-[10px]">
+                              {u.isActive === false ? 'Inactive' : 'Active'}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3 text-right flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => toggleAdminMutation.mutate(u.id)}
+                              title={u.isActive === false ? 'Enable user login' : 'Disable user login'}
+                            >
+                              <Icon name={u.isActive === false ? 'toggle_off' : 'toggle_on'} size={18} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="text-error hover:bg-error/10"
+                              onClick={() => handleDeleteAdminClick(u)}
+                              title="Delete administrator account"
+                            >
+                              <Icon name="delete" size={16} />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
-            </DataFetchWrapper>
-          </TabsContent>
-        </Tabs>
-      </div>
+            </TabsContent>
+
+            {/* -------------------------------------------------------------
+                TAB CONTENT: AUDIT LOGS
+               ------------------------------------------------------------- */}
+            <TabsContent value="audit" className="mt-4 space-y-6">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <h3 className="text-title-md font-bold">System Audit Trail</h3>
+                  <p className="text-body-md text-muted-foreground">Track all system changes and administrative actions</p>
+                </div>
+                <Input
+                  placeholder="Search audit actions (e.g. class.create)..."
+                  value={auditActionFilter}
+                  onChange={(e) => { setAuditActionFilter(e.target.value); setAuditPage(1); }}
+                  className="max-w-xs border-border/60 placeholder:text-muted-foreground"
+                />
+              </div>
+
+              <DataFetchWrapper
+                data={auditLogsQuery.data?.items}
+                isLoading={auditLogsQuery.isLoading}
+                error={auditLogsQuery.error}
+                loadingType="list"
+              >
+                {(items) => (
+                  <div className="space-y-3">
+                    {items.length === 0 ? (
+                      <p className="text-muted-foreground text-sm text-center py-8">No audit trail records found.</p>
+                    ) : (
+                      items.map((log) => (
+                        <Card
+                          key={log.id}
+                          className="border-border/60 cursor-pointer hover:border-primary/20 hover:shadow-elevation-1"
+                          onClick={() => setSelectedLog(selectedLog?.id === log.id ? null : log)}
+                        >
+                          <CardContent className="p-5">
+                            <div className="flex items-center justify-between gap-4">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  {getActionBadge(log.action)}
+                                  <span className="text-title-sm font-semibold truncate">{log.summary}</span>
+                                </div>
+                                <div className="flex items-center gap-3 mt-1.5 text-label-xs text-muted-foreground font-medium">
+                                  <span>Performed by: <span className="text-primary">{log.performedByName}</span> ({log.performedByRole})</span>
+                                  <span>&middot;</span>
+                                  <span>{formatDate(log.timestamp)}</span>
+                                </div>
+                              </div>
+                              <Icon name={selectedLog?.id === log.id ? 'expand_less' : 'expand_more'} size={18} className="text-muted-foreground" />
+                            </div>
+
+                            {selectedLog?.id === log.id && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                className="mt-3 pt-3 border-t border-border/60 space-y-3 text-label-xs"
+                              >
+                                <div className="grid grid-cols-2 gap-2 text-muted-foreground font-medium">
+                                  <div><span className="text-muted-foreground font-semibold">Target Object:</span> {log.targetType} "{log.targetName}"</div>
+                                  <div><span className="text-muted-foreground font-semibold">Performed ID:</span> {log.performedBy}</div>
+                                </div>
+                                {log.oldValue && (
+                                  <div>
+                                    <span className="text-muted-foreground font-semibold block mb-1">Old State:</span>
+                                    <pre className="p-2.5 rounded bg-muted/40 border border-border font-mono overflow-x-auto text-[11px]">{JSON.stringify(log.oldValue, null, 2)}</pre>
+                                  </div>
+                                )}
+                                {log.newValue && (
+                                  <div>
+                                    <span className="text-muted-foreground font-semibold block mb-1">New State:</span>
+                                    <pre className="p-2.5 rounded bg-muted/40 border border-border font-mono overflow-x-auto text-[11px]">{JSON.stringify(log.newValue, null, 2)}</pre>
+                                  </div>
+                                )}
+                                {log.action.includes('delete') && log.oldValue && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => { e.stopPropagation(); recoverMutation.mutate(log.id); }}
+                                    disabled={recoverMutation.isPending}
+                                  >
+                                    <Icon name="restore" size={14} className="mr-1" />
+                                    Recover Deleted Entity
+                                  </Button>
+                                )}
+                              </motion.div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))
+                    )}
+
+                    {auditLogsQuery.data?.pagination && (
+                      <div className="flex items-center justify-between pt-2">
+                        <span className="text-label-xs text-muted-foreground font-medium">
+                          Page {auditLogsQuery.data.pagination.page} of {auditLogsQuery.data.pagination.totalPages} ({auditLogsQuery.data.pagination.total} total logs)
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm" disabled={!auditLogsQuery.data.pagination.hasPrev} onClick={handleAuditPrev}>
+                            <Icon name="chevron_left" size={14} className="mr-1" />
+                            Previous
+                          </Button>
+                          <Button variant="outline" size="sm" disabled={!auditLogsQuery.data.pagination.hasNext} onClick={handleAuditNext}>
+                            Next
+                            <Icon name="chevron_right" size={14} className="ml-1" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </DataFetchWrapper>
+            </TabsContent>
+          </Tabs>
+        </motion.div>
+      </motion.div>
 
       {/* -------------------------------------------------------------
           SHARED DIALOGS (TAB 2)
@@ -682,8 +683,8 @@ export default function AdminSettingsPage() {
           </DialogHeader>
 
           {adminDependencyReport && adminDependencyReport.categories.length > 0 && (
-            <div className="space-y-2 rounded-lg border border-outline-variant p-4">
-              <p className="text-label-sm font-medium text-on-surface-variant uppercase tracking-wider font-semibold">Impact Summary</p>
+            <div className="space-y-2 rounded-lg border border-border p-4">
+              <p className="text-label-sm font-medium text-muted-foreground uppercase tracking-wider font-semibold">Impact Summary</p>
               {adminDependencyReport.categories.map((cat) => (
                 <div key={cat.label} className="flex items-center justify-between text-body-md font-medium">
                   <span>{cat.label}</span>
@@ -701,7 +702,7 @@ export default function AdminSettingsPage() {
             >
               <Icon name="toggle_off" size={16} className="mr-2" />
               Toggle Active Status (Recommended)
-              <span className="ml-auto text-xs text-on-surface-variant">Preserves administrative logs</span>
+              <span className="ml-auto text-label-xs text-muted-foreground">Preserves administrative logs</span>
             </Button>
             <Button
               variant="destructive"
@@ -711,7 +712,7 @@ export default function AdminSettingsPage() {
             >
               <Icon name="delete_forever" size={16} className="mr-2" />
               Permanently Delete
-              <span className="ml-auto text-xs text-on-surface-variant">
+              <span className="ml-auto text-label-xs text-muted-foreground">
                 {(adminDependencyReport?.totalDependents ?? 0) > 0 ? 'Disabled (has dependencies)' : 'Irreversible'}
               </span>
             </Button>

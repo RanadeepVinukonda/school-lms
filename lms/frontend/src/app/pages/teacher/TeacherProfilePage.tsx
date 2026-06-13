@@ -11,7 +11,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Link } from 'react-router-dom';
 import { getInitials } from '@/lib/utils';
 import { ROUTES } from '@/lib/constants';
-import { pageTransition, listContainer, listItem } from '@/lib/motion';
+import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { getAllSubjects, getAllClasses, getAllEnrollments, getAllGrades, getUser } from '@/services/dataService';
 import type { Subject, ClassEntry, GradeEntry, Enrollment } from '@/services/dataService';
@@ -81,27 +81,32 @@ export default function TeacherProfilePage() {
   return (
     <>
       <SEOHead title="My Profile" description="Teacher profile and statistics" canonical="/teacher/profile" />
-      <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-4xl mx-auto space-y-6 pb-20">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="p-6 max-w-4xl mx-auto pb-32 space-y-16"
+      >
         <DataFetchWrapper data={data} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="profile">
           {(profileData) => (
             <>
-              <motion.div variants={listItem}>
-                <Card variant="elevated" className="overflow-hidden">
+              <motion.div variants={cardStackReveal} custom={0}>
+                <Card className="border-border/60 overflow-hidden">
                   <div className="h-24 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent" />
-                  <CardContent className="p-6 -mt-12">
+                  <CardContent className="p-5 -mt-12">
                     <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4">
                       <Avatar className="h-24 w-24 border-4 border-background ring-2 ring-primary/20">
                         <AvatarFallback className="text-2xl">{getInitials(profileData.user.displayName ?? 'T')}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 text-center sm:text-left">
                         <h1 className="text-headline-sm">{profileData.user.displayName ?? 'Teacher'}</h1>
-                        <p className="text-muted-foreground">{profileData.user.email ?? ''}</p>
+                        <p className="text-body-md text-muted-foreground">{profileData.user.email ?? ''}</p>
                         <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
-                          <Badge variant="info" className="text-[10px]">
+                          <Badge variant="info" className="text-label-xs">
                             <Icon name="school" size={11} className="mr-1" />Teacher
                           </Badge>
                           {profileData.user.id && (
-                            <Badge variant="secondary" className="text-[10px]">{profileData.user.id}</Badge>
+                            <Badge variant="secondary" className="text-label-xs">{profileData.user.id}</Badge>
                           )}
                         </div>
                       </div>
@@ -113,17 +118,17 @@ export default function TeacherProfilePage() {
                 </Card>
               </motion.div>
 
-              <motion.div variants={listItem}>
+              <motion.div variants={cardStackReveal} custom={0}>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[...statCards, avgStat].map((stat) => (
-                    <Card key={stat.label}>
-                      <CardContent className="p-4 flex items-center gap-3">
-                        <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${stat.bg}`}>
+                    <Card key={stat.label} className="border-border/60">
+                      <CardContent className="p-5 flex items-center gap-3">
+                        <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${stat.bg}`}>
                           <Icon name={stat.icon} size={20} className={stat.color} />
                         </div>
                         <div>
-                          <p className="text-xl font-bold tabular-nums">{stat.value}</p>
-                          <p className="text-xs text-muted-foreground">{stat.label}</p>
+                          <p className="text-display-xs font-bold tabular-nums">{stat.value}</p>
+                          <p className="text-label-xs text-muted-foreground">{stat.label}</p>
                         </div>
                       </CardContent>
                     </Card>
@@ -132,10 +137,10 @@ export default function TeacherProfilePage() {
               </motion.div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <motion.div variants={listItem}>
-                  <Card variant="elevated">
+                <motion.div variants={cardStackReveal} custom={0}>
+                  <Card className="border-border/60">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-title-md flex items-center gap-2">
+                      <CardTitle className="text-title-sm flex items-center gap-2">
                         <Icon name="menu_book" size={18} className="text-muted-foreground" />Subjects Taught
                       </CardTitle>
                     </CardHeader>
@@ -143,20 +148,20 @@ export default function TeacherProfilePage() {
                       {profileData.taughtSubjects.length === 0 ? (
                         <div className="flex flex-col items-center gap-2 py-6 text-center">
                           <Icon name="book_off" size={32} className="text-muted-foreground/40" />
-                          <p className="text-sm text-muted-foreground">No subjects assigned</p>
+                          <p className="text-body-md text-muted-foreground">No subjects assigned</p>
                         </div>
                       ) : (
-                        <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-2">
+                        <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-2">
                           {profileData.taughtSubjects.map((sub) => (
-                            <motion.div key={sub.id} variants={listItem} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-accent transition-colors">
+                            <motion.div key={sub.id} variants={cardStackReveal} custom={0} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-accent transition-colors">
                               <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${sub.color}15` }}>
                                 <span style={{ color: sub.color }}><Icon name={sub.icon ?? 'menu_book'} size={18} /></span>
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium">{sub.name}</p>
-                                <p className="text-xs text-muted-foreground">{sub.code} &middot; {sub.category}</p>
+                                <p className="text-title-sm font-medium">{sub.name}</p>
+                                <p className="text-label-xs text-muted-foreground">{sub.code} &middot; {sub.category}</p>
                               </div>
-                              <Badge variant="secondary" className="text-[10px]">{sub.code}</Badge>
+                              <Badge variant="secondary" className="text-label-xs">{sub.code}</Badge>
                             </motion.div>
                           ))}
                         </motion.div>
@@ -165,10 +170,10 @@ export default function TeacherProfilePage() {
                   </Card>
                 </motion.div>
 
-                <motion.div variants={listItem}>
-                  <Card variant="elevated">
+                <motion.div variants={cardStackReveal} custom={0}>
+                  <Card className="border-border/60">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-title-md flex items-center gap-2">
+                      <CardTitle className="text-title-sm flex items-center gap-2">
                         <Icon name="school" size={18} className="text-muted-foreground" />Classes Assigned
                       </CardTitle>
                     </CardHeader>
@@ -176,20 +181,20 @@ export default function TeacherProfilePage() {
                       {profileData.assignedClasses.length === 0 ? (
                         <div className="flex flex-col items-center gap-2 py-6 text-center">
                           <Icon name="school_off" size={32} className="text-muted-foreground/40" />
-                          <p className="text-sm text-muted-foreground">No classes assigned</p>
+                          <p className="text-body-md text-muted-foreground">No classes assigned</p>
                         </div>
                       ) : (
-                        <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-2">
+                        <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-2">
                           {profileData.assignedClasses.map((cls) => (
-                            <motion.div key={cls.id} variants={listItem} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-accent transition-colors">
+                            <motion.div key={cls.id} variants={cardStackReveal} custom={0} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-accent transition-colors">
                               <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
                                 <Icon name="school" size={18} className="text-primary" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium">{cls.name}</p>
-                                <p className="text-xs text-muted-foreground">Grade {cls.grade} &middot; {cls.studentCount} students &middot; {cls.subjectIds?.length} subjects</p>
+                                <p className="text-title-sm font-medium">{cls.name}</p>
+                                <p className="text-label-xs text-muted-foreground">Grade {cls.grade} &middot; {cls.studentCount} students &middot; {cls.subjectIds?.length} subjects</p>
                               </div>
-                              <Badge variant="secondary" className="text-[10px]">{cls.code}</Badge>
+                              <Badge variant="secondary" className="text-label-xs">{cls.code}</Badge>
                             </motion.div>
                           ))}
                         </motion.div>
@@ -199,30 +204,30 @@ export default function TeacherProfilePage() {
                 </motion.div>
               </div>
 
-              <motion.div variants={listItem}>
-                <Card variant="elevated">
+              <motion.div variants={cardStackReveal} custom={0}>
+                <Card className="border-border/60">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-title-md flex items-center gap-2">
+                    <CardTitle className="text-title-sm flex items-center gap-2">
                       <Icon name="info" size={18} className="text-muted-foreground" />Account Information
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-body-md">
                       <div>
-                        <p className="text-muted-foreground">Email</p>
-                        <p className="font-medium">{profileData.user.email ?? ''}</p>
+                        <p className="text-label-xs text-muted-foreground">Email</p>
+                        <p className="text-title-sm font-medium">{profileData.user.email ?? ''}</p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground">Role</p>
-                        <p className="font-medium capitalize">{profileData.user.role ?? 'teacher'}</p>
+                        <p className="text-label-xs text-muted-foreground">Role</p>
+                        <p className="text-title-sm font-medium capitalize">{profileData.user.role ?? 'teacher'}</p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground">User ID</p>
-                        <p className="font-medium">{profileData.user.id ?? 'N/A'}</p>
+                        <p className="text-label-xs text-muted-foreground">User ID</p>
+                        <p className="text-title-sm font-medium">{profileData.user.id ?? 'N/A'}</p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground">Account Status</p>
-                        <Badge variant="success" className="text-[10px] mt-0.5">Active</Badge>
+                        <p className="text-label-xs text-muted-foreground">Account Status</p>
+                        <Badge variant="success" className="text-label-xs mt-0.5">Active</Badge>
                       </div>
                     </div>
                   </CardContent>

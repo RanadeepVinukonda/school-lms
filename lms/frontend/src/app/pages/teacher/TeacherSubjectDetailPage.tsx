@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
 import { getAllSubjects, getAllClasses } from '@/services/dataService';
 import { getTextbooksBySubject } from '@/services/textbookService';
-import { pageTransition, listContainer, listItem } from '@/lib/motion';
+import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import { useAuthStore } from '@/store/authStore';
 
@@ -48,30 +48,31 @@ export default function TeacherSubjectDetailPage() {
     <>
       <SEOHead title={data?.subjectName ?? 'Subject'} description={`Textbooks for ${data?.subjectName}`} />
       <motion.div
-        variants={pageTransition}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        className="p-4 max-w-6xl mx-auto space-y-6 pb-20"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="p-6 max-w-6xl mx-auto space-y-16 pb-32"
       >
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" asChild>
-            <Link to={ROUTES.TEACHER_CLASS(classId!)}>
-              <Icon name="arrow_back" size={20} />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-headline-sm">{data?.subjectName ?? 'Loading...'}</h1>
-            <p className="text-sm text-muted-foreground">
-              {data?.className} &middot; Select a textbook to explore
-            </p>
+        <motion.div variants={cardStackReveal} custom={0}>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" asChild>
+              <Link to={ROUTES.TEACHER_CLASS(classId!)}>
+                <Icon name="arrow_back" size={20} />
+              </Link>
+            </Button>
+            <div>
+              <h1 className="text-headline-sm">{data?.subjectName ?? 'Loading...'}</h1>
+              {data?.className && (
+                <p className="text-sm text-muted-foreground">{data.className}</p>
+              )}
+            </div>
           </div>
-        </div>
+        </motion.div>
 
         <DataFetchWrapper data={data} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="card">
           {(d) => (
             <motion.div
-              variants={listContainer}
+              variants={staggerContainer}
               initial="hidden"
               animate="show"
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
@@ -92,15 +93,15 @@ export default function TeacherSubjectDetailPage() {
                 </div>
               ) : (
                 d.textbooks.map((tb) => (
-                  <motion.div key={tb.id} variants={listItem}>
+                  <motion.div key={tb.id} variants={scrollReveal}>
                     <Link
                       to={ROUTES.TEACHER_TEXTBOOK(tb.id)}
                       className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl"
                     >
-                      <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                      <Card className="border-border/60 hover:shadow-md transition-shadow cursor-pointer h-full">
                         <CardContent className="p-5">
                           <div className="flex items-start gap-4">
-                            <div className="h-14 w-14 rounded-xl bg-surface-variant flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            <div className="h-12 w-12 rounded-xl bg-surface-variant flex items-center justify-center flex-shrink-0 overflow-hidden">
                               {tb.thumbnail ? (
                                 <img src={tb.thumbnail} alt="" className="h-full w-full object-cover" />
                               ) : (

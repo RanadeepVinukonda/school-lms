@@ -16,7 +16,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { pageTransition, listContainer, listItem } from '@/lib/motion';
+import { cardStackReveal } from '@/lib/motion';
 import { getUserByRole, getAllClasses } from '@/services/dataService';
 import { userService } from '@/services/userService';
 import type { ClassEntry } from '@/services/dataService';
@@ -142,7 +142,6 @@ export default function AdminStudentsPage() {
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
 
-  // Reset page when search or classFilter changes
   useEffect(() => {
     setPage(1);
   }, [search, classFilter]);
@@ -155,51 +154,60 @@ export default function AdminStudentsPage() {
       ) : isError ? (
         <ErrorState title="Failed to load students" message="Could not fetch student data" onRetry={() => refetch()} />
       ) : (
-        <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit">
-          <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
-            <motion.div variants={listItem} className="flex items-center justify-between flex-wrap gap-3">
-              <div>
-                <h1 className="text-headline-sm">Students</h1>
-                <p className="text-sm text-on-surface-variant">{students.length} total students</p>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="p-6 max-w-6xl mx-auto pb-32"
+        >
+          <motion.div variants={cardStackReveal} custom={0} className="space-y-16">
+            <motion.div variants={cardStackReveal} custom={1}>
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <h1 className="text-headline-sm font-bold">Students</h1>
+                  <p className="text-body-md text-muted-foreground">{students.length} total students</p>
+                </div>
+                <Button onClick={() => setShowCreate(true)}>
+                  <Icon name="add" size={16} className="mr-2" />
+                  Add Student
+                </Button>
               </div>
-              <Button onClick={() => setShowCreate(true)}>
-                <Icon name="add" size={16} className="mr-2" />
-                Add Student
-              </Button>
             </motion.div>
 
-            <motion.div variants={listItem} className="flex items-center gap-3 flex-wrap">
-              <div className="relative flex-1 min-w-[200px]">
-                <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
-                <Input
-                  placeholder="Search students..."
-                  className="pl-10"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+            <motion.div variants={cardStackReveal} custom={2}>
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                  <Input
+                    placeholder="Search students..."
+                    className="pl-10 border-border/60 placeholder:text-muted-foreground"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
+                <OptionsSelect
+                  options={[{ value: 'all', label: 'All Classes' }, ...classOptions]}
+                  value={classFilter}
+                  onChange={(v: string) => setClassFilter(v)}
+                  className="w-40"
                 />
+                <button
+                  className="text-label-sm text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => { setSearch(''); setClassFilter('all'); }}
+                >
+                  Clear
+                </button>
               </div>
-              <OptionsSelect
-                options={[{ value: 'all', label: 'All Classes' }, ...classOptions]}
-                value={classFilter}
-                onChange={(v: string) => setClassFilter(v)}
-                className="w-40"
-              />
-              <button
-                className="text-sm text-primary hover:underline"
-                onClick={() => { setSearch(''); setClassFilter('all'); }}
-              >
-                Clear
-              </button>
             </motion.div>
 
             {filtered.length === 0 ? (
-              <motion.div variants={listItem}>
+              <motion.div variants={cardStackReveal} custom={3}>
                 {students.length === 0 ? (
-                  <Card>
+                  <Card className="border-border/60">
                     <CardContent className="flex flex-col items-center gap-4 py-16">
-                      <Icon name="person_off" size={48} className="text-on-surface-variant/50" />
-                      <p className="font-medium">No students yet</p>
-                      <p className="text-sm text-on-surface-variant">Students will appear here once they register.</p>
+                      <Icon name="person_off" size={48} className="text-muted-foreground/50" />
+                      <p className="text-title-sm font-medium">No students yet</p>
+                      <p className="text-body-md text-muted-foreground">Students will appear here once they register.</p>
                       <Button onClick={() => setShowCreate(true)}>
                         <Icon name="add" size={16} className="mr-2" />
                         Create Student
@@ -207,12 +215,12 @@ export default function AdminStudentsPage() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <Card>
+                  <Card className="border-border/60">
                     <CardContent className="flex flex-col items-center gap-4 py-16">
-                      <Icon name="search_off" size={48} className="text-on-surface-variant/50" />
-                      <p className="font-medium">No students match your search</p>
-                      <p className="text-sm text-on-surface-variant">Try adjusting your search or filter.</p>
-                      <button className="text-sm text-primary hover:underline" onClick={() => { setSearch(''); setClassFilter('all'); }}>
+                      <Icon name="search_off" size={48} className="text-muted-foreground/50" />
+                      <p className="text-title-sm font-medium">No students match your search</p>
+                      <p className="text-body-md text-muted-foreground">Try adjusting your search or filter.</p>
+                      <button className="text-label-sm text-muted-foreground hover:text-foreground transition-colors" onClick={() => { setSearch(''); setClassFilter('all'); }}>
                         Clear Filters
                       </button>
                     </CardContent>
@@ -220,29 +228,29 @@ export default function AdminStudentsPage() {
                 )}
               </motion.div>
             ) : (
-              <motion.div variants={listItem}>
-                <div className="border-outline-variant rounded-lg overflow-x-auto border">
+              <motion.div variants={cardStackReveal} custom={3}>
+                <div className="border border-border/60 rounded-lg overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b-outline-variant border-b bg-surface-variant/50">
-                        <th className="text-left text-label-sm font-medium text-on-surface-variant uppercase tracking-wider px-4 py-3">Name</th>
-                        <th className="text-left text-label-sm font-medium text-on-surface-variant uppercase tracking-wider px-4 py-3">Email</th>
-                        <th className="text-left text-label-sm font-medium text-on-surface-variant uppercase tracking-wider px-4 py-3">Student ID</th>
-                        <th className="text-left text-label-sm font-medium text-on-surface-variant uppercase tracking-wider px-4 py-3">Class</th>
-                        <th className="text-left text-label-sm font-medium text-on-surface-variant uppercase tracking-wider px-4 py-3">Status</th>
-                        <th className="text-right text-label-sm font-medium text-on-surface-variant uppercase tracking-wider px-4 py-3">Actions</th>
+                      <tr className="border-b border-border/60 bg-muted/30">
+                        <th className="text-left text-label-sm font-bold text-muted-foreground uppercase tracking-wider px-4 py-3">Name</th>
+                        <th className="text-left text-label-sm font-bold text-muted-foreground uppercase tracking-wider px-4 py-3">Email</th>
+                        <th className="text-left text-label-sm font-bold text-muted-foreground uppercase tracking-wider px-4 py-3">Student ID</th>
+                        <th className="text-left text-label-sm font-bold text-muted-foreground uppercase tracking-wider px-4 py-3">Class</th>
+                        <th className="text-left text-label-sm font-bold text-muted-foreground uppercase tracking-wider px-4 py-3">Status</th>
+                        <th className="text-right text-label-sm font-bold text-muted-foreground uppercase tracking-wider px-4 py-3">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y-outline-variant divide-y">
+                    <tbody className="divide-y divide-border/40">
                       {paginatedStudents.map((student) => {
                         const className = classes.find((c: ClassEntry) => c.id === student.classId)?.name || '\u2014';
                         return (
-                          <tr key={student.id} className="hover:bg-surface-variant/40 transition-colors">
+                          <tr key={student.id} className="hover:bg-muted/20 transition-colors">
                             <td className="px-4 py-3">
                               <span className="text-body-md font-medium">{student.displayName}</span>
                             </td>
-                            <td className="px-4 py-3 text-body-md text-on-surface-variant">{student.email}</td>
-                            <td className="px-4 py-3 text-body-md text-on-surface-variant font-mono">{student.studentId || '\u2014'}</td>
+                            <td className="px-4 py-3 text-body-md text-muted-foreground">{student.email}</td>
+                            <td className="px-4 py-3 text-body-md text-muted-foreground font-mono">{student.studentId || '\u2014'}</td>
                             <td className="px-4 py-3 text-body-md">{className}</td>
                             <td className="px-4 py-3">
                               <Badge variant={student.isActive === false ? 'destructive' : 'success'} className="text-[10px]">
@@ -305,6 +313,7 @@ export default function AdminStudentsPage() {
               <Label>Full Name</Label>
               <Input
                 placeholder="John Doe"
+                className="border-border/60 placeholder:text-muted-foreground"
                 value={createForm.displayName}
                 onChange={(e) => setCreateForm((f) => ({ ...f, displayName: e.target.value }))}
               />
@@ -324,6 +333,7 @@ export default function AdminStudentsPage() {
                 <Input
                   type="number"
                   placeholder="e.g. 5"
+                  className="border-border/60 placeholder:text-muted-foreground"
                   value={createForm.rollNo}
                   onChange={(e) => setCreateForm((f) => ({ ...f, rollNo: e.target.value }))}
                 />
@@ -333,6 +343,7 @@ export default function AdminStudentsPage() {
               <Label>Academic Year</Label>
               <Input
                 placeholder="e.g. 2026"
+                className="border-border/60 placeholder:text-muted-foreground"
                 value={createForm.academicYear}
                 onChange={(e) => setCreateForm((f) => ({ ...f, academicYear: e.target.value }))}
               />
@@ -367,22 +378,22 @@ export default function AdminStudentsPage() {
             </DialogDescription>
           </DialogHeader>
           {createdCredentials && (
-            <div className="space-y-4 bg-surface-variant/40 p-4 rounded-lg border border-outline-variant font-mono text-sm">
-              <div className="grid grid-cols-2 gap-2 border-b border-outline-variant/60 pb-2">
-                <span className="font-bold text-on-surface-variant">Name:</span>
+            <div className="space-y-4 bg-muted/30 p-4 rounded-lg border border-border/60 font-mono text-sm">
+              <div className="grid grid-cols-2 gap-2 border-b border-border/60 pb-2">
+                <span className="font-bold text-muted-foreground">Name:</span>
                 <span className="col-span-2 select-all font-sans font-medium">{createdCredentials.displayName}</span>
               </div>
-              <div className="grid grid-cols-2 gap-2 border-b border-outline-variant/60 pb-2">
-                <span className="font-bold text-on-surface-variant">Student ID:</span>
+              <div className="grid grid-cols-2 gap-2 border-b border-border/60 pb-2">
+                <span className="font-bold text-muted-foreground">Student ID:</span>
                 <span className="col-span-2 select-all text-primary font-bold">{createdCredentials.studentId}</span>
               </div>
-              <div className="grid grid-cols-2 gap-2 border-b border-outline-variant/60 pb-2">
-                <span className="font-bold text-on-surface-variant">Email:</span>
+              <div className="grid grid-cols-2 gap-2 border-b border-border/60 pb-2">
+                <span className="font-bold text-muted-foreground">Email:</span>
                 <span className="col-span-2 select-all">{createdCredentials.email}</span>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <span className="font-bold text-on-surface-variant">Password:</span>
-                <span className="col-span-2 select-all text-error font-bold bg-error-container/50 px-2 py-0.5 rounded">{createdCredentials.generatedPassword}</span>
+                <span className="font-bold text-muted-foreground">Password:</span>
+                <span className="col-span-2 select-all text-error font-bold bg-error/10 px-2 py-0.5 rounded">{createdCredentials.generatedPassword}</span>
               </div>
             </div>
           )}
@@ -420,6 +431,7 @@ export default function AdminStudentsPage() {
               <Label>Full Name</Label>
               <Input
                 placeholder="John Doe"
+                className="border-border/60 placeholder:text-muted-foreground"
                 value={editForm.displayName}
                 onChange={(e) => setEditForm((f) => ({ ...f, displayName: e.target.value }))}
               />
@@ -439,6 +451,7 @@ export default function AdminStudentsPage() {
                 <Input
                   type="number"
                   placeholder="e.g. 5"
+                  className="border-border/60 placeholder:text-muted-foreground"
                   value={editForm.rollNo}
                   onChange={(e) => setEditForm((f) => ({ ...f, rollNo: e.target.value }))}
                 />
@@ -448,6 +461,7 @@ export default function AdminStudentsPage() {
               <Label>Academic Year</Label>
               <Input
                 placeholder="e.g. 2026"
+                className="border-border/60 placeholder:text-muted-foreground"
                 value={editForm.academicYear}
                 onChange={(e) => setEditForm((f) => ({ ...f, academicYear: e.target.value }))}
               />

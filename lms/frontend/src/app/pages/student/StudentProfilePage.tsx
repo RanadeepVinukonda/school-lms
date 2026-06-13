@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { cn, getInitials, formatDate } from '@/lib/utils';
 import { getLetterGrade } from '@/lib/format';
-import { pageTransition, listItem } from '@/lib/motion';
+import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { useQuery } from '@tanstack/react-query';
@@ -73,19 +73,26 @@ export default function StudentProfilePage() {
   return (
     <>
       <SEOHead title="My Profile" description="Your student profile and academic summary" />
-      <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-4xl mx-auto space-y-6 pb-20">
-        <h1 className="text-headline-sm font-bold">My Profile</h1>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="p-6 max-w-6xl mx-auto pb-32 space-y-16"
+      >
+        <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+          <h1 className="text-headline-sm md:text-headline-md font-bold tracking-tight">My Profile</h1>
+        </motion.div>
         <DataFetchWrapper data={data} isLoading={isLoading} error={isError ? error ?? new Error('Failed to load profile') : null} loadingType="profile" emptyMessage="Could not load profile information" onRetry={() => refetch()} errorTitle="Failed to load profile">
           {(d) => (
-            <div className="space-y-6">
+            <div className="space-y-16">
               {/* School Information */}
-              <motion.div variants={listItem} initial="hidden" animate="show">
-                <Card variant="elevated" className="rounded-2xl">
+              <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                <Card className="border-border/60 rounded-2xl">
                   <CardContent className="p-6">
                     <div className="flex items-start gap-5">
                       <img src="/genesis_icon.png" alt="Genesis School Crest" className="h-20 w-auto object-contain shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <h2 className="text-xl font-bold">Genesis International Montessori &amp; STEM School</h2>
+                        <h2 className="text-headline-sm font-bold">Genesis International Montessori &amp; STEM School</h2>
                         <p className="text-warning uppercase text-xs tracking-wider font-semibold mt-0.5">Learn &middot; Lead &middot; Achieve</p>
                         <p className="text-body-sm text-muted-foreground mt-2">A premier institution dedicated to academic excellence, leadership development, and holistic student growth.</p>
                         <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-border">
@@ -109,15 +116,15 @@ export default function StudentProfilePage() {
               </motion.div>
 
               {/* Personal Information */}
-              <motion.div variants={listItem} initial="hidden" animate="show">
-                <Card variant="elevated">
+              <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                <Card className="border-border/60">
                   <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-5">
                     <Avatar className="h-20 w-20">
                       <AvatarImage src={d.user.avatar} alt={d.user.displayName} />
                       <AvatarFallback className="text-xl font-bold bg-primary-container text-primary">{getInitials(d.user.displayName)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 text-center sm:text-left">
-                      <h2 className="text-xl font-bold">{d.user.displayName}</h2>
+                      <h2 className="text-title-md font-bold">{d.user.displayName}</h2>
                       <p className="text-body-md text-muted-foreground">Student &middot; Roll No: {d.user.studentId ?? 'N/A'}</p>
                       <div className="flex items-center justify-center sm:justify-start gap-3 mt-2 flex-wrap">
                         <Badge variant="secondary" className="text-xs gap-1"><Icon name="mail" size={12} />{d.user.email}</Badge>
@@ -132,34 +139,49 @@ export default function StudentProfilePage() {
               </motion.div>
 
               {/* Academic Overview */}
-              <motion.div variants={listItem} initial="hidden" animate="show">
-                <div className="grid grid-cols-2 gap-3">
-                  <Card variant="elevated" className="p-4 flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary-container flex items-center justify-center shrink-0"><Icon name="school" size={20} className="text-primary" /></div>
-                    <div><p className="text-xs text-muted-foreground">Subjects</p><p className="text-lg font-bold">{d.totalEnrolled}</p></div>
-                  </Card>
-                  <Card variant="elevated" className="p-4 flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-success-container flex items-center justify-center shrink-0"><Icon name="grade" size={20} className="text-success" /></div>
-                    <div><p className="text-xs text-muted-foreground">Avg Grade</p><p className="text-lg font-bold">{d.avgPercentage.toFixed(0)}%</p></div>
-                  </Card>
-                  <Card variant="elevated" className="p-4 flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-warning-container flex items-center justify-center shrink-0"><Icon name="assignment" size={20} className="text-warning" /></div>
-                    <div><p className="text-xs text-muted-foreground">Completed</p><p className="text-lg font-bold">{d.grades.length}</p></div>
-                  </Card>
-                  <Card variant="elevated" className="p-4 flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary-container/50 flex items-center justify-center shrink-0"><Icon name="trending_up" size={20} className="text-primary" /></div>
-                    <div><p className="text-xs text-muted-foreground">Enrolled</p><p className="text-lg font-bold">{d.enrolledSubjects.length}</p></div>
-                  </Card>
-                </div>
+              <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                <motion.div
+                  variants={staggerContainer}
+                  initial="hidden"
+                  whileInView="show"
+                  viewport={{ once: true, margin: '-60px' }}
+                  className="grid grid-cols-2 sm:grid-cols-4 gap-4"
+                >
+                  <motion.div variants={cardStackReveal} custom={0}>
+                    <Card className="p-5 flex items-center gap-4 border-border/60">
+                      <div className="h-12 w-12 rounded-xl bg-primary-container flex items-center justify-center shrink-0"><Icon name="school" size={20} className="text-primary" /></div>
+                      <div><p className="text-label-xs text-muted-foreground">Subjects</p><p className="text-display-xs font-bold">{d.totalEnrolled}</p></div>
+                    </Card>
+                  </motion.div>
+                  <motion.div variants={cardStackReveal} custom={1}>
+                    <Card className="p-5 flex items-center gap-4 border-border/60">
+                      <div className="h-12 w-12 rounded-xl bg-success-container flex items-center justify-center shrink-0"><Icon name="grade" size={20} className="text-success" /></div>
+                      <div><p className="text-label-xs text-muted-foreground">Avg Grade</p><p className="text-display-xs font-bold">{d.avgPercentage.toFixed(0)}%</p></div>
+                    </Card>
+                  </motion.div>
+                  <motion.div variants={cardStackReveal} custom={2}>
+                    <Card className="p-5 flex items-center gap-4 border-border/60">
+                      <div className="h-12 w-12 rounded-xl bg-warning-container flex items-center justify-center shrink-0"><Icon name="assignment" size={20} className="text-warning" /></div>
+                      <div><p className="text-label-xs text-muted-foreground">Completed</p><p className="text-display-xs font-bold">{d.grades.length}</p></div>
+                    </Card>
+                  </motion.div>
+                  <motion.div variants={cardStackReveal} custom={3}>
+                    <Card className="p-5 flex items-center gap-4 border-border/60">
+                      <div className="h-12 w-12 rounded-xl bg-primary-container/50 flex items-center justify-center shrink-0"><Icon name="trending_up" size={20} className="text-primary" /></div>
+                      <div><p className="text-label-xs text-muted-foreground">Enrolled</p><p className="text-display-xs font-bold">{d.enrolledSubjects.length}</p></div>
+                    </Card>
+                  </motion.div>
+                </motion.div>
               </motion.div>
 
-
-
               {/* Assignment History */}
-              <motion.div variants={listItem} initial="hidden" animate="show">
-                <Card variant="elevated">
-                  <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Icon name="assignment" size={18} />Assignment History</CardTitle></CardHeader>
-                  <CardContent>
+              <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                <div className="mb-6">
+                  <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">ACADEMICS</p>
+                  <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">Assignment History</h2>
+                </div>
+                <Card className="border-border/60">
+                  <CardContent className="p-5">
                     {d.assignmentGrades.length === 0 ? <EmptySection icon="assignment" message="No assignments graded yet" /> : (
                       <div className="space-y-2">
                         {d.assignmentGrades.map((g) => {
@@ -184,13 +206,14 @@ export default function StudentProfilePage() {
                 </Card>
               </motion.div>
 
-
-
               {/* Settings */}
-              <motion.div variants={listItem} initial="hidden" animate="show">
-                <Card variant="elevated">
-                  <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Icon name="settings" size={18} />Settings</CardTitle></CardHeader>
-                  <CardContent>
+              <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                <div className="mb-6">
+                  <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">PREFERENCES</p>
+                  <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">Settings</h2>
+                </div>
+                <Card className="border-border/60">
+                  <CardContent className="p-5">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <PasswordChangeDialog />
                       <Button variant="outline" className="justify-start gap-2" asChild>

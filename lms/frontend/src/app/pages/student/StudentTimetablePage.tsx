@@ -4,7 +4,7 @@ import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent } from '@/components/ui/card';
 import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
-import { pageTransition } from '@/lib/motion';
+import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/lib/motion';
 import { useQuery } from '@tanstack/react-query';
 import { getTimetableByClass, getSubject, getUser } from '@/services/dataService';
 import type { Subject as DataServiceSubject, UserDoc, TimetableEntry } from '@/services/dataService';
@@ -73,16 +73,17 @@ export default function StudentTimetablePage() {
     <>
       <SEOHead title="Timetable" description="Your class schedule" />
       <motion.div
-        variants={pageTransition}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        className="p-4 max-w-6xl mx-auto pb-20"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="p-6 max-w-6xl mx-auto pb-32 space-y-16"
       >
-        <div className="mb-4">
-          <h1 className="text-headline-sm font-bold">Timetable</h1>
-          <p className="text-body-md text-muted-foreground">Weekly class schedule</p>
-        </div>
+        <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+          <div>
+            <h1 className="text-headline-sm md:text-headline-md font-bold tracking-tight">Timetable</h1>
+            <p className="text-body-md text-muted-foreground">Weekly class schedule</p>
+          </div>
+        </motion.div>
 
         <DataFetchWrapper
           data={data}
@@ -95,108 +96,109 @@ export default function StudentTimetablePage() {
           errorTitle="Failed to load timetable"
         >
           {(slots: TimetableSlot[]) => (
-            <div className="overflow-x-auto -mx-4 px-4 pb-4">
-              <div className="grid grid-cols-6 gap-2 min-w-[640px]">
-                <div className="sticky left-0 bg-background z-10">
-                  <Card variant="elevated" className="h-10 flex items-center justify-center rounded-lg">
-                    <span className="text-label-sm font-semibold text-muted-foreground">Period</span>
-                  </Card>
-                </div>
-                {days.map((day) => (
-                  <div key={day} className="text-center">
-                    <Card
-                      variant="elevated"
-                      className={cn(
-                        'h-10 flex items-center justify-center rounded-lg font-semibold text-title-sm',
-                        day === todayKey
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-surface-variant text-muted-foreground',
-                      )}
-                    >
-                      <span className="hidden sm:inline">{DAY_FULL[day]}</span>
-                      <span className="sm:hidden">{DAY_LABELS[day]}</span>
+            <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+              <div className="overflow-x-auto -mx-4 px-4 pb-4">
+                <div className="grid grid-cols-6 gap-2 min-w-[640px]">
+                  <div className="sticky left-0 bg-background z-10">
+                    <Card className="h-10 flex items-center justify-center rounded-lg border-border/60">
+                      <span className="text-label-sm font-semibold text-muted-foreground">Period</span>
                     </Card>
                   </div>
-                ))}
-
-                {periods.map((period) => (
-                  <div key={period} className="contents">
-                    <div className="sticky left-0 bg-background z-10">
-                      <div className="h-20 flex items-center justify-center rounded-lg bg-surface-variant/50">
-                        <span className="text-label-sm font-medium text-muted-foreground">
-                          {period}
-                        </span>
-                      </div>
+                  {days.map((day) => (
+                    <div key={day} className="text-center">
+                      <Card
+                        className={cn(
+                          'h-10 flex items-center justify-center rounded-lg border-border/60 font-semibold text-title-sm',
+                          day === todayKey
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-surface-variant text-muted-foreground',
+                        )}
+                      >
+                        <span className="hidden sm:inline">{DAY_FULL[day]}</span>
+                        <span className="sm:hidden">{DAY_LABELS[day]}</span>
+                      </Card>
                     </div>
+                  ))}
 
-                    {days.map((day) => {
-                      const slot = slots.find((s) => s.day === day && s.period === period);
-                      const isToday = day === todayKey;
+                  {periods.map((period) => (
+                    <div key={period} className="contents">
+                      <div className="sticky left-0 bg-background z-10">
+                        <div className="h-20 flex items-center justify-center rounded-lg bg-surface-variant/50">
+                          <span className="text-label-sm font-medium text-muted-foreground">
+                            {period}
+                          </span>
+                        </div>
+                      </div>
 
-                      if (!slot) {
-                        return (
-                          <div
-                            key={`${day}-${period}`}
-                            className={cn(
-                              'h-20 rounded-lg border border-dashed',
-                              isToday ? 'border-primary/20 bg-primary-container/30' : 'border-outline-variant/50',
-                            )}
-                          />
-                        );
-                      }
+                      {days.map((day) => {
+                        const slot = slots.find((s) => s.day === day && s.period === period);
+                        const isToday = day === todayKey;
 
-                      return (
-                        <motion.div
-                          key={slot.id}
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: (period - 1) * 0.03 }}
-                          className={cn(
-                            'h-20 rounded-lg p-2 flex flex-col justify-between cursor-default group relative overflow-hidden',
-                            isToday
-                              ? 'ring-2 ring-primary/30'
-                              : '',
-                          )}
-                          style={{
-                            backgroundColor: slot.subject
-                              ? `${slot.subject.color || '#6366f1'}15`
-                              : 'hsl(var(--surface-variant))',
-                          }}
-                        >
-                          {slot.subject && (
+                        if (!slot) {
+                          return (
                             <div
-                              className="absolute top-0 left-0 w-1 h-full rounded-l"
-                              style={{ backgroundColor: slot.subject.color || '#6366f1' }}
+                              key={`${day}-${period}`}
+                              className={cn(
+                                'h-20 rounded-lg border border-dashed',
+                                isToday ? 'border-primary/20 bg-primary-container/30' : 'border-border/30',
+                              )}
                             />
-                          )}
-                          <div className="pl-2 min-w-0">
-                            <p
-                              className="text-label-sm font-semibold truncate leading-tight"
-                              style={{ color: slot.subject?.color }}
-                            >
-                              {slot.subject?.name ?? 'Unknown'}
-                            </p>
-                            <p className="text-body-sm text-muted-foreground truncate leading-tight mt-0.5">
-                              {slot.teacher?.displayName ?? 'Unknown'}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-1 pl-2">
-                            <Icon
-                              name="meeting_room"
-                              size={10}
-                              className="text-muted-foreground flex-shrink-0"
-                            />
-                            <span className="text-body-sm text-muted-foreground truncate">
-                              Room {slot.room}
-                            </span>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                ))}
+                          );
+                        }
+
+                        return (
+                          <motion.div
+                            key={slot.id}
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: (period - 1) * 0.03 }}
+                            className={cn(
+                              'h-20 rounded-lg p-2 flex flex-col justify-between cursor-default group relative overflow-hidden',
+                              isToday
+                                ? 'ring-2 ring-primary/30'
+                                : '',
+                            )}
+                            style={{
+                              backgroundColor: slot.subject
+                                ? `${slot.subject.color || '#6366f1'}15`
+                                : 'hsl(var(--surface-variant))',
+                            }}
+                          >
+                            {slot.subject && (
+                              <div
+                                className="absolute top-0 left-0 w-1 h-full rounded-l"
+                                style={{ backgroundColor: slot.subject.color || '#6366f1' }}
+                              />
+                            )}
+                            <div className="pl-2 min-w-0">
+                              <p
+                                className="text-label-sm font-semibold truncate leading-tight"
+                                style={{ color: slot.subject?.color }}
+                              >
+                                {slot.subject?.name ?? 'Unknown'}
+                              </p>
+                              <p className="text-body-sm text-muted-foreground truncate leading-tight mt-0.5">
+                                {slot.teacher?.displayName ?? 'Unknown'}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1 pl-2">
+                              <Icon
+                                name="meeting_room"
+                                size={10}
+                                className="text-muted-foreground flex-shrink-0"
+                              />
+                              <span className="text-body-sm text-muted-foreground truncate">
+                                Room {slot.room}
+                              </span>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            </motion.div>
           )}
         </DataFetchWrapper>
       </motion.div>

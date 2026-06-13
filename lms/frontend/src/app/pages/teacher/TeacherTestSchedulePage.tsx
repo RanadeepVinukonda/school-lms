@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { pageTransition } from '@/lib/motion';
+import { scrollReveal, cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
 
@@ -115,52 +115,53 @@ export default function TeacherTestSchedulePage() {
   return (
     <>
       <SEOHead title="Test Schedule" description="Schedule and manage tests" canonical="/teacher/test-schedule" />
-      <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-6xl mx-auto space-y-6 pb-20">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-6xl mx-auto space-y-16 pb-32">
+        <motion.div variants={cardStackReveal} custom={0} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-headline-sm">Test Schedule</h1>
-            <p className="text-sm text-muted-foreground">Schedule, approve, and manage tests</p>
           </div>
           <Button onClick={() => setShowCreate(true)}><Icon name="add" size={16} className="mr-1" />Schedule Test</Button>
-        </div>
+        </motion.div>
 
-        <DataFetchWrapper data={data} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="list">
-          {(schedules: any[]) => (
-            <div className="space-y-2">
-              {schedules.length === 0 ? (
-                <Card><CardContent className="p-8 text-center text-muted-foreground"><Icon name="calendar_month" size={48} className="mx-auto mb-3 opacity-40" /><p>No scheduled tests.</p></CardContent></Card>
-              ) : (
-                schedules.map((s: any) => (
-                  <Card key={s.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold">{s.title}</h3>
-                            <Badge variant="outline" className={`text-xs ${STATUS_STYLES[s.status] || ''}`}>{s.status?.replace('_', ' ')}</Badge>
+        <motion.div variants={cardStackReveal} custom={0}>
+          <DataFetchWrapper data={data} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="list">
+            {(schedules: any[]) => (
+              <div className="space-y-2">
+                {schedules.length === 0 ? (
+                  <Card className="border-border/60"><CardContent className="p-8 text-center text-muted-foreground"><Icon name="calendar_month" size={48} className="mx-auto mb-3 opacity-40" /><p>No scheduled tests.</p></CardContent></Card>
+                ) : (
+                  schedules.map((s: any) => (
+                    <Card key={s.id} className="border-border/60">
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-semibold">{s.title}</h3>
+                              <Badge variant="outline" className={`text-xs ${STATUS_STYLES[s.status] || ''}`}>{s.status?.replace('_', ' ')}</Badge>
+                            </div>
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-1">
+                              <span><Icon name="schedule" size={12} className="inline mr-0.5" />{s.durationMinutes} min</span>
+                              <span><Icon name="play_arrow" size={12} className="inline mr-0.5" />{s.startDate ? new Date(s.startDate).toLocaleString() : '-'}</span>
+                              <span><Icon name="stop" size={12} className="inline mr-0.5" />{s.endDate ? new Date(s.endDate).toLocaleString() : '-'}</span>
+                              <span>{s.totalStudents || 0} students</span>
+                              <span>{s.attemptedCount || 0} attempts</span>
+                            </div>
+                            {s.approvedBy && <p className="text-xs text-muted-foreground mt-1">Approved by: {s.approvedBy}</p>}
                           </div>
-                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-1">
-                            <span><Icon name="schedule" size={12} className="inline mr-0.5" />{s.durationMinutes} min</span>
-                            <span><Icon name="play_arrow" size={12} className="inline mr-0.5" />{s.startDate ? new Date(s.startDate).toLocaleString() : '-'}</span>
-                            <span><Icon name="stop" size={12} className="inline mr-0.5" />{s.endDate ? new Date(s.endDate).toLocaleString() : '-'}</span>
-                            <span>{s.totalStudents || 0} students</span>
-                            <span>{s.attemptedCount || 0} attempts</span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {s.status === 'pending_approval' && <Button size="sm" onClick={() => approveMutation.mutate(s.id)}><Icon name="check" size={14} className="mr-1" />Approve</Button>}
+                            {(s.status === 'scheduled' || s.status === 'approved') && <Button variant="outline" size="sm" onClick={() => cancelMutation.mutate(s.id)}>Cancel</Button>}
+                            {(s.status === 'draft' || s.status === 'cancelled') && <Button variant="ghost" size="icon-sm" onClick={() => { if (confirm('Delete?')) deleteMutation.mutate(s.id); }}><Icon name="delete" size={16} /></Button>}
                           </div>
-                          {s.approvedBy && <p className="text-xs text-muted-foreground mt-1">Approved by: {s.approvedBy}</p>}
                         </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          {s.status === 'pending_approval' && <Button size="sm" onClick={() => approveMutation.mutate(s.id)}><Icon name="check" size={14} className="mr-1" />Approve</Button>}
-                          {(s.status === 'scheduled' || s.status === 'approved') && <Button variant="outline" size="sm" onClick={() => cancelMutation.mutate(s.id)}>Cancel</Button>}
-                          {(s.status === 'draft' || s.status === 'cancelled') && <Button variant="ghost" size="icon-sm" onClick={() => { if (confirm('Delete?')) deleteMutation.mutate(s.id); }}><Icon name="delete" size={16} /></Button>}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          )}
-        </DataFetchWrapper>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            )}
+          </DataFetchWrapper>
+        </motion.div>
 
         <Dialog open={showCreate} onOpenChange={setShowCreate}>
           <DialogContent className="max-w-lg">

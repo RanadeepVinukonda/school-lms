@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { Input } from '@/components/ui/input';
-import { pageTransition } from '@/lib/motion';
+import { cardStackReveal } from '@/lib/motion';
 import { formatDate } from '@/lib/utils';
 
 interface AuditLog {
@@ -91,98 +91,105 @@ export default function AdminAuditLogsPage() {
   return (
     <>
       <SEOHead title="Audit Logs" description="View and manage system audit logs" />
-      <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-6xl mx-auto space-y-6 pb-20">
-        <div className="flex items-center justify-between">
-          <h1 className="text-headline-sm flex items-center gap-2">
-            <Icon name="history" size={24} className="text-primary" />
-            Audit Logs
-          </h1>
-          <div className="flex items-center gap-2">
-            <Input
-              placeholder="Filter by action..."
-              value={actionFilter}
-              onChange={(e) => {
-                setActionFilter(e.target.value);
-                setPage(1);
-              }}
-              className="max-w-60"
-            />
-          </div>
-        </div>
-
-        <DataFetchWrapper data={logsQuery.data?.items} isLoading={logsQuery.isLoading} error={logsQuery.error} loadingType="list">
-          {(items) => (
-            <div className="space-y-2">
-              {items.length === 0 && (
-                <p className="text-muted-foreground text-sm text-center py-8">No audit logs found.</p>
-              )}
-              {items.map((log) => (
-                <Card key={log.id} variant="elevated" className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:ring-1 hover:ring-primary/20" tabIndex={0} role="button" onClick={() => setSelectedLog(selectedLog?.id === log.id ? null : log)}>
-                  <CardContent className="p-3">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          {getActionBadge(log.action)}
-                          <span className="text-sm font-medium truncate">{log.summary}</span>
-                        </div>
-                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                          <span>{log.performedByName} ({log.performedByRole})</span>
-                          <span>{formatDate(log.timestamp)}</span>
-                        </div>
-                      </div>
-                      <Icon name={selectedLog?.id === log.id ? 'expand_less' : 'expand_more'} size={16} className="text-muted-foreground flex-shrink-0" />
-                    </div>
-
-                    {selectedLog?.id === log.id && (
-                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="mt-3 pt-3 border-t border-outline-variant space-y-2 text-xs">
-                        <div className="grid grid-cols-2 gap-2">
-                          <div><span className="text-muted-foreground">Target:</span> {log.targetType} "{log.targetName}" ({log.targetId})</div>
-                          <div><span className="text-muted-foreground">Performed By:</span> {log.performedBy}</div>
-                        </div>
-                        {log.oldValue && (
-                          <div>
-                            <span className="text-muted-foreground">Old Value:</span>
-                            <pre className="mt-1 p-2 rounded bg-muted overflow-x-auto">{JSON.stringify(log.oldValue, null, 2)}</pre>
-                          </div>
-                        )}
-                        {log.newValue && (
-                          <div>
-                            <span className="text-muted-foreground">New Value:</span>
-                            <pre className="mt-1 p-2 rounded bg-muted overflow-x-auto">{JSON.stringify(log.newValue, null, 2)}</pre>
-                          </div>
-                        )}
-                        {log.action.includes('delete') && log.oldValue && (
-                          <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); recoverMutation.mutate(log.id); }} disabled={recoverMutation.isPending}>
-                            <Icon name="restore" size={14} className="mr-1" />
-                            Recover Entity
-                          </Button>
-                        )}
-                      </motion.div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-
-              {pagination && (
-                <div className="flex items-center justify-between pt-2">
-                  <span className="text-xs text-muted-foreground">
-                    Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" disabled={!pagination.hasPrev} onClick={handlePrev}>
-                      <Icon name="chevron_left" size={14} />
-                      Prev
-                    </Button>
-                    <Button variant="outline" size="sm" disabled={!pagination.hasNext} onClick={handleNext}>
-                      Next
-                      <Icon name="chevron_right" size={14} />
-                    </Button>
-                  </div>
-                </div>
-              )}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="p-6 max-w-6xl mx-auto pb-32"
+      >
+        <motion.div variants={cardStackReveal} custom={0} className="space-y-16">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-headline-sm">Audit Logs</h1>
+              <p className="text-body-md text-muted-foreground">View and manage system audit logs</p>
             </div>
-          )}
-        </DataFetchWrapper>
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Filter by action..."
+                value={actionFilter}
+                onChange={(e) => {
+                  setActionFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="max-w-60 border-border/60 placeholder:text-muted-foreground"
+              />
+            </div>
+          </div>
+
+          <DataFetchWrapper data={logsQuery.data?.items} isLoading={logsQuery.isLoading} error={logsQuery.error} loadingType="list">
+            {(items) => (
+              <div className="space-y-3">
+                {items.length === 0 && (
+                  <p className="text-muted-foreground text-sm text-center py-8">No audit logs found.</p>
+                )}
+                {items.map((log) => (
+                  <Card key={log.id} className="border-border/60 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:ring-1 hover:ring-primary/20" tabIndex={0} role="button" onClick={() => setSelectedLog(selectedLog?.id === log.id ? null : log)}>
+                    <CardContent className="p-5">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            {getActionBadge(log.action)}
+                            <span className="text-title-sm font-medium truncate">{log.summary}</span>
+                          </div>
+                          <div className="flex items-center gap-3 mt-1 text-label-xs text-muted-foreground">
+                            <span>{log.performedByName} ({log.performedByRole})</span>
+                            <span>{formatDate(log.timestamp)}</span>
+                          </div>
+                        </div>
+                        <Icon name={selectedLog?.id === log.id ? 'expand_less' : 'expand_more'} size={16} className="text-muted-foreground flex-shrink-0" />
+                      </div>
+
+                      {selectedLog?.id === log.id && (
+                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="mt-3 pt-3 border-t border-border/60 space-y-2 text-label-xs">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div><span className="text-muted-foreground">Target:</span> {log.targetType} "{log.targetName}" ({log.targetId})</div>
+                            <div><span className="text-muted-foreground">Performed By:</span> {log.performedBy}</div>
+                          </div>
+                          {log.oldValue && (
+                            <div>
+                              <span className="text-muted-foreground">Old Value:</span>
+                              <pre className="mt-1 p-2 rounded bg-muted overflow-x-auto">{JSON.stringify(log.oldValue, null, 2)}</pre>
+                            </div>
+                          )}
+                          {log.newValue && (
+                            <div>
+                              <span className="text-muted-foreground">New Value:</span>
+                              <pre className="mt-1 p-2 rounded bg-muted overflow-x-auto">{JSON.stringify(log.newValue, null, 2)}</pre>
+                            </div>
+                          )}
+                          {log.action.includes('delete') && log.oldValue && (
+                            <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); recoverMutation.mutate(log.id); }} disabled={recoverMutation.isPending}>
+                              <Icon name="restore" size={14} className="mr-1" />
+                              Recover Entity
+                            </Button>
+                          )}
+                        </motion.div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+
+                {pagination && (
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-label-xs text-muted-foreground">
+                      Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" disabled={!pagination.hasPrev} onClick={handlePrev}>
+                        <Icon name="chevron_left" size={14} />
+                        Prev
+                      </Button>
+                      <Button variant="outline" size="sm" disabled={!pagination.hasNext} onClick={handleNext}>
+                        Next
+                        <Icon name="chevron_right" size={14} />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </DataFetchWrapper>
+        </motion.div>
       </motion.div>
     </>
   );

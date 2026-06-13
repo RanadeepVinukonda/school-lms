@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/skeleton';
-import { pageTransition, listItem } from '@/lib/motion';
+import { scrollReveal, cardStackReveal } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import { useAuthStore } from '@/store/authStore';
 import { db } from '@/firebase/config';
@@ -134,7 +134,7 @@ export default function TeacherTextbookUploadPage() {
     return (
       <>
         <SEOHead title="Upload Textbook" description="Upload and process a textbook PDF" canonical="/teacher/textbooks/upload" />
-        <div className="p-4 max-w-3xl mx-auto space-y-6 pb-20">
+        <div className="p-6 max-w-3xl mx-auto space-y-6 pb-32">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-8 w-72 mt-2" />
           <Skeleton className="h-64 w-full mt-6" />
@@ -147,16 +147,16 @@ export default function TeacherTextbookUploadPage() {
     return (
       <>
         <SEOHead title="Upload Textbook" description="Upload and process a textbook PDF" canonical="/teacher/textbooks/upload" />
-        <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-3xl mx-auto space-y-6 pb-20">
-          <motion.div variants={listItem}>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-3xl mx-auto space-y-16 pb-32">
+          <motion.div variants={cardStackReveal} custom={0}>
             <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
               <Icon name="arrow_back" size={16} className="mr-1" />
               Back
             </Button>
             <h1 className="text-headline-sm">Upload Textbook</h1>
           </motion.div>
-          <motion.div variants={listItem}>
-            <Card>
+          <motion.div variants={cardStackReveal} custom={0}>
+            <Card className="border-border/60">
               <CardContent className="p-12 text-center space-y-4">
                 <Icon name="school" size={48} className="text-muted-foreground mx-auto" />
                 <p className="text-muted-foreground">
@@ -176,19 +176,18 @@ export default function TeacherTextbookUploadPage() {
   return (
     <>
       <SEOHead title="Upload Textbook" description="Upload and process a textbook PDF" canonical="/teacher/textbooks/upload" />
-      <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-3xl mx-auto space-y-6 pb-20">
-        <motion.div variants={listItem}>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-3xl mx-auto space-y-16 pb-32">
+        <motion.div variants={cardStackReveal} custom={0}>
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
             <Icon name="arrow_back" size={16} className="mr-1" />
             Back
           </Button>
           <h1 className="text-headline-sm">Upload Textbook</h1>
-          <p className="text-sm text-muted-foreground">Upload a PDF textbook for your class</p>
         </motion.div>
 
-        <motion.div variants={listItem}>
-          <Card>
-            <CardContent className="p-6 space-y-6">
+        <motion.div variants={cardStackReveal} custom={0}>
+          <Card className="border-border/60">
+            <CardContent className="p-5 space-y-6">
               <div>
                 <label className="text-sm font-medium mb-2 block">Title</label>
                 <input

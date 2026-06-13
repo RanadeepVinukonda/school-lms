@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { listContainer } from '@/lib/motion';
+import { staggerContainer } from '@/lib/motion';
 import api from '@/services/api';
 import { VideoCard } from './VideoCard';
 import type { TeacherVideo } from './types';
@@ -158,7 +158,7 @@ export function MyLibraryTab({ onTabChange }: MyLibraryTabProps) {
         }
       >
         {(videos) => (
-          <motion.div variants={listContainer} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+          <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
             {videos.map((video) => (
               <VideoCard
                 key={video.id}

@@ -13,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/skeleton';
-import { pageTransition, listItem, listContainer } from '@/lib/motion';
+import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
 import { getTextbooksBySubject, getChaptersForTextbook, getConceptsForChapter } from '@/services/textbookService';
@@ -452,7 +452,7 @@ export default function TeacherAssessmentCreatePage() {
     return (
       <>
         <SEOHead title="Create Assessment" description="Create quizzes and assignments for your class" canonical="/teacher/assessments/create" />
-        <div className="p-4 max-w-4xl mx-auto space-y-6 pb-20">
+        <div className="p-6 max-w-4xl mx-auto pb-32 space-y-16">
           <Skeleton className="h-8 w-56" />
           <Skeleton className="h-4 w-80" />
           <Skeleton className="h-10 w-full mt-4" />
@@ -468,16 +468,18 @@ export default function TeacherAssessmentCreatePage() {
     return (
       <>
         <SEOHead title="Create Assessment" description="Create quizzes and assignments for your class" canonical="/teacher/assessments/create" />
-        <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-4xl mx-auto space-y-6 pb-20">
-          <Card>
-            <CardContent className="p-12 text-center space-y-4">
-              <Icon name="error_outline" size={48} className="text-destructive mx-auto" />
-              <p className="text-muted-foreground">Failed to load your assignments. Please try again.</p>
-              <Button variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: ['teacher-assignments', user?.id] })}>
-                Retry
-              </Button>
-            </CardContent>
-          </Card>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-4xl mx-auto pb-32 space-y-16">
+          <motion.div variants={cardStackReveal} custom={0}>
+            <Card className="border-border/60">
+              <CardContent className="p-5 text-center space-y-4">
+                <Icon name="error_outline" size={48} className="text-destructive mx-auto" />
+                <p className="text-muted-foreground">Failed to load your assignments. Please try again.</p>
+                <Button variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: ['teacher-assignments', user?.id] })}>
+                  Retry
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
         </motion.div>
       </>
     );
@@ -487,14 +489,14 @@ export default function TeacherAssessmentCreatePage() {
     return (
       <>
         <SEOHead title="Create Assessment" description="Create quizzes and assignments for your class" canonical="/teacher/assessments/create" />
-        <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-4xl mx-auto space-y-6 pb-20">
-          <motion.div variants={listItem}>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-4xl mx-auto pb-32 space-y-16">
+          <motion.div variants={cardStackReveal} custom={0}>
             <h1 className="text-headline-sm">Create Assessment</h1>
-            <p className="text-sm text-muted-foreground">Create quizzes and assignments for your class</p>
+            <p className="text-body-md text-muted-foreground">Create quizzes and assignments for your class</p>
           </motion.div>
-          <motion.div variants={listItem}>
-            <Card>
-              <CardContent className="p-12 text-center space-y-4">
+          <motion.div variants={cardStackReveal} custom={0}>
+            <Card className="border-border/60">
+              <CardContent className="p-5 text-center space-y-4">
                 <Icon name="school" size={48} className="text-muted-foreground mx-auto" />
                 <p className="text-muted-foreground">
                   You haven&apos;t been assigned to any class/subject yet. Contact your administrator.
@@ -513,22 +515,27 @@ export default function TeacherAssessmentCreatePage() {
   return (
     <>
       <SEOHead title="Create Assessment" description="Create quizzes and assignments for your class" canonical="/teacher/assessments/create" />
-      <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-4xl mx-auto space-y-6 pb-20">
-        <motion.div variants={listItem}>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="p-6 max-w-4xl mx-auto pb-32 space-y-16"
+      >
+        <motion.div variants={cardStackReveal} custom={0}>
           <Button variant="ghost" size="sm" onClick={() => window.history.back()} className="mb-2">
             <Icon name="arrow_back" size={16} className="mr-1" />
             Back
           </Button>
           <h1 className="text-headline-sm">Create Assessment</h1>
-          <p className="text-sm text-muted-foreground">Create quizzes and assignments for your class</p>
+          <p className="text-body-md text-muted-foreground">Create quizzes and assignments for your class</p>
         </motion.div>
 
-        <motion.div variants={listItem}>
-          <Card>
-            <CardContent className="p-6 space-y-6">
+        <motion.div variants={cardStackReveal} custom={0}>
+          <Card className="border-border/60">
+            <CardContent className="p-5 space-y-6">
               <div className="flex items-center gap-2">
                 <Icon name="school" size={16} className="text-primary" />
-                <span className="text-sm font-medium">Class &amp; Content Selection</span>
+                <span className="text-title-sm">Class &amp; Content Selection</span>
               </div>
 
               <div>
@@ -637,13 +644,13 @@ export default function TeacherAssessmentCreatePage() {
           </Card>
         </motion.div>
 
-        <motion.div variants={listItem}>
-          <Card>
-            <CardContent className="p-6 space-y-6">
+        <motion.div variants={cardStackReveal} custom={0}>
+          <Card className="border-border/60">
+            <CardContent className="p-5 space-y-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Icon name="assignment" size={16} className="text-primary" />
-                  <span className="text-sm font-medium">Assessment Type</span>
+                  <span className="text-title-sm">Assessment Type</span>
                 </div>
                 <div className="inline-flex rounded-lg border border-border p-0.5 bg-muted/50">
                   <button
@@ -687,7 +694,7 @@ export default function TeacherAssessmentCreatePage() {
 
                   <div>
                     <Label className="mb-2 block">Question Models</Label>
-                    <p className="text-xs text-muted-foreground mb-3">
+                    <p className="text-label-xs text-muted-foreground mb-3">
                       Select which question types to pull from the concept&apos;s question bank
                     </p>
                     <div className="grid grid-cols-2 sm:grid-cols-2 gap-3">
@@ -760,7 +767,7 @@ export default function TeacherAssessmentCreatePage() {
                         <Switch checked={quizShuffle} onCheckedChange={setQuizShuffle} />
                         <div>
                           <span className="text-sm font-medium">Shuffle Questions</span>
-                          <p className="text-xs text-muted-foreground">Randomize question order for each student</p>
+                          <p className="text-label-xs text-muted-foreground">Randomize question order for each student</p>
                         </div>
                       </label>
                     </div>
@@ -828,7 +835,7 @@ export default function TeacherAssessmentCreatePage() {
 
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <Label className="text-sm font-medium">Questions</Label>
+                      <Label className="text-title-sm">Questions</Label>
                       <Button variant="outline" size="sm" onClick={addAssignmentQuestion}>
                         <Icon name="add" size={14} className="mr-1" />
                         Add Question
@@ -837,10 +844,10 @@ export default function TeacherAssessmentCreatePage() {
 
                     <div className="space-y-4">
                       {assignmentQuestions.map((question, index) => (
-                        <Card key={question.id} variant="outlined">
-                          <CardContent className="p-4 space-y-3">
+                        <Card key={question.id} className="border-border/60">
+                          <CardContent className="p-5 space-y-3">
                             <div className="flex items-center justify-between">
-                              <span className="text-xs font-semibold text-muted-foreground">
+                              <span className="text-label-xs font-semibold text-muted-foreground">
                                 Question {index + 1}
                               </span>
                               {assignmentQuestions.length > 1 && (
@@ -855,7 +862,7 @@ export default function TeacherAssessmentCreatePage() {
                             </div>
 
                             <div>
-                              <Label className="mb-1 block text-xs">Question Text</Label>
+                              <Label className="mb-1 block text-label-xs">Question Text</Label>
                               <Input
                                 value={question.text}
                                 onChange={(e) => updateAssignmentQuestion(question.id, 'text', e.target.value)}
@@ -865,7 +872,7 @@ export default function TeacherAssessmentCreatePage() {
 
                             <div className="grid grid-cols-2 gap-3">
                               <div>
-                                <Label className="mb-1 block text-xs">Type</Label>
+                                <Label className="mb-1 block text-label-xs">Type</Label>
                                 <select
                                   value={question.type}
                                   onChange={(e) => updateAssignmentQuestion(question.id, 'type', e.target.value)}
@@ -877,7 +884,7 @@ export default function TeacherAssessmentCreatePage() {
                                 </select>
                               </div>
                               <div>
-                                <Label className="mb-1 block text-xs">Points</Label>
+                                <Label className="mb-1 block text-label-xs">Points</Label>
                                 <Input
                                   type="number"
                                   min={1}
@@ -890,7 +897,7 @@ export default function TeacherAssessmentCreatePage() {
                             {question.type === 'multiple_choice' && (
                               <div>
                                 <div className="flex items-center justify-between mb-1">
-                                  <Label className="text-xs">Options</Label>
+                                  <Label className="text-label-xs">Options</Label>
                                   <Button variant="ghost" size="icon-sm" onClick={() => addOption(question.id)}>
                                     <Icon name="add_circle" size={14} className="text-primary" />
                                   </Button>
@@ -898,7 +905,7 @@ export default function TeacherAssessmentCreatePage() {
                                 <div className="space-y-2">
                                   {question.options.map((opt, oi) => (
                                     <div key={oi} className="flex items-center gap-2">
-                                      <span className="text-xs font-medium text-muted-foreground w-5">
+                                      <span className="text-label-xs font-medium text-muted-foreground w-5">
                                         {String.fromCharCode(65 + oi)}.
                                       </span>
                                       <Input
@@ -923,7 +930,7 @@ export default function TeacherAssessmentCreatePage() {
                             )}
 
                             <div>
-                              <Label className="mb-1 block text-xs">Correct Answer</Label>
+                              <Label className="mb-1 block text-label-xs">Correct Answer</Label>
                               {question.type === 'multiple_choice' ? (
                                 <select
                                   value={question.correctAnswer}
@@ -988,7 +995,7 @@ export default function TeacherAssessmentCreatePage() {
                         <Switch checked={assignmentShuffle} onCheckedChange={setAssignmentShuffle} />
                         <div>
                           <span className="text-sm font-medium">Shuffle Questions</span>
-                          <p className="text-xs text-muted-foreground">Randomize question order for each student</p>
+                          <p className="text-label-xs text-muted-foreground">Randomize question order for each student</p>
                         </div>
                       </label>
                     </div>
@@ -1026,10 +1033,10 @@ export default function TeacherAssessmentCreatePage() {
         </motion.div>
 
         {selectedClassId && (
-          <motion.div variants={listItem}>
-            <Card>
+          <motion.div variants={cardStackReveal} custom={0}>
+            <Card className="border-border/60">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
+                <CardTitle className="text-title-sm flex items-center gap-2">
                   <Icon name="list_alt" size={18} className="text-muted-foreground" />
                   Existing Assessments
                 </CardTitle>
@@ -1037,7 +1044,7 @@ export default function TeacherAssessmentCreatePage() {
                   Quizzes and assignments for the selected class
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-5">
                 {quizzesLoading || assignmentsDataLoading ? (
                   <div className="space-y-3">
                     <Skeleton className="h-20 w-full" />
@@ -1051,21 +1058,21 @@ export default function TeacherAssessmentCreatePage() {
                     </p>
                   </div>
                 ) : (
-                  <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-3">
+                  <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3">
                     {allAssessments.map((assessment) => (
-                      <motion.div key={`${assessment.type}-${assessment.id}`} variants={listItem}>
-                        <Card variant="outlined">
-                          <CardContent className="p-4">
+                      <motion.div key={`${assessment.type}-${assessment.id}`} variants={cardStackReveal} custom={0}>
+                        <Card className="border-border/60">
+                          <CardContent className="p-5">
                             <div className="flex items-start justify-between gap-4">
                               <div className="flex items-start gap-3 min-w-0 flex-1">
-                                <div className={`h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                                <div className={`h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
                                   assessment.type === 'quiz'
                                     ? 'bg-primary-container text-on-primary-container'
                                     : 'bg-secondary-container text-on-secondary-container'
                                 }`}>
                                   <Icon
                                     name={assessment.type === 'quiz' ? 'quiz' : 'note_alt'}
-                                    size={18}
+                                    size={20}
                                   />
                                 </div>
                                 <div className="min-w-0 flex-1">
@@ -1081,7 +1088,7 @@ export default function TeacherAssessmentCreatePage() {
                                       {assessment.type}
                                     </Badge>
                                   </div>
-                                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                                  <div className="flex items-center gap-3 mt-1 text-label-xs text-muted-foreground">
                                     <span className="flex items-center gap-1">
                                       <Icon name="people" size={12} />
                                       {assessment.attemptCount ?? 0} attempt{(assessment.attemptCount ?? 0) !== 1 ? 's' : ''}
@@ -1130,7 +1137,7 @@ export default function TeacherAssessmentCreatePage() {
                                   )
                                 )}
                                 <label className="flex items-center gap-1.5 cursor-pointer">
-                                  <span className="text-[10px] text-muted-foreground hidden sm:inline">Grades</span>
+                                  <span className="text-label-xs text-muted-foreground hidden sm:inline">Grades</span>
                                   <Switch
                                     checked={assessment.showResults}
                                     onCheckedChange={(checked) => {

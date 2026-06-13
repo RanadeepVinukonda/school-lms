@@ -16,6 +16,7 @@ import { ROUTES } from '@/lib/constants';
 import { loginUser } from '@/firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
+import { cardStackReveal } from '@/lib/motion';
 
 const adminLoginSchema = z.object({
   email: z
@@ -84,59 +85,66 @@ export default function AdminLoginPage() {
   return (
     <>
       <SEOHead title="Admin Sign In" description="Sign in to your Genesis admin portal." />
-      <motion.div className="flex min-h-[80vh] items-center justify-center px-4 py-12" initial="initial" animate="animate" variants={pageTransition}>
-        <Card className="w-full max-w-md">
-          <CardHeader className="space-y-1 text-center">
-            <div className="mb-2 flex justify-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-purple-500/10">
-                <Icon name="manage_accounts" size={28} className="text-purple-500" />
-              </div>
-            </div>
-            <CardTitle className="text-2xl">Admin Sign In</CardTitle>
-            <CardDescription>Authorized personnel only</CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <CardContent className="space-y-4">
-              {error && (
-                <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-                  <Icon name="error" size={16} className="shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="admin@genesis.edu" {...register('email')} error={errors.email?.message} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
-                    {...register('password')}
-                    error={errors.password?.message}
-                    className="pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    tabIndex={-1}
-                  >
-                    <Icon name={showPassword ? 'visibility_off' : 'visibility'} size={18} />
-                  </button>
+      <motion.div
+        className="flex min-h-[80vh] items-center justify-center px-4 py-12"
+        initial="initial"
+        animate="animate"
+        variants={pageTransition}
+      >
+        <motion.div variants={cardStackReveal} custom={0} className="w-full max-w-md">
+          <Card className="w-full border-border/60">
+            <CardHeader className="space-y-1 text-center">
+              <div className="mb-2 flex justify-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-purple-500/10">
+                  <Icon name="manage_accounts" size={28} className="text-purple-500" />
                 </div>
               </div>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-3">
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? 'Signing in...' : 'Sign In'}
-              </Button>
-              <Link to={ROUTES.FORGOT_PASSWORD} className="text-sm text-primary hover:underline">Forgot password?</Link>
-            </CardFooter>
-          </form>
-        </Card>
+              <CardTitle className="text-headline-sm">Admin Sign In</CardTitle>
+              <CardDescription>Authorized personnel only</CardDescription>
+            </CardHeader>
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <CardContent className="space-y-4 p-5">
+                {error && (
+                  <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                    <Icon name="error" size={16} className="shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" type="email" placeholder="admin@genesis.edu" {...register('email')} error={errors.email?.message} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Enter your password"
+                      {...register('password')}
+                      error={errors.password?.message}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      tabIndex={-1}
+                    >
+                      <Icon name={showPassword ? 'visibility_off' : 'visibility'} size={18} />
+                    </button>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-col gap-3">
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? 'Signing in...' : 'Sign In'}
+                </Button>
+                <Link to={ROUTES.FORGOT_PASSWORD} className="text-sm text-primary hover:underline">Forgot password?</Link>
+              </CardFooter>
+            </form>
+          </Card>
+        </motion.div>
       </motion.div>
     </>
   );

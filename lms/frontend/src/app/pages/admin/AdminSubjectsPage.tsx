@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
-import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +18,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { pageTransition, listContainer, listItem } from '@/lib/motion';
+import { cardStackReveal } from '@/lib/motion';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { getAllSubjects, getAllClasses } from '@/services/dataService';
@@ -60,11 +59,11 @@ const iconOptions = [
 ];
 
 const categoryColors: Record<string, string> = {
-  STEM: 'bg-primary-container text-on-primary-container',
-  Humanities: 'bg-warning-container text-on-warning-container',
-  Arts: 'bg-error-container text-on-error-container',
-  Languages: 'bg-success-container text-on-success-container',
-  'Physical Education': 'bg-primary-container text-on-primary-container',
+  STEM: 'bg-primary/10 text-primary',
+  Humanities: 'bg-warning/10 text-warning',
+  Arts: 'bg-destructive/10 text-destructive',
+  Languages: 'bg-success/10 text-success',
+  'Physical Education': 'bg-primary/10 text-primary',
 };
 
 export default function AdminSubjectsPage() {
@@ -94,7 +93,6 @@ export default function AdminSubjectsPage() {
     queryFn: getAllClasses,
   });
 
-  // Sync fetched subjects into local state on initial load
   useEffect(() => {
     if (fetchedSubjects) {
       setSubjects(fetchedSubjects);
@@ -275,134 +273,142 @@ export default function AdminSubjectsPage() {
   return (
     <>
       <SEOHead title="Subjects" description="Manage academic subjects" canonical="/admin/subjects" />
-      <DataFetchWrapper
-        data={subjects}
-        isLoading={isLoading}
-        error={isError ? new Error('Failed to load subjects') : null}
-        onRetry={() => refetch()}
-        loadingType="card"
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="p-6 max-w-6xl mx-auto pb-32"
       >
-        {() => (
-          <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit">
-            <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
-            <motion.div variants={listItem} className="flex items-center justify-between flex-wrap gap-3">
-              <div>
-                <h1 className="text-headline-sm">Subjects</h1>
-                <p className="text-sm text-on-surface-variant">{subjects.length} total subjects</p>
-              </div>
-              <Button onClick={() => setShowAdd(true)}>
-                <Icon name="add" size={18} className="mr-2" />
-                Add Subject
-              </Button>
-            </motion.div>
-
-            <motion.div variants={listItem}>
-              <div className="relative max-w-sm">
-                <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
-                <Input
-                  placeholder="Search subjects..."
-                  className="pl-10"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-            </motion.div>
-
-            {filtered.length === 0 ? (
-              <motion.div variants={listItem}>
-                {subjects.length === 0 ? (
-                  <Card>
-                    <CardContent className="flex flex-col items-center gap-4 py-16">
-                      <Icon name="menu_book" size={48} className="text-on-surface-variant/50" />
-                      <p className="font-medium">No subjects yet</p>
-                      <p className="text-sm text-on-surface-variant">Add your first subject to get started.</p>
-                      <Button onClick={() => setShowAdd(true)}>
-                        <Icon name="add" size={18} className="mr-2" />
-                        Add Subject
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <Card>
-                    <CardContent className="flex flex-col items-center gap-4 py-16">
-                      <Icon name="search_off" size={48} className="text-on-surface-variant/50" />
-                      <p className="font-medium">No subjects match your search</p>
-                      <p className="text-sm text-on-surface-variant">Try a different search term.</p>
-                      <Button variant="outline" onClick={() => setSearch('')}>
-                        <Icon name="close" size={16} className="mr-2" />
-                        Clear Search
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
+        <DataFetchWrapper
+          data={subjects}
+          isLoading={isLoading}
+          error={isError ? new Error('Failed to load subjects') : null}
+          onRetry={() => refetch()}
+          loadingType="card"
+        >
+          {() => (
+            <motion.div variants={cardStackReveal} custom={0} className="space-y-16">
+              <motion.div variants={cardStackReveal} custom={1}>
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div>
+                    <h1 className="text-headline-sm font-bold">Subjects</h1>
+                    <p className="text-body-md text-muted-foreground">{subjects.length} total subjects</p>
+                  </div>
+                  <Button onClick={() => setShowAdd(true)}>
+                    <Icon name="add" size={18} className="mr-2" />
+                    Add Subject
+                  </Button>
+                </div>
               </motion.div>
-            ) : (
-              <motion.div
-                variants={listItem}
-                className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
-              >
-                {filtered.map((subject) => (
-                  <Card key={subject.id} variant="elevated">
-                    <CardContent className="p-5">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="h-11 w-11 rounded-xl flex items-center justify-center"
-                            style={{ backgroundColor: `${subject.color}15`, color: subject.color }}
-                          >
-                            <Icon
-                              name={subject.icon || 'menu_book'}
-                              size={22}
-                            />
+
+              <motion.div variants={cardStackReveal} custom={2}>
+                <div className="relative max-w-sm">
+                  <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                  <Input
+                    placeholder="Search subjects..."
+                    className="pl-10 border-border/60 placeholder:text-muted-foreground"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
+              </motion.div>
+
+              {filtered.length === 0 ? (
+                <motion.div variants={cardStackReveal} custom={3}>
+                  {subjects.length === 0 ? (
+                    <Card className="border-border/60">
+                      <CardContent className="flex flex-col items-center gap-4 py-16">
+                        <Icon name="menu_book" size={48} className="text-muted-foreground/50" />
+                        <p className="text-title-sm font-medium">No subjects yet</p>
+                        <p className="text-body-md text-muted-foreground">Add your first subject to get started.</p>
+                        <Button onClick={() => setShowAdd(true)}>
+                          <Icon name="add" size={18} className="mr-2" />
+                          Add Subject
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card className="border-border/60">
+                      <CardContent className="flex flex-col items-center gap-4 py-16">
+                        <Icon name="search_off" size={48} className="text-muted-foreground/50" />
+                        <p className="text-title-sm font-medium">No subjects match your search</p>
+                        <p className="text-body-md text-muted-foreground">Try a different search term.</p>
+                        <Button variant="outline" onClick={() => setSearch('')}>
+                          <Icon name="close" size={16} className="mr-2" />
+                          Clear Search
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
+                </motion.div>
+              ) : (
+                <motion.div
+                  variants={cardStackReveal}
+                  custom={3}
+                  className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+                >
+                  {filtered.map((subject) => (
+                    <Card key={subject.id} className="border-border/60">
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="h-11 w-11 rounded-xl flex items-center justify-center"
+                              style={{ backgroundColor: `${subject.color}15`, color: subject.color }}
+                            >
+                              <Icon
+                                name={subject.icon || 'menu_book'}
+                                size={22}
+                              />
+                            </div>
+                            <div>
+                              <p className="text-body-md font-medium">{subject.name}</p>
+                              <Badge variant="outline" className="text-[10px] mt-0.5">
+                                {subject.code}
+                              </Badge>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium">{subject.name}</p>
-                            <Badge variant="outline" className="text-[10px] mt-0.5">
-                              {subject.code}
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => handleEditClick(subject)}
+                            >
+                              <Icon name="edit" size={16} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => handleDeleteClick(subject.id, subject.name)}
+                            >
+                              <Icon name="delete" size={16} className="text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/60">
+                          <div className="flex items-center gap-2">
+                            {(subject as { classId?: string }).classId && allClasses && (
+                              <span className="text-label-sm text-muted-foreground font-medium">
+                                {allClasses.find((c) => c.id === (subject as { classId?: string }).classId)?.name || '\u2014'}
+                              </span>
+                            )}
+                            <Badge className={`text-[10px] ${categoryColors[subject.category || ''] || ''}`}>
+                              {subject.category || '\u2014'}
                             </Badge>
                           </div>
+                          <span className="text-label-sm text-muted-foreground">
+                            {getTextbookCount(subject.id)} textbook{getTextbookCount(subject.id) !== 1 ? 's' : ''}
+                          </span>
                         </div>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => handleEditClick(subject)}
-                          >
-                            <Icon name="edit" size={16} />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => handleDeleteClick(subject.id, subject.name)}
-                          >
-                            <Icon name="delete" size={16} className="text-error" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between mt-3 pt-3 border-t-outline-variant border-t">
-                        <div className="flex items-center gap-2">
-                          {(subject as { classId?: string }).classId && allClasses && (
-                            <span className="text-xs text-on-surface-variant font-medium">
-                              {allClasses.find((c) => c.id === (subject as { classId?: string }).classId)?.name || '\u2014'}
-                            </span>
-                          )}
-                          <Badge className={`text-[10px] ${categoryColors[subject.category || ''] || ''}`}>
-                            {subject.category || '\u2014'}
-                          </Badge>
-                        </div>
-                        <span className="text-xs text-on-surface-variant">
-                          {getTextbookCount(subject.id)} textbook{getTextbookCount(subject.id) !== 1 ? 's' : ''}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </motion.div>
-            )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </motion.div>
+              )}
             </motion.div>
-          </motion.div>
-        )}
-      </DataFetchWrapper>
+          )}
+        </DataFetchWrapper>
+      </motion.div>
 
       <Dialog open={showDependencyDialog} onOpenChange={(open) => { if (!open) { setShowDependencyDialog(false); setDeleteTarget(null); } }}>
         <DialogContent className="sm:max-w-[480px]">
@@ -428,8 +434,8 @@ export default function AdminSubjectsPage() {
           </DialogHeader>
 
           {dependencyReport && dependencyReport.categories.length > 0 && (
-            <div className="space-y-2 rounded-lg border border-outline-variant p-4">
-              <p className="text-label-sm font-medium text-on-surface-variant uppercase tracking-wider">
+            <div className="space-y-2 rounded-lg border border-border/60 p-4">
+              <p className="text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
                 Impact Summary
               </p>
               {dependencyReport.categories.map((cat) => (
@@ -450,7 +456,7 @@ export default function AdminSubjectsPage() {
             >
               <Icon name="archive" size={16} className="mr-2" />
               Archive Subject (recommended)
-              <span className="ml-auto text-xs text-on-surface-variant">Students retain access</span>
+              <span className="ml-auto text-xs text-muted-foreground">Students retain access</span>
             </Button>
             <Button
               variant="destructive"
@@ -461,8 +467,8 @@ export default function AdminSubjectsPage() {
             >
               <Icon name="delete_forever" size={16} className="mr-2" />
               Permanently Delete
-              <span className="ml-auto text-xs text-on-surface-variant">
-                {(dependencyReport?.totalDependents ?? 0) > 0 ? 'Disabled — has dependencies' : 'Irreversible'}
+              <span className="ml-auto text-xs text-muted-foreground">
+                {(dependencyReport?.totalDependents ?? 0) > 0 ? 'Disabled \u2014 has dependencies' : 'Irreversible'}
               </span>
             </Button>
             <Button variant="ghost" className="w-full" onClick={() => { setShowDependencyDialog(false); setDeleteTarget(null); }}>
@@ -485,6 +491,7 @@ export default function AdminSubjectsPage() {
               <Label>Subject Name</Label>
               <Input
                 placeholder="e.g. Computer Science"
+                className="border-border/60 placeholder:text-muted-foreground"
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               />
@@ -494,6 +501,7 @@ export default function AdminSubjectsPage() {
                 <Label>Code</Label>
                 <Input
                   placeholder="e.g. CS"
+                  className="border-border/60 placeholder:text-muted-foreground"
                   value={form.code}
                   onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
                 />
@@ -527,9 +535,9 @@ export default function AdminSubjectsPage() {
               />
             </div>
             {editTarget && (
-              <p className="text-xs text-on-surface-variant">
+              <p className="text-label-sm text-muted-foreground">
                 <Icon name="info" size={14} className="inline mr-1" />
-                Updating {editTarget.name} affects {subjects.find(s => s.id === editTarget.id)?.name || 'this subject'} across textbooks, exams, assignments, and grades.
+                Updating {editTarget.name} affects subjects across textbooks, exams, assignments, and grades.
               </p>
             )}
             <Button className="w-full" onClick={handleUpdate}>
@@ -551,6 +559,7 @@ export default function AdminSubjectsPage() {
               <Label>Subject Name</Label>
               <Input
                 placeholder="e.g. Computer Science"
+                className="border-border/60 placeholder:text-muted-foreground"
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               />
@@ -560,6 +569,7 @@ export default function AdminSubjectsPage() {
                 <Label>Code</Label>
                 <Input
                   placeholder="e.g. CS"
+                  className="border-border/60 placeholder:text-muted-foreground"
                   value={form.code}
                   onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
                 />

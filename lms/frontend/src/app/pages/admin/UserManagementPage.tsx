@@ -17,7 +17,7 @@ import { OptionsSelect } from '@/components/ui/select';
 import { getInitials } from '@/lib/utils';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
-import { pageTransition, listContainer, listItem } from '@/lib/motion';
+import { cardStackReveal } from '@/lib/motion';
 import { userService, type CreateUserInput } from '@/services/userService';
 import { getUserDependencies } from '@/services/dependencyService';
 import { logAudit } from '@/services/auditService';
@@ -136,119 +136,133 @@ export default function UserManagementPage() {
   return (
     <>
       <SEOHead title="User Management" description="Manage system users" canonical="/admin/users" />
-      <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-5xl mx-auto pb-20 space-y-6">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-headline-sm">User Management</h1>
-            <p className="text-sm text-on-surface-variant">{pagination.total} total users</p>
-          </div>
-          <Button onClick={() => setShowCreate(true)}>
-            <Icon name="add" size={16} className="mr-2" />
-            Add User
-          </Button>
-        </div>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="p-6 max-w-6xl mx-auto pb-32"
+      >
+        <motion.div variants={cardStackReveal} custom={0} className="space-y-16">
+          <motion.div variants={cardStackReveal} custom={1}>
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                <h1 className="text-headline-sm font-bold">User Management</h1>
+                <p className="text-body-md text-muted-foreground">{pagination.total} total users</p>
+              </div>
+              <Button onClick={() => setShowCreate(true)}>
+                <Icon name="add" size={16} className="mr-2" />
+                Add User
+              </Button>
+            </div>
+          </motion.div>
 
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1">
-            <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
-            <Input placeholder="Search users..." className="pl-10" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
-          </div>
-          <OptionsSelect
-            options={[{ value: 'all', label: 'All Roles' }, ...roleOptions]}
-            value={roleFilter}
-            onChange={(v: string) => { setRoleFilter(v); setPage(1); }}
-            className="w-32"
-          />
-        </div>
+          <motion.div variants={cardStackReveal} custom={2}>
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1">
+                <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                <Input placeholder="Search users..." className="pl-10 border-border/60 placeholder:text-muted-foreground" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
+              </div>
+              <OptionsSelect
+                options={[{ value: 'all', label: 'All Roles' }, ...roleOptions]}
+                value={roleFilter}
+                onChange={(v: string) => { setRoleFilter(v); setPage(1); }}
+                className="w-32"
+              />
+            </div>
+          </motion.div>
 
-        <DataFetchWrapper
-          data={data}
-          isLoading={isLoading}
-          error={isError ? error ?? new Error('Failed to load users') : null}
-          onRetry={() => refetch()}
-          loadingType="table"
-          emptyMessage="No users found"
-          emptyAction={
-            <Button onClick={() => setShowCreate(true)}>
-              <Icon name="add" size={16} className="mr-2" />
-              Create User
-            </Button>
-          }
-        >
-          {() => items.length > 0 ? (
-            <motion.div variants={listContainer} initial="hidden" animate="show">
-              <Card>
-                <CardContent className="p-0 divide-y divide-outline-variant">
-                  {items.map((u) => (
-                    <motion.div key={u.id} variants={listItem} className="flex items-center gap-3 p-3 hover:bg-surface-variant/40 transition-colors">
-                      <Avatar className="h-9 w-9">
-                        <AvatarFallback className="text-xs">{getInitials(u.displayName)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-body-md font-medium truncate">{u.displayName}</p>
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${roleBadgeColors[u.role] ?? ''}`}>
-                            {u.role}
-                          </span>
-                          {!u.isActive && <Icon name="block" size={14} className="text-error" />}
+          <motion.div variants={cardStackReveal} custom={3}>
+            <DataFetchWrapper
+              data={data}
+              isLoading={isLoading}
+              error={isError ? error ?? new Error('Failed to load users') : null}
+              onRetry={() => refetch()}
+              loadingType="table"
+              emptyMessage="No users found"
+              emptyAction={
+                <Button onClick={() => setShowCreate(true)}>
+                  <Icon name="add" size={16} className="mr-2" />
+                  Create User
+                </Button>
+              }
+            >
+              {() => items.length > 0 ? (
+                <>
+                  <Card className="border-border/60">
+                    <CardContent className="p-0 divide-y divide-border/40">
+                      {items.map((u) => (
+                        <div key={u.id} className="flex items-center gap-3 p-3 hover:bg-muted/20 transition-colors">
+                          <Avatar className="h-9 w-9">
+                            <AvatarFallback className="text-xs">{getInitials(u.displayName)}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-body-md font-medium truncate">{u.displayName}</p>
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${roleBadgeColors[u.role] ?? ''}`}>
+                                {u.role}
+                              </span>
+                              {!u.isActive && <Icon name="block" size={14} className="text-destructive" />}
+                            </div>
+                            <p className="text-label-sm text-muted-foreground truncate">{u.email}</p>
+                          </div>
+                          <div className="text-right text-label-sm text-muted-foreground flex-shrink-0 space-y-1">
+                            <p>{new Date(u.createdAt).toLocaleDateString()}</p>
+                            <Badge variant={u.isActive ? 'success' : 'secondary'} className="text-[10px]">
+                              {u.isActive ? 'Active' : 'Disabled'}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => toggleMutation.mutate(u.id)}
+                              title={u.isActive ? 'Disable user' : 'Enable user'}
+                            >
+                              <Icon name={u.isActive ? 'toggle_off' : 'toggle_on'} size={16} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive"
+                              onClick={() => handleDeleteClick(u)}
+                              disabled={deleteMutation.isPending}
+                              title="Delete user"
+                            >
+                              <Icon name="delete" size={16} />
+                            </Button>
+                          </div>
                         </div>
-                        <p className="text-xs text-on-surface-variant truncate">{u.email}</p>
-                      </div>
-                      <div className="text-right text-xs text-on-surface-variant flex-shrink-0 space-y-1">
-                        <p>{new Date(u.createdAt).toLocaleDateString()}</p>
-                        <Badge variant={u.isActive ? 'success' : 'secondary'} className="text-[10px]">
-                          {u.isActive ? 'Active' : 'Disabled'}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => toggleMutation.mutate(u.id)}
-                          title={u.isActive ? 'Disable user' : 'Enable user'}
-                        >
-                          <Icon name={u.isActive ? 'toggle_off' : 'toggle_on'} size={16} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-error"
-                          onClick={() => handleDeleteClick(u)}
-                          disabled={deleteMutation.isPending}
-                          title="Delete user"
-                        >
-                          <Icon name="delete" size={16} />
-                        </Button>
-                      </div>
-                    </motion.div>
-                  ))}
-                </CardContent>
-              </Card>
+                      ))}
+                    </CardContent>
+                  </Card>
 
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-4">
-                  <Button variant="outline" size="icon" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
-                    <Icon name="chevron_left" size={18} />
-                  </Button>
-                  {Array.from({ length: totalPages }, (_, i) => (
-                    <Button
-                      key={i + 1}
-                      variant={page === i + 1 ? 'default' : 'outline'}
-                      size="icon"
-                      onClick={() => setPage(i + 1)}
-                    >
-                      {i + 1}
-                    </Button>
-                  ))}
-                  <Button variant="outline" size="icon" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
-                    <Icon name="chevron_right" size={18} />
-                  </Button>
-                </div>
-              )}
-            </motion.div>
-          ) : null}
-        </DataFetchWrapper>
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-2 mt-4">
+                      <Button variant="outline" size="icon" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
+                        <Icon name="chevron_left" size={18} />
+                      </Button>
+                      {Array.from({ length: totalPages }, (_, i) => (
+                        <Button
+                          key={i + 1}
+                          variant={page === i + 1 ? 'default' : 'outline'}
+                          size="icon"
+                          onClick={() => setPage(i + 1)}
+                        >
+                          {i + 1}
+                        </Button>
+                      ))}
+                      <Button variant="outline" size="icon" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
+                        <Icon name="chevron_right" size={18} />
+                      </Button>
+                    </div>
+                  )}
+                </>
+              ) : null}
+            </DataFetchWrapper>
+          </motion.div>
+        </motion.div>
+      </motion.div>
 
       <Dialog open={showDependencyDialog} onOpenChange={(open) => { if (!open) { setShowDependencyDialog(false); setDeleteTarget(null); } }}>
         <DialogContent className="sm:max-w-[480px]">
@@ -273,8 +287,8 @@ export default function UserManagementPage() {
           </DialogHeader>
 
           {dependencyReport && dependencyReport.categories.length > 0 && (
-            <div className="space-y-2 rounded-lg border border-outline-variant p-4">
-              <p className="text-label-sm font-medium text-on-surface-variant uppercase tracking-wider">
+            <div className="space-y-2 rounded-lg border border-border/60 p-4">
+              <p className="text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
                 Impact Summary
               </p>
               {dependencyReport.categories.map((cat) => (
@@ -282,7 +296,7 @@ export default function UserManagementPage() {
                   <span>{cat.label}</span>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">{cat.count}</Badge>
-                    {cat.action && <span className="text-xs text-on-surface-variant">{cat.action}</span>}
+                    {cat.action && <span className="text-label-sm text-muted-foreground">{cat.action}</span>}
                   </div>
                 </div>
               ))}
@@ -300,7 +314,7 @@ export default function UserManagementPage() {
             >
               <Icon name="toggle_off" size={16} className="mr-2" />
               Deactivate User (recommended)
-              <span className="ml-auto text-xs text-on-surface-variant">Preserves all records</span>
+              <span className="ml-auto text-xs text-muted-foreground">Preserves all records</span>
             </Button>
             <Button
               variant="destructive"
@@ -313,7 +327,7 @@ export default function UserManagementPage() {
             >
               <Icon name="delete_forever" size={16} className="mr-2" />
               Permanently Delete
-              <span className="ml-auto text-xs text-on-surface-variant">
+              <span className="ml-auto text-xs text-muted-foreground">
                 {(dependencyReport?.totalDependents ?? 0) > 0 ? 'Has dependencies' : 'Irreversible'}
               </span>
             </Button>
@@ -335,6 +349,7 @@ export default function UserManagementPage() {
                 <Label>Full Name</Label>
                 <Input
                   placeholder="John Doe"
+                  className="border-border/60 placeholder:text-muted-foreground"
                   value={createForm.displayName}
                   onChange={(e) => setCreateForm((f) => ({ ...f, displayName: e.target.value }))}
                 />
@@ -344,6 +359,7 @@ export default function UserManagementPage() {
                 <Input
                   type="email"
                   placeholder="john@school.edu"
+                  className="border-border/60 placeholder:text-muted-foreground"
                   value={createForm.email}
                   onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
                 />
@@ -353,6 +369,7 @@ export default function UserManagementPage() {
                 <Input
                   type="password"
                   placeholder="Min 8 chars, upper+lower+number+special"
+                  className="border-border/60 placeholder:text-muted-foreground"
                   value={createForm.password}
                   onChange={(e) => setCreateForm((f) => ({ ...f, password: e.target.value }))}
                 />
@@ -381,7 +398,6 @@ export default function UserManagementPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </motion.div>
     </>
   );
 }

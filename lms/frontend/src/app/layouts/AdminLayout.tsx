@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { NavLink, Outlet, Navigate } from 'react-router-dom';
+import { NavLink, Outlet, Navigate, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
@@ -12,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { UserAvatar } from '@/components/layout/UserAvatar';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { pageTransition } from '@/lib/motion';
 
 interface NavItem {
   label: string;
@@ -228,7 +230,11 @@ export function AdminLayout() {
         </header>
 
         <main id="main-content" className="min-h-[calc(100vh-8rem)]">
-          <Outlet />
+          <AnimatePresence mode="wait">
+            <motion.div key={useLocation().pathname} variants={pageTransition} initial="initial" animate="animate" exit="exit">
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
 
       </div>

@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { pageTransition, listItem } from '@/lib/motion';
+import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -145,7 +145,12 @@ export default function AssignmentDetailPage() {
   return (
     <>
       <SEOHead title={assignment?.title || 'Assignment'} description={`Assignment: ${assignment?.title || ''}`} canonical={`/assignments/${assignmentId}`} />
-      <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-3xl mx-auto pb-20 space-y-4">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="p-6 max-w-6xl mx-auto pb-32 space-y-16"
+      >
         <Button variant="ghost" size="sm" asChild className="mb-1">
           <Link to="/student/dashboard"><Icon name="arrow_back" size={18} className="mr-1" />Back</Link>
         </Button>
@@ -169,136 +174,148 @@ export default function AssignmentDetailPage() {
 
             return (
               <>
-                <Card variant="elevated">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <CardTitle className="text-xl">{a.title}</CardTitle>
-                          <Badge variant={r.variant}>{r.label}</Badge>
-                        </div>
-                        {sbj && <p className="flex items-center gap-1 mt-2 text-sm text-muted-foreground"><Icon name="book" size={16} />{sbj.name}{tb && <span className="text-xs ml-2 opacity-70">{tb.title}</span>}</p>}
-                      </div>
-                      <div className="flex flex-col items-end gap-2 shrink-0">
-                        <Badge variant={s.variant}>{s.label}</Badge>
-                        <Badge variant={si.variant}>{si.label}</Badge>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-4 text-sm flex-wrap">
-                      <span className="flex items-center gap-1"><Icon name="calendar_today" size={16} className="text-muted-foreground" />Due {a.dueDate ? formatDate(a.dueDate) : 'N/A'}</span>
-                      <span className="flex items-center gap-1"><Icon name="award_star" size={16} className="text-muted-foreground" />{a.points} pts</span>
-                      <span className="flex items-center gap-1"><Icon name="schedule" size={16} className="text-muted-foreground" />{r.label}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card variant="elevated">
-                  <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Icon name="description" size={20} />Instructions</CardTitle></CardHeader>
-                  <CardContent>
-                    <div className="text-sm prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: sanitizeHtml(a.description || '') }} />
-                  </CardContent>
-                </Card>
-
-                <Card variant="elevated">
-                  <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Icon name="attachment" size={20} />Resources</CardTitle></CardHeader>
-                  <CardContent className="space-y-2">
-                    {mockFiles.map((f) => (
-                      <motion.div key={f} variants={listItem} initial="hidden" animate="show" className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="p-2 rounded-lg bg-primary/10"><Icon name="description" size={18} className="text-primary" /></div>
-                          <span className="text-sm font-medium truncate">{f}</span>
-                        </div>
-                        <Button variant="ghost" size="icon" className="shrink-0"><Icon name="download" size={18} /></Button>
-                      </motion.div>
-                    ))}
-                  </CardContent>
-                </Card>
-
-                <Card variant="elevated">
-                  <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Icon name="school" size={20} />Teacher Notes</CardTitle></CardHeader>
-                  <CardContent>
-                    <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
-                      <p className="text-sm italic leading-relaxed text-muted-foreground">&ldquo;{teacherNotes[a.title] || 'Follow the instructions and submit before the deadline. Good luck!'}&rdquo;</p>
-                      <p className="text-xs text-muted-foreground/60 mt-2">&mdash; Your Teacher</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card variant="elevated">
-                  <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Icon name="upload_file" size={20} />{sub ? 'Your Submission' : 'Submit Assignment'}</CardTitle></CardHeader>
-                  <CardContent>
-                    {sub ? (
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-3 p-4 rounded-xl bg-success/5 border border-success/20">
-                          <div className="p-2 rounded-full bg-success/10"><Icon name="check_circle" size={28} className="text-success" /></div>
-                          <div><p className="font-medium text-sm">{sub.status === 'graded' ? 'Graded' : 'Submitted'}</p><p className="text-xs text-muted-foreground">Submitted {formatDateTime(sub.submittedAt)}</p></div>
-                          <Badge variant={si.variant} className="ml-auto">{si.label}</Badge>
-                        </div>
-                        {sub.content && <div className="p-3 rounded-xl bg-muted/50"><p className="text-xs text-muted-foreground mb-1">Your notes:</p><p className="text-sm">{sub.content}</p></div>}
-                        {sub.grade && (
-                          <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-medium">Grade</span>
-                              <span className="text-2xl font-bold text-primary">{sub.grade.score}<span className="text-sm font-normal text-muted-foreground">/{a.points}</span></span>
-                            </div>
-                            {sub.grade.feedback && <><Separator className="my-2" /><p className="text-xs text-muted-foreground mb-1">Feedback:</p><p className="text-sm italic">{sub.grade.feedback}</p></>}
+                <motion.div variants={cardStackReveal} custom={0}>
+                  <Card className="border-border/60">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <CardTitle className="text-title-md">{a.title}</CardTitle>
+                            <Badge variant={r.variant}>{r.label}</Badge>
                           </div>
-                        )}
+                          {sbj && <p className="flex items-center gap-1 mt-2 text-body-md text-muted-foreground"><Icon name="book" size={16} />{sbj.name}{tb && <span className="text-label-xs ml-2 opacity-70">{tb.title}</span>}</p>}
+                        </div>
+                        <div className="flex flex-col items-end gap-2 shrink-0">
+                          <Badge variant={s.variant}>{s.label}</Badge>
+                          <Badge variant={si.variant}>{si.label}</Badge>
+                        </div>
                       </div>
-                    ) : (
-                      <form onSubmit={handleSubmit(() => setConfirm(true))} className="space-y-4">
-                        <div
-                          className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${drag ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'}`}
-                          onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
-                          onDragLeave={() => setDrag(false)}
-                          onDrop={(e) => { e.preventDefault(); setDrag(false); setFile(e.dataTransfer.files[0]?.name || null); }}
-                          onClick={() => fileRef.current?.click()}
-                        >
-                          <input ref={fileRef} type="file" className="hidden" accept=".pdf,.doc,.docx,.txt,.png,.jpg" onChange={(e) => setFile(e.target.files?.[0]?.name || null)} />
-                          {file ? (
-                            <div className="flex items-center justify-center gap-2">
-                              <Icon name="description" size={24} className="text-primary" />
-                              <span className="text-sm font-medium">{file}</span>
-                              <Button type="button" variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); setFile(null); }}><Icon name="close" size={16} /></Button>
-                            </div>
-                          ) : (
-                            <><Icon name="upload_file" size={36} className="mx-auto mb-2 text-muted-foreground/60" /><p className="text-sm font-medium">Drop files here or click to upload</p><p className="text-xs text-muted-foreground mt-1">PDF, DOC, TXT, PNG up to 10MB</p></>
-                          )}
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-sm font-medium">Additional Notes</label>
-                          <Textarea placeholder="Add any notes or comments about your submission..." rows={3} {...register('notes')} error={errors.notes?.message as string} />
-                        </div>
-                        <Button type="submit" className="w-full" size="lg" disabled={isPending}>
-                          {isPending ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />Submitting...</> : <><Icon name="upload_file" size={18} className="mr-2" />Submit Assignment</>}
-                        </Button>
-                      </form>
-                    )}
-                  </CardContent>
-                </Card>
+                    </CardHeader>
+                    <CardContent className="p-5">
+                      <div className="flex items-center gap-4 text-body-md flex-wrap">
+                        <span className="flex items-center gap-1"><Icon name="calendar_today" size={16} className="text-muted-foreground" />Due {a.dueDate ? formatDate(a.dueDate) : 'N/A'}</span>
+                        <span className="flex items-center gap-1"><Icon name="award_star" size={16} className="text-muted-foreground" />{a.points} pts</span>
+                        <span className="flex items-center gap-1"><Icon name="schedule" size={16} className="text-muted-foreground" />{r.label}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
 
-                {history.length > 1 && (
-                  <Card variant="elevated">
-                    <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Icon name="history" size={20} />Version History</CardTitle><CardDescription>{history.length} submission(s)</CardDescription></CardHeader>
-                    <CardContent className="space-y-2">
-                      {history.map((h, i) => (
-                        <motion.div key={h.id} variants={listItem} initial="hidden" animate="show" className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
-                          <div className="p-1.5 rounded-full bg-primary/10"><Icon name="description" size={16} className="text-primary" /></div>
-                          <div className="flex-1 min-w-0"><p className="text-sm font-medium">Version {history.length - i}</p><p className="text-xs text-muted-foreground">Submitted {formatRelativeTime(h.submittedAt)}</p></div>
-                          <Badge variant={h.status === 'graded' ? 'success' : h.status === 'late' ? 'destructive' : 'secondary'}>{h.status}</Badge>
-                        </motion.div>
+                <motion.div variants={cardStackReveal} custom={0}>
+                  <Card className="border-border/60">
+                    <CardHeader className="pb-2"><CardTitle className="text-title-sm flex items-center gap-2"><Icon name="description" size={20} />Instructions</CardTitle></CardHeader>
+                    <CardContent className="p-5">
+                      <div className="text-body-md prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: sanitizeHtml(a.description || '') }} />
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
+                <motion.div variants={cardStackReveal} custom={0}>
+                  <Card className="border-border/60">
+                    <CardHeader className="pb-2"><CardTitle className="text-title-sm flex items-center gap-2"><Icon name="attachment" size={20} />Resources</CardTitle></CardHeader>
+                    <CardContent className="p-5 space-y-2">
+                      {mockFiles.map((f) => (
+                        <div key={f} className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center"><Icon name="description" size={18} className="text-primary" /></div>
+                            <span className="text-body-md font-medium truncate">{f}</span>
+                          </div>
+                          <Button variant="ghost" size="icon" className="shrink-0"><Icon name="download" size={18} /></Button>
+                        </div>
                       ))}
                     </CardContent>
                   </Card>
+                </motion.div>
+
+                <motion.div variants={cardStackReveal} custom={0}>
+                  <Card className="border-border/60">
+                    <CardHeader className="pb-2"><CardTitle className="text-title-sm flex items-center gap-2"><Icon name="school" size={20} />Teacher Notes</CardTitle></CardHeader>
+                    <CardContent className="p-5">
+                      <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
+                        <p className="text-body-md italic leading-relaxed text-muted-foreground">&ldquo;{teacherNotes[a.title] || 'Follow the instructions and submit before the deadline. Good luck!'}&rdquo;</p>
+                        <p className="text-label-xs text-muted-foreground/60 mt-2">&mdash; Your Teacher</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
+                <motion.div variants={cardStackReveal} custom={0}>
+                  <Card className="border-border/60">
+                    <CardHeader className="pb-2"><CardTitle className="text-title-sm flex items-center gap-2"><Icon name="upload_file" size={20} />{sub ? 'Your Submission' : 'Submit Assignment'}</CardTitle></CardHeader>
+                    <CardContent className="p-5">
+                      {sub ? (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-3 p-4 rounded-xl bg-success/5 border border-success/20">
+                            <div className="h-12 w-12 rounded-xl bg-success/10 flex items-center justify-center"><Icon name="check_circle" size={28} className="text-success" /></div>
+                            <div><p className="font-medium text-body-md">{sub.status === 'graded' ? 'Graded' : 'Submitted'}</p><p className="text-label-xs text-muted-foreground">Submitted {formatDateTime(sub.submittedAt)}</p></div>
+                            <Badge variant={si.variant} className="ml-auto">{si.label}</Badge>
+                          </div>
+                          {sub.content && <div className="p-3 rounded-xl bg-muted/50"><p className="text-label-xs text-muted-foreground mb-1">Your notes:</p><p className="text-body-md">{sub.content}</p></div>}
+                          {sub.grade && (
+                            <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-title-sm font-medium">Grade</span>
+                                <span className="text-display-xs font-bold text-primary">{sub.grade.score}<span className="text-body-md font-normal text-muted-foreground">/{a.points}</span></span>
+                              </div>
+                              {sub.grade.feedback && <><Separator className="my-2" /><p className="text-label-xs text-muted-foreground mb-1">Feedback:</p><p className="text-body-md italic">{sub.grade.feedback}</p></>}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <form onSubmit={handleSubmit(() => setConfirm(true))} className="space-y-4">
+                          <div
+                            className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${drag ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'}`}
+                            onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+                            onDragLeave={() => setDrag(false)}
+                            onDrop={(e) => { e.preventDefault(); setDrag(false); setFile(e.dataTransfer.files[0]?.name || null); }}
+                            onClick={() => fileRef.current?.click()}
+                          >
+                            <input ref={fileRef} type="file" className="hidden" accept=".pdf,.doc,.docx,.txt,.png,.jpg" onChange={(e) => setFile(e.target.files?.[0]?.name || null)} />
+                            {file ? (
+                              <div className="flex items-center justify-center gap-2">
+                                <Icon name="description" size={24} className="text-primary" />
+                                <span className="text-body-md font-medium">{file}</span>
+                                <Button type="button" variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); setFile(null); }}><Icon name="close" size={16} /></Button>
+                              </div>
+                            ) : (
+                              <><Icon name="upload_file" size={36} className="mx-auto mb-2 text-muted-foreground/60" /><p className="text-body-md font-medium">Drop files here or click to upload</p><p className="text-label-xs text-muted-foreground mt-1">PDF, DOC, TXT, PNG up to 10MB</p></>
+                            )}
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-body-md font-medium">Additional Notes</label>
+                            <Textarea placeholder="Add any notes or comments about your submission..." rows={3} {...register('notes')} error={errors.notes?.message as string} />
+                          </div>
+                          <Button type="submit" className="w-full" size="lg" disabled={isPending}>
+                            {isPending ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />Submitting...</> : <><Icon name="upload_file" size={18} className="mr-2" />Submit Assignment</>}
+                          </Button>
+                        </form>
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
+                {history.length > 1 && (
+                  <motion.div variants={cardStackReveal} custom={0}>
+                    <Card className="border-border/60">
+                      <CardHeader className="pb-2"><CardTitle className="text-title-sm flex items-center gap-2"><Icon name="history" size={20} />Version History</CardTitle><CardDescription>{history.length} submission(s)</CardDescription></CardHeader>
+                      <CardContent className="p-5 space-y-2">
+                        {history.map((h, i) => (
+                          <div key={h.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
+                            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center"><Icon name="description" size={16} className="text-primary" /></div>
+                            <div className="flex-1 min-w-0"><p className="text-body-md font-medium">Version {history.length - i}</p><p className="text-label-xs text-muted-foreground">Submitted {formatRelativeTime(h.submittedAt)}</p></div>
+                            <Badge variant={h.status === 'graded' ? 'success' : h.status === 'late' ? 'destructive' : 'secondary'}>{h.status}</Badge>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
                 )}
 
                 {confirm && (
                   <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-                    <Card className="w-full max-w-sm">
-                      <CardHeader><CardTitle>Confirm Submission</CardTitle><CardDescription>Are you sure you want to submit? You can resubmit before the deadline if needed.</CardDescription></CardHeader>
-                      <CardContent className="flex gap-3">
+                    <Card className="w-full max-w-sm border-border/60">
+                      <CardHeader><CardTitle className="text-title-sm">Confirm Submission</CardTitle><CardDescription>Are you sure you want to submit? You can resubmit before the deadline if needed.</CardDescription></CardHeader>
+                      <CardContent className="p-5 flex gap-3">
                         <Button variant="outline" className="flex-1" onClick={() => setConfirm(false)}>Cancel</Button>
                         <Button className="flex-1" onClick={() => mutate()}>Confirm &amp; Submit</Button>
                       </CardContent>
@@ -321,5 +338,5 @@ function formatRelativeTime(d: string) {
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
   const days = Math.floor(h / 24);
-  return days < 7 ? `${days}d ago` : formatDate(d);
+  return days < 7 ? `${d}d ago` : formatDate(d);
 }

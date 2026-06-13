@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { pageTransition } from '@/lib/motion';
+import { cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
 
@@ -59,49 +59,63 @@ export default function TeacherQuestionPapersPage() {
   return (
     <>
       <SEOHead title="Question Papers" description="Compose and manage question papers" canonical="/teacher/question-papers" />
-      <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="p-4 max-w-6xl mx-auto space-y-6 pb-20">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-headline-sm">Question Papers</h1>
-            <p className="text-sm text-muted-foreground">Compose reusable question papers from your question bank</p>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="p-6 max-w-6xl mx-auto pb-32 space-y-16"
+      >
+        <motion.div variants={cardStackReveal} custom={0}>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-headline-sm">Question Papers</h1>
+              <p className="text-body-md text-muted-foreground">Compose reusable question papers from your question bank</p>
+            </div>
+            <Button onClick={() => setShowCreate(true)}><Icon name="add" size={16} className="mr-1" />New Paper</Button>
           </div>
-          <Button onClick={() => setShowCreate(true)}><Icon name="add" size={16} className="mr-1" />New Paper</Button>
-        </div>
+        </motion.div>
 
-        <DataFetchWrapper data={data} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="list">
-          {(papers: any[]) => (
-            <div className="space-y-2">
-              {papers.length === 0 ? (
-                <Card><CardContent className="p-8 text-center text-muted-foreground"><Icon name="description" size={48} className="mx-auto mb-3 opacity-40" /><p>No question papers yet.</p></CardContent></Card>
-              ) : (
-                papers.map((p: any) => (
-                  <Card key={p.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold">{p.title}</h3>
-                            <Badge variant={p.status === 'ready' ? 'default' : 'outline'} className="text-xs">{p.status}</Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground">{p.description}</p>
-                          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                            <span>{p.sections?.length || 0} sections</span>
-                            <span>{p.totalPoints} total points</span>
-                            {p.duration && <span>{p.duration} min</span>}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          {p.status === 'draft' && <Button variant="outline" size="sm" onClick={() => markReadyMutation.mutate(p.id)}>Mark Ready</Button>}
-                          <Button variant="ghost" size="icon-sm" onClick={() => { if (confirm('Delete this paper?')) deleteMutation.mutate(p.id); }}><Icon name="delete" size={16} /></Button>
-                        </div>
-                      </div>
+        <motion.div variants={cardStackReveal} custom={0}>
+          <DataFetchWrapper data={data} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="list">
+            {(papers: any[]) => (
+              <div className="space-y-2">
+                {papers.length === 0 ? (
+                  <Card className="border-border/60">
+                    <CardContent className="p-8 text-center text-muted-foreground">
+                      <Icon name="description" size={48} className="mx-auto mb-3 opacity-40" />
+                      <p className="text-body-md">No question papers yet.</p>
                     </CardContent>
                   </Card>
-                ))
-              )}
-            </div>
-          )}
-        </DataFetchWrapper>
+                ) : (
+                  papers.map((p: any) => (
+                    <Card key={p.id} className="border-border/60">
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="text-title-sm font-semibold">{p.title}</h3>
+                              <Badge variant={p.status === 'ready' ? 'default' : 'outline'} className="text-label-xs">{p.status}</Badge>
+                            </div>
+                            <p className="text-body-md text-muted-foreground">{p.description}</p>
+                            <div className="flex items-center gap-3 mt-2 text-label-xs text-muted-foreground">
+                              <span>{p.sections?.length || 0} sections</span>
+                              <span>{p.totalPoints} total points</span>
+                              {p.duration && <span>{p.duration} min</span>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {p.status === 'draft' && <Button variant="outline" size="sm" onClick={() => markReadyMutation.mutate(p.id)}>Mark Ready</Button>}
+                            <Button variant="ghost" size="icon-sm" onClick={() => { if (confirm('Delete this paper?')) deleteMutation.mutate(p.id); }}><Icon name="delete" size={16} /></Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            )}
+          </DataFetchWrapper>
+        </motion.div>
 
         <Dialog open={showCreate} onOpenChange={(o) => { if (!o) resetForm(); setShowCreate(o); }}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -115,8 +129,8 @@ export default function TeacherQuestionPapersPage() {
               <Input type="number" value={duration} onChange={(e) => setDuration(Number(e.target.value))} placeholder="Duration (minutes)" min={1} />
 
               {sections.map((sec, i) => (
-                <Card key={i}>
-                  <CardContent className="p-3 space-y-2">
+                <Card key={i} className="border-border/60">
+                  <CardContent className="p-5 space-y-2">
                     <div className="flex items-center justify-between">
                       <Input value={sec.title} onChange={(e) => updateSection(i, 'title', e.target.value)} placeholder="Section title" className="max-w-xs" />
                       {sections.length > 1 && <Button variant="ghost" size="icon-sm" onClick={() => setSections(sections.filter((_, j) => j !== i))}><Icon name="close" size={16} /></Button>}
@@ -124,10 +138,10 @@ export default function TeacherQuestionPapersPage() {
                     <Input value={sec.instructions || ''} onChange={(e) => updateSection(i, 'instructions', e.target.value)} placeholder="Instructions (optional)" />
                     <Input type="number" value={sec.pointsPerQuestion} onChange={(e) => updateSection(i, 'pointsPerQuestion', Number(e.target.value))} placeholder="Points per question" min={1} className="max-w-[180px]" />
                     <div className="space-y-1">
-                      <p className="text-xs text-muted-foreground">Question IDs (Firestore document IDs from question bank):</p>
+                      <p className="text-label-xs text-muted-foreground">Question IDs (Firestore document IDs from question bank):</p>
                       {sec.questionIds.map((qid, qi) => (
                         <div key={qi} className="flex items-center gap-1">
-                          <Input value={qid} onChange={(e) => { const c = [...sections]; c[i].questionIds[qi] = e.target.value; setSections(c); }} placeholder="Question ID" className="text-xs font-mono" />
+                          <Input value={qid} onChange={(e) => { const c = [...sections]; c[i].questionIds[qi] = e.target.value; setSections(c); }} placeholder="Question ID" className="text-label-xs font-mono" />
                           {sec.questionIds.length > 1 && <Button variant="ghost" size="icon-sm" onClick={() => { const c = [...sections]; c[i].questionIds.splice(qi, 1); setSections(c); }}><Icon name="close" size={14} /></Button>}
                         </div>
                       ))}

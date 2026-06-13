@@ -11,7 +11,7 @@ import { Icon } from '@/components/ui/Icon';
 import { OptionsSelect } from '@/components/ui/select';
 import { getInitials } from '@/lib/utils';
 import { getLetterGrade } from '@/lib/format';
-import { pageTransition, listContainer, listItem } from '@/lib/motion';
+import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import {
   getUserByRole,
   getAllClasses,
@@ -119,14 +119,14 @@ export default function TeacherStudentsPage() {
     <>
       <SEOHead title="My Students" description="View and manage your students" canonical="/teacher/students" />
       <motion.div
-        variants={pageTransition}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        className="p-4 max-w-5xl mx-auto space-y-6 pb-20"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="p-6 max-w-6xl mx-auto space-y-16 pb-32"
       >
         <motion.div
-          variants={listItem}
+          variants={cardStackReveal}
+          custom={0}
           className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
         >
           <div>
@@ -164,20 +164,20 @@ export default function TeacherStudentsPage() {
           }
         >
           {(studentList) => (
-            <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-2">
+            <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-2">
               {studentList.map((student) => {
                 const letterGrade = getLetterGrade(student.overallPercentage);
                 const isHighPerformer = student.overallPercentage >= 80;
                 const isLowPerformer = student.overallPercentage < 60;
 
                 return (
-                  <motion.div key={student.id} variants={listItem}>
+                  <motion.div key={student.id} variants={scrollReveal}>
                     <Link
                       to={`/teacher/students/${student.id}`}
                       className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl block"
                     >
-                      <Card className="hover:shadow-md transition-all duration-200 group cursor-pointer">
-                        <CardContent className="p-4">
+                      <Card className="border-border/60 hover:shadow-md transition-all duration-200 group cursor-pointer">
+                        <CardContent className="p-5">
                           <div className="flex items-center gap-4">
                             <Avatar className="h-11 w-11">
                               <AvatarFallback>{getInitials(student.displayName)}</AvatarFallback>

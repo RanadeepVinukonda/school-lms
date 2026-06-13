@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import api from '@/services/api';
-import { pageTransition, listContainer } from '@/lib/motion';
+import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/lib/motion';
 import { getAllSubjects, getExamsBySubject, getEnrollmentsByStudent, getAssignmentsBySubject } from '@/services/dataService';
 import { useAuthStore } from '@/store/authStore';
 import type { AssignmentItem, ExamItem, QuizItem } from '@/services/dataService';
@@ -44,7 +44,7 @@ export default function StudentTasksPage() {
         .filter((a: any) => !!a.releasedAt)
         .map((a: any) => ({ id: a.id, ...a })) as AssignmentItem[];
 
-      // Fetch quizzes for the student's class using the newer quiz‑v2 API (class‑scoped)
+      // Fetch quizzes for the student's class using the newer quiz-v2 API (class-scoped)
       const quizzesResponse = classId
         ? await api.get(`/quizzes-v2/class/${classId}`).then((r) => r.data.data ?? [])
         : [];
@@ -52,7 +52,7 @@ export default function StudentTasksPage() {
         .filter((q: any) => !!q.releasedAt)
         .map((q: any) => ({ id: q.id, ...q })) as QuizItem[];
 
-      // Fetch exams for the student's class using the newer exam‑v2 API (class‑scoped)
+      // Fetch exams for the student's class using the newer exam-v2 API (class-scoped)
       const examsResponse = classId
         ? await api.get(`/exams-v2/class/${classId}`).then((r) => r.data.data ?? [])
         : [];
@@ -117,58 +117,59 @@ export default function StudentTasksPage() {
         description="View all upcoming tasks sorted by urgency"
       />
       <motion.div
-        variants={pageTransition}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        className="p-4 max-w-4xl mx-auto space-y-6 pb-20"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="p-6 max-w-6xl mx-auto pb-32 space-y-16"
       >
-        <div className="flex flex-col gap-4">
-          <div>
-            <h1 className="text-headline-sm font-bold flex items-center gap-3">
-              Tasks
-              {overdueCount > 0 && (
-                <Badge variant="destructive" className="text-xs">
-                  {overdueCount} overdue
-                </Badge>
-              )}
-            </h1>
-            <p className="text-body-md text-muted-foreground">Stay on top of your upcoming work</p>
-          </div>
-          {subjectsData && subjectsData.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5 pt-1">
-              <button
-                onClick={() => setSelectedSubjectId('')}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border shrink-0 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                  selectedSubjectId === ''
-                    ? "bg-primary text-white border-primary shadow-sm"
-                    : "bg-surface text-on-surface hover:bg-surface-variant/40 border-outline-variant/60"
-                }`}
-              >
-                <Icon name="select_all" size={14} />
-                All Subjects
-              </button>
-              {subjectsData.map((sub: any) => {
-                const isSelected = selectedSubjectId === sub.id;
-                return (
-                  <button
-                    key={sub.id}
-                    onClick={() => setSelectedSubjectId(sub.id)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border shrink-0 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                      isSelected
-                        ? "text-white shadow-sm"
-                        : "bg-surface text-on-surface hover:bg-surface-variant/40 border-outline-variant/60"
-                    }`}
-                    style={isSelected ? { backgroundColor: sub.color || '#6366f1', borderColor: sub.color || '#6366f1' } : {}}
-                  >
-                    <Icon name={sub.icon || 'menu_book'} size={14} style={!isSelected ? { color: sub.color } : undefined} />
-                    {sub.name}
-                  </button>
-                );
-              })}
+        <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+          <div className="flex flex-col gap-4">
+            <div>
+              <h1 className="text-headline-sm font-bold flex items-center gap-3">
+                Tasks
+                {overdueCount > 0 && (
+                  <Badge variant="destructive" className="text-xs">
+                    {overdueCount} overdue
+                  </Badge>
+                )}
+              </h1>
+              <p className="text-body-md text-muted-foreground">Stay on top of your upcoming work</p>
             </div>
-          )}
-        </div>
+            {subjectsData && subjectsData.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <button
+                  onClick={() => setSelectedSubjectId('')}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border shrink-0 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                    selectedSubjectId === ''
+                      ? "bg-primary text-white border-primary shadow-sm"
+                      : "bg-surface text-on-surface hover:bg-surface-variant/40 border-border/60"
+                  }`}
+                >
+                  <Icon name="select_all" size={14} />
+                  All Subjects
+                </button>
+                {subjectsData.map((sub: any) => {
+                  const isSelected = selectedSubjectId === sub.id;
+                  return (
+                    <button
+                      key={sub.id}
+                      onClick={() => setSelectedSubjectId(sub.id)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border shrink-0 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                        isSelected
+                          ? "text-white shadow-sm"
+                          : "bg-surface text-on-surface hover:bg-surface-variant/40 border-border/60"
+                      }`}
+                      style={isSelected ? { backgroundColor: sub.color || '#6366f1', borderColor: sub.color || '#6366f1' } : {}}
+                    >
+                      <Icon name={sub.icon || 'menu_book'} size={14} style={!isSelected ? { color: sub.color } : undefined} />
+                      {sub.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </motion.div>
 
         <DataFetchWrapper
           data={data}
@@ -181,19 +182,25 @@ export default function StudentTasksPage() {
           emptyIcon={<Icon name="task_alt" size={40} />}
         >
           {() => (
-            <>
+            <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
               <FilterBar active={activeFilter} onChange={setActiveFilter} overdueCount={overdueCount} />
 
               {filteredAndGrouped && filteredAndGrouped.all.length === 0 ? (
                 <EmptyFilterState filter={activeFilter} />
               ) : (
-                <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
+                <motion.div
+                  variants={staggerContainer}
+                  initial="hidden"
+                  whileInView="show"
+                  viewport={{ once: true, margin: '-60px' }}
+                  className="space-y-6"
+                >
                   {filteredAndGrouped?.sections.map((section) => (
                     <TaskSection key={section.level} level={section.level} tasks={section.tasks} />
                   ))}
                 </motion.div>
               )}
-            </>
+            </motion.div>
           )}
         </DataFetchWrapper>
       </motion.div>

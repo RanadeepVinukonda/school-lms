@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useAuthStore } from '@/store/authStore';
@@ -10,11 +11,11 @@ import GlobalSearchDialog from '@/components/common/GlobalSearchDialog';
 import { TutorialGuide } from '@/components/common/TutorialGuide';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { UserAvatar } from '@/components/layout/UserAvatar';
-
 import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/lib/constants';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { pageTransition } from '@/lib/motion';
 
 interface NavItem {
   label: string;
@@ -277,7 +278,11 @@ export default function TeacherLayout() {
         </header>
 
         <main id="main-content" className="min-h-[calc(100vh-8rem)]">
-          <Outlet />
+          <AnimatePresence mode="wait">
+            <motion.div key={useLocation().pathname} variants={pageTransition} initial="initial" animate="animate" exit="exit">
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
       <GlobalSearchDialog isOpen={searchOpen} onClose={() => setSearchOpen(false)} />

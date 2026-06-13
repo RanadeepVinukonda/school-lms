@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Icon } from '@/components/ui/Icon';
 import { getInitials } from '@/lib/utils';
-import { listItem } from '@/lib/motion';
+import { cardStackReveal } from '@/lib/motion';
 import type { UserDoc, CorrectionItem, ExamItem } from '@/services/dataService';
 
 interface MarkEntry {
@@ -57,7 +57,7 @@ export function StudentCorrectionPanel({
   const examQuestions = (exam.questions as { id: string; type: string; question: string; points: number; options?: string[]; correctAnswer?: string }[]) ?? [];
 
   return (
-    <motion.div variants={listItem}>
+    <motion.div variants={cardStackReveal} custom={0}>
       <div className="border-b last:border-b-0">
         <button
           type="button"

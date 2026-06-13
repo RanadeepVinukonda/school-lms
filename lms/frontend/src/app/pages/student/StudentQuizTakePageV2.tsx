@@ -19,7 +19,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
-import { pageTransition } from '@/lib/motion';
+import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
@@ -106,17 +106,15 @@ function playSynthesizedSound(type: 'correct' | 'incorrect') {
     gain.connect(ctx.destination);
     
     if (type === 'correct') {
-      // Pleasant double chime: E5 followed quickly by A5
-      osc.frequency.setValueAtTime(659.25, ctx.currentTime); // E5
-      osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.08); // A5
+      osc.frequency.setValueAtTime(659.25, ctx.currentTime);
+      osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.08);
       gain.gain.setValueAtTime(0.08, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.35);
     } else {
-      // Deep buzzer sound
       osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(110.00, ctx.currentTime); // A2
+      osc.frequency.setValueAtTime(110.00, ctx.currentTime);
       gain.gain.setValueAtTime(0.12, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
       osc.start(ctx.currentTime);
@@ -145,10 +143,8 @@ export default function StudentQuizTakePageV2() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(true);
 
-  // Status tracking for Normal Exam Console
   const [questionStatuses, setQuestionStatuses] = useState<Record<string, 'unvisited' | 'visited' | 'attempted' | 'review'>>({});
   
-  // Interactive mode states (for republished practice)
   const [wrongOptions, setWrongOptions] = useState<Record<string, string[]>>({});
   const [interactiveCorrect, setInteractiveCorrect] = useState<Record<string, boolean>>({});
   const [interactiveError, setInteractiveError] = useState<Record<string, boolean>>({});
@@ -189,7 +185,6 @@ export default function StudentQuizTakePageV2() {
       questionStartTimeRef.current = Date.now();
       questionTimeMapRef.current = {};
 
-      // Initialize statuses: first is visited, others are unvisited
       const initialStatuses: Record<string, 'unvisited' | 'visited' | 'attempted' | 'review'> = {};
       data.questions.forEach((q, idx) => {
         initialStatuses[q.id] = idx === 0 ? 'visited' : 'unvisited';
@@ -240,7 +235,6 @@ export default function StudentQuizTakePageV2() {
         if (currentQ) trackTimeOnQuestion(currentQ.id);
         
         const nextQ = attempt.questions[index];
-        // Mark next question as visited if it was unvisited
         setQuestionStatuses((prev) => {
           const currentStatus = prev[nextQ.id] || 'unvisited';
           if (currentStatus === 'unvisited') {
@@ -249,7 +243,6 @@ export default function StudentQuizTakePageV2() {
           return prev;
         });
 
-        // Initialize custom text input if moving to text-based question in interactive mode
         if (assessmentInfo?.isRepublished) {
           setCustomTextInput(answers[nextQ.id] || '');
         }
@@ -283,7 +276,6 @@ export default function StudentQuizTakePageV2() {
     setQuestionStatuses((prev) => {
       const current = prev[q.id];
       if (current === 'review') {
-        // Fall back to attempted or visited
         return { ...prev, [q.id]: answers[q.id] ? 'attempted' : 'visited' };
       } else {
         return { ...prev, [q.id]: 'review' };
@@ -322,13 +314,11 @@ export default function StudentQuizTakePageV2() {
     }
   }, [attempt, userId, isSubmitting, currentIndex, answers, basePath, trackTimeOnQuestion]);
 
-  // Handle option selection in interactive mode
   const handleInteractiveSelect = (optionValue: string) => {
     if (!attempt || !assessmentInfo?.isRepublished) return;
     const q = attempt.questions[currentIndex];
     if (!q) return;
 
-    // If already correctly answered, do nothing
     if (interactiveCorrect[q.id]) return;
 
     const isCorrect = optionValue.trim().toLowerCase() === q.correctAnswer?.trim().toLowerCase();
@@ -339,7 +329,6 @@ export default function StudentQuizTakePageV2() {
       setInteractiveError((prev) => ({ ...prev, [q.id]: false }));
       handleAnswerChange(optionValue);
 
-      // Auto advance to next question after 1.2s delay
       setTimeout(() => {
         if (currentIndex < (attempt.questions?.length ?? 0) - 1) {
           goToQuestion(currentIndex + 1);
@@ -358,7 +347,6 @@ export default function StudentQuizTakePageV2() {
     }
   };
 
-  // Handle text verification in interactive mode (for fill_blank, numerical, descriptive)
   const handleInteractiveTextVerify = () => {
     if (!attempt || !assessmentInfo?.isRepublished) return;
     const q = attempt.questions[currentIndex];
@@ -369,7 +357,6 @@ export default function StudentQuizTakePageV2() {
     const formattedInput = customTextInput.trim().toLowerCase();
     const formattedCorrect = (q.correctAnswer || '').trim().toLowerCase();
 
-    // For descriptive, we accept any text longer than 5 chars for simulation
     const isCorrect = q.type === 'descriptive' 
       ? formattedInput.length > 5 
       : formattedInput === formattedCorrect;
@@ -495,11 +482,11 @@ export default function StudentQuizTakePageV2() {
   if (infoError || !assessmentInfo) {
     const errorMessage = (infoErrorObj as { message?: string })?.message || `${assessmentType === 'exam' ? 'Exam' : 'Quiz'} not found`;
     return (
-      <div className="p-4 max-w-lg mx-auto mt-12">
-        <Card>
+      <div className="p-6 max-w-lg mx-auto mt-12">
+        <Card className="border-border/60">
           <CardContent className="flex flex-col items-center gap-4 py-8 text-center">
             <AlertCircle className="h-12 w-12 text-destructive" />
-            <p className="font-semibold text-lg">{errorMessage}</p>
+            <p className="font-semibold text-headline-sm">{errorMessage}</p>
             <Button onClick={() => refetchInfo()}>Retry</Button>
           </CardContent>
         </Card>
@@ -511,14 +498,14 @@ export default function StudentQuizTakePageV2() {
 
   if (questionModels.length === 0 && phase === 'select-models') {
     return (
-      <div className="p-4 max-w-lg mx-auto mt-12">
+      <div className="p-6 max-w-lg mx-auto mt-12">
         <Button variant="ghost" size="sm" onClick={handleBack} className="mb-4">
           <ArrowLeft className="h-4 w-4 mr-1" />Back
         </Button>
-        <Card>
+        <Card className="border-border/60">
           <CardContent className="flex flex-col items-center gap-4 py-16 text-center">
             <AlertCircle className="h-12 w-12 text-on-surface-variant/40" />
-            <p className="font-semibold text-lg">No question types configured</p>
+            <p className="font-semibold text-headline-sm">No question types configured</p>
             <Button variant="outline" onClick={handleBack}>Go Back</Button>
           </CardContent>
         </Card>
@@ -531,109 +518,110 @@ export default function StudentQuizTakePageV2() {
       <>
         <SEOHead title={assessmentInfo.title} description={`${assessmentType}: ${assessmentInfo.title}`} />
         <motion.div
-          variants={pageTransition}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          className="p-4 max-w-2xl mx-auto space-y-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="p-6 max-w-6xl mx-auto pb-32 space-y-16"
         >
-          <Button variant="ghost" size="sm" onClick={handleBack} className="mb-2">
-            <ArrowLeft className="h-4 w-4 mr-1" />Back
-          </Button>
+          <motion.div variants={cardStackReveal} custom={0} className="max-w-2xl mx-auto space-y-6">
+            <Button variant="ghost" size="sm" onClick={handleBack} className="mb-2">
+              <ArrowLeft className="h-4 w-4 mr-1" />Back
+            </Button>
 
-          <div className="text-center space-y-3">
-            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-              <Layers className="h-8 w-8 text-primary" />
-            </div>
-            <h1 className="text-2xl font-bold flex items-center justify-center gap-2">
-              {assessmentInfo.title}
-              {assessmentInfo.isRepublished && (
-                <Badge variant="success" className="text-[10px] tracking-wider font-bold">
-                  INTERACTIVE PRACTICE
-                </Badge>
-              )}
-            </h1>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              {assessmentInfo.description}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto text-sm">
-            <div className="bg-muted rounded-xl p-3 text-center">
-              <p className="text-2xl font-bold">{assessmentInfo.questionsCount || '--'}</p>
-              <p className="text-xs text-muted-foreground">Questions</p>
-            </div>
-            <div className="bg-muted rounded-xl p-3 text-center">
-              <p className="text-2xl font-bold">{assessmentInfo.timeLimitMinutes}m</p>
-              <p className="text-xs text-muted-foreground">Time Limit</p>
-            </div>
-            <div className="bg-muted rounded-xl p-3 text-center">
-              <p className="text-2xl font-bold">{assessmentInfo.totalPoints || '--'}</p>
-              <p className="text-xs text-muted-foreground">Points</p>
-            </div>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Brain className="h-5 w-5 text-primary" />
-                Select Formats to Include
-              </CardTitle>
-              <CardDescription>
-                Check the formats you wish to practice or test on.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 gap-3">
-              {questionModels.map((model) => (
-                <div
-                  key={model}
-                  className={cn(
-                    'flex items-start gap-4 p-4 rounded-xl border-2 transition-all cursor-pointer',
-                    selectedModels.includes(model)
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-primary/30 hover:bg-accent/50',
-                  )}
-                  onClick={() => toggleModel(model)}
-                >
-                  <Checkbox
-                    checked={selectedModels.includes(model)}
-                    onCheckedChange={() => toggleModel(model)}
-                    className="mt-0.5"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <Label className="text-base font-semibold cursor-pointer">
-                      {MODEL_LABELS[model] || model.toUpperCase()}
-                    </Label>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          {assessmentInfo.isRepublished && (
-            <div className="bg-success-container/10 border border-success/30 rounded-xl p-4 text-sm space-y-2">
-              <div className="flex items-center gap-2 font-bold text-success">
-                <Brain className="h-[18px] w-[18px]" />
-                <span>Interactive Practice Mode Active</span>
+            <div className="text-center space-y-3">
+              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto">
+                <Layers className="h-6 w-6 text-primary" />
               </div>
-              <p className="text-on-surface-variant">
-                This test has been republished as interactive homework. Selecting correct options triggers immediate visual ticks and chime audio, automatically advancing you to the next question. Wrong selections trigger audio buzzers and red crosses, prompting you to try again.
+              <h1 className="text-headline-sm font-bold flex items-center justify-center gap-2">
+                {assessmentInfo.title}
+                {assessmentInfo.isRepublished && (
+                  <Badge variant="success" className="text-[10px] tracking-wider font-bold">
+                    INTERACTIVE PRACTICE
+                  </Badge>
+                )}
+              </h1>
+              <p className="text-body-md text-muted-foreground max-w-md mx-auto">
+                {assessmentInfo.description}
               </p>
             </div>
-          )}
 
-          <Button
-            size="lg"
-            className="w-full text-base"
-            onClick={handleStart}
-            disabled={startMutation.isPending || selectedModels.length === 0}
-          >
-            {startMutation.isPending ? (
-              <><Loader2 className="h-5 w-5 mr-2 animate-spin" />Starting...</>
-            ) : (
-              <><Play className="h-5 w-5 mr-2" />Start {assessmentInfo.isRepublished ? 'Interactive Session' : 'Exam'}</>
+            <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto text-body-md">
+              <div className="bg-muted rounded-xl p-3 text-center">
+                <p className="text-display-xs font-bold">{assessmentInfo.questionsCount || '--'}</p>
+                <p className="text-label-xs text-muted-foreground">Questions</p>
+              </div>
+              <div className="bg-muted rounded-xl p-3 text-center">
+                <p className="text-display-xs font-bold">{assessmentInfo.timeLimitMinutes}m</p>
+                <p className="text-label-xs text-muted-foreground">Time Limit</p>
+              </div>
+              <div className="bg-muted rounded-xl p-3 text-center">
+                <p className="text-display-xs font-bold">{assessmentInfo.totalPoints || '--'}</p>
+                <p className="text-label-xs text-muted-foreground">Points</p>
+              </div>
+            </div>
+
+            <Card className="border-border/60">
+              <CardHeader>
+                <CardTitle className="text-title-md flex items-center gap-2">
+                  <Brain className="h-5 w-5 text-primary" />
+                  Select Formats to Include
+                </CardTitle>
+                <CardDescription>
+                  Check the formats you wish to practice or test on.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-5 grid grid-cols-1 gap-3">
+                {questionModels.map((model) => (
+                  <div
+                    key={model}
+                    className={cn(
+                      'flex items-start gap-4 p-4 rounded-xl border-2 transition-all cursor-pointer',
+                      selectedModels.includes(model)
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/30 hover:bg-accent/50',
+                    )}
+                    onClick={() => toggleModel(model)}
+                  >
+                    <Checkbox
+                      checked={selectedModels.includes(model)}
+                      onCheckedChange={() => toggleModel(model)}
+                      className="mt-0.5"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <Label className="text-body-lg font-semibold cursor-pointer">
+                        {MODEL_LABELS[model] || model.toUpperCase()}
+                      </Label>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {assessmentInfo.isRepublished && (
+              <div className="bg-success-container/10 border border-success/30 rounded-xl p-4 text-body-md space-y-2">
+                <div className="flex items-center gap-2 font-bold text-success">
+                  <Brain className="h-[18px] w-[18px]" />
+                  <span>Interactive Practice Mode Active</span>
+                </div>
+                <p className="text-on-surface-variant">
+                  This test has been republished as interactive homework. Selecting correct options triggers immediate visual ticks and chime audio, automatically advancing you to the next question. Wrong selections trigger audio buzzers and red crosses, prompting you to try again.
+                </p>
+              </div>
             )}
-          </Button>
+
+            <Button
+              size="lg"
+              className="w-full text-body-lg"
+              onClick={handleStart}
+              disabled={startMutation.isPending || selectedModels.length === 0}
+            >
+              {startMutation.isPending ? (
+                <><Loader2 className="h-5 w-5 mr-2 animate-spin" />Starting...</>
+              ) : (
+                <><Play className="h-5 w-5 mr-2" />Start {assessmentInfo.isRepublished ? 'Interactive Session' : 'Exam'}</>
+              )}
+            </Button>
+          </motion.div>
         </motion.div>
       </>
     );
@@ -642,11 +630,11 @@ export default function StudentQuizTakePageV2() {
   const attemptData = attempt;
   if ((phase === 'quiz' || phase === 'result') && !attemptData) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh] p-4">
-        <Card className="w-full max-w-sm">
+      <div className="flex items-center justify-center min-h-[60vh] p-6">
+        <Card className="w-full max-w-sm border-border/60">
           <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
             <AlertCircle className="h-10 w-10 text-destructive" />
-            <p className="font-semibold text-lg">Attempt not found</p>
+            <p className="font-semibold text-headline-sm">Attempt not found</p>
             <Button variant="outline" onClick={handleBack}>Go Back</Button>
           </CardContent>
         </Card>
@@ -665,88 +653,89 @@ export default function StudentQuizTakePageV2() {
       <>
         <SEOHead title={`${assessmentInfo.title} - Results`} description="Test results" />
         <motion.div
-          variants={pageTransition}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          className="max-w-2xl mx-auto p-4 space-y-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="p-6 max-w-6xl mx-auto pb-32 space-y-16"
         >
-          <Card>
-            <CardContent className="p-6 text-center space-y-4">
-              <div
-                className={cn(
-                  'h-20 w-20 rounded-full mx-auto flex items-center justify-center',
-                  isPassed ? 'bg-emerald-500/10' : 'bg-destructive/10',
-                )}
-              >
-                {isPassed ? (
-                  <CheckCircle className="h-10 w-10 text-emerald-500" />
-                ) : (
-                  <XCircle className="h-10 w-10 text-destructive" />
-                )}
-              </div>
-              <div>
-                <CardTitle className="text-2xl">
-                  {isPassed ? 'Passed!' : 'Keep Practicing'}
-                </CardTitle>
-                <CardDescription className="text-base mt-1">
-                  {assessmentInfo.title}
-                </CardDescription>
-              </div>
+          <motion.div variants={cardStackReveal} custom={0} className="max-w-2xl mx-auto space-y-6">
+            <Card className="border-border/60">
+              <CardContent className="p-6 text-center space-y-4">
+                <div
+                  className={cn(
+                    'h-12 w-12 rounded-xl mx-auto flex items-center justify-center',
+                    isPassed ? 'bg-emerald-500/10' : 'bg-destructive/10',
+                  )}
+                >
+                  {isPassed ? (
+                    <CheckCircle className="h-6 w-6 text-emerald-500" />
+                  ) : (
+                    <XCircle className="h-6 w-6 text-destructive" />
+                  )}
+                </div>
+                <div>
+                  <CardTitle className="text-headline-sm">
+                    {isPassed ? 'Passed!' : 'Keep Practicing'}
+                  </CardTitle>
+                  <CardDescription className="text-body-lg mt-1">
+                    {assessmentInfo.title}
+                  </CardDescription>
+                </div>
 
-              <div className="flex items-center justify-center gap-6 flex-wrap">
-                <div className="text-center">
-                  <p className="text-4xl font-bold">
-                    {result.score}/{result.totalPoints}
-                  </p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Final Score</p>
+                <div className="flex items-center justify-center gap-6 flex-wrap">
+                  <div className="text-center">
+                    <p className="text-display-xs font-bold">
+                      {result.score}/{result.totalPoints}
+                    </p>
+                    <p className="text-label-xs text-muted-foreground uppercase tracking-wider mt-1">Final Score</p>
+                  </div>
+                  <Separator orientation="vertical" className="h-12" />
+                  <div className="text-center">
+                    <p className={cn('text-display-xs font-bold', isPassed ? 'text-emerald-500' : 'text-destructive')}>
+                      {Math.round(result.percentage)}%
+                    </p>
+                    <p className="text-label-xs text-muted-foreground uppercase tracking-wider mt-1">Percentage</p>
+                  </div>
                 </div>
-                <Separator orientation="vertical" className="h-12" />
-                <div className="text-center">
-                  <p className={cn('text-4xl font-bold', isPassed ? 'text-emerald-500' : 'text-destructive')}>
-                    {Math.round(result.percentage)}%
-                  </p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Percentage</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Card>
-              <CardContent className="p-4 space-y-2">
-                <div className="flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-amber-500" />
-                  <h3 className="font-semibold">AI Calculated Level</h3>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="text-sm capitalize font-bold">
-                    {levelLabel}
-                  </Badge>
-                </div>
-                <p className="text-xs text-on-surface-variant leading-relaxed">
-                  Based on accuracy, average question response times, and maximum complexity solved.
-                </p>
               </CardContent>
             </Card>
-            <Card>
-              <CardContent className="p-4 space-y-2">
-                <div className="flex items-center gap-2">
-                  <Timer className="h-5 w-5 text-primary" />
-                  <h3 className="font-semibold">Time Spent</h3>
-                </div>
-                <p className="text-2xl font-bold font-mono">{fmt(result.timeSpent)}</p>
-                <p className="text-xs text-muted-foreground">
-                  out of {assessmentInfo.timeLimitMinutes} minutes
-                </p>
-              </CardContent>
-            </Card>
-          </div>
 
-          <Button className="w-full" size="lg" onClick={handleBack}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Card className="border-border/60">
+                <CardContent className="p-5 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="h-5 w-5 text-amber-500" />
+                    <h3 className="font-semibold text-title-sm">AI Calculated Level</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-body-md capitalize font-bold">
+                      {levelLabel}
+                    </Badge>
+                  </div>
+                  <p className="text-label-xs text-on-surface-variant leading-relaxed">
+                    Based on accuracy, average question response times, and maximum complexity solved.
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="border-border/60">
+                <CardContent className="p-5 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Timer className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold text-title-sm">Time Spent</h3>
+                  </div>
+                  <p className="text-display-xs font-bold font-mono">{fmt(result.timeSpent)}</p>
+                  <p className="text-label-xs text-muted-foreground">
+                    out of {assessmentInfo.timeLimitMinutes} minutes
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Button className="w-full" size="lg" onClick={handleBack}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </motion.div>
         </motion.div>
       </>
     );
@@ -761,7 +750,6 @@ export default function StudentQuizTakePageV2() {
 
   const currentStatus = questionStatuses[currentQuestion.id] || 'unvisited';
 
-  // Format indicators for palette
   const getStatusColor = (status: 'unvisited' | 'visited' | 'attempted' | 'review', isCurrent: boolean) => {
     if (isCurrent) return 'ring-2 ring-primary scale-110 font-bold bg-primary text-primary-foreground';
     switch (status) {
@@ -775,7 +763,7 @@ export default function StudentQuizTakePageV2() {
   return (
     <>
       <SEOHead title={`${assessmentInfo.title} - Testing`} description="Exam Take page" />
-      <div className="fixed inset-0 bg-background z-50 flex flex-col md:flex-row overflow-hidden font-sans">
+      <div className="fixed inset-0 bg-background z-50 flex flex-col md:flex-row overflow-hidden">
         
         {/* MAIN EXAM WORKSPACE */}
         <div className="flex-1 flex flex-col overflow-y-auto">
@@ -786,7 +774,7 @@ export default function StudentQuizTakePageV2() {
           )}>
             <div className="flex items-center gap-4">
               <div className={cn(
-                'flex items-center gap-2 font-mono text-2xl font-black tracking-tight',
+                'flex items-center gap-2 font-mono text-title-md font-black tracking-tight',
                 warn && 'animate-pulse text-error'
               )}>
                 <Clock className="h-5 w-5" />
@@ -800,7 +788,7 @@ export default function StudentQuizTakePageV2() {
             </div>
             <div className="flex items-center gap-3">
               <span className="text-body-md font-medium">
-                Question <span className="text-lg font-bold">{currentIndex + 1}</span> of {totalQuestions}
+                Question <span className="text-title-sm font-bold">{currentIndex + 1}</span> of {totalQuestions}
               </span>
               <Progress value={progress} className="w-24 h-2" />
             </div>
@@ -809,28 +797,25 @@ export default function StudentQuizTakePageV2() {
           {/* Question Display Workspace */}
           <div className="flex-1 p-6 md:p-12 max-w-3xl mx-auto w-full flex flex-col justify-start space-y-6">
             <div className="flex items-center justify-between">
-              <Badge variant="outline" className="text-xs px-2.5 py-0.5 capitalize">
+              <Badge variant="outline" className="text-label-xs px-2.5 py-0.5 capitalize">
                 {MODEL_LABELS[currentQuestion.type] || currentQuestion.type.toUpperCase()}
               </Badge>
-              <span className="text-sm text-on-surface-variant font-medium">
+              <span className="text-body-md text-on-surface-variant font-medium">
                 {currentQuestion.points} pts
               </span>
             </div>
 
-            {/* Passage Text rendering if passage type */}
             {currentQuestion.type === 'passage' && currentQuestion.passageText && (
-              <div className="bg-surface-variant/30 border border-outline-variant p-4 rounded-xl max-h-48 overflow-y-auto text-sm leading-relaxed mb-2 font-serif italic text-on-surface-variant">
+              <div className="bg-surface-variant/30 border border-outline-variant p-4 rounded-xl max-h-48 overflow-y-auto text-body-md leading-relaxed mb-2 font-serif italic text-on-surface-variant">
                 {currentQuestion.passageText}
               </div>
             )}
 
-            <h2 className="text-xl md:text-2xl font-bold leading-relaxed text-on-surface">
+            <h2 className="text-headline-sm font-bold leading-relaxed text-on-surface">
               {currentQuestion.text}
             </h2>
 
-            {/* CONDITIONAL RENDERER FOR INTERACTIVE republished VS NORMAL MODE */}
             {assessmentInfo.isRepublished ? (
-              /* INTERACTIVE MODE INPUT METHOD */
               <div className="py-4 space-y-4">
                 {(currentQuestion.type === 'mcq' || currentQuestion.type === 'multiple_choice' || currentQuestion.type === 'true_false' || currentQuestion.type === 'passage') && currentQuestion.options ? (
                   <div className="grid grid-cols-1 gap-3">
@@ -846,7 +831,7 @@ export default function StudentQuizTakePageV2() {
                           disabled={hasResponded || isWrong}
                           onClick={() => handleInteractiveSelect(option)}
                           className={cn(
-                            'flex items-center gap-3 p-4 rounded-xl border-2 text-left font-medium transition-all text-body-md',
+                            'flex items-center gap-3 p-4 rounded-xl border-2 text-left font-medium transition-all text-body-lg',
                             hasResponded && isCorrectAnswer
                               ? 'border-success bg-success/10 text-success'
                               : isWrong
@@ -857,7 +842,7 @@ export default function StudentQuizTakePageV2() {
                           )}
                         >
                           <div className={cn(
-                            'h-6 w-6 rounded-full flex items-center justify-center border font-bold text-xs shrink-0',
+                            'h-6 w-6 rounded-full flex items-center justify-center border font-bold text-label-xs shrink-0',
                             hasResponded && isCorrectAnswer
                               ? 'bg-success text-success-foreground border-success'
                               : isWrong
@@ -872,7 +857,6 @@ export default function StudentQuizTakePageV2() {
                     })}
                   </div>
                 ) : (
-                  /* TEXT-BASED INTERACTIVE QUESTION */
                   <div className="space-y-4">
                     {interactiveCorrect[currentQuestion.id] ? (
                       <div className="p-4 rounded-xl border-2 border-success bg-success/10 text-success font-semibold text-center flex items-center justify-center gap-2">
@@ -881,7 +865,7 @@ export default function StudentQuizTakePageV2() {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        <Label>Type your answer:</Label>
+                        <Label className="text-body-md">Type your answer:</Label>
                         <div className="flex gap-2">
                           <Input
                             placeholder={currentQuestion.type === 'numerical' ? 'Enter numeric value' : 'Type here...'}
@@ -894,7 +878,7 @@ export default function StudentQuizTakePageV2() {
                           </Button>
                         </div>
                         {interactiveError[currentQuestion.id] && (
-                          <p className="text-xs text-error font-medium flex items-center gap-1">
+                          <p className="text-label-xs text-error font-medium flex items-center gap-1">
                             <AlertCircle className="h-3 w-3" />
                             Incorrect answer. Please verify and try again!
                           </p>
@@ -905,7 +889,6 @@ export default function StudentQuizTakePageV2() {
                 )}
               </div>
             ) : (
-              /* NORMAL MODE RENDERER */
               <QuestionRendererV2
                 question={currentQuestion}
                 answer={answers[currentQuestion.id] || ''}
@@ -973,13 +956,12 @@ export default function StudentQuizTakePageV2() {
                 <Brain className="h-4 w-4 text-primary" />
                 Question Navigator
               </h3>
-              <p className="text-[11px] text-on-surface-variant mt-0.5">
+              <p className="text-label-xs text-on-surface-variant mt-0.5">
                 {answeredCount} of {totalQuestions} answered
               </p>
             </div>
 
-            {/* Legend info */}
-            <div className="p-3 bg-surface-variant/30 border-b border-outline-variant text-[11px] grid grid-cols-2 gap-2 text-on-surface-variant">
+            <div className="p-3 bg-surface-variant/30 border-b border-outline-variant text-label-xs grid grid-cols-2 gap-2 text-on-surface-variant">
               <div className="flex items-center gap-1.5">
                 <div className="h-2.5 w-2.5 rounded-full bg-muted opacity-60" />
                 <span>Unvisited</span>
@@ -998,7 +980,6 @@ export default function StudentQuizTakePageV2() {
               </div>
             </div>
 
-            {/* Boxes Palette Grid */}
             <div className="p-4 grid grid-cols-5 gap-2.5">
               {questions.map((q, i) => {
                 const status = questionStatuses[q.id] || 'unvisited';
@@ -1008,7 +989,7 @@ export default function StudentQuizTakePageV2() {
                     key={q.id}
                     onClick={() => goToQuestion(i)}
                     className={cn(
-                      'h-9 w-9 rounded-lg text-xs font-bold transition-all flex items-center justify-center shadow-sm hover:scale-105',
+                      'h-9 w-9 rounded-lg text-label-xs font-bold transition-all flex items-center justify-center shadow-sm hover:scale-105',
                       getStatusColor(status, isCurrent)
                     )}
                   >
@@ -1030,16 +1011,16 @@ export default function StudentQuizTakePageV2() {
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             className="w-full max-w-sm"
           >
-            <Card>
+            <Card className="border-border/60">
               <CardHeader>
-                <CardTitle>Finish Assessment</CardTitle>
+                <CardTitle className="text-title-sm">Finish Assessment</CardTitle>
                 <CardDescription>
                   You answered {answeredCount} of {totalQuestions} questions.
                   {answeredCount < totalQuestions && ` ${totalQuestions - answeredCount} remain unanswered.`}
                   Are you ready to submit and calculate your performance analytics?
                 </CardDescription>
               </CardHeader>
-              <CardContent className="flex gap-3">
+              <CardContent className="p-5 flex gap-3">
                 <Button
                   variant="outline"
                   className="flex-1"
@@ -1068,18 +1049,18 @@ export default function StudentQuizTakePageV2() {
       {/* FULLSCREEN BLOCKING MODAL FOR EXAMS */}
       {assessmentType === 'exam' && !isFullscreen && phase === 'quiz' && (
         <div className="fixed inset-0 bg-background/95 backdrop-blur-md z-[100] flex flex-col items-center justify-center p-4">
-          <Card className="w-full max-w-md border-destructive/50 shadow-2xl">
+          <Card className="w-full max-w-md border-destructive/50 border-border/60 shadow-2xl">
             <CardHeader className="text-center pb-2">
-              <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-2 text-destructive">
+              <div className="h-12 w-12 rounded-xl bg-destructive/10 flex items-center justify-center mx-auto mb-2 text-destructive">
                 <AlertTriangle className="h-6 w-6" />
               </div>
-              <CardTitle className="text-xl font-bold">Fullscreen Required</CardTitle>
-              <CardDescription className="text-sm">
+              <CardTitle className="text-headline-sm font-bold">Fullscreen Required</CardTitle>
+              <CardDescription className="text-body-md">
                 Leaving fullscreen mode violates exam integrity policies. This exit has been logged.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col gap-4 pt-4 text-center">
-              <p className="text-xs text-muted-foreground">
+            <CardContent className="p-5 flex flex-col gap-4 pt-4 text-center">
+              <p className="text-label-xs text-muted-foreground">
                 To continue with your exam, you must return to fullscreen mode immediately.
               </p>
               <Button onClick={requestFullscreen} size="lg" className="w-full font-semibold">

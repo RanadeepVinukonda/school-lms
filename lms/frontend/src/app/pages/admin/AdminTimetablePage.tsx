@@ -14,7 +14,7 @@ import { Icon } from '@/components/ui/Icon';
 import { OptionsSelect } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { pageTransition, listContainer, listItem } from '@/lib/motion';
+import { cardStackReveal } from '@/lib/motion';
 import { getTimetableByClass, getAllSubjects, getAllUsers, getAllClasses } from '@/services/dataService';
 import { collection, addDoc, deleteDoc, doc, writeBatch, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase/config';
@@ -220,58 +220,65 @@ export default function AdminTimetablePage() {
   return (
     <>
       <SEOHead title={pageTitle} description={`Weekly timetable for ${classData?.name || 'class'}`} />
-      <DataFetchWrapper
-        data={(!isLoading && !isError) ? {} : undefined}
-        isLoading={isLoading}
-        error={isError ? new Error('Failed to load timetable') : null}
-        onRetry={() => refetch()}
-        loadingType="card"
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="p-6 max-w-6xl mx-auto pb-32"
       >
-        {() => {
-          if (!classData) {
+        <DataFetchWrapper
+          data={(!isLoading && !isError) ? {} : undefined}
+          isLoading={isLoading}
+          error={isError ? new Error('Failed to load timetable') : null}
+          onRetry={() => refetch()}
+          loadingType="card"
+        >
+          {() => {
+            if (!classData) {
+              return (
+                <motion.div variants={cardStackReveal} custom={0}>
+                  <Card className="border-border/60">
+                    <CardContent className="flex flex-col items-center gap-4 py-16">
+                      <Icon name="error" size={48} className="text-muted-foreground/50" />
+                      <p className="text-title-sm font-medium">Class not found</p>
+                      <p className="text-body-md text-muted-foreground">The class you are looking for does not exist.</p>
+                      <Button variant="outline" onClick={() => navigate('/admin/classes')}>
+                        <Icon name="arrow_back" size={16} className="mr-2" />
+                        Back to Classes
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            }
+
+            const hasSlots = timetableSlots.length > 0;
+
             return (
-              <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit">
-                <Card>
-                  <CardContent className="flex flex-col items-center gap-4 py-16">
-                    <Icon name="error" size={48} className="text-on-surface-variant/50" />
-                    <p className="font-medium">Class not found</p>
-                    <p className="text-sm text-on-surface-variant">The class you are looking for does not exist.</p>
-                    <Button variant="outline" onClick={() => navigate('/admin/classes')}>
-                      <Icon name="arrow_back" size={16} className="mr-2" />
-                      Back to Classes
+              <motion.div variants={cardStackReveal} custom={0} className="space-y-16">
+                <motion.div variants={cardStackReveal} custom={1}>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <Button variant="ghost" size="sm" onClick={() => navigate('/admin/classes')}>
+                      <Icon name="arrow_back" size={18} className="mr-1" />
+                      Back
                     </Button>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            );
-          }
-
-          const hasSlots = timetableSlots.length > 0;
-
-          return (
-            <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit">
-              <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
-                <motion.div variants={listItem} className="flex items-center gap-3 flex-wrap">
-                  <Button variant="ghost" size="sm" onClick={() => navigate('/admin/classes')}>
-                    <Icon name="arrow_back" size={18} className="mr-1" />
-                    Back
-                  </Button>
-                  <div>
-                    <h1 className="text-headline-sm">{classData.name} Timetable</h1>
-                    <p className="text-sm text-on-surface-variant">
-                      Code: {classData.code} &middot; Grade {classData.grade || '\u2014'} &middot;{' '}
-                      {hasSlots ? `${timetableSlots.length} scheduled slots` : 'No schedule yet'}
-                    </p>
+                    <div>
+                      <h1 className="text-headline-sm font-bold">{classData.name} Timetable</h1>
+                      <p className="text-body-md text-muted-foreground">
+                        Code: {classData.code} &middot; Grade {classData.grade || '\u2014'} &middot;{' '}
+                        {hasSlots ? `${timetableSlots.length} scheduled slots` : 'No schedule yet'}
+                      </p>
+                    </div>
                   </div>
                 </motion.div>
 
                 {!hasSlots ? (
-                  <motion.div variants={listItem}>
-                    <Card>
+                  <motion.div variants={cardStackReveal} custom={2}>
+                    <Card className="border-border/60">
                       <CardContent className="flex flex-col items-center gap-4 py-16">
-                        <Icon name="calendar_month" size={48} className="text-on-surface-variant/50" />
-                        <p className="font-medium">No timetable set for this class</p>
-                        <p className="text-sm text-on-surface-variant">Click Edit Schedule to add periods.</p>
+                        <Icon name="calendar_month" size={48} className="text-muted-foreground/50" />
+                        <p className="text-title-sm font-medium">No timetable set for this class</p>
+                        <p className="text-body-md text-muted-foreground">Click Edit Schedule to add periods.</p>
                         <Button onClick={() => openSlotEditor('monday', 1)}>
                           <Icon name="edit" size={16} className="mr-2" />
                           Edit Schedule
@@ -280,20 +287,20 @@ export default function AdminTimetablePage() {
                     </Card>
                   </motion.div>
                 ) : (
-                  <motion.div variants={listItem} className="overflow-x-auto">
+                  <motion.div variants={cardStackReveal} custom={2} className="overflow-x-auto">
                     <div className="min-w-[700px]">
-                      <div className="grid grid-cols-[60px_repeat(5,1fr)] gap-px bg-outline-variant rounded-lg overflow-hidden">
-                        <div className="bg-surface-variant/50 p-2 flex items-center justify-center">
-                          <Icon name="schedule" size={16} className="text-on-surface-variant" />
+                      <div className="grid grid-cols-[60px_repeat(5,1fr)] gap-px bg-border/60 rounded-lg overflow-hidden">
+                        <div className="bg-muted/30 p-2 flex items-center justify-center">
+                          <Icon name="schedule" size={16} className="text-muted-foreground" />
                         </div>
                         {days.map((day) => (
-                          <div key={day} className="bg-surface-variant/50 p-2 text-center text-label-sm font-semibold text-on-surface-variant uppercase">
+                          <div key={day} className="bg-muted/30 p-2 text-center text-label-sm font-semibold text-muted-foreground uppercase">
                             {dayLabels[day]}
                           </div>
                         ))}
                         {periods.map((period) => (
                           <>
-                            <div key={`label-${period}`} className="bg-surface-variant/30 p-2 flex items-center justify-center text-label-sm font-medium text-on-surface-variant">
+                            <div key={`label-${period}`} className="bg-muted/20 p-2 flex items-center justify-center text-label-sm font-medium text-muted-foreground">
                               P{period}
                             </div>
                             {days.map((day) => {
@@ -304,25 +311,25 @@ export default function AdminTimetablePage() {
                                 <div
                                   key={`${day}-${period}`}
                                   className={
-                                    'min-h-[72px] p-2 bg-surface relative group' +
-                                    (slot ? ' hover:bg-surface-variant/30 transition-colors cursor-pointer' : ' hover:bg-surface-variant/10 transition-colors cursor-pointer')
+                                    'min-h-[72px] p-2 bg-card relative group' +
+                                    (slot ? ' hover:bg-muted/30 transition-colors cursor-pointer' : ' hover:bg-muted/10 transition-colors cursor-pointer')
                                   }
                                   onClick={() => openSlotEditor(day, period, slot || undefined)}
                                 >
                                   {slot ? (
                                     <div className="h-full flex flex-col justify-center gap-0.5">
                                       <span className="text-label-sm font-medium leading-tight">{subject?.name || '\u2014'}</span>
-                                      <span className="text-[10px] text-on-surface-variant leading-tight">{teacher?.displayName || '\u2014'}</span>
+                                      <span className="text-[10px] text-muted-foreground leading-tight">{teacher?.displayName || '\u2014'}</span>
                                       <Badge variant="outline" className="text-[9px] px-1 py-0 w-fit mt-0.5">Room {slot.room}</Badge>
                                     </div>
                                   ) : (
-                                    <span className="text-[10px] text-on-surface-variant/40 flex items-center justify-center h-full">
+                                    <span className="text-[10px] text-muted-foreground/40 flex items-center justify-center h-full">
                                       Click to add
                                     </span>
                                   )}
                                   {slot && slot.id && (
                                     <button
-                                      className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 text-error hover:text-error/80 transition-opacity"
+                                      className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive/80 transition-opacity"
                                       onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ id: slot.id!, label: `${slot.day} P${slot.period}` }); }}
                                       title="Remove slot"
                                     >
@@ -345,10 +352,10 @@ export default function AdminTimetablePage() {
                   </motion.div>
                 )}
               </motion.div>
-            </motion.div>
-          );
-        }}
-      </DataFetchWrapper>
+            );
+          }}
+        </DataFetchWrapper>
+      </motion.div>
 
       <ConfirmDialog
         open={!!deleteConfirm}
@@ -416,6 +423,7 @@ export default function AdminTimetablePage() {
                 <Label>Room</Label>
                 <Input
                   placeholder="e.g. Room 101, Lab A"
+                  className="border-border/60 placeholder:text-muted-foreground"
                   value={slotForm.room}
                   onChange={(e) => setSlotForm((f) => ({ ...f, room: e.target.value }))}
                 />
