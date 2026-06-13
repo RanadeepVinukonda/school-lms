@@ -109,7 +109,7 @@ function ProfileSkeleton() {
           <Skeleton className="h-4 w-24" />
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="p-4 rounded-xl border border-outline-variant space-y-2">
             <Skeleton className="h-4 w-20" />

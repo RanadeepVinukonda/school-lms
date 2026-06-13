@@ -123,7 +123,7 @@ export default function ExamAttemptPage() {
           <CardContent className="p-6 text-center space-y-6">
             <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto"><FileText className="h-8 w-8 text-primary" /></div>
             <div><CardTitle className="text-2xl">{exam.title}</CardTitle><CardDescription className="text-base">{exam.description}</CardDescription></div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {[{ l: 'Questions', v: qs }, { l: 'Duration', v: `${exam.duration}m` }, { l: 'Points', v: totalPts }].map(s => (
                 <div key={s.l} className="bg-muted rounded-xl p-3"><p className="text-2xl font-bold">{s.v}</p><p className="text-xs text-muted-foreground">{s.l}</p></div>
               ))}

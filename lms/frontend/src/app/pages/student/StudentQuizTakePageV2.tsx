@@ -483,7 +483,7 @@ export default function StudentQuizTakePageV2() {
       <div className="p-8 max-w-3xl mx-auto space-y-6">
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-48 rounded-2xl" />
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <Skeleton className="h-24 rounded-xl" />
           <Skeleton className="h-24 rounded-xl" />
           <Skeleton className="h-24 rounded-xl" />
@@ -558,7 +558,7 @@ export default function StudentQuizTakePageV2() {
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto text-sm">
+          <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto text-sm">
             <div className="bg-muted rounded-xl p-3 text-center">
               <p className="text-2xl font-bold">{assessmentInfo.questionsCount || '--'}</p>
               <p className="text-xs text-muted-foreground">Questions</p>

@@ -35,7 +35,7 @@ export default function TeacherVideoLibraryPage() {
         </motion.div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:inline-flex">
+          <TabsList className="w-full sm:w-auto grid grid-cols-2 sm:inline-flex">
             <TabsTrigger value="search" className="gap-2">
               <Icon name="search" size={16} />
               <span className="hidden sm:inline">Search YouTube</span>

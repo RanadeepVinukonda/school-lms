@@ -134,7 +134,7 @@ export default function QuizAttemptPage() {
             </div>
             <CardTitle className="text-xl">{quiz.title}</CardTitle>
             <CardDescription>{quiz.description}</CardDescription>
-            <div className="grid grid-cols-3 gap-3 text-sm">
+            <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="bg-muted rounded-lg p-3"><p className="font-bold text-lg">{totalQuestions}</p><p className="text-xs text-muted-foreground">Questions</p></div>
               <div className="bg-muted rounded-lg p-3"><p className="font-bold text-lg">{quiz.timeLimit}m</p><p className="text-xs text-muted-foreground">Time Limit</p></div>
               <div className="bg-muted rounded-lg p-3"><p className="font-bold text-lg">{quiz.questions?.reduce((s, q) => s + q.points, 0) || 0}</p><p className="text-xs text-muted-foreground">Points</p></div>

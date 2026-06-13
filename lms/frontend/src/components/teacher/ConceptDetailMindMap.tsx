@@ -126,7 +126,7 @@ export function ConceptDetailMindMap({ concept }: ConceptDetailMindMapProps) {
   const conceptTitleLabel = concept.title.length > 25 ? concept.title.slice(0, 22) + '…' : concept.title;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div className="lg:col-span-2">
         <Card className="overflow-hidden">
           <CardContent className="p-4 relative">

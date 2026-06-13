@@ -88,7 +88,7 @@ export default function StudentProfilePage() {
                         <h2 className="text-xl font-bold">Genesis International Montessori &amp; STEM School</h2>
                         <p className="text-warning uppercase text-xs tracking-wider font-semibold mt-0.5">Learn &middot; Lead &middot; Achieve</p>
                         <p className="text-body-sm text-muted-foreground mt-2">A premier institution dedicated to academic excellence, leadership development, and holistic student growth.</p>
-                        <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-border">
+                        <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-border">
                           <div>
                             <p className="text-xs text-muted-foreground">Academic Year</p>
                             <p className="text-sm font-semibold">2025&ndash;2026</p>
@@ -191,7 +191,7 @@ export default function StudentProfilePage() {
                 <Card variant="elevated">
                   <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Icon name="settings" size={18} />Settings</CardTitle></CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <PasswordChangeDialog />
                       <Button variant="outline" className="justify-start gap-2" asChild>
                         <Link to="/notifications"><Icon name="notifications" size={16} />Notifications</Link>

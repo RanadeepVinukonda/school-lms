@@ -139,7 +139,7 @@ export default function WelcomePage() {
           </motion.div>
 
           <motion.div
-            className="mx-auto mt-24 grid max-w-6xl gap-6 px-4 sm:grid-cols-2 lg:grid-cols-3"
+            className="mx-auto mt-24 grid max-w-6xl gap-6 px-4 sm:grid-cols-2 lg:grid-cols-2"
             variants={listContainer}
             initial="hidden"
             animate="show"

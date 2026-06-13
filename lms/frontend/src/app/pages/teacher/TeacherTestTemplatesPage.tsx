@@ -254,7 +254,7 @@ export default function TeacherTestTemplatesPage() {
                 <div><label className="text-sm font-medium">Question Count</label><Input type="number" value={questionCount} onChange={(e) => setQuestionCount(Number(e.target.value))} min={1} /></div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <div><label className="text-sm font-medium">Easy</label><Input type="number" value={easyCount} onChange={(e) => setEasyCount(Number(e.target.value))} min={0} /></div>
                 <div><label className="text-sm font-medium">Medium</label><Input type="number" value={mediumCount} onChange={(e) => setMediumCount(Number(e.target.value))} min={0} /></div>
                 <div><label className="text-sm font-medium">Hard</label><Input type="number" value={hardCount} onChange={(e) => setHardCount(Number(e.target.value))} min={0} /></div>

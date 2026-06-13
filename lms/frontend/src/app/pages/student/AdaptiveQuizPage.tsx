@@ -182,7 +182,7 @@ export default function AdaptiveQuizPage() {
                     This quiz adapts to your knowledge level. Answer correctly and the questions get harder.
                     Wrong answers? We'll reinforce with easier questions first.
                   </p>
-                  <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto text-sm">
+                  <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto text-sm">
                     <div className="p-3 rounded-xl bg-success/10 border border-success/20">
                       <div className="font-semibold text-success">3</div>
                       <div className="text-muted-foreground text-xs">Rounds</div>
@@ -357,7 +357,7 @@ export default function AdaptiveQuizPage() {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto text-sm">
+                  <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto text-sm">
                     <div className="p-3 rounded-xl bg-success/10 border border-success/20">
                       <div className="font-semibold text-success capitalize">{resultSkillLevel}</div>
                       <div className="text-muted-foreground text-xs">Skill Level</div>

@@ -698,7 +698,7 @@ export default function AdminClassesPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="classes">Classes</TabsTrigger>
             <TabsTrigger value="teachers">Teachers</TabsTrigger>
             <TabsTrigger value="students">Students</TabsTrigger>
@@ -743,7 +743,7 @@ export default function AdminClassesPage() {
                       </CardContent>
                     </Card>
                   ) : (
-                    <motion.div variants={listContainer} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <motion.div variants={listContainer} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
                       {filteredClasses.map((cls) => {
                         const isExpanded = expandedId === cls.id;
                         const classSubjects = getClassSubjects(cls.id);
@@ -1162,21 +1162,21 @@ export default function AdminClassesPage() {
           </DialogHeader>
           {createdCredentials && (
             <div className="space-y-4 bg-surface-variant/40 p-4 rounded-lg border border-outline-variant font-mono text-sm">
-              <div className="grid grid-cols-3 gap-2 border-b border-outline-variant/60 pb-2">
+              <div className="grid grid-cols-2 gap-2 border-b border-outline-variant/60 pb-2">
                 <span className="font-bold text-on-surface-variant">Name:</span>
                 <span className="col-span-2 select-all font-sans font-medium">{createdCredentials.displayName}</span>
               </div>
               {createdCredentials.studentId && (
-                <div className="grid grid-cols-3 gap-2 border-b border-outline-variant/60 pb-2">
+                <div className="grid grid-cols-2 gap-2 border-b border-outline-variant/60 pb-2">
                   <span className="font-bold text-on-surface-variant">Student ID:</span>
                   <span className="col-span-2 select-all text-primary font-bold">{createdCredentials.studentId}</span>
                 </div>
               )}
-              <div className="grid grid-cols-3 gap-2 border-b border-outline-variant/60 pb-2">
+              <div className="grid grid-cols-2 gap-2 border-b border-outline-variant/60 pb-2">
                 <span className="font-bold text-on-surface-variant">Email Login:</span>
                 <span className="col-span-2 select-all font-bold">{createdCredentials.email}</span>
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <span className="font-bold text-on-surface-variant">Password:</span>
                 <span className="col-span-2 select-all text-error font-bold bg-error-container/50 px-2 py-0.5 rounded">{createdCredentials.generatedPassword}</span>
               </div>
@@ -1267,7 +1267,7 @@ export default function AdminClassesPage() {
                 <Input value={editClassForm.code} onChange={(e) => setEditClassForm((f) => ({ ...f, code: e.target.value }))} />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Grade</Label>
                 <Input value={editClassForm.grade} onChange={(e) => setEditClassForm((f) => ({ ...f, grade: e.target.value }))} />

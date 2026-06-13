@@ -286,7 +286,7 @@ export default function AdminSettingsPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="general">General Settings</TabsTrigger>
             <TabsTrigger value="admins">Admin Users</TabsTrigger>
             <TabsTrigger value="audit">Audit Logs</TabsTrigger>

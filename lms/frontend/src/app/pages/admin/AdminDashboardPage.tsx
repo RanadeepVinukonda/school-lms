@@ -632,7 +632,7 @@ export default function AdminDashboardPage() {
               ) : (
                 /* FULL MONITOR TAB */
                 <motion.div variants={listContainer} initial="hidden" animate="show" className="space-y-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       <motion.div variants={listItem}>
                         <Card>
                           <CardHeader className="pb-3"><CardTitle className="text-sm flex items-center gap-2"><Icon name="badge" size={16} className="text-primary" /> Teachers ({teachersData.length})</CardTitle></CardHeader>
@@ -763,7 +763,7 @@ export default function AdminDashboardPage() {
           ) : inspectDetails ? (
             <div className="space-y-6 mt-4">
               {/* Quick Metrics Header */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <Card variant="outlined">
                   <CardContent className="p-4 flex flex-col items-center text-center">
                     <span className="text-xs text-on-surface-variant">Total Submissions</span>

@@ -31,7 +31,7 @@ export default function App() {
     <AuthGate>
       <SplashScreen isLoading={showSplash} onFinish={() => setShowSplash(false)} />
       <UploadProgressBanner />
-      <RouterProvider router={router} />
+      <div className="container mx-auto px-4"><RouterProvider router={router} /></div>
     </AuthGate>
   );
 }

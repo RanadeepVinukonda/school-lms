@@ -196,7 +196,7 @@ export default function AboutSchoolPage() {
               Our Core Values
             </motion.h2>
 
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-5">
               {coreValues.map((value) => (
                 <motion.div key={value.title} variants={listItem}>
                   <Card
@@ -237,7 +237,7 @@ export default function AboutSchoolPage() {
             <motion.div variants={listItem}>
               <Card className="mx-auto max-w-4xl rounded-3xl border border-border/50 p-8 sm:p-10">
                 <CardContent className="p-0">
-                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
                     {schoolFacts.map((fact) => (
                       <div
                         key={fact.label}

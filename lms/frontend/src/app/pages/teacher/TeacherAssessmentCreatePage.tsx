@@ -690,7 +690,7 @@ export default function TeacherAssessmentCreatePage() {
                     <p className="text-xs text-muted-foreground mb-3">
                       Select which question types to pull from the concept&apos;s question bank
                     </p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 gap-3">
                       {QUESTION_MODELS.map((model) => (
                         <label
                           key={model.value}
@@ -710,7 +710,7 @@ export default function TeacherAssessmentCreatePage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="quiz-time-limit" className="mb-2 block">Time Limit (minutes)</Label>
                       <Input
@@ -961,7 +961,7 @@ export default function TeacherAssessmentCreatePage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="assignment-passing-score" className="mb-2 block">Passing Score (%)</Label>
                       <Input

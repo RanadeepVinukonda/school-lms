@@ -192,12 +192,12 @@ export default function TeacherDashboardPage() {
                   <Icon name="notifications_active" size={20} className="text-destructive" aria-hidden />
                   <h2 className="text-title-md font-semibold">Needs Attention</h2>
                 </div>
-                <motion.div variants={listContainer} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <motion.div variants={listContainer} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {d.needsAttention.map((item) => <NeedsAttentionCard key={item.label} item={item} />)}
                 </motion.div>
               </section>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <motion.div variants={listItem} initial="hidden" animate="show" className="lg:col-span-2">
                   <Card>
                     <CardHeader className="pb-3 flex flex-row items-center justify-between">
@@ -235,7 +235,7 @@ export default function TeacherDashboardPage() {
               {(d.teaching.classes.length > 0 || d.teaching.textbooks.length > 0) && (
                 <motion.div variants={listItem} initial="hidden" animate="show">
                   <h2 className="text-title-md font-semibold mb-3">My Teaching</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3">
                     {d.teaching.classes.length > 0 && (
                       <Card>
                         <CardContent className="p-4">

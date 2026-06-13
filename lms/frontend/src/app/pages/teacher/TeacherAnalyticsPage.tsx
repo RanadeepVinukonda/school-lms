@@ -62,7 +62,7 @@ function AssessmentRow({ assessment }: { assessment: any }) {
       </button>
       {expanded && (
         <div className="px-4 pb-4 border-t pt-3">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <p className="text-xs text-muted-foreground">Pass Rate</p>
               <p className="font-semibold">{assessment.passRate}%</p>

@@ -221,15 +221,15 @@ export default function AdminTeachersPage() {
           </DialogHeader>
           {createdCredentials && (
             <div className="space-y-4 bg-surface-variant/40 p-4 rounded-lg border border-outline-variant font-mono text-sm">
-              <div className="grid grid-cols-3 gap-2 border-b border-outline-variant/60 pb-2">
+              <div className="grid grid-cols-2 gap-2 border-b border-outline-variant/60 pb-2">
                 <span className="font-bold text-on-surface-variant">Name:</span>
                 <span className="col-span-2 select-all font-sans font-medium">{createdCredentials.displayName}</span>
               </div>
-              <div className="grid grid-cols-3 gap-2 border-b border-outline-variant/60 pb-2">
+              <div className="grid grid-cols-2 gap-2 border-b border-outline-variant/60 pb-2">
                 <span className="font-bold text-on-surface-variant">Email:</span>
                 <span className="col-span-2 select-all">{createdCredentials.email}</span>
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <span className="font-bold text-on-surface-variant">Password:</span>
                 <span className="col-span-2 select-all text-error font-bold bg-error-container/50 px-2 py-0.5 rounded">{createdCredentials.generatedPassword}</span>
               </div>

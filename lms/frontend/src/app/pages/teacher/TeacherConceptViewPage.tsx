@@ -399,7 +399,7 @@ export default function TeacherConceptViewPage() {
                   <p className="text-xs text-muted-foreground">
                     Toggle what is visible and accessible to students in their portal.
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Button
                       variant={d.release?.questionBankReleased ? 'default' : 'outline'}
                       onClick={() => toggleReleaseMutation.mutate('questionBankReleased')}

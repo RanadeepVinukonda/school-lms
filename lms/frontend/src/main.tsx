@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from 'sonner';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import App from './app/App';
 import './index.css';
 import './lib/motion.css';
@@ -25,7 +26,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
-        <App />
+        <ErrorBoundary><App /></ErrorBoundary>
         <Toaster
           position="top-right"
           richColors
