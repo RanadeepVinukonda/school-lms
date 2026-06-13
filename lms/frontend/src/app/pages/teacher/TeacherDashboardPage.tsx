@@ -34,7 +34,7 @@ interface DashboardData {
   needsAttention: NeedsAttentionItem[];
   todaySchedule: { period: number; subjectName: string; room: string }[];
   stats: { icon: string; label: string; value: string | number; color: string; bg: string }[];
-  teaching: { classes: { id: string; name: string }[]; textbooks: { id: string; title: string; subjectId: string }[]; studentCount: number };
+  teaching: { classes: { id: string; name: string }[]; textbooks: { id: string; title: string; subjectId: string }[]; studentCount: number; subjects?: { id: string; name: string }[] };
 }
 
 const QUICK_ACTIONS = [
@@ -233,7 +233,7 @@ export default function TeacherDashboardPage() {
                   </Card>
               </motion.div>
 
-                {(d.teaching.classes.length > 0 || d.teaching.textbooks.length > 0 || d.teaching.subjects?.length > 0) && (
+                {(d.teaching.classes.length > 0 || d.teaching.textbooks.length > 0 || (d.teaching.subjects?.length ?? 0) > 0) && (
                   <motion.div variants={listItem} initial="hidden" animate="show">
                     <h2 className="text-title-md font-semibold mb-3">My Teaching</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -271,7 +271,7 @@ export default function TeacherDashboardPage() {
                           </Card>
                         </Link>
                       )}
-                      {d.teaching.subjects?.length > 0 && (
+                      {(d.teaching.subjects?.length ?? 0) > 0 && (
                         <Card>
                           <CardContent className="p-4">
                             <div className="flex items-start gap-3">
@@ -280,7 +280,7 @@ export default function TeacherDashboardPage() {
                               </div>
                               <div className="min-w-0">
                                 <p className="text-sm font-semibold">Subjects</p>
-                                {d.teaching.subjects.map((sub) => (
+                                {d.teaching.subjects?.map((sub) => (
                                   <p key={sub.id} className="text-xs text-muted-foreground flex items-center justify-between">
                                     <span>{sub.name}</span>
                                     <Link to={`/teacher/students?subject=${sub.id}`} className="text-primary underline">View Students</Link>

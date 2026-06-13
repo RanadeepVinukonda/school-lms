@@ -6,17 +6,26 @@ export interface Subject {
   id: string;
   name: string;
   code: string;
-  icon?: string;
-  color?: string;
-  category?: string;
   classId?: string;
   description?: string;
+  category?: string;
+  icon?: string;
+  color?: string;
+  credits?: number;
+  department?: string;
+  thumbnail?: string;
+  isElective?: boolean;
+  gradeLevels?: string[];
+  tags?: string[];
+  syllabus?: string;
+  status?: string;
   isActive?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
 
 export interface Enrollment {
+  id?: string;
   courseId: string;
   studentId: string;
   enrolledAt: string;
@@ -28,6 +37,7 @@ export interface ClassEntry {
   id: string;
   name: string;
   code: string;
+  description?: string;
   grade?: string;
   section?: string;
   academicYear?: string;
@@ -35,7 +45,12 @@ export interface ClassEntry {
   teacherIds?: string[];
   subjectIds?: string[];
   studentCount?: number;
+  maxStudents?: number;
+  startDate?: string;
+  endDate?: string;
   status?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface GradeEntry {
@@ -51,7 +66,10 @@ export interface GradeEntry {
   letterGrade?: string;
   feedback?: string;
   gradedBy?: string;
+  academicYear?: string;
+  term?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface NotificationItem {
@@ -215,11 +233,18 @@ export interface AssignmentItem {
   chapterId?: string;
   textbookId?: string;
   lessonId?: string;
+  courseId?: string;
   dueDate?: string;
   points?: number;
+  maxAttempts?: number;
+  allowLateSubmission?: boolean;
+  latePenaltyPercent?: number;
+  passingGrade?: number;
   status?: string;
   submissionCount?: number;
+  isPublished?: boolean;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 /** Fetch assignments for a specific subject. */
@@ -242,10 +267,14 @@ export interface SubmissionItem {
   assignmentId: string;
   studentId: string;
   content?: string;
+  attachments?: string[];
   submittedAt?: string;
   status?: string;
+  attemptNumber?: number;
   grade?: number;
   feedback?: string;
+  gradedBy?: string;
+  gradedAt?: string;
 }
 
 /** Fetch submissions for a specific assignment. */
@@ -261,12 +290,19 @@ export interface ExamItem {
   title: string;
   description?: string;
   subjectId?: string;
+  courseId?: string;
   duration?: number;
+  totalPoints?: number;
+  passingScore?: number;
   questions?: unknown[];
   status?: string;
   startDate?: string;
   endDate?: string;
+  isProctored?: boolean;
+  shuffleQuestions?: boolean;
+  showResults?: boolean;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 /** Fetch exams for a specific subject. */
@@ -340,6 +376,10 @@ export interface TimetableEntry {
   subjectId?: string;
   teacherId?: string;
   room?: string;
+  startTime?: string;
+  endTime?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /** Fetch timetable entries for a specific class. */
@@ -367,6 +407,14 @@ export interface UserDoc {
   address?: string;
   dateOfBirth?: string;
   isActive?: boolean;
+  notificationPreferences?: {
+    email?: Record<string, boolean>;
+    push?: Record<string, boolean>;
+    sms?: Record<string, boolean>;
+    inApp?: Record<string, boolean>;
+  };
+  streakCount?: number;
+  lastActiveDate?: string;
   createdAt?: string;
   updatedAt?: string;
 }
