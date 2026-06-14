@@ -134,14 +134,10 @@ export async function createTextbook(data: {
   let status: 'processing' | 'ready' = 'ready';
 
   if (data.pdfBuffer && data.pdfBuffer.length > 0) {
-    // Upload PDF to Cloudinary
     const { url, publicId } = await uploadBufferToCloudinary(data.pdfBuffer, `textbooks/${textbookId}`);
-    storagePath = publicId; // Store Cloudinary public ID as storagePath
+    storagePath = publicId;
     pdfUrl = url;
-    // Only set processing if Redis is available (BullMQ queues are active)
-    if (env.REDIS_URL) {
-      status = 'processing';
-    }
+    status = 'processing';
   }
 
   const textbookData = {
@@ -153,29 +149,28 @@ export async function createTextbook(data: {
     description: data.description || '',
     coverImage: data.coverImage || '',
     storagePath,
-    pdfUrl, // Store Cloudinary URL for later download
+    pdfUrl,
     status,
     chapterCount: 0,
+    totalConcepts: 0,
+    completedConcepts: 0,
     createdAt: now,
     updatedAt: now,
   };
 
   await collections.textbooks().doc(textbookId).set(textbookData);
 
-  if (status === 'processing') {
-    // Trigger AI pipeline via BullMQ queue (requires Redis)
+  if (pdfUrl) {
     try {
-      const { addUploadJob } = require('../jobs/queue');
-      await addUploadJob(textbookId, storagePath);
-    } catch {
-      // No Redis available — fall back to mock content so textbook is immediately usable
-      logger.warn('BullMQ queue unavailable, populating mock content instead', { textbookId });
+      const { processUploadInline } = require('./pipeline.service');
+      await processUploadInline(textbookId);
       status = 'ready';
+    } catch (err) {
+      logger.error('Inline pipeline failed, falling back to mock content', { textbookId, err });
       await populateMockContent(textbookId, data.title);
-      await collections.textbooks().doc(textbookId).update({ status: 'ready', pdfUrl, storagePath });
+      await collections.textbooks().doc(textbookId).update({ status: 'ready' });
     }
   } else {
-    // No BullMQ (no Redis) or no PDF — populate mock content immediately
     await populateMockContent(textbookId, data.title);
   }
 
