@@ -230,9 +230,15 @@ export async function runAIPipeline(textbookId: string): Promise<void> {
 
     // Step 3: Extract text with pdf-parse (dynamic import for CJS compat)
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string }>;
-    const pdfData = await pdfParse(pdfBuffer);
-    const textContent = pdfData.text?.trim() ?? '';
+    const { PDFParse } = require('pdf-parse');
+    const parser = new PDFParse({ data: pdfBuffer });
+    let textContent = '';
+    try {
+      const parsed = await parser.getText();
+      textContent = parsed.text?.trim() ?? '';
+    } finally {
+      await parser.destroy();
+    }
 
     if (!textContent) throw new Error('PDF text extraction returned empty content — may be image-only or corrupt');
 

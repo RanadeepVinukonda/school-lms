@@ -61,18 +61,22 @@ const uploadWorker = new Worker(
     const pdfBuffer = Buffer.from(await response.arrayBuffer());
 
     // Parse PDF page by page
-    const pdfParse = require('pdf-parse');
+    const { PDFParse } = require('pdf-parse');
+    const parser = new PDFParse({ data: pdfBuffer });
     const pageTexts: string[] = [];
-    await pdfParse(pdfBuffer, {
-      pagerender: (pageData: any) =>
-        pageData.getTextContent().then((textContent: any) => {
-          const text = textContent.items.map((i: any) => i.str).join(' ');
-          pageTexts.push(text);
-          return text;
-        }),
-    });
+    try {
+      const parsed = await parser.getText();
+      const sortedPages = [...(parsed.pages || [])].sort((a, b) => a.num - b.num);
+      for (const page of sortedPages) {
+        pageTexts.push(page.text || '');
+      }
+    } finally {
+      await parser.destroy();
+    }
 
-    if (pageTexts.length === 0) throw new Error('PDF yielded no readable text');
+    if (pageTexts.length === 0 || pageTexts.every(t => !t.trim())) {
+      throw new Error('PDF yielded no readable text');
+    }
 
     await updateJobProgress(textbookId, 10, 'extract_text');
 

@@ -173,15 +173,22 @@ export async function processUploadInline(textbookId: string) {
   if (!response.ok) throw new Error(`Failed to download PDF: ${response.statusText}`);
   const pdfBuffer = Buffer.from(await response.arrayBuffer());
 
-  const pdfParse = require('pdf-parse');
-  const parsed = await pdfParse(pdfBuffer);
-  const fullText = parsed.text;
+  const { PDFParse } = require('pdf-parse');
+  const parser = new PDFParse({ data: pdfBuffer });
+  let fullText = '';
+  let pageCount = 0;
+  try {
+    const parsed = await parser.getText();
+    fullText = parsed.text;
+    pageCount = parsed.total || parsed.pages?.length || 0;
+  } finally {
+    await parser.destroy();
+  }
 
   if (!fullText || fullText.trim().length === 0) {
     throw new Error('PDF yielded no readable text');
   }
 
-  const pageCount = parsed.numpages || 0;
   logger.info('PDF parsed', { textbookId, chars: fullText.length, pages: pageCount });
 
   await textbookRef.collection('rawPages').doc('full').set({
