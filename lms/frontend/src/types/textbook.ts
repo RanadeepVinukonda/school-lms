@@ -14,6 +14,11 @@ export interface Textbook {
   processingStage: string;
   createdAt: string;
   updatedAt: string;
+  pdfUrl?: string;
+  logs?: string[];
+  failureReason?: string | null;
+  totalConcepts?: number;
+  completedConcepts?: number;
 }
 
 export interface Chapter {

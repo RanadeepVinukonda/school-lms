@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -47,6 +47,14 @@ export default function TeacherTextbookDetailPage() {
       return data?.status === 'processing' ? 3000 : false;
     },
   });
+
+  const logEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (logEndRef.current) {
+      logEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [textbookQuery.data?.logs]);
 
   const subjectQuery = useQuery({
     queryKey: ['subject', textbookQuery.data?.subjectId],
@@ -200,6 +208,32 @@ export default function TeacherTextbookDetailPage() {
                 />
               </div>
               <p className="text-xs text-muted-foreground">{stage}</p>
+            </div>
+          )}
+
+          {tb.logs && tb.logs.length > 0 && (
+            <div className="rounded-xl border border-border/80 bg-slate-950 p-4 space-y-2">
+              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-800 pb-2">
+                <Icon name="terminal" size={14} className="text-emerald-500 animate-pulse" />
+                Live Processing Terminal
+              </h4>
+              <div className="max-h-48 overflow-y-auto font-mono text-xs text-slate-300 space-y-1.5 pr-2">
+                {tb.logs.map((log: string, idx: number) => {
+                  const isWarning = log.includes('[Warning]');
+                  const isSuccess = log.includes('Success!') || log.includes('parsed successfully') || log.includes('enrichment complete');
+                  return (
+                    <div
+                      key={idx}
+                      className={
+                        isWarning ? 'text-amber-400' : isSuccess ? 'text-emerald-400' : 'text-slate-300'
+                      }
+                    >
+                      {log}
+                    </div>
+                  );
+                })}
+                <div ref={logEndRef} />
+              </div>
             </div>
           )}
 

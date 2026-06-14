@@ -11,6 +11,20 @@ import { logger } from '../utils/logger';
 
 const connection = getRedisConnection();
 
+async function addTextbookLog(textbookId: string, message: string) {
+  try {
+    const db = getAdminFirestore();
+    const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+    const logEntry = `[${timestamp}] ${message}`;
+    await db.collection('textbooks').doc(textbookId).update({
+      logs: admin.firestore.FieldValue.arrayUnion(logEntry),
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    logger.error('Failed to write textbook log in worker', { textbookId, err });
+  }
+}
+
 async function getJobDbRefs(textbookId: string) {
   const db = getAdminFirestore();
   const textbookRef = db.collection('textbooks').doc(textbookId);
@@ -53,12 +67,16 @@ const uploadWorker = new Worker(
     const pdfUrl = textbookDoc.data()?.pdfUrl;
     if (!pdfUrl) throw new Error('PDF URL not found for textbook');
 
+    await db.collection('textbooks').doc(textbookId).update({ logs: [] });
+    await addTextbookLog(textbookId, "Downloading textbook PDF from Cloudinary...");
     await updateJobProgress(textbookId, 5, 'extract_text');
 
     // Download PDF
     const response = await fetch(pdfUrl);
     if (!response.ok) throw new Error(`Failed to download PDF: ${response.statusText}`);
     const pdfBuffer = Buffer.from(await response.arrayBuffer());
+
+    await addTextbookLog(textbookId, "PDF downloaded. Extracting text content page by page...");
 
     // Parse PDF page by page
     const { PDFParse } = require('pdf-parse');
@@ -78,6 +96,7 @@ const uploadWorker = new Worker(
       throw new Error('PDF yielded no readable text');
     }
 
+    await addTextbookLog(textbookId, `PDF parsed successfully. Total pages: ${pageTexts.length}.`);
     await updateJobProgress(textbookId, 10, 'extract_text');
 
     // Save raw pages to Firestore
@@ -100,6 +119,7 @@ const uploadWorker = new Worker(
     logger.info('uploadWorker: Raw text saved', { textbookId, totalPages: pageTexts.length });
 
     await updateJobProgress(textbookId, 15, 'chapters');
+    await addTextbookLog(textbookId, "Analyzing syllabus layout and extracting Table of Contents (TOC) with Gemini AI...");
 
     // ── Gemini TOC Planning ──────────────────────────────
     const textbookData = textbookDoc.data()!;
@@ -138,6 +158,7 @@ ${tocText}`;
       structure = JSON.parse(cleaned);
     } catch (err) {
       logger.error('uploadWorker: TOC Gemini call failed, using fallback structure', { err });
+      await addTextbookLog(textbookId, "[Warning] Gemini TOC call failed. Using default syllabus layout fallback.");
     }
 
     if (!structure || !structure.chapters || structure.chapters.length === 0) {
@@ -173,6 +194,7 @@ ${tocText}`;
 
     // Set totalConcepts BEFORE enqueueing concept jobs
     await textbookRef.update({ chapterCount: structure.chapters.length, totalConcepts, updatedAt: new Date().toISOString() });
+    await addTextbookLog(textbookId, `Curriculum layout saved. Created ${structure.chapters.length} chapters and ${totalConcepts} concepts. Starting AI enrichment...`);
 
     await updateJobProgress(textbookId, 25, 'chapters');
 
@@ -228,6 +250,7 @@ const conceptWorker = new Worker(
   'conceptQueue',
   async (job: Job) => {
     const { textbookId, chapterId, conceptId, conceptTitle, chapterTitle } = job.data;
+    await addTextbookLog(textbookId, `Starting AI enrichment for concept: "${conceptTitle}"...`);
     logger.info('conceptWorker: Starting parallel enrichment', { conceptId, conceptTitle });
 
     const db = getAdminFirestore();
@@ -454,17 +477,22 @@ Context: ${contextText.slice(0, 8000)}`;
     const totalConcepts = updatedDoc.data()?.totalConcepts || 0;
     const completedCount = updatedDoc.data()?.completedConcepts || 0;
 
+    if (errors.length > 0) {
+      logger.warn('conceptWorker: Completed with partial failures', { conceptId, errors: errors.join('; ') });
+      await addTextbookLog(textbookId, `[Warning] Concept "${conceptTitle}" completed with issues: ${errors.join('; ')}`);
+    } else {
+      await addTextbookLog(textbookId, `Completed concept enrichment: "${conceptTitle}"`);
+    }
+
     if (completedCount >= totalConcepts && totalConcepts > 0) {
       logger.info('conceptWorker: All concepts completed — marking textbook ready', { textbookId });
       await updateJobProgress(textbookId, 100, 'done', 'COMPLETED');
+      await addTextbookLog(textbookId, "Success! Textbook processing completed. Reloading database view...");
     } else {
       // Calculate progress: 25% + (completed / total) * 75%
       const progress = Math.round(25 + (completedCount / Math.max(totalConcepts, 1)) * 75);
       await updateJobProgress(textbookId, progress, 'concepts');
-    }
-
-    if (errors.length > 0) {
-      logger.warn('conceptWorker: Completed with partial failures', { conceptId, errors: errors.join('; ') });
+      await addTextbookLog(textbookId, `Enriched concept progress: ${completedCount} / ${totalConcepts} completed.`);
     }
   },
   { connection }

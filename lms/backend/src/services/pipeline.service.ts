@@ -10,10 +10,25 @@ import { logger } from '../utils/logger';
 
 const AI_MODEL = env.AI_MODEL;
 
+async function addTextbookLog(textbookId: string, message: string) {
+  try {
+    const db = getAdminFirestore();
+    const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+    const logEntry = `[${timestamp}] ${message}`;
+    await db.collection('textbooks').doc(textbookId).update({
+      logs: admin.firestore.FieldValue.arrayUnion(logEntry),
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    logger.error('Failed to write textbook log', { textbookId, err });
+  }
+}
+
 async function processConcept(
   textbookId: string, chapterId: string, conceptId: string,
   conceptTitle: string, chapterTitle: string, fullText: string,
 ) {
+  await addTextbookLog(textbookId, `Generating resources for concept: "${conceptTitle}"...`);
   const db = getAdminFirestore();
 
   const matchingLines = fullText.split('\n')
@@ -149,6 +164,9 @@ ${contextText}`;
 
   if (errors.length > 0) {
     logger.warn('Concept partial failures', { conceptId, errors: errors.join('; ') });
+    await addTextbookLog(textbookId, `[Warning] Concept "${conceptTitle}" completed with issues: ${errors.join('; ')}`);
+  } else {
+    await addTextbookLog(textbookId, `Completed concept enrichment: "${conceptTitle}"`);
   }
 
   return errors.length === 0;
@@ -165,13 +183,16 @@ export async function processUploadInline(textbookId: string) {
 
   const title = textbookDoc.data()!.title || 'Textbook';
 
-  await textbookRef.update({ status: 'processing' });
+  await textbookRef.update({ status: 'processing', logs: [] });
 
   // 1. Download PDF – single pass text extraction
   logger.info('Downloading and parsing PDF', { textbookId });
+  await addTextbookLog(textbookId, "Downloading textbook PDF from Cloudinary...");
   const response = await fetch(pdfUrl);
   if (!response.ok) throw new Error(`Failed to download PDF: ${response.statusText}`);
   const pdfBuffer = Buffer.from(await response.arrayBuffer());
+
+  await addTextbookLog(textbookId, "PDF downloaded. Extracting text content...");
 
   const { PDFParse } = require('pdf-parse');
   const parser = new PDFParse({ data: pdfBuffer });
@@ -190,6 +211,7 @@ export async function processUploadInline(textbookId: string) {
   }
 
   logger.info('PDF parsed', { textbookId, chars: fullText.length, pages: pageCount });
+  await addTextbookLog(textbookId, `PDF parsed successfully. Total pages: ${pageCount}, size: ${fullText.length} characters.`);
 
   await textbookRef.collection('rawPages').doc('full').set({
     text: fullText.slice(0, 100000),
@@ -199,6 +221,7 @@ export async function processUploadInline(textbookId: string) {
 
   // 2. Gemini TOC planning
   logger.info('Generating TOC structure', { textbookId });
+  await addTextbookLog(textbookId, "Analyzing syllabus layout and extracting Table of Contents (TOC) with Gemini AI...");
   let structure: { chapters: Array<{ title: string; order: number; summary: string; concepts: string[] }> };
 
   try {
@@ -241,6 +264,7 @@ ${tocInput}`;
     // If very few chapters returned, try again with more of the text
     if (structure.chapters.length <= 2 && fullText.length > 80000) {
       logger.warn('Only 2 or fewer chapters detected — retrying with full text', { textbookId });
+      await addTextbookLog(textbookId, `[Warning] TOC returned only ${structure.chapters.length} chapters. Retrying with full text scan...`);
       const retryPrompt = `I previously extracted only ${structure.chapters.length} chapters from "${title}", but this is wrong. The textbook has MANY more chapters.
 
 Read the ENTIRE text below and extract EVERY chapter heading you can find. Look for patterns like "Chapter 1", "Chapter 2", "Unit 1", "Part I", numbered headings, or any section title.
@@ -270,6 +294,7 @@ ${fullText.slice(0, 120000)}`;
     }
   } catch (err) {
     logger.error('TOC generation failed, using fallback', { err });
+    await addTextbookLog(textbookId, "[Warning] Gemini TOC call failed. Using default syllabus layout fallback.");
     structure = {
       chapters: [
         { title: 'Chapter 1: Core Concepts', order: 1, summary: 'Foundational topics.', concepts: ['1.1 Introduction', '1.2 Key Principles'] },
@@ -314,6 +339,7 @@ ${fullText.slice(0, 120000)}`;
   });
 
   logger.info('Structure saved', { textbookId, chapters: chapters.length, totalConcepts });
+  await addTextbookLog(textbookId, `Curriculum layout saved. Created ${structure.chapters.length} chapters and ${totalConcepts} concepts. Starting AI enrichment...`);
 
   // 4. Process concepts in batches of 2 (parallel within batch)
   let completedCount = 0;
@@ -338,6 +364,7 @@ ${fullText.slice(0, 120000)}`;
             completedConcepts: admin.firestore.FieldValue.increment(1),
             updatedAt: new Date().toISOString(),
           });
+          await addTextbookLog(textbookId, `Enriched concept progress: ${completedCount} / ${totalConcepts} completed.`);
         }
       }
     }
@@ -347,4 +374,5 @@ ${fullText.slice(0, 120000)}`;
   await textbookRef.update({ status: 'ready', updatedAt: new Date().toISOString() });
 
   logger.info('Textbook processing complete', { textbookId, totalConcepts, completedCount });
+  await addTextbookLog(textbookId, "Success! Textbook processing completed. Reloading database view...");
 }
