@@ -156,9 +156,17 @@ export async function createTextbook(data: {
   await collections.textbooks().doc(textbookId).set(textbookData);
 
   if (status === 'processing') {
-    // Trigger AI pipeline non-blocking via BullMQ queue
-    const { addUploadJob } = require('../jobs/queue');
-    await addUploadJob(textbookId, storagePath);
+    // Trigger AI pipeline via BullMQ queue (requires Redis)
+    try {
+      const { addUploadJob } = require('../jobs/queue');
+      await addUploadJob(textbookId, storagePath);
+    } catch {
+      // No Redis available — fall back to mock content so textbook is immediately usable
+      logger.warn('BullMQ queue unavailable, populating mock content instead', { textbookId });
+      status = 'ready';
+      await populateMockContent(textbookId, data.title);
+      await collections.textbooks().doc(textbookId).update({ status: 'ready', pdfUrl, storagePath });
+    }
   } else {
     // No PDF — populate mock content for dev/demo
     await populateMockContent(textbookId, data.title);

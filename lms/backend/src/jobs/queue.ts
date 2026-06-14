@@ -1,42 +1,52 @@
-import { Queue, FlowProducer } from 'bullmq';
-import { getRedisConnection } from '../config/redis';
+import { env } from '../config/env';
 import { logger } from '../utils/logger';
 
-const connection = getRedisConnection();
+const hasRedis = !!env.REDIS_URL;
 
-// Initialize BullMQ Queues
-export const uploadQueue = new Queue('uploadQueue', { connection });
-export const chapterQueue = new Queue('chapterQueue', { connection });
-export const conceptQueue = new Queue('conceptQueue', { connection });
-export const questionQueue = new Queue('questionQueue', { connection });
-export const videoQueue = new Queue('videoQueue', { connection });
-export const resourceQueue = new Queue('resourceQueue', { connection });
-export const embeddingQueue = new Queue('embeddingQueue', { connection });
+let uploadQueue: any = null;
+let addUploadJob: (textbookId: string, storagePath: string) => Promise<void>;
 
-// Set up flow producer to coordinate nested jobs (e.g. parents waiting for children to finish)
-export const flowProducer = new FlowProducer({ connection });
+if (hasRedis) {
+  const { Queue, FlowProducer } = require('bullmq');
+  const { getRedisConnection } = require('../config/redis');
+  const connection = getRedisConnection();
 
-logger.info('BullMQ Queues and FlowProducer initialized successfully.');
+  uploadQueue = new Queue('uploadQueue', { connection });
 
-/**
- * Triggers the textbook processing pipeline by pushing the initial upload job.
- */
-export async function addUploadJob(textbookId: string, storagePath: string) {
-  logger.info('Adding upload job to queue', { textbookId, storagePath });
-  
-  // Clean job ID to prevent duplicates
-  await uploadQueue.add(
-    'process-pdf',
-    { textbookId, storagePath },
-    {
-      jobId: `upload_${textbookId}`,
-      removeOnComplete: true,
-      removeOnFail: false,
-      attempts: 3,
-      backoff: {
-        type: 'exponential',
-        delay: 5000,
-      },
-    }
-  );
+  const chapterQueue = new Queue('chapterQueue', { connection });
+  const conceptQueue = new Queue('conceptQueue', { connection });
+  const questionQueue = new Queue('questionQueue', { connection });
+  const videoQueue = new Queue('videoQueue', { connection });
+  const resourceQueue = new Queue('resourceQueue', { connection });
+  const embeddingQueue = new Queue('embeddingQueue', { connection });
+
+  const flowProducer = new FlowProducer({ connection });
+
+  logger.info('BullMQ Queues and FlowProducer initialized successfully.');
+
+  addUploadJob = async function (textbookId: string, storagePath: string) {
+    logger.info('Adding upload job to queue', { textbookId, storagePath });
+    await uploadQueue.add(
+      'process-pdf',
+      { textbookId, storagePath },
+      {
+        jobId: `upload_${textbookId}`,
+        removeOnComplete: true,
+        removeOnFail: false,
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000,
+        },
+      }
+    );
+  };
+} else {
+  logger.info('No REDIS_URL configured — BullMQ queues disabled');
+  addUploadJob = async function (_textbookId: string, _storagePath: string) {
+    logger.info('BullMQ not available (no Redis), skipping job');
+  };
 }
+
+export { addUploadJob };
+export { uploadQueue };
