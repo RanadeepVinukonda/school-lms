@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, query, where, deleteDoc, Timestamp, orderBy } from 'firebase/firestore';
+import { collection, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, query, where, Timestamp, orderBy } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { logAudit } from '@/services/auditService';
 import api from '@/services/api';
@@ -67,16 +67,9 @@ export async function getTextbooksBySubject(subjectId: string): Promise<Textbook
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Textbook));
 }
 
-/** Delete a textbook document from Firestore. */
+/** Delete a textbook via backend API. */
 export async function deleteTextbook(id: string): Promise<void> {
-  await deleteDoc(doc(db, TEXTBOOKS_COLLECTION, id));
-  logAudit({
-    action: 'textbook.delete',
-    targetId: id,
-    targetType: 'textbook',
-    targetName: id,
-    summary: `Deleted textbook ${id}`,
-  });
+  await api.delete(`/textbooks/${id}`);
 }
 
 /** Save chapter data to a textbook: creates subcollection documents for each chapter and concept. */

@@ -17,7 +17,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../firebase/firestore';
+import { collections, getDb } from '../firebase/firestore';
 import { NotFoundError, ConflictError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { uploadBufferToCloudinary, deleteCloudinaryFile } from './cloudinary.service';
@@ -252,11 +252,16 @@ export async function deleteTextbook(textbookId: string) {
   const ref = collections.textbooks().doc(textbookId);
   const doc = await ref.get();
   if (!doc.exists) throw new NotFoundError('Textbook not found');
+
   // Delete PDF from Cloudinary if exists
   const data = doc.data();
   if (data?.storagePath) {
     await deleteCloudinaryFile(data.storagePath);
   }
-  await ref.delete();
+
+  // Cascade-delete all subcollections (chapters → concepts → questions)
+  const db = getDb();
+  await db.recursiveDelete(ref);
+
   logger.info('Textbook deleted', { textbookId });
 }

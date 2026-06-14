@@ -1,4 +1,5 @@
-import { useParams, Link } from 'react-router-dom';
+import { useState } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -6,11 +7,20 @@ import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icon } from '@/components/ui/Icon';
 import { ConceptMindMap } from '@/components/teacher/ConceptMindMap';
 import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
-import { getTextbook, getChaptersForTextbook, getConceptsForChapter, reprocessTextbook } from '@/services/textbookService';
+import { getTextbook, getChaptersForTextbook, getConceptsForChapter, reprocessTextbook, deleteTextbook } from '@/services/textbookService';
 import { getSubject } from '@/services/dataService';
 import type { Chapter, Concept } from '@/types/textbook';
 
@@ -20,6 +30,8 @@ interface ChapterWithConcepts extends Chapter {
 
 export default function TeacherTextbookDetailPage() {
   const { textbookId } = useParams<{ textbookId: string }>();
+  const navigate = useNavigate();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const textbookQuery = useQuery({
     queryKey: ['teacher-textbook', textbookId],
@@ -70,6 +82,21 @@ export default function TeacherTextbookDetailPage() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!textbookId) return;
+      await deleteTextbook(textbookId);
+    },
+    onSuccess: () => {
+      toast.success('Textbook deleted');
+      navigate('/teacher/textbooks');
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Failed to delete textbook.');
+      setDeleteDialogOpen(false);
+    },
+  });
+
   const allConcepts = (chaptersQuery.data ?? []).flatMap((ch) => ch.conceptsList);
 
   const renderProgressTracker = (tb: any) => {
@@ -100,25 +127,56 @@ export default function TeacherTextbookDetailPage() {
                   : 'Your textbook is being processed. This page will update automatically.'}
               </p>
             </div>
-            {isFailed && (
-              <Button
-                onClick={() => reprocessMutation.mutate()}
-                disabled={reprocessMutation.isPending}
-                className="gap-1.5 self-start md:self-auto shrink-0"
-              >
-                {reprocessMutation.isPending ? (
-                  <>
-                    <Icon name="sync" className="animate-spin" size={16} />
-                    Starting...
-                  </>
-                ) : (
-                  <>
-                    <Icon name="replay" size={16} />
-                    Reprocess Textbook
-                  </>
-                )}
-              </Button>
-            )}
+            <div className="flex gap-2 self-start md:self-auto shrink-0">
+              <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="destructive" size="sm" className="gap-1.5">
+                    <Icon name="delete" size={16} />
+                    Delete
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Delete Textbook</DialogTitle>
+                    <DialogDescription>
+                      Are you sure you want to delete "{tb.title}"? This action cannot be undone and will remove all chapters, concepts, and uploaded files.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => deleteMutation.mutate()}
+                      disabled={deleteMutation.isPending}
+                    >
+                      {deleteMutation.isPending ? 'Deleting...' : 'Delete Forever'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              {isFailed && (
+                <Button
+                  onClick={() => reprocessMutation.mutate()}
+                  disabled={reprocessMutation.isPending}
+                  size="sm"
+                  className="gap-1.5"
+                >
+                  {reprocessMutation.isPending ? (
+                    <>
+                      <Icon name="sync" className="animate-spin" size={16} />
+                      Starting...
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="replay" size={16} />
+                      Reprocess
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
 
           {isFailed && errorLog && (
@@ -145,16 +203,46 @@ export default function TeacherTextbookDetailPage() {
           {(tb) => (
             <>
               <motion.div variants={cardStackReveal} custom={0}>
-                <div className="flex items-center gap-3">
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to="/teacher/textbooks">
-                      <Icon name="arrow_back" size={16} />
-                    </Link>
-                  </Button>
-                  <div>
-                    <h1 className="text-headline-sm">{tb.title}</h1>
-                    <p className="text-sm text-muted-foreground">{subjectQuery.data?.name ?? 'Unknown Subject'}</p>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <Button variant="outline" size="sm" asChild>
+                      <Link to="/teacher/textbooks">
+                        <Icon name="arrow_back" size={16} />
+                      </Link>
+                    </Button>
+                    <div>
+                      <h1 className="text-headline-sm">{tb.title}</h1>
+                      <p className="text-sm text-muted-foreground">{subjectQuery.data?.name ?? 'Unknown Subject'}</p>
+                    </div>
                   </div>
+                  <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="destructive" size="sm" className="gap-1.5">
+                        <Icon name="delete" size={16} />
+                        Delete
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Delete Textbook</DialogTitle>
+                        <DialogDescription>
+                          Are you sure you want to delete "{tb.title}"? This action cannot be undone and will remove all chapters, concepts, and uploaded files.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={() => deleteMutation.mutate()}
+                          disabled={deleteMutation.isPending}
+                        >
+                          {deleteMutation.isPending ? 'Deleting...' : 'Delete Forever'}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </motion.div>
 
