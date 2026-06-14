@@ -783,7 +783,7 @@
       "source_file": "lms/backend/src/controllers/academic-year.controller.ts",
       "source_location": "L1",
       "id": "controllers_academic_year_controller",
-      "community": 22,
+      "community": 11,
       "norm_label": "academic-year.controller.ts"
     },
     {
@@ -792,7 +792,7 @@
       "source_file": "lms/backend/src/controllers/academic-year.controller.ts",
       "source_location": "L6",
       "id": "controllers_academic_year_controller_createacademicyear",
-      "community": 22,
+      "community": 11,
       "norm_label": "createacademicyear()"
     },
     {
@@ -801,7 +801,7 @@
       "source_file": "lms/backend/src/controllers/academic-year.controller.ts",
       "source_location": "L11",
       "id": "controllers_academic_year_controller_updateacademicyear",
-      "community": 22,
+      "community": 11,
       "norm_label": "updateacademicyear()"
     },
     {
@@ -810,7 +810,7 @@
       "source_file": "lms/backend/src/controllers/academic-year.controller.ts",
       "source_location": "L16",
       "id": "controllers_academic_year_controller_deleteacademicyear",
-      "community": 22,
+      "community": 11,
       "norm_label": "deleteacademicyear()"
     },
     {
@@ -819,7 +819,7 @@
       "source_file": "lms/backend/src/controllers/academic-year.controller.ts",
       "source_location": "L21",
       "id": "controllers_academic_year_controller_getacademicyear",
-      "community": 22,
+      "community": 11,
       "norm_label": "getacademicyear()"
     },
     {
@@ -828,7 +828,7 @@
       "source_file": "lms/backend/src/controllers/academic-year.controller.ts",
       "source_location": "L26",
       "id": "controllers_academic_year_controller_listacademicyears",
-      "community": 22,
+      "community": 11,
       "norm_label": "listacademicyears()"
     },
     {
@@ -837,7 +837,7 @@
       "source_file": "lms/backend/src/controllers/academic-year.controller.ts",
       "source_location": "L31",
       "id": "controllers_academic_year_controller_getcurrentacademicyear",
-      "community": 22,
+      "community": 11,
       "norm_label": "getcurrentacademicyear()"
     },
     {
@@ -1260,7 +1260,7 @@
       "source_file": "lms/backend/src/controllers/class.controller.ts",
       "source_location": "L1",
       "id": "controllers_class_controller",
-      "community": 23,
+      "community": 38,
       "norm_label": "class.controller.ts"
     },
     {
@@ -1269,7 +1269,7 @@
       "source_file": "lms/backend/src/controllers/class.controller.ts",
       "source_location": "L8",
       "id": "controllers_class_controller_createclass",
-      "community": 23,
+      "community": 38,
       "norm_label": "createclass()"
     },
     {
@@ -1278,7 +1278,7 @@
       "source_file": "lms/backend/src/controllers/class.controller.ts",
       "source_location": "L17",
       "id": "controllers_class_controller_updateclass",
-      "community": 23,
+      "community": 38,
       "norm_label": "updateclass()"
     },
     {
@@ -1287,7 +1287,7 @@
       "source_file": "lms/backend/src/controllers/class.controller.ts",
       "source_location": "L28",
       "id": "controllers_class_controller_deleteclass",
-      "community": 23,
+      "community": 38,
       "norm_label": "deleteclass()"
     },
     {
@@ -1296,7 +1296,7 @@
       "source_file": "lms/backend/src/controllers/class.controller.ts",
       "source_location": "L36",
       "id": "controllers_class_controller_listclasses",
-      "community": 23,
+      "community": 38,
       "norm_label": "listclasses()"
     },
     {
@@ -1305,7 +1305,7 @@
       "source_file": "lms/backend/src/controllers/class.controller.ts",
       "source_location": "L41",
       "id": "controllers_class_controller_getclass",
-      "community": 23,
+      "community": 38,
       "norm_label": "getclass()"
     },
     {
@@ -1314,7 +1314,7 @@
       "source_file": "lms/backend/src/controllers/class.controller.ts",
       "source_location": "L46",
       "id": "controllers_class_controller_addstudents",
-      "community": 23,
+      "community": 38,
       "norm_label": "addstudents()"
     },
     {
@@ -1323,7 +1323,7 @@
       "source_file": "lms/backend/src/controllers/class.controller.ts",
       "source_location": "L51",
       "id": "controllers_class_controller_removestudents",
-      "community": 23,
+      "community": 38,
       "norm_label": "removestudents()"
     },
     {
@@ -1332,7 +1332,7 @@
       "source_file": "lms/backend/src/controllers/class.controller.ts",
       "source_location": "L56",
       "id": "controllers_class_controller_getroster",
-      "community": 23,
+      "community": 38,
       "norm_label": "getroster()"
     },
     {
@@ -1683,7 +1683,7 @@
       "source_file": "lms/backend/src/controllers/grade.controller.ts",
       "source_location": "L1",
       "id": "controllers_grade_controller",
-      "community": 23,
+      "community": 11,
       "norm_label": "grade.controller.ts"
     },
     {
@@ -1692,7 +1692,7 @@
       "source_file": "lms/backend/src/controllers/grade.controller.ts",
       "source_location": "L7",
       "id": "controllers_grade_controller_getstudentgrades",
-      "community": 23,
+      "community": 11,
       "norm_label": "getstudentgrades()"
     },
     {
@@ -1701,7 +1701,7 @@
       "source_file": "lms/backend/src/controllers/grade.controller.ts",
       "source_location": "L12",
       "id": "controllers_grade_controller_getgradebook",
-      "community": 23,
+      "community": 11,
       "norm_label": "getgradebook()"
     },
     {
@@ -1710,7 +1710,7 @@
       "source_file": "lms/backend/src/controllers/grade.controller.ts",
       "source_location": "L17",
       "id": "controllers_grade_controller_updategrade",
-      "community": 23,
+      "community": 11,
       "norm_label": "updategrade()"
     },
     {
@@ -1719,7 +1719,7 @@
       "source_file": "lms/backend/src/controllers/grade.controller.ts",
       "source_location": "L26",
       "id": "controllers_grade_controller_bulkupdategrades",
-      "community": 23,
+      "community": 11,
       "norm_label": "bulkupdategrades()"
     },
     {
@@ -1728,7 +1728,7 @@
       "source_file": "lms/backend/src/controllers/grade.controller.ts",
       "source_location": "L34",
       "id": "controllers_grade_controller_generatereport",
-      "community": 23,
+      "community": 11,
       "norm_label": "generatereport()"
     },
     {
@@ -1737,7 +1737,7 @@
       "source_file": "lms/backend/src/controllers/lesson.controller.ts",
       "source_location": "L1",
       "id": "controllers_lesson_controller",
-      "community": 23,
+      "community": 11,
       "norm_label": "lesson.controller.ts"
     },
     {
@@ -1746,7 +1746,7 @@
       "source_file": "lms/backend/src/controllers/lesson.controller.ts",
       "source_location": "L8",
       "id": "controllers_lesson_controller_createlesson",
-      "community": 23,
+      "community": 11,
       "norm_label": "createlesson()"
     },
     {
@@ -1755,7 +1755,7 @@
       "source_file": "lms/backend/src/controllers/lesson.controller.ts",
       "source_location": "L17",
       "id": "controllers_lesson_controller_updatelesson",
-      "community": 23,
+      "community": 11,
       "norm_label": "updatelesson()"
     },
     {
@@ -1764,7 +1764,7 @@
       "source_file": "lms/backend/src/controllers/lesson.controller.ts",
       "source_location": "L28",
       "id": "controllers_lesson_controller_deletelesson",
-      "community": 23,
+      "community": 11,
       "norm_label": "deletelesson()"
     },
     {
@@ -1773,7 +1773,7 @@
       "source_file": "lms/backend/src/controllers/lesson.controller.ts",
       "source_location": "L36",
       "id": "controllers_lesson_controller_getlesson",
-      "community": 23,
+      "community": 11,
       "norm_label": "getlesson()"
     },
     {
@@ -1782,7 +1782,7 @@
       "source_file": "lms/backend/src/controllers/lesson.controller.ts",
       "source_location": "L41",
       "id": "controllers_lesson_controller_listlessonsbycourse",
-      "community": 23,
+      "community": 11,
       "norm_label": "listlessonsbycourse()"
     },
     {
@@ -1791,7 +1791,7 @@
       "source_file": "lms/backend/src/controllers/lesson.controller.ts",
       "source_location": "L46",
       "id": "controllers_lesson_controller_reorderlessons",
-      "community": 23,
+      "community": 11,
       "norm_label": "reorderlessons()"
     },
     {
@@ -1800,7 +1800,7 @@
       "source_file": "lms/backend/src/controllers/lesson.controller.ts",
       "source_location": "L51",
       "id": "controllers_lesson_controller_marklessoncomplete",
-      "community": 23,
+      "community": 11,
       "norm_label": "marklessoncomplete()"
     },
     {
@@ -2169,7 +2169,7 @@
       "source_file": "lms/backend/src/controllers/quiz.controller.ts",
       "source_location": "L1",
       "id": "controllers_quiz_controller",
-      "community": 38,
+      "community": 112,
       "norm_label": "quiz.controller.ts"
     },
     {
@@ -2178,7 +2178,7 @@
       "source_file": "lms/backend/src/controllers/quiz.controller.ts",
       "source_location": "L8",
       "id": "controllers_quiz_controller_listallquizzes",
-      "community": 38,
+      "community": 112,
       "norm_label": "listallquizzes()"
     },
     {
@@ -2187,7 +2187,7 @@
       "source_file": "lms/backend/src/controllers/quiz.controller.ts",
       "source_location": "L13",
       "id": "controllers_quiz_controller_createquiz",
-      "community": 38,
+      "community": 112,
       "norm_label": "createquiz()"
     },
     {
@@ -2196,7 +2196,7 @@
       "source_file": "lms/backend/src/controllers/quiz.controller.ts",
       "source_location": "L22",
       "id": "controllers_quiz_controller_updatequiz",
-      "community": 38,
+      "community": 112,
       "norm_label": "updatequiz()"
     },
     {
@@ -2205,7 +2205,7 @@
       "source_file": "lms/backend/src/controllers/quiz.controller.ts",
       "source_location": "L33",
       "id": "controllers_quiz_controller_deletequiz",
-      "community": 38,
+      "community": 112,
       "norm_label": "deletequiz()"
     },
     {
@@ -2214,7 +2214,7 @@
       "source_file": "lms/backend/src/controllers/quiz.controller.ts",
       "source_location": "L41",
       "id": "controllers_quiz_controller_getquiz",
-      "community": 38,
+      "community": 112,
       "norm_label": "getquiz()"
     },
     {
@@ -2223,7 +2223,7 @@
       "source_file": "lms/backend/src/controllers/quiz.controller.ts",
       "source_location": "L46",
       "id": "controllers_quiz_controller_startattempt",
-      "community": 38,
+      "community": 112,
       "norm_label": "startattempt()"
     },
     {
@@ -2232,7 +2232,7 @@
       "source_file": "lms/backend/src/controllers/quiz.controller.ts",
       "source_location": "L51",
       "id": "controllers_quiz_controller_submitattempt",
-      "community": 38,
+      "community": 112,
       "norm_label": "submitattempt()"
     },
     {
@@ -2241,7 +2241,7 @@
       "source_file": "lms/backend/src/controllers/quiz.controller.ts",
       "source_location": "L56",
       "id": "controllers_quiz_controller_getresults",
-      "community": 38,
+      "community": 112,
       "norm_label": "getresults()"
     },
     {
@@ -2250,7 +2250,7 @@
       "source_file": "lms/backend/src/controllers/quiz.controller.ts",
       "source_location": "L61",
       "id": "controllers_quiz_controller_releasegrades",
-      "community": 38,
+      "community": 112,
       "norm_label": "releasegrades()"
     },
     {
@@ -2466,7 +2466,7 @@
       "source_file": "lms/backend/src/controllers/teacher-video.controller.ts",
       "source_location": "L1",
       "id": "controllers_teacher_video_controller",
-      "community": 22,
+      "community": 18,
       "norm_label": "teacher-video.controller.ts"
     },
     {
@@ -2475,7 +2475,7 @@
       "source_file": "lms/backend/src/controllers/teacher-video.controller.ts",
       "source_location": "L5",
       "id": "controllers_teacher_video_controller_addvideo",
-      "community": 22,
+      "community": 18,
       "norm_label": "addvideo()"
     },
     {
@@ -2484,7 +2484,7 @@
       "source_file": "lms/backend/src/controllers/teacher-video.controller.ts",
       "source_location": "L10",
       "id": "controllers_teacher_video_controller_listvideos",
-      "community": 22,
+      "community": 18,
       "norm_label": "listvideos()"
     },
     {
@@ -2493,7 +2493,7 @@
       "source_file": "lms/backend/src/controllers/teacher-video.controller.ts",
       "source_location": "L15",
       "id": "controllers_teacher_video_controller_removevideo",
-      "community": 22,
+      "community": 18,
       "norm_label": "removevideo()"
     },
     {
@@ -2502,7 +2502,7 @@
       "source_file": "lms/backend/src/controllers/teacher-video.controller.ts",
       "source_location": "L20",
       "id": "controllers_teacher_video_controller_attachtoconcept",
-      "community": 22,
+      "community": 18,
       "norm_label": "attachtoconcept()"
     },
     {
@@ -2511,7 +2511,7 @@
       "source_file": "lms/backend/src/controllers/teacher-video.controller.ts",
       "source_location": "L25",
       "id": "controllers_teacher_video_controller_searchandsave",
-      "community": 22,
+      "community": 18,
       "norm_label": "searchandsave()"
     },
     {
@@ -2520,7 +2520,7 @@
       "source_file": "lms/backend/src/controllers/test-schedule.controller.ts",
       "source_location": "L1",
       "id": "controllers_test_schedule_controller",
-      "community": 18,
+      "community": 22,
       "norm_label": "test-schedule.controller.ts"
     },
     {
@@ -2529,7 +2529,7 @@
       "source_file": "lms/backend/src/controllers/test-schedule.controller.ts",
       "source_location": "L5",
       "id": "controllers_test_schedule_controller_createschedule",
-      "community": 18,
+      "community": 22,
       "norm_label": "createschedule()"
     },
     {
@@ -2538,7 +2538,7 @@
       "source_file": "lms/backend/src/controllers/test-schedule.controller.ts",
       "source_location": "L10",
       "id": "controllers_test_schedule_controller_approveschedule",
-      "community": 18,
+      "community": 22,
       "norm_label": "approveschedule()"
     },
     {
@@ -2547,7 +2547,7 @@
       "source_file": "lms/backend/src/controllers/test-schedule.controller.ts",
       "source_location": "L15",
       "id": "controllers_test_schedule_controller_updateschedulestatus",
-      "community": 18,
+      "community": 22,
       "norm_label": "updateschedulestatus()"
     },
     {
@@ -2556,7 +2556,7 @@
       "source_file": "lms/backend/src/controllers/test-schedule.controller.ts",
       "source_location": "L20",
       "id": "controllers_test_schedule_controller_deleteschedule",
-      "community": 18,
+      "community": 22,
       "norm_label": "deleteschedule()"
     },
     {
@@ -2565,7 +2565,7 @@
       "source_file": "lms/backend/src/controllers/test-schedule.controller.ts",
       "source_location": "L25",
       "id": "controllers_test_schedule_controller_getschedule",
-      "community": 18,
+      "community": 22,
       "norm_label": "getschedule()"
     },
     {
@@ -2574,7 +2574,7 @@
       "source_file": "lms/backend/src/controllers/test-schedule.controller.ts",
       "source_location": "L30",
       "id": "controllers_test_schedule_controller_listschedules",
-      "community": 18,
+      "community": 22,
       "norm_label": "listschedules()"
     },
     {
@@ -2718,7 +2718,7 @@
       "source_file": "lms/backend/src/controllers/upload.controller.ts",
       "source_location": "L1",
       "id": "controllers_upload_controller",
-      "community": 11,
+      "community": 72,
       "norm_label": "upload.controller.ts"
     },
     {
@@ -2727,7 +2727,7 @@
       "source_file": "lms/backend/src/controllers/upload.controller.ts",
       "source_location": "L5",
       "id": "controllers_upload_controller_deleteupload",
-      "community": 11,
+      "community": 72,
       "norm_label": "deleteupload()"
     },
     {
@@ -2736,7 +2736,7 @@
       "source_file": "lms/backend/src/controllers/user.controller.ts",
       "source_location": "L1",
       "id": "controllers_user_controller",
-      "community": 72,
+      "community": 23,
       "norm_label": "user.controller.ts"
     },
     {
@@ -2745,7 +2745,7 @@
       "source_file": "lms/backend/src/controllers/user.controller.ts",
       "source_location": "L8",
       "id": "controllers_user_controller_reqwithuser",
-      "community": 72,
+      "community": 23,
       "norm_label": "reqwithuser"
     },
     {
@@ -2754,7 +2754,7 @@
       "source_file": "lms/backend/src/controllers/user.controller.ts",
       "source_location": "L10",
       "id": "controllers_user_controller_listusersquery",
-      "community": 72,
+      "community": 23,
       "norm_label": "listusersquery"
     },
     {
@@ -2772,7 +2772,7 @@
       "source_file": "lms/backend/src/controllers/user.controller.ts",
       "source_location": "L28",
       "id": "controllers_user_controller_getuser",
-      "community": 72,
+      "community": 23,
       "norm_label": "getuser()"
     },
     {
@@ -2781,7 +2781,7 @@
       "source_file": "lms/backend/src/controllers/user.controller.ts",
       "source_location": "L33",
       "id": "controllers_user_controller_createuser",
-      "community": 72,
+      "community": 23,
       "norm_label": "createuser()"
     },
     {
@@ -2790,7 +2790,7 @@
       "source_file": "lms/backend/src/controllers/user.controller.ts",
       "source_location": "L42",
       "id": "controllers_user_controller_updateuser",
-      "community": 72,
+      "community": 23,
       "norm_label": "updateuser()"
     },
     {
@@ -2799,7 +2799,7 @@
       "source_file": "lms/backend/src/controllers/user.controller.ts",
       "source_location": "L53",
       "id": "controllers_user_controller_deleteuser",
-      "community": 72,
+      "community": 23,
       "norm_label": "deleteuser()"
     },
     {
@@ -2808,7 +2808,7 @@
       "source_file": "lms/backend/src/controllers/user.controller.ts",
       "source_location": "L61",
       "id": "controllers_user_controller_toggleactive",
-      "community": 72,
+      "community": 23,
       "norm_label": "toggleactive()"
     },
     {
@@ -2817,7 +2817,7 @@
       "source_file": "lms/backend/src/controllers/user.controller.ts",
       "source_location": "L73",
       "id": "controllers_user_controller_assignrole",
-      "community": 72,
+      "community": 23,
       "norm_label": "assignrole()"
     },
     {
@@ -2826,7 +2826,7 @@
       "source_file": "lms/backend/src/controllers/user.controller.ts",
       "source_location": "L85",
       "id": "controllers_user_controller_updateprofile",
-      "community": 72,
+      "community": 23,
       "norm_label": "updateprofile()"
     },
     {
@@ -2835,7 +2835,7 @@
       "source_file": "lms/backend/src/controllers/user.controller.ts",
       "source_location": "L90",
       "id": "controllers_user_controller_pingactive",
-      "community": 72,
+      "community": 23,
       "norm_label": "pingactive()"
     },
     {
@@ -2844,7 +2844,7 @@
       "source_file": "lms/backend/src/controllers/user.controller.ts",
       "source_location": "L95",
       "id": "controllers_user_controller_getstrengthsweaknesses",
-      "community": 72,
+      "community": 23,
       "norm_label": "getstrengthsweaknesses()"
     },
     {
@@ -2961,7 +2961,7 @@
       "source_file": "lms/backend/src/firebase/auth.ts",
       "source_location": "L48",
       "id": "firebase_auth_setcustomclaims",
-      "community": 28,
+      "community": 36,
       "norm_label": "setcustomclaims()"
     },
     {
@@ -3024,7 +3024,7 @@
       "source_file": "lms/backend/src/firebase/firestore.ts",
       "source_location": "L6",
       "id": "firebase_firestore_getdb",
-      "community": 28,
+      "community": 36,
       "norm_label": "getdb()"
     },
     {
@@ -3123,7 +3123,7 @@
       "source_file": "lms/backend/src/jobs/aiPipeline.job.ts",
       "source_location": "L1",
       "id": "jobs_aipipeline_job",
-      "community": 36,
+      "community": 33,
       "norm_label": "aipipeline.job.ts"
     },
     {
@@ -3132,7 +3132,7 @@
       "source_file": "lms/backend/src/jobs/aiPipeline.job.ts",
       "source_location": "L26",
       "id": "jobs_aipipeline_job_questiontype",
-      "community": 36,
+      "community": 33,
       "norm_label": "questiontype"
     },
     {
@@ -3141,7 +3141,7 @@
       "source_file": "lms/backend/src/jobs/aiPipeline.job.ts",
       "source_location": "L27",
       "id": "jobs_aipipeline_job_difficulty",
-      "community": 36,
+      "community": 33,
       "norm_label": "difficulty"
     },
     {
@@ -3150,7 +3150,7 @@
       "source_file": "lms/backend/src/jobs/aiPipeline.job.ts",
       "source_location": "L29",
       "id": "jobs_aipipeline_job_llmquestion",
-      "community": 36,
+      "community": 33,
       "norm_label": "llmquestion"
     },
     {
@@ -3159,7 +3159,7 @@
       "source_file": "lms/backend/src/jobs/aiPipeline.job.ts",
       "source_location": "L40",
       "id": "jobs_aipipeline_job_llmconcept",
-      "community": 36,
+      "community": 33,
       "norm_label": "llmconcept"
     },
     {
@@ -3168,7 +3168,7 @@
       "source_file": "lms/backend/src/jobs/aiPipeline.job.ts",
       "source_location": "L48",
       "id": "jobs_aipipeline_job_llmchapter",
-      "community": 36,
+      "community": 33,
       "norm_label": "llmchapter"
     },
     {
@@ -3177,7 +3177,7 @@
       "source_file": "lms/backend/src/jobs/aiPipeline.job.ts",
       "source_location": "L55",
       "id": "jobs_aipipeline_job_llmresponse",
-      "community": 36,
+      "community": 33,
       "norm_label": "llmresponse"
     },
     {
@@ -3186,7 +3186,7 @@
       "source_file": "lms/backend/src/jobs/aiPipeline.job.ts",
       "source_location": "L61",
       "id": "jobs_aipipeline_job_buildprompt",
-      "community": 36,
+      "community": 33,
       "norm_label": "buildprompt()"
     },
     {
@@ -3195,7 +3195,7 @@
       "source_file": "lms/backend/src/jobs/aiPipeline.job.ts",
       "source_location": "L118",
       "id": "jobs_aipipeline_job_valid_types",
-      "community": 36,
+      "community": 33,
       "norm_label": "valid_types"
     },
     {
@@ -3204,7 +3204,7 @@
       "source_file": "lms/backend/src/jobs/aiPipeline.job.ts",
       "source_location": "L119",
       "id": "jobs_aipipeline_job_valid_difficulties",
-      "community": 36,
+      "community": 33,
       "norm_label": "valid_difficulties"
     },
     {
@@ -3213,7 +3213,7 @@
       "source_file": "lms/backend/src/jobs/aiPipeline.job.ts",
       "source_location": "L121",
       "id": "jobs_aipipeline_job_sanitizequestion",
-      "community": 36,
+      "community": 33,
       "norm_label": "sanitizequestion()"
     },
     {
@@ -3222,7 +3222,7 @@
       "source_file": "lms/backend/src/jobs/aiPipeline.job.ts",
       "source_location": "L138",
       "id": "jobs_aipipeline_job_ensurealltypes",
-      "community": 36,
+      "community": 33,
       "norm_label": "ensurealltypes()"
     },
     {
@@ -3231,7 +3231,7 @@
       "source_file": "lms/backend/src/jobs/aiPipeline.job.ts",
       "source_location": "L184",
       "id": "jobs_aipipeline_job_parsellmresponse",
-      "community": 36,
+      "community": 33,
       "norm_label": "parsellmresponse()"
     },
     {
@@ -3240,7 +3240,7 @@
       "source_file": "lms/backend/src/jobs/aiPipeline.job.ts",
       "source_location": "L201",
       "id": "jobs_aipipeline_job_runaipipeline",
-      "community": 36,
+      "community": 33,
       "norm_label": "runaipipeline()"
     },
     {
@@ -4140,7 +4140,7 @@
       "source_file": "lms/backend/src/routes/upload.routes.ts",
       "source_location": "L1",
       "id": "routes_upload_routes",
-      "community": 11,
+      "community": 72,
       "norm_label": "upload.routes.ts"
     },
     {
@@ -4149,7 +4149,7 @@
       "source_file": "lms/backend/src/routes/upload.routes.ts",
       "source_location": "L4",
       "id": "routes_upload_routes_router",
-      "community": 11,
+      "community": 72,
       "norm_label": "router"
     },
     {
@@ -5202,7 +5202,7 @@
       "source_file": "lms/backend/src/services/assignment-v2.service.ts",
       "source_location": "L317",
       "id": "services_assignment_v2_service_listassignmentsforteacher",
-      "community": 20,
+      "community": 16,
       "norm_label": "listassignmentsforteacher()"
     },
     {
@@ -5535,7 +5535,7 @@
       "source_file": "lms/backend/src/services/cloudinary.service.ts",
       "source_location": "L1",
       "id": "services_cloudinary_service",
-      "community": 11,
+      "community": 72,
       "norm_label": "cloudinary.service.ts"
     },
     {
@@ -5544,7 +5544,7 @@
       "source_file": "lms/backend/src/services/cloudinary.service.ts",
       "source_location": "L11",
       "id": "services_cloudinary_service_deletecloudinaryfile",
-      "community": 11,
+      "community": 72,
       "norm_label": "deletecloudinaryfile()"
     },
     {
@@ -5553,7 +5553,7 @@
       "source_file": "lms/backend/src/services/cloudinary.service.ts",
       "source_location": "L17",
       "id": "services_cloudinary_service_uploadfromurl",
-      "community": 11,
+      "community": 72,
       "norm_label": "uploadfromurl()"
     },
     {
@@ -6021,7 +6021,7 @@
       "source_file": "lms/backend/src/services/impact.service.ts",
       "source_location": "L152",
       "id": "services_impact_service_getlessonimpact",
-      "community": 23,
+      "community": 11,
       "norm_label": "getlessonimpact()"
     },
     {
@@ -7407,7 +7407,7 @@
       "source_file": "lms/backend/src/services/user.service.ts",
       "source_location": "L1",
       "id": "services_user_service",
-      "community": 28,
+      "community": 36,
       "norm_label": "user.service.ts"
     },
     {
@@ -7416,7 +7416,7 @@
       "source_file": "lms/backend/src/services/user.service.ts",
       "source_location": "L11",
       "id": "services_user_service_listusers",
-      "community": 28,
+      "community": 16,
       "norm_label": "listusers()"
     },
     {
@@ -7425,7 +7425,7 @@
       "source_file": "lms/backend/src/services/user.service.ts",
       "source_location": "L61",
       "id": "services_user_service_getuserbyidservice",
-      "community": 28,
+      "community": 36,
       "norm_label": "getuserbyidservice()"
     },
     {
@@ -7434,7 +7434,7 @@
       "source_file": "lms/backend/src/services/user.service.ts",
       "source_location": "L75",
       "id": "services_user_service_createuser",
-      "community": 28,
+      "community": 36,
       "norm_label": "createuser()"
     },
     {
@@ -7443,7 +7443,7 @@
       "source_file": "lms/backend/src/services/user.service.ts",
       "source_location": "L166",
       "id": "services_user_service_updateuser",
-      "community": 28,
+      "community": 36,
       "norm_label": "updateuser()"
     },
     {
@@ -7452,7 +7452,7 @@
       "source_file": "lms/backend/src/services/user.service.ts",
       "source_location": "L242",
       "id": "services_user_service_deleteuserservice",
-      "community": 28,
+      "community": 36,
       "norm_label": "deleteuserservice()"
     },
     {
@@ -7461,7 +7461,7 @@
       "source_file": "lms/backend/src/services/user.service.ts",
       "source_location": "L257",
       "id": "services_user_service_toggleactive",
-      "community": 28,
+      "community": 36,
       "norm_label": "toggleactive()"
     },
     {
@@ -7470,7 +7470,7 @@
       "source_file": "lms/backend/src/services/user.service.ts",
       "source_location": "L285",
       "id": "services_user_service_assignrole",
-      "community": 28,
+      "community": 36,
       "norm_label": "assignrole()"
     },
     {
@@ -7479,7 +7479,7 @@
       "source_file": "lms/backend/src/services/user.service.ts",
       "source_location": "L304",
       "id": "services_user_service_pingactive",
-      "community": 28,
+      "community": 36,
       "norm_label": "pingactive()"
     },
     {
@@ -7488,7 +7488,7 @@
       "source_file": "lms/backend/src/services/user.service.ts",
       "source_location": "L338",
       "id": "services_user_service_getstrengthsweaknesses",
-      "community": 28,
+      "community": 36,
       "norm_label": "getstrengthsweaknesses()"
     },
     {
@@ -7497,7 +7497,7 @@
       "source_file": "lms/backend/src/services/user.service.ts",
       "source_location": "L388",
       "id": "services_user_service_updateprofile",
-      "community": 28,
+      "community": 36,
       "norm_label": "updateprofile()"
     },
     {
@@ -7542,7 +7542,7 @@
       "source_file": "lms/backend/src/types/common.ts",
       "source_location": "L1",
       "id": "types_common",
-      "community": 23,
+      "community": 11,
       "norm_label": "common.ts"
     },
     {
@@ -7551,7 +7551,7 @@
       "source_file": "lms/backend/src/types/common.ts",
       "source_location": "L4",
       "id": "types_common_reqwithuser",
-      "community": 23,
+      "community": 11,
       "norm_label": "reqwithuser"
     },
     {
@@ -7560,7 +7560,7 @@
       "source_file": "lms/backend/src/types/common.ts",
       "source_location": "L7",
       "id": "types_common_queryparams",
-      "community": 23,
+      "community": 11,
       "norm_label": "queryparams"
     },
     {
@@ -7794,7 +7794,7 @@
       "source_file": "lms/backend/src/utils/passwordGenerator.ts",
       "source_location": "L1",
       "id": "utils_passwordgenerator",
-      "community": 28,
+      "community": 36,
       "norm_label": "passwordgenerator.ts"
     },
     {
@@ -7803,7 +7803,7 @@
       "source_file": "lms/backend/src/utils/passwordGenerator.ts",
       "source_location": "L16",
       "id": "utils_passwordgenerator_pickrandom",
-      "community": 28,
+      "community": 36,
       "norm_label": "pickrandom()"
     },
     {
@@ -7812,7 +7812,7 @@
       "source_file": "lms/backend/src/utils/passwordGenerator.ts",
       "source_location": "L28",
       "id": "utils_passwordgenerator_shuffle",
-      "community": 28,
+      "community": 36,
       "norm_label": "shuffle()"
     },
     {
@@ -7821,7 +7821,7 @@
       "source_file": "lms/backend/src/utils/passwordGenerator.ts",
       "source_location": "L55",
       "id": "utils_passwordgenerator_generatepassword",
-      "community": 28,
+      "community": 36,
       "norm_label": "generatepassword()"
     },
     {
@@ -7875,7 +7875,7 @@
       "source_file": "lms/backend/src/utils/response.ts",
       "source_location": "L37",
       "id": "utils_response_senderror",
-      "community": 11,
+      "community": 72,
       "norm_label": "senderror()"
     },
     {
@@ -7902,7 +7902,7 @@
       "source_file": "lms/backend/src/utils/studentIdGenerator.ts",
       "source_location": "L1",
       "id": "utils_studentidgenerator",
-      "community": 28,
+      "community": 36,
       "norm_label": "studentidgenerator.ts"
     },
     {
@@ -7911,7 +7911,7 @@
       "source_file": "lms/backend/src/utils/studentIdGenerator.ts",
       "source_location": "L11",
       "id": "utils_studentidgenerator_generatestudentid",
-      "community": 28,
+      "community": 36,
       "norm_label": "generatestudentid()"
     },
     {
@@ -10242,7 +10242,7 @@
       "source_file": "lms/frontend/src/app/pages/shared/NotFoundPage.tsx",
       "source_location": "L1",
       "id": "shared_notfoundpage",
-      "community": 1,
+      "community": 8,
       "norm_label": "notfoundpage.tsx"
     },
     {
@@ -10251,7 +10251,7 @@
       "source_file": "lms/frontend/src/app/pages/shared/NotFoundPage.tsx",
       "source_location": "L8",
       "id": "shared_notfoundpage_notfoundpage",
-      "community": 1,
+      "community": 8,
       "norm_label": "notfoundpage()"
     },
     {
@@ -10431,7 +10431,7 @@
       "source_file": "lms/frontend/src/app/pages/student/LessonViewPage.tsx",
       "source_location": "L1",
       "id": "student_lessonviewpage",
-      "community": 8,
+      "community": 98,
       "norm_label": "lessonviewpage.tsx"
     },
     {
@@ -10440,7 +10440,7 @@
       "source_file": "lms/frontend/src/app/pages/student/LessonViewPage.tsx",
       "source_location": "L16",
       "id": "student_lessonviewpage_entry",
-      "community": 8,
+      "community": 98,
       "norm_label": "entry"
     },
     {
@@ -10449,7 +10449,7 @@
       "source_file": "lms/frontend/src/app/pages/student/LessonViewPage.tsx",
       "source_location": "L18",
       "id": "student_lessonviewpage_data",
-      "community": 8,
+      "community": 98,
       "norm_label": "data"
     },
     {
@@ -10458,7 +10458,7 @@
       "source_file": "lms/frontend/src/app/pages/student/LessonViewPage.tsx",
       "source_location": "L36",
       "id": "student_lessonviewpage_match",
-      "community": 8,
+      "community": 98,
       "norm_label": "match()"
     },
     {
@@ -10467,7 +10467,7 @@
       "source_file": "lms/frontend/src/app/pages/student/LessonViewPage.tsx",
       "source_location": "L42",
       "id": "student_lessonviewpage_lessonviewpage",
-      "community": 8,
+      "community": 98,
       "norm_label": "lessonviewpage()"
     },
     {
@@ -10539,7 +10539,7 @@
       "source_file": "lms/frontend/src/app/pages/student/StudentConceptPage.tsx",
       "source_location": "L1",
       "id": "student_studentconceptpage",
-      "community": 100,
+      "community": 8,
       "norm_label": "studentconceptpage.tsx"
     },
     {
@@ -10548,7 +10548,7 @@
       "source_file": "lms/frontend/src/app/pages/student/StudentConceptPage.tsx",
       "source_location": "L23",
       "id": "student_studentconceptpage_questiontype",
-      "community": 100,
+      "community": 8,
       "norm_label": "questiontype"
     },
     {
@@ -10557,7 +10557,7 @@
       "source_file": "lms/frontend/src/app/pages/student/StudentConceptPage.tsx",
       "source_location": "L25",
       "id": "student_studentconceptpage_questionconfig",
-      "community": 100,
+      "community": 8,
       "norm_label": "questionconfig"
     },
     {
@@ -10566,7 +10566,7 @@
       "source_file": "lms/frontend/src/app/pages/student/StudentConceptPage.tsx",
       "source_location": "L35",
       "id": "student_studentconceptpage_questioninput",
-      "community": 100,
+      "community": 8,
       "norm_label": "questioninput()"
     },
     {
@@ -10575,7 +10575,7 @@
       "source_file": "lms/frontend/src/app/pages/student/StudentConceptPage.tsx",
       "source_location": "L110",
       "id": "student_studentconceptpage_normalize",
-      "community": 100,
+      "community": 8,
       "norm_label": "normalize()"
     },
     {
@@ -10584,7 +10584,7 @@
       "source_file": "lms/frontend/src/app/pages/student/StudentConceptPage.tsx",
       "source_location": "L114",
       "id": "student_studentconceptpage_iscorrect",
-      "community": 100,
+      "community": 8,
       "norm_label": "iscorrect()"
     },
     {
@@ -10593,7 +10593,7 @@
       "source_file": "lms/frontend/src/app/pages/student/StudentConceptPage.tsx",
       "source_location": "L125",
       "id": "student_studentconceptpage_unlockoverlay",
-      "community": 100,
+      "community": 8,
       "norm_label": "unlockoverlay()"
     },
     {
@@ -10602,7 +10602,7 @@
       "source_file": "lms/frontend/src/app/pages/student/StudentConceptPage.tsx",
       "source_location": "L136",
       "id": "student_studentconceptpage_studentconceptpage",
-      "community": 100,
+      "community": 8,
       "norm_label": "studentconceptpage()"
     },
     {
@@ -11646,7 +11646,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherExamsPage.tsx",
       "source_location": "L1",
       "id": "teacher_teacherexamspage",
-      "community": 8,
+      "community": 395,
       "norm_label": "teacherexamspage.tsx"
     },
     {
@@ -11655,7 +11655,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherExamsPage.tsx",
       "source_location": "L22",
       "id": "teacher_teacherexamspage_now",
-      "community": 8,
+      "community": 395,
       "norm_label": "now"
     },
     {
@@ -11664,7 +11664,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherExamsPage.tsx",
       "source_location": "L24",
       "id": "teacher_teacherexamspage_examquestion",
-      "community": 8,
+      "community": 395,
       "norm_label": "examquestion"
     },
     {
@@ -11673,7 +11673,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherExamsPage.tsx",
       "source_location": "L33",
       "id": "teacher_teacherexamspage_examdata",
-      "community": 8,
+      "community": 395,
       "norm_label": "examdata"
     },
     {
@@ -11682,7 +11682,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherExamsPage.tsx",
       "source_location": "L46",
       "id": "teacher_teacherexamspage_examcard",
-      "community": 8,
+      "community": 395,
       "norm_label": "examcard()"
     },
     {
@@ -11691,7 +11691,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherExamsPage.tsx",
       "source_location": "L156",
       "id": "teacher_teacherexamspage_teacherexamspage",
-      "community": 8,
+      "community": 395,
       "norm_label": "teacherexamspage()"
     },
     {
@@ -11743,7 +11743,7 @@
       "label": "ProfileData",
       "file_type": "code",
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherProfilePage.tsx",
-      "source_location": "L19",
+      "source_location": "L20",
       "id": "teacher_teacherprofilepage_profiledata",
       "community": 98,
       "norm_label": "profiledata"
@@ -11752,7 +11752,7 @@
       "label": "TeacherProfilePage()",
       "file_type": "code",
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherProfilePage.tsx",
-      "source_location": "L26",
+      "source_location": "L27",
       "id": "teacher_teacherprofilepage_teacherprofilepage",
       "community": 98,
       "norm_label": "teacherprofilepage()"
@@ -11799,7 +11799,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherQuestionBankPage.tsx",
       "source_location": "L100",
       "id": "teacher_teacherquestionbankpage_teacherquestionbankpage",
-      "community": 100,
+      "community": 10,
       "norm_label": "teacherquestionbankpage()"
     },
     {
@@ -11826,7 +11826,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherResultsPushPage.tsx",
       "source_location": "L1",
       "id": "teacher_teacherresultspushpage",
-      "community": 9,
+      "community": 10,
       "norm_label": "teacherresultspushpage.tsx"
     },
     {
@@ -11835,7 +11835,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherResultsPushPage.tsx",
       "source_location": "L15",
       "id": "teacher_teacherresultspushpage_release_options",
-      "community": 9,
+      "community": 10,
       "norm_label": "release_options"
     },
     {
@@ -11844,7 +11844,7 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherResultsPushPage.tsx",
       "source_location": "L22",
       "id": "teacher_teacherresultspushpage_teacherresultspushpage",
-      "community": 9,
+      "community": 10,
       "norm_label": "teacherresultspushpage()"
     },
     {
@@ -11907,25 +11907,25 @@
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherStudentsPage.tsx",
       "source_location": "L1",
       "id": "teacher_teacherstudentspage",
-      "community": 8,
+      "community": 98,
       "norm_label": "teacherstudentspage.tsx"
     },
     {
       "label": "StudentRow",
       "file_type": "code",
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherStudentsPage.tsx",
-      "source_location": "L24",
+      "source_location": "L23",
       "id": "teacher_teacherstudentspage_studentrow",
-      "community": 8,
+      "community": 98,
       "norm_label": "studentrow"
     },
     {
       "label": "TeacherStudentsPage()",
       "file_type": "code",
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherStudentsPage.tsx",
-      "source_location": "L33",
+      "source_location": "L32",
       "id": "teacher_teacherstudentspage_teacherstudentspage",
-      "community": 8,
+      "community": 98,
       "norm_label": "teacherstudentspage()"
     },
     {
@@ -12231,7 +12231,7 @@
       "source_file": "lms/frontend/src/app/router/ProtectedRoute.tsx",
       "source_location": "L1",
       "id": "router_protectedroute",
-      "community": 112,
+      "community": 48,
       "norm_label": "protectedroute.tsx"
     },
     {
@@ -12240,7 +12240,7 @@
       "source_file": "lms/frontend/src/app/router/ProtectedRoute.tsx",
       "source_location": "L8",
       "id": "router_protectedroute_roledashboard",
-      "community": 112,
+      "community": 48,
       "norm_label": "roledashboard()"
     },
     {
@@ -12249,7 +12249,7 @@
       "source_file": "lms/frontend/src/app/router/ProtectedRoute.tsx",
       "source_location": "L21",
       "id": "router_protectedroute_protectedrouteprops",
-      "community": 112,
+      "community": 48,
       "norm_label": "protectedrouteprops"
     },
     {
@@ -12258,7 +12258,7 @@
       "source_file": "lms/frontend/src/app/router/ProtectedRoute.tsx",
       "source_location": "L28",
       "id": "router_protectedroute_protectedroute",
-      "community": 112,
+      "community": 48,
       "norm_label": "protectedroute()"
     },
     {
@@ -12996,7 +12996,7 @@
       "source_file": "lms/frontend/src/components/layout/ThemeToggle.tsx",
       "source_location": "L1",
       "id": "layout_themetoggle",
-      "community": 99,
+      "community": 5,
       "norm_label": "themetoggle.tsx"
     },
     {
@@ -13005,7 +13005,7 @@
       "source_file": "lms/frontend/src/components/layout/ThemeToggle.tsx",
       "source_location": "L12",
       "id": "layout_themetoggle_theme",
-      "community": 99,
+      "community": 5,
       "norm_label": "theme"
     },
     {
@@ -13086,7 +13086,7 @@
       "source_file": "lms/frontend/src/components/teacher/ConceptDetailMindMap.tsx",
       "source_location": "L11",
       "id": "teacher_conceptdetailmindmap_conceptdetailmindmap",
-      "community": 100,
+      "community": 8,
       "norm_label": "conceptdetailmindmap()"
     },
     {
@@ -14787,7 +14787,7 @@
       "source_file": "lms/frontend/src/lib/format.ts",
       "source_location": "L35",
       "id": "lib_format_getlettergrade",
-      "community": 8,
+      "community": 395,
       "norm_label": "getlettergrade()"
     },
     {
@@ -14904,7 +14904,7 @@
       "source_file": "lms/frontend/src/lib/motion.ts",
       "source_location": "L35",
       "id": "lib_motion_listitem",
-      "community": 8,
+      "community": 10,
       "norm_label": "listitem"
     },
     {
@@ -15372,7 +15372,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L1",
       "id": "services_dataservice",
-      "community": 8,
+      "community": 98,
       "norm_label": "dataservice.ts"
     },
     {
@@ -15417,7 +15417,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L75",
       "id": "services_dataservice_notificationitem",
-      "community": 8,
+      "community": 98,
       "norm_label": "notificationitem"
     },
     {
@@ -15471,7 +15471,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L145",
       "id": "services_dataservice_getclassesbyids",
-      "community": 8,
+      "community": 98,
       "norm_label": "getclassesbyids()"
     },
     {
@@ -15498,7 +15498,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L167",
       "id": "services_dataservice_getallenrollments",
-      "community": 8,
+      "community": 98,
       "norm_label": "getallenrollments()"
     },
     {
@@ -15534,7 +15534,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L196",
       "id": "services_dataservice_getunreadnotificationscount",
-      "community": 8,
+      "community": 98,
       "norm_label": "getunreadnotificationscount()"
     },
     {
@@ -15579,7 +15579,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L258",
       "id": "services_dataservice_getassignment",
-      "community": 8,
+      "community": 98,
       "norm_label": "getassignment()"
     },
     {
@@ -15588,7 +15588,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L265",
       "id": "services_dataservice_submissionitem",
-      "community": 8,
+      "community": 98,
       "norm_label": "submissionitem"
     },
     {
@@ -15642,7 +15642,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L336",
       "id": "services_dataservice_getcorrectionsbystudent",
-      "community": 8,
+      "community": 98,
       "norm_label": "getcorrectionsbystudent()"
     },
     {
@@ -15651,7 +15651,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L343",
       "id": "services_dataservice_getcorrectionsbyexam",
-      "community": 8,
+      "community": 395,
       "norm_label": "getcorrectionsbyexam()"
     },
     {
@@ -15669,7 +15669,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L364",
       "id": "services_dataservice_getquiz",
-      "community": 8,
+      "community": 98,
       "norm_label": "getquiz()"
     },
     {
@@ -15705,7 +15705,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L423",
       "id": "services_dataservice_getuserbyrole",
-      "community": 10,
+      "community": 98,
       "norm_label": "getuserbyrole()"
     },
     {
@@ -15750,7 +15750,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L477",
       "id": "services_dataservice_getlessonsbychapter",
-      "community": 8,
+      "community": 98,
       "norm_label": "getlessonsbychapter()"
     },
     {
@@ -15759,7 +15759,7 @@
       "source_file": "lms/frontend/src/services/dataService.ts",
       "source_location": "L484",
       "id": "services_dataservice_getlesson",
-      "community": 8,
+      "community": 98,
       "norm_label": "getlesson()"
     },
     {
@@ -15921,7 +15921,7 @@
       "source_file": "lms/frontend/src/services/gradeService.ts",
       "source_location": "L1",
       "id": "services_gradeservice",
-      "community": 105,
+      "community": 117,
       "norm_label": "gradeservice.ts"
     },
     {
@@ -15930,7 +15930,7 @@
       "source_file": "lms/frontend/src/services/gradeService.ts",
       "source_location": "L5",
       "id": "services_gradeservice_gradeservice",
-      "community": 105,
+      "community": 117,
       "norm_label": "gradeservice"
     },
     {
@@ -15939,7 +15939,7 @@
       "source_file": "lms/frontend/src/services/lessonService.ts",
       "source_location": "L1",
       "id": "services_lessonservice",
-      "community": 73,
+      "community": 105,
       "norm_label": "lessonservice.ts"
     },
     {
@@ -15948,7 +15948,7 @@
       "source_file": "lms/frontend/src/services/lessonService.ts",
       "source_location": "L5",
       "id": "services_lessonservice_lessonservice",
-      "community": 73,
+      "community": 105,
       "norm_label": "lessonservice"
     },
     {
@@ -15957,7 +15957,7 @@
       "source_file": "lms/frontend/src/services/messagingService.ts",
       "source_location": "L1",
       "id": "services_messagingservice",
-      "community": 90,
+      "community": 67,
       "norm_label": "messagingservice.ts"
     },
     {
@@ -15966,7 +15966,7 @@
       "source_file": "lms/frontend/src/services/messagingService.ts",
       "source_location": "L5",
       "id": "services_messagingservice_messagingservice",
-      "community": 90,
+      "community": 67,
       "norm_label": "messagingservice"
     },
     {
@@ -16029,7 +16029,7 @@
       "source_file": "lms/frontend/src/services/settingsService.ts",
       "source_location": "L1",
       "id": "services_settingsservice",
-      "community": 82,
+      "community": 67,
       "norm_label": "settingsservice.ts"
     },
     {
@@ -16038,7 +16038,7 @@
       "source_file": "lms/frontend/src/services/settingsService.ts",
       "source_location": "L4",
       "id": "services_settingsservice_systemsettings",
-      "community": 82,
+      "community": 67,
       "norm_label": "systemsettings"
     },
     {
@@ -16047,7 +16047,7 @@
       "source_file": "lms/frontend/src/services/settingsService.ts",
       "source_location": "L28",
       "id": "services_settingsservice_settingsservice",
-      "community": 82,
+      "community": 67,
       "norm_label": "settingsservice"
     },
     {
@@ -16542,7 +16542,7 @@
       "source_file": "lms/frontend/src/types/api.ts",
       "source_location": "L1",
       "id": "types_api_apiresponse",
-      "community": 82,
+      "community": 67,
       "norm_label": "apiresponse"
     },
     {
@@ -16722,7 +16722,7 @@
       "source_file": "lms/frontend/src/types/class.ts",
       "source_location": "L1",
       "id": "types_class",
-      "community": 105,
+      "community": 103,
       "norm_label": "class.ts"
     },
     {
@@ -16731,7 +16731,7 @@
       "source_file": "lms/frontend/src/types/class.ts",
       "source_location": "L1",
       "id": "types_class_class",
-      "community": 105,
+      "community": 103,
       "norm_label": "class"
     },
     {
@@ -16740,7 +16740,7 @@
       "source_file": "lms/frontend/src/types/class.ts",
       "source_location": "L16",
       "id": "types_class_section",
-      "community": 105,
+      "community": 103,
       "norm_label": "section"
     },
     {
@@ -16749,7 +16749,7 @@
       "source_file": "lms/frontend/src/types/class.ts",
       "source_location": "L30",
       "id": "types_class_schedule",
-      "community": 105,
+      "community": 103,
       "norm_label": "schedule"
     },
     {
@@ -16884,7 +16884,7 @@
       "source_file": "lms/frontend/src/types/grade.ts",
       "source_location": "L1",
       "id": "types_grade",
-      "community": 105,
+      "community": 117,
       "norm_label": "grade.ts"
     },
     {
@@ -16893,7 +16893,7 @@
       "source_file": "lms/frontend/src/types/grade.ts",
       "source_location": "L1",
       "id": "types_grade_gradesummary",
-      "community": 105,
+      "community": 117,
       "norm_label": "gradesummary"
     },
     {
@@ -16902,7 +16902,7 @@
       "source_file": "lms/frontend/src/types/grade.ts",
       "source_location": "L19",
       "id": "types_grade_gradedetail",
-      "community": 105,
+      "community": 117,
       "norm_label": "gradedetail"
     },
     {
@@ -16911,7 +16911,7 @@
       "source_file": "lms/frontend/src/types/grade.ts",
       "source_location": "L31",
       "id": "types_grade_gradeitem",
-      "community": 105,
+      "community": 117,
       "norm_label": "gradeitem"
     },
     {
@@ -16929,7 +16929,7 @@
       "source_file": "lms/frontend/src/types/index.ts",
       "source_location": "L18",
       "id": "types_index_activity",
-      "community": 73,
+      "community": 103,
       "norm_label": "activity"
     },
     {
@@ -16965,7 +16965,7 @@
       "source_file": "lms/frontend/src/types/index.ts",
       "source_location": "L54",
       "id": "types_index_announcement",
-      "community": 73,
+      "community": 103,
       "norm_label": "announcement"
     },
     {
@@ -16974,7 +16974,7 @@
       "source_file": "lms/frontend/src/types/index.ts",
       "source_location": "L63",
       "id": "types_index_bookmark",
-      "community": 73,
+      "community": 103,
       "norm_label": "bookmark"
     },
     {
@@ -16983,7 +16983,7 @@
       "source_file": "lms/frontend/src/types/index.ts",
       "source_location": "L73",
       "id": "types_index_attachment",
-      "community": 73,
+      "community": 103,
       "norm_label": "attachment"
     },
     {
@@ -16992,7 +16992,7 @@
       "source_file": "lms/frontend/src/types/lesson.ts",
       "source_location": "L1",
       "id": "types_lesson",
-      "community": 73,
+      "community": 105,
       "norm_label": "lesson.ts"
     },
     {
@@ -17001,7 +17001,7 @@
       "source_file": "lms/frontend/src/types/lesson.ts",
       "source_location": "L1",
       "id": "types_lesson_lessontype",
-      "community": 73,
+      "community": 105,
       "norm_label": "lessontype"
     },
     {
@@ -17010,7 +17010,7 @@
       "source_file": "lms/frontend/src/types/lesson.ts",
       "source_location": "L2",
       "id": "types_lesson_resourcetype",
-      "community": 73,
+      "community": 105,
       "norm_label": "resourcetype"
     },
     {
@@ -17019,7 +17019,7 @@
       "source_file": "lms/frontend/src/types/lesson.ts",
       "source_location": "L4",
       "id": "types_lesson_lesson",
-      "community": 73,
+      "community": 105,
       "norm_label": "lesson"
     },
     {
@@ -17028,7 +17028,7 @@
       "source_file": "lms/frontend/src/types/lesson.ts",
       "source_location": "L22",
       "id": "types_lesson_lessonprogress",
-      "community": 73,
+      "community": 105,
       "norm_label": "lessonprogress"
     },
     {
@@ -17037,7 +17037,7 @@
       "source_file": "lms/frontend/src/types/lesson.ts",
       "source_location": "L34",
       "id": "types_lesson_lessonresource",
-      "community": 73,
+      "community": 105,
       "norm_label": "lessonresource"
     },
     {
@@ -17289,7 +17289,7 @@
       "source_file": "lms/frontend/src/types/user.ts",
       "source_location": "L1",
       "id": "types_user",
-      "community": 67,
+      "community": 103,
       "norm_label": "user.ts"
     },
     {
@@ -17307,7 +17307,7 @@
       "source_file": "lms/frontend/src/types/user.ts",
       "source_location": "L25",
       "id": "types_user_usersettings",
-      "community": 67,
+      "community": 103,
       "norm_label": "usersettings"
     },
     {
@@ -17505,7 +17505,7 @@
       "source_file": "lms/frontend/src/utils/permissions.ts",
       "source_location": "L67",
       "id": "utils_permissions_checkpermission",
-      "community": 112,
+      "community": 48,
       "norm_label": "checkpermission()"
     },
     {
@@ -21581,7 +21581,7 @@
       "file_type": "code",
       "source_file": "lms/frontend/src/types/index.ts",
       "source_location": "L1",
-      "community": 73,
+      "community": 103,
       "norm_label": "index.ts",
       "id": "lms_frontend_src_types_index_ts_types_index"
     },
@@ -21590,7 +21590,7 @@
       "file_type": "code",
       "source_file": "lms/frontend/src/types/index.ts",
       "source_location": "L27",
-      "community": 67,
+      "community": 103,
       "norm_label": "user",
       "id": "lms_frontend_src_types_index_ts_types_index_user"
     },
@@ -21806,7 +21806,7 @@
       "file_type": "code",
       "source_file": "lms/backend/src/services/user.service.ts",
       "source_location": "L71",
-      "community": 28,
+      "community": 36,
       "norm_label": "generaterandompassword()",
       "id": "services_user_service_generaterandompassword"
     },
@@ -22004,7 +22004,7 @@
       "file_type": "code",
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherResultsPushPage.tsx",
       "source_location": "L20",
-      "community": 9,
+      "community": 10,
       "norm_label": "teacherassignment",
       "id": "teacher_teacherresultspushpage_teacherassignment"
     },
@@ -22013,7 +22013,7 @@
       "file_type": "code",
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherResultsPushPage.tsx",
       "source_location": "L28",
-      "community": 9,
+      "community": 10,
       "norm_label": "releaseoption",
       "id": "teacher_teacherresultspushpage_releaseoption"
     },
@@ -22022,7 +22022,7 @@
       "file_type": "code",
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherResultsPushPage.tsx",
       "source_location": "L41",
-      "community": 9,
+      "community": 10,
       "norm_label": "countresponse",
       "id": "teacher_teacherresultspushpage_countresponse"
     },
@@ -22031,7 +22031,7 @@
       "file_type": "code",
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherResultsPushPage.tsx",
       "source_location": "L46",
-      "community": 9,
+      "community": 10,
       "norm_label": "pushrecord",
       "id": "teacher_teacherresultspushpage_pushrecord"
     },
@@ -22040,7 +22040,7 @@
       "file_type": "code",
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherResultsPushPage.tsx",
       "source_location": "L56",
-      "community": 9,
+      "community": 10,
       "norm_label": "stepindicator()",
       "id": "teacher_teacherresultspushpage_stepindicator"
     },
@@ -68795,6 +68795,17 @@
       "target": "services_dataservice_gettimetablebyclass"
     },
     {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lms/frontend/src/app/pages/teacher/TeacherDashboardPage.tsx",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "teacher_teacherdashboardpage",
+      "target": "services_dataservice_getuserbyrole",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
@@ -69205,6 +69216,17 @@
       "confidence_score": 1.0,
       "source": "teacher_teacherexamcorrectionpage",
       "target": "services_dataservice_examitem"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lms/frontend/src/app/pages/teacher/TeacherExamCorrectionPage.tsx",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "teacher_teacherexamcorrectionpage",
+      "target": "services_dataservice_getallclasses",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -70313,6 +70335,17 @@
       "confidence_score": 1.0,
       "source": "teacher_teacherexamspage",
       "target": "services_dataservice_getexamsbysubject"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lms/frontend/src/app/pages/teacher/TeacherExamsPage.tsx",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "teacher_teacherexamspage",
+      "target": "services_dataservice_getuserbyrole",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -71522,6 +71555,17 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "lms/frontend/src/app/pages/teacher/TeacherProfilePage.tsx",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "teacher_teacherprofilepage",
+      "target": "services_dataservice_getuserbyrole",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lms/frontend/src/app/pages/teacher/TeacherProfilePage.tsx",
       "source_location": "L17",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -71538,6 +71582,28 @@
       "confidence_score": 1.0,
       "source": "teacher_teacherprofilepage",
       "target": "services_dataservice_subject"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lms/frontend/src/app/pages/teacher/TeacherProfilePage.tsx",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "teacher_teacherprofilepage",
+      "target": "services_teacherclasssubjectservice",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lms/frontend/src/app/pages/teacher/TeacherProfilePage.tsx",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "teacher_teacherprofilepage",
+      "target": "services_teacherclasssubjectservice_teacherclasssubjectservice",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -96357,5 +96423,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "a1dc24a7ea3c174aa4c75a879edfcc3c7f4a8854"
+  "built_at_commit": "6941eb140103c86b9b4f2b940eec42efec57b4e1"
 }

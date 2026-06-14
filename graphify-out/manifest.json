@@ -740,8 +740,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\admin\\AdminClassesPage.tsx": {
-    "mtime": 1781368469.9417608,
-    "ast_hash": "555d26f208ee9b2ade735751ff23c62f",
+    "mtime": 1781410661.8259299,
+    "ast_hash": "2648204c56bdca0d39878d2e19bf3599",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\admin\\AdminDashboardPage.tsx": {
@@ -930,13 +930,13 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherDashboardPage.tsx": {
-    "mtime": 1781359589.9962187,
-    "ast_hash": "993fe916fe36a021963ff883c06ea5a9",
+    "mtime": 1781410584.118077,
+    "ast_hash": "0b93956ac7607b4d5fc76c29832002b0",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherExamCorrectionPage.tsx": {
-    "mtime": 1781360608.836902,
-    "ast_hash": "066f0454984b00763b71d261b546a9a0",
+    "mtime": 1781410632.3179018,
+    "ast_hash": "d0ad35df98a198d6c10ec7458a236257",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherExamCreatePage.tsx": {
@@ -945,8 +945,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherExamsPage.tsx": {
-    "mtime": 1781361149.8238595,
-    "ast_hash": "63cbdc1e56dd119eeb37ccf2ff1ef029",
+    "mtime": 1781410684.6547534,
+    "ast_hash": "58cb2cec75a01341f47643352480dc3b",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherProfileEditPage.tsx": {
@@ -955,8 +955,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherProfilePage.tsx": {
-    "mtime": 1781361184.854559,
-    "ast_hash": "725afe8431ba32e0bba92e06425ee066",
+    "mtime": 1781410563.779452,
+    "ast_hash": "5a56d9e7ca8141d6e088fda36b0ba657",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherResultsPushPage.tsx": {
@@ -970,8 +970,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherStudentsPage.tsx": {
-    "mtime": 1781360372.6564493,
-    "ast_hash": "e9a4e2d8de0ef04a7e7896774894c973",
+    "mtime": 1781410552.3156037,
+    "ast_hash": "51b31e75bf7aab1e6d499907d55df562",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherTextbookDetailPage.tsx": {

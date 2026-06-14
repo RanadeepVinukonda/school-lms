@@ -10,7 +10,7 @@ import { Icon } from '@/components/ui/Icon';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
 import {
-  getAllSubjects, getAllClasses, getAllEnrollments, getAllGrades,
+  getAllSubjects, getAllClasses, getUserByRole, getAllGrades,
   getExamsBySubject, getAssignmentsBySubject, getCorrectionsByExam,
   getSubmissionsByAssignment, getTimetableByClass, getNotificationsByUser,
 } from '@/services/dataService';
@@ -92,8 +92,8 @@ export default function TeacherDashboardPage() {
   const { isLoading, error, refetch, data } = useQuery({
     queryKey: ['teacher-dashboard', user?.id],
     queryFn: async (): Promise<DashboardData> => {
-      const [allSubjects, allClasses, allEnrollments, allGrades, assignmentsRes] = await Promise.all([
-        getAllSubjects(), getAllClasses(), getAllEnrollments(), getAllGrades(),
+      const [allSubjects, allClasses, students, allGrades, assignmentsRes] = await Promise.all([
+        getAllSubjects(), getAllClasses(), getUserByRole('student'), getAllGrades(),
         teacherClassSubjectService.getMyAssignments().catch(() => ({ data: [] })),
       ]);
 
@@ -136,17 +136,16 @@ export default function TeacherDashboardPage() {
       const gradedEntries = allGrades.filter((g) => g.percentage != null);
       const avgScore = gradedEntries.length > 0
         ? Math.round(gradedEntries.reduce((sum, g) => sum + g.percentage, 0) / gradedEntries.length) : 0;
-      const totalStudents = new Set(allGrades.map((g) => g.studentId)).size;
 
       const textbookArrays = await Promise.all(
         subjectIds.map((sid) => getTextbooksBySubject(sid).catch(() => [] as any[])),
       );
       const allTextbooks = textbookArrays.flat();
 
-      const enrolledStudentIds = new Set(
-        allEnrollments.filter((e) => e.courseId && subjectIds.includes(e.courseId)).map((e) => e.studentId),
+      const assignedStudents = students.filter(
+        (s) => s.classId && myClassIds.includes(s.classId)
       );
-      const teachingStudentCount = enrolledStudentIds.size;
+      const teachingStudentCount = assignedStudents.length;
 
       return {
         needsAttention: [
@@ -157,7 +156,7 @@ export default function TeacherDashboardPage() {
         todaySchedule: todaySlots,
         stats: [
           { icon: 'trending_up', label: 'Avg Score', value: `${avgScore}%`, color: 'text-success', bg: 'bg-success-container' },
-          { icon: 'school', label: 'Total Students', value: totalStudents, color: 'text-primary', bg: 'bg-primary-container' },
+          { icon: 'school', label: 'Total Students', value: teachingStudentCount, color: 'text-primary', bg: 'bg-primary-container' },
           { icon: 'assignment', label: 'Exams Created', value: allExams.length, color: 'text-secondary', bg: 'bg-secondary-container' },
         ],
         teaching: {
@@ -341,7 +340,7 @@ export default function TeacherDashboardPage() {
                                   <Icon name="group" size={22} className="text-success" />
                                 </div>
                                 <div className="min-w-0">
-                                  <p className="text-title-sm font-bold">Enrolled Students</p>
+                                  <p className="text-title-sm font-bold">My Students</p>
                                   <p className="text-label-sm text-muted-foreground mt-1">{d.teaching.studentCount} student{d.teaching.studentCount > 1 ? 's' : ''}</p>
                                 </div>
                               </div>

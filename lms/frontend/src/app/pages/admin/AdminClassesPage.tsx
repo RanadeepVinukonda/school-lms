@@ -877,7 +877,7 @@ export default function AdminClassesPage() {
                                       </Button>
                                     </div>
                                     {classStudents.length === 0 ? (
-                                      <p className="text-label-xs text-muted-foreground/60 ml-6 py-1">No students enrolled yet</p>
+                                      <p className="text-label-xs text-muted-foreground/60 ml-6 py-1">No students registered yet</p>
                                     ) : (
                                       <ul className="space-y-1 max-h-48 overflow-y-auto pr-1">
                                         {classStudents.map((student) => (

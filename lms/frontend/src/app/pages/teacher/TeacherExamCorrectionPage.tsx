@@ -17,7 +17,7 @@ import {
   getExam,
   getSubject,
   getCorrectionsByExam,
-  getAllEnrollments,
+  getAllClasses,
   getAllUsers,
 } from '@/services/dataService';
 import type { ExamItem, CorrectionItem, UserDoc } from '@/services/dataService';
@@ -100,9 +100,9 @@ export default function TeacherExamCorrectionPage() {
     queryKey: ['teacher-exam-correction', id],
     queryFn: async () => {
       if (!id) return null;
-      const [exam, allEnrollments, allUsers] = await Promise.all([
+      const [exam, allClasses, allUsers] = await Promise.all([
         getExam(id),
-        getAllEnrollments(),
+        getAllClasses(),
         getAllUsers(),
       ]);
       if (!exam) return null;
@@ -110,15 +110,13 @@ export default function TeacherExamCorrectionPage() {
       const subject = exam.subjectId ? await getSubject(exam.subjectId) : null;
       const corrections = await getCorrectionsByExam(exam.id);
 
-      const enrolled = allEnrollments
-        .filter(
-          (e) =>
-            (e as unknown as { subjectId: string }).subjectId === exam.subjectId &&
-            e.status === 'active',
-        )
-        .map((e) => e.studentId)
-        .map((sid) => allUsers.find((u) => u.id === sid && u.role === 'student'))
-        .filter(Boolean) as UserDoc[];
+      const targetClassId = (exam as any).classId;
+      const enrolled = allUsers.filter((u) => {
+        if (u.role !== 'student' || !u.classId) return false;
+        if (targetClassId) return u.classId === targetClassId;
+        const studentClass = allClasses.find((c) => c.id === u.classId);
+        return studentClass?.subjectIds?.includes(exam.subjectId || '');
+      });
 
       return { exam, subject, corrections, enrolled };
     },
@@ -401,8 +399,8 @@ export default function TeacherExamCorrectionPage() {
       <SEOHead title={`Correcting: ${exam.title}`} description={`Grade submissions for ${exam.title}`} />
       <div className="flex flex-col items-center gap-3 py-12">
         <Icon name="group_off" size={48} className="text-muted-foreground/40" />
-        <p className="text-title-md font-medium">No students enrolled</p>
-        <p className="text-body-md text-muted-foreground">There are no students enrolled in {subject?.name ?? 'this subject'}.</p>
+        <p className="text-title-md font-medium">No students assigned</p>
+        <p className="text-body-md text-muted-foreground">There are no students assigned to this class/subject.</p>
         <Button asChild><Link to="/teacher/exams"><Icon name="arrow_back" size={16} className="mr-1" /> Back to Exams</Link></Button>
       </div>
     </motion.div>

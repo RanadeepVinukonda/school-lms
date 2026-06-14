@@ -13,7 +13,7 @@ import { formatDate } from '@/lib/format';
 import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import {
   getAllSubjects,
-  getAllEnrollments,
+  getUserByRole,
   getExamsBySubject,
   getCorrectionsByExam,
 } from '@/services/dataService';
@@ -157,9 +157,9 @@ export default function TeacherExamsPage() {
   const { isLoading, error, refetch, data } = useQuery({
     queryKey: ['teacher-exams'],
     queryFn: async () => {
-      const [allSubjects, allEnrollments, assignmentsRes] = await Promise.all([
+      const [allSubjects, students, assignmentsRes] = await Promise.all([
         getAllSubjects(),
-        getAllEnrollments(),
+        getUserByRole('student'),
         teacherClassSubjectService.getMyAssignments().catch(() => ({ data: [] })),
       ]);
 
@@ -182,13 +182,19 @@ export default function TeacherExamsPage() {
       const mapped: ExamData[] = allExams.map((exam) => {
         const subject = allSubjects.find((s) => s.id === exam.subjectId);
         const corrections = allCorrections.filter((c) => c.examId === exam.id);
-        const studentIds = allEnrollments
-          .filter(
-            (enr) =>
-              (enr as unknown as { subjectId: string }).subjectId === exam.subjectId &&
-              enr.status === 'active',
-          )
-          .map((e) => e.studentId);
+        
+        const targetClassId = (exam as any).classId;
+        const studentIds = students
+          .filter((s) => {
+            if (s.role !== 'student' || !s.classId) return false;
+            if (targetClassId) return s.classId === targetClassId;
+            const matchedClasses = myAssignments
+              .filter((a) => a.subjectId === exam.subjectId)
+              .map((a) => a.classId);
+            return matchedClasses.includes(s.classId);
+          })
+          .map((s) => s.id);
+
         const gradedCount = corrections.filter((c) => c.status === 'published').length;
         const submittedCount = corrections.length;
         const pendingCount = studentIds.length - submittedCount;

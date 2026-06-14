@@ -16,7 +16,6 @@ import {
   getUserByRole,
   getAllClasses,
   getAllSubjects,
-  getAllEnrollments,
   getAllGrades,
 } from '@/services/dataService';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
@@ -36,22 +35,20 @@ export default function TeacherStudentsPage() {
   const { isLoading, error, refetch, data } = useQuery({
     queryKey: ['teacher-students'],
     queryFn: async () => {
-      const [students, classes, subjects, enrollments, grades, assignmentsRes] = await Promise.all([
+      const [students, classes, subjects, grades, assignmentsRes] = await Promise.all([
         getUserByRole('student'),
         getAllClasses(),
         getAllSubjects(),
-        getAllEnrollments(),
         getAllGrades(),
         teacherClassSubjectService.getMyAssignments().catch(() => ({ data: [] })),
       ]);
-      return { students, classes, subjects, enrollments, grades, assignments: assignmentsRes?.data ?? [] };
+      return { students, classes, subjects, grades, assignments: assignmentsRes?.data ?? [] };
     },
   });
 
   const allStudents = data?.students ?? [];
   const allClasses = data?.classes ?? [];
   const allSubjects = data?.subjects ?? [];
-  const allEnrollments = data?.enrollments ?? [];
   const allGrades = data?.grades ?? [];
   const myAssignments = data?.assignments ?? [];
 
@@ -72,26 +69,19 @@ export default function TeacherStudentsPage() {
   );
 
   const students = useMemo((): StudentRow[] => {
-    const allowedStudentIds = allStudents.filter(u => myClassIds.includes(u.classId || '')).map(u => u.id);
+    const activeAssignments = selectedSubjectId === 'all'
+      ? myAssignments
+      : myAssignments.filter((a) => a.subjectId === selectedSubjectId);
+    const activeClassIds = [...new Set(activeAssignments.map((a) => a.classId))];
 
-    const studentIds =
-      selectedSubjectId === 'all'
-        ? [...new Set(allEnrollments.filter((e) => mySubjectIds.includes(e.courseId || (e as any).subjectId) && allowedStudentIds.includes(e.studentId)).map((e) => e.studentId))]
-        : allEnrollments
-            .filter(
-              (e) =>
-                (e.courseId || (e as unknown as { subjectId: string }).subjectId) === selectedSubjectId &&
-                allowedStudentIds.includes(e.studentId),
-            )
-            .map((e) => e.studentId);
+    const filteredStudents = allStudents.filter(
+      (u) => u.role === 'student' && u.classId && activeClassIds.includes(u.classId)
+    );
 
-    return studentIds
-      .map((id) => {
-        const user = allStudents.find((u) => u.id === id && u.role === 'student');
-        if (!user) return null;
-
+    return filteredStudents
+      .map((user) => {
         const studentClass = allClasses.find((c) => c.id === user.classId);
-        const studentGrades = allGrades.filter((g) => g.studentId === id);
+        const studentGrades = allGrades.filter((g) => g.studentId === user.id);
         const overallPercentage =
           studentGrades.length > 0
             ? Math.round(
@@ -100,20 +90,17 @@ export default function TeacherStudentsPage() {
               )
             : 0;
 
-        const enrolledSubjects = allEnrollments.filter((e) => e.studentId === id);
-
         return {
           id: user.id,
           displayName: user.displayName,
-          studentId: user.studentId ?? id,
+          studentId: user.studentId ?? user.id,
           className: studentClass?.name ?? 'Unknown',
           overallPercentage,
-          subjectCount: enrolledSubjects.length,
+          subjectCount: studentClass?.subjectIds?.length ?? 0,
         } as StudentRow;
       })
-      .filter((s): s is StudentRow => s !== null)
       .sort((a, b) => b.overallPercentage - a.overallPercentage);
-  }, [selectedSubjectId, allStudents, allClasses, allEnrollments, allGrades, myClassIds, mySubjectIds]);
+  }, [selectedSubjectId, allStudents, allClasses, allGrades, myAssignments]);
 
   return (
     <>
@@ -132,7 +119,7 @@ export default function TeacherStudentsPage() {
           <div>
             <h1 className="text-headline-sm">My Students</h1>
             <p className="text-sm text-muted-foreground">
-              {students.length} student{students.length !== 1 ? 's' : ''} enrolled
+              {students.length} student{students.length !== 1 ? 's' : ''} total
             </p>
           </div>
           <div className="w-full sm:w-56">
@@ -153,7 +140,7 @@ export default function TeacherStudentsPage() {
           loadingType="list"
           emptyMessage={
             allSubjects.length > 0
-              ? 'No students are enrolled in the selected subject yet.'
+              ? 'No students found in the assigned classes.'
               : 'No subjects available. Contact your administrator.'
           }
           emptyAction={

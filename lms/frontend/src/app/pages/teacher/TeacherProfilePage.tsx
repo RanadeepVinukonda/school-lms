@@ -13,8 +13,9 @@ import { getInitials } from '@/lib/utils';
 import { ROUTES } from '@/lib/constants';
 import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
-import { getAllSubjects, getAllClasses, getAllEnrollments, getAllGrades, getUser } from '@/services/dataService';
-import type { Subject, ClassEntry, GradeEntry, Enrollment } from '@/services/dataService';
+import { getAllSubjects, getAllClasses, getUserByRole, getAllGrades, getUser } from '@/services/dataService';
+import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
+import type { Subject, ClassEntry, GradeEntry } from '@/services/dataService';
 
 interface ProfileData {
   user: import('@/services/dataService').UserDoc;
@@ -30,15 +31,16 @@ export default function TeacherProfilePage() {
     queryKey: ['teacher-profile', authUser?.id],
     queryFn: async () => {
       if (!authUser?.id) throw new Error('Not authenticated');
-      const [firestoreUser, subjects, classes, enrollments, grades] = await Promise.all([
+      const [firestoreUser, subjects, classes, students, grades, assignmentsRes] = await Promise.all([
         getUser(authUser.id),
         getAllSubjects(),
         getAllClasses(),
-        getAllEnrollments(),
+        getUserByRole('student'),
         getAllGrades(),
+        teacherClassSubjectService.getMyAssignments().catch(() => ({ data: [] })),
       ]);
       if (!firestoreUser) throw new Error('User not found in Firestore');
-      return { firestoreUser, subjects, classes, enrollments, grades };
+      return { firestoreUser, subjects, classes, students, grades, assignments: assignmentsRes?.data ?? [] };
     },
     enabled: !!authUser,
   });
@@ -47,19 +49,25 @@ export default function TeacherProfilePage() {
     if (!raw) {
       return { stats: { totalStudents: 0, totalClasses: 0, totalSubjects: 0, avgPerformance: 0 }, assignedClasses: [], taughtSubjects: [], user: null! };
     }
-    const { firestoreUser, subjects, classes, enrollments, grades } = raw;
-    const enrolledStudentIds = [...new Set(enrollments.map((e) => e.studentId))];
+    const { firestoreUser, subjects, classes, students, grades, assignments } = raw;
+    const myClassIds = [...new Set(assignments.map((a) => a.classId))];
+    const mySubjectIds = [...new Set(assignments.map((a) => a.subjectId))];
+
+    const assignedClasses = classes.filter((c) => myClassIds.includes(c.id));
+    const taughtSubjects = subjects.filter((s) => mySubjectIds.includes(s.id));
+    const assignedStudents = students.filter((s) => s.classId && myClassIds.includes(s.classId));
+
     const avgPerformance = grades.length > 0 ? Math.round(grades.reduce((sum, g) => sum + g.percentage, 0) / grades.length) : 0;
     return {
       user: firestoreUser,
       stats: {
-        totalStudents: enrolledStudentIds.length,
-        totalClasses: classes.filter((c) => c.teacherIds?.includes(authUser!.id)).length,
-        totalSubjects: subjects.length,
+        totalStudents: assignedStudents.length,
+        totalClasses: assignedClasses.length,
+        totalSubjects: taughtSubjects.length,
         avgPerformance,
       },
-      assignedClasses: classes.filter((c) => c.teacherIds?.includes(authUser!.id)),
-      taughtSubjects: subjects,
+      assignedClasses,
+      taughtSubjects,
     };
   }, [raw, authUser]);
 
