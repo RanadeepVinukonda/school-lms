@@ -103,19 +103,24 @@ export async function createTextbook(data: {
   description?: string;
   coverImage?: string;
   pdfBuffer?: Buffer;
+  teacherRole?: string;
 }) {
-  // Verify teacher assignment
-  const assignmentSnap = await collections.teacherClassSubject()
-    .where('teacherId', '==', data.teacherId)
-    .where('classId', '==', data.classId)
-    .where('subjectId', '==', data.subjectId)
-    .limit(1)
-    .get();
+  let assignment: Record<string, unknown> | null = null;
 
-  if (assignmentSnap.empty) {
-    throw new ForbiddenError('You are not assigned to teach this subject in this class');
+  // Verify teacher assignment (skip for admin)
+  if (data.teacherRole !== 'admin') {
+    const assignmentSnap = await collections.teacherClassSubject()
+      .where('teacherId', '==', data.teacherId)
+      .where('classId', '==', data.classId)
+      .where('subjectId', '==', data.subjectId)
+      .limit(1)
+      .get();
+
+    if (assignmentSnap.empty) {
+      throw new ForbiddenError('You are not assigned to teach this subject in this class');
+    }
+    assignment = { id: assignmentSnap.docs[0].id, ...assignmentSnap.docs[0].data() } as Record<string, unknown>;
   }
-  const assignment = { id: assignmentSnap.docs[0].id, ...assignmentSnap.docs[0].data() } as Record<string, unknown>;
 
   // Prevent duplicates
   const existing = await collections.textbooks()
@@ -175,7 +180,7 @@ export async function createTextbook(data: {
   }
 
   // Update teacher-class-subject with textbookId
-  if (assignment.id) {
+  if (assignment?.id) {
     await collections.teacherClassSubject().doc(assignment.id as string).update({ textbookId, updatedAt: now });
   }
 

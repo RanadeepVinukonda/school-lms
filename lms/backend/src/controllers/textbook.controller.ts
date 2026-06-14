@@ -7,6 +7,7 @@ export async function createTextbook(req: Request, res: Response) {
     ...req.body,
     pdfBuffer: req.file?.buffer,
     teacherId: req.user!.uid,
+    teacherRole: req.user!.role,
   });
   sendCreated(res, result, 'Textbook created');
 }
