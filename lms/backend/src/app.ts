@@ -10,6 +10,10 @@ import routes from './routes/index';
 import { logger } from './utils/logger';
 
 initializeFirebase();
+console.log("DEBUG_FIREBASE_PROJECT_ID:", process.env.FIREBASE_PROJECT_ID);
+console.log("DEBUG_FIREBASE_CLIENT_EMAIL:", process.env.FIREBASE_CLIENT_EMAIL);
+console.log("DEBUG_FIREBASE_PRIVATE_KEY_LENGTH:", process.env.FIREBASE_PRIVATE_KEY?.length);
+console.log("DEBUG_FIREBASE_WEB_API_KEY:", process.env.FIREBASE_WEB_API_KEY);
 
 const app = express();
 app.set('trust proxy', 1);
