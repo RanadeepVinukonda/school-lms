@@ -25,11 +25,18 @@ export async function assignTeacher(data: {
     .get();
 
   if (!existing.empty) {
-    const current = existing.docs[0].data() as TeacherClassSubject;
+    const currentDoc = existing.docs[0];
+    const current = currentDoc.data() as TeacherClassSubject;
     if (current.teacherId !== data.teacherId) {
-      throw new ConflictError('This subject already has a teacher assigned in this class');
+      // Update assignment to new teacher instead of throwing conflict
+      const now = new Date().toISOString();
+      const docRef = collections.teacherClassSubject().doc(currentDoc.id);
+      await docRef.update({ teacherId: data.teacherId, updatedAt: now });
+      const updatedSnap = await docRef.get();
+      const updated = updatedSnap.data() as TeacherClassSubject;
+      return { id: updatedSnap.id, ...updated };
     }
-    return { id: existing.docs[0].id, ...current };
+    return { id: currentDoc.id, ...current };
   }
 
   const now = new Date().toISOString();
