@@ -899,15 +899,6 @@ export default function AdminClassesPage() {
 
                               {/* Card Footer Actions */}
                               <div className="px-5 pb-4 flex items-center gap-2 pt-2 border-t border-border/10">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => navigate(`/admin/classes/${cls.id}/timetable`)}
-                                  title="Timetable Management"
-                                >
-                                  <Icon name="calendar_month" size={16} className="text-primary mr-1" />
-                                  Timetable
-                                </Button>
                                 <Button variant="ghost" size="sm" onClick={() => handleClassGradeChange} className="ml-auto opacity-0 pointer-events-none" />
                                 <Button variant="ghost" size="sm" onClick={() => handleEditClassClick(cls)} title="Edit Class Details">
                                   <Icon name="edit" size={16} />

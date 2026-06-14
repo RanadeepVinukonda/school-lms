@@ -12,7 +12,7 @@ import { ROUTES } from '@/lib/constants';
 import {
   getAllSubjects, getAllClasses, getUserByRole, getAllGrades,
   getExamsBySubject, getAssignmentsBySubject, getCorrectionsByExam,
-  getSubmissionsByAssignment, getTimetableByClass, getNotificationsByUser,
+  getSubmissionsByAssignment, getNotificationsByUser,
 } from '@/services/dataService';
 import { getTextbooksBySubject } from '@/services/textbookService';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
@@ -25,7 +25,6 @@ interface NeedsAttentionItem {
 
 interface DashboardData {
   needsAttention: NeedsAttentionItem[];
-  todaySchedule: { period: number; subjectName: string; room: string }[];
   stats: { icon: string; label: string; value: string | number; color: string; bg: string }[];
   teaching: {
     classes: { id: string; name: string }[];
@@ -36,10 +35,10 @@ interface DashboardData {
 }
 
 const QUICK_ACTIONS = [
-  { icon: 'add_circle', label: 'Create Exam', link: '/teacher/exams', bg: 'bg-primary-container', color: 'text-primary' },
-  { icon: 'note_add', label: 'Create Assignment', link: '/teacher/assignments', bg: 'bg-secondary-container', color: 'text-secondary' },
+  { icon: 'add_circle', label: 'Create Exam', link: '/teacher/exams/create', bg: 'bg-primary-container', color: 'text-primary' },
+  { icon: 'note_add', label: 'Create Quiz/Task', link: '/teacher/assessments', bg: 'bg-secondary-container', color: 'text-secondary' },
   { icon: 'group', label: 'View Students', link: '/teacher/students', bg: 'bg-success-container', color: 'text-success' },
-  { icon: 'analytics', label: 'View Reports', link: '/teacher/reports', bg: 'bg-warning-container', color: 'text-warning' },
+  { icon: 'analytics', label: 'View Analytics', link: '/teacher/analytics', bg: 'bg-warning-container', color: 'text-warning' },
 ] as const;
 
 function SectionTitle({ label, title }: { label: string; title: string }) {
@@ -100,13 +99,11 @@ export default function TeacherDashboardPage() {
       const myAssignments = assignmentsRes?.data ?? [];
       const myClassIds = [...new Set(myAssignments.map((a) => a.classId))];
       const myClasses = allClasses.filter((c) => myClassIds.includes(c.id));
-      const classId = myClasses[0]?.id;
       const subjectIds = [...new Set(myAssignments.map((a) => a.subjectId))];
 
-      const [examArrays, assignmentArrays, timetable] = await Promise.all([
+      const [examArrays, assignmentArrays] = await Promise.all([
         Promise.all(subjectIds.map((sid) => getExamsBySubject(sid))),
         Promise.all(subjectIds.map((sid) => getAssignmentsBySubject(sid))),
-        classId ? getTimetableByClass(classId) : Promise.resolve([]),
       ]);
 
       const allExams = examArrays.flat();
@@ -123,15 +120,6 @@ export default function TeacherDashboardPage() {
       const awaitingGradingCount = allSubmissions.filter((s) => s.status === 'submitted').length;
       const awaitingCorrectionCount = allExams.filter((e) => !correctedExamIds.has(e.id)).length;
       const lateAssignmentsCount = allAssignments.filter((a) => a.dueDate && new Date(a.dueDate) < todayDate).length;
-
-      const todaySlots = timetable
-        .filter((t) => t.day === todayKey)
-        .sort((a, b) => (a.period ?? 0) - (b.period ?? 0))
-        .map((t) => ({
-          period: t.period ?? 0,
-          subjectName: allSubjects.find((s) => s.id === t.subjectId)?.name ?? 'Unknown',
-          room: t.room ?? '',
-        }));
 
       const gradedEntries = allGrades.filter((g) => g.percentage != null);
       const avgScore = gradedEntries.length > 0
@@ -153,7 +141,6 @@ export default function TeacherDashboardPage() {
           { icon: 'fact_check', label: 'Need Correction', count: awaitingCorrectionCount, color: 'text-error', bg: 'bg-error-container', link: '/teacher/exams', description: 'Exams to mark' },
           { icon: 'warning', label: 'Late Submissions', count: lateAssignmentsCount, color: 'text-destructive', bg: 'bg-destructive/10', link: '/teacher/assignments?filter=late', description: 'Past due date' },
         ],
-        todaySchedule: todaySlots,
         stats: [
           { icon: 'trending_up', label: 'Avg Score', value: `${avgScore}%`, color: 'text-success', bg: 'bg-success-container' },
           { icon: 'school', label: 'Total Students', value: teachingStudentCount, color: 'text-primary', bg: 'bg-primary-container' },
@@ -214,69 +201,31 @@ export default function TeacherDashboardPage() {
                 </motion.div>
               </section>
 
-              <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div>
-                  <SectionTitle label="Schedule" title="Today&apos;s timetable" />
-                  <motion.div variants={cardStackReveal} custom={0}>
-                    <Card className="border-border/60">
-                      <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                        <CardTitle className="text-title-sm flex items-center gap-2">
-                          <Icon name="schedule" size={18} className="text-muted-foreground" />
-                          {todayLabel}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {d.todaySchedule.length === 0 ? (
-                          <div className="flex flex-col items-center gap-2 py-10 text-center">
-                            <Icon name="event_busy" size={40} className="text-muted-foreground/30" />
-                            <p className="text-body-md text-muted-foreground">No classes scheduled today</p>
+              <section>
+                <SectionTitle label="Performance" title="Class metrics" />
+                <motion.div
+                  variants={staggerContainer}
+                  initial="hidden"
+                  whileInView="show"
+                  viewport={{ once: true, margin: '-60px' }}
+                  className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+                >
+                  {d.stats.map((stat) => (
+                    <motion.div key={stat.label} variants={cardStackReveal} custom={0}>
+                      <Card className="border-border/60">
+                        <CardContent className="p-5 flex items-center gap-4">
+                          <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${stat.bg}`}>
+                            <Icon name={stat.icon} size={22} className={stat.color} />
                           </div>
-                        ) : (
-                          <div className="relative pl-6 space-y-4">
-                            <div className="absolute left-[11px] top-2 bottom-2 w-[2px] bg-border rounded-full" />
-                            {d.todaySchedule.map((slot) => (
-                              <div key={slot.period} className="relative flex items-center gap-4">
-                                <div className="absolute -left-[22px] w-[14px] h-[14px] rounded-full bg-primary border-[3px] border-surface" />
-                                <span className="text-xs font-bold text-muted-foreground w-6 text-right shrink-0">P{slot.period}</span>
-                                <div className="flex-1 min-w-0 py-1">
-                                  <p className="text-title-sm font-semibold">{slot.subjectName}</p>
-                                  <p className="text-label-sm text-muted-foreground">Room {slot.room}</p>
-                                </div>
-                              </div>
-                            ))}
+                          <div>
+                            <p className="text-display-xs font-bold tabular-nums leading-none mb-1">{stat.value}</p>
+                            <p className="text-label-sm text-muted-foreground">{stat.label}</p>
                           </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                </div>
-
-                <div>
-                  <SectionTitle label="Performance" title="Class metrics" />
-                  <motion.div variants={cardStackReveal} custom={0}>
-                    <Card className="border-border/60 h-full">
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-title-sm flex items-center gap-2">
-                          <Icon name="analytics" size={18} className="text-muted-foreground" />
-                          Key Metrics
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        {d.stats.map((stat) => (
-                          <div key={stat.label} className="flex items-center gap-4 p-3 rounded-xl bg-muted/40">
-                            <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${stat.bg}`}>
-                              <Icon name={stat.icon} size={20} className={stat.color} />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-display-xs font-bold tabular-nums">{stat.value}</p>
-                              <p className="text-label-sm text-muted-foreground">{stat.label}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </motion.div>
               </section>
 
               {(d.teaching.classes.length > 0 || d.teaching.textbooks.length > 0 || (d.teaching.subjects?.length ?? 0) > 0) && (

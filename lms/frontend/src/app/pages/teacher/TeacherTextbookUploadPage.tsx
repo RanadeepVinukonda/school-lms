@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -27,6 +27,10 @@ interface TeacherAssignment {
 
 export default function TeacherTextbookUploadPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const queryClassId = searchParams.get('classId') ?? '';
+  const querySubjectId = searchParams.get('subjectId') ?? '';
+
   const user = useAuthStore((s) => s.user);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -61,15 +65,17 @@ export default function TeacherTextbookUploadPage() {
 
   const assignmentList: TeacherAssignment[] = assignments ?? [];
 
-  const selectedAssignment = assignmentList.length === 1
-    ? assignmentList[0]
-    : assignmentList.find((a) => a.classId === selectedClassId) ?? null;
+  const selectedAssignment = assignmentList.find(
+    (a) => a.classId === selectedClassId && (querySubjectId ? a.subjectId === querySubjectId : true)
+  ) ?? (assignmentList.length === 1 ? assignmentList[0] : null);
 
   useEffect(() => {
-    if (assignmentList.length === 1 && !selectedClassId) {
+    if (queryClassId) {
+      setSelectedClassId(queryClassId);
+    } else if (assignmentList.length === 1 && !selectedClassId) {
       setSelectedClassId(assignmentList[0].classId);
     }
-  }, [assignmentList, selectedClassId]);
+  }, [assignmentList, selectedClassId, queryClassId]);
 
   useEffect(() => {
     if (file && !title) {
@@ -210,16 +216,21 @@ export default function TeacherTextbookUploadPage() {
                 />
               </div>
 
-              {assignmentList.length === 1 && (
+              {queryClassId && querySubjectId && selectedAssignment ? (
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Class &amp; Subject</label>
+                  <div className="w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground font-semibold">
+                    {selectedAssignment.className} — {selectedAssignment.subjectName}
+                  </div>
+                </div>
+              ) : assignmentList.length === 1 ? (
                 <div>
                   <label className="text-sm font-medium mb-2 block">Subject</label>
                   <div className="w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
                     {assignmentList[0].subjectName}
                   </div>
                 </div>
-              )}
-
-              {assignmentList.length > 1 && (
+              ) : assignmentList.length > 1 ? (
                 <div>
                   <label className="text-sm font-medium mb-2 block">Class</label>
                   <select
@@ -235,7 +246,7 @@ export default function TeacherTextbookUploadPage() {
                     ))}
                   </select>
                 </div>
-              )}
+              ) : null}
 
               <div
                 onDragEnter={handleDrag}

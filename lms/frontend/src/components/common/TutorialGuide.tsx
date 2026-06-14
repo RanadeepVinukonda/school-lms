@@ -60,7 +60,7 @@ const steps: Record<string, { title: string; body: string }[]> = {
     },
     {
       title: 'Classes & Subjects',
-      body: 'Create and manage classes, assign subjects, and set up timetables.',
+      body: 'Create and manage classes and assign subjects.',
     },
   ],
 };

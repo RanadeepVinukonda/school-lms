@@ -59,7 +59,6 @@ import AdminSettingsPage from '@/app/pages/admin/AdminSettingsPage';
 import AdminProfileEditPage from '@/app/pages/admin/AdminProfileEditPage';
 import UserManagementPage from '@/app/pages/admin/UserManagementPage';
 import AdminAuditLogsPage from '@/app/pages/admin/AdminAuditLogsPage';
-import AdminTimetablePage from '@/app/pages/admin/AdminTimetablePage';
 
 import RollNumberEntryPage from '@/app/pages/student/RollNumberEntryPage';
 import ClassSelectionPage from '@/app/pages/teacher/ClassSelectionPage';
@@ -158,7 +157,6 @@ export const router = createBrowserRouter([
       { path: ROUTES.ADMIN_STUDENTS, element: <Navigate to={ROUTES.ADMIN_CLASSES} replace /> },
       { path: ROUTES.ADMIN_TEACHERS, element: <Navigate to={ROUTES.ADMIN_CLASSES} replace /> },
       { path: ROUTES.ADMIN_CLASSES, element: <AdminClassesPage /> },
-      { path: '/admin/classes/:id/timetable', element: <AdminTimetablePage /> },
       { path: ROUTES.ADMIN_SUBJECTS, element: <Navigate to={ROUTES.ADMIN_CLASSES} replace /> },
       { path: ROUTES.ADMIN_SETTINGS, element: <AdminSettingsPage /> },
       { path: '/admin/profile/edit', element: <AdminProfileEditPage /> },

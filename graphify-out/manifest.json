@@ -740,8 +740,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\admin\\AdminClassesPage.tsx": {
-    "mtime": 1781410661.8259299,
-    "ast_hash": "2648204c56bdca0d39878d2e19bf3599",
+    "mtime": 1781411466.6464949,
+    "ast_hash": "2310895b757365cbf4942a9ab628fbd4",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\admin\\AdminDashboardPage.tsx": {
@@ -772,11 +772,6 @@
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\admin\\AdminTeachersPage.tsx": {
     "mtime": 1781361995.083045,
     "ast_hash": "aad73d546074b045088cd5b5df44f87c",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\admin\\AdminTimetablePage.tsx": {
-    "mtime": 1781362025.0963771,
-    "ast_hash": "60590c98df35e66c01169300dc2b5bbc",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\admin\\UserManagementPage.tsx": {
@@ -884,11 +879,6 @@
     "ast_hash": "5dfddf53dda86241da2021163e0a447d",
     "semantic_hash": ""
   },
-  "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\student\\StudentTimetablePage.tsx": {
-    "mtime": 1781360462.5156355,
-    "ast_hash": "d2ac3d496ef55223d0641b6de165b8ea",
-    "semantic_hash": ""
-  },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\student\\SubjectDetailPage.tsx": {
     "mtime": 1781409440.9945836,
     "ast_hash": "cfe5ccb06dc1fa5487a4dec1477b3bd5",
@@ -930,8 +920,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherDashboardPage.tsx": {
-    "mtime": 1781410584.118077,
-    "ast_hash": "0b93956ac7607b4d5fc76c29832002b0",
+    "mtime": 1781411484.331734,
+    "ast_hash": "e8e6c92d229fdc9b6af8af4532a7b0e2",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherExamCorrectionPage.tsx": {
@@ -980,13 +970,13 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherTextbookUploadPage.tsx": {
-    "mtime": 1781361277.5563166,
-    "ast_hash": "92b7ee6fbb8a45b7334671838cb2c29b",
+    "mtime": 1781411527.6639981,
+    "ast_hash": "7ec29f5f75db922520560859da75a432",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherTextbooksPage.tsx": {
-    "mtime": 1781361075.4985373,
-    "ast_hash": "ab9bb962b98b7d8d9a7d9eee61b5e63d",
+    "mtime": 1781411631.721826,
+    "ast_hash": "4be0014e3863f76d494272b4a02a468f",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherVideoLibraryPage.tsx": {
@@ -1025,8 +1015,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\router\\index.tsx": {
-    "mtime": 1781354031.3884346,
-    "ast_hash": "72af00d09c478c63667941a2d8dcc2ca",
+    "mtime": 1781411418.8746364,
+    "ast_hash": "f62153e0c2beede9dda67d8bdf630b28",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\components\\common\\Breadcrumbs.tsx": {
@@ -1100,8 +1090,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\components\\common\\TutorialGuide.tsx": {
-    "mtime": 1781349696.100365,
-    "ast_hash": "95c502dc9c38fa401d45f4ad6bd586ea",
+    "mtime": 1781411567.1361077,
+    "ast_hash": "82c24bfb7bcde2115308882d69c41a22",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\components\\layout\\NotificationBell.tsx": {
