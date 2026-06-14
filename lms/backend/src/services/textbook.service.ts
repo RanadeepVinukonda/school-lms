@@ -17,7 +17,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { collections } from '../firebase/firestore';
 import { NotFoundError, ConflictError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
-import { runAIPipeline } from '../jobs/aiPipeline.job';
 import { getBucket } from '../firebase/storage';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -157,12 +156,9 @@ export async function createTextbook(data: {
   await collections.textbooks().doc(textbookId).set(textbookData);
 
   if (status === 'processing') {
-    // Trigger AI pipeline non-blocking
-    process.nextTick(() => {
-      runAIPipeline(textbookId).catch((err) => {
-        logger.error('runAIPipeline uncaught error', { textbookId, err });
-      });
-    });
+    // Trigger AI pipeline non-blocking via BullMQ queue
+    const { addUploadJob } = require('../jobs/queue');
+    await addUploadJob(textbookId, storagePath);
   } else {
     // No PDF — populate mock content for dev/demo
     await populateMockContent(textbookId, data.title);
@@ -190,11 +186,8 @@ export async function reprocessTextbook(textbookId: string, requestingTeacherId:
 
   await ref.update({ status: 'processing', failureReason: null, updatedAt: new Date().toISOString() });
 
-  process.nextTick(() => {
-    runAIPipeline(textbookId).catch((err) => {
-      logger.error('runAIPipeline uncaught error on reprocess', { textbookId, err });
-    });
-  });
+  const { addUploadJob } = require('../jobs/queue');
+  await addUploadJob(textbookId, data.storagePath);
 
   logger.info('Textbook reprocessing triggered', { textbookId });
   return { textbookId, status: 'processing' };
