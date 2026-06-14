@@ -135,7 +135,7 @@ export default function TeacherTextbooksPage() {
                   : `Browse textbooks or upload materials for ${selectedSubject?.name ?? ''}.`}
               </p>
             </div>
-            {selectedClassId && selectedSubjectId && (
+            {selectedClassId && selectedSubjectId && currentTextbooks.length > 0 && (
               <Button asChild>
                 <Link
                   to={`/teacher/textbooks/upload?classId=${selectedClassId}&subjectId=${selectedSubjectId}`}
