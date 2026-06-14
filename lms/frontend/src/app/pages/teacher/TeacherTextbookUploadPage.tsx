@@ -2,17 +2,18 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
+import UploadProgressBanner from '@/components/textbook/UploadProgressBanner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/skeleton';
-import { scrollReveal, cardStackReveal } from '@/lib/motion';
+import { cardStackReveal } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import { useAuthStore } from '@/store/authStore';
-import { db } from '@/firebase/config';
+import { useUploadStore } from '@/store/uploadStore';
 import { getAllSubjects, getAllClasses } from '@/services/dataService';
 import api from '@/services/api';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
@@ -106,6 +107,36 @@ export default function TeacherTextbookUploadPage() {
     if (!file || !selectedAssignment) return;
 
     setIsUploading(true);
+
+    const taskId = `upload_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const addLog = (msg: string) => {
+      useUploadStore.setState((s) => ({
+        tasks: s.tasks.map((t) =>
+          t.id === taskId ? { ...t, log: [...t.log, msg] } : t
+        ),
+      }));
+    };
+
+    useUploadStore.setState((s) => ({
+      tasks: [
+        ...s.tasks,
+        {
+          id: taskId,
+          file,
+          subjectId: selectedAssignment.subjectId,
+          subjectName: selectedAssignment.subjectName,
+          classId: selectedAssignment.classId,
+          stage: 'uploading',
+          progress: 0,
+          textbookId: null,
+          log: [],
+          error: null,
+        },
+      ],
+    }));
+
+    addLog('Uploading textbook to server...');
+
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -114,9 +145,32 @@ export default function TeacherTextbookUploadPage() {
       formData.append('title', title || file.name.replace('.pdf', ''));
       if (description) formData.append('description', description);
 
+      useUploadStore.setState((s) => ({
+        tasks: s.tasks.map((t) =>
+          t.id === taskId ? { ...t, progress: 40 } : t
+        ),
+      }));
+
       const res = await api.post('/textbooks', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (e) => {
+          if (e.total) {
+            const pct = Math.round((e.loaded / e.total) * 40);
+            useUploadStore.setState((s) => ({
+              tasks: s.tasks.map((t) =>
+                t.id === taskId ? { ...t, progress: pct } : t
+              ),
+            }));
+          }
+        },
       });
+
+      addLog('Textbook uploaded successfully!');
+      useUploadStore.setState((s) => ({
+        tasks: s.tasks.map((t) =>
+          t.id === taskId ? { ...t, progress: 100, stage: 'complete' } : t
+        ),
+      }));
 
       toast.success('Textbook uploaded successfully!');
       const textbookId = res.data?.data?.id;
@@ -130,6 +184,11 @@ export default function TeacherTextbookUploadPage() {
         err && typeof err === 'object' && 'message' in err
           ? (err as { message: string }).message
           : 'Upload failed. Please try again.';
+      useUploadStore.setState((s) => ({
+        tasks: s.tasks.map((t) =>
+          t.id === taskId ? { ...t, stage: 'error', error: message, progress: 0 } : t
+        ),
+      }));
       toast.error(message);
     } finally {
       setIsUploading(false);
@@ -182,6 +241,7 @@ export default function TeacherTextbookUploadPage() {
   return (
     <>
       <SEOHead title="Upload Textbook" description="Upload and process a textbook PDF" canonical="/teacher/textbooks/upload" />
+      <UploadProgressBanner />
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-3xl mx-auto space-y-16 pb-32">
         <motion.div variants={cardStackReveal} custom={0}>
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
