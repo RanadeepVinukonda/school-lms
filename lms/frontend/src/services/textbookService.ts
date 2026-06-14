@@ -1,6 +1,7 @@
 import { collection, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, query, where, deleteDoc, Timestamp, orderBy } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { logAudit } from '@/services/auditService';
+import api from '@/services/api';
 import type { Textbook, Chapter, Concept, GeneratedQuestion, GeneratedAssignment, CachedVideo, ConceptProgress, ConceptRelease } from '@/types/textbook';
 
 const TEXTBOOKS_COLLECTION = 'textbooks';
@@ -260,4 +261,10 @@ export async function setConceptRelease(
     summary: `Updated release settings for concept ${conceptId} in textbook ${textbookId} for class ${classId}`,
     newValue: data,
   });
+}
+
+/** Reprocess a failed textbook via API. */
+export async function reprocessTextbook(textbookId: string): Promise<any> {
+  const res = await api.post(`/textbooks/${textbookId}/reprocess`);
+  return res.data;
 }

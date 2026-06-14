@@ -211,6 +211,10 @@ service cloud.firestore {
       allow create: if isAdmin();
       allow read: if getRole() == 'super_admin';
       allow update, delete: if false;
+    // --- Processing Jobs collection ---
+    match /processingJobs/{jobId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin() || isTeacher();
     }
   }
 }

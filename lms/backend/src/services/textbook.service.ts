@@ -4,8 +4,8 @@
  * createTextbook():
  *   - Validates teacher is assigned to the class+subject (junction check)
  *   - Ensures only one textbook per class+subject (409 on conflict)
- *   - If pdfBuffer provided: uploads to Firebase Storage, sets status "processing",
- *     triggers runAIPipeline() via process.nextTick
+ *   - If pdfBuffer provided: uploads to Cloudinary, sets status "processing",
+ *     triggers AI processing pipeline via BullMQ
  *   - If no pdfBuffer: populates mock content (dev/demo), status "ready"
  *
  * reprocessTextbook():
@@ -17,7 +17,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { collections } from '../firebase/firestore';
 import { NotFoundError, ConflictError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
-import { getBucket } from '../firebase/storage';
+import { uploadBufferToCloudinary, deleteCloudinaryFile } from './cloudinary.service';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -126,15 +126,14 @@ export async function createTextbook(data: {
   const textbookId = uuidv4();
   const now = new Date().toISOString();
   let storagePath = '';
+  let pdfUrl = '';
   let status: 'processing' | 'ready' = 'ready';
 
   if (data.pdfBuffer && data.pdfBuffer.length > 0) {
-    storagePath = `textbooks/${textbookId}/original.pdf`;
-    const bucket = getBucket();
-    await bucket.file(storagePath).save(data.pdfBuffer, {
-      metadata: { contentType: 'application/pdf' },
-      resumable: false,
-    });
+    // Upload PDF to Cloudinary
+    const { url, publicId } = await uploadBufferToCloudinary(data.pdfBuffer, `textbooks/${textbookId}`);
+    storagePath = publicId; // Store Cloudinary public ID as storagePath
+    pdfUrl = url;
     status = 'processing';
   }
 
@@ -147,6 +146,7 @@ export async function createTextbook(data: {
     description: data.description || '',
     coverImage: data.coverImage || '',
     storagePath,
+    pdfUrl, // Store Cloudinary URL for later download
     status,
     chapterCount: 0,
     createdAt: now,
@@ -231,6 +231,11 @@ export async function deleteTextbook(textbookId: string) {
   const ref = collections.textbooks().doc(textbookId);
   const doc = await ref.get();
   if (!doc.exists) throw new NotFoundError('Textbook not found');
+  // Delete PDF from Cloudinary if exists
+  const data = doc.data();
+  if (data?.storagePath) {
+    await deleteCloudinaryFile(data.storagePath);
+  }
   await ref.delete();
   logger.info('Textbook deleted', { textbookId });
 }

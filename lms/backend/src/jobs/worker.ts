@@ -1,7 +1,7 @@
 import { Worker, Job } from 'bullmq';
 import { v4 as uuidv4 } from 'uuid';
 import { getAdminFirestore } from '../firebase/admin';
-import { getBucket } from '../firebase/storage';
+// import { getBucket } from '../firebase/storage'; // Removed unused Firebase storage import
 import { getRedisConnection } from '../config/redis';
 import { chatCompletion } from '../services/ai.service';
 import { getEmbedding } from '../services/transformers.service';
@@ -59,8 +59,19 @@ const uploadWorker = new Worker(
     await updateJobProgress(textbookId, 10, 'extract_text');
 
     const db = getAdminFirestore();
-    const bucket = getBucket();
-    const [pdfBuffer] = await bucket.file(storagePath).download();
+    // Retrieve the textbook doc to get the Cloudinary PDF URL
+    const textbookDoc = await db.collection('textbooks').doc(textbookId).get();
+    const pdfUrl = textbookDoc.data()?.pdfUrl;
+    if (!pdfUrl) {
+      throw new Error('PDF URL not found for textbook');
+    }
+    // Download the PDF into a buffer using fetch (node-fetch builtin in Node 18+)
+    const response = await fetch(pdfUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to download PDF from Cloudinary: ${response.statusText}`);
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    const pdfBuffer = Buffer.from(arrayBuffer);
 
     // Parse PDF page by page using pdf-parse hook
     // eslint-disable-next-line @typescript-eslint/no-require-imports

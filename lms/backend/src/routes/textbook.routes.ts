@@ -15,5 +15,6 @@ router.get('/:textbookId/chapters', authenticate, asyncHandler(textbookControlle
 router.get('/:textbookId/chapters/:chapterId/concepts', authenticate, asyncHandler(textbookController.listConcepts));
 router.get('/:textbookId', authenticate, asyncHandler(textbookController.getTextbook));
 router.delete('/:textbookId', authenticate, requireRole('teacher', 'admin'), asyncHandler(textbookController.deleteTextbook));
+router.post('/:textbookId/reprocess', authenticate, requireRole('teacher'), asyncHandler(textbookController.reprocessTextbook));
 
 export default router;

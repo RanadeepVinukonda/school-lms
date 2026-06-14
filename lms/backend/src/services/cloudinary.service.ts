@@ -19,4 +19,19 @@ export async function uploadFromUrl(url: string, folder = 'genesis') {
   return { url: result.secure_url, publicId: result.public_id };
 }
 
+/** Upload a file buffer to Cloudinary under the given folder. */
+export async function uploadBufferToCloudinary(buffer: Buffer, folder = 'genesis') {
+  return new Promise<{ url: string; publicId: string }>((resolve, reject) => {
+    const stream = cloudinary.v2.uploader.upload_stream({ folder }, (error, result) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve({ url: result!.secure_url, publicId: result!.public_id });
+      }
+    });
+    stream.end(buffer);
+  });
+}
+
+
 export default cloudinary;

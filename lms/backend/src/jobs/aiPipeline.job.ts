@@ -17,7 +17,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { getAdminFirestore } from '../firebase/admin';
-import { getBucket } from '../firebase/storage';
+// import { getBucket } from '../firebase/storage'; // Removed Firebase storage import
 import { chatCompletion } from '../services/ai.service';
 import { logger } from '../utils/logger';
 
@@ -216,8 +216,17 @@ export async function runAIPipeline(textbookId: string): Promise<void> {
 
     // Step 2: Download PDF
     logger.info('Downloading PDF', { textbookId, storagePath });
-    const bucket = getBucket();
-    const [pdfBuffer] = await bucket.file(storagePath).download();
+    // Retrieve the textbook document to get Cloudinary PDF URL
+    const pdfUrl = textbookData.pdfUrl;
+    if (!pdfUrl) {
+      throw new Error('PDF URL not found for textbook');
+    }
+    const response = await fetch(pdfUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to download PDF from Cloudinary: ${response.statusText}`);
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    const pdfBuffer = Buffer.from(arrayBuffer);
 
     // Step 3: Extract text with pdf-parse (dynamic import for CJS compat)
     // eslint-disable-next-line @typescript-eslint/no-require-imports

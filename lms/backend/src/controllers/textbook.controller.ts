@@ -46,3 +46,11 @@ export async function deleteTextbook(req: Request, res: Response) {
   await textbookService.deleteTextbook(req.params.textbookId);
   sendSuccess(res, null, 'Textbook deleted');
 }
+
+export async function reprocessTextbook(req: Request, res: Response) {
+  const result = await textbookService.reprocessTextbook(
+    req.params.textbookId,
+    req.user!.uid
+  );
+  sendSuccess(res, result, 'Textbook reprocessing triggered');
+}
