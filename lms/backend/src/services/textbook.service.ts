@@ -166,18 +166,41 @@ export async function createTextbook(data: {
   await collections.textbooks().doc(textbookId).set(textbookData);
 
   if (pdfUrl) {
-    try {
-      const { processUploadInline } = require('./pipeline.service');
-      await processUploadInline(textbookId);
-      status = 'ready';
-    } catch (err) {
-      logger.error('Inline pipeline failed, falling back to mock content', { textbookId, err });
-      await populateMockContent(textbookId, data.title);
-      await collections.textbooks().doc(textbookId).update({ status: 'ready' });
+    if (env.REDIS_URL) {
+      try {
+        const { addUploadJob } = require('../jobs/queue');
+        await addUploadJob(textbookId, storagePath);
+        status = 'processing';
+        logger.info('Textbook upload job added to background queue', { textbookId });
+      } catch (err) {
+        logger.error('Failed to add textbook upload job to queue, falling back to inline', { textbookId, err });
+        try {
+          const { processUploadInline } = require('./pipeline.service');
+          await processUploadInline(textbookId);
+          status = 'ready';
+        } catch (inlineErr) {
+          logger.error('Inline pipeline failed, falling back to mock content', { textbookId, inlineErr });
+          await populateMockContent(textbookId, data.title);
+          status = 'ready';
+        }
+      }
+    } else {
+      try {
+        const { processUploadInline } = require('./pipeline.service');
+        await processUploadInline(textbookId);
+        status = 'ready';
+      } catch (err) {
+        logger.error('Inline pipeline failed, falling back to mock content', { textbookId, err });
+        await populateMockContent(textbookId, data.title);
+        status = 'ready';
+      }
     }
   } else {
     await populateMockContent(textbookId, data.title);
+    status = 'ready';
   }
+
+  textbookData.status = status;
 
   // Update teacher-class-subject with textbookId
   if (assignment?.id) {
