@@ -480,8 +480,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\cloudinary.service.ts": {
-    "mtime": 1781420948.4168482,
-    "ast_hash": "dedec03bf327ed2d7f4641217754c87c",
+    "mtime": 1781441497.4145105,
+    "ast_hash": "e703cb2489d55384b6ae08de6b44e962",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\course.service.ts": {
@@ -1927,16 +1927,6 @@
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\video-ranker.service.ts": {
     "mtime": 1781418806.843779,
     "ast_hash": "660b3cc4466abb975742567a11e0ca70",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\scripts\\test_pipeline.ts": {
-    "mtime": 1781440052.7864785,
-    "ast_hash": "0e681ab654fd770f9b0fa807a7798633",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\scripts\\test_read.ts": {
-    "mtime": 1781440027.2308357,
-    "ast_hash": "6f3bed96cd9023492aed76551f182e5b",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\scripts\\verifyAssignments.ts": {

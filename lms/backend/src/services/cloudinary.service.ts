@@ -9,7 +9,7 @@ cloudinary.v2.config({
 
 /** Delete a file from Cloudinary by its public id. */
 export async function deleteCloudinaryFile(publicId: string) {
-  const result = await cloudinary.v2.uploader.destroy(publicId);
+  const result = await cloudinary.v2.uploader.destroy(publicId, { resource_type: 'raw' });
   return result;
 }
 
@@ -22,7 +22,7 @@ export async function uploadFromUrl(url: string, folder = 'genesis') {
 /** Upload a file buffer to Cloudinary under the given folder. */
 export async function uploadBufferToCloudinary(buffer: Buffer, folder = 'genesis') {
   return new Promise<{ url: string; publicId: string }>((resolve, reject) => {
-    const stream = cloudinary.v2.uploader.upload_stream({ folder }, (error, result) => {
+    const stream = cloudinary.v2.uploader.upload_stream({ folder, resource_type: 'raw' }, (error, result) => {
       if (error) {
         reject(error);
       } else {
