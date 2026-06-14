@@ -37,7 +37,7 @@ export default function SubjectsPage() {
 
   return (
     <>
-      <SEOHead title="My Subjects" description="View your enrolled subjects" />
+      <SEOHead title="My Subjects" description="View your subjects" />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -48,7 +48,7 @@ export default function SubjectsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-headline-sm md:text-headline-md font-bold tracking-tight">My Subjects</h1>
-              <p className="text-body-md text-muted-foreground">Subjects you are currently enrolled in</p>
+              <p className="text-body-md text-muted-foreground">Subjects in your curriculum</p>
             </div>
           </div>
         </motion.div>
@@ -58,16 +58,8 @@ export default function SubjectsPage() {
           isLoading={isLoading}
           error={isError ? error ?? new Error('Failed to load subjects') : null}
           loadingType="card"
-          emptyMessage="You are not currently enrolled in any subjects. Subjects will appear here once assigned."
+          emptyMessage="No subjects have been assigned to your class yet."
           emptyIcon={<Icon name="menu_book" size={40} />}
-          emptyAction={
-            <Button asChild>
-              <Link to="/student/subjects">
-                <Icon name="add" size={16} className="mr-2" />
-                Browse Subjects
-              </Link>
-            </Button>
-          }
           onRetry={() => refetch()}
           errorTitle="Failed to load subjects"
         >

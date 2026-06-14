@@ -27,7 +27,7 @@ interface ResultEntry { id: string; itemName: string; score: number; maxScore: n
 
 interface DashboardData {
   displayName: string; greeting: string; motivationalMessage: string; todayDate: string;
-  recentResults: ResultEntry[]; enrolledCount: number; className: string | null;
+  recentResults: ResultEntry[]; subjectsCount: number; className: string | null;
   classGrade: string | null; avgGrade: number; totalAssessments: number;
 }
 
@@ -82,7 +82,7 @@ export default function StudentDashboardPage() {
       return {
         displayName, greeting, motivationalMessage: motivationalMessages[messageIndex],
         todayDate: now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
-        recentResults, enrolledCount: classDoc?.subjectIds?.length ?? 0,
+        recentResults, subjectsCount: classDoc?.subjectIds?.length ?? 0,
         className: classDoc?.name ?? null, classGrade: classDoc?.grade ?? null,
         avgGrade, totalAssessments: grades.length,
       } satisfies DashboardData;
@@ -135,7 +135,7 @@ export default function StudentDashboardPage() {
                   className="grid grid-cols-2 lg:grid-cols-4 gap-4"
                 >
                   {[
-                    { icon: 'school', label: 'Subjects', value: dash.enrolledCount, color: 'text-primary', bg: 'bg-primary-container' },
+                    { icon: 'school', label: 'Subjects', value: dash.subjectsCount, color: 'text-primary', bg: 'bg-primary-container' },
                     { icon: 'grade', label: 'Avg Grade', value: `${dash.avgGrade}%`, color: 'text-success', bg: 'bg-success-container' },
                     { icon: 'checklist', label: 'Completed', value: dash.totalAssessments, color: 'text-warning', bg: 'bg-warning-container' },
                     { icon: 'group', label: 'Class', value: dash.className ?? '\u2014', color: 'text-tertiary', bg: 'bg-tertiary-container' },

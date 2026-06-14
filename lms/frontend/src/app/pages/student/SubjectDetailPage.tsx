@@ -10,14 +10,13 @@ import { Icon } from '@/components/ui/Icon';
 import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/lib/motion';
 import { useQuery } from '@tanstack/react-query';
 import { getTextbooksBySubject, getChaptersForTextbook } from '@/services/textbookService';
-import { getSubject, getEnrollmentsByStudent, getGradesByStudent } from '@/services/dataService';
+import { getSubject, getGradesByStudent } from '@/services/dataService';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
 import type { Textbook } from '@/types/textbook';
 
 interface DashboardData {
   subject: NonNullable<Awaited<ReturnType<typeof getSubject>>>;
-  enrollmentProgress: number;
   currentChapter: { textbookId: string; textbookTitle: string; id: string; title: string; order: number; conceptCount: number } | null;
   recentGrade: { itemName: string; score: number; maxScore: number; percentage: number; gradedAt: string } | null;
   textbooks: Array<Textbook & { chapterCount: number }>;
@@ -34,10 +33,9 @@ export default function SubjectDetailPage() {
       const studentId = authUser?.id;
       if (!studentId) return null;
 
-      const [subject, firestoreTextbooks, enrollments, grades] = await Promise.all([
+      const [subject, firestoreTextbooks, grades] = await Promise.all([
         getSubject(id),
         getTextbooksBySubject(id),
-        studentId ? getEnrollmentsByStudent(studentId) : Promise.resolve([]),
         studentId ? getGradesByStudent(studentId) : Promise.resolve([]),
       ]);
 
@@ -46,7 +44,6 @@ export default function SubjectDetailPage() {
       const textbooks = firestoreTextbooks
         .filter((tb) => tb.status !== 'processing' && (!authUser?.classId || tb.classId === authUser.classId))
         .map((tb) => ({ ...tb, chapterCount: tb.chapterCount ?? 0 }));
-      const enrollment = enrollments.find((e) => e.courseId === id);
       const firstTb = textbooks[0];
       let currentChapter = null;
       if (firstTb) {
@@ -69,7 +66,6 @@ export default function SubjectDetailPage() {
 
       return {
         subject,
-        enrollmentProgress: enrollment?.progress ?? 0,
         currentChapter,
         recentGrade: recentGrade ? { itemName: recentGrade.itemName ?? 'Assessment', score: recentGrade.score, maxScore: recentGrade.totalPoints, percentage: recentGrade.percentage, gradedAt: recentGrade.createdAt } : null,
         textbooks,
@@ -119,14 +115,6 @@ export default function SubjectDetailPage() {
                       </div>
                     </div>
                   </div>
-                  {d.enrollmentProgress > 0 && (
-                    <CardContent className="px-6 pb-5 pt-0 -mt-5 relative z-10">
-                      <div className="flex items-center gap-3 bg-background/80 backdrop-blur-sm rounded-lg p-3 shadow-sm border border-border/60">
-                        <Progress value={d.enrollmentProgress} className="flex-1 h-2.5" />
-                        <span className="text-sm font-medium tabular-nums shrink-0">{d.enrollmentProgress}% complete</span>
-                      </div>
-                    </CardContent>
-                  )}
                 </Card>
               </motion.div>
 

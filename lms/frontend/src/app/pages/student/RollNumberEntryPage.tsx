@@ -97,7 +97,7 @@ export default function RollNumberEntryPage() {
         userId: user.id,
         type: 'welcome',
         title: 'Welcome to Genesis LMS!',
-        body: `Hi ${user.displayName}! You're now enrolled in class. Explore your subjects, tasks, and exams to get started.`,
+        body: `Hi ${user.displayName}! Your student account is now active. Explore your subjects, tasks, and exams to get started.`,
         data: { role: 'student' },
         priority: 'high',
         read: false,

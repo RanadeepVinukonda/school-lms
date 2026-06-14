@@ -1,7 +1,7 @@
 # Graph Report - school  (2026-06-14)
 
 ## Corpus Check
-- 375 files · ~237,564 words
+- 375 files · ~237,455 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e72e9890`
+- Built from commit: `a1dc24a7`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -156,9 +156,9 @@
   frontend/index.html → lms/frontend/index.html
 - `Genesis entry page` --references--> `Genesis platform icon PNG`  [EXTRACTED]
   lms/frontend/index.html → lms/frontend/public/genesis_icon.png
-- `createAcademicYear()` --calls--> `sendCreated()`  [EXTRACTED]
-  lms/backend/src/controllers/academic-year.controller.ts → lms/backend/src/utils/response.ts
 - `updateAcademicYear()` --calls--> `sendSuccess()`  [EXTRACTED]
+  lms/backend/src/controllers/academic-year.controller.ts → lms/backend/src/utils/response.ts
+- `deleteAcademicYear()` --calls--> `sendSuccess()`  [EXTRACTED]
   lms/backend/src/controllers/academic-year.controller.ts → lms/backend/src/utils/response.ts
 
 ## Import Cycles
@@ -207,8 +207,8 @@ Cohesion: 0.07
 Nodes (60): AdminClassesPage(), ordinal(), subjectCategoryOptions, subjectIconOptions, TeacherClassSubject, AssignmentDoc, ExamDoc, ACTION_COLORS (+52 more)
 
 ### Community 11 - "Community 11"
-Cohesion: 0.29
-Nodes (6): createAcademicYear(), deleteAcademicYear(), getAcademicYear(), getCurrentAcademicYear(), listAcademicYears(), updateAcademicYear()
+Cohesion: 0.39
+Nodes (4): deleteUpload(), router, deleteCloudinaryFile(), sendError()
 
 ### Community 12 - "Community 12"
 Cohesion: 0.12
@@ -236,7 +236,7 @@ Nodes (14): AttachToConceptTab(), MyLibraryTab(), MyLibraryTabProps, TeacherVide
 
 ### Community 18 - "Community 18"
 Cohesion: 0.05
-Nodes (61): chat(), getAdminDashboard(), getCourseAnalytics(), getStudentDashboard(), getTeacherDashboard(), getProctoringLogs(), getResults(), getStudentAttempt() (+53 more)
+Nodes (60): getAdminDashboard(), getCourseAnalytics(), getStudentDashboard(), getTeacherDashboard(), getProctoringLogs(), getResults(), getStudentAttempt(), listForClass() (+52 more)
 
 ### Community 19 - "Community 19"
 Cohesion: 0.06
@@ -251,12 +251,12 @@ Cohesion: 0.06
 Nodes (34): dependencies, axios, class-variance-authority, clsx, date-fns, framer-motion, @hookform/resolvers, lucide-react (+26 more)
 
 ### Community 22 - "Community 22"
-Cohesion: 0.07
-Nodes (32): createClass(), createExam(), createConversation(), getConversations(), getMessages(), markConversationRead(), sendMessage(), bulkCreate() (+24 more)
+Cohesion: 0.06
+Nodes (37): createAcademicYear(), deleteAcademicYear(), getAcademicYear(), getCurrentAcademicYear(), listAcademicYears(), updateAcademicYear(), createExam(), createConversation() (+29 more)
 
 ### Community 23 - "Community 23"
 Cohesion: 0.06
-Nodes (52): deleteClass(), createCourse(), deleteCourse(), enrollStudent(), getCourse(), getEnrollments(), listCourses(), unenrollStudent() (+44 more)
+Nodes (50): addStudents(), createClass(), deleteClass(), getClass(), getRoster(), listClasses(), removeStudents(), updateClass() (+42 more)
 
 ### Community 24 - "Community 24"
 Cohesion: 0.06
@@ -315,8 +315,8 @@ Cohesion: 0.27
 Nodes (4): addVideo(), searchAndSave(), searchVideos(), searchVideosForConcept()
 
 ### Community 38 - "Community 38"
-Cohesion: 0.16
-Nodes (17): addStudents(), getClass(), getRoster(), listClasses(), removeStudents(), updateClass(), countArrayWhere(), countWhere() (+9 more)
+Cohesion: 0.13
+Nodes (20): createQuiz(), deleteQuiz(), getQuiz(), getResults(), listAllQuizzes(), releaseGrades(), startAttempt(), submitAttempt() (+12 more)
 
 ### Community 39 - "Community 39"
 Cohesion: 0.14
@@ -411,8 +411,8 @@ Cohesion: 0.29
 Nodes (6): description, main, name, version, name, version
 
 ### Community 72 - "Community 72"
-Cohesion: 0.10
-Nodes (21): listAuditLogs(), recoverEntity(), deleteUpload(), assignRole(), createUser(), deleteUser(), getStrengthsWeaknesses(), getUser() (+13 more)
+Cohesion: 0.12
+Nodes (18): chat(), listAuditLogs(), recoverEntity(), assignRole(), createUser(), deleteUser(), getStrengthsWeaknesses(), getUser() (+10 more)
 
 ### Community 73 - "Community 73"
 Cohesion: 0.15

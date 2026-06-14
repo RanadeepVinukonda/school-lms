@@ -18,7 +18,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { useQuery } from '@tanstack/react-query';
 import { changePassword } from '@/firebase/auth';
-import { getAllSubjects, getEnrollmentsByStudent, getGradesByStudent, getUser, getClass } from '@/services/dataService';
+import { getAllSubjects, getGradesByStudent, getUser, getClass } from '@/services/dataService';
 
 function EmptySection({ icon, message }: { icon: string; message: string }) {
   return (
@@ -41,17 +41,16 @@ export default function StudentProfilePage() {
       const user = firestoreUser as typeof firestoreUser & { studentId?: string; classId?: string };
       const authId = user.id;
 
-      const [allSubjects, enrollments, grades, classDoc] = await Promise.all([
+      const [allSubjects, grades, classDoc] = await Promise.all([
         getAllSubjects(),
-        getEnrollmentsByStudent(authId),
         getGradesByStudent(authId),
         user.classId ? getClass(user.classId) : Promise.resolve(null),
       ]);
 
       const subjectMap = new Map(allSubjects.map((s) => [s.id, s]));
-      const enrolledSubjects = enrollments
-        .map((e) => {
-          const s = subjectMap.get(e.courseId);
+      const studentSubjects = (classDoc?.subjectIds || [])
+        .map((subId) => {
+          const s = subjectMap.get(subId);
           if (!s) return null;
           return { ...s, icon: s.icon || 'school', color: s.color || '#6366f1' };
         })
@@ -65,7 +64,7 @@ export default function StudentProfilePage() {
         ? enrichedGrades.reduce((sum, g) => sum + g.percentage, 0) / enrichedGrades.length
         : 0;
 
-      return { user, enrolledSubjects, grades: enrichedGrades, assignmentGrades, avgPercentage, totalEnrolled: enrolledSubjects.length, className: classDoc?.name ?? null, classGrade: classDoc?.grade ?? null };
+      return { user, subjects: studentSubjects, grades: enrichedGrades, assignmentGrades, avgPercentage, totalSubjects: studentSubjects.length, className: classDoc?.name ?? null, classGrade: classDoc?.grade ?? null };
     },
     enabled: !!authUser,
   });
@@ -145,12 +144,12 @@ export default function StudentProfilePage() {
                   initial="hidden"
                   whileInView="show"
                   viewport={{ once: true, margin: '-60px' }}
-                  className="grid grid-cols-2 sm:grid-cols-4 gap-4"
+                  className="grid grid-cols-1 sm:grid-cols-3 gap-4"
                 >
                   <motion.div variants={cardStackReveal} custom={0}>
                     <Card className="p-5 flex items-center gap-4 border-border/60">
                       <div className="h-12 w-12 rounded-xl bg-primary-container flex items-center justify-center shrink-0"><Icon name="school" size={20} className="text-primary" /></div>
-                      <div><p className="text-label-xs text-muted-foreground">Subjects</p><p className="text-display-xs font-bold">{d.totalEnrolled}</p></div>
+                      <div><p className="text-label-xs text-muted-foreground">Subjects</p><p className="text-display-xs font-bold">{d.totalSubjects}</p></div>
                     </Card>
                   </motion.div>
                   <motion.div variants={cardStackReveal} custom={1}>
@@ -163,12 +162,6 @@ export default function StudentProfilePage() {
                     <Card className="p-5 flex items-center gap-4 border-border/60">
                       <div className="h-12 w-12 rounded-xl bg-warning-container flex items-center justify-center shrink-0"><Icon name="assignment" size={20} className="text-warning" /></div>
                       <div><p className="text-label-xs text-muted-foreground">Completed</p><p className="text-display-xs font-bold">{d.grades.length}</p></div>
-                    </Card>
-                  </motion.div>
-                  <motion.div variants={cardStackReveal} custom={3}>
-                    <Card className="p-5 flex items-center gap-4 border-border/60">
-                      <div className="h-12 w-12 rounded-xl bg-primary-container/50 flex items-center justify-center shrink-0"><Icon name="trending_up" size={20} className="text-primary" /></div>
-                      <div><p className="text-label-xs text-muted-foreground">Enrolled</p><p className="text-display-xs font-bold">{d.enrolledSubjects.length}</p></div>
                     </Card>
                   </motion.div>
                 </motion.div>
