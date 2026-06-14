@@ -555,8 +555,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\teacher-class-subject.service.ts": {
-    "mtime": 1781110059.1219742,
-    "ast_hash": "4218ae77828e0446b684aae1da24658e",
+    "mtime": 1781407583.9382546,
+    "ast_hash": "6ac6a6acb4b065c6b6c49b5e2b3516a7",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\teacher-video.service.ts": {
@@ -710,8 +710,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\layouts\\StudentLayout.tsx": {
-    "mtime": 1781365017.8896725,
-    "ast_hash": "620bfab98eda11b6f771d3f5c79f3888",
+    "mtime": 1781408735.4873312,
+    "ast_hash": "bf09bed576105896975bcd117ec23330",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\layouts\\TeacherLayout.tsx": {
@@ -1907,6 +1907,11 @@
   "C:\\Users\\USER\\Desktop\\school\\CHANGELOG.md": {
     "mtime": 1781343568.8955052,
     "ast_hash": "0e85206450c623c57853bf49f83b8acb",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\__tests__\\teacher-class-subject.service.test.ts": {
+    "mtime": 1781407825.9829755,
+    "ast_hash": "e6d5a7b24caaa4de93c47a7cd1aef344",
     "semantic_hash": ""
   }
 }
