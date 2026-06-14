@@ -1,15 +1,11 @@
-import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '@/firebase/config';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icon } from '@/components/ui/Icon';
 import { ConceptMindMap } from '@/components/teacher/ConceptMindMap';
@@ -22,40 +18,8 @@ interface ChapterWithConcepts extends Chapter {
   conceptsList: Concept[];
 }
 
-function useProcessingJob(textbookId: string | undefined) {
-  const [job, setJob] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!textbookId) {
-      setLoading(false);
-      return;
-    }
-    const docRef = doc(db, 'processingJobs', textbookId);
-    const unsubscribe = onSnapshot(
-      docRef,
-      (snap) => {
-        if (snap.exists()) {
-          setJob(snap.data());
-        } else {
-          setJob(null);
-        }
-        setLoading(false);
-      },
-      (error) => {
-        console.error('Error watching processing job:', error);
-        setLoading(false);
-      }
-    );
-    return () => unsubscribe();
-  }, [textbookId]);
-
-  return { job, loading };
-}
-
 export default function TeacherTextbookDetailPage() {
   const { textbookId } = useParams<{ textbookId: string }>();
-  const queryClient = useQueryClient();
 
   const textbookQuery = useQuery({
     queryKey: ['teacher-textbook', textbookId],
@@ -92,8 +56,6 @@ export default function TeacherTextbookDetailPage() {
     enabled: !!textbookId && textbookQuery.data?.status === 'ready',
   });
 
-  const { job, loading: jobLoading } = useProcessingJob(textbookId);
-
   const reprocessMutation = useMutation({
     mutationFn: async () => {
       if (!textbookId) return;
@@ -110,60 +72,9 @@ export default function TeacherTextbookDetailPage() {
 
   const allConcepts = (chaptersQuery.data ?? []).flatMap((ch) => ch.conceptsList);
 
-  // Helper to determine step status
-  const getStepStatus = (
-    stepIndex: number,
-    progress: number,
-    currentStep: string,
-    jobStatus: string
-  ): 'completed' | 'in_progress' | 'pending' | 'failed' => {
-    if (jobStatus === 'FAILED') {
-      const activeStepMap: Record<string, number> = {
-        extract_text: 1,
-        chapters: 2,
-        concepts: 3,
-      };
-      const activeStep = activeStepMap[currentStep] || 0;
-      if (stepIndex === activeStep) return 'failed';
-      if (stepIndex < activeStep) return 'completed';
-      return 'pending';
-    }
-
-    if (stepIndex === 0) return 'completed'; // Upload is always completed at this point
-
-    if (stepIndex === 1) {
-      if (progress >= 25 || currentStep !== 'extract_text') return 'completed';
-      if (currentStep === 'extract_text') return 'in_progress';
-      return 'pending';
-    }
-
-    if (stepIndex === 2) {
-      if (progress >= 45 || currentStep === 'concepts' || currentStep === 'done') return 'completed';
-      if (currentStep === 'chapters') return 'in_progress';
-      return 'pending';
-    }
-
-    if (stepIndex === 3) {
-      if (progress === 100 || currentStep === 'done') return 'completed';
-      if (currentStep === 'concepts') return 'in_progress';
-      return 'pending';
-    }
-
-    return 'pending';
-  };
-
   const renderProgressTracker = (tb: any) => {
-    const progressVal = job?.progress ?? (tb.status === 'failed' ? 0 : 5);
-    const jobStatus = job?.status ?? (tb.status === 'failed' ? 'FAILED' : 'PROCESSING');
-    const currentStep = job?.currentStep ?? (tb.status === 'failed' ? 'done' : 'extract_text');
-    const errorLog = job?.error ?? tb.failureReason;
-
-    const steps = [
-      { title: 'Upload Textbook', desc: 'Textbook PDF successfully uploaded' },
-      { title: 'Raw Text Extraction', desc: 'Parsing pages and extracting text segments' },
-      { title: 'Curriculum & Chapters Structuring', desc: 'AI aligning TOC and outline' },
-      { title: 'Concept Notes & Questions Compilation', desc: 'Generating detailed learning resources and quiz banks' },
-    ];
+    const isFailed = tb.status === 'failed';
+    const errorLog = tb.failureReason;
 
     return (
       <Card className="border-border/60">
@@ -171,7 +82,7 @@ export default function TeacherTextbookDetailPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h2 className="text-title-md font-bold flex items-center gap-2">
-                {jobStatus === 'FAILED' ? (
+                {isFailed ? (
                   <>
                     <Icon name="error" className="text-red-500 animate-pulse" />
                     Processing Failed
@@ -179,17 +90,17 @@ export default function TeacherTextbookDetailPage() {
                 ) : (
                   <>
                     <Icon name="hourglass_top" className="text-primary animate-spin" />
-                    AI Processing Pipeline Active
+                    Processing Textbook...
                   </>
                 )}
               </h2>
               <p className="text-body-sm text-muted-foreground mt-1">
-                {jobStatus === 'FAILED'
-                  ? 'The extraction pipeline encountered an error. Review the logs below and click reprocess to try again.'
-                  : 'Your textbook is being parsed by AI to generate chapters, concepts, study notes, videos, and questions.'}
+                {isFailed
+                  ? 'The extraction pipeline encountered an error.'
+                  : 'Your textbook is being processed. This page will update automatically.'}
               </p>
             </div>
-            {jobStatus === 'FAILED' && (
+            {isFailed && (
               <Button
                 onClick={() => reprocessMutation.mutate()}
                 disabled={reprocessMutation.isPending}
@@ -210,46 +121,7 @@ export default function TeacherTextbookDetailPage() {
             )}
           </div>
 
-          <div className="space-y-2">
-            <div className="flex justify-between items-center text-sm font-semibold">
-              <span>Overall Progress</span>
-              <span>{progressVal}%</span>
-            </div>
-            <Progress value={progressVal} className="h-2" />
-          </div>
-
-          <div className="relative border-l border-border pl-6 ml-3 space-y-6">
-            {steps.map((step, idx) => {
-              const status = getStepStatus(idx, progressVal, currentStep, jobStatus);
-              let iconNode = <Icon name="radio_button_unchecked" className="text-muted-foreground" size={18} />;
-              let statusClass = 'text-muted-foreground';
-
-              if (status === 'completed') {
-                iconNode = <Icon name="check_circle" className="text-green-500" size={18} />;
-                statusClass = 'text-foreground font-medium';
-              } else if (status === 'in_progress') {
-                iconNode = <Icon name="sync" className="text-primary animate-spin" size={18} />;
-                statusClass = 'text-primary font-semibold';
-              } else if (status === 'failed') {
-                iconNode = <Icon name="error" className="text-red-500" size={18} />;
-                statusClass = 'text-red-500 font-bold';
-              }
-
-              return (
-                <div key={idx} className="relative">
-                  <div className="absolute -left-[35px] top-0.5 bg-background p-0.5 rounded-full">
-                    {iconNode}
-                  </div>
-                  <div>
-                    <h4 className={`text-sm ${statusClass}`}>{step.title}</h4>
-                    <p className="text-xs text-muted-foreground mt-0.5">{step.desc}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {jobStatus === 'FAILED' && errorLog && (
+          {isFailed && errorLog && (
             <div className="rounded-xl border border-red-200 bg-red-50/50 dark:bg-red-950/10 p-4 space-y-2">
               <h4 className="text-xs font-bold text-red-700 dark:text-red-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Icon name="terminal" size={14} />
