@@ -5,6 +5,7 @@ import { sendSuccess, sendCreated } from '../utils/response';
 export async function createTextbook(req: Request, res: Response) {
   const result = await textbookService.createTextbook({
     ...req.body,
+    pdfBuffer: req.file?.buffer,
     teacherId: req.user!.uid,
   });
   sendCreated(res, result, 'Textbook created');
