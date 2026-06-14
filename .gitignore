@@ -10,3 +10,5 @@ _ignore_this/
 
 .vscode/
 .kiro/
+
+.vercel

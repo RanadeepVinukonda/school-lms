@@ -51,7 +51,8 @@ export async function deleteTextbook(req: Request, res: Response) {
 export async function reprocessTextbook(req: Request, res: Response) {
   const result = await textbookService.reprocessTextbook(
     req.params.textbookId,
-    req.user!.uid
+    req.user!.uid,
+    req.user!.role
   );
   sendSuccess(res, result, 'Textbook reprocessing triggered');
 }

@@ -188,14 +188,16 @@ export async function createTextbook(data: {
   return textbookData;
 }
 
-export async function reprocessTextbook(textbookId: string, requestingTeacherId: string) {
+export async function reprocessTextbook(textbookId: string, requestingTeacherId: string, requestingTeacherRole?: string) {
   const ref = collections.textbooks().doc(textbookId);
   const doc = await ref.get();
 
   if (!doc.exists) throw new NotFoundError('Textbook not found');
 
   const data = doc.data()!;
-  if (data.teacherId !== requestingTeacherId) throw new ForbiddenError('You do not own this textbook');
+  if (requestingTeacherRole !== 'admin' && data.teacherId !== requestingTeacherId) {
+    throw new ForbiddenError('You do not own this textbook');
+  }
   if (data.status !== 'failed') throw new ConflictError(`Cannot reprocess textbook with status "${data.status}". Only "failed" textbooks can be reprocessed.`);
   if (!data.storagePath) throw new ConflictError('Textbook has no storagePath — cannot reprocess without an uploaded PDF.');
 

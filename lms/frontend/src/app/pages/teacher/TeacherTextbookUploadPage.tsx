@@ -37,7 +37,7 @@ export default function TeacherTextbookUploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedClassId, setSelectedClassId] = useState('');
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -67,16 +67,26 @@ export default function TeacherTextbookUploadPage() {
   const assignmentList: TeacherAssignment[] = assignments ?? [];
 
   const selectedAssignment = assignmentList.find(
-    (a) => a.classId === selectedClassId && (querySubjectId ? a.subjectId === querySubjectId : true)
+    (a) => a.id === selectedAssignmentId
   ) ?? (assignmentList.length === 1 ? assignmentList[0] : null);
 
   useEffect(() => {
-    if (queryClassId) {
-      setSelectedClassId(queryClassId);
-    } else if (assignmentList.length === 1 && !selectedClassId) {
-      setSelectedClassId(assignmentList[0].classId);
+    if (queryClassId && querySubjectId && assignmentList.length > 0) {
+      const found = assignmentList.find(
+        (a) => a.classId === queryClassId && a.subjectId === querySubjectId
+      );
+      if (found) {
+        setSelectedAssignmentId(found.id);
+      }
+    } else if (queryClassId && assignmentList.length > 0) {
+      const found = assignmentList.find((a) => a.classId === queryClassId);
+      if (found) {
+        setSelectedAssignmentId(found.id);
+      }
+    } else if (assignmentList.length === 1 && !selectedAssignmentId) {
+      setSelectedAssignmentId(assignmentList[0].id);
     }
-  }, [assignmentList, selectedClassId, queryClassId]);
+  }, [assignmentList, selectedAssignmentId, queryClassId, querySubjectId]);
 
   useEffect(() => {
     if (file && !title) {
@@ -152,7 +162,7 @@ export default function TeacherTextbookUploadPage() {
       }));
 
       const res = await api.post('/textbooks', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { 'Content-Type': undefined },
         onUploadProgress: (e) => {
           if (e.total) {
             const pct = Math.round((e.loaded / e.total) * 40);
@@ -292,15 +302,15 @@ export default function TeacherTextbookUploadPage() {
                 </div>
               ) : assignmentList.length > 1 ? (
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Class</label>
+                  <label className="text-sm font-medium mb-2 block">Class &amp; Subject</label>
                   <select
-                    value={selectedClassId}
-                    onChange={(e) => setSelectedClassId(e.target.value)}
+                    value={selectedAssignmentId}
+                    onChange={(e) => setSelectedAssignmentId(e.target.value)}
                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                   >
-                    <option value="">Select a class...</option>
+                    <option value="">Select a class &amp; subject...</option>
                     {assignmentList.map((a) => (
-                      <option key={a.classId} value={a.classId}>
+                      <option key={a.id} value={a.id}>
                         {a.className} — {a.subjectName}
                       </option>
                     ))}

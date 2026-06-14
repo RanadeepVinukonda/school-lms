@@ -180,8 +180,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\controllers\\textbook.controller.ts": {
-    "mtime": 1781421500.6124067,
-    "ast_hash": "16ac9d4c7184a5adb3bd1b93ebe04ea2",
+    "mtime": 1781440223.2575412,
+    "ast_hash": "e95afd10dee270e3e8e2b84d58def265",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\controllers\\upload.controller.ts": {
@@ -214,14 +214,9 @@
     "ast_hash": "ba6fb70ec602acbb6c1b117e64da300b",
     "semantic_hash": ""
   },
-  "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\firebase\\storage.ts": {
-    "mtime": 1781063744.8609228,
-    "ast_hash": "fe3ae2a80b6b2650875fcf080cf1a81b",
-    "semantic_hash": ""
-  },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\index.ts": {
-    "mtime": 1781418852.214896,
-    "ast_hash": "6de57263a19d4517d1cddaf00e92f109",
+    "mtime": 1781434866.1501207,
+    "ast_hash": "b21260aa647f6000a991d789e5035832",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\jobs\\cleanupExpired.job.ts": {
@@ -400,8 +395,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\routes\\textbook.routes.ts": {
-    "mtime": 1781421513.7009234,
-    "ast_hash": "638f85aab9fa9456a42480628fefce8e",
+    "mtime": 1781437832.8546238,
+    "ast_hash": "0440f3768f9048fdf0389735e3ac9e9d",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\routes\\upload.routes.ts": {
@@ -565,13 +560,13 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\textbook.service.ts": {
-    "mtime": 1781421448.6934278,
-    "ast_hash": "f1e85230e858234056d4d668cd4a1847",
+    "mtime": 1781440228.9422832,
+    "ast_hash": "80c718208cff8b358dd51de0d7633281",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\upload.service.ts": {
-    "mtime": 1780752907.0999627,
-    "ast_hash": "2d06ec7194bb10a0f89575f276fabcf9",
+    "mtime": 1781423003.5784729,
+    "ast_hash": "acfa5d1120e5e24ebdbafeef16be7ccc",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\user.service.ts": {
@@ -965,13 +960,13 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherTextbookDetailPage.tsx": {
-    "mtime": 1781421559.406818,
-    "ast_hash": "6032009c9990d68dc6202c126c4be076",
+    "mtime": 1781432948.6523013,
+    "ast_hash": "b98c8172b285c1aeda84ec48d7a9a041",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherTextbookUploadPage.tsx": {
-    "mtime": 1781411527.6639981,
-    "ast_hash": "7ec29f5f75db922520560859da75a432",
+    "mtime": 1781440217.059355,
+    "ast_hash": "6fb8b91af028355007aa55393ebfcbeb",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\app\\pages\\teacher\\TeacherTextbooksPage.tsx": {
@@ -1110,8 +1105,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\components\\textbook\\UploadProgressBanner.tsx": {
-    "mtime": 1781349696.38981,
-    "ast_hash": "102559f69c5fe84e4f85f9e41e98d938",
+    "mtime": 1781422946.0057037,
+    "ast_hash": "87db3b701de08604c41a1b043009659b",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\components\\ui\\Icon.tsx": {
@@ -1270,18 +1265,13 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\firebase\\config.ts": {
-    "mtime": 1780476973.1357129,
-    "ast_hash": "492193002bb745119578f689e2284290",
+    "mtime": 1781422966.7536047,
+    "ast_hash": "0656d6ba56ee05560a1b8b2226c04673",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\firebase\\firestore.ts": {
     "mtime": 1780410311.3790536,
     "ast_hash": "a0849ff34495ac28c9e905b308fb9f0e",
-    "semantic_hash": ""
-  },
-  "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\firebase\\storage.ts": {
-    "mtime": 1780410311.6504543,
-    "ast_hash": "cbd4e923c34053de5d009c3f0929ef1b",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\hooks\\useDebounce.ts": {
@@ -1345,8 +1335,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\services\\api.ts": {
-    "mtime": 1781095543.5849948,
-    "ast_hash": "38330da39de64e6e04a03cc97539f40a",
+    "mtime": 1781437447.1601648,
+    "ast_hash": "50e685db4a0c763c5002b0a374d9d095",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\services\\assignmentService.ts": {
@@ -1415,13 +1405,13 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\services\\storageService.ts": {
-    "mtime": 1780753000.0040064,
-    "ast_hash": "c7e5a0c0e3f8bb78be557e8874737c63",
+    "mtime": 1781423183.556443,
+    "ast_hash": "85c945bb0df21c76eee95fbe301caa06",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\services\\textbookService.ts": {
-    "mtime": 1781421535.0735776,
-    "ast_hash": "0684aeaf815974d5ce5b3f048f85e824",
+    "mtime": 1781427323.0318127,
+    "ast_hash": "86d9e75c8e70337fd887122222ed94fb",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\frontend\\src\\services\\userService.ts": {
@@ -1915,13 +1905,13 @@
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\jobs\\queue.ts": {
-    "mtime": 1781418823.157333,
-    "ast_hash": "1157656fdb8d186e50f296ba5bc23d87",
+    "mtime": 1781432948.625247,
+    "ast_hash": "580b8b8f24f0b5462dd1ce09d1ece76d",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\jobs\\worker.ts": {
-    "mtime": 1781421112.9544032,
-    "ast_hash": "bd9514f879a189a72e225d3bdad83dbe",
+    "mtime": 1781432948.625247,
+    "ast_hash": "f5ccc1fa1b0ffdc01e3520982aa63682",
     "semantic_hash": ""
   },
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\resource-ranker.service.ts": {
@@ -1937,6 +1927,31 @@
   "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\video-ranker.service.ts": {
     "mtime": 1781418806.843779,
     "ast_hash": "660b3cc4466abb975742567a11e0ca70",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\scripts\\test_pipeline.ts": {
+    "mtime": 1781440052.7864785,
+    "ast_hash": "0e681ab654fd770f9b0fa807a7798633",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\scripts\\test_read.ts": {
+    "mtime": 1781440027.2308357,
+    "ast_hash": "6f3bed96cd9023492aed76551f182e5b",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\scripts\\verifyAssignments.ts": {
+    "mtime": 1781439460.397483,
+    "ast_hash": "b1e2ffcdf8e907e33b1275f3307f0173",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\lms\\backend\\src\\services\\pipeline.service.ts": {
+    "mtime": 1781435957.3364315,
+    "ast_hash": "be86922c6b03039714791edf35f932b9",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\USER\\Desktop\\school\\lms\\docs\\textbook_pipeline_plan.md": {
+    "mtime": 1781430105.4601002,
+    "ast_hash": "416bd967bfaafb8bd5818f155eaab613",
     "semantic_hash": ""
   }
 }
