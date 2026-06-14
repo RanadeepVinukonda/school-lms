@@ -1,60 +1,72 @@
-import {
-  ref,
-  uploadBytes,
-  uploadBytesResumable,
-  getDownloadURL,
-  deleteObject,
-  listAll,
-} from 'firebase/storage';
-import { storage } from '@/firebase/config';
+const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || '';
+const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || '';
 
-/** Firebase Storage service for file upload, download, and management. */
+function cloudinaryUpload(
+  file: File,
+  folder: string,
+  onProgress?: (pct: number) => void,
+): Promise<{ url: string; path: string }> {
+  if (!CLOUD_NAME || !UPLOAD_PRESET) {
+    throw new Error('Cloudinary not configured. Set VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET in .env');
+  }
+
+  const form = new FormData();
+  form.append('file', file);
+  form.append('upload_preset', UPLOAD_PRESET);
+  if (folder) form.append('folder', folder);
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    const resourceType = file.type.startsWith('video/') ? 'video' : 'image';
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress(Math.round((e.loaded / e.total) * 100));
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const data = JSON.parse(xhr.responseText);
+        resolve({ url: data.secure_url, path: data.public_id });
+      } else {
+        try {
+          const err = JSON.parse(xhr.responseText);
+          reject(new Error(err.error?.message || 'Upload failed'));
+        } catch {
+          reject(new Error(`Upload failed with status ${xhr.status}`));
+        }
+      }
+    };
+
+    xhr.onerror = () => reject(new Error('Network error during upload'));
+    xhr.send(form);
+  });
+}
+
 export const storageService = {
-  /** Upload a file to Firebase Storage at the given path with progress tracking. */
-  async uploadFile(path: string, file: File, onProgress?: (progress: number) => void) {
-    const storageRef = ref(storage, path);
-    const uploadTask = uploadBytesResumable(storageRef, file);
-
-    return new Promise<{ url: string; path: string }>((resolve, reject) => {
-      uploadTask.on(
-        'state_changed',
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          onProgress?.(progress);
-        },
-        (error) => reject(error),
-        async () => {
-          const url = await getDownloadURL(uploadTask.snapshot.ref);
-          resolve({ url, path });
-        },
-      );
-    });
+  async uploadFile(path: string, file: File, onProgress?: (pct: number) => void) {
+    const result = await cloudinaryUpload(file, path, onProgress);
+    return result;
   },
 
-  /** Upload raw bytes (Blob/Uint8Array/ArrayBuffer) to Firebase Storage at the given path. */
   async uploadBytes(path: string, data: Blob | Uint8Array | ArrayBuffer) {
-    const storageRef = ref(storage, path);
-    const result = await uploadBytes(storageRef, data);
-    const url = await getDownloadURL(result.ref);
-    return { url, path: result.ref.fullPath };
+    const blob = data instanceof Blob ? data : new Blob([data as BlobPart]);
+    const file = new File([blob], 'upload.bin');
+    return cloudinaryUpload(file, path);
   },
 
-  /** Get a download URL for a file at the given storage path. */
-  async getDownloadUrl(path: string) {
-    const storageRef = ref(storage, path);
-    return getDownloadURL(storageRef);
+  async getDownloadUrl(publicId: string) {
+    return `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${publicId}`;
   },
 
-  /** Delete a file from Firebase Storage at the given path. */
-  async deleteFile(path: string) {
-    const storageRef = ref(storage, path);
-    await deleteObject(storageRef);
+  async deleteFile(publicId: string) {
+    const { default: api } = await import('./api');
+    await api.post('/upload/delete', { publicId });
   },
 
-  /** List all items (files) at a given storage path prefix. */
-  async listFiles(path: string) {
-    const storageRef = ref(storage, path);
-    const result = await listAll(storageRef);
-    return result.items;
+  async listFiles(_path: string) {
+    throw new Error('Cloudinary listFiles is not supported via client-side API');
   },
 };
