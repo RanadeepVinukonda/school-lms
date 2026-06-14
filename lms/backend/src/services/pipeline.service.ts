@@ -37,7 +37,7 @@ Generate ALL of the following in ONE JSON response:
 4. formulas — Formulas in LaTeX like $E=mc^2$ (if applicable, else empty string)
 5. examples — Practical solved examples or applications (2-3 items)
 6. learningObjectives — Bullet list of learning objectives (3-4 items)
-7. questions — 2 questions for EACH of these 12 types (24 total): mcq, fill_blank, true_false, matching, descriptive, numerical, passage, assertion_reason, case_study, application_based, hots, short_answer
+7. questions — 3 questions for EACH of these 12 types (36 total): mcq, fill_blank, true_false, matching, descriptive, numerical, passage, assertion_reason, case_study, application_based, hots, short_answer
 
 Return ONLY this JSON with no markdown:
 {
@@ -192,27 +192,75 @@ export async function processUploadInline(textbookId: string) {
 
   // 2. Gemini TOC planning
   logger.info('Generating TOC structure', { textbookId });
-  const tocInput = fullText.slice(0, 35000);
-
   let structure: { chapters: Array<{ title: string; order: number; summary: string; concepts: string[] }> };
 
   try {
-    const tocPrompt = `Read this textbook's opening content and generate a detailed curriculum outline for "${title}".
-Identify real chapter titles and concept names from the actual content.
-Return JSON: { "chapters": [{ "title": "chapter title", "order": number, "summary": "short summary", "concepts": ["1.1 Concept Name", "1.2 Next Concept"] }] }
-Content: ${tocInput}`;
+    const tocInput = fullText.slice(0, 80000);
+
+    const tocPrompt = `You are analyzing a textbook titled "${title}". Your task is to extract the COMPLETE table of contents.
+
+Look for the table of contents section in the text below. Find EVERY chapter listed in the textbook — do not skip any. For each chapter, also extract the subsections/concept names.
+
+Rules:
+- Extract ALL chapters. If the textbook has 15 chapters, return all 15.
+- Use the ACTUAL chapter titles from the textbook — do not summarize or rename them.
+- For each chapter, include 2-4 concept names based on what the chapter actually covers.
+- If you cannot find an explicit table of contents, scan the headings and structure of the full text to infer chapters.
+
+Return ONLY valid JSON:
+{
+  "chapters": [
+    { "title": "Exact Chapter Title", "order": 1, "summary": "Brief description of what this chapter covers", "concepts": ["1.1 First Concept", "1.2 Second Concept"] }
+  ]
+}
+
+Textbook content:
+${tocInput}`;
 
     const raw = await chatCompletion({
       model: AI_MODEL,
       messages: [
-        { role: 'system', content: 'You respond in valid JSON only.' },
+        { role: 'system', content: 'You respond in valid JSON only. Extract ALL chapters from the textbook content.' },
         { role: 'user', content: tocPrompt },
       ],
-      temperature: 0.3,
-      max_tokens: 8192,
+      temperature: 0.2,
+      max_tokens: 16384,
     });
     const cleaned = raw.trim().replace(/^```json?/, '').replace(/```$/, '').trim();
     structure = JSON.parse(cleaned);
+
+    logger.info('TOC extraction result', { textbookId, chapterCount: structure.chapters?.length || 0 });
+
+    // If very few chapters returned, try again with more of the text
+    if (structure.chapters.length <= 2 && fullText.length > 80000) {
+      logger.warn('Only 2 or fewer chapters detected — retrying with full text', { textbookId });
+      const retryPrompt = `I previously extracted only ${structure.chapters.length} chapters from "${title}", but this is wrong. The textbook has MANY more chapters.
+
+Read the ENTIRE text below and extract EVERY chapter heading you can find. Look for patterns like "Chapter 1", "Chapter 2", "Unit 1", "Part I", numbered headings, or any section title.
+
+Return JSON: { "chapters": [{ "title": string, "order": number, "summary": string, "concepts": [string] }] }
+
+Full textbook text:
+${fullText.slice(0, 120000)}`;
+
+      const retryRaw = await chatCompletion({
+        model: AI_MODEL,
+        messages: [
+          { role: 'system', content: 'You respond in valid JSON only. Extract ALL chapters.' },
+          { role: 'user', content: retryPrompt },
+        ],
+        temperature: 0.1,
+        max_tokens: 16384,
+      });
+
+      const retryCleaned = retryRaw.trim().replace(/^```json?/, '').replace(/```$/, '').trim();
+      const retryStructure = JSON.parse(retryCleaned);
+
+      if (retryStructure.chapters && retryStructure.chapters.length > structure.chapters.length) {
+        structure = retryStructure;
+        logger.info('Retry found more chapters', { textbookId, chapterCount: structure.chapters.length });
+      }
+    }
   } catch (err) {
     logger.error('TOC generation failed, using fallback', { err });
     structure = {
