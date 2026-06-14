@@ -42,6 +42,10 @@ export default function TeacherTextbookDetailPage() {
       return tb;
     },
     enabled: !!textbookId,
+    refetchInterval: (query) => {
+      const data = query.state.data as { status?: string } | undefined;
+      return data?.status === 'processing' ? 3000 : false;
+    },
   });
 
   const subjectQuery = useQuery({
@@ -102,6 +106,10 @@ export default function TeacherTextbookDetailPage() {
   const renderProgressTracker = (tb: any) => {
     const isFailed = tb.status === 'failed';
     const errorLog = tb.failureReason;
+    const total = tb.totalConcepts || 0;
+    const completed = tb.completedConcepts || 0;
+    const progressVal = total > 0 ? Math.round(25 + (completed / total) * 75) : 5;
+    const stage = total > 0 ? `${completed} / ${total} concepts` : 'Extracting text...';
 
     return (
       <Card className="border-border/60">
@@ -117,14 +125,14 @@ export default function TeacherTextbookDetailPage() {
                 ) : (
                   <>
                     <Icon name="hourglass_top" className="text-primary animate-spin" />
-                    Processing Textbook...
+                    AI Processing Pipeline Active
                   </>
                 )}
               </h2>
               <p className="text-body-sm text-muted-foreground mt-1">
                 {isFailed
                   ? 'The extraction pipeline encountered an error.'
-                  : 'Your textbook is being processed. This page will update automatically.'}
+                  : 'Your textbook is being parsed by AI to generate chapters, concepts, study notes, videos, and questions.'}
               </p>
             </div>
             <div className="flex gap-2 self-start md:self-auto shrink-0">
@@ -178,6 +186,22 @@ export default function TeacherTextbookDetailPage() {
               )}
             </div>
           </div>
+
+          {!isFailed && (
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-sm font-semibold">
+                <span>Overall Progress</span>
+                <span>{progressVal}%</span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
+                <div
+                  className="bg-primary h-full rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${progressVal}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">{stage}</p>
+            </div>
+          )}
 
           {isFailed && errorLog && (
             <div className="rounded-xl border border-red-200 bg-red-50/50 dark:bg-red-950/10 p-4 space-y-2">

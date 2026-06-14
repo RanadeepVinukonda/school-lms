@@ -1,7 +1,7 @@
 import { Worker, Job } from 'bullmq';
 import { v4 as uuidv4 } from 'uuid';
 import { getAdminFirestore } from '../firebase/admin';
-// import { getBucket } from '../firebase/storage'; // Removed unused Firebase storage import
+import admin from 'firebase-admin';
 import { getRedisConnection } from '../config/redis';
 import { chatCompletion } from '../services/ai.service';
 import { getEmbedding } from '../services/transformers.service';
@@ -9,14 +9,15 @@ import { searchAndRankVideos } from '../services/video-ranker.service';
 import { matchAndRankResources } from '../services/resource-ranker.service';
 import { logger } from '../utils/logger';
 
-// Delay helper to respect API rate limits on free-tier keys
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 const connection = getRedisConnection();
 
-/**
- * UTILITY: Update the textbook and job progress in Firestore
- */
+async function getJobDbRefs(textbookId: string) {
+  const db = getAdminFirestore();
+  const textbookRef = db.collection('textbooks').doc(textbookId);
+  const jobRef = db.collection('processingJobs').doc(textbookId);
+  return { db, textbookRef, jobRef };
+}
+
 async function updateJobProgress(
   textbookId: string,
   progress: number,
@@ -24,20 +25,10 @@ async function updateJobProgress(
   status: 'PROCESSING' | 'COMPLETED' | 'FAILED' = 'PROCESSING',
   error: string | null = null
 ) {
-  const db = getAdminFirestore();
-  const jobRef = db.collection('processingJobs').doc(textbookId);
-  const textbookRef = db.collection('textbooks').doc(textbookId);
-
+  const { textbookRef, jobRef } = await getJobDbRefs(textbookId);
   const now = new Date().toISOString();
-  
-  await jobRef.set({
-    id: textbookId,
-    status,
-    progress,
-    currentStep,
-    error,
-    updatedAt: now,
-  }, { merge: true });
+
+  await jobRef.set({ id: textbookId, status, progress, currentStep, error, updatedAt: now }, { merge: true });
 
   if (status === 'COMPLETED') {
     await textbookRef.update({ status: 'ready', updatedAt: now, failureReason: null });
@@ -48,139 +39,87 @@ async function updateJobProgress(
   }
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// 1. UPLOAD WORKER
-// ──────────────────────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────
+// 1. UPLOAD WORKER  —  PDF parse → Gemini TOC → save structure
+// ──────────────────────────────────────────────────────────────
 const uploadWorker = new Worker(
   'uploadQueue',
   async (job: Job) => {
     const { textbookId, storagePath } = job.data;
-    logger.info('uploadWorker: Starting text extraction', { textbookId });
-    await updateJobProgress(textbookId, 10, 'extract_text');
+    logger.info('uploadWorker: Starting PDF extraction and TOC planning', { textbookId });
 
     const db = getAdminFirestore();
-    // Retrieve the textbook doc to get the Cloudinary PDF URL
     const textbookDoc = await db.collection('textbooks').doc(textbookId).get();
     const pdfUrl = textbookDoc.data()?.pdfUrl;
-    if (!pdfUrl) {
-      throw new Error('PDF URL not found for textbook');
-    }
-    // Download the PDF into a buffer using fetch (node-fetch builtin in Node 18+)
-    const response = await fetch(pdfUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to download PDF from Cloudinary: ${response.statusText}`);
-    }
-    const arrayBuffer = await response.arrayBuffer();
-    const pdfBuffer = Buffer.from(arrayBuffer);
+    if (!pdfUrl) throw new Error('PDF URL not found for textbook');
 
-    // Parse PDF page by page using pdf-parse hook
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    await updateJobProgress(textbookId, 5, 'extract_text');
+
+    // Download PDF
+    const response = await fetch(pdfUrl);
+    if (!response.ok) throw new Error(`Failed to download PDF: ${response.statusText}`);
+    const pdfBuffer = Buffer.from(await response.arrayBuffer());
+
+    // Parse PDF page by page
     const pdfParse = require('pdf-parse');
     const pageTexts: string[] = [];
-
     await pdfParse(pdfBuffer, {
-      pagerender: (pageData: any) => {
-        return pageData.getTextContent().then((textContent: any) => {
+      pagerender: (pageData: any) =>
+        pageData.getTextContent().then((textContent: any) => {
           const text = textContent.items.map((i: any) => i.str).join(' ');
           pageTexts.push(text);
           return text;
-        });
-      },
+        }),
     });
 
-    if (pageTexts.length === 0) {
-      throw new Error('PDF extracted successfully but yielded no readable text.');
-    }
+    if (pageTexts.length === 0) throw new Error('PDF yielded no readable text');
 
-    // Save pages to rawPages subcollection
+    await updateJobProgress(textbookId, 10, 'extract_text');
+
+    // Save raw pages to Firestore
     const textbookRef = db.collection('textbooks').doc(textbookId);
     const rawPagesColl = textbookRef.collection('rawPages');
-    
-    // Clear any old raw pages
-    const oldPages = await rawPagesColl.get();
-    const batch = db.batch();
-    oldPages.docs.forEach((doc) => batch.delete(doc.ref));
-    await batch.commit();
 
-    // Write new pages in batches of 100
+    const oldPages = await rawPagesColl.get();
+    const clearBatch = db.batch();
+    oldPages.docs.forEach((d) => clearBatch.delete(d.ref));
+    await clearBatch.commit();
+
     let writeBatch = db.batch();
     for (let i = 0; i < pageTexts.length; i++) {
-      const pageNum = i + 1;
-      const ref = rawPagesColl.doc(`page_${pageNum}`);
-      writeBatch.set(ref, {
-        pageNum,
-        text: pageTexts[i],
-        createdAt: new Date().toISOString(),
-      });
-
-      if (pageNum % 100 === 0) {
-        await writeBatch.commit();
-        writeBatch = db.batch();
-      }
+      const ref = rawPagesColl.doc(`page_${i + 1}`);
+      writeBatch.set(ref, { pageNum: i + 1, text: pageTexts[i], createdAt: new Date().toISOString() });
+      if ((i + 1) % 100 === 0) { await writeBatch.commit(); writeBatch = db.batch(); }
     }
     await writeBatch.commit();
 
-    logger.info('uploadWorker: Finished page-by-page raw text extraction', {
-      textbookId,
-      totalPages: pageTexts.length,
-    });
+    logger.info('uploadWorker: Raw text saved', { textbookId, totalPages: pageTexts.length });
 
-    // Enqueue the chapter worker job next
-    const { chapterQueue } = require('./queue');
-    await chapterQueue.add(
-      'extract-chapters',
-      { textbookId },
-      { jobId: `chapter_${textbookId}`, removeOnComplete: true }
-    );
+    await updateJobProgress(textbookId, 15, 'chapters');
 
-    await updateJobProgress(textbookId, 25, 'chapters');
-  },
-  { connection }
-);
+    // ── Gemini TOC Planning ──────────────────────────────
+    const textbookData = textbookDoc.data()!;
+    const title = textbookData.title || 'Textbook';
+    const tocText = pageTexts.slice(0, 15).join('\n').slice(0, 35000);
 
-// ──────────────────────────────────────────────────────────────────────────────
-// 2. CHAPTER WORKER
-// ──────────────────────────────────────────────────────────────────────────────
-const chapterWorker = new Worker(
-  'chapterQueue',
-  async (job: Job) => {
-    const { textbookId } = job.data;
-    logger.info('chapterWorker: Extracting chapter structure', { textbookId });
-    await updateJobProgress(textbookId, 30, 'chapters');
-
-    const db = getAdminFirestore();
-    const pagesSnap = await db.collection('textbooks').doc(textbookId).collection('rawPages').get();
-    const pages = pagesSnap.docs.map((d) => d.data()).sort((a, b) => a.pageNum - b.pageNum);
-
-    // Concat first 12 pages to find the Table of Contents (TOC)
-    const tocText = pages
-      .slice(0, 12)
-      .map((p) => p.text)
-      .join('\n');
-
-    // Attempt simple regex for chapter outlines
     let structure: { chapters: Array<{ title: string; order: number; summary: string; concepts: string[] }> } | null = null;
 
     try {
-      const prompt = `You are a professional syllabus compiler. Read this Table of Contents text and generate a clean curriculum outline.
-Return ONLY valid JSON matching this schema (do not output any markdown formatting, just the raw string):
+      const prompt = `You are a professional syllabus compiler. Read this textbook's opening pages and generate a clean curriculum outline for "${title}".
+Return ONLY valid JSON matching this schema (no markdown, no formatting):
 {
   "chapters": [
     {
       "title": "Chapter title",
       "order": 1,
       "summary": "Short chapter description",
-      "concepts": [
-        "1.1 First Concept Name",
-        "1.2 Second Concept Name"
-      ]
+      "concepts": ["1.1 First Concept Name", "1.2 Second Concept Name"]
     }
   ]
 }
-Textbook TOC context:
-${tocText.slice(0, 30000)}`;
+Textbook content:
+${tocText}`;
 
-      await delay(1000); // respects free key RPM limits
       const rawResponse = await chatCompletion({
         model: 'gemini-2.0-flash',
         messages: [
@@ -188,425 +127,349 @@ ${tocText.slice(0, 30000)}`;
           { role: 'user', content: prompt },
         ],
         temperature: 0.3,
+        max_tokens: 8192,
       });
 
-      // Strip potential markdown wrappers if any
-      const cleanedResponse = rawResponse.trim().replace(/^```json/, '').replace(/```$/, '').trim();
-      structure = JSON.parse(cleanedResponse);
+      const cleaned = rawResponse.trim().replace(/^```json/, '').replace(/```$/, '').trim();
+      structure = JSON.parse(cleaned);
     } catch (err) {
-      logger.error('chapterWorker: Failed to compile outline via LLM. Falling back to mock curriculum structure.', { err });
-      // Fallback fallback outline if prompt fails
+      logger.error('uploadWorker: TOC Gemini call failed, using fallback structure', { err });
+    }
+
+    if (!structure || !structure.chapters || structure.chapters.length === 0) {
       structure = {
         chapters: [
-          { title: 'Chapter 1: Foundations', order: 1, summary: 'Basics and core principles.', concepts: ['1.1 Core Principles', '1.2 Fundamental Theories'] },
-          { title: 'Chapter 2: Advanced Topics', order: 2, summary: 'Detailed analyses and implementations.', concepts: ['2.1 Structural Analysis', '2.2 Real-world Systems'] },
+          { title: 'Chapter 1: Core Concepts', order: 1, summary: 'Foundational topics.', concepts: ['1.1 Introduction', '1.2 Key Principles'] },
+          { title: 'Chapter 2: Advanced Topics', order: 2, summary: 'In-depth coverage.', concepts: ['2.1 Advanced Theory', '2.2 Practical Applications'] },
         ],
       };
     }
 
-    if (!structure || !structure.chapters || structure.chapters.length === 0) {
-      throw new Error('Chapter extraction failed to construct a valid syllabus outline.');
-    }
-
-    const textbookRef = db.collection('textbooks').doc(textbookId);
-    
-    // Clear old chapters/concepts if any
+    // Clear old chapters
     const oldChaps = await textbookRef.collection('chapters').get();
-    for (const doc of oldChaps.docs) {
-      await doc.ref.delete();
-    }
+    for (const d of oldChaps.docs) { await d.ref.delete(); }
 
-    // Write new structural documents
-    let totalChapters = 0;
-    const { conceptQueue } = require('./queue');
-
+    // Write new chapters + concepts, count total concepts
+    let totalConcepts = 0;
     for (const chap of structure.chapters) {
       const chapterId = uuidv4();
       const chapterRef = textbookRef.collection('chapters').doc(chapterId);
-
       await chapterRef.set({
-        id: chapterId,
-        title: chap.title,
-        order: chap.order || totalChapters + 1,
-        summary: chap.summary || '',
+        id: chapterId, title: chap.title, order: chap.order || totalConcepts + 1, summary: chap.summary || '',
       });
-      totalChapters++;
 
-      // Dispatch concepts individually for background notes + questions compilation
       for (let cIdx = 0; cIdx < chap.concepts.length; cIdx++) {
-        const conceptTitle = chap.concepts[cIdx];
+        totalConcepts++;
         const conceptId = uuidv4();
-        
         await chapterRef.collection('concepts').doc(conceptId).set({
-          id: conceptId,
-          title: conceptTitle,
-          order: cIdx + 1,
-          videoLinks: [],
+          id: conceptId, title: chap.concepts[cIdx], order: cIdx + 1, videoLinks: [],
         });
-
-        // Trigger concept execution job
-        await conceptQueue.add(
-          'process-concept',
-          { textbookId, chapterId, conceptId, conceptTitle, chapterTitle: chap.title },
-          { jobId: `concept_${conceptId}`, removeOnComplete: true }
-        );
       }
     }
 
-    await textbookRef.update({ chapterCount: totalChapters });
-    await updateJobProgress(textbookId, 45, 'concepts');
+    // Set totalConcepts BEFORE enqueueing concept jobs
+    await textbookRef.update({ chapterCount: structure.chapters.length, totalConcepts, updatedAt: new Date().toISOString() });
+
+    await updateJobProgress(textbookId, 25, 'chapters');
+
+    // Enqueue one concept job per concept
+    const { conceptQueue } = require('./queue');
+    const chaptersSnap = await textbookRef.collection('chapters').get();
+    const conceptJobs: Array<{ name: string; data: any; opts: any }> = [];
+
+    for (const chapDoc of chaptersSnap.docs) {
+      const chapterData = chapDoc.data();
+      const conceptsSnap = await chapDoc.ref.collection('concepts').get();
+      for (const concDoc of conceptsSnap.docs) {
+        const conceptData = concDoc.data();
+        conceptJobs.push({
+          name: 'process-concept',
+          data: {
+            textbookId,
+            chapterId: chapDoc.id,
+            conceptId: concDoc.id,
+            conceptTitle: conceptData.title,
+            chapterTitle: chapterData.title,
+          },
+          opts: {
+            jobId: `concept_${concDoc.id}`,
+            removeOnComplete: true,
+            removeOnFail: false,
+            attempts: 3,
+            backoff: { type: 'exponential', delay: 3000 },
+          },
+        });
+      }
+    }
+
+    // Add in batches to avoid overwhelming the queue
+    const BATCH_SIZE = 10;
+    for (let i = 0; i < conceptJobs.length; i += BATCH_SIZE) {
+      const batch = conceptJobs.slice(i, i + BATCH_SIZE);
+      await Promise.all(batch.map((cj) => conceptQueue.add(cj.name, cj.data, cj.opts)));
+    }
+
+    logger.info('uploadWorker: Pipeline complete — concept jobs enqueued', {
+      textbookId, totalConcepts, chapterCount: structure.chapters.length,
+    });
   },
   { connection }
 );
 
-// ──────────────────────────────────────────────────────────────────────────────
-// 3. CONCEPT WORKER (Generates Notes, Summaries, Formulas)
-// ──────────────────────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────
+// 2. CONCEPT WORKER  —  Promise.all for notes, questions,
+//                       videos, resources, embedding
+// ──────────────────────────────────────────────────────────────
 const conceptWorker = new Worker(
   'conceptQueue',
   async (job: Job) => {
     const { textbookId, chapterId, conceptId, conceptTitle, chapterTitle } = job.data;
-    logger.info('conceptWorker: Compiling detailed study notes', { conceptId, conceptTitle });
+    logger.info('conceptWorker: Starting parallel enrichment', { conceptId, conceptTitle });
 
     const db = getAdminFirestore();
 
-    // Query context text around this concept name
+    // ── Gather context ──────────────────────────────────────
     const pagesSnap = await db.collection('textbooks').doc(textbookId).collection('rawPages').get();
-    const pages = pagesSnap.docs.map((d) => d.data());
-    
-    // Simple window match: find pages containing concept name to restrict prompt size
-    const matchingPages = pages
-      .filter((p) => p.text.toLowerCase().includes(conceptTitle.toLowerCase()))
-      .slice(0, 10);
-      
-    const contextText = matchingPages.length > 0 
-      ? matchingPages.map((p) => p.text).join('\n') 
-      : 'Review curriculum topics';
+    const allPages = pagesSnap.docs.map((d) => d.data());
+    const matchingPages = allPages
+      .filter((p: any) => p.text?.toLowerCase().includes(conceptTitle.toLowerCase()))
+      .slice(0, 8);
+    const contextText = matchingPages.length > 0
+      ? matchingPages.map((p: any) => p.text).join('\n')
+      : 'Review curriculum topics.';
 
-    // Call Gemini to generate formatted study notes
-    await delay(3000); // 3 sec throttles prevent free tier RPM blocks
-    
-    const prompt = `Read the source text and compile educational notes for the concept: "${conceptTitle}" (under "${chapterTitle}").
+    // Get subject name for video search
+    const textbookDoc = await db.collection('textbooks').doc(textbookId).get();
+    const subjectId = textbookDoc.data()?.subjectId || '';
+    const subjectDoc = subjectId ? await db.collection('subjects').doc(subjectId).get() : null;
+    const subjectName = subjectDoc?.data()?.name || 'Education';
+
+    // ── Run 5 tasks in parallel ────────────────────────────
+    const [notesResult, questionsResult, videosResult, resourcesResult, embeddingResult] = await Promise.allSettled([
+      // Task 1 — Study Notes, Summary, Key Points, Formulas, Examples, Learning Objectives
+      (async () => {
+        const prompt = `Read the source text and compile educational notes for the concept: "${conceptTitle}" (under "${chapterTitle}").
 Return ONLY valid JSON matching this schema:
 {
   "summary": "String summary of this concept",
   "notes": "Detailed markdown study notes. Include 3+ rich paragraphs explaining principles and rules.",
   "keyPoints": "Markdown list of key terms and rules",
-  "formulas": "Markdown list of scientific or math formulas (use LaTeX format like $E=mc^2$ if applicable)",
+  "formulas": "Markdown list of formulas (use LaTeX like $E=mc^2$ if applicable)",
   "examples": "Markdown list of solved examples or applications",
   "learningObjectives": "Markdown list of learning objectives"
 }
-
 Context Text:
 ${contextText.slice(0, 15000)}`;
 
-    const rawResponse = await chatCompletion({
-      model: 'gemini-2.0-flash',
-      messages: [
-        { role: 'system', content: 'You respond in clean JSON only.' },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.3,
-    });
+        const raw = await chatCompletion({
+          model: 'gemini-2.0-flash',
+          messages: [
+            { role: 'system', content: 'You respond in clean JSON only.' },
+            { role: 'user', content: prompt },
+          ],
+          temperature: 0.3,
+          max_tokens: 4096,
+        });
+        const cleaned = raw.trim().replace(/^```json/, '').replace(/```$/, '').trim();
+        return JSON.parse(cleaned);
+      })(),
 
-    const cleaned = rawResponse.trim().replace(/^```json/, '').replace(/```$/, '').trim();
-    const data = JSON.parse(cleaned);
+      // Task 2 — Question Bank (12 types in one call)
+      (async () => {
+        const prompt = `Generate a comprehensive question bank for: "${conceptTitle}".
 
-    // Save to conceptNotes collection
-    await db.collection('conceptNotes').doc(conceptId).set({
-      id: conceptId,
-      conceptId,
-      textbookId,
-      chapterId,
-      summary: data.summary || '',
-      notes: data.notes || '',
-      keyPoints: data.keyPoints || '',
-      formulas: data.formulas || '',
-      examples: data.examples || '',
-      learningObjectives: data.learningObjectives || '',
-      updatedAt: new Date().toISOString(),
-    });
-
-    // Enqueue questions generation next
-    const { questionQueue } = require('./queue');
-    await questionQueue.add(
-      'process-questions',
-      { textbookId, chapterId, conceptId, conceptTitle, conceptSummary: data.summary },
-      { jobId: `questions_${conceptId}`, removeOnComplete: true }
-    );
-  },
-  { connection }
-);
-
-// ──────────────────────────────────────────────────────────────────────────────
-// 4. QUESTION WORKER (Generates Question Bank covering 12 Types)
-// ──────────────────────────────────────────────────────────────────────────────
-const questionWorker = new Worker(
-  'questionQueue',
-  async (job: Job) => {
-    const { textbookId, chapterId, conceptId, conceptTitle, conceptSummary } = job.data;
-    logger.info('questionWorker: Generating multi-variety questions', { conceptId, conceptTitle });
-
-    const db = getAdminFirestore();
-
-    // Split generation into 2 distinct batches to keep prompt limits clean and stable
-    const batches = [
-      ['mcq', 'fill_blank', 'true_false', 'matching', 'descriptive', 'numerical'],
-      ['passage', 'assertion_reason', 'case_study', 'application_based', 'hots', 'one_word', 'short_answer', 'long_answer'],
-    ];
-
-    const questions: any[] = [];
-
-    for (let bIdx = 0; bIdx < batches.length; bIdx++) {
-      const types = batches[bIdx];
-      await delay(4000); // Prevents free API RPM limits
-
-      const prompt = `Compile a structured list of study questions for: "${conceptTitle}".
-Generate exactly 1 question for EACH of these types: ${types.join(', ')}.
+Generate exactly 1 question for EACH of these types:
+mcq, fill_blank, true_false, matching, descriptive, numerical, passage, assertion_reason, case_study, application_based, hots, short_answer
 
 Return ONLY valid JSON matching this schema:
 {
   "questions": [
     {
       "question": "The question text",
-      "type": "one of the types requested",
+      "type": "one of the types above",
       "difficulty": "easy|medium|hard|hots",
-      "options": ["Option A", "Option B", "Option C", "Option D"], (only for mcq, true_false, matching, passage, assertion_reason)
-      "answer": "The correct option text or answer string",
-      "explanation": "Brief reasoning explaining why this is correct",
-      "passageText": "The passage context (only for passage or case_study type)"
+      "options": ["A", "B", "C", "D"],
+      "answer": "Correct answer",
+      "explanation": "Brief reasoning",
+      "passageText": "Passage context (only for passage or case_study)"
     }
   ]
 }
 
-Concept summary: ${conceptSummary}`;
+Concept: ${conceptTitle}
+Chapter: ${chapterTitle}
+Context: ${contextText.slice(0, 8000)}`;
 
-      try {
-        const rawResponse = await chatCompletion({
+        const raw = await chatCompletion({
           model: 'gemini-2.0-flash',
           messages: [
             { role: 'system', content: 'You respond in clean JSON only.' },
             { role: 'user', content: prompt },
           ],
           temperature: 0.4,
+          max_tokens: 8192,
         });
+        const cleaned = raw.trim().replace(/^```json/, '').replace(/```$/, '').trim();
+        return JSON.parse(cleaned);
+      })(),
 
-        const cleaned = rawResponse.trim().replace(/^```json/, '').replace(/```$/, '').trim();
-        const parsed = JSON.parse(cleaned);
+      // Task 3 — YouTube video search + rank
+      (async () => {
+        return searchAndRankVideos(conceptTitle, '', subjectName, 3);
+      })(),
 
-        if (Array.isArray(parsed.questions)) {
-          questions.push(...parsed.questions);
-        }
-      } catch (err) {
-        logger.error('questionWorker: Failed to generate batch', { types, err });
-      }
+      // Task 4 — Curated resource matching + rank
+      (async () => {
+        return matchAndRankResources(conceptTitle, '', 3);
+      })(),
+
+      // Task 5 — Local vector embedding
+      (async () => {
+        const textToEmbed = `${conceptTitle}. ${contextText.slice(0, 500)}`.slice(0, 1000);
+        return getEmbedding(textToEmbed);
+      })(),
+    ]);
+
+    // ── Save results ───────────────────────────────────────
+    const errors: string[] = [];
+
+    function reasonOf(r: PromiseSettledResult<any>): string {
+      return r.status === 'rejected' ? (r.reason?.message || String(r.reason)) : 'unknown';
     }
 
-    // Save questions in Firestore
-    const questionsColl = db.collection('conceptQuestions');
-    for (const q of questions) {
-      const qId = uuidv4();
-      await questionsColl.doc(qId).set({
-        id: qId,
-        conceptId,
-        textbookId,
-        chapterId,
-        question: q.question,
-        type: q.type || 'mcq',
-        difficulty: q.difficulty || 'medium',
-        options: Array.isArray(q.options) ? q.options : null,
-        answer: q.answer || '',
-        explanation: q.explanation || '',
-        passageText: q.passageText || null,
-        createdAt: new Date().toISOString(),
+    // Save Notes
+    if (notesResult.status === 'fulfilled' && notesResult.value) {
+      const data = notesResult.value;
+      await db.collection('conceptNotes').doc(conceptId).set({
+        id: conceptId, conceptId, textbookId, chapterId,
+        summary: data.summary || '',
+        notes: data.notes || '',
+        keyPoints: data.keyPoints || '',
+        formulas: data.formulas || '',
+        examples: data.examples || '',
+        learningObjectives: data.learningObjectives || '',
+        updatedAt: new Date().toISOString(),
       });
+    } else {
+      const msg = reasonOf(notesResult);
+      errors.push(`notes: ${msg}`);
+      logger.error('conceptWorker: Notes generation failed', { conceptId, err: msg });
     }
 
-    logger.info('questionWorker: Successfully generated question bank', {
-      conceptId,
-      totalGenerated: questions.length,
+    // Save Questions
+    if (questionsResult.status === 'fulfilled' && questionsResult.value?.questions) {
+      const questions = questionsResult.value.questions;
+      const questionsColl = db.collection('conceptQuestions');
+      for (const q of questions) {
+        const qId = uuidv4();
+        await questionsColl.doc(qId).set({
+          id: qId, conceptId, textbookId, chapterId,
+          question: q.question, type: q.type || 'mcq',
+          difficulty: q.difficulty || 'medium',
+          options: Array.isArray(q.options) ? q.options : null,
+          answer: q.answer || '',
+          explanation: q.explanation || '',
+          passageText: q.passageText || null,
+          createdAt: new Date().toISOString(),
+        });
+      }
+      logger.info('conceptWorker: Questions saved', { conceptId, count: questions.length });
+    } else {
+      const msg = reasonOf(questionsResult);
+      errors.push(`questions: ${msg}`);
+      logger.error('conceptWorker: Question bank generation failed', { conceptId, err: msg });
+    }
+
+    // Save Videos
+    if (videosResult.status === 'fulfilled' && Array.isArray(videosResult.value)) {
+      const topVideos = videosResult.value;
+      const videosColl = db.collection('conceptVideos');
+      const videoLinks: string[] = [];
+      for (const video of topVideos) {
+        const videoId = uuidv4();
+        await videosColl.doc(videoId).set({
+          id: videoId, conceptId, textbookId, chapterId,
+          videoId: video.youtubeId, title: video.title, description: video.description,
+          channel: video.channelName, thumbnail: video.thumbnail, duration: video.duration,
+          score: video.score || 1.0, embedding: video.embedding || null,
+          createdAt: new Date().toISOString(),
+        });
+        videoLinks.push(video.embedUrl || `https://www.youtube.com/watch?v=${video.youtubeId}`);
+      }
+
+      const conceptRef = db.collection('textbooks').doc(textbookId)
+        .collection('chapters').doc(chapterId)
+        .collection('concepts').doc(conceptId);
+      await conceptRef.update({ videoLinks });
+    } else {
+      const msg = reasonOf(videosResult);
+      errors.push(`videos: ${msg}`);
+      logger.error('conceptWorker: Video search failed', { conceptId, err: msg });
+    }
+
+    // Save Resources
+    if (resourcesResult.status === 'fulfilled' && Array.isArray(resourcesResult.value)) {
+      const resources = resourcesResult.value;
+      const resourcesColl = db.collection('conceptResources');
+      for (const resource of resources) {
+        const resourceId = uuidv4();
+        await resourcesColl.doc(resourceId).set({
+          id: resourceId, conceptId, textbookId, chapterId,
+          title: resource.title, url: resource.url, source: resource.source,
+          description: resource.description, score: resource.score || 1.0,
+          embedding: resource.embedding || null, createdAt: new Date().toISOString(),
+        });
+      }
+    } else {
+      const msg = reasonOf(resourcesResult);
+      errors.push(`resources: ${msg}`);
+      logger.error('conceptWorker: Resource matching failed', { conceptId, err: msg });
+    }
+
+    // Save Embedding on conceptNotes doc
+    if (embeddingResult.status === 'fulfilled' && embeddingResult.value) {
+      try {
+        await db.collection('conceptNotes').doc(conceptId).update({ embedding: embeddingResult.value });
+      } catch {
+        // conceptNotes doc might not exist if notes task failed — that's fine
+      }
+    } else {
+      const msg = reasonOf(embeddingResult);
+      errors.push(`embedding: ${msg}`);
+      logger.error('conceptWorker: Embedding failed', { conceptId, err: msg });
+    }
+
+    // ── Increment completed counter & finalize if last ────
+    const textbookRef = db.collection('textbooks').doc(textbookId);
+    await textbookRef.update({
+      completedConcepts: admin.firestore.FieldValue.increment(1),
+      updatedAt: new Date().toISOString(),
     });
 
-    // Enqueue video matching next
-    const { videoQueue } = require('./queue');
-    await videoQueue.add(
-      'process-videos',
-      { textbookId, chapterId, conceptId, conceptTitle, conceptSummary },
-      { jobId: `videos_${conceptId}`, removeOnComplete: true }
-    );
-  },
-  { connection }
-);
+    const updatedDoc = await textbookRef.get();
+    const totalConcepts = updatedDoc.data()?.totalConcepts || 0;
+    const completedCount = updatedDoc.data()?.completedConcepts || 0;
 
-// ──────────────────────────────────────────────────────────────────────────────
-// 5. VIDEO WORKER (YouTube Search & Embedding Cosine Alignment)
-// ──────────────────────────────────────────────────────────────────────────────
-const videoWorker = new Worker(
-  'videoQueue',
-  async (job: Job) => {
-    const { textbookId, chapterId, conceptId, conceptTitle, conceptSummary } = job.data;
-    logger.info('videoWorker: Aligning YouTube video assets', { conceptId, conceptTitle });
-
-    const db = getAdminFirestore();
-
-    // Retrieve subject details for query context
-    const textbookDoc = await db.collection('textbooks').doc(textbookId).get();
-    const subjectId = textbookDoc.data()?.subjectId || '';
-    const subjectDoc = await db.collection('subjects').doc(subjectId).get();
-    const subjectName = subjectDoc.data()?.name || 'Education';
-
-    const topVideos = await searchAndRankVideos(conceptTitle, conceptSummary, subjectName, 3);
-
-    const videosColl = db.collection('conceptVideos');
-    const videoLinks: string[] = [];
-
-    for (const video of topVideos) {
-      const videoId = uuidv4();
-      await videosColl.doc(videoId).set({
-        id: videoId,
-        conceptId,
-        textbookId,
-        chapterId,
-        videoId: video.youtubeId,
-        title: video.title,
-        description: video.description,
-        channel: video.channelName,
-        thumbnail: video.thumbnail,
-        duration: video.duration,
-        score: video.score || 1.0,
-        embedding: video.embedding || null,
-        createdAt: new Date().toISOString(),
-      });
-
-      videoLinks.push(video.embedUrl);
-    }
-
-    // Update the concept document with video link hooks
-    const conceptRef = db
-      .collection('textbooks')
-      .doc(textbookId)
-      .collection('chapters')
-      .doc(chapterId)
-      .collection('concepts')
-      .doc(conceptId);
-
-    await conceptRef.update({ videoLinks });
-
-    // Enqueue static resource matching next
-    const { resourceQueue } = require('./queue');
-    await resourceQueue.add(
-      'process-resources',
-      { textbookId, chapterId, conceptId, conceptTitle, conceptSummary },
-      { jobId: `resources_${conceptId}`, removeOnComplete: true }
-    );
-  },
-  { connection }
-);
-
-// ──────────────────────────────────────────────────────────────────────────────
-// 6. RESOURCE WORKER (MIT OCW, Khan Academy, GeeksforGeeks Alignment)
-// ──────────────────────────────────────────────────────────────────────────────
-const resourceWorker = new Worker(
-  'resourceQueue',
-  async (job: Job) => {
-    const { textbookId, chapterId, conceptId, conceptTitle, conceptSummary } = job.data;
-    logger.info('resourceWorker: Scoring static references', { conceptId, conceptTitle });
-
-    const db = getAdminFirestore();
-    const rankedResources = await matchAndRankResources(conceptTitle, conceptSummary, 3);
-
-    const resourcesColl = db.collection('conceptResources');
-
-    for (const resource of rankedResources) {
-      const resourceId = uuidv4();
-      await resourcesColl.doc(resourceId).set({
-        id: resourceId,
-        conceptId,
-        textbookId,
-        chapterId,
-        title: resource.title,
-        url: resource.url,
-        source: resource.source,
-        description: resource.description,
-        score: resource.score || 1.0,
-        embedding: resource.embedding || null,
-        createdAt: new Date().toISOString(),
-      });
-    }
-
-    // Enqueue final embedding/indexing job
-    const { embeddingQueue } = require('./queue');
-    await embeddingQueue.add(
-      'finalize-concept',
-      { textbookId, chapterId, conceptId, conceptTitle, conceptSummary },
-      { jobId: `finalize_${conceptId}`, removeOnComplete: true }
-    );
-  },
-  { connection }
-);
-
-// ──────────────────────────────────────────────────────────────────────────────
-// 7. EMBEDDING WORKER (Aggregates, Indexes, and Finalizes Status)
-// ──────────────────────────────────────────────────────────────────────────────
-const embeddingWorker = new Worker(
-  'embeddingQueue',
-  async (job: Job) => {
-    const { textbookId, conceptId, conceptTitle, conceptSummary } = job.data;
-    logger.info('embeddingWorker: Finalizing and creating vector maps', { conceptId });
-
-    const db = getAdminFirestore();
-
-    try {
-      // Create vector map of concept details for recommendations and search
-      const textToEmbed = `${conceptTitle}. ${conceptSummary}`.slice(0, 1000);
-      const vector = await getEmbedding(textToEmbed);
-
-      // Save vector metadata on the concept notes
-      await db.collection('conceptNotes').doc(conceptId).update({
-        embedding: vector,
-      });
-    } catch (err) {
-      logger.error('embeddingWorker: Failed to compute final vector representations', { conceptId, err });
-    }
-
-    // Perform check: if this was the last concept of the textbook, finalize progress to 100
-    const jobSnap = await db.collection('processingJobs').doc(textbookId).get();
-    const currentProgress = jobSnap.data()?.progress || 45;
-    
-    // Safely step progress up dynamically towards completion
-    const nextProgress = Math.min(currentProgress + 10, 95);
-    await updateJobProgress(textbookId, nextProgress, 'concepts');
-
-    // Query pending jobs for this textbook to verify pipeline complete
-    const textbookRef = db.collection('textbooks').doc(textbookId);
-    const chapters = await textbookRef.collection('chapters').get();
-    
-    let totalConceptsCount = 0;
-    for (const chap of chapters.docs) {
-      const concepts = await chap.ref.collection('concepts').get();
-      totalConceptsCount += concepts.docs.length;
-    }
-
-    const processedNotes = await db
-      .collection('conceptNotes')
-      .where('textbookId', '==', textbookId)
-      .get();
-
-    if (processedNotes.docs.length >= totalConceptsCount && totalConceptsCount > 0) {
-      logger.info('embeddingWorker: All concepts processed. Marking pipeline complete.', { textbookId });
+    if (completedCount >= totalConcepts && totalConcepts > 0) {
+      logger.info('conceptWorker: All concepts completed — marking textbook ready', { textbookId });
       await updateJobProgress(textbookId, 100, 'done', 'COMPLETED');
+    } else {
+      // Calculate progress: 25% + (completed / total) * 75%
+      const progress = Math.round(25 + (completedCount / Math.max(totalConcepts, 1)) * 75);
+      await updateJobProgress(textbookId, progress, 'concepts');
+    }
+
+    if (errors.length > 0) {
+      logger.warn('conceptWorker: Completed with partial failures', { conceptId, errors: errors.join('; ') });
     }
   },
   { connection }
 );
 
-// Global Error Handler Logger for Workers
+// ── Global failure handler ─────────────────────────────────────
 const logFailure = (queueName: string) => {
   return async (job: Job | undefined, err: Error) => {
-    logger.error(`Worker job failed on queue "${queueName}"`, {
-      jobId: job?.id,
-      error: err.message,
-    });
+    logger.error(`Worker job failed on queue "${queueName}"`, { jobId: job?.id, error: err.message });
     if (job?.data?.textbookId) {
       await updateJobProgress(job.data.textbookId, 0, 'done', 'FAILED', err.message);
     }
@@ -614,11 +477,6 @@ const logFailure = (queueName: string) => {
 };
 
 uploadWorker.on('failed', logFailure('uploadQueue'));
-chapterWorker.on('failed', logFailure('chapterQueue'));
 conceptWorker.on('failed', logFailure('conceptQueue'));
-questionWorker.on('failed', logFailure('questionQueue'));
-videoWorker.on('failed', logFailure('videoQueue'));
-resourceWorker.on('failed', logFailure('resourceQueue'));
-embeddingWorker.on('failed', logFailure('embeddingQueue'));
 
-logger.info('BullMQ workers initialized and actively listening to queue channels.');
+logger.info('BullMQ workers initialized: uploadQueue, conceptQueue');

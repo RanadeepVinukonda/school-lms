@@ -4,25 +4,18 @@ import { logger } from '../utils/logger';
 const hasRedis = !!env.REDIS_URL;
 
 let uploadQueue: any = null;
+let conceptQueue: any = null;
 let addUploadJob: (textbookId: string, storagePath: string) => Promise<void>;
 
 if (hasRedis) {
-  const { Queue, FlowProducer } = require('bullmq');
+  const { Queue } = require('bullmq');
   const { getRedisConnection } = require('../config/redis');
   const connection = getRedisConnection();
 
   uploadQueue = new Queue('uploadQueue', { connection });
+  conceptQueue = new Queue('conceptQueue', { connection });
 
-  const chapterQueue = new Queue('chapterQueue', { connection });
-  const conceptQueue = new Queue('conceptQueue', { connection });
-  const questionQueue = new Queue('questionQueue', { connection });
-  const videoQueue = new Queue('videoQueue', { connection });
-  const resourceQueue = new Queue('resourceQueue', { connection });
-  const embeddingQueue = new Queue('embeddingQueue', { connection });
-
-  const flowProducer = new FlowProducer({ connection });
-
-  logger.info('BullMQ Queues and FlowProducer initialized successfully.');
+  logger.info('BullMQ queues initialized: uploadQueue, conceptQueue');
 
   addUploadJob = async function (textbookId: string, storagePath: string) {
     logger.info('Adding upload job to queue', { textbookId, storagePath });
@@ -34,10 +27,7 @@ if (hasRedis) {
         removeOnComplete: true,
         removeOnFail: false,
         attempts: 3,
-        backoff: {
-          type: 'exponential',
-          delay: 5000,
-        },
+        backoff: { type: 'exponential', delay: 5000 },
       }
     );
   };
@@ -48,5 +38,4 @@ if (hasRedis) {
   };
 }
 
-export { addUploadJob };
-export { uploadQueue };
+export { addUploadJob, uploadQueue, conceptQueue };
