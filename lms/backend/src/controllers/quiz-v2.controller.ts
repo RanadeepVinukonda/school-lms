@@ -7,6 +7,11 @@ export async function createQuiz(req: Request, res: Response) {
   sendCreated(res, result, 'Quiz created');
 }
 
+export async function updateQuiz(req: Request, res: Response) {
+  const result = await quizV2Service.updateQuiz(req.params.quizId, req.user!.uid, req.body);
+  sendSuccess(res, result, 'Quiz updated');
+}
+
 export async function releaseQuiz(req: Request, res: Response) {
   const result = await quizV2Service.releaseQuiz(req.params.quizId, req.user!.uid);
   sendSuccess(res, result, 'Quiz released');

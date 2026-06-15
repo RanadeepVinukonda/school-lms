@@ -25,6 +25,9 @@ const navItems: NavItem[] = [
   { label: 'Dashboard', href: ROUTES.ADMIN_DASHBOARD, icon: 'dashboard' },
   { label: 'Academic Years', href: ROUTES.ADMIN_ACADEMIC_YEARS, icon: 'calendar_month' },
   { label: 'Classes Hub', href: ROUTES.ADMIN_CLASSES, icon: 'meeting_room' },
+  { label: 'School Analytics', href: ROUTES.ADMIN_SCHOOL_ANALYTICS, icon: 'analytics' },
+  { label: 'Attendance', href: ROUTES.ADMIN_ATTENDANCE, icon: 'checklist' },
+  { label: 'Fee Management', href: ROUTES.ADMIN_FEE, icon: 'payments' },
   { label: 'Settings', href: ROUTES.ADMIN_SETTINGS, icon: 'settings' },
 ];
 

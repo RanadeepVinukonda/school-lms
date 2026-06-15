@@ -14,6 +14,8 @@ export type { Notification, NotificationPreferences, NotificationType } from './
 export type { ApiResponse, PaginatedResponse, PaginationParams, ApiError } from './api';
 export type { DashboardStats, PerformanceData, ChartData } from './analytics';
 export type { Textbook, Chapter, Concept, CachedVideo, GeneratedQuestion, GeneratedAssignment, ConceptProgress } from './textbook';
+export type { VirtualLab, LabElement, LabProgress } from './virtualLab';
+export type { CodingProject, StreamProject, ProjectStep, CodeExecutionResult } from './coding';
 
 export interface Activity {
   id: string;

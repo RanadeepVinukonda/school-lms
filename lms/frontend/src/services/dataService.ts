@@ -230,6 +230,7 @@ export interface AssignmentItem {
   title: string;
   description?: string;
   subjectId?: string;
+  subjectName?: string;
   chapterId?: string;
   textbookId?: string;
   lessonId?: string;
@@ -290,6 +291,7 @@ export interface ExamItem {
   title: string;
   description?: string;
   subjectId?: string;
+  subjectName?: string;
   courseId?: string;
   duration?: number;
   totalPoints?: number;
@@ -355,16 +357,30 @@ export interface QuizItem {
   chapterId?: string;
   textbookId?: string;
   subjectId?: string;
+  subjectName?: string;
   timeLimit?: number;
   questions?: unknown[];
+  questionCount?: number;
   status?: string;
 }
 
-/** Fetch a single quiz by id. */
+/** Fetch a single quiz by id. Checks quizzes and quizV2 collections. */
 export async function getQuiz(id: string): Promise<QuizItem | null> {
-  const snap = await getDoc(doc(db, 'quizzes', id));
+  let snap = await getDoc(doc(db, 'quizzes', id));
+  if (snap.exists()) return { id: snap.id, ...snap.data() } as QuizItem;
+  snap = await getDoc(doc(db, 'quizV2', id));
   if (!snap.exists()) return null;
-  return { id: snap.id, ...snap.data() } as QuizItem;
+  const quizData = snap.data() as Record<string, any>;
+  const result: QuizItem = { id: snap.id, ...quizData } as QuizItem;
+  if (quizData.textbookId && quizData.chapterId && quizData.conceptId) {
+    try {
+      const questionsSnap = await getDocs(
+        collection(db, 'textbooks', quizData.textbookId, 'chapters', quizData.chapterId, 'concepts', quizData.conceptId, 'questions'),
+      );
+      result.questions = questionsSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as any[];
+    } catch { /* questions not available */ }
+  }
+  return result;
 }
 
 // ── Timetable ──

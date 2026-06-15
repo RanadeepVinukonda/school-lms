@@ -33,6 +33,16 @@ import testTemplateRoutes from './test-template.routes';
 import testScheduleRoutes from './test-schedule.routes';
 import academicYearRoutes from './academic-year.routes';
 import enrollmentRoutes from './enrollment.routes';
+import gamificationRoutes from './gamification.routes';
+import parentRoutes from './parent.routes';
+import mindmapRoutes from './mindmap.routes';
+import attendanceRoutes from './attendance.routes';
+import feeRoutes from './fee.routes';
+import schoolAnalyticsRoutes from './school-analytics.routes';
+import codingRoutes from './coding.routes';
+import prePrimaryRoutes from './pre-primary.routes';
+import nepQuestionsRoutes from './nep-questions.routes';
+import ocrRoutes from './ocr.routes';
 
 const router = Router();
 
@@ -70,6 +80,16 @@ router.use('/test-templates', testTemplateRoutes);
 router.use('/test-schedule', testScheduleRoutes);
 router.use('/academic-years', academicYearRoutes);
 router.use('/enrollments', enrollmentRoutes);
+router.use('/gamification', gamificationRoutes);
+router.use('/parent', parentRoutes);
+router.use('/mindmaps', mindmapRoutes);
+router.use('/attendance', attendanceRoutes);
+router.use('/fee', feeRoutes);
+router.use('/school-analytics', schoolAnalyticsRoutes);
+router.use('/pre-primary', prePrimaryRoutes);
+router.use('/coding', codingRoutes);
+router.use('/nep-questions', nepQuestionsRoutes);
+router.use('/ocr', ocrRoutes);
 
 router.get('/health', (_req, res) => {
   res.json({

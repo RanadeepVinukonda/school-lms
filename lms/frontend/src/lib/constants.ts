@@ -25,6 +25,7 @@ export const ROUTES = {
   STUDENT_EXAMS: '/student/exams',
   STUDENT_TASKS: '/student/tasks',
   STUDENT_TIMETABLE: '/student/timetable',
+  STUDENT_AI_TUTOR: '/student/ai-tutor',
   STUDENT_PROFILE: '/student/profile',
   STUDENT_PROFILE_EDIT: '/student/profile/edit',
 
@@ -52,6 +53,8 @@ export const ROUTES = {
   TEACHER_TEST_TEMPLATES: '/teacher/test-templates',
   TEACHER_TEST_SCHEDULE: '/teacher/test-schedule',
   TEACHER_PYQ: '/teacher/pyq',
+  TEACHER_ATTENDANCE: '/teacher/attendance',
+  TEACHER_OCR: '/teacher/ocr',
 
   ADMIN_DASHBOARD: '/admin/dashboard',
   ADMIN_ACADEMIC_YEARS: '/admin/academic-years',
@@ -62,6 +65,9 @@ export const ROUTES = {
   ADMIN_SETTINGS: '/admin/settings',
   ADMIN_USERS: '/admin/users',
   ADMIN_AUDIT_LOGS: '/admin/audit-logs',
+  ADMIN_SCHOOL_ANALYTICS: '/admin/school-analytics',
+  ADMIN_ATTENDANCE: '/admin/attendance',
+  ADMIN_FEE: '/admin/fee',
 
   ASSIGNMENT_DETAIL: (id: string) => `/assignments/${id}`,
   QUIZ_ATTEMPT: (id: string) => `/quizzes/${id}/attempt`,
@@ -70,8 +76,35 @@ export const ROUTES = {
   NOTIFICATIONS: '/notifications',
   ABOUT: '/about',
 
+  STUDENT_GAMIFICATION: '/student/gamification',
+  STUDENT_LEADERBOARD: '/student/leaderboard',
+  STUDENT_LABS: '/student/labs',
+  STUDENT_LAB_DETAIL: (id: string) => `/student/labs/${id}`,
   STUDENT_ROLL_NUMBER: '/student/roll-number',
   TEACHER_SELECT_CLASS: '/teacher/select-class',
+
+  PARENT_DASHBOARD: '/parent/dashboard',
+  PARENT_CHILDREN: '/parent/children',
+  PARENT_CHILD: (id: string) => `/parent/children/${id}`,
+  PARENT_REPORTS: '/parent/reports',
+  PARENT_PROFILE: '/parent/profile',
+
+  STUDENT_MIND_MAPS: '/student/mindmaps',
+  STUDENT_MIND_MAP_EDITOR: (id: string) => `/student/mindmaps/${id}`,
+  STUDENT_CODING: '/student/coding',
+  STUDENT_CODING_EDITOR: (id: string) => `/student/coding/${id}`,
+  STUDENT_STREAM_PROJECTS: '/student/stream-projects',
+  STUDENT_OCR: '/student/ocr',
+  TEACHER_MIND_MAPS: '/teacher/mindmaps',
+  TEACHER_MIND_MAP_EDITOR: (id: string) => `/teacher/mindmaps/${id}`,
+  TEACHER_NEP_QUESTIONS: '/teacher/nep-questions',
+  TEACHER_RUBRICS: '/teacher/rubrics',
+  K2_DASHBOARD: '/k2/dashboard',
+  K2_TRACING: '/k2/tracing',
+  K2_PHONICS: '/k2/phonics',
+  K2_STORIES: '/k2/stories',
+  K2_FLASHCARDS: '/k2/flashcards',
+  K2_FLASHCARD_CATEGORY: (category: string) => `/k2/flashcards/${category}`,
 } as const;
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';

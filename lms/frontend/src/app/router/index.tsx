@@ -24,6 +24,24 @@ import QuizAttemptPage from '@/app/pages/student/QuizAttemptPage';
 import ExamAttemptPage from '@/app/pages/student/ExamAttemptPage';
 import StudentQuizTakePageV2 from '@/app/pages/student/StudentQuizTakePageV2';
 import StudentConceptPage from '@/app/pages/student/StudentConceptPage';
+import StudentGamificationPage from '@/app/pages/student/StudentGamificationPage';
+import StudentLeaderboardPage from '@/app/pages/student/StudentLeaderboardPage';
+import StudentAITutorPage from '@/app/pages/student/StudentAITutorPage';
+import StudentVirtualLabsPage from '@/app/pages/student/StudentVirtualLabsPage';
+import StudentVirtualLabDetailPage from '@/app/pages/student/StudentVirtualLabDetailPage';
+import StudentMindMapsPage from '@/app/pages/student/StudentMindMapsPage';
+import StudentMindMapEditorPage from '@/app/pages/student/StudentMindMapEditorPage';
+import K2Layout from '@/app/layouts/K2Layout';
+import K2DashboardPage from '@/app/pages/student/K2DashboardPage';
+import K2TracingPage from '@/app/pages/student/K2TracingPage';
+import K2PhonicsPage from '@/app/pages/student/K2PhonicsPage';
+import K2StoriesPage from '@/app/pages/student/K2StoriesPage';
+import K2FlashcardsPage from '@/app/pages/student/K2FlashcardsPage';
+import StudentCodingPage from '@/app/pages/student/StudentCodingPage';
+import StudentCodingEditorPage from '@/app/pages/student/StudentCodingEditorPage';
+import StudentStreamProjectsPage from '@/app/pages/student/StudentStreamProjectsPage';
+import StudentOCRPage from '@/app/pages/student/StudentOCRPage';
+import TeacherOCRPage from '@/app/pages/teacher/TeacherOCRPage';
 
 import TeacherDashboardPage from '@/app/pages/teacher/TeacherDashboardPage';
 import TeacherStudentsPage from '@/app/pages/teacher/TeacherStudentsPage';
@@ -48,6 +66,11 @@ import TeacherQuestionPapersPage from '@/app/pages/teacher/TeacherQuestionPapers
 import TeacherTestTemplatesPage from '@/app/pages/teacher/TeacherTestTemplatesPage';
 import TeacherTestSchedulePage from '@/app/pages/teacher/TeacherTestSchedulePage';
 import TeacherPreviousYearQPage from '@/app/pages/teacher/TeacherPreviousYearQPage';
+import TeacherMindMapsPage from '@/app/pages/teacher/TeacherMindMapsPage';
+import TeacherMindMapEditorPage from '@/app/pages/teacher/TeacherMindMapEditorPage';
+import TeacherAttendancePage from '@/app/pages/teacher/TeacherAttendancePage';
+import TeacherNEPQuestionsPage from '@/app/pages/teacher/TeacherNEPQuestionsPage';
+import TeacherRubricPage from '@/app/pages/teacher/TeacherRubricPage';
 
 import AdminDashboardPage from '@/app/pages/admin/AdminDashboardPage';
 import AdminAcademicYearsPage from '@/app/pages/admin/AdminAcademicYearsPage';
@@ -59,9 +82,19 @@ import AdminSettingsPage from '@/app/pages/admin/AdminSettingsPage';
 import AdminProfileEditPage from '@/app/pages/admin/AdminProfileEditPage';
 import UserManagementPage from '@/app/pages/admin/UserManagementPage';
 import AdminAuditLogsPage from '@/app/pages/admin/AdminAuditLogsPage';
+import AdminSchoolAnalyticsPage from '@/app/pages/admin/AdminSchoolAnalyticsPage';
+import AdminAttendancePage from '@/app/pages/admin/AdminAttendancePage';
+import AdminFeePage from '@/app/pages/admin/AdminFeePage';
 
 import RollNumberEntryPage from '@/app/pages/student/RollNumberEntryPage';
 import ClassSelectionPage from '@/app/pages/teacher/ClassSelectionPage';
+
+import ParentLayout from '@/app/layouts/ParentLayout';
+import ParentDashboardPage from '@/app/pages/parent/ParentDashboardPage';
+import ParentChildrenPage from '@/app/pages/parent/ParentChildrenPage';
+import ParentChildDetailPage from '@/app/pages/parent/ParentChildDetailPage';
+import ParentReportsPage from '@/app/pages/parent/ParentReportsPage';
+import ParentProfilePage from '@/app/pages/parent/ParentProfilePage';
 
 import NotificationsPage from '@/app/pages/NotificationsPage';
 
@@ -105,8 +138,19 @@ export const router = createBrowserRouter([
       { path: ROUTES.ASSIGNMENT_DETAIL(':id'), element: <AssignmentDetailPage /> },
       { path: ROUTES.QUIZ_ATTEMPT(':id'), element: <QuizAttemptPage /> },
       { path: ROUTES.EXAM_DETAIL(':id'), element: <ExamAttemptPage /> },
-      { path: ROUTES.STUDENT_TAKE_ASSESSMENT(':id'), element: <StudentQuizTakePageV2 /> },
+      { path: ROUTES.STUDENT_TAKE_ASSESSMENT(':assessmentId'), element: <StudentQuizTakePageV2 /> },
       { path: ROUTES.STUDENT_CONCEPT(':conceptId'), element: <StudentConceptPage /> },
+      { path: ROUTES.STUDENT_AI_TUTOR, element: <StudentAITutorPage /> },
+      { path: ROUTES.STUDENT_GAMIFICATION, element: <StudentGamificationPage /> },
+      { path: ROUTES.STUDENT_LEADERBOARD, element: <StudentLeaderboardPage /> },
+      { path: ROUTES.STUDENT_LABS, element: <StudentVirtualLabsPage /> },
+      { path: ROUTES.STUDENT_LAB_DETAIL(':id'), element: <StudentVirtualLabDetailPage /> },
+      { path: ROUTES.STUDENT_MIND_MAPS, element: <StudentMindMapsPage /> },
+      { path: ROUTES.STUDENT_MIND_MAP_EDITOR(':id'), element: <StudentMindMapEditorPage /> },
+      { path: ROUTES.STUDENT_CODING, element: <StudentCodingPage /> },
+      { path: ROUTES.STUDENT_CODING_EDITOR(':id'), element: <StudentCodingEditorPage /> },
+      { path: ROUTES.STUDENT_STREAM_PROJECTS, element: <StudentStreamProjectsPage /> },
+      { path: ROUTES.STUDENT_OCR, element: <StudentOCRPage /> },
     ],
   },
 
@@ -141,6 +185,12 @@ export const router = createBrowserRouter([
       { path: ROUTES.TEACHER_TEST_TEMPLATES, element: <TeacherTestTemplatesPage /> },
       { path: ROUTES.TEACHER_TEST_SCHEDULE, element: <TeacherTestSchedulePage /> },
       { path: ROUTES.TEACHER_PYQ, element: <TeacherPreviousYearQPage /> },
+      { path: ROUTES.TEACHER_ATTENDANCE, element: <TeacherAttendancePage /> },
+      { path: ROUTES.TEACHER_MIND_MAPS, element: <TeacherMindMapsPage /> },
+      { path: ROUTES.TEACHER_MIND_MAP_EDITOR(':id'), element: <TeacherMindMapEditorPage /> },
+      { path: ROUTES.TEACHER_NEP_QUESTIONS, element: <TeacherNEPQuestionsPage /> },
+      { path: ROUTES.TEACHER_RUBRICS, element: <TeacherRubricPage /> },
+      { path: ROUTES.TEACHER_OCR, element: <TeacherOCRPage /> },
     ],
   },
 
@@ -162,6 +212,42 @@ export const router = createBrowserRouter([
       { path: '/admin/profile/edit', element: <AdminProfileEditPage /> },
       { path: ROUTES.ADMIN_USERS, element: <Navigate to={ROUTES.ADMIN_SETTINGS} replace /> },
       { path: ROUTES.ADMIN_AUDIT_LOGS, element: <Navigate to={ROUTES.ADMIN_SETTINGS} replace /> },
+      { path: ROUTES.ADMIN_SCHOOL_ANALYTICS, element: <AdminSchoolAnalyticsPage /> },
+      { path: ROUTES.ADMIN_ATTENDANCE, element: <AdminAttendancePage /> },
+      { path: ROUTES.ADMIN_FEE, element: <AdminFeePage /> },
+    ],
+  },
+
+  {
+    errorElement: <RouteErrorFallback />,
+    element: (
+      <ProtectedRoute roles={['parent']}>
+        <ParentLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { path: ROUTES.PARENT_DASHBOARD, element: <ParentDashboardPage /> },
+      { path: ROUTES.PARENT_CHILDREN, element: <ParentChildrenPage /> },
+      { path: ROUTES.PARENT_CHILD(':studentId'), element: <ParentChildDetailPage /> },
+      { path: ROUTES.PARENT_REPORTS, element: <ParentReportsPage /> },
+      { path: ROUTES.PARENT_PROFILE, element: <ParentProfilePage /> },
+    ],
+  },
+
+  {
+    errorElement: <RouteErrorFallback />,
+    element: (
+      <ProtectedRoute roles={['student']}>
+        <K2Layout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { path: ROUTES.K2_DASHBOARD, element: <K2DashboardPage /> },
+      { path: ROUTES.K2_TRACING, element: <K2TracingPage /> },
+      { path: ROUTES.K2_PHONICS, element: <K2PhonicsPage /> },
+      { path: ROUTES.K2_STORIES, element: <K2StoriesPage /> },
+      { path: ROUTES.K2_FLASHCARDS, element: <K2FlashcardsPage /> },
+      { path: ROUTES.K2_FLASHCARD_CATEGORY(':category'), element: <K2FlashcardsPage /> },
     ],
   },
 

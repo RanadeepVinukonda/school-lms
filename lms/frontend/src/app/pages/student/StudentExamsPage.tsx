@@ -104,7 +104,8 @@ export default function StudentExamsPage() {
         }
       }
 
-      return { upcoming, past, subjects: allSubjects };
+      const uniqueSubjects = allSubjects.filter((s, i, arr) => arr.findIndex((x) => x.name === s.name) === i);
+      return { upcoming, past, subjects: uniqueSubjects };
     },
     enabled: !!studentId,
   });

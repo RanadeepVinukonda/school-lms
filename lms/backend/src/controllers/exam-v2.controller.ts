@@ -68,6 +68,11 @@ export async function logProctoringEvent(req: Request, res: Response) {
   sendSuccess(res, result, 'Proctoring event logged');
 }
 
+export async function getExam(req: Request, res: Response) {
+  const result = await examV2Service.getExamById(req.params.examId);
+  sendSuccess(res, result);
+}
+
 export async function getStudentAttempt(req: Request, res: Response) {
   const result = await examV2Service.getStudentAttempt(req.params.examId, req.params.studentId);
   sendSuccess(res, result);

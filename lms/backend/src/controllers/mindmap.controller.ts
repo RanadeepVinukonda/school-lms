@@ -1,0 +1,51 @@
+import { Request, Response } from 'express';
+import * as mindmapService from '../services/mindmap.service';
+import { sendSuccess, sendCreated, sendNoContent } from '../utils/response';
+
+export async function createMindMap(req: Request, res: Response) {
+  const { title, description } = req.body;
+  const mindMap = await mindmapService.createMindMap(req.user!.uid, title, description);
+  sendCreated(res, mindMap, 'Mind map created');
+}
+
+export async function getMindMap(req: Request, res: Response) {
+  const mindMap = await mindmapService.getMindMapById(req.params.id, req.user!.uid);
+  sendSuccess(res, mindMap);
+}
+
+export async function updateMindMap(req: Request, res: Response) {
+  const { title, description, nodes, edges } = req.body;
+  const mindMap = await mindmapService.updateMindMap(req.params.id, req.user!.uid, {
+    title, description, nodes, edges,
+  });
+  sendSuccess(res, mindMap, 'Mind map updated');
+}
+
+export async function deleteMindMap(req: Request, res: Response) {
+  await mindmapService.deleteMindMap(req.params.id, req.user!.uid);
+  sendNoContent(res);
+}
+
+export async function getUserMindMaps(req: Request, res: Response) {
+  const mindMaps = await mindmapService.getUserMindMaps(req.user!.uid);
+  sendSuccess(res, mindMaps);
+}
+
+export async function getSharedMindMaps(req: Request, res: Response) {
+  const mindMaps = await mindmapService.getSharedMindMaps(req.user!.uid);
+  sendSuccess(res, mindMaps);
+}
+
+export async function shareMindMap(req: Request, res: Response) {
+  const { shareWithIds } = req.body;
+  const mindMap = await mindmapService.shareMindMap(req.params.id, req.user!.uid, shareWithIds);
+  sendSuccess(res, mindMap, 'Mind map shared');
+}
+
+export async function pinResource(req: Request, res: Response) {
+  const { nodeId, resourceId, resourceType } = req.body;
+  const mindMap = await mindmapService.pinResource(
+    req.params.id, req.user!.uid, nodeId, resourceId, resourceType,
+  );
+  sendSuccess(res, mindMap, 'Resource pinned');
+}

@@ -17,66 +17,68 @@ This checklist serves as the roadmap for the project, tracking what has already 
 
 ---
 
-## 2. Left Tasks (Phase-by-Phase Roadmap)
+## 2. Completed Tasks
 
 ### Phase 2: Personalization, Analytics, and Parent Portals
 
-#### [ ] Parent Integration Layer
-- `[ ]` **Parent Portal Dashboard**: Design parent login views and links to monitor their child's daily/weekly activity.
-- `[ ]` **AI Reporting & Progress**: Generate automated weekly summaries highlighting child learning gaps (e.g. "Struggling in Geometry").
-- `[ ]` **Recommendations Engine**: Provide parent actions checklist (e.g. "Recommend 15 min daily practice on Fractions").
+#### [x] Parent Integration Layer
+- `[x]` **Parent Portal Dashboard**: Parent login views, dashboard with children list, child detail pages with activity monitoring.
+- `[x]` **AI Reporting & Progress**: Weekly report generation highlighting learning gaps via AI service integration.
+- `[x]` **Recommendations Engine**: Parent actions checklist based on student performance analysis.
 
-#### [ ] Analytics & ERP
-- `[ ]` **School-wide Comparison Panels**: Enable admin comparison charts (Grade vs. Grade, Teacher vs. Teacher performance).
-- `[ ]` **Attendance Module**: Track student and teacher attendance logs with exports.
-- `[ ]` **Fee & School ERP Integration**: Add fee schedules, payment collection gateway portals, transport tracking, and HR admin dashboard tabs.
+#### [x] Analytics & ERP
+- `[x]` **School-wide Comparison Panels**: Admin comparison charts for Grade vs. Grade and Teacher vs. Teacher performance.
+- `[x]` **Attendance Module**: Student and teacher attendance tracking with CSV export and reporting.
+- `[x]` **Fee & School ERP Integration**: Fee schedules, payment recording, outstanding reports, and student payment history.
 
 ---
 
 ### Phase 3: AI Tutor, Textbooks OCR, and Advanced Content
 
-#### [ ] AI Tutor Module
-- `[ ]` **24/7 Chatbot Workspace**: Build student sandbox tutor chat using Gemini/OpenAI endpoints.
-- `[ ]` **Voice Interaction**: Integrate Web Speech API (Speech-to-Text / Text-to-Speech) for voice-enabled doubt solving.
-- `[ ]` **Step-by-step Explainer**: Format mathematical equations and code structures dynamically using LaTeX/Markdown components.
+#### [x] AI Tutor Module
+- `[x]` **24/7 Chatbot Workspace**: Student sandbox tutor chat using Gemini/OpenAI endpoints with conversation history.
+- `[x]` **Voice Interaction**: Web Speech API integration for Speech-to-Text input and Text-to-Speech output.
+- `[x]` **Step-by-step Explainer**: Markdown rendering with LaTeX math formatting and code block syntax highlighting.
 
-#### [ ] Textbook Page OCR Mapping
-- `[ ]` **Camera Capture Integration**: Allow mobile/web camera page snapshot capture in mapping UI.
-- `[ ]` **OCR Scanning Engine**: Implement text extraction from photos, map it to a concept, and auto-generate interactive assessments on the spot.
+#### [x] Textbook Page OCR Mapping
+- `[x]` **Camera Capture Integration**: Camera snapshot capture using MediaDevices API with front/back toggle, flash, and file upload fallback.
+- `[x]` **OCR Scanning Engine**: Tesseract.js text extraction, AI-powered concept mapping, and auto-generated interactive assessments.
 
-#### [ ] Advanced AI Question Generation
-- `[ ]` **NEP-aligned Question Sets**: Expand textbook parser to generate Olympiad, Competency-Based, and Viva questions.
-- `[ ]` **AI Assignment Rubrics**: Enable AI-generated grading rubrics and customized feedback summaries for homework.
+#### [x] Advanced AI Question Generation
+- `[x]` **NEP-aligned Question Sets**: AI generation of Olympiad (higher-order thinking), Competency-Based (real-world scenarios), and Viva (oral exam) questions.
+- `[x]` **AI Assignment Rubrics**: AI-generated grading rubrics with criteria levels and customized feedback summaries for submissions.
 
 ---
 
 ### Phase 4: Mind Mapping, Gamification, and Simulations
 
-#### [ ] Interactive Mind Mapping
-- `[ ]` **Interactive Builder**: Enable students and teachers to create, add custom nodes, edit labels, and structure revision maps manually.
-- `[ ]` **Sharing Pipeline**: Allow students to share mind maps with classmates and teachers to pin resources.
+#### [x] Interactive Mind Mapping
+- `[x]` **Interactive Builder**: SVG-based drag-and-drop builder with custom nodes, labels, colors, zoom, and auto-layout.
+- `[x]` **Sharing Pipeline**: Share mind maps with users/classes, pin resources (lessons, concepts, videos) to nodes.
 
-#### [ ] Gamification Engine
-- `[ ]` **XP & Coins System**: Trigger rewards when lessons are completed or assessment accuracies are high.
-- `[ ]` **Badge Collections**: Create visual trophies shelf for students.
-- `[ ]` **Daily Challenges**: Setup leaderboard rankings and daily learning targets checklist.
+#### [x] Gamification Engine
+- `[x]` **XP & Coins System**: Rewards triggered by lessons completed and assessment accuracy with level progression.
+- `[x]` **Badge Collections**: 13 badge types with earned/locked visual display shelf.
+- `[x]` **Daily Challenges**: Leaderboard rankings (class/global) and daily learning targets checklist with streak tracking.
 
-#### [ ] Virtual Labs (Simulations)
-- `[ ]` **Brilliant.org-Style Labs**: Embed interactive simulations for Physics (circuits, mechanics), Chemistry (reactions), and Biology (cell structure).
+#### [x] Virtual Labs (Simulations)
+- `[x]` **Physics Labs**: Interactive circuit simulator (components, wires, current flow) and mechanics simulator (inclined plane, forces).
+- `[x]` **Chemistry Labs**: Chemical reaction simulator with animated molecules, color changes, and gas evolution.
+- `[x]` **Biology Labs**: Interactive cell explorer with clickable organelles for plant and animal cells.
 
 ---
 
 ### Phase 5: Pre-Primary, Skills, and Mobile Apps
 
-#### [ ] Pre-Primary Module
-- `[ ]` **K-2 Dashboard**: Simple, visual layouts for Nursery, LKG, and UKG students.
-- `[ ]` **Visual Tracing & Phonics**: Add drag-and-draw canvas tracers, audio-phonics games, stories slideshows, and flashcards.
+#### [x] Pre-Primary Module
+- `[x]` **K-2 Dashboard**: Colorful, visual layout with large buttons and progress stars for Nursery, LKG, UKG.
+- `[x]` **Visual Tracing & Phonics**: HTML5 Canvas tracing, A-Z phonics with audio, story slideshows with narration, and interactive flashcards.
 
-#### [ ] Skill & STREAM Education
-- `[ ]` **Coding & Circuits Workspace**: Setup embedded JS/Python code sandbox and sensor circuit simulator.
-- `[ ]` **STREAM Cross-subject Projects**: Implement catalog of collaborative STREAM projects.
+#### [x] Skill & STREAM Education
+- `[x]` **Coding Workspace**: JS/HTML code sandbox with line numbers, syntax highlighting, client-side execution, and output console.
+- `[x]` **STREAM Cross-subject Projects**: Catalog of collaborative STREAM projects with step-by-step guided workflow.
 
-#### [ ] Native Mobile Apps & Offline Mode
-- `[ ]` **Cross-Platform Apps**: Develop React Native wrappers for Android and iOS app store compatibility.
-- `[ ]` **Offline Database Sync**: Setup offline data storage (SQLite/WatermelonDB) to download lessons and sync test results later.
-- `[ ]` **Multilingual Layout**: Provide native toggle support for Telugu and Hindi translations.
+#### [x] Native Mobile Apps & Offline Mode
+- `[x]` **Cross-Platform Apps**: React Native (Expo) scaffold with auth, role-based navigation, and shared Firebase backend.
+- `[x]` **Offline Database Sync**: Service worker caching, localStorage-based offline storage, download-for-offline, action queue with sync.
+- `[x]` **Multilingual Layout**: i18n system with English, Telugu, and Hindi translations with language switcher.

@@ -1,5 +1,41 @@
 import api from './api';
 
+export interface ChatMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+export async function sendChatMessage(
+  message: string,
+  history?: ChatMessage[]
+): Promise<{ reply: string }> {
+  const systemPrompt = 'You are a helpful AI tutor for students. Answer questions clearly, explain concepts step-by-step. Use markdown: code blocks (```...```) for code, $$...$$ for LaTeX math equations, **bold** for emphasis, and tables when comparing data. Be thorough but concise.';
+
+  const messages: ChatMessage[] = [
+    { role: 'system', content: systemPrompt },
+    ...(history || []),
+    { role: 'user', content: message },
+  ];
+
+  try {
+    const res = await api.post('/ai/chat', { messages, temperature: 0.7, max_tokens: 4096 });
+    let reply = (res.data?.data?.content || '').trim();
+    if (reply.startsWith('{') || reply.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(reply);
+        reply = parsed.answer || parsed.message || parsed.response || parsed.content || parsed.text || reply;
+      } catch {}
+    }
+    return { reply };
+  } catch (err: unknown) {
+    const axiosErr = err as { status?: number; message?: string };
+    if (axiosErr.status === 502) {
+      throw new Error('AI service unavailable. Please try again later.');
+    }
+    throw new Error(axiosErr.message || 'Failed to get AI response');
+  }
+}
+
 /** Choose a model based on the processing step. Falls back to the generic model env var, then a default. */
 export function getModel(step: 'extract' | 'content' | 'question') {
   const specificKey =

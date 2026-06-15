@@ -83,6 +83,7 @@ export async function createUser(data: {
   classId?: string;
   rollNo?: number;
   academicYear?: string;
+  childrenIds?: string[];
 }) {
   let studentId = '';
   let finalClassIds = data.classIds || [];
@@ -126,6 +127,19 @@ export async function createUser(data: {
     photoURL: data.photoURL,
   });
 
+  // Resolve student IDs (e.g. "1a012025") to Firebase UIDs
+  let resolvedChildrenIds = data.childrenIds || [];
+  if (resolvedChildrenIds.length > 0) {
+    const resolved = await Promise.all(
+      resolvedChildrenIds.map(async (id) => {
+        const snapshot = await collections.users().where('studentId', '==', id).get();
+        if (!snapshot.empty) return snapshot.docs[0].id;
+        return id;
+      }),
+    );
+    resolvedChildrenIds = resolved;
+  }
+
   const now = new Date().toISOString();
 
   const userData = {
@@ -140,6 +154,7 @@ export async function createUser(data: {
     studentId: studentId || null,
     rollNo: data.rollNo || null,
     academicYear: data.academicYear || null,
+    childrenIds: resolvedChildrenIds,
     isActive: true,
     createdAt: now,
     updatedAt: now,
@@ -389,6 +404,7 @@ export async function updateProfile(uid: string, data: {
   displayName?: string;
   phoneNumber?: string;
   photoURL?: string;
+  language?: string;
 }) {
   const userRef = collections.users().doc(uid);
   const existing = await userRef.get();
@@ -404,6 +420,7 @@ export async function updateProfile(uid: string, data: {
   if (data.displayName) updateData.displayName = data.displayName;
   if (data.phoneNumber !== undefined) updateData.phoneNumber = data.phoneNumber;
   if (data.photoURL !== undefined) updateData.photoURL = data.photoURL;
+  if (data.language !== undefined) updateData.language = data.language;
 
   await userRef.update(updateData);
 

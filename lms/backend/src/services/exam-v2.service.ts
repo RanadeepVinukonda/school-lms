@@ -6,8 +6,10 @@ import { logger } from '../utils/logger';
 import { getTeacherAssignment } from './teacher-class-subject.service';
 import { computeLevel, computeComplexityHandled } from './ai-level.service';
 import type { Difficulty, StudentLevel } from './ai-level.service';
+import * as gamificationService from './gamification.service';
 
 const DIFFICULTY_RANK: Record<Difficulty, number> = { easy: 0, medium: 1, hard: 2 };
+const POINTS_BY_DIFFICULTY: Record<string, number> = { easy: 1, medium: 2, hard: 3 };
 
 export async function createExam(data: {
   title: string;
@@ -49,7 +51,7 @@ export async function createExam(data: {
 
     const filtered = questionBank.filter((q) => data.selectedModels.includes(q.type));
     const selected = filtered.slice(0, Math.min(data.questionCountPerConcept, filtered.length));
-    totalPoints += selected.reduce((sum, q) => sum + (q.points || 0), 0);
+    totalPoints += selected.reduce((sum, q) => sum + (POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1), 0);
   }
 
   const examId = uuidv4();
@@ -71,6 +73,7 @@ export async function createExam(data: {
     maxAttempts: data.maxAttempts ?? 1,
     shuffleQuestions: data.shuffleQuestions ?? true,
     showResults: data.showResults ?? false,
+    attemptCount: 0,
     releasedAt: null,
     startDate: data.startDate || null,
     endDate: data.endDate || null,
@@ -203,7 +206,7 @@ export async function startExamAttempt(examId: string, studentId: string, select
     allSelected = [...allSelected].sort(() => Math.random() - 0.5);
   }
 
-  const totalPoints = allSelected.reduce((sum, q) => sum + (q.points || 0), 0);
+  const totalPoints = allSelected.reduce((sum, q) => sum + (POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1), 0);
 
   const questionsForStudent = allSelected.map((q) => {
     const { correctAnswer, ...rest } = q;
@@ -325,7 +328,7 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
         question.correctAnswer?.toString().toLowerCase().trim();
     }
 
-    const pointsEarned = isCorrect ? question.points : 0;
+    const pointsEarned = isCorrect ? (POINTS_BY_DIFFICULTY[question.difficulty || 'medium'] || 1) : 0;
     if (isCorrect) score += pointsEarned;
 
     return {
@@ -375,6 +378,23 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
   await attemptRef.update(result);
 
   logger.info('Exam V2 attempt submitted', { attemptId, studentId, score, percentage, newLevel });
+
+  try {
+    await gamificationService.recordAssessmentResult(studentId, passed, percentage >= 80, percentage);
+    await gamificationService.awardXp(studentId, 'assessmentComplete', `Completed exam: ${examData.title}`);
+    await gamificationService.awardCoins(studentId, 'assessmentComplete', `Completed exam: ${examData.title}`);
+    if (percentage >= 80) {
+      await gamificationService.awardXp(studentId, 'highAccuracy', `High accuracy (${percentage}%) on ${examData.title}`);
+      await gamificationService.awardCoins(studentId, 'highAccuracy', `High accuracy (${percentage}%) on ${examData.title}`);
+    }
+    if (percentage === 100) {
+      await gamificationService.awardXp(studentId, 'perfectScore', `Perfect score on ${examData.title}`);
+      await gamificationService.awardCoins(studentId, 'perfectScore', `Perfect score on ${examData.title}`);
+    }
+    await gamificationService.updateStreak(studentId);
+  } catch (gamErr) {
+    logger.error('Gamification reward failed', { studentId, examId: attemptData.examId, error: gamErr });
+  }
 
   return { id: attemptId, ...attemptData, ...result, level: newLevel };
 }

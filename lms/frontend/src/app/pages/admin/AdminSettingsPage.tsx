@@ -183,6 +183,39 @@ export default function AdminSettingsPage() {
     onError: (err: Error) => toast.error(err.message || 'Failed to create admin'),
   });
 
+  // Parent Registration
+  const [showCreateParent, setShowCreateParent] = useState(false);
+  const [parentForm, setParentForm] = useState({ displayName: '', email: '', password: '', childrenIds: '' as string });
+  const createParentMutation = useMutation({
+    mutationFn: () =>
+      api.post('/users', {
+        displayName: parentForm.displayName,
+        email: parentForm.email,
+        password: parentForm.password,
+        role: 'parent',
+        childrenIds: parentForm.childrenIds.split(',').map((s) => s.trim()).filter(Boolean),
+      }),
+    onSuccess: () => {
+      toast.success('Parent account created');
+      setShowCreateParent(false);
+      setParentForm({ displayName: '', email: '', password: '', childrenIds: '' });
+      queryClient.invalidateQueries({ queryKey: ['admin-users-stats'] });
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || err.message || 'Failed to create parent'),
+  });
+
+  // Parents list
+  const [parentSearch, setParentSearch] = useState('');
+
+  const parentUsers = useMemo(() => {
+    return users.filter((u) => u.role === 'parent');
+  }, [users]);
+
+  const filteredParentUsers = useMemo(() => {
+    const q = parentSearch.toLowerCase();
+    return parentUsers.filter((u) => u.displayName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+  }, [parentUsers, parentSearch]);
+
   const [adminDeleteTarget, setAdminDeleteTarget] = useState<UserDoc | null>(null);
   const [adminDeleteLoading, setAdminDeleteLoading] = useState(false);
   const [adminDependencyReport, setAdminDependencyReport] = useState<DependencyReport | null>(null);
@@ -287,9 +320,10 @@ export default function AdminSettingsPage() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full max-w-md grid-cols-3">
+            <TabsList className="grid w-full max-w-md grid-cols-4">
               <TabsTrigger value="general">General Settings</TabsTrigger>
               <TabsTrigger value="admins">Admin Users</TabsTrigger>
+              <TabsTrigger value="parents">Parents</TabsTrigger>
               <TabsTrigger value="audit">Audit Logs</TabsTrigger>
             </TabsList>
 
@@ -417,10 +451,16 @@ export default function AdminSettingsPage() {
                     onChange={(e) => setAdminSearch(e.target.value)}
                   />
                 </div>
-                <Button onClick={() => setShowCreateAdmin(true)}>
-                  <Icon name="add" size={16} className="mr-2" />
-                  Add Admin
-                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={() => setShowCreateAdmin(true)}>
+                    <Icon name="add" size={16} className="mr-2" />
+                    Add Admin
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowCreateParent(true)}>
+                    <Icon name="add" size={16} className="mr-2" />
+                    Register Parent
+                  </Button>
+                </div>
               </div>
 
               {filteredAdminUsers.length === 0 ? (
@@ -476,6 +516,78 @@ export default function AdminSettingsPage() {
                               title="Delete administrator account"
                             >
                               <Icon name="delete" size={16} />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* -------------------------------------------------------------
+                TAB CONTENT: PARENTS
+               ------------------------------------------------------------- */}
+            <TabsContent value="parents" className="mt-4 space-y-6">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="relative max-w-sm flex-1">
+                  <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                  <Input
+                    placeholder="Search parents..."
+                    className="pl-10 border-border/60 placeholder:text-muted-foreground"
+                    value={parentSearch}
+                    onChange={(e) => setParentSearch(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {filteredParentUsers.length === 0 ? (
+                <Card className="border-border/60">
+                  <CardContent className="flex flex-col items-center gap-4 py-16">
+                    <Icon name="family_link" size={48} className="text-muted-foreground/50" />
+                    <p className="text-title-sm font-medium">No parents registered yet</p>
+                    <p className="text-body-md text-muted-foreground">Use the Register Parent button in the Admin Users tab to add parents.</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="border border-border/60 rounded-xl overflow-x-auto bg-surface">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
+                        <th className="text-left px-4 py-3">Parent</th>
+                        <th className="text-left px-4 py-3">Email</th>
+                        <th className="text-left px-4 py-3">Children</th>
+                        <th className="text-left px-4 py-3">Status</th>
+                        <th className="text-right px-4 py-3">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/40">
+                      {filteredParentUsers.map((u) => (
+                        <tr key={u.id} className="hover:bg-muted/20 transition-colors text-body-md">
+                          <td className="px-4 py-3 flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="text-xs">{getInitials(u.displayName)}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-semibold">{u.displayName}</span>
+                          </td>
+                          <td className="px-4 py-3 font-mono text-sm select-all">{u.email}</td>
+                          <td className="px-4 py-3 text-sm text-muted-foreground">
+                            {(u as any).childrenIds?.length ? `${(u as any).childrenIds.length} linked` : 'None'}
+                          </td>
+                          <td className="px-4 py-3">
+                            <Badge variant={u.isActive === false ? 'destructive' : 'success'} className="text-[10px]">
+                              {u.isActive === false ? 'Inactive' : 'Active'}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => toggleAdminMutation.mutate(u.id)}
+                              title={u.isActive === false ? 'Enable user login' : 'Disable user login'}
+                            >
+                              <Icon name={u.isActive === false ? 'toggle_off' : 'toggle_on'} size={18} />
                             </Button>
                           </td>
                         </tr>
@@ -656,6 +768,38 @@ export default function AdminSettingsPage() {
               disabled={!createAdminForm.displayName || !createAdminForm.email || !createAdminForm.password || createAdminMutation.isPending}
             >
               {createAdminMutation.isPending ? 'Registering...' : 'Create Admin'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* REGISTER PARENT DIALOG */}
+      <Dialog open={showCreateParent} onOpenChange={setShowCreateParent}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Register Parent</DialogTitle>
+            <DialogDescription>Create a parent account linked to student(s).</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Full Name</Label>
+              <Input placeholder="Parent Name" value={parentForm.displayName} onChange={(e) => setParentForm((f) => ({ ...f, displayName: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input type="email" placeholder="parent@school.edu" value={parentForm.email} onChange={(e) => setParentForm((f) => ({ ...f, email: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Password</Label>
+              <Input type="password" placeholder="Min 6 characters" value={parentForm.password} onChange={(e) => setParentForm((f) => ({ ...f, password: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Children (student IDs - comma separated)</Label>
+              <Input placeholder="e.g. 1a012025, 1a022025" value={parentForm.childrenIds} onChange={(e) => setParentForm((f) => ({ ...f, childrenIds: e.target.value }))} />
+              <p className="text-label-xs text-muted-foreground">Use student IDs like 1a012025 (not Firebase UIDs)</p>
+            </div>
+            <Button className="w-full mt-2" onClick={() => createParentMutation.mutate()} disabled={!parentForm.displayName || !parentForm.email || !parentForm.password || createParentMutation.isPending}>
+              {createParentMutation.isPending ? 'Registering...' : 'Register Parent'}
             </Button>
           </div>
         </DialogContent>

@@ -12,6 +12,8 @@ function roleDashboard(role: UserRole): string {
       return ROUTES.ADMIN_DASHBOARD;
     case 'teacher':
       return ROUTES.TEACHER_DASHBOARD;
+    case 'parent':
+      return ROUTES.PARENT_DASHBOARD;
     case 'student':
     default:
       return ROUTES.STUDENT_DASHBOARD;

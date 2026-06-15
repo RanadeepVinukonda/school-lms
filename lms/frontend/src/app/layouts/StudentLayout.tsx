@@ -24,7 +24,14 @@ const navItems: NavItem[] = [
   { label: 'Home', href: ROUTES.STUDENT_DASHBOARD, icon: 'home' },
   { label: 'Tasks', href: ROUTES.STUDENT_TASKS, icon: 'checklist' },
   { label: 'Exams', href: ROUTES.STUDENT_EXAMS, icon: 'assignment' },
+  { label: 'AI Tutor', href: ROUTES.STUDENT_AI_TUTOR, icon: 'smart_toy' },
   { label: 'Profile', href: ROUTES.STUDENT_PROFILE, icon: 'person' },
+  { label: 'Rewards', href: ROUTES.STUDENT_GAMIFICATION, icon: 'emoji_events' },
+  { label: 'Leaderboard', href: ROUTES.STUDENT_LEADERBOARD, icon: 'leaderboard' },
+  { label: 'Virtual Labs', href: ROUTES.STUDENT_LABS, icon: 'science' },
+  { label: 'Mind Maps', href: ROUTES.STUDENT_MIND_MAPS, icon: 'psychology' },
+  { label: 'Coding', href: ROUTES.STUDENT_CODING, icon: 'code' },
+  { label: 'Scan Page', href: ROUTES.STUDENT_OCR, icon: 'document_scanner' },
 ];
 
 export default function StudentLayout() {

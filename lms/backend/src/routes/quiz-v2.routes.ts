@@ -7,6 +7,7 @@ import { asyncHandler } from '../middlewares/asyncHandler';
 const router = Router();
 
 router.post('/', authenticate, requireRole('teacher', 'admin'), asyncHandler(quizV2Controller.createQuiz));
+router.patch('/:quizId', authenticate, requireRole('teacher', 'admin'), asyncHandler(quizV2Controller.updateQuiz));
 router.post('/:quizId/release', authenticate, requireRole('teacher', 'admin'), asyncHandler(quizV2Controller.releaseQuiz));
 router.post('/:quizId/republish', authenticate, requireRole('teacher', 'admin'), asyncHandler(quizV2Controller.republishQuiz));
 router.post('/:quizId/start', authenticate, requireRole('student'), asyncHandler(quizV2Controller.startAttempt));

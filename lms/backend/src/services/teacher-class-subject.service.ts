@@ -65,12 +65,31 @@ export async function assignTeacher(data: {
   };
 }
 
-/** Get all assignments for a teacher. */
-export async function getTeacherAssignments(teacherId: string): Promise<TeacherClassSubject[]> {
+/** Get all assignments for a teacher, enriched with class name. */
+export async function getTeacherAssignments(teacherId: string): Promise<(TeacherClassSubject & { className: string; subjectName: string })[]> {
   const snap = await collections.teacherClassSubject()
     .where('teacherId', '==', teacherId)
     .get();
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as TeacherClassSubject));
+  const results = await Promise.all(snap.docs.map(async (d) => {
+    const data = { id: d.id, ...d.data() } as TeacherClassSubject;
+    let className = '';
+    let subjectName = '';
+    try {
+      const [classSnap, subjectSnap] = await Promise.all([
+        collections.classes().doc(data.classId).get(),
+        collections.subjects().doc(data.subjectId).get(),
+      ]);
+      if (classSnap.exists) {
+        const c = classSnap.data()!;
+        className = `${c.grade || ''} ${c.section || ''} ${c.name || ''}`.trim() || c.code || data.classId;
+      }
+      if (subjectSnap.exists) {
+        subjectName = subjectSnap.data()!.name || data.subjectId;
+      }
+    } catch { /* ignore */ }
+    return { ...data, className, subjectName };
+  }));
+  return results;
 }
 
 /** Get the single assignment for a teacher + class. */

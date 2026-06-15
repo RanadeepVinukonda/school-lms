@@ -106,12 +106,13 @@ export function getUrgencyLevel(date: Date | null): UrgencyLevel {
 function findSubjectName(
   subjects: Subject[],
   subjectId?: string,
+  fallback?: string,
 ): string {
   if (subjectId) {
     const subject = subjects.find((s) => s.id === subjectId);
     if (subject) return subject.name;
   }
-  return 'Unknown Subject';
+  return fallback || 'Unknown Subject';
 }
 
 export function buildTasks(
@@ -129,7 +130,7 @@ export function buildTasks(
       type: 'assignment',
       title: a.title,
       description: a.description ?? '',
-      subjectName: findSubjectName(subjects, a.subjectId),
+      subjectName: findSubjectName(subjects, a.subjectId, a.subjectName),
       subjectId: a.subjectId,
       date: dueDate,
       urgency: getUrgencyLevel(dueDate),
@@ -145,13 +146,13 @@ export function buildTasks(
       type: 'quiz',
       title: q.title,
       description: q.description ?? '',
-      subjectName: findSubjectName(subjects, q.subjectId),
+      subjectName: findSubjectName(subjects, q.subjectId, q.subjectName),
       subjectId: q.subjectId,
       date: null,
       urgency: 'later',
-      linkTo: `/quizzes/${q.id}/attempt`,
+      linkTo: `/student/assessments/${q.id}/take`,
       timeLimit: q.timeLimit,
-      questionCount: Array.isArray(q.questions) ? q.questions.length : 0,
+      questionCount: q.questionCount ?? (Array.isArray(q.questions) ? q.questions.length : 0),
     });
   }
 
@@ -162,11 +163,11 @@ export function buildTasks(
       type: 'exam',
       title: e.title,
       description: e.description ?? '',
-      subjectName: findSubjectName(subjects, e.subjectId),
+      subjectName: findSubjectName(subjects, e.subjectId, e.subjectName),
       subjectId: e.subjectId,
       date: startDate,
       urgency: getUrgencyLevel(startDate),
-      linkTo: `/exams/${e.id}`,
+      linkTo: `/student/assessments/${e.id}/take?type=exam`,
       duration: e.duration,
       questionCount: Array.isArray(e.questions) ? e.questions.length : 0,
     });

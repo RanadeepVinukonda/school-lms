@@ -39,6 +39,11 @@ function parseRetryAfter(errBody: string): number | null {
       const m = raw.match(/retry_after_seconds[=:](\d+)/);
       if (m) return parseInt(m[1], 10) * 1000;
     }
+    const msg = parsed?.error?.message;
+    if (typeof msg === 'string') {
+      const m = msg.match(/retry in\s*(\d+(?:\.\d+)?)\s*s/i);
+      if (m) return Math.ceil(parseFloat(m[1]) * 1000);
+    }
   } catch { /* ignore parse errors */ }
   return null;
 }
@@ -150,8 +155,9 @@ async function geminiChatCompletion(
         const jsonBlock = extractJsonBlock(text);
         const sanitized = sanitizeJson(jsonBlock);
         try {
-          JSON.parse(sanitized);
-          return sanitized;
+          const parsed = JSON.parse(sanitized);
+          const extracted = parsed.answer || parsed.message || parsed.response || parsed.content || parsed.text || sanitized;
+          return typeof extracted === 'string' ? extracted : sanitized;
         } catch {
           logger.warn('Gemini response was not valid JSON, returning raw', { contentPreview: text.slice(0, 200) });
           return text;
@@ -224,7 +230,7 @@ async function openaiChatCompletion(
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 120000);
-
+    
     try {
       const res = await fetch(env.AI_BASE_URL, {
         method: 'POST',
@@ -242,8 +248,9 @@ async function openaiChatCompletion(
         const jsonBlock = extractJsonBlock(content);
         const sanitized = sanitizeJson(jsonBlock);
         try {
-          JSON.parse(sanitized);
-          return sanitized;
+          const parsed = JSON.parse(sanitized);
+          const text = parsed.answer || parsed.message || parsed.response || parsed.content || parsed.text || sanitized;
+          return typeof text === 'string' ? text : sanitized;
         } catch {
           logger.warn('AI response was not valid JSON, returning raw content', { contentPreview: content.slice(0, 200) });
           return content;

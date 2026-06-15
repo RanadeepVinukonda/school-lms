@@ -34,7 +34,9 @@ const navGroups: NavGroup[] = [
     items: [
       { label: 'Home', href: ROUTES.TEACHER_DASHBOARD, icon: 'home' },
       { label: 'Teaching Space', href: ROUTES.TEACHER_TEXTBOOKS, icon: 'menu_book' },
+      { label: 'Mind Maps', href: ROUTES.TEACHER_MIND_MAPS, icon: 'psychology' },
       { label: 'Manage Tests & Review', href: ROUTES.TEACHER_TEST_SCHEDULE, icon: 'analytics' },
+      { label: 'OCR Scanner', href: ROUTES.TEACHER_OCR, icon: 'document_scanner' },
     ],
   },
 ];
@@ -42,6 +44,7 @@ const navGroups: NavGroup[] = [
 const mobileNavItems: NavItem[] = [
   { label: 'Home', href: ROUTES.TEACHER_DASHBOARD, icon: 'home' },
   { label: 'Teaching', href: ROUTES.TEACHER_TEXTBOOKS, icon: 'menu_book' },
+  { label: 'Mind Maps', href: ROUTES.TEACHER_MIND_MAPS, icon: 'psychology' },
   { label: 'Tests', href: ROUTES.TEACHER_TEST_SCHEDULE, icon: 'analytics' },
 ];
 

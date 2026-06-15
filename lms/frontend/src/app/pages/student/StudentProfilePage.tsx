@@ -19,6 +19,9 @@ import { useUIStore } from '@/store/uiStore';
 import { useQuery } from '@tanstack/react-query';
 import { changePassword } from '@/firebase/auth';
 import { getAllSubjects, getGradesByStudent, getUser, getClass } from '@/services/dataService';
+import { XPBar } from '@/components/gamification/XPBar';
+import { XP_THRESHOLDS } from '@/components/gamification/constants';
+import api from '@/services/api';
 
 function EmptySection({ icon, message }: { icon: string; message: string }) {
   return (
@@ -41,10 +44,12 @@ export default function StudentProfilePage() {
       const user = firestoreUser as typeof firestoreUser & { studentId?: string; classId?: string };
       const authId = user.id;
 
-      const [allSubjects, grades, classDoc] = await Promise.all([
+      const [allSubjects, grades, classDoc, gamification, perf] = await Promise.all([
         getAllSubjects(),
         getGradesByStudent(authId),
         user.classId ? getClass(user.classId) : Promise.resolve(null),
+        api.get('/gamification/profile/me').then(r => r.data.data).catch(() => null),
+        api.get(`/analytics-v2/student/${authId}`).then(r => r.data.data).catch(() => null),
       ]);
 
       const subjectMap = new Map(allSubjects.map((s) => [s.id, s]));
@@ -64,7 +69,7 @@ export default function StudentProfilePage() {
         ? enrichedGrades.reduce((sum, g) => sum + g.percentage, 0) / enrichedGrades.length
         : 0;
 
-      return { user, subjects: studentSubjects, grades: enrichedGrades, assignmentGrades, avgPercentage, totalSubjects: studentSubjects.length, className: classDoc?.name ?? null, classGrade: classDoc?.grade ?? null };
+      return { user, subjects: studentSubjects, grades: enrichedGrades, assignmentGrades, avgPercentage, totalSubjects: studentSubjects.length, className: classDoc?.name ?? null, classGrade: classDoc?.grade ?? null, gamification, perf };
     },
     enabled: !!authUser,
   });
@@ -166,6 +171,70 @@ export default function StudentProfilePage() {
                   </motion.div>
                 </motion.div>
               </motion.div>
+
+              {/* Performance & Activity */}
+              {d.gamification && (
+                <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                  <div className="mb-6">
+                    <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">PERFORMANCE</p>
+                    <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">Gamification &amp; Activity</h2>
+                  </div>
+                  <Card className="border-border/60">
+                    <CardContent className="p-5 space-y-6">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-xl bg-primary-container flex items-center justify-center shrink-0"><Icon name="emoji_events" size={18} className="text-primary" /></div>
+                          <div><p className="text-label-xs text-muted-foreground">Level</p><p className="text-title-sm font-bold">{d.gamification.level ?? 1}</p></div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-xl bg-warning-container flex items-center justify-center shrink-0"><Icon name="monetization_on" size={18} className="text-warning" /></div>
+                          <div><p className="text-label-xs text-muted-foreground">Coins</p><p className="text-title-sm font-bold">{d.gamification.coins ?? 0}</p></div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-xl bg-success-container flex items-center justify-center shrink-0"><Icon name="local_fire_department" size={18} className="text-success" /></div>
+                          <div><p className="text-label-xs text-muted-foreground">Streak</p><p className="text-title-sm font-bold">{d.gamification.streak ?? 0} days</p></div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-xl bg-info-container flex items-center justify-center shrink-0"><Icon name="assessment" size={18} className="text-info" /></div>
+                          <div><p className="text-label-xs text-muted-foreground">Badges</p><p className="text-title-sm font-bold">{d.gamification.badges?.length ?? 0}</p></div>
+                        </div>
+                      </div>
+                      {(() => {
+                        const lvl = d.gamification.level ?? 1;
+                        const xp = d.gamification.xp ?? 0;
+                        const before = lvl > 1 ? (XP_THRESHOLDS[lvl - 1] ?? 0) : 0;
+                        const after = XP_THRESHOLDS[lvl] ?? XP_THRESHOLDS[XP_THRESHOLDS.length - 1] + 1000;
+                        return <XPBar xp={xp} level={lvl} xpForCurrentLevel={before} xpForNextLevel={after} />;
+                      })()}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+
+              {d.perf && d.perf.recentActivity && d.perf.recentActivity.length > 0 && (
+                <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                  <Card className="border-border/60">
+                    <CardHeader>
+                      <CardTitle className="text-title-sm flex items-center gap-2"><Icon name="history" size={18} />Recent Activity</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-5 pt-0">
+                      <div className="space-y-2">
+                        {d.perf.recentActivity.slice(0, 5).map((a: { type: string; title: string; score: number; date: string }, i: number) => (
+                          <div key={i} className="flex items-center justify-between p-3 rounded-lg hover:bg-accent transition-colors">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium truncate">{a.title}</p>
+                              <p className="text-xs text-muted-foreground capitalize">{a.type} &middot; {formatDate(a.date)}</p>
+                            </div>
+                            <span className={cn('text-sm font-bold shrink-0 ml-3', a.score >= 80 ? 'text-success' : a.score >= 60 ? 'text-warning' : 'text-error')}>
+                              {a.score}%
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
 
               {/* Assignment History */}
               <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>

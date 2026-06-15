@@ -32,7 +32,7 @@ interface AssessmentInfo {
   title: string;
   description: string;
   timeLimitMinutes: number;
-  questionModels: QuestionModel[];
+  selectedModels: QuestionModel[];
   totalPoints: number;
   questionsCount: number;
   showResults: boolean;
@@ -126,7 +126,8 @@ function playSynthesizedSound(type: 'correct' | 'incorrect') {
 }
 
 export default function StudentQuizTakePageV2() {
-  const { assessmentId } = useParams<{ assessmentId: string }>();
+  const params = useParams<{ assessmentId: string; id: string }>();
+  const assessmentId = params.assessmentId || params.id;
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const userId = useAuthStore((s) => s.user?.id);
@@ -156,7 +157,7 @@ export default function StudentQuizTakePageV2() {
   const phaseRef = useRef(phase);
 
   phaseRef.current = phase;
-  const basePath = assessmentType === 'exam' ? `/api/exams-v2` : `/api/quizzes-v2`;
+  const basePath = assessmentType === 'exam' ? `/exams-v2` : `/quizzes-v2`;
 
   const {
     data: assessmentInfo,
@@ -197,6 +198,15 @@ export default function StudentQuizTakePageV2() {
       toast.error(err.message || 'Failed to start assessment');
     },
   });
+
+  // Auto-start quiz with teacher-configured models, skip student selection
+  const hasAutoStarted = useRef(false);
+  useEffect(() => {
+    if (assessmentInfo && phase === 'select-models' && !hasAutoStarted.current) {
+      hasAutoStarted.current = true;
+      startMutation.mutate(assessmentInfo.selectedModels ?? []);
+    }
+  }, [assessmentInfo?.id]);
 
   autoSubmitRef.current = () => {
     if (phaseRef.current !== 'quiz') return;
@@ -494,7 +504,7 @@ export default function StudentQuizTakePageV2() {
     );
   }
 
-  const questionModels = assessmentInfo.questionModels || [];
+  const questionModels = assessmentInfo.selectedModels || [];
 
   if (questionModels.length === 0 && phase === 'select-models') {
     return (

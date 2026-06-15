@@ -17,5 +17,6 @@ router.put('/:examId/grades', authenticate, requireRole('teacher', 'admin'), asy
 router.get('/:examId/results', authenticate, asyncHandler(examV2Controller.getResults));
 router.get('/class/:classId', authenticate, asyncHandler(examV2Controller.listForClass));
 router.get('/my', authenticate, asyncHandler(examV2Controller.listForTeacher));
+router.get('/:examId', authenticate, asyncHandler(examV2Controller.getExam));
 
 export default router;

@@ -117,12 +117,10 @@ function ExamCard({
                   <Icon name="percent" size={14} />
                   Pass: {exam.passingScore}%
                 </span>
-                {exam.attemptCount !== undefined && (
-                  <span className="flex items-center gap-1">
-                    <Icon name="people" size={14} />
-                    {exam.attemptCount} attempt{exam.attemptCount !== 1 ? 's' : ''}
-                  </span>
-                )}
+                <span className="flex items-center gap-1">
+                  <Icon name="people" size={14} />
+                  {exam.attemptCount ?? 0} attempt{(exam.attemptCount ?? 0) !== 1 ? 's' : ''}
+                </span>
                 <span className="text-muted-foreground">
                   {formatDate(exam.createdAt)}
                 </span>
