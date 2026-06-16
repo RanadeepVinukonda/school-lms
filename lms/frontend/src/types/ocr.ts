@@ -23,7 +23,17 @@ export interface GeneratedQuestion {
 export interface OCRMappingResult {
   conceptId: string;
   conceptName: string;
-  questions: GeneratedQuestion[];
+  questions?: GeneratedQuestion[];
+  assignment?: {
+    id: string;
+    title: string;
+    description: string;
+    instructions: string;
+    questions: string[];
+    totalPoints: number;
+    rubric: string;
+  };
+  type?: 'quiz' | 'assignment';
 }
 
 export interface ConceptOption {

@@ -120,6 +120,85 @@ Return a JSON object with the matched concept id and name:
   }
 }
 
+export interface GeneratedAssignment {
+  id: string;
+  title: string;
+  description: string;
+  instructions: string;
+  questions: string[];
+  totalPoints: number;
+  rubric: string;
+}
+
+export async function generateAssignmentFromText(
+  extractedText: string,
+  conceptName: string,
+  count: number = 5,
+): Promise<GeneratedAssignment> {
+  const prompt = `You are an educational assignment generator. Based on the following textbook content, create a comprehensive assignment with ${count} questions.
+
+Textbook content:
+"""
+${extractedText.slice(0, 4000)}
+"""
+
+Concept: ${conceptName}
+
+Return a JSON object with:
+- id: a unique string (e.g., "assn-1")
+- title: assignment title
+- description: brief description
+- instructions: detailed instructions for students
+- questions: array of ${count} questions (mix of short answer, long answer, and analytical)
+- totalPoints: total points (each question worth varying points)
+- rubric: brief grading rubric
+
+Example:
+{
+  "id": "assn-1",
+  "title": "Assignment on ${conceptName}",
+  "description": "Test your understanding of ${conceptName}",
+  "instructions": "Answer all questions in detail. Show your work where applicable.",
+  "questions": ["Explain the concept of...", "Compare and contrast..."],
+  "totalPoints": 50,
+  "rubric": "Each question is graded based on accuracy and completeness."
+}`;
+
+  try {
+    const response = await aiService.chatCompletion({
+      model: env.AI_MODEL,
+      messages: [
+        { role: 'system', content: 'You are an educational assignment generator. Return only valid JSON.' },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.7,
+      max_tokens: 4096,
+    });
+
+    const parsed = JSON.parse(response);
+    return {
+      id: parsed.id || `assn-${Date.now()}`,
+      title: parsed.title || `Assignment on ${conceptName}`,
+      description: parsed.description || '',
+      instructions: parsed.instructions || 'Answer all questions.',
+      questions: Array.isArray(parsed.questions) ? parsed.questions.slice(0, count) : [],
+      totalPoints: parsed.totalPoints || count * 10,
+      rubric: parsed.rubric || '',
+    };
+  } catch (error) {
+    logger.error('Assignment generation failed', { error: error instanceof Error ? error.message : String(error) });
+    return {
+      id: `assn-${Date.now()}`,
+      title: `Assignment on ${conceptName}`,
+      description: '',
+      instructions: 'Answer all questions.',
+      questions: [],
+      totalPoints: 0,
+      rubric: '',
+    };
+  }
+}
+
 export async function generateQuestionsFromText(
   extractedText: string,
   conceptName: string,

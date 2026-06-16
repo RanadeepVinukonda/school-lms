@@ -28,23 +28,44 @@ export async function scanImage(req: Request, res: Response) {
   sendSuccess(res, result);
 }
 
+export async function scanMultipleImages(req: Request, res: Response) {
+  const files = req.files as Express.Multer.File[] | undefined;
+  if (!files || files.length === 0) {
+    throw new ValidationError('No images provided. Upload at least one image.');
+  }
+  for (const f of files) {
+    if (f.buffer.length > 10 * 1024 * 1024) {
+      throw new AppError(400, `Image ${f.originalname} is too large. Maximum size is 10MB.`);
+    }
+  }
+  const results = await Promise.all(files.map((f) => ocrService.extractText(f.buffer)));
+  const combinedText = results.map((r) => r.text).filter(Boolean).join('\n\n');
+  const avgConfidence = results.reduce((s, r) => s + r.confidence, 0) / results.length;
+  sendSuccess(res, {
+    text: combinedText,
+    confidence: avgConfidence,
+    pages: results.map((r) => ({ text: r.text, confidence: r.confidence })),
+  });
+}
+
 export async function mapToConcept(req: Request, res: Response) {
-  const { text, textbookId, count } = req.body;
+  const { text, textbookId, count, type } = req.body;
 
   if (!text || typeof text !== 'string') {
     throw new ValidationError('Text is required');
   }
 
   const questionCount = Math.min(Math.max(parseInt(count) || 5, 1), 20);
+  const generationType = type === 'assignment' ? 'assignment' : 'quiz';
 
-  // If textbookId is 'auto' or missing, generate questions directly from text
   if (!textbookId || textbookId === 'auto') {
-    const questions = await ocrService.generateQuestionsFromText(text, 'Detected Content', questionCount);
-    sendCreated(res, {
-      conceptId: null,
-      conceptName: 'Detected Content',
-      questions,
-    });
+    if (generationType === 'assignment') {
+      const assignment = await ocrService.generateAssignmentFromText(text, 'Detected Content', questionCount);
+      sendCreated(res, { conceptId: null, conceptName: 'Detected Content', assignment, type: 'assignment' });
+    } else {
+      const questions = await ocrService.generateQuestionsFromText(text, 'Detected Content', questionCount);
+      sendCreated(res, { conceptId: null, conceptName: 'Detected Content', questions, type: 'quiz' });
+    }
     return;
   }
 
@@ -75,13 +96,13 @@ export async function mapToConcept(req: Request, res: Response) {
     return;
   }
 
-  const questions = await ocrService.generateQuestionsFromText(text, mapping.conceptName, questionCount);
-
-  sendCreated(res, {
-    conceptId: mapping.conceptId,
-    conceptName: mapping.conceptName,
-    questions,
-  });
+  if (generationType === 'assignment') {
+    const assignment = await ocrService.generateAssignmentFromText(text, mapping.conceptName, questionCount);
+    sendCreated(res, { conceptId: mapping.conceptId, conceptName: mapping.conceptName, assignment, type: 'assignment' });
+  } else {
+    const questions = await ocrService.generateQuestionsFromText(text, mapping.conceptName, questionCount);
+    sendCreated(res, { conceptId: mapping.conceptId, conceptName: mapping.conceptName, questions, type: 'quiz' });
+  }
 }
 
 export async function getConceptsForTextbook(req: Request, res: Response) {

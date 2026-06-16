@@ -21,6 +21,8 @@ const upload = multer({
 
 router.post('/scan', authenticate, uploadRateLimit, upload.single('image'), asyncHandler(ocrController.scanImage));
 
+router.post('/scan-multiple', authenticate, uploadRateLimit, upload.array('images', 10), asyncHandler(ocrController.scanMultipleImages));
+
 router.post('/map-to-concept', authenticate, asyncHandler(ocrController.mapToConcept));
 
 router.get('/concepts/:textbookId', authenticate, asyncHandler(ocrController.getConceptsForTextbook));

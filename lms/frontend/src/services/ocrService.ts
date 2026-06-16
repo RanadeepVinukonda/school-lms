@@ -32,13 +32,24 @@ export async function scanImage(image: File): Promise<OCRResult> {
   return res.data.data;
 }
 
+export async function scanMultipleImages(images: File[]): Promise<{ text: string; confidence: number; pages: Array<{ text: string; confidence: number }> }> {
+  const formData = new FormData();
+  for (const img of images) {
+    const blob = await downscaleImage(img);
+    const resized = new File([blob], img.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' });
+    formData.append('images', resized);
+  }
+  const res = await api.post('/ocr/scan-multiple', formData);
+  return res.data.data;
+}
+
 export async function scanImageBase64(imageBase64: string): Promise<OCRResult> {
   const res = await api.post('/ocr/scan', { image: imageBase64 });
   return res.data.data;
 }
 
-export async function mapToConcept(text: string, textbookId: string, count?: number): Promise<OCRMappingResult> {
-  const res = await api.post('/ocr/map-to-concept', { text, textbookId, count });
+export async function mapToConcept(text: string, textbookId: string, count?: number, type?: 'quiz' | 'assignment'): Promise<OCRMappingResult & { type?: string; assignment?: any }> {
+  const res = await api.post('/ocr/map-to-concept', { text, textbookId, count, type });
   return res.data.data;
 }
 
