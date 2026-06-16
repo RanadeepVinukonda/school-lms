@@ -3,6 +3,7 @@ import { collections } from '../firebase/firestore';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { getAdminFirestore } from '../firebase/admin';
+import { createBulkNotifications } from './notification.service';
 
 export async function markAttendance(data: {
   studentIds: string[];
@@ -36,6 +37,42 @@ export async function markAttendance(data: {
 
   await batch.commit();
   logger.info('Attendance marked', { classId: data.classId, date: data.date, count: data.studentIds.length });
+
+  // Send attendance notification to parents
+  try {
+    // Fetch student names
+    const studentDocs = await Promise.all(data.studentIds.map((sid: string) => collections.users().doc(sid).get()));
+    const studentNameMap: Record<string, string> = {};
+    for (const snap of studentDocs) {
+      if (snap.exists) studentNameMap[snap.id] = snap.data()?.displayName || snap.id;
+    }
+
+    // Find parents linked to any of these students
+    const allParents = await collections.users().where('role', '==', 'parent').get();
+    const notifications: Array<{ userId: string; type: string; title: string; body: string; data: Record<string, unknown> }> = [];
+
+    for (const doc of allParents.docs) {
+      const kids = (doc.data().childrenIds || []) as string[];
+      const matched = data.studentIds.filter((sid: string) => kids.includes(sid));
+      if (matched.length === 0) continue;
+      const names = matched.map((sid: string) => studentNameMap[sid] || sid).join(', ');
+      notifications.push({
+        userId: doc.id,
+        type: 'attendance',
+        title: 'Attendance Marked',
+        body: `${data.status.charAt(0).toUpperCase() + data.status.slice(1)} for ${names} on ${data.date}`,
+        data: { classId: data.classId, date: data.date, status: data.status, studentIds: matched },
+      });
+    }
+
+    if (notifications.length > 0) {
+      await createBulkNotifications(notifications);
+      logger.info('Attendance notifications sent to parents', { count: notifications.length });
+    }
+  } catch (err) {
+    logger.error('Failed to send attendance notifications', { error: err });
+  }
+
   return records;
 }
 
