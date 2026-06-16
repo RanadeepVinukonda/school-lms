@@ -35,6 +35,7 @@
     "date-fns": "^4.1.0",
     "firebase": "^11.0.1",
     "framer-motion": "^11.11.17",
+    "katex": "^0.17.0",
     "lucide-react": "^0.460.0",
     "material-expressive-react": "^0.2.1",
     "pdfjs-dist": "^6.0.227",

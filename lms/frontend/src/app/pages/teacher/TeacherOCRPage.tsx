@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { sendChatMessage } from '@/services/ocrService';
 import { getAllClasses } from '@/services/dataService';
+import LatexRenderer from '@/components/common/LatexRenderer';
 
 interface ChatMsg {
   role: 'user' | 'assistant';
@@ -178,13 +179,13 @@ export default function TeacherOCRPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const renderContent = (msg: ChatMsg) => {
-    if (!msg.data) return <p className="text-sm whitespace-pre-wrap">{msg.content}</p>;
+    if (!msg.data) return <LatexRenderer content={msg.content} className="text-sm" />;
     const action = msg.data.data?.action || msg.data.action;
     const payload = msg.data.data?.data || msg.data.data || msg.data;
     if (action === 'quiz' || payload?.questions) return <QuizView data={payload.questions ? payload : { questions: payload }} onPush={handlePushQuiz} />;
     if (action === 'assignment' || payload?.title) return <AssignmentView data={payload} onPush={handlePushAssignment} />;
     if (action === 'mindmap' || payload?.nodes || payload?.centralTopic) return <MindMapView data={payload} onView={handleViewMindMap} />;
-    return <p className="text-sm whitespace-pre-wrap">{msg.content}</p>;
+    return <LatexRenderer content={msg.content} className="text-sm" />;
   };
 
   return (
@@ -208,7 +209,7 @@ export default function TeacherOCRPage() {
                       ))}
                     </div>
                   )}
-                  {msg.role === 'user' ? <p className="text-sm">{msg.content}</p> : renderContent(msg)}
+                  {msg.role === 'user' ? <LatexRenderer content={msg.content} className="text-sm" /> : renderContent(msg)}
                 </div>
               </motion.div>
             ))}
