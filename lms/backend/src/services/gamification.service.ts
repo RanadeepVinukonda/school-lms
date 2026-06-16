@@ -203,21 +203,34 @@ export async function getLeaderboard(limit = 50) {
 export async function getClassLeaderboard(classId: string, limit = 50) {
   const classSnap = await collections.classes().doc(classId).get();
   if (!classSnap.exists) throw new NotFoundError('Class not found');
-  const classData = classSnap.data()!;
-  const studentIds = classData.studentIds || [];
-  if (studentIds.length === 0) return [];
+
+  // Find all students whose classIds array contains this classId
+  const usersSnap = await collections.users()
+    .where('classIds', 'array-contains', classId)
+    .get();
+  let studentIds = usersSnap.docs.map((d) => d.id);
+
+  if (studentIds.length === 0) {
+    // Fallback: try classData.studentIds if populated
+    const classData = classSnap.data()!;
+    const legacyIds = (classData.studentIds as string[]) || [];
+    if (legacyIds.length === 0) return [];
+    studentIds = legacyIds;
+  }
+
   const profiles: Array<{ userId: string; xp: number; level: number; displayName: string; avatar?: string }> = [];
   for (const sid of studentIds) {
     const profileSnap = await collections.gamificationProfiles().doc(sid).get();
     const userSnap = await collections.users().doc(sid).get();
     const userData = userSnap.data();
+    if (!userData) continue;
     const p = profileSnap.exists ? profileSnap.data()! : { xp: 0, level: 1 };
     profiles.push({
       userId: sid,
       xp: p.xp || 0,
       level: p.level || 1,
-      displayName: userData?.displayName || userData?.email || 'Unknown',
-      avatar: userData?.avatar || undefined,
+      displayName: userData.displayName || userData.email || 'Unknown',
+      avatar: userData.avatar || undefined,
     });
   }
   profiles.sort((a, b) => b.xp - a.xp);

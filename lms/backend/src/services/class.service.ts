@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { FieldValue } from 'firebase-admin/firestore';
 import { collections } from '../firebase/firestore';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
@@ -142,13 +143,14 @@ export async function addStudents(classId: string, studentIds: string[]) {
       const userData = userDoc.data()!;
       const classIds = userData.classIds || [];
       if (!classIds.includes(classId)) {
-        batch.update(userRef, { classIds: [...classIds, classId] });
+        batch.update(userRef, { classIds: [...classIds, classId], classId });
       }
     }
   }
 
   await batch.commit();
   await classRef.update({
+    studentIds: FieldValue.arrayUnion(...studentIds),
     studentCount: studentIds.length,
     updatedAt: new Date().toISOString(),
   });

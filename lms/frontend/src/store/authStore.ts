@@ -69,7 +69,7 @@ export const useAuthStore = create<AuthStore>()(
                   classIds: data.classIds as string[] | undefined,
                   studentId: data.studentId as string | undefined,
                   teacherId: data.teacherId as string | undefined,
-                  classId: data.classId as string | undefined,
+                  classId: (data.classId as string) || ((data.classIds as string[])?.[0]) || undefined,
                   tutorialSeen: data.tutorialSeen as boolean | undefined,
                   createdAt: (data.createdAt as string) || new Date().toISOString(),
                   updatedAt: (data.updatedAt as string) || new Date().toISOString(),
