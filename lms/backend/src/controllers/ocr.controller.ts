@@ -105,6 +105,26 @@ export async function mapToConcept(req: Request, res: Response) {
   }
 }
 
+export async function chat(req: Request, res: Response) {
+  const raw = req.body.messages;
+  const files = req.files as Express.Multer.File[] | undefined;
+  const imageBuffers = files ? files.map((f) => f.buffer) : [];
+
+  let messages: Array<{ role: string; content: string }>;
+  try {
+    messages = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  } catch {
+    throw new ValidationError('Messages must be a valid JSON array');
+  }
+
+  if (!Array.isArray(messages) || messages.length === 0) {
+    throw new ValidationError('Messages array is required');
+  }
+
+  const result = await ocrService.processChatMessage(messages, imageBuffers);
+  sendSuccess(res, result);
+}
+
 export async function getConceptsForTextbook(req: Request, res: Response) {
   const { textbookId } = req.params;
 

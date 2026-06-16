@@ -49,6 +49,69 @@ async function getWorker(): Promise<Tesseract.Worker> {
   return worker;
 }
 
+export async function processChatMessage(
+  messages: Array<{ role: string; content: string }>,
+  imageBuffers: Buffer[],
+): Promise<{ role: string; content: string; data?: Record<string, unknown> }> {
+  let extractedText = '';
+  if (imageBuffers.length > 0) {
+    const results = await Promise.all(imageBuffers.map((b) => extractText(b)));
+    extractedText = results.map((r) => r.text).filter(Boolean).join('\n\n---\n\n');
+  }
+
+  const systemPrompt = `You are an AI teaching assistant for a school LMS. You help teachers with the following tasks:
+
+1. **Create Quiz** — When a teacher says "create a quiz" or "generate quiz questions", analyze any uploaded textbook images and generate a JSON quiz with multiple question types (mcq, true_false, short_answer, fill_blank). Return a JSON object with "action": "quiz" and "data" containing the questions array.
+
+2. **Create Assignment** — When a teacher says "create assignment", analyze uploaded images and generate an assignment with long-form questions. Return JSON with "action": "assignment" and "data" containing title, description, instructions, questions array, totalPoints, rubric.
+
+3. **Generate Mind Map** — When a teacher says "create mind map" or "mind map", analyze the content and generate a mind map structure. Return JSON with "action": "mindmap" and "data" containing a central topic and nodes array (each with id, label, children).
+
+4. **Answer Questions** — When a teacher asks a question or has doubts, answer helpfully based on the uploaded content or general knowledge. Return plain text or JSON with "action": "answer" and "data" containing the response.
+
+5. **General Conversation** — For any other requests, respond helpfully as an AI assistant.
+
+When images are uploaded, their extracted text is provided below. Use it as context for your response.
+Always respond in JSON format with "action" and "data" fields. For plain conversation, use action: "chat".`;
+
+  const userContent = imageBuffers.length > 0
+    ? `Extracted text from uploaded images:\n"""\n${extractedText.slice(0, 8000)}\n"""\n\nTeacher's message: ${messages[messages.length - 1]?.content || ''}`
+    : messages[messages.length - 1]?.content || '';
+
+  const aiMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+    { role: 'system', content: systemPrompt },
+    ...messages.slice(0, -1).map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+    { role: 'user', content: userContent },
+  ];
+
+  try {
+    const response = await aiService.chatCompletion({
+      model: env.AI_MODEL,
+      messages: aiMessages,
+      temperature: 0.7,
+      max_tokens: 4096,
+    });
+
+    const parsed = JSON.parse(response);
+    return {
+      role: 'assistant',
+      content: parsed.data?.message || parsed.data?.text || JSON.stringify(parsed.data || parsed),
+      data: parsed,
+    };
+  } catch (error) {
+    logger.error('Chat processing failed', { error: error instanceof Error ? error.message : String(error) });
+    // Fallback: just OCR and return text
+    if (extractedText) {
+      return {
+        role: 'assistant',
+        content: `I've extracted text from the uploaded images. Here's what I found:\n\n${extractedText.slice(0, 2000)}\n\nHow would you like me to help with this content?`,
+        data: { action: 'chat', text: extractedText },
+      };
+    }
+    throw new AppError(502, 'AI service unavailable. Please try again.');
+  }
+}
+
 export async function extractText(imageBuffer: Buffer): Promise<OCRResult> {
   try {
     const w = await getWorker();

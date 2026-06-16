@@ -23,6 +23,8 @@ router.post('/scan', authenticate, uploadRateLimit, upload.single('image'), asyn
 
 router.post('/scan-multiple', authenticate, uploadRateLimit, upload.array('images', 10), asyncHandler(ocrController.scanMultipleImages));
 
+router.post('/chat', authenticate, upload.array('images', 10), asyncHandler(ocrController.chat));
+
 router.post('/map-to-concept', authenticate, asyncHandler(ocrController.mapToConcept));
 
 router.get('/concepts/:textbookId', authenticate, asyncHandler(ocrController.getConceptsForTextbook));

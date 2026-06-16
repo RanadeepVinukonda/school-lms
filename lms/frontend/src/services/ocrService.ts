@@ -53,6 +53,23 @@ export async function mapToConcept(text: string, textbookId: string, count?: num
   return res.data.data;
 }
 
+export async function sendChatMessage(
+  messages: Array<{ role: string; content: string }>,
+  images?: File[],
+): Promise<any> {
+  const formData = new FormData();
+  formData.append('messages', JSON.stringify(messages));
+  if (images && images.length > 0) {
+    const downscaled = await Promise.all(images.map((f) => downscaleImage(f)));
+    for (let i = 0; i < downscaled.length; i++) {
+      const resized = new File([downscaled[i]], `page-${i + 1}.jpg`, { type: 'image/jpeg' });
+      formData.append('images', resized);
+    }
+  }
+  const res = await api.post('/ocr/chat', formData);
+  return res.data.data;
+}
+
 export async function getConceptsForTextbook(textbookId: string): Promise<ConceptOption[]> {
   const res = await api.get(`/ocr/concepts/${textbookId}`);
   return res.data.data;
