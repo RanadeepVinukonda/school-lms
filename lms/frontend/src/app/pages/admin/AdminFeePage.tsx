@@ -12,6 +12,37 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { feeService } from '@/services/feeService';
 import { getAllClasses, getAllUsers } from '@/services/dataService';
 
+function OutstandingRow({ item }: { item: any }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <>
+      <tr className="hover:bg-muted/20 cursor-pointer" onClick={() => setExpanded(!expanded)}>
+        <td className="px-4 py-3 font-semibold flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">{expanded ? '▼' : '▶'}</span>
+          {item.studentName || item.studentId}
+        </td>
+        <td className="px-4 py-3 text-muted-foreground">{item.className || '-'}</td>
+        <td className="px-4 py-3 text-right font-mono">Rs. {item.totalDue?.toFixed(2)}</td>
+        <td className="px-4 py-3 text-right font-mono text-success">Rs. {item.totalPaid?.toFixed(2)}</td>
+        <td className={`px-4 py-3 text-right font-mono font-bold ${item.balance > 0 ? 'text-error' : 'text-success'}`}>
+          Rs. {item.balance?.toFixed(2)}
+        </td>
+      </tr>
+      {expanded && item.schedules?.map((sc: any) => (
+        <tr key={`${item.studentId}-${sc.scheduleId}`} className="bg-muted/10 text-sm">
+          <td className="px-4 py-2 pl-10 text-muted-foreground">{sc.name}</td>
+          <td className="px-4 py-2 text-muted-foreground">{new Date(sc.dueDate).toLocaleDateString()}</td>
+          <td className="px-4 py-2 text-right font-mono">Rs. {sc.amount?.toFixed(2)}</td>
+          <td className="px-4 py-2 text-right font-mono text-success">Rs. {(sc.paid || 0)?.toFixed(2)}</td>
+          <td className={`px-4 py-2 text-right font-mono font-bold ${(sc.amount - (sc.paid || 0)) > 0 ? 'text-error' : 'text-success'}`}>
+            Rs. {(sc.amount - (sc.paid || 0))?.toFixed(2)}
+          </td>
+        </tr>
+      ))}
+    </>
+  );
+}
+
 export default function AdminFeePage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('schedules');
@@ -276,30 +307,21 @@ export default function AdminFeePage() {
                     {(outstandingData as any[])?.length === 0 ? (
                       <p className="text-muted-foreground text-center py-8">No outstanding fees</p>
                     ) : (
-                      <div className="border border-border/60 rounded-xl overflow-x-auto">
+                        <div className="border border-border/60 rounded-xl overflow-x-auto">
                         <table className="w-full text-left">
                           <thead>
                             <tr className="border-b border-b-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
                               <th className="px-4 py-3">Student</th>
+                              <th className="px-4 py-3">Class</th>
                               <th className="px-4 py-3 text-right">Total Due</th>
                               <th className="px-4 py-3 text-right">Total Paid</th>
                               <th className="px-4 py-3 text-right">Balance</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-border/40 text-title-sm">
-                            {(outstandingData as any[])?.map((item: any) => {
-                              const student = usersData.find((u) => u.id === item.studentId);
-                              return (
-                                <tr key={item.studentId} className="hover:bg-muted/20">
-                                  <td className="px-4 py-3 font-semibold">{student?.displayName || item.studentId}</td>
-                                  <td className="px-4 py-3 text-right font-mono">Rs. {item.totalDue?.toFixed(2)}</td>
-                                  <td className="px-4 py-3 text-right font-mono text-success">Rs. {item.totalPaid?.toFixed(2)}</td>
-                                  <td className={`px-4 py-3 text-right font-mono font-bold ${item.balance > 0 ? 'text-error' : 'text-success'}`}>
-                                    Rs. {item.balance?.toFixed(2)}
-                                  </td>
-                                </tr>
-                              );
-                            })}
+                            {(outstandingData as any[])?.map((item: any) => (
+                              <OutstandingRow key={item.studentId} item={item} />
+                            ))}
                           </tbody>
                         </table>
                       </div>
