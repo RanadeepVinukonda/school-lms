@@ -77,9 +77,19 @@ export async function getAttendanceReport(classId: string) {
 
 export async function exportAttendanceCSV(classId: string): Promise<string> {
   const records = await getClassAttendance(classId);
-  const header = 'StudentId,Date,Status,MarkedBy,Note,MarkedAt';
-  const rows = records.map((r: any) =>
-    `${r.studentId},${r.date},${r.status},${r.markedBy},${(r.note || '').replace(/,/g, ';')},${r.markedAt}`
-  );
+
+  // Resolve student names
+  const studentIds = [...new Set(records.map((r: any) => r.studentId))];
+  const studentSnaps = await Promise.all(studentIds.map((sid: string) => collections.users().doc(sid).get().catch(() => null)));
+  const nameMap: Record<string, string> = {};
+  for (const snap of studentSnaps) {
+    if (snap?.exists) nameMap[snap.id] = snap.data()?.displayName || snap.id;
+  }
+
+  const header = 'StudentId,StudentName,Date,Status,MarkedBy,Note,MarkedAt';
+  const rows = records.map((r: any) => {
+    const name = (nameMap[r.studentId] || r.studentId).replace(/,/g, ';');
+    return `${r.studentId},${name},${r.date},${r.status},${r.markedBy},${(r.note || '').replace(/,/g, ';')},${r.markedAt}`;
+  });
   return [header, ...rows].join('\n');
 }
