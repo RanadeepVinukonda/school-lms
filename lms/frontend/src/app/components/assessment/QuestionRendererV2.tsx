@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -180,7 +180,7 @@ export function QuestionRendererV2({
 function MatchingRenderer({ question, answer, onAnswerChange, disabled }: QuestionRendererProps) {
   const shuffled = useMemo(() => {
     const pairs = (question.options || []).map(opt => {
-      const sep = opt.includes(' - ') ? ' - ' : opt.includes(':') ? ': ' : '|';
+      const sep = opt.includes(' - ') ? ' - ' : opt.includes(': ') ? ': ' : '|';
       const idx = opt.indexOf(sep);
       return idx > 0
         ? { left: opt.slice(0, idx).trim(), right: opt.slice(idx + sep.length).trim() }
@@ -190,7 +190,7 @@ function MatchingRenderer({ question, answer, onAnswerChange, disabled }: Questi
     return { pairs, rights };
   }, [question.options]);
 
-  const selections = useState<Record<string, string>>(() => {
+  const matchAnswers = useMemo(() => {
     const parsed: Record<string, string> = {};
     if (answer) {
       answer.split('|').forEach(part => {
@@ -199,13 +199,10 @@ function MatchingRenderer({ question, answer, onAnswerChange, disabled }: Questi
       });
     }
     return parsed;
-  });
-  const matchAnswers = selections[0];
-  const setMatchAnswers = selections[1];
+  }, [answer]);
 
   const handleSelect = (left: string, right: string) => {
     const next = { ...matchAnswers, [left]: right };
-    setMatchAnswers(next);
     const ordered = shuffled.pairs.map(p => `${p.left}:${next[p.left] || ''}`).join('|');
     onAnswerChange(ordered);
   };
