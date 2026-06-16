@@ -47,7 +47,7 @@ export async function createExam(data: {
   let totalPoints = 0;
   for (const doc of conceptsSnapshot.docs) {
     const questionsSnapshot = await doc.ref.collection('questions').get();
-    const questionBank = questionsSnapshot.docs.map(qDoc => qDoc.data()) as Array<{ type: string; points: number }>;
+    const questionBank = questionsSnapshot.docs.map(qDoc => qDoc.data()) as Array<{ type: string; points: number; difficulty?: string }>;
 
     const filtered = questionBank.filter((q) => data.selectedModels.includes(q.type));
     const selected = filtered.slice(0, Math.min(data.questionCountPerConcept, filtered.length));
@@ -380,16 +380,16 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
   logger.info('Exam V2 attempt submitted', { attemptId, studentId, score, percentage, newLevel });
 
   try {
-    await gamificationService.recordAssessmentResult(studentId, passed, percentage >= 80, percentage);
-    await gamificationService.awardXp(studentId, 'assessmentComplete', `Completed exam: ${examData.title}`);
-    await gamificationService.awardCoins(studentId, 'assessmentComplete', `Completed exam: ${examData.title}`);
+    await gamificationService.recordAssessmentResult(studentId, percentage);
+    await gamificationService.awardXp(studentId, gamificationService.XP_REWARDS.assessmentComplete, `Completed exam: ${examData.title}`);
+    await gamificationService.awardCoins(studentId, gamificationService.COIN_REWARDS.assessmentComplete, `Completed exam: ${examData.title}`);
     if (percentage >= 80) {
-      await gamificationService.awardXp(studentId, 'highAccuracy', `High accuracy (${percentage}%) on ${examData.title}`);
-      await gamificationService.awardCoins(studentId, 'highAccuracy', `High accuracy (${percentage}%) on ${examData.title}`);
+      await gamificationService.awardXp(studentId, gamificationService.XP_REWARDS.highAccuracy, `High accuracy (${percentage}%) on ${examData.title}`);
+      await gamificationService.awardCoins(studentId, gamificationService.COIN_REWARDS.highAccuracy, `High accuracy (${percentage}%) on ${examData.title}`);
     }
     if (percentage === 100) {
-      await gamificationService.awardXp(studentId, 'perfectScore', `Perfect score on ${examData.title}`);
-      await gamificationService.awardCoins(studentId, 'perfectScore', `Perfect score on ${examData.title}`);
+      await gamificationService.awardXp(studentId, gamificationService.XP_REWARDS.perfectScore, `Perfect score on ${examData.title}`);
+      await gamificationService.awardCoins(studentId, gamificationService.COIN_REWARDS.perfectScore, `Perfect score on ${examData.title}`);
     }
     await gamificationService.updateStreak(studentId);
   } catch (gamErr) {

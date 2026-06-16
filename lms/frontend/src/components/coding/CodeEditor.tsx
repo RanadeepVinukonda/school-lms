@@ -190,7 +190,7 @@ export default function CodeEditor({ value, onChange, language, onLanguageChange
             Preview
           </div>
           <iframe
-            srcdoc={value}
+            srcDoc={value}
             className="w-full bg-white"
             style={{ height: 200, border: 'none' }}
             title="HTML Preview"

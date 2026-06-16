@@ -43,7 +43,7 @@ export function DailyChallengeCard({ challenge, onComplete, completing, index = 
         </div>
       </div>
       <Button
-        variant={challenge.completed ? 'ghost' : 'primary'}
+        variant={challenge.completed ? 'ghost' : 'default'}
         size="sm"
         disabled={challenge.completed || completing}
         onClick={() => onComplete(challenge.id)}

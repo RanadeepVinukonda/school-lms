@@ -25,13 +25,13 @@ export default function StudentGamificationPage() {
     queryFn: () => gamificationService.getMyProfile(),
   });
 
-  const { data: badges, isLoading: badgesLoading } = useQuery({
+  const { data: badges, isLoading: badgesLoading, error: badgesError } = useQuery({
     queryKey: ['gamification-badges', userId],
     enabled: !!userId,
     queryFn: () => gamificationService.getMyBadges(),
   });
 
-  const { data: challenges, isLoading: challengesLoading } = useQuery({
+  const { data: challenges, isLoading: challengesLoading, error: challengesError } = useQuery({
     queryKey: ['gamification-daily-challenges', userId],
     enabled: !!userId,
     queryFn: () => gamificationService.getDailyChallenges(),
@@ -201,7 +201,7 @@ export default function StudentGamificationPage() {
               <h2 className="text-title-md font-bold tracking-tight">Daily Challenges</h2>
               <p className="text-body-sm text-muted-foreground">Complete these to earn bonus XP and coins</p>
             </div>
-            <DataFetchWrapper data={challenges} isLoading={challengesLoading} loadingType="card">
+            <DataFetchWrapper data={challenges} isLoading={challengesLoading} error={challengesError} loadingType="card">
               {(cData) => cData && cData.length > 0 ? (
                 <div className="space-y-3">
                   {cData.map((c, i) => (
@@ -219,7 +219,7 @@ export default function StudentGamificationPage() {
               <h2 className="text-title-md font-bold tracking-tight">Badges</h2>
               <p className="text-body-sm text-muted-foreground">Your earned and locked achievements</p>
             </div>
-            <DataFetchWrapper data={badges} isLoading={badgesLoading} loadingType="card">
+            <DataFetchWrapper data={badges} isLoading={badgesLoading} error={badgesError} loadingType="card">
               {(bData) => (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {bData?.map((b, i) => (

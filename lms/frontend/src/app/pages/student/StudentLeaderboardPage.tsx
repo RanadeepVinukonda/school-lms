@@ -15,13 +15,13 @@ export default function StudentLeaderboardPage() {
   const classId = user?.classId;
   const [view, setView] = useState<'global' | 'class'>('class');
 
-  const { data: globalData, isLoading: globalLoading } = useQuery({
+  const { data: globalData, isLoading: globalLoading, error: globalError } = useQuery({
     queryKey: ['leaderboard-global'],
     enabled: view === 'global',
     queryFn: () => gamificationService.getLeaderboard(100),
   });
 
-  const { data: classData, isLoading: classLoading } = useQuery({
+  const { data: classData, isLoading: classLoading, error: classError } = useQuery({
     queryKey: ['leaderboard-class', classId],
     enabled: view === 'class' && !!classId,
     queryFn: () => gamificationService.getClassLeaderboard(classId!),
@@ -29,6 +29,7 @@ export default function StudentLeaderboardPage() {
 
   const leaderboard = view === 'global' ? globalData : classData;
   const isLoading = view === 'global' ? globalLoading : classLoading;
+  const error = view === 'global' ? globalError : classError;
 
   return (
     <>
@@ -55,8 +56,8 @@ export default function StudentLeaderboardPage() {
           </TabsList>
         </Tabs>
 
-        <DataFetchWrapper data={leaderboard} isLoading={isLoading} error={null} loadingType="card">
-          {leaderboard && <LeaderboardTable entries={leaderboard} currentUserId={userId} />}
+        <DataFetchWrapper data={leaderboard} isLoading={isLoading} error={error as Error | null} loadingType="card">
+          {(data) => <LeaderboardTable entries={data} currentUserId={userId} />}
         </DataFetchWrapper>
       </motion.div>
     </>

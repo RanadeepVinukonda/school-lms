@@ -123,7 +123,7 @@ export default function TeacherMindMapsPage() {
         </div>
 
         <DataFetchWrapper data={myMaps} isLoading={isLoading} error={error as Error | null} onRetry={() => refetch()} loadingType="card">
-          {myMaps && myMaps.length > 0 ? (
+          {(data) => data && data.length > 0 ? (
             <motion.div
               variants={staggerContainer}
               initial="hidden"

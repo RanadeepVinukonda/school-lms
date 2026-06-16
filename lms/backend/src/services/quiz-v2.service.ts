@@ -525,16 +525,16 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
   logger.info('Quiz V2 attempt submitted', { attemptId, studentId, score, percentage, newLevel });
 
   try {
-    await gamificationService.recordAssessmentResult(studentId, passed, percentage >= 80, percentage);
-    await gamificationService.awardXp(studentId, 'assessmentComplete', `Completed quiz: ${quizData.title}`);
-    await gamificationService.awardCoins(studentId, 'assessmentComplete', `Completed quiz: ${quizData.title}`);
+    await gamificationService.recordAssessmentResult(studentId, percentage);
+    await gamificationService.awardXp(studentId, gamificationService.XP_REWARDS.assessmentComplete, `Completed quiz: ${quizData.title}`);
+    await gamificationService.awardCoins(studentId, gamificationService.COIN_REWARDS.assessmentComplete, `Completed quiz: ${quizData.title}`);
     if (percentage >= 80) {
-      await gamificationService.awardXp(studentId, 'highAccuracy', `High accuracy (${percentage}%) on ${quizData.title}`);
-      await gamificationService.awardCoins(studentId, 'highAccuracy', `High accuracy (${percentage}%) on ${quizData.title}`);
+      await gamificationService.awardXp(studentId, gamificationService.XP_REWARDS.highAccuracy, `High accuracy (${percentage}%) on ${quizData.title}`);
+      await gamificationService.awardCoins(studentId, gamificationService.COIN_REWARDS.highAccuracy, `High accuracy (${percentage}%) on ${quizData.title}`);
     }
     if (percentage === 100) {
-      await gamificationService.awardXp(studentId, 'perfectScore', `Perfect score on ${quizData.title}`);
-      await gamificationService.awardCoins(studentId, 'perfectScore', `Perfect score on ${quizData.title}`);
+      await gamificationService.awardXp(studentId, gamificationService.XP_REWARDS.perfectScore, `Perfect score on ${quizData.title}`);
+      await gamificationService.awardCoins(studentId, gamificationService.COIN_REWARDS.perfectScore, `Perfect score on ${quizData.title}`);
     }
     await gamificationService.updateStreak(studentId);
   } catch (gamErr) {

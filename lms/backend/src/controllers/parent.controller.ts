@@ -234,21 +234,21 @@ export async function getRecommendations(req: Request, res: Response) {
       if (examAvg < 60) weakSubjects.push('Exams');
     }
 
-    const recs = [
-      { area: 'General', suggestion: 'Maintain a consistent daily study schedule of at least 1-2 hours', priority: 'medium' as const },
+    const recs: Array<{ area: string; suggestion: string; priority: string }> = [
+      { area: 'General', suggestion: 'Maintain a consistent daily study schedule of at least 1-2 hours', priority: 'medium' },
     ];
 
     if (avgScore < 60) {
-      recs.push({ area: 'Core Subjects', suggestion: 'Focus on strengthening foundational concepts. Consider scheduling extra help sessions with teachers.', priority: 'high' as const });
-      recs.push({ area: 'Daily Practice', suggestion: 'Recommend 30 min daily practice on weak subjects identified in recent assessments', priority: 'high' as const });
+      recs.push({ area: 'Core Subjects', suggestion: 'Focus on strengthening foundational concepts. Consider scheduling extra help sessions with teachers.', priority: 'high' });
+      recs.push({ area: 'Daily Practice', suggestion: 'Recommend 30 min daily practice on weak subjects identified in recent assessments', priority: 'high' });
     } else if (avgScore < 75) {
-      recs.push({ area: 'Review', suggestion: 'Encourage regular revision of class notes and completion of all homework assignments', priority: 'medium' as const });
+      recs.push({ area: 'Review', suggestion: 'Encourage regular revision of class notes and completion of all homework assignments', priority: 'medium' });
     } else {
-      recs.push({ area: 'Enrichment', suggestion: 'Student is performing well. Encourage advanced reading and challenging problems.', priority: 'low' as const });
+      recs.push({ area: 'Enrichment', suggestion: 'Student is performing well. Encourage advanced reading and challenging problems.', priority: 'low' });
     }
 
     if (weakSubjects.length > 0) {
-      recs.push({ area: weakSubjects.join(', '), suggestion: `Pay extra attention to ${weakSubjects.join(' and ')} — review past mistakes and practice similar problems`, priority: 'high' as const });
+      recs.push({ area: weakSubjects.join(', '), suggestion: `Pay extra attention to ${weakSubjects.join(' and ')} — review past mistakes and practice similar problems`, priority: 'high' });
     }
 
     allRecommendations.push({
