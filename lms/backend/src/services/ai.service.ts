@@ -273,9 +273,12 @@ async function openaiChatCompletion(
         continue;
       }
 
-      logger.error('AI API error', { status: res.status, body: errBody, model });
+      logger.error('AI API error', { status: res.status, body: errBody, model, attempt });
       if (res.status === 401) throw new AppError(502, 'AI service rejected the API key. Check AI_API_KEY.');
-      if (res.status === 404) throw new AppError(502, `AI model "${model}" not found. Check AI_MODEL.`);
+      if (res.status === 404 && model !== 'openrouter/free') {
+        logger.warn('AI model not found, retrying with openrouter/free', { model });
+        return openaiChatCompletion('openrouter/free', messages, temperature, max_tokens);
+      }
       throw new AppError(502, `AI API error ${res.status}: ${errBody.slice(0, 500)}`);
     } catch (err) {
       clearTimeout(timer);
