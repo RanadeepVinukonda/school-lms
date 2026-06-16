@@ -133,7 +133,7 @@ export default function AdminFeePage() {
                               return (
                                 <tr key={s.id} className="hover:bg-muted/20">
                                   <td className="px-4 py-3 font-semibold">{s.name}</td>
-                                  <td className="px-4 py-3 font-mono font-bold">${s.amount?.toFixed(2)}</td>
+                                  <td className="px-4 py-3 font-mono font-bold">Rs. {s.amount?.toFixed(2)}</td>
                                   <td className="px-4 py-3">{new Date(s.dueDate).toLocaleDateString()}</td>
                                   <td className="px-4 py-3">{cls?.name || s.classId}</td>
                                   <td className="px-4 py-3">{s.academicYear}</td>
@@ -179,7 +179,7 @@ export default function AdminFeePage() {
                     <select className="h-10 px-3 rounded-lg border border-border/60 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary" value={paymentData.feeScheduleId} onChange={(e) => setPaymentData({ ...paymentData, feeScheduleId: e.target.value })}>
                       <option value="">Select Fee Schedule</option>
                       {(schedulesData as any[])?.map((s: any) => (
-                        <option key={s.id} value={s.id}>{s.name} - ${s.amount?.toFixed(2)}</option>
+                        <option key={s.id} value={s.id}>{s.name} - Rs. {s.amount?.toFixed(2)}</option>
                       ))}
                     </select>
                     <Input type="number" placeholder="Amount Paid" value={paymentData.amountPaid || ''} onChange={(e) => setPaymentData({ ...paymentData, amountPaid: Number(e.target.value) })} />
@@ -235,7 +235,7 @@ export default function AdminFeePage() {
                                   return (
                                     <tr key={p.id} className="hover:bg-muted/20">
                                       <td className="px-4 py-3 font-semibold">{sched?.name || p.feeScheduleId}</td>
-                                      <td className="px-4 py-3 font-mono font-bold">${p.amountPaid?.toFixed(2)}</td>
+                                      <td className="px-4 py-3 font-mono font-bold">Rs. {p.amountPaid?.toFixed(2)}</td>
                                       <td className="px-4 py-3 capitalize">{p.paymentMethod}</td>
                                       <td className="px-4 py-3 text-muted-foreground">{new Date(p.paymentDate).toLocaleDateString()}</td>
                                       <td className="px-4 py-3">
@@ -292,10 +292,10 @@ export default function AdminFeePage() {
                               return (
                                 <tr key={item.studentId} className="hover:bg-muted/20">
                                   <td className="px-4 py-3 font-semibold">{student?.displayName || item.studentId}</td>
-                                  <td className="px-4 py-3 text-right font-mono">${item.totalDue?.toFixed(2)}</td>
-                                  <td className="px-4 py-3 text-right font-mono text-success">${item.totalPaid?.toFixed(2)}</td>
+                                  <td className="px-4 py-3 text-right font-mono">Rs. {item.totalDue?.toFixed(2)}</td>
+                                  <td className="px-4 py-3 text-right font-mono text-success">Rs. {item.totalPaid?.toFixed(2)}</td>
                                   <td className={`px-4 py-3 text-right font-mono font-bold ${item.balance > 0 ? 'text-error' : 'text-success'}`}>
-                                    ${item.balance?.toFixed(2)}
+                                    Rs. {item.balance?.toFixed(2)}
                                   </td>
                                 </tr>
                               );
