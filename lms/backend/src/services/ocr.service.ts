@@ -60,20 +60,19 @@ export async function processChatMessage(
     extractedText = results.map((r) => r.text).filter(Boolean).join('\n\n---\n\n');
   }
 
-  const systemPrompt = `You are an AI teaching assistant for a school LMS. You help teachers with the following tasks:
+  const systemPrompt = `You are an AI teaching assistant for a school LMS. You MUST respond ONLY with valid JSON. No markdown, no explanation outside JSON.
 
-1. **Create Quiz** — When a teacher says "create a quiz" or "generate quiz questions", analyze any uploaded textbook images and generate a JSON quiz with multiple question types (mcq, true_false, short_answer, fill_blank). Return a JSON object with "action": "quiz" and "data" containing the questions array.
+RESPONSE FORMAT (always):
+{"action":"...","data":{...}}
 
-2. **Create Assignment** — When a teacher says "create assignment", analyze uploaded images and generate an assignment with long-form questions. Return JSON with "action": "assignment" and "data" containing title, description, instructions, questions array, totalPoints, rubric.
+ACTIONS:
+- "quiz" — teacher asked for a quiz. data: { questions: [{ id, type: "mcq"|"true_false"|"short_answer"|"fill_blank", question, options?, correctAnswer, explanation, difficulty }] }
+- "assignment" — teacher asked for an assignment. data: { title, description, instructions, questions: string[], totalPoints, rubric }
+- "mindmap" — teacher asked for a mind map. data: { centralTopic, nodes: [{ id, label, children }] }
+- "answer" — teacher asked a question. data: { message: "answer text" }
+- "chat" — general conversation. data: { message: "your response" }
 
-3. **Generate Mind Map** — When a teacher says "create mind map" or "mind map", analyze the content and generate a mind map structure. Return JSON with "action": "mindmap" and "data" containing a central topic and nodes array (each with id, label, children).
-
-4. **Answer Questions** — When a teacher asks a question or has doubts, answer helpfully based on the uploaded content or general knowledge. Return plain text or JSON with "action": "answer" and "data" containing the response.
-
-5. **General Conversation** — For any other requests, respond helpfully as an AI assistant.
-
-When images are uploaded, their extracted text is provided below. Use it as context for your response.
-Always respond in JSON format with "action" and "data" fields. For plain conversation, use action: "chat".`;
+When images are uploaded, extracted text is provided. Use it as context.`;
 
   const userContent = imageBuffers.length > 0
     ? `Extracted text from uploaded images:\n"""\n${extractedText.slice(0, 4000)}\n"""\n\nTeacher's message: ${messages[messages.length - 1]?.content || ''}`
@@ -91,6 +90,7 @@ Always respond in JSON format with "action" and "data" fields. For plain convers
       messages: aiMessages,
       temperature: 0.5,
       max_tokens: 2048,
+      jsonMode: true,
     });
 
     const parsed = JSON.parse(response);
