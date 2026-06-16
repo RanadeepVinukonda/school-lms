@@ -192,16 +192,14 @@ export async function getClassLeaderboard(classId: string, limit = 50) {
     const profileSnap = await collections.gamificationProfiles().doc(sid).get();
     const userSnap = await collections.users().doc(sid).get();
     const userData = userSnap.data();
-    if (profileSnap.exists) {
-      const p = profileSnap.data()!;
-      profiles.push({
-        userId: sid,
-        xp: p.xp || 0,
-        level: p.level || 1,
-        displayName: userData?.displayName || userData?.email || 'Unknown',
-        avatar: userData?.avatar || undefined,
-      });
-    }
+    const p = profileSnap.exists ? profileSnap.data()! : { xp: 0, level: 1 };
+    profiles.push({
+      userId: sid,
+      xp: p.xp || 0,
+      level: p.level || 1,
+      displayName: userData?.displayName || userData?.email || 'Unknown',
+      avatar: userData?.avatar || undefined,
+    });
   }
   profiles.sort((a, b) => b.xp - a.xp);
   return profiles.slice(0, limit).map((p, i) => ({ ...p, rank: i + 1 }));

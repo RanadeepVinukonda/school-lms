@@ -13,7 +13,7 @@ export default function StudentLeaderboardPage() {
   const user = useAuthStore((s) => s.user);
   const userId = user?.id;
   const classId = user?.classId;
-  const [view, setView] = useState<'global' | 'class'>('class');
+  const [view, setView] = useState<'global' | 'class'>(classId ? 'class' : 'global');
 
   const { data: globalData, isLoading: globalLoading, error: globalError } = useQuery({
     queryKey: ['leaderboard-global'],
@@ -51,10 +51,13 @@ export default function StudentLeaderboardPage() {
 
         <Tabs value={view} onValueChange={(v) => setView(v as 'global' | 'class')}>
           <TabsList>
-            <TabsTrigger value="class">My Class</TabsTrigger>
+            <TabsTrigger value="class" disabled={!classId}>My Class</TabsTrigger>
             <TabsTrigger value="global">Global</TabsTrigger>
           </TabsList>
         </Tabs>
+        {!classId && view === 'class' && (
+          <p className="text-sm text-muted-foreground -mt-4">You are not assigned to a class. Switch to Global to see rankings.</p>
+        )}
 
         <DataFetchWrapper data={leaderboard} isLoading={isLoading} error={error as Error | null} loadingType="card">
           {(data) => <LeaderboardTable entries={data} currentUserId={userId} />}
