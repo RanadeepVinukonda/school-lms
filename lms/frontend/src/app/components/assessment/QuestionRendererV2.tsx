@@ -1,7 +1,9 @@
+import { useState, useMemo } from 'react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
 export type QuestionModel =
@@ -39,8 +41,8 @@ export function QuestionRendererV2({
   onAnswerChange,
   disabled,
 }: QuestionRendererProps) {
-  // MCQ, multiple_choice and matching can be rendered as radio group selectors
-  if (question.type === 'mcq' || question.type === 'multiple_choice' || question.type === 'matching') {
+  // MCQ, multiple_choice
+  if (question.type === 'mcq' || question.type === 'multiple_choice') {
     return (
       <RadioGroup value={answer} onValueChange={onAnswerChange} disabled={disabled} className="space-y-2">
         {question.options?.map((opt, i) => (
@@ -69,6 +71,11 @@ export function QuestionRendererV2({
         ))}
       </RadioGroup>
     );
+  }
+
+  // Matching — two-column match interface
+  if (question.type === 'matching') {
+    return <MatchingRenderer question={question} answer={answer} onAnswerChange={onAnswerChange} disabled={disabled} />;
   }
 
   if (question.type === 'true_false') {
@@ -166,6 +173,64 @@ export function QuestionRendererV2({
   return (
     <div className="text-sm text-muted-foreground p-4 bg-muted rounded-lg">
       Unsupported question type: {question.type}
+    </div>
+  );
+}
+
+function MatchingRenderer({ question, answer, onAnswerChange, disabled }: QuestionRendererProps) {
+  const shuffled = useMemo(() => {
+    const pairs = (question.options || []).map(opt => {
+      const sep = opt.includes(' - ') ? ' - ' : opt.includes(':') ? ': ' : '|';
+      const idx = opt.indexOf(sep);
+      return idx > 0
+        ? { left: opt.slice(0, idx).trim(), right: opt.slice(idx + sep.length).trim() }
+        : { left: opt, right: opt };
+    });
+    const rights = pairs.map(p => p.right).sort(() => Math.random() - 0.5);
+    return { pairs, rights };
+  }, [question.options]);
+
+  const selections = useState<Record<string, string>>(() => {
+    const parsed: Record<string, string> = {};
+    if (answer) {
+      answer.split('|').forEach(part => {
+        const [k, v] = part.split(':');
+        if (k && v) parsed[k.trim()] = v.trim();
+      });
+    }
+    return parsed;
+  });
+  const matchAnswers = selections[0];
+  const setMatchAnswers = selections[1];
+
+  const handleSelect = (left: string, right: string) => {
+    const next = { ...matchAnswers, [left]: right };
+    setMatchAnswers(next);
+    const ordered = shuffled.pairs.map(p => `${p.left}:${next[p.left] || ''}`).join('|');
+    onAnswerChange(ordered);
+  };
+
+  return (
+    <div className="space-y-3">
+      {shuffled.pairs.map(p => (
+        <div key={p.left} className="flex items-center gap-3">
+          <div className="flex-1 p-3 rounded-xl border-2 bg-card font-medium text-sm">{p.left}</div>
+          <Select
+            value={matchAnswers[p.left] || ''}
+            onValueChange={(v) => handleSelect(p.left, v)}
+            disabled={disabled}
+          >
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="Select match..." />
+            </SelectTrigger>
+            <SelectContent>
+              {shuffled.rights.map(r => (
+                <SelectItem key={r} value={r}>{r}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      ))}
     </div>
   );
 }

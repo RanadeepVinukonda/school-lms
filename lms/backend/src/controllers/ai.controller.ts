@@ -13,4 +13,3 @@ export async function chat(req: Request, res: Response) {
     res.status(502).json({ success: false, error: { message: msg } });
   }
 }
-}

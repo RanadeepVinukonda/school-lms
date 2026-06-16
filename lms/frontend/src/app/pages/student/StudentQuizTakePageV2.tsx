@@ -827,7 +827,7 @@ export default function StudentQuizTakePageV2() {
 
             {assessmentInfo.isRepublished ? (
               <div className="py-4 space-y-4">
-                {(currentQuestion.type === 'mcq' || currentQuestion.type === 'multiple_choice' || currentQuestion.type === 'true_false' || currentQuestion.type === 'passage') && currentQuestion.options ? (
+                {(currentQuestion.type === 'mcq' || currentQuestion.type === 'multiple_choice' || currentQuestion.type === 'true_false' || currentQuestion.type === 'passage' || currentQuestion.type === 'matching') && currentQuestion.options ? (
                   <div className="grid grid-cols-1 gap-3">
                     {currentQuestion.options.map((option, idx) => {
                       const isWrong = wrongOptions[currentQuestion.id]?.includes(option);
