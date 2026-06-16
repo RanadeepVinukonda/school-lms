@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { verifyToken } from '../firebase/auth';
 import { getAdminFirestore } from '../firebase/admin';
 import { UnauthorizedError } from '../utils/errors';
+import { asyncHandler } from './asyncHandler';
 
 declare global {
   namespace Express {
@@ -18,7 +19,7 @@ declare global {
 }
 
 /** Require a valid Firebase Auth token. Sets req.user with uid, email, role, and name. Falls back to Firestore for role if token lacks it. Throws UnauthorizedError if missing or invalid. */
-export async function authenticate(req: Request, _res: Response, next: NextFunction): Promise<void> {
+async function _authenticate(req: Request, _res: Response, next: NextFunction): Promise<void> {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -65,6 +66,8 @@ export async function authenticate(req: Request, _res: Response, next: NextFunct
     }
   }
 }
+
+export const authenticate = asyncHandler(_authenticate);
 
 /** Optionally parse a Firebase Auth token if present. Does not throw on failure — req.user will remain undefined. */
 export function optionalAuth(req: Request, _res: Response, next: NextFunction): void {

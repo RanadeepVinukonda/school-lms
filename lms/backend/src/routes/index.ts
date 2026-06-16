@@ -92,21 +92,12 @@ router.use('/nep-questions', nepQuestionsRoutes);
 router.use('/ocr', ocrRoutes);
 
 router.get('/health', (_req, res) => {
-  const aiBaseUrl = process.env.AI_BASE_URL || '(not set)';
-  const aiModel = process.env.AI_MODEL || '(not set)';
-  const aiKeySet = process.env.AI_API_KEY ? 'YES' : 'NO';
   res.json({
     success: true,
     data: {
       status: 'ok',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      env: {
-        AI_BASE_URL: aiBaseUrl,
-        AI_MODEL: aiModel,
-        AI_API_KEY_SET: aiKeySet,
-        NODE_ENV: process.env.NODE_ENV || '(not set)',
-      },
     },
   });
 });
