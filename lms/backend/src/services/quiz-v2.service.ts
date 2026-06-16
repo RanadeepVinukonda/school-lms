@@ -100,18 +100,31 @@ export async function createQuiz(data: {
       const typeNames = selectedModels.length > 0
         ? selectedModels.map((m: string) => (TYPE_MAP[m] || [m])[0]).join(', ')
         : 'mcq, true_false, short_answer, fill_blank';
+
+      const hasMatching = typeNames.includes('matching');
+
+      let formatInstructions = `- type: one of "${typeNames}"
+- text: the question text
+- options: array of 4 options (only for mcq, true_false, short_answer, fill_blank)
+- correctAnswer: the correct answer string
+- explanation: brief explanation
+- difficulty: "easy" | "medium" | "hard"
+- points: number (1-5)`;
+
+      if (hasMatching) {
+        formatInstructions += `
+
+For matching questions:
+- options must be an array of term-definition pairs, each formatted like "Term Name - Definition description"
+- correctAnswer must be a pipe-delimited string of colon-separated pairs, e.g. "Term Name:Definition description|Term Name2:Definition2"`;
+      }
+
       const prompt = `You are an educational assessment generator. Generate EXACTLY ${needed} questions for the concept "${conceptName}".
 
 Question types to use: ${typeNames}
 
 IMPORTANT: You MUST generate exactly ${needed} questions. Each question must have:
-- type: one of "${typeNames}"
-- text: the question text
-- options: array of 4 options (only for mcq)
-- correctAnswer: the correct answer
-- explanation: brief explanation
-- difficulty: "easy" | "medium" | "hard"
-- points: number (1-5)
+${formatInstructions}
 
 Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in the array.`;
 
