@@ -6,7 +6,10 @@ type HandlerFn = (req: IncomingMessage, res: ServerResponse) => void;
 let handler: HandlerFn;
 
 try {
-  handler = require('../backend/dist/app').default;
+  const app = require('../backend/dist/app').default;
+  handler = (req: IncomingMessage, res: ServerResponse) => {
+    app(req, res);
+  };
 } catch (e: unknown) {
   handler = function (req: IncomingMessage, res: ServerResponse) {
     const err = e instanceof Error ? e : new Error(String(e));
