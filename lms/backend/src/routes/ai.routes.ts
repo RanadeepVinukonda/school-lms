@@ -19,7 +19,7 @@ const chatSchema = z.object({
   max_tokens: z.number().positive().optional(),
 });
 
-router.post('/chat', authenticate, strictRateLimit, validate(chatSchema), asyncHandler(aiController.chat));
+router.post('/chat', strictRateLimit, validate(chatSchema), asyncHandler(aiController.chat));
 
 router.get('/diagnose', authenticate, asyncHandler(async (_req, res) => {
   const headers: Record<string, string> = {
