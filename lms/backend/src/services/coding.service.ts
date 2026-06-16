@@ -4,6 +4,8 @@ import { collections } from '../firebase/firestore';
 import { NotFoundError, ValidationError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
+const PISTON_API = 'https://emkc.org/api/v2/piston';
+
 export interface CodingProject {
   id?: string;
   title: string;
@@ -80,31 +82,75 @@ export async function deleteProject(id: string, userId: string) {
   logger.info('Coding project deleted', { id });
 }
 
-export async function executeCode(code: string, language: string) {
-  const mockResults: Record<string, unknown> = {
-    javascript: {
-      output: 'Hello from JavaScript sandbox!\n> Execution completed successfully.',
-      executionTime: '0.002s',
-      memory: '4.2 MB',
-    },
-    python: {
-      output: 'Python execution requires a backend Python runtime.\nIn production, this would connect to a sandboxed interpreter.',
-      executionTime: 'N/A',
-      memory: 'N/A',
-    },
-    html: {
-      output: 'HTML will be rendered in the browser via iframe.',
-      executionTime: 'N/A',
-      memory: 'N/A',
-    },
-  };
+const LANGUAGE_MAP: Record<string, { language: string; version: string }> = {
+  python: { language: 'python', version: '3.10.0' },
+  javascript: { language: 'javascript', version: '18.15.0' },
+  html: { language: 'html', version: '5.0.0' },
+};
 
-  return {
-    language,
-    code,
-    result: mockResults[language] || { output: 'Unsupported language', executionTime: 'N/A', memory: 'N/A' },
-    timestamp: new Date().toISOString(),
-  };
+export async function executeCode(code: string, language: string) {
+  if (language === 'html') {
+    return {
+      language,
+      code,
+      result: { output: 'HTML will be rendered in the browser via iframe.', executionTime: 'N/A', memory: 'N/A' },
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  const target = LANGUAGE_MAP[language];
+  if (!target) {
+    return {
+      language,
+      code,
+      result: { output: 'Unsupported language', executionTime: 'N/A', memory: 'N/A' },
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  try {
+    const res = await fetch(`${PISTON_API}/execute`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        language: target.language,
+        version: target.version,
+        files: [{ content: code }],
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      logger.error('Piston API error', { status: res.status, body: errText });
+      return {
+        language,
+        code,
+        result: { output: `Execution service error (${res.status}). Please try again.`, executionTime: 'N/A', memory: 'N/A' },
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    const data = await res.json() as { run?: { stdout?: string; stderr?: string; time?: string; memory?: number } };
+    const run = data.run || {};
+    return {
+      language,
+      code,
+      result: {
+        output: run.stdout || run.stderr || '(no output)',
+        executionTime: run.time ? `${run.time}s` : 'N/A',
+        memory: run.memory ? `${Math.round(run.memory / 1024)} KB` : 'N/A',
+      },
+      timestamp: new Date().toISOString(),
+    };
+  } catch (error) {
+    logger.error('Code execution failed', { error: error instanceof Error ? error.message : String(error) });
+    return {
+      language,
+      code,
+      result: { output: 'Execution request failed. Check your network connection.', executionTime: 'N/A', memory: 'N/A' },
+      timestamp: new Date().toISOString(),
+    };
+  }
 }
 
 export async function getAllStreamProjects() {

@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Icon } from '@/components/ui/Icon';
+import { codingService } from '@/services/codingService';
 
 interface CodeEditorProps {
   value: string;
@@ -69,7 +70,7 @@ export default function CodeEditor({ value, onChange, language, onLanguageChange
   const lines = value.split('\n');
   const lineCount = lines.length;
 
-  const handleRun = useCallback(() => {
+  const handleRun = useCallback(async () => {
     setRunning(true);
     setOutput('');
     setError('');
@@ -98,8 +99,16 @@ export default function CodeEditor({ value, onChange, language, onLanguageChange
         setOutput('HTML rendered in preview below');
         if (onRun) onRun('HTML rendered in preview below');
       } else {
-        setOutput('Python execution requires a backend runtime. Connect to a sandboxed Python interpreter for execution.');
-        if (onRun) onRun('Python execution requires a backend runtime.');
+        try {
+          const result = await codingService.executeCode(value, language);
+          const output = result?.result?.output || '(no output)';
+          setOutput(output);
+          if (onRun) onRun(output);
+        } catch (e) {
+          const errMsg = e instanceof Error ? e.message : String(e);
+          setError(errMsg);
+          if (onRun) onRun(errMsg);
+        }
       }
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
