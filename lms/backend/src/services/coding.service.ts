@@ -4,7 +4,7 @@ import { collections } from '../firebase/firestore';
 import { NotFoundError, ValidationError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
-const GLOT_API = 'https://glot.io/api/run';
+const WANDBOX_API = 'https://wandbox.org/api/compile.json';
 
 export interface CodingProject {
   id?: string;
@@ -83,8 +83,8 @@ export async function deleteProject(id: string, userId: string) {
 }
 
 const LANGUAGE_MAP: Record<string, string> = {
-  python: 'python',
-  javascript: 'javascript',
+  python: 'python3',
+  javascript: 'nodejs',
 };
 
 export async function executeCode(code: string, language: string) {
@@ -97,8 +97,8 @@ export async function executeCode(code: string, language: string) {
     };
   }
 
-  const langSlug = LANGUAGE_MAP[language];
-  if (!langSlug) {
+  const compiler = LANGUAGE_MAP[language];
+  if (!compiler) {
     return {
       language,
       code,
@@ -108,17 +108,20 @@ export async function executeCode(code: string, language: string) {
   }
 
   try {
-    const res = await fetch(`${GLOT_API}/${langSlug}/latest`, {
+    const res = await fetch(WANDBOX_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        files: [{ name: `main.${language === 'python' ? 'py' : 'js'}`, content: code }],
+        compiler,
+        code,
+        options: '',
+        stdin: '',
       }),
     });
 
     if (!res.ok) {
       const errText = await res.text();
-      logger.error('Glot API error', { status: res.status, body: errText });
+      logger.error('Wandbox API error', { status: res.status, body: errText });
       return {
         language,
         code,
@@ -127,12 +130,13 @@ export async function executeCode(code: string, language: string) {
       };
     }
 
-    const data = await res.json() as { stdout?: string; stderr?: string; error?: string };
+    const data = await res.json() as { stdout?: string; stderr?: string; signal?: string; compiler_error?: string; compiler_message?: string };
+    const output = data.stdout || data.stderr || data.compiler_error || data.compiler_message || '(no output)';
     return {
       language,
       code,
       result: {
-        output: data.stdout || data.stderr || data.error || '(no output)',
+        output,
         executionTime: 'N/A',
         memory: 'N/A',
       },
