@@ -84,9 +84,15 @@ api.interceptors.response.use(
       }
     }
 
+    const data = error.response?.data as any;
+    const errorMessage = data?.error?.message || data?.message || error.message;
+    const details = data?.error?.details as Array<{ field: string; message: string }> | undefined;
+    const message = details && details.length > 0
+      ? details.map((d) => d.message).join('; ')
+      : errorMessage;
     const apiError: ApiError = {
-      message: error.response?.data?.message || error.message || 'An unexpected error occurred',
-      code: error.response?.data?.code,
+      message: message || 'An unexpected error occurred',
+      code: data?.error?.code || data?.code,
       status: error.response?.status,
     };
     return Promise.reject(apiError);

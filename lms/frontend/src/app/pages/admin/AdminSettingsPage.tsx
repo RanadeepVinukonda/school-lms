@@ -201,7 +201,7 @@ export default function AdminSettingsPage() {
       setParentForm({ displayName: '', email: '', password: '', childrenIds: '' });
       queryClient.invalidateQueries({ queryKey: ['admin-users-stats'] });
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || err.message || 'Failed to create parent'),
+    onError: (err: any) => toast.error(err.message || 'Failed to create parent'),
   });
 
   // Parents list
@@ -791,7 +791,7 @@ export default function AdminSettingsPage() {
             </div>
             <div className="space-y-2">
               <Label>Password</Label>
-              <Input type="password" placeholder="Min 6 characters" value={parentForm.password} onChange={(e) => setParentForm((f) => ({ ...f, password: e.target.value }))} />
+              <Input type="password" placeholder="Min 8 characters" value={parentForm.password} onChange={(e) => setParentForm((f) => ({ ...f, password: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label>Children (student IDs - comma separated)</Label>
