@@ -12,6 +12,7 @@ interface ChatRequest {
   messages: ChatMessage[];
   temperature?: number;
   max_tokens?: number;
+  jsonMode?: boolean;
 }
 
 interface ChatResponse {
@@ -202,6 +203,7 @@ async function openaiChatCompletion(
   messages: ChatMessage[],
   temperature: number,
   max_tokens: number,
+  jsonMode = true,
 ): Promise<string> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -214,7 +216,7 @@ async function openaiChatCompletion(
     headers['X-Title'] = 'School LMS';
   }
 
-  let useResponseFormat = true;
+  let useResponseFormat = jsonMode;
   let lastError: string | null = null;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
@@ -244,6 +246,10 @@ async function openaiChatCompletion(
         const data = await res.json() as ChatResponse;
         const content = data.choices?.[0]?.message?.content || '';
         logger.info('AI response received', { model, attempt, useResponseFormat, contentLength: content.length, contentPreview: content.slice(0, 200) });
+
+        if (!jsonMode) {
+          return content;
+        }
 
         const jsonBlock = extractJsonBlock(content);
         const sanitized = sanitizeJson(jsonBlock);
@@ -277,7 +283,7 @@ async function openaiChatCompletion(
       if (res.status === 401) throw new AppError(502, 'AI service rejected the API key. Check AI_API_KEY.');
       if (res.status === 404 && model !== 'openrouter/free') {
         logger.warn('AI model not found, retrying with openrouter/free', { model });
-        return openaiChatCompletion('openrouter/free', messages, temperature, max_tokens);
+        return openaiChatCompletion('openrouter/free', messages, temperature, max_tokens, jsonMode);
       }
       throw new AppError(502, `AI API error ${res.status}: ${errBody.slice(0, 500)}`);
     } catch (err) {
@@ -300,7 +306,7 @@ async function openaiChatCompletion(
 /* ── Dispatcher ──────────────────────────────────────────────── */
 
 export async function chatCompletion(params: ChatRequest): Promise<string> {
-  const { model, messages, temperature = 0.7, max_tokens = 2048 } = params;
+  const { model, messages, temperature = 0.7, max_tokens = 2048, jsonMode = false } = params;
 
   if (env.GEMINI_API_KEY) {
     return geminiChatCompletion(model, messages, temperature, max_tokens);
@@ -310,5 +316,5 @@ export async function chatCompletion(params: ChatRequest): Promise<string> {
     throw new AppError(502, 'No AI provider configured. Set GEMINI_API_KEY or AI_API_KEY.');
   }
 
-  return openaiChatCompletion(model, messages, temperature, max_tokens);
+  return openaiChatCompletion(model, messages, temperature, max_tokens, jsonMode);
 }

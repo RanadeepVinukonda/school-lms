@@ -18,7 +18,7 @@ export async function sendChatMessage(
   ];
 
   try {
-    const res = await api.post('/ai/chat', { messages, temperature: 0.7, max_tokens: 4096 });
+    const res = await api.post('/ai/chat', { messages, temperature: 0.7, max_tokens: 4096, jsonMode: false });
     let reply = (res.data?.data?.content || '').trim();
     if (reply.startsWith('{') || reply.startsWith('[')) {
       try {
@@ -129,6 +129,7 @@ async function callAI(prompt: string, step: 'extract' | 'content' | 'question') 
     messages,
     temperature: 0.1,
     max_tokens: 2048,
+    jsonMode: true,
   };
 
   try {

@@ -15,6 +15,7 @@ const chatSchema = z.object({
   })).min(1),
   temperature: z.number().min(0).max(2).optional(),
   max_tokens: z.number().positive().optional(),
+  jsonMode: z.boolean().optional(),
 });
 
 router.post('/chat', authenticate, strictRateLimit, validate(chatSchema), asyncHandler(aiController.chat));
