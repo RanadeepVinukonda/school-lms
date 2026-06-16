@@ -12,7 +12,7 @@ const envSchema = z.object({
   FIREBASE_PRIVATE_KEY: z.string().min(1).transform((key) => key.replace(/\\n/g, '\n')),
   AI_API_KEY: z.string().min(1),
   AI_BASE_URL: z.string().default('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'),
-  AI_MODEL: z.string().default('gemini-2.0-flash'),
+  AI_MODEL: z.string().default('deepseek/deepseek-v4-flash:free'),
   GEMINI_API_KEY: z.string().optional(),
   CLOUDINARY_CLOUD_NAME: z.string().min(1),
   CLOUDINARY_API_KEY: z.string().min(1),
