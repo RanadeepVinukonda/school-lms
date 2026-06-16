@@ -2,11 +2,10 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
 import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { sendChatMessage } from '@/services/ocrService';
 import { getAllClasses } from '@/services/dataService';
@@ -111,6 +110,7 @@ export default function TeacherOCRPage() {
   const [pendingImages, setPendingImages] = useState<string[]>([]);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingPhase, setLoadingPhase] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
@@ -121,12 +121,16 @@ export default function TeacherOCRPage() {
     setInput('');
 
     const userMsg: ChatMsg = { role: 'user', content: text || 'Please process these images', images: pendingImages.length > 0 ? [...pendingImages] : undefined };
-    setMessages((prev) => [...prev, userMsg]);
-    setIsLoading(true);
-
     const files = [...pendingFiles];
     setPendingImages([]);
     setPendingFiles([]);
+
+    setMessages((prev) => [...prev, userMsg]);
+    setIsLoading(true);
+    setLoadingPhase(files.length > 0 ? 'OCR scanning...' : 'Generating...');
+
+    const timer = setTimeout(() => setLoadingPhase((p) => p === 'OCR scanning...' ? 'OCR still working...' : 'AI generating...'), 5000);
+    const timer2 = setTimeout(() => setLoadingPhase('Almost done...'), 15000);
 
     try {
       const result = await sendChatMessage(
@@ -138,7 +142,10 @@ export default function TeacherOCRPage() {
     } catch (err: any) {
       setMessages((prev) => [...prev, { role: 'assistant', content: err?.message || 'Sorry, something went wrong. Please try again.' }]);
     } finally {
+      clearTimeout(timer);
+      clearTimeout(timer2);
       setIsLoading(false);
+      setLoadingPhase('');
     }
   }, [input, pendingFiles, pendingImages, messages]);
 
@@ -208,8 +215,8 @@ export default function TeacherOCRPage() {
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
                 <div className="bg-muted/50 rounded-2xl rounded-bl-md px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <Progress value={60} className="w-24 h-2" />
-                    <span className="text-xs text-muted-foreground">Thinking...</span>
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    <span className="text-xs text-muted-foreground">{loadingPhase || 'Processing...'}</span>
                   </div>
                 </div>
               </motion.div>

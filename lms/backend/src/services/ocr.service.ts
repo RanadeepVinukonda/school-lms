@@ -1,4 +1,4 @@
-import Tesseract, { createWorker } from 'tesseract.js';
+import Tesseract, { createWorker, PSM } from 'tesseract.js';
 import { AppError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import * as aiService from './ai.service';
@@ -44,7 +44,8 @@ async function getWorker(): Promise<Tesseract.Worker> {
         else if (m.status === 'initializing api') logger.debug('OCR: initializing API');
       },
     });
-    logger.info('OCR worker created');
+    await worker.setParameters({ tessedit_pageseg_mode: PSM.SINGLE_BLOCK });
+    logger.info('OCR worker created (LSTM only, PSM 6)');
   }
   return worker;
 }
@@ -75,7 +76,7 @@ When images are uploaded, their extracted text is provided below. Use it as cont
 Always respond in JSON format with "action" and "data" fields. For plain conversation, use action: "chat".`;
 
   const userContent = imageBuffers.length > 0
-    ? `Extracted text from uploaded images:\n"""\n${extractedText.slice(0, 8000)}\n"""\n\nTeacher's message: ${messages[messages.length - 1]?.content || ''}`
+    ? `Extracted text from uploaded images:\n"""\n${extractedText.slice(0, 4000)}\n"""\n\nTeacher's message: ${messages[messages.length - 1]?.content || ''}`
     : messages[messages.length - 1]?.content || '';
 
   const aiMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
@@ -88,8 +89,8 @@ Always respond in JSON format with "action" and "data" fields. For plain convers
     const response = await aiService.chatCompletion({
       model: env.AI_MODEL,
       messages: aiMessages,
-      temperature: 0.7,
-      max_tokens: 4096,
+      temperature: 0.5,
+      max_tokens: 2048,
     });
 
     const parsed = JSON.parse(response);

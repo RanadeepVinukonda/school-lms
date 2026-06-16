@@ -1,7 +1,7 @@
 import api from '@/services/api';
 import type { OCRResult, OCRMappingResult, ConceptOption } from '@/types/ocr';
 
-function downscaleImage(file: File, maxDim = 800): Promise<Blob> {
+function downscaleImage(file: File, maxDim = 500): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -15,8 +15,10 @@ function downscaleImage(file: File, maxDim = 800): Promise<Blob> {
       const c = document.createElement('canvas');
       c.width = width; c.height = height;
       const ctx = c.getContext('2d')!;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img, 0, 0, width, height);
-      c.toBlob((b) => b ? resolve(b) : reject(new Error('Failed to encode')), 'image/jpeg', 0.8);
+      c.toBlob((b) => b ? resolve(b) : reject(new Error('Failed to encode')), 'image/jpeg', 0.6);
     };
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Failed to load image')); };
     img.src = url;
