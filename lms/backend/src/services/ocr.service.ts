@@ -109,17 +109,34 @@ Extracted text from images (if any) is below. Use it as context.`;
       max_tokens: 2048,
     });
 
-    const parsed = tryParseJson(response, { action: 'chat', data: { message: response } });
-
-    if (parsed.action === 'answer' && parsed.data?.message) {
-      return { role: 'assistant', content: parsed.data.message, data: parsed };
+    if (!response || (typeof response === 'string' && response.trim().length < 3)) {
+      return {
+        role: 'assistant',
+        content: 'I received your message, but the AI generated an empty response. Could you try rephrasing?',
+        data: { action: 'chat', data: { message: 'Empty response from AI' } },
+      };
     }
 
-    const displayText = parsed.data?.message || parsed.data?.text || (parsed.data?.questions ? `Generated ${parsed.data.questions.length} questions` : null) || (parsed.data?.title ? `Generated assignment: ${parsed.data.title}` : null) || JSON.stringify(parsed.data || parsed).slice(0, 500);
+    const parsed = tryParseJson(response, { action: 'chat', data: { message: response } });
+
+    const messageText = parsed.data?.message || parsed.data?.text || parsed.data?.response || parsed.data?.content || '';
+    if (messageText) {
+      return { role: 'assistant', content: messageText, data: parsed };
+    }
+
+    if (parsed.data?.questions) {
+      return { role: 'assistant', content: `Generated ${parsed.data.questions.length} questions`, data: parsed };
+    }
+    if (parsed.data?.title) {
+      return { role: 'assistant', content: `Generated assignment: ${parsed.data.title}`, data: parsed };
+    }
+    if (parsed.data?.centralTopic || parsed.data?.nodes) {
+      return { role: 'assistant', content: `Generated mind map: ${parsed.data.centralTopic || 'Untitled'}`, data: parsed };
+    }
 
     return {
       role: 'assistant',
-      content: displayText,
+      content: response.slice(0, 1000) || 'Done!',
       data: parsed,
     };
   } catch (error) {
@@ -127,7 +144,7 @@ Extracted text from images (if any) is below. Use it as context.`;
     if (extractedText) {
       return {
         role: 'assistant',
-        content: `I've extracted text from the uploaded images. Here's what I found:\n\n${extractedText.slice(0, 2000)}\n\nHow would you like me to help with this content?`,
+        content: `I've extracted text from the uploaded images:\n\n${extractedText.slice(0, 2000)}`,
         data: { action: 'chat', text: extractedText },
       };
     }

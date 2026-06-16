@@ -138,7 +138,8 @@ export default function TeacherOCRPage() {
         files,
       );
       const data = result.data || result;
-      setMessages((prev) => [...prev, { role: 'assistant', content: data.content || data.data?.message || 'Done!', data }]);
+      const reply = data.content || data.data?.message || data.data?.text || data.data?.response || data.data?.content || (typeof data === 'string' ? data : null) || 'Done!';
+      setMessages((prev) => [...prev, { role: 'assistant', content: reply, data }]);
     } catch (err: any) {
       setMessages((prev) => [...prev, { role: 'assistant', content: err?.message || 'Sorry, something went wrong. Please try again.' }]);
     } finally {
