@@ -168,15 +168,34 @@ export async function getLeaderboard(limit = 50) {
     const data = doc.data();
     const userSnap = await collections.users().doc(doc.id).get();
     const userData = userSnap.data();
+    if (!userData) continue;
     results.push({
       userId: doc.id,
-      displayName: userData?.displayName || userData?.email || 'Unknown',
+      displayName: userData.displayName || userData.email || 'Unknown',
       xp: data.xp || 0,
       level: data.level || 1,
       rank,
-      avatar: userData?.avatar || undefined,
+      avatar: userData.avatar || undefined,
     });
     rank++;
+  }
+  if (results.length === 0) {
+    const allUsers = await collections.users().get();
+    for (const doc of allUsers.docs) {
+      const u = doc.data();
+      if (u.role === 'student') {
+        results.push({
+          userId: doc.id,
+          displayName: u.displayName || u.email || 'Unknown',
+          xp: 0,
+          level: 1,
+          rank,
+          avatar: u.avatar || undefined,
+        });
+        rank++;
+        if (results.length >= limit) break;
+      }
+    }
   }
   return results;
 }
