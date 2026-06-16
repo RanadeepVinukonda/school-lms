@@ -70,8 +70,8 @@ export default function StudentOCRPage() {
           setQuestions(mappingResult.questions);
         }
       }
-    } catch {
-      setError('Could not generate quiz. Please try again.');
+    } catch (err: any) {
+      setError(err?.message || 'Could not generate quiz. Please try again.');
     }
     setIsProcessing(false);
   }, [ocrResult, questionCount]);
@@ -86,8 +86,8 @@ export default function StudentOCRPage() {
       setOcrResult(result);
       setIsScanning(false);
       setStep('quiz');
-    } catch {
-      setError('Could not process the image. Please try again.');
+    } catch (err: any) {
+      setError(err?.message || 'Could not process the image. Please try again.');
       setIsScanning(false);
       setStep('capture');
     }
@@ -102,8 +102,8 @@ export default function StudentOCRPage() {
       setOcrResult(result);
       setIsScanning(false);
       setStep('quiz');
-    } catch {
-      setError('Could not process the image. Please try again.');
+    } catch (err: any) {
+      setError(err?.message || 'Could not process the image. Please try again.');
       setIsScanning(false);
       setStep('capture');
     }

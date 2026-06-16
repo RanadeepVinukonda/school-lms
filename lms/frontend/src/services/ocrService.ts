@@ -4,9 +4,7 @@ import type { OCRResult, OCRMappingResult, ConceptOption } from '@/types/ocr';
 export async function scanImage(image: File): Promise<OCRResult> {
   const formData = new FormData();
   formData.append('image', image);
-  const res = await api.post('/ocr/scan', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  const res = await api.post('/ocr/scan', formData);
   return res.data.data;
 }
 

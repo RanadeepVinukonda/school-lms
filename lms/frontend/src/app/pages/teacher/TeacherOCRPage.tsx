@@ -44,8 +44,8 @@ export default function TeacherOCRPage() {
       const file = new File([blob], 'capture.jpg', { type: 'image/jpeg' });
       const result = await scanImage(file);
       setOcrResult(result);
-    } catch {
-      setOcrError('Failed to scan image. Please try again.');
+    } catch (err: any) {
+      setOcrError(err?.message || 'Failed to scan image. Please try again.');
     } finally {
       setIsScanning(false);
     }
@@ -60,8 +60,8 @@ export default function TeacherOCRPage() {
       setImageUrl(url);
       const result = await scanImage(file);
       setOcrResult(result);
-    } catch {
-      setOcrError('Failed to scan image. Please try again.');
+    } catch (err: any) {
+      setOcrError(err?.message || 'Failed to scan image. Please try again.');
     } finally {
       setIsScanning(false);
     }
@@ -75,8 +75,8 @@ export default function TeacherOCRPage() {
       if (mappingResult.questions && mappingResult.questions.length > 0) {
         setGeneratedQuestions(mappingResult.questions);
       }
-    } catch {
-      setOcrError('Failed to generate assessments. Please try again.');
+    } catch (err: any) {
+      setOcrError(err?.message || 'Failed to generate assessments. Please try again.');
     } finally {
       setIsGenerating(false);
     }
