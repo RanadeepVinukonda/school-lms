@@ -136,13 +136,9 @@ export async function getOutstandingReport() {
     if (snap.exists) classMap[snap.id] = snap.data()?.name || snap.id;
   }
 
-  // Build report for every student in applicable classes
+  // Build report: pair every schedule with every student
   for (const s of schedules) {
-    const classStudents = allStudents.filter((st: any) => {
-      const ids = st.classIds || (st.classId ? [st.classId] : []);
-      return ids.includes(s.classId);
-    });
-    for (const st of classStudents) {
+    for (const st of allStudents) {
       if (!reportMap[st.id]) {
         reportMap[st.id] = {
           studentId: st.id,
