@@ -1,9 +1,33 @@
 import api from '@/services/api';
 import type { OCRResult, OCRMappingResult, ConceptOption } from '@/types/ocr';
 
+function downscaleImage(file: File, maxDim = 1200): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) { height = Math.round(height * maxDim / width); width = maxDim; }
+        else { width = Math.round(width * maxDim / height); height = maxDim; }
+      }
+      const c = document.createElement('canvas');
+      c.width = width; c.height = height;
+      const ctx = c.getContext('2d')!;
+      ctx.drawImage(img, 0, 0, width, height);
+      c.toBlob((b) => b ? resolve(b) : reject(new Error('Failed to encode')), 'image/jpeg', 0.8);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Failed to load image')); };
+    img.src = url;
+  });
+}
+
 export async function scanImage(image: File): Promise<OCRResult> {
+  const blob = await downscaleImage(image);
+  const resized = new File([blob], image.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' });
   const formData = new FormData();
-  formData.append('image', image);
+  formData.append('image', resized);
   const res = await api.post('/ocr/scan', formData);
   return res.data.data;
 }

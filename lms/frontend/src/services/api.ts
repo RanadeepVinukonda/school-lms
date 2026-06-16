@@ -7,7 +7,7 @@ import type { ApiError } from '@/types';
 /** Axios instance pre-configured with base URL, timeouts, and interceptors for auth tokens and error handling. */
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 300000,
+  timeout: 600000,
 });
 
 /** Inject the Firebase Auth token from the auth store into every request. */
