@@ -4,7 +4,7 @@ import { collections } from '../firebase/firestore';
 import { NotFoundError, ValidationError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
-const PISTON_API = 'https://emkc.org/api/v2/piston';
+const GLOT_API = 'https://glot.io/api/run';
 
 export interface CodingProject {
   id?: string;
@@ -82,10 +82,9 @@ export async function deleteProject(id: string, userId: string) {
   logger.info('Coding project deleted', { id });
 }
 
-const LANGUAGE_MAP: Record<string, { language: string; version: string }> = {
-  python: { language: 'python', version: '3.10.0' },
-  javascript: { language: 'javascript', version: '18.15.0' },
-  html: { language: 'html', version: '5.0.0' },
+const LANGUAGE_MAP: Record<string, string> = {
+  python: 'python',
+  javascript: 'javascript',
 };
 
 export async function executeCode(code: string, language: string) {
@@ -98,8 +97,8 @@ export async function executeCode(code: string, language: string) {
     };
   }
 
-  const target = LANGUAGE_MAP[language];
-  if (!target) {
+  const langSlug = LANGUAGE_MAP[language];
+  if (!langSlug) {
     return {
       language,
       code,
@@ -109,19 +108,17 @@ export async function executeCode(code: string, language: string) {
   }
 
   try {
-    const res = await fetch(`${PISTON_API}/execute`, {
+    const res = await fetch(`${GLOT_API}/${langSlug}/latest`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        language: target.language,
-        version: target.version,
-        files: [{ content: code }],
+        files: [{ name: `main.${language === 'python' ? 'py' : 'js'}`, content: code }],
       }),
     });
 
     if (!res.ok) {
       const errText = await res.text();
-      logger.error('Piston API error', { status: res.status, body: errText });
+      logger.error('Glot API error', { status: res.status, body: errText });
       return {
         language,
         code,
@@ -130,15 +127,14 @@ export async function executeCode(code: string, language: string) {
       };
     }
 
-    const data = await res.json() as { run?: { stdout?: string; stderr?: string; time?: string; memory?: number } };
-    const run = data.run || {};
+    const data = await res.json() as { stdout?: string; stderr?: string; error?: string };
     return {
       language,
       code,
       result: {
-        output: run.stdout || run.stderr || '(no output)',
-        executionTime: run.time ? `${run.time}s` : 'N/A',
-        memory: run.memory ? `${Math.round(run.memory / 1024)} KB` : 'N/A',
+        output: data.stdout || data.stderr || data.error || '(no output)',
+        executionTime: 'N/A',
+        memory: 'N/A',
       },
       timestamp: new Date().toISOString(),
     };
