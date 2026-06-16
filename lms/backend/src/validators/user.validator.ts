@@ -5,12 +5,14 @@ export const createUserSchema = z.object({
     .string()
     .email('Invalid email address')
     .max(255, 'Email must be at most 255 characters')
-    .optional(),
+    .optional()
+    .or(z.literal('')),
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')
     .max(128, 'Password must be at most 128 characters')
-    .optional(),
+    .optional()
+    .or(z.literal('')),
   displayName: z
     .string()
     .min(2, 'Name must be at least 2 characters')
