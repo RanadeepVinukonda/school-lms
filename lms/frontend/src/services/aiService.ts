@@ -28,11 +28,12 @@ export async function sendChatMessage(
     }
     return { reply };
   } catch (err: unknown) {
-    const axiosErr = err as { status?: number; message?: string };
-    if (axiosErr.status === 502) {
-      throw new Error('AI service unavailable. Please try again later.');
+    const axiosErr = err as { response?: { status?: number; data?: { error?: { message?: string } } }; message?: string };
+    const backendMsg = axiosErr.response?.data?.error?.message;
+    if (axiosErr.response?.status === 502) {
+      throw new Error(backendMsg || 'AI service unavailable. Please try again later.');
     }
-    throw new Error(axiosErr.message || 'Failed to get AI response');
+    throw new Error(backendMsg || axiosErr.message || 'Failed to get AI response');
   }
 }
 
@@ -135,11 +136,12 @@ async function callAI(prompt: string, step: 'extract' | 'content' | 'question') 
     const raw = res.data?.data?.content || '';
     return extractJson(raw);
   } catch (err: unknown) {
-    const axiosErr = err as { status?: number; message?: string };
-    if (axiosErr.status === 502) {
-      throw new Error('AI service unavailable. Check server configuration.');
+    const axiosErr = err as { response?: { status?: number; data?: { error?: { message?: string } } }; message?: string };
+    const backendMsg = axiosErr.response?.data?.error?.message;
+    if (axiosErr.response?.status === 502) {
+      throw new Error(backendMsg || 'AI service unavailable. Check server configuration.');
     }
-    throw new Error(axiosErr.message || 'AI request failed');
+    throw new Error(backendMsg || axiosErr.message || 'AI request failed');
   }
 }
 
