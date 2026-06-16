@@ -29,7 +29,14 @@ if (process.env.NODE_ENV !== 'test') {
   }));
 }
 
-app.use('/api', apiRateLimit, routes);
+// Strip /api prefix — Vercel rewrite preserves original URL with /api prefix
+app.use((req, _res, next) => {
+  if (req.url.startsWith('/api')) {
+    req.url = req.url.replace(/^\/api/, '') || '/';
+  }
+  next();
+});
+app.use('/', apiRateLimit, routes);
 
 app.use(errorHandler);
 
