@@ -11,7 +11,7 @@ export async function scanImage(req: Request, res: Response) {
 
   if (req.file) {
     imageBuffer = req.file.buffer;
-  } else if (req.body.image) {
+  } else if (req.body.image && typeof req.body.image === 'string') {
     const base64Data = req.body.image.replace(/^data:image\/\w+;base64,/, '');
     imageBuffer = Buffer.from(base64Data, 'base64');
   }

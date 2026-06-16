@@ -8,9 +8,6 @@ import type { ApiError } from '@/types';
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 300000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 /** Inject the Firebase Auth token from the auth store into every request. */
