@@ -1,7 +1,7 @@
 import api from '@/services/api';
 import type { OCRResult, OCRMappingResult, ConceptOption } from '@/types/ocr';
 
-function downscaleImage(file: File, maxDim = 1200): Promise<Blob> {
+function downscaleImage(file: File, maxDim = 800): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);

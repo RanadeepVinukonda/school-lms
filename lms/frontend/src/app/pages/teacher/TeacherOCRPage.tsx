@@ -1,10 +1,10 @@
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
+import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getAllTextbooks } from '@/services/textbookService';
 import CameraCapture from '@/components/ocr/CameraCapture';
@@ -131,9 +131,10 @@ export default function TeacherOCRPage() {
         {isScanning && (
           <Card>
             <CardContent className="flex items-center justify-center py-12">
-              <div className="flex flex-col items-center gap-3">
+              <div className="flex flex-col items-center gap-3 w-full max-w-sm">
                 <Icon name="hourglass_top" size={32} className="animate-spin text-primary" />
                 <p className="text-sm text-on-surface-variant">Scanning image and extracting text...</p>
+                <Progress value={45} className="w-full" />
               </div>
             </CardContent>
           </Card>

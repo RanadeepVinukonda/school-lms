@@ -1,4 +1,4 @@
-import Tesseract from 'tesseract.js';
+import Tesseract, { createWorker } from 'tesseract.js';
 import { AppError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import * as aiService from './ai.service';
@@ -32,15 +32,27 @@ export interface OCRMappingResult {
   questions: GeneratedQuestion[];
 }
 
-export async function extractText(imageBuffer: Buffer): Promise<OCRResult> {
-  try {
-    const { data } = await Tesseract.recognize(imageBuffer, 'eng', {
+let worker: Tesseract.Worker | null = null;
+
+async function getWorker(): Promise<Tesseract.Worker> {
+  if (!worker) {
+    worker = await createWorker('eng', 1, {
       logger: (m) => {
-        if (m.status === 'recognizing text') {
-          logger.debug('OCR progress', { progress: Math.round(m.progress * 100) });
-        }
+        if (m.status === 'loading tesseract core') logger.debug('OCR: loading core');
+        else if (m.status === 'initializing tesseract') logger.debug('OCR: initializing');
+        else if (m.status === 'loading language traineddata') logger.debug('OCR: loading language data');
+        else if (m.status === 'initializing api') logger.debug('OCR: initializing API');
       },
     });
+    logger.info('OCR worker created');
+  }
+  return worker;
+}
+
+export async function extractText(imageBuffer: Buffer): Promise<OCRResult> {
+  try {
+    const w = await getWorker();
+    const { data } = await w.recognize(imageBuffer);
 
     const blocks: OCRBlock[] = (data.blocks || []).map((block) => ({
       text: block.text,
