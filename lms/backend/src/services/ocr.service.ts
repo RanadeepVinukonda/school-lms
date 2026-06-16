@@ -1,4 +1,22 @@
 import Tesseract, { createWorker, PSM } from 'tesseract.js';
+
+function tryParseJson(raw: string, fallback: any): any {
+  try { return JSON.parse(raw); } catch { /* not JSON */ }
+  const brace = raw.indexOf('{');
+  const bracket = raw.indexOf('[');
+  const start = brace >= 0 && (bracket < 0 || brace < bracket) ? brace : bracket;
+  if (start >= 0) {
+    let depth = 0, inStr = false;
+    for (let i = start; i < raw.length; i++) {
+      const c = raw[i];
+      if (c === '"' && (i === 0 || raw[i - 1] !== '\\')) inStr = !inStr;
+      if (inStr) continue;
+      if (c === '{' || c === '[') depth++;
+      if (c === '}' || c === ']') { depth--; if (depth === 0) { try { return JSON.parse(raw.slice(start, i + 1)); } catch { break; } } }
+    }
+  }
+  return fallback;
+}
 import { AppError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import * as aiService from './ai.service';
@@ -60,19 +78,18 @@ export async function processChatMessage(
     extractedText = results.map((r) => r.text).filter(Boolean).join('\n\n---\n\n');
   }
 
-  const systemPrompt = `You are an AI teaching assistant for a school LMS. You MUST respond ONLY with valid JSON. No markdown, no explanation outside JSON.
+  const systemPrompt = `You are an AI teaching assistant for a school LMS. You MUST output ONLY valid JSON. No greetings, no markdown, no extra text — just JSON.
 
-RESPONSE FORMAT (always):
 {"action":"...","data":{...}}
 
 ACTIONS:
-- "quiz" — teacher asked for a quiz. data: { questions: [{ id, type: "mcq"|"true_false"|"short_answer"|"fill_blank", question, options?, correctAnswer, explanation, difficulty }] }
-- "assignment" — teacher asked for an assignment. data: { title, description, instructions, questions: string[], totalPoints, rubric }
-- "mindmap" — teacher asked for a mind map. data: { centralTopic, nodes: [{ id, label, children }] }
-- "answer" — teacher asked a question. data: { message: "answer text" }
-- "chat" — general conversation. data: { message: "your response" }
+- "quiz" — user wants a quiz. data: { questions: [{ id: "q1", type: "mcq"|"true_false"|"short_answer"|"fill_blank", question: "...", options?: [...], correctAnswer: "...", explanation: "...", difficulty: "easy"|"medium"|"hard" }] }
+- "assignment" — user wants an assignment. data: { title: "...", description: "...", instructions: "...", questions: ["...", "..."], totalPoints: number, rubric: "..." }
+- "mindmap" — user wants a mind map. data: { centralTopic: "...", nodes: [{ id: "n1", label: "...", children: ["n2","n3"] }, { id: "n2", label: "..." }] }
+- "answer" — user asks a question. data: { message: "answer text" }
+- "chat" — general chat. data: { message: "your response" }
 
-When images are uploaded, extracted text is provided. Use it as context.`;
+Extracted text from images (if any) is below. Use it as context.`;
 
   const userContent = imageBuffers.length > 0
     ? `Extracted text from uploaded images:\n"""\n${extractedText.slice(0, 4000)}\n"""\n\nTeacher's message: ${messages[messages.length - 1]?.content || ''}`
@@ -88,20 +105,25 @@ When images are uploaded, extracted text is provided. Use it as context.`;
     const response = await aiService.chatCompletion({
       model: env.AI_MODEL,
       messages: aiMessages,
-      temperature: 0.5,
+      temperature: 0.3,
       max_tokens: 2048,
-      jsonMode: true,
     });
 
-    const parsed = JSON.parse(response);
+    const parsed = tryParseJson(response, { action: 'chat', data: { message: response } });
+
+    if (parsed.action === 'answer' && parsed.data?.message) {
+      return { role: 'assistant', content: parsed.data.message, data: parsed };
+    }
+
+    const displayText = parsed.data?.message || parsed.data?.text || (parsed.data?.questions ? `Generated ${parsed.data.questions.length} questions` : null) || (parsed.data?.title ? `Generated assignment: ${parsed.data.title}` : null) || JSON.stringify(parsed.data || parsed).slice(0, 500);
+
     return {
       role: 'assistant',
-      content: parsed.data?.message || parsed.data?.text || JSON.stringify(parsed.data || parsed),
+      content: displayText,
       data: parsed,
     };
   } catch (error) {
     logger.error('Chat processing failed', { error: error instanceof Error ? error.message : String(error) });
-    // Fallback: just OCR and return text
     if (extractedText) {
       return {
         role: 'assistant',
@@ -109,7 +131,7 @@ When images are uploaded, extracted text is provided. Use it as context.`;
         data: { action: 'chat', text: extractedText },
       };
     }
-    throw new AppError(502, 'AI service unavailable. Please try again.');
+    throw new AppError(502, 'AI service is currently unavailable. Please try again in a moment.');
   }
 }
 
