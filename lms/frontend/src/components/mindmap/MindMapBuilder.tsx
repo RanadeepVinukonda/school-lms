@@ -187,6 +187,16 @@ export function MindMapBuilder({ nodes, edges, onChange, readOnly = false }: Min
   const zoomOut = useCallback(() => setZoom((z) => Math.max(z - 0.1, 0.3)), []);
   const resetZoom = useCallback(() => { setZoom(1); setPan({ x: 0, y: 0 }); }, []);
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNode && !readOnly) {
+        deleteNode(selectedNode);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [selectedNode, readOnly, deleteNode]);
+
   const autoLayout = useCallback(() => {
     const centerX = 400;
     const centerY = 300;
@@ -392,6 +402,33 @@ export function MindMapBuilder({ nodes, edges, onChange, readOnly = false }: Min
                         <circle r={8} fill="#22c55e" />
                         <text textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={8}>
                           {node.resourceType === 'lesson' ? 'L' : node.resourceType === 'video' ? 'V' : 'C'}
+                        </text>
+                      </g>
+                    )}
+                    {!readOnly && (
+                      <g
+                        className="cursor-pointer opacity-0 hover:opacity-100 transition-opacity"
+                        onClick={(e) => { e.stopPropagation(); deleteNode(node.id); }}
+                      >
+                        <rect
+                          x={node.x + 50}
+                          y={node.y - 24}
+                          width={16}
+                          height={16}
+                          rx={4}
+                          fill="#ef4444"
+                        />
+                        <text
+                          x={node.x + 58}
+                          y={node.y - 12}
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          fill="white"
+                          fontSize={10}
+                          fontWeight={700}
+                          className="pointer-events-none"
+                        >
+                          ×
                         </text>
                       </g>
                     )}
