@@ -1,10 +1,15 @@
 import { v4 as uuidv4 } from 'uuid';
 import { FieldValue } from 'firebase-admin/firestore';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+import { writeFile, unlink } from 'fs/promises';
+import { join } from 'path';
+import { tmpdir } from 'os';
 import { collections } from '../firebase/firestore';
 import { NotFoundError, ValidationError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
-const WANDBOX_API = 'https://wandbox.org/api/compile.json';
+const exec = promisify(execFile);
 
 export interface CodingProject {
   id?: string;
@@ -82,72 +87,64 @@ export async function deleteProject(id: string, userId: string) {
   logger.info('Coding project deleted', { id });
 }
 
-const LANGUAGE_MAP: Record<string, string> = {
-  python: 'python3',
-  javascript: 'nodejs',
-};
+const TIMEOUT_MS = 10000;
 
 export async function executeCode(code: string, language: string) {
   if (language === 'html') {
     return {
-      language,
-      code,
+      language, code,
       result: { output: 'HTML will be rendered in the browser via iframe.', executionTime: 'N/A', memory: 'N/A' },
       timestamp: new Date().toISOString(),
     };
   }
 
-  const compiler = LANGUAGE_MAP[language];
-  if (!compiler) {
-    return {
-      language,
-      code,
-      result: { output: 'Unsupported language', executionTime: 'N/A', memory: 'N/A' },
-      timestamp: new Date().toISOString(),
-    };
-  }
-
   try {
-    const res = await fetch(WANDBOX_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        compiler,
-        code,
-        options: '',
-        stdin: '',
-      }),
-    });
+    const tmpFile = join(tmpdir(), `exec_${Date.now()}_${Math.random().toString(36).slice(2)}`);
+    let stdout = '', stderr = '';
 
-    if (!res.ok) {
-      const errText = await res.text();
-      logger.error('Wandbox API error', { status: res.status, body: errText });
+    if (language === 'python') {
+      const filePath = `${tmpFile}.py`;
+      await writeFile(filePath, code);
+      try {
+        const result = await exec('python3', [filePath], { timeout: TIMEOUT_MS, maxBuffer: 1024 * 100 });
+        stdout = result.stdout || '';
+        stderr = result.stderr || '';
+      } catch (execError: any) {
+        stdout = execError.stdout || '';
+        stderr = execError.stderr || execError.message || '';
+      }
+      await unlink(filePath).catch(() => {});
+    } else if (language === 'javascript') {
+      const filePath = `${tmpFile}.js`;
+      await writeFile(filePath, code);
+      try {
+        const result = await exec('node', [filePath], { timeout: TIMEOUT_MS, maxBuffer: 1024 * 100 });
+        stdout = result.stdout || '';
+        stderr = result.stderr || '';
+      } catch (execError: any) {
+        stdout = execError.stdout || '';
+        stderr = execError.stderr || execError.message || '';
+      }
+      await unlink(filePath).catch(() => {});
+    } else {
       return {
-        language,
-        code,
-        result: { output: `Execution service error (${res.status}). Please try again.`, executionTime: 'N/A', memory: 'N/A' },
+        language, code,
+        result: { output: 'Unsupported language', executionTime: 'N/A', memory: 'N/A' },
         timestamp: new Date().toISOString(),
       };
     }
 
-    const data = await res.json() as { stdout?: string; stderr?: string; signal?: string; compiler_error?: string; compiler_message?: string };
-    const output = data.stdout || data.stderr || data.compiler_error || data.compiler_message || '(no output)';
+    const output = stdout || stderr || '(no output)';
     return {
-      language,
-      code,
-      result: {
-        output,
-        executionTime: 'N/A',
-        memory: 'N/A',
-      },
+      language, code,
+      result: { output, executionTime: 'N/A', memory: 'N/A' },
       timestamp: new Date().toISOString(),
     };
   } catch (error) {
     logger.error('Code execution failed', { error: error instanceof Error ? error.message : String(error) });
     return {
-      language,
-      code,
-      result: { output: 'Execution request failed. Check your network connection.', executionTime: 'N/A', memory: 'N/A' },
+      language, code,
+      result: { output: 'Execution failed. Check your code for syntax errors.', executionTime: 'N/A', memory: 'N/A' },
       timestamp: new Date().toISOString(),
     };
   }
