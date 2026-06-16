@@ -4,16 +4,6 @@ import { sendSuccess } from '../utils/response';
 import { env } from '../config/env';
 
 export async function chat(req: Request, res: Response) {
-  const { messages, temperature, max_tokens } = req.body;
-  try {
-    const content = await aiService.chatCompletion({ model: env.AI_MODEL, messages, temperature, max_tokens });
-    sendSuccess(res, { content });
-  } catch (err: any) {
-    const msg = err?.message || String(err) || 'Unknown AI error';
-    res.status(502).json({ success: false, error: { message: msg } });
-  }
-}
-
-export async function testResponse(_req: Request, res: Response) {
-  res.json({ success: true, data: { message: 'response works' } });
+  res.status(200).json({ success: true, data: { content: 'Debug: controller reached. AI call pending...' } });
+  return;
 }
