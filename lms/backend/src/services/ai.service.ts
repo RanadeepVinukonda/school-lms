@@ -378,6 +378,10 @@ export async function textbookChatCompletion(params: ChatRequest): Promise<strin
       }
       logger.error('Textbook AI API error', { status: res.status, body: errBody, model, attempt });
       if (res.status === 401) throw new AppError(502, 'Textbook AI key rejected. Check AI_TEXTBOOK_API_KEY or AI_API_KEY.');
+      if (res.status === 404 && model !== 'openrouter/free') {
+        logger.warn('Textbook AI model not found, retrying with openrouter/free', { model });
+        return textbookChatCompletion({ ...params, model: 'openrouter/free' });
+      }
       throw new AppError(502, `Textbook AI error ${res.status}: ${errBody.slice(0, 500)}`);
     } catch (err) {
       clearTimeout(timer);
