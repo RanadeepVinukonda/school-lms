@@ -1,7 +1,19 @@
 import api from '@/services/api';
 import type { OCRResult, OCRMappingResult, ConceptOption } from '@/types/ocr';
 
-function downscaleImage(file: File, maxDim = 500): Promise<Blob> {
+function preprocessImage(ctx: CanvasRenderingContext2D, width: number, height: number) {
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const d = imageData.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i], g = d[i + 1], b = d[i + 2];
+    let gray = 0.299 * r + 0.587 * g + 0.114 * b;
+    gray = Math.min(255, Math.max(0, (gray - 80) * 1.6));
+    d[i] = d[i + 1] = d[i + 2] = gray;
+  }
+  ctx.putImageData(imageData, 0, 0);
+}
+
+function downscaleImage(file: File, maxDim = 1600): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -18,7 +30,8 @@ function downscaleImage(file: File, maxDim = 500): Promise<Blob> {
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img, 0, 0, width, height);
-      c.toBlob((b) => b ? resolve(b) : reject(new Error('Failed to encode')), 'image/jpeg', 0.6);
+      preprocessImage(ctx, width, height);
+      c.toBlob((b) => b ? resolve(b) : reject(new Error('Failed to encode')), 'image/jpeg', 0.85);
     };
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Failed to load image')); };
     img.src = url;

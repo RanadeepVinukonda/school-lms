@@ -54,7 +54,7 @@ let worker: Tesseract.Worker | null = null;
 
 async function getWorker(): Promise<Tesseract.Worker> {
   if (!worker) {
-    worker = await createWorker('eng', 1, {
+    worker = await createWorker('eng', 3, {
       logger: (m) => {
         if (m.status === 'loading tesseract core') logger.debug('OCR: loading core');
         else if (m.status === 'initializing tesseract') logger.debug('OCR: initializing');
@@ -62,8 +62,8 @@ async function getWorker(): Promise<Tesseract.Worker> {
         else if (m.status === 'initializing api') logger.debug('OCR: initializing API');
       },
     });
-    await worker.setParameters({ tessedit_pageseg_mode: PSM.SINGLE_BLOCK });
-    logger.info('OCR worker created (LSTM only, PSM 6)');
+    await worker.setParameters({ tessedit_pageseg_mode: PSM.AUTO });
+    logger.info('OCR worker created (LSTM+Legacy, PSM AUTO)');
   }
   return worker;
 }
@@ -92,7 +92,7 @@ ACTIONS:
 Extracted text from images (if any) is below. Use it as context.`;
 
   const userContent = imageBuffers.length > 0
-    ? `Extracted text from uploaded images:\n"""\n${extractedText.slice(0, 4000)}\n"""\n\nTeacher's message: ${messages[messages.length - 1]?.content || ''}`
+    ? `Extracted text from uploaded images:\n"""\n${extractedText.slice(0, 8000)}\n"""\n\nTeacher's message: ${messages[messages.length - 1]?.content || ''}`
     : messages[messages.length - 1]?.content || '';
 
   const aiMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
@@ -189,7 +189,7 @@ export async function mapTextToConcept(
 
 Extracted text:
 """
-${extractedText.slice(0, 3000)}
+${extractedText.slice(0, 6000)}
 """
 
 Available concepts:
@@ -242,7 +242,7 @@ export async function generateAssignmentFromText(
 
 Textbook content:
 """
-${extractedText.slice(0, 4000)}
+${extractedText.slice(0, 8000)}
 """
 
 Concept: ${conceptName}
@@ -311,7 +311,7 @@ export async function generateQuestionsFromText(
 
 Textbook content:
 """
-${extractedText.slice(0, 4000)}
+${extractedText.slice(0, 8000)}
 """
 
 Concept: ${conceptName}
