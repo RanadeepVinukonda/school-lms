@@ -308,6 +308,12 @@ async function openaiChatCompletion(
 export async function textbookChatCompletion(params: ChatRequest): Promise<string> {
   const { model: _fallback = '', messages, temperature = 0.7, max_tokens = 2048, jsonMode = false } = params;
 
+  // Use GEMINI_API_KEY for textbook/OCR tasks when available
+  if (env.GEMINI_API_KEY) {
+    const geminiModel = env.AI_TEXTBOOK_MODEL || env.AI_MODEL || 'gemini-2.0-flash';
+    return geminiChatCompletion(geminiModel, messages, temperature, max_tokens);
+  }
+
   const apiKey = env.AI_TEXTBOOK_API_KEY || env.AI_API_KEY;
   const baseUrl = env.AI_TEXTBOOK_BASE_URL || env.AI_BASE_URL;
   const model = env.AI_TEXTBOOK_MODEL || env.AI_MODEL || 'openai/gpt-4o-mini';
