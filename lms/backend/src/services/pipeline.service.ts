@@ -341,15 +341,15 @@ ${fullText.slice(0, 120000)}`;
   logger.info('Structure saved', { textbookId, chapters: chapters.length, totalConcepts });
   await addTextbookLog(textbookId, `Curriculum layout saved. Created ${structure.chapters.length} chapters and ${totalConcepts} concepts. Starting AI enrichment...`);
 
-  // 4. Process concepts in batches of 2 (parallel within batch)
+  // 4. Process concepts in batches of 8 (parallel within batch)
   let completedCount = 0;
 
   for (const chap of chapters) {
     const conceptsSnap = await textbookRef.collection('chapters').doc(chap.id).collection('concepts').get();
     const conceptDocs = conceptsSnap.docs;
 
-    for (let i = 0; i < conceptDocs.length; i += 2) {
-      const batch = conceptDocs.slice(i, i + 2);
+    for (let i = 0; i < conceptDocs.length; i += 8) {
+      const batch = conceptDocs.slice(i, i + 8);
       const results = await Promise.allSettled(
         batch.map((doc) => {
           const d = doc.data();
