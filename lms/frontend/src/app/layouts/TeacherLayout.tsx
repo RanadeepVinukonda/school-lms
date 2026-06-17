@@ -200,7 +200,7 @@ export default function TeacherLayout() {
                 <Icon name="menu" size={24} />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-64 p-0 flex flex-col h-full border-r border-outline-variant bg-surface animate-in">
+            <SheetContent side="left" className="p-0 flex flex-col h-full border-r border-outline-variant bg-surface animate-in">
               {/* Drawer Brand */}
               <div className="flex items-center h-20 px-6 border-b border-outline-variant shrink-0">
                 <img
