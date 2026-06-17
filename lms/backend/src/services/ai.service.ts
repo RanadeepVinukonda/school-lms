@@ -310,7 +310,7 @@ export async function textbookChatCompletion(params: ChatRequest): Promise<strin
 
   // Use GEMINI_API_KEY for textbook/OCR tasks when available
   if (env.GEMINI_API_KEY) {
-    const geminiModel = env.AI_TEXTBOOK_MODEL || env.AI_MODEL || 'gemini-2.0-flash';
+    const geminiModel = toGeminiModel(env.AI_TEXTBOOK_MODEL || env.AI_MODEL || 'gemini-2.0-flash');
     return geminiChatCompletion(geminiModel, messages, temperature, max_tokens);
   }
 
@@ -397,11 +397,16 @@ export async function textbookChatCompletion(params: ChatRequest): Promise<strin
 
 /* ── Dispatcher ──────────────────────────────────────────────── */
 
+function toGeminiModel(model: string): string {
+  const m = model.replace(/^google\//, '');
+  return m || 'gemini-2.0-flash';
+}
+
 export async function chatCompletion(params: ChatRequest): Promise<string> {
-  const { model = 'openrouter/free', messages, temperature = 0.7, max_tokens = 2048, jsonMode = false } = params;
+  const { model = 'gemini-2.0-flash', messages, temperature = 0.7, max_tokens = 2048, jsonMode = false } = params;
 
   if (env.GEMINI_API_KEY) {
-    return geminiChatCompletion(model, messages, temperature, max_tokens);
+    return geminiChatCompletion(toGeminiModel(model), messages, temperature, max_tokens);
   }
 
   if (!env.AI_API_KEY) {
