@@ -162,7 +162,7 @@ export function AdminLayout() {
                 <Icon name="menu" size={24} />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="p-0 flex flex-col h-full border-r border-outline-variant bg-surface">
+            <SheetContent side="left" className="gap-0 p-0 flex flex-col h-full border-r border-outline-variant bg-surface">
               {/* Drawer Brand */}
               <div className="flex items-center h-20 px-6 border-b border-outline-variant shrink-0">
                 <img
@@ -173,14 +173,14 @@ export function AdminLayout() {
               </div>
 
               {/* Drawer Links */}
-              <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+              <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
                 {navItems.map((item) => (
                   <SheetClose asChild key={item.href}>
                     <NavLink
                       to={item.href}
                       className={({ isActive }) =>
                         cn(
-                          'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                          'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                           isActive
                             ? 'bg-secondary-container text-on-secondary-container'
                             : 'text-on-surface-variant hover:bg-surface-variant/50',
