@@ -99,14 +99,14 @@ export function AdminLayout() {
         </div>
 
         {/* Nav items */}
-        <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+        <nav className="flex-1 overflow-y-auto p-3 flex flex-col gap-0.5">
           {navItems.map((item) => (
             <NavLink
               key={item.href}
               to={item.href}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  'flex items-center gap-3 rounded-xl w-full px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   isActive
                     ? 'bg-secondary-container text-on-secondary-container'
                     : 'text-on-surface-variant hover:bg-surface-variant/50',
@@ -173,14 +173,14 @@ export function AdminLayout() {
               </div>
 
               {/* Drawer Links */}
-              <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
+              <nav className="flex-1 overflow-y-auto py-2 px-2 flex flex-col gap-1">
                 {navItems.map((item) => (
                   <SheetClose asChild key={item.href}>
                     <NavLink
                       to={item.href}
                       className={({ isActive }) =>
                         cn(
-                          'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                          'flex items-center gap-3 rounded-xl w-full px-4 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                           isActive
                             ? 'bg-secondary-container text-on-secondary-container'
                             : 'text-on-surface-variant hover:bg-surface-variant/50',

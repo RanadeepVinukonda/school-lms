@@ -211,20 +211,20 @@ export default function TeacherLayout() {
               </div>
 
               {/* Drawer Links */}
-              <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-3">
+              <nav className="flex-1 overflow-y-auto py-2 px-2 flex flex-col gap-3">
                 {navGroups.map((group) => (
                   <div key={group.label}>
                     <p className="text-label-xs font-semibold text-on-surface-variant uppercase tracking-wider px-3 pb-1">
                       {group.label}
                     </p>
-                    <div className="space-y-0.5">
+                    <div className="flex flex-col gap-1">
                       {group.items.map((item) => (
                         <SheetClose asChild key={item.href}>
                           <NavLink
                             to={item.href}
                             className={({ isActive }) =>
                               cn(
-                                'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                'flex items-center gap-3 rounded-xl w-full px-4 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                                 isActive
                                   ? 'bg-secondary-container text-on-secondary-container'
                                   : 'text-on-surface-variant hover:bg-surface-variant/50',
