@@ -6,7 +6,7 @@ import { requireRole } from '../middlewares/role.middleware';
 import { asyncHandler } from '../middlewares/asyncHandler';
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100 * 1024 * 1024 } });
 
 router.post('/', authenticate, requireRole('teacher', 'admin'), upload.single('file'), asyncHandler(textbookController.createTextbook));
 router.get('/by-class/:classId/subject/:subjectId', authenticate, asyncHandler(textbookController.getTextbooksByClassAndSubject));

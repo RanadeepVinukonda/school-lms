@@ -20,8 +20,8 @@ app.set('trust proxy', 1);
 
 app.use(securityHeaders);
 app.use(cors(corsOptions));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('combined', {
