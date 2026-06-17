@@ -118,7 +118,7 @@ export default function RollNumberEntryPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="flex min-h-screen items-center justify-center bg-background px-6"
+      className="flex min-h-screen items-center justify-center bg-background sm:px-6 px-4"
     >
       <motion.div variants={cardStackReveal} custom={0} className="w-full max-w-sm">
         <form onSubmit={handleSubmit} className="w-full space-y-6">

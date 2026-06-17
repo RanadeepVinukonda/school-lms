@@ -93,7 +93,7 @@ export default function TeacherProfilePage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-4xl mx-auto pb-32 space-y-16"
+        className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-16"
       >
         <DataFetchWrapper data={data} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="profile">
           {(profileData) => (
@@ -127,7 +127,7 @@ export default function TeacherProfilePage() {
               </motion.div>
 
               <motion.div variants={cardStackReveal} custom={0}>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                   {[...statCards, avgStat].map((stat) => (
                     <Card key={stat.label} className="border-border/60">
                       <CardContent className="p-5 flex items-center gap-3">

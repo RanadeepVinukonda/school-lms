@@ -66,8 +66,8 @@ export default function ResetPasswordPage() {
         <SEOHead title="Reset Password" description="Password reset successful" canonical="/auth/reset-password" />
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
           <motion.div variants={cardStackReveal} custom={0}>
-            <Card className="border-border/60">
-              <CardContent className="flex flex-col items-center gap-4 py-12 p-5">
+            <Card className="w-full border-border/60">
+              <CardContent className="flex flex-col items-center gap-4 py-12 sm:px-5 px-4">
                 <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
                   <CheckCircle2 className="h-8 w-8 text-primary" />
                 </div>
@@ -87,12 +87,12 @@ export default function ResetPasswordPage() {
       <SEOHead title="Reset Password" description="Set a new password for your account" canonical="/auth/reset-password" />
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="w-full max-w-md">
         <motion.div variants={cardStackReveal} custom={0}>
-          <Card className="border-border/60">
+          <Card className="w-full border-border/60">
             <CardHeader className="text-center pb-2">
               <CardTitle className="text-headline-sm">Set new password</CardTitle>
               <CardDescription>Enter your new password below</CardDescription>
             </CardHeader>
-            <CardContent className="p-5">
+            <CardContent className="sm:p-5 p-4">
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="password">New Password</Label>

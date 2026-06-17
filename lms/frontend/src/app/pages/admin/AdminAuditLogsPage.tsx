@@ -95,10 +95,10 @@ export default function AdminAuditLogsPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-6xl mx-auto pb-32"
+        className="sm:p-6 p-4 max-w-6xl mx-auto pb-32"
       >
         <motion.div variants={cardStackReveal} custom={0} className="space-y-16">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
               <h1 className="text-headline-sm">Audit Logs</h1>
               <p className="text-body-md text-muted-foreground">View and manage system audit logs</p>
@@ -141,7 +141,7 @@ export default function AdminAuditLogsPage() {
 
                       {selectedLog?.id === log.id && (
                         <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="mt-3 pt-3 border-t border-border/60 space-y-2 text-label-xs">
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div><span className="text-muted-foreground">Target:</span> {log.targetType} "{log.targetName}" ({log.targetId})</div>
                             <div><span className="text-muted-foreground">Performed By:</span> {log.performedBy}</div>
                           </div>

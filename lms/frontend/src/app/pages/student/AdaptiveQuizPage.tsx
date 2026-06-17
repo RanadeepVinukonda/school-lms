@@ -160,7 +160,7 @@ export default function AdaptiveQuizPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-6xl mx-auto pb-32 space-y-16"
+        className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
       >
         {phase !== 'intro' && (
           <Link to={`${ROUTES.STUDENT_CONCEPT(conceptId!)}?textbookId=${textbookId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
@@ -188,7 +188,7 @@ export default function AdaptiveQuizPage() {
                       This quiz adapts to your knowledge level. Answer correctly and the questions get harder.
                       Wrong answers? We'll reinforce with easier questions first.
                     </p>
-                    <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-sm mx-auto text-sm">
                       <div className="p-3 rounded-xl bg-success/10 border border-success/20">
                         <div className="text-display-xs font-semibold text-success">3</div>
                         <div className="text-muted-foreground text-xs">Rounds</div>
@@ -279,7 +279,7 @@ export default function AdaptiveQuizPage() {
                             )}
 
                             {currentQuestion.type === 'true_false' && (
-                              <div className="grid grid-cols-2 gap-3">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {['True', 'False'].map((opt) => {
                                   const isSelected = answers.get(currentQuestion.id) === opt;
                                   const isCorrectAnswer = answeredCurrent && currentQuestion.correctAnswer === opt;
@@ -367,7 +367,7 @@ export default function AdaptiveQuizPage() {
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-sm mx-auto text-sm">
                       <div className="p-3 rounded-xl bg-success/10 border border-success/20">
                         <div className="text-display-xs font-semibold text-success capitalize">{resultSkillLevel}</div>
                         <div className="text-muted-foreground text-xs">Skill Level</div>

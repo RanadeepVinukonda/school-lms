@@ -54,7 +54,7 @@ export default function ParentReportsPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-6xl mx-auto pb-32 space-y-16"
+        className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
       >
         <motion.div variants={cardStackReveal} custom={0}>
           <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">Reports & Recommendations</h1>
@@ -65,7 +65,7 @@ export default function ParentReportsPage() {
           <motion.div variants={cardStackReveal} custom={0}>
             <Card className="border-border/60">
               <CardHeader className="pb-3">
-                <CardTitle className="text-title-md flex items-center gap-2">
+                <CardTitle className="text-title-md flex items-center gap-2 flex-wrap">
                   <Icon name="auto_awesome" size={18} className="text-muted-foreground" />
                   AI Weekly Report
                 </CardTitle>
@@ -204,7 +204,7 @@ export default function ParentReportsPage() {
           <motion.div variants={cardStackReveal} custom={0}>
             <Card className="border-border/60">
               <CardHeader className="pb-3">
-                <CardTitle className="text-title-md flex items-center gap-2">
+                <CardTitle className="text-title-md flex items-center gap-2 flex-wrap">
                   <Icon name="checklist" size={18} className="text-muted-foreground" />
                   Recommendations Engine
                 </CardTitle>

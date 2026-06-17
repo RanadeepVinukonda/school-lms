@@ -52,7 +52,7 @@ export default function ParentChildDetailPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-6xl mx-auto space-y-16 pb-32"
+        className="sm:p-6 p-4 max-w-6xl mx-auto space-y-16 pb-32"
       >
         {notFound ? (
           <Card className="border-border/60">
@@ -92,7 +92,7 @@ export default function ParentChildDetailPage() {
                 <motion.div variants={cardStackReveal} custom={0}>
                   <Card className="border-border/60">
                     <CardContent className="p-5">
-                      <div className="flex items-center gap-5">
+                      <div className="flex items-center gap-5 flex-wrap">
                         <Avatar className="h-16 w-16">
                           <AvatarFallback className="text-lg">{getInitials(d.student.displayName)}</AvatarFallback>
                         </Avatar>
@@ -154,7 +154,7 @@ export default function ParentChildDetailPage() {
                   <motion.div variants={cardStackReveal} custom={0}>
                     <Card className="border-border/60">
                       <CardHeader className="pb-3">
-                        <CardTitle className="text-title-md flex items-center gap-2">
+                        <CardTitle className="text-title-md flex items-center gap-2 flex-wrap">
                           <Icon name="history" size={18} className="text-muted-foreground" />
                           Recent Activity
                         </CardTitle>
@@ -192,9 +192,9 @@ export default function ParentChildDetailPage() {
                 <motion.div variants={cardStackReveal} custom={0}>
                   <Card className="border-border/60">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-title-md flex items-center gap-2">
-                        <Icon name="graded" size={18} className="text-muted-foreground" />
-                        Grades
+                        <CardTitle className="text-title-md flex items-center gap-2 flex-wrap">
+                          <Icon name="graded" size={18} className="text-muted-foreground" />
+                          Grades
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
@@ -243,7 +243,7 @@ export default function ParentChildDetailPage() {
                 </motion.div>
 
                 <motion.div variants={cardStackReveal} custom={0}>
-                  <div className="flex gap-3">
+                  <div className="flex flex-wrap gap-3">
                     <Button asChild variant="outline" className="gap-1">
                       <Link to={ROUTES.PARENT_REPORTS}>
                         <Icon name="analytics" size={16} />

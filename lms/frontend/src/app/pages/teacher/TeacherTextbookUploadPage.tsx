@@ -209,7 +209,7 @@ export default function TeacherTextbookUploadPage() {
     return (
       <>
         <SEOHead title="Upload Textbook" description="Upload and process a textbook PDF" canonical="/teacher/textbooks/upload" />
-        <div className="p-6 max-w-3xl mx-auto space-y-6 pb-32">
+        <div className="sm:p-6 p-4 max-w-3xl mx-auto space-y-6 pb-32">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-8 w-72 mt-2" />
           <Skeleton className="h-64 w-full mt-6" />
@@ -222,7 +222,7 @@ export default function TeacherTextbookUploadPage() {
     return (
       <>
         <SEOHead title="Upload Textbook" description="Upload and process a textbook PDF" canonical="/teacher/textbooks/upload" />
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-3xl mx-auto space-y-16 pb-32">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-3xl mx-auto space-y-16 pb-32">
           <motion.div variants={cardStackReveal} custom={0}>
             <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
               <Icon name="arrow_back" size={16} className="mr-1" />
@@ -252,7 +252,7 @@ export default function TeacherTextbookUploadPage() {
     <>
       <SEOHead title="Upload Textbook" description="Upload and process a textbook PDF" canonical="/teacher/textbooks/upload" />
       <UploadProgressBanner />
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-3xl mx-auto space-y-16 pb-32">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-3xl mx-auto space-y-16 pb-32">
         <motion.div variants={cardStackReveal} custom={0}>
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
             <Icon name="arrow_back" size={16} className="mr-1" />

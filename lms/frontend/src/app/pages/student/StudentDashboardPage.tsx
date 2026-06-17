@@ -96,7 +96,7 @@ export default function StudentDashboardPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-6xl mx-auto pb-32"
+        className="sm:p-6 p-4 max-w-6xl mx-auto pb-32"
       >
         <DataFetchWrapper data={data} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="detail">
           {(dash) => (

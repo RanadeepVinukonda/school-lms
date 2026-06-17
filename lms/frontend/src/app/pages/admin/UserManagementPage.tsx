@@ -140,7 +140,7 @@ export default function UserManagementPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-6xl mx-auto pb-32"
+        className="sm:p-6 p-4 max-w-6xl mx-auto pb-32"
       >
         <motion.div variants={cardStackReveal} custom={0} className="space-y-16">
           <motion.div variants={cardStackReveal} custom={1}>

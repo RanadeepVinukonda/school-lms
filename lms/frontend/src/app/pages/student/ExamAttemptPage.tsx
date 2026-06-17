@@ -118,13 +118,13 @@ export default function ExamAttemptPage() {
   if (phase === 'intro') return (
     <>
       <SEOHead title={exam.title} description={exam.description} canonical={`/exams/${examId}`} />
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center justify-center min-h-[80vh] p-6">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center justify-center min-h-[80vh] sm:p-6 p-4">
         <motion.div variants={cardStackReveal} custom={0} className="w-full max-w-md">
           <Card className="border-border/60">
             <CardContent className="p-6 text-center space-y-6">
               <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto"><FileText className="h-6 w-6 text-primary" /></div>
               <div><CardTitle className="text-headline-sm">{exam.title}</CardTitle><CardDescription className="text-body-lg">{exam.description}</CardDescription></div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[{ l: 'Questions', v: qs }, { l: 'Duration', v: `${exam.duration}m` }, { l: 'Points', v: totalPts }].map(s => (
                   <div key={s.l} className="bg-muted rounded-xl p-3"><p className="text-display-xs font-bold">{s.v}</p><p className="text-label-xs text-muted-foreground">{s.l}</p></div>
                 ))}
@@ -167,7 +167,7 @@ export default function ExamAttemptPage() {
     return (
       <>
         <SEOHead title={`${exam.title} - Results`} description="Exam results" />
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-6xl mx-auto pb-32 space-y-16">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16">
           <motion.div variants={cardStackReveal} custom={0}>
             <Card className="border-border/60">
               <CardContent className="p-6 text-center space-y-4">

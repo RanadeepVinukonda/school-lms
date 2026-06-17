@@ -256,7 +256,7 @@ export default function TeacherTextbookDetailPage() {
   return (
     <>
       <SEOHead title={textbookQuery.data?.title ?? 'Textbook'} description="View textbook chapters and concepts" />
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-6xl mx-auto space-y-16 pb-32">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-6xl mx-auto space-y-16 pb-32">
         <DataFetchWrapper data={textbookQuery.data} isLoading={textbookQuery.isLoading} error={textbookQuery.error} loadingType="detail">
           {(tb) => (
             <>

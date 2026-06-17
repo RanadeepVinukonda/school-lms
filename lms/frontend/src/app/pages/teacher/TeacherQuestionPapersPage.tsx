@@ -63,7 +63,7 @@ export default function TeacherQuestionPapersPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-6xl mx-auto pb-32 space-y-16"
+        className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
       >
         <motion.div variants={cardStackReveal} custom={0}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -90,7 +90,7 @@ export default function TeacherQuestionPapersPage() {
                   papers.map((p: any) => (
                     <Card key={p.id} className="border-border/60">
                       <CardContent className="p-5">
-                        <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start justify-between gap-4 flex-wrap">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <h3 className="text-title-sm font-semibold">{p.title}</h3>

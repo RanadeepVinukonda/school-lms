@@ -61,7 +61,7 @@ export default function StudentStreamProjectsPage() {
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-56 rounded-xl bg-surface-variant animate-pulse" />
           ))}
@@ -73,7 +73,7 @@ export default function StudentStreamProjectsPage() {
           <p className="text-label-sm text-on-surface-variant/60 mt-1">Check back soon for new projects</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredProjects.map((project) => (
             <StreamProjectCard
               key={project.id}

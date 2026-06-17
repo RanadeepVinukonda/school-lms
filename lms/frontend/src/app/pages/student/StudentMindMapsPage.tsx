@@ -59,7 +59,7 @@ export default function StudentMindMapsPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-6xl mx-auto pb-32 space-y-8"
+        className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-8"
       >
         <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
           <div className="flex items-center justify-between flex-wrap gap-4">

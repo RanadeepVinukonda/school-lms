@@ -23,7 +23,7 @@ export default function ParentChildrenPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-4xl mx-auto pb-32"
+        className="sm:p-6 p-4 max-w-4xl mx-auto pb-32"
       >
         <motion.div variants={cardStackReveal} custom={0} className="mb-8">
           <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">My Children</h1>

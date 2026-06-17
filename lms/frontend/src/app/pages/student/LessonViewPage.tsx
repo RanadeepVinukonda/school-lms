@@ -86,7 +86,7 @@ export default function LessonViewPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-6xl mx-auto pb-32 space-y-16"
+        className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
       >
         <DataFetchWrapper
           data={data}
@@ -119,7 +119,7 @@ export default function LessonViewPage() {
                       {d.subject?.name} &middot; {d.chapter?.title ?? 'Chapter'} &middot; Lesson {d.lesson.order}
                     </p>
                     <h1 className="text-headline-sm font-bold text-on-surface">{d.lesson.title}</h1>
-                    <div className="flex items-center gap-4 text-body-md text-muted-foreground">
+                    <div className="flex items-center gap-4 text-body-md text-muted-foreground flex-wrap">
                       <span className="flex items-center gap-1">
                         <Icon name="schedule" size={16} />{d.lesson.duration} min
                       </span>
@@ -307,7 +307,7 @@ export default function LessonViewPage() {
                         <p className="text-body-md font-medium text-on-surface">{d.assignment.title}</p>
                         <p className="text-body-md text-muted-foreground mt-0.5">{d.assignment.description}</p>
                       </div>
-                      <div className="flex items-center gap-4 text-body-md text-muted-foreground">
+                      <div className="flex items-center gap-4 text-body-md text-muted-foreground flex-wrap">
                         <span className="flex items-center gap-1"><Icon name="event" size={14} />Due {d.assignment.dueDate ? new Date(d.assignment.dueDate).toLocaleDateString() : 'N/A'}</span>
                         <span className="flex items-center gap-1"><Icon name="score" size={14} />{d.assignment.points} pts</span>
                       </div>

@@ -193,7 +193,7 @@ export default function AdminDashboardPage() {
   return (
     <>
       <SEOHead title="School Health Dashboard" description="Actionable insights and school health metrics" canonical="/admin/dashboard" />
-      <div className="p-6 max-w-6xl mx-auto pb-32 space-y-8">
+      <div className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-8">
         <section>
           <motion.div
             initial={{ opacity: 0, y: 24 }}

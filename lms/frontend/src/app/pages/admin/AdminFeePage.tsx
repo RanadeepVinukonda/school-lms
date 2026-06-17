@@ -94,7 +94,7 @@ export default function AdminFeePage() {
   return (
     <>
       <SEOHead title="Fee Management" description="Fee schedules, payments, and outstanding reports" />
-      <div className="p-6 max-w-6xl mx-auto pb-32 space-y-8">
+      <div className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-8">
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">Fee & ERP Management</h1>
           <p className="text-body-md text-muted-foreground mt-1">Manage fee schedules, payments, and outstanding reports</p>

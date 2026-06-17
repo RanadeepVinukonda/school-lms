@@ -81,7 +81,7 @@ export default function AdminAcademicYearsPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-6xl mx-auto pb-32"
+        className="sm:p-6 p-4 max-w-6xl mx-auto pb-32"
       >
         <motion.div variants={cardStackReveal} custom={0} className="space-y-16">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -136,7 +136,7 @@ export default function AdminAcademicYearsPage() {
               <div className="space-y-4">
                 <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. 2025-2026" />
                 <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. 2025-26" />
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div><label className="text-sm font-medium">Start Date</label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
                   <div><label className="text-sm font-medium">End Date</label><Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
                 </div>

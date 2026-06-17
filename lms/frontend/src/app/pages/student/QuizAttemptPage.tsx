@@ -87,7 +87,7 @@ export default function QuizAttemptPage() {
 
   if (isError || !quiz) {
     return (
-      <div className="p-6">
+      <div className="sm:p-6 p-4">
         <Card className="border-border/60"><CardContent className="flex flex-col items-center gap-4 py-12">
           <AlertCircle className="h-8 w-8 text-destructive" />
           <p className="font-medium text-headline-sm">Failed to load quiz</p>
@@ -104,7 +104,7 @@ export default function QuizAttemptPage() {
 
   if (!q && phase === 'taking') {
     return (
-      <div className="p-6">
+      <div className="sm:p-6 p-4">
         <Card className="border-border/60"><CardContent className="flex flex-col items-center gap-4 py-12">
           <AlertCircle className="h-8 w-8 text-destructive" />
           <p className="font-medium text-headline-sm">No questions found</p>
@@ -123,7 +123,7 @@ export default function QuizAttemptPage() {
     return (
       <>
         <SEOHead title={quiz.title} description={`Quiz: ${quiz.title}`} canonical={`/quizzes/${quizId}`} />
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-6xl mx-auto pb-32 space-y-16">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16">
           <motion.div variants={cardStackReveal} custom={0} className="max-w-lg mx-auto">
             <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
               <ArrowLeft className="h-4 w-4 mr-1" />Back
@@ -135,7 +135,7 @@ export default function QuizAttemptPage() {
                 </div>
                 <CardTitle className="text-headline-sm">{quiz.title}</CardTitle>
                 <CardDescription className="text-body-lg">{quiz.description}</CardDescription>
-                <div className="grid grid-cols-2 gap-3 text-body-md">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-body-md">
                   <div className="bg-muted rounded-lg p-3"><p className="text-display-xs font-bold">{totalQuestions}</p><p className="text-label-xs text-muted-foreground">Questions</p></div>
                   <div className="bg-muted rounded-lg p-3"><p className="text-display-xs font-bold">{quiz.timeLimit}m</p><p className="text-label-xs text-muted-foreground">Time Limit</p></div>
                   <div className="bg-muted rounded-lg p-3"><p className="text-display-xs font-bold">{quiz.questions?.reduce((s, q) => s + q.points, 0) || 0}</p><p className="text-label-xs text-muted-foreground">Points</p></div>
@@ -164,7 +164,7 @@ export default function QuizAttemptPage() {
     return (
       <>
         <SEOHead title={`${quiz.title} - Results`} description="Quiz results" />
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-6xl mx-auto pb-32 space-y-16">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16">
           <motion.div variants={cardStackReveal} custom={0} className="max-w-lg mx-auto">
             <Card className="border-border/60">
               <CardContent className="p-6 text-center space-y-4">

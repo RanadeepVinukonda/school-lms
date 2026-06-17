@@ -107,7 +107,7 @@ export default function AboutSchoolPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="relative z-10 p-6 max-w-6xl mx-auto pb-32"
+          className="relative z-10 sm:p-6 p-4 max-w-6xl mx-auto pb-32"
         >
           {/* Hero Section */}
           <motion.div
@@ -170,7 +170,7 @@ export default function AboutSchoolPage() {
               initial="hidden"
               whileInView="show"
               viewport={{ once: true, amount: 0.2 }}
-              className="grid gap-6 md:grid-cols-2"
+              className="grid grid-cols-1 gap-6 md:grid-cols-2"
             >
               <motion.div variants={cardStackReveal} custom={0}>
                 <Card className="h-full border-border/60 p-8">
@@ -220,7 +220,7 @@ export default function AboutSchoolPage() {
               Our Core Values
             </motion.h2>
 
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-5">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-5">
               {coreValues.map((value, i) => (
                 <motion.div
                   key={value.title}
@@ -275,7 +275,7 @@ export default function AboutSchoolPage() {
             >
               <Card className="mx-auto max-w-4xl border-border/60 p-8 sm:p-10">
                 <CardContent className="p-0">
-                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2">
                     {schoolFacts.map((fact) => (
                       <StatCard key={fact.label} label={fact.label} value={fact.value} />
                     ))}
@@ -301,7 +301,7 @@ export default function AboutSchoolPage() {
               Academic Programs
             </motion.h2>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
               {academicPrograms.map((program, i) => (
                 <motion.div
                   key={program.title}

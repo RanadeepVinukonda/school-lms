@@ -61,7 +61,7 @@ export default function StudentGamificationPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-6xl mx-auto pb-32 space-y-8"
+        className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-8"
       >
         <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
           <div className="flex items-center justify-between">
@@ -195,7 +195,7 @@ export default function StudentGamificationPage() {
 
         {profile && <XPBar xp={xp} level={level} xpForCurrentLevel={xpForCurrentLevel} xpForNextLevel={xpForNextLevel} />}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-1 sm:grid-cols-2 gap-8">
           <div className="space-y-6">
             <div>
               <h2 className="text-title-md font-bold tracking-tight">Daily Challenges</h2>

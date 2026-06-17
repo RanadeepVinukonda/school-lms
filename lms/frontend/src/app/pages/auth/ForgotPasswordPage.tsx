@@ -49,14 +49,14 @@ export default function ForgotPasswordPage() {
         className="w-full max-w-md"
       >
         <motion.div variants={cardStackReveal} custom={0}>
-          <Card className="border-border/60">
+          <Card className="w-full border-border/60">
             <CardHeader className="text-center pb-2">
               <CardTitle className="text-headline-sm">Reset password</CardTitle>
               <CardDescription>
                 {sent ? 'Check your email for the reset link' : 'Enter your email and we\'ll send you a reset link'}
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-5">
+            <CardContent className="sm:p-5 p-4">
               {sent ? (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}

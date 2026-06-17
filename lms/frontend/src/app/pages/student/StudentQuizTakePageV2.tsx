@@ -530,7 +530,7 @@ export default function StudentQuizTakePageV2() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="p-6 max-w-6xl mx-auto pb-32 space-y-16"
+          className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
         >
           <motion.div variants={cardStackReveal} custom={0} className="max-w-2xl mx-auto space-y-6">
             <Button variant="ghost" size="sm" onClick={handleBack} className="mb-2">
@@ -665,7 +665,7 @@ export default function StudentQuizTakePageV2() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="p-6 max-w-6xl mx-auto pb-32 space-y-16"
+          className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
         >
           <motion.div variants={cardStackReveal} custom={0} className="max-w-2xl mx-auto space-y-6">
             <Card className="border-border/60">

@@ -76,7 +76,7 @@ export default function TeacherAttendancePage() {
   return (
     <>
       <SEOHead title="Mark Attendance" description="Mark your class attendance" />
-      <div className="p-6 max-w-4xl mx-auto pb-32 space-y-8">
+      <div className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-8">
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <h1 className="text-headline-md font-bold tracking-tight">Mark Attendance</h1>
           <p className="text-body-md text-muted-foreground mt-1">Record daily attendance for your classes</p>

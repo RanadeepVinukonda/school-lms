@@ -60,7 +60,7 @@ export default function ParentProfilePage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-4xl mx-auto pb-32 space-y-16"
+        className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-16"
       >
         <DataFetchWrapper data={data} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="profile">
           {(profileData) => (
@@ -76,7 +76,7 @@ export default function ParentProfilePage() {
                       <div className="flex-1 text-center sm:text-left">
                         <h1 className="text-headline-sm">{profileData.user.displayName ?? 'Parent'}</h1>
                         <p className="text-body-md text-muted-foreground">{profileData.user.email ?? ''}</p>
-                        <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
+                        <div className="flex items-center justify-center sm:justify-start gap-2 mt-1 flex-wrap">
                           <Badge variant="info" className="text-label-xs">
                             <Icon name="family_history" size={11} className="mr-1" />Parent
                           </Badge>
@@ -112,7 +112,7 @@ export default function ParentProfilePage() {
                 <motion.div variants={cardStackReveal} custom={0}>
                   <Card className="border-border/60">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-title-sm flex items-center gap-2">
+                      <CardTitle className="text-title-sm flex items-center gap-2 flex-wrap">
                         <Icon name="group" size={18} className="text-muted-foreground" />Linked Children
                       </CardTitle>
                     </CardHeader>
@@ -138,8 +138,8 @@ export default function ParentProfilePage() {
               <motion.div variants={cardStackReveal} custom={0}>
                 <Card className="border-border/60">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-title-sm flex items-center gap-2">
-                      <Icon name="info" size={18} className="text-muted-foreground" />Account Information
+                      <CardTitle className="text-title-sm flex items-center gap-2 flex-wrap">
+                        <Icon name="info" size={18} className="text-muted-foreground" />Account Information
                     </CardTitle>
                   </CardHeader>
                   <CardContent>

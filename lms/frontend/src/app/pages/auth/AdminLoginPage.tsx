@@ -103,7 +103,7 @@ export default function AdminLoginPage() {
               <CardDescription>Authorized personnel only</CardDescription>
             </CardHeader>
             <form onSubmit={handleSubmit(onSubmit)}>
-              <CardContent className="space-y-4 p-5">
+              <CardContent className="space-y-4 sm:p-5 p-4">
                 {error && (
                   <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
                     <Icon name="error" size={16} className="shrink-0" />

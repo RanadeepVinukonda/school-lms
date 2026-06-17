@@ -117,7 +117,7 @@ export default function StudentExamsPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-6xl mx-auto pb-32 space-y-16"
+        className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
       >
         <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
           <div className="flex flex-col gap-4">
@@ -225,7 +225,7 @@ export default function StudentExamsPage() {
                                     <p className="text-body-sm text-muted-foreground mt-1 line-clamp-1">
                                       {exam.description}
                                     </p>
-                                    <div className="flex items-center gap-4 mt-2 text-body-sm text-muted-foreground">
+                                    <div className="flex items-center gap-4 mt-2 text-body-sm text-muted-foreground flex-wrap">
                                       <span className="flex items-center gap-1">
                                         <Icon name="schedule" size={14} />
                                         {exam.duration} min
@@ -303,7 +303,7 @@ export default function StudentExamsPage() {
                                     <p className="text-body-sm text-muted-foreground mt-0.5">
                                       {exam.subject?.name ?? 'Unknown Subject'}
                                     </p>
-                                    <div className="flex items-center gap-4 mt-2 text-body-sm text-muted-foreground">
+                                    <div className="flex items-center gap-4 mt-2 text-body-sm text-muted-foreground flex-wrap">
                                       <span className="flex items-center gap-1">
                                         <Icon name="grade" size={14} />
                                         {exam.correction.totalMarks}/{Array.isArray(exam.questions)

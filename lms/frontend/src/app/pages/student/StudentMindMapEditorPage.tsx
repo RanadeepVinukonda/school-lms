@@ -78,7 +78,7 @@ export default function StudentMindMapEditorPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-6xl mx-auto pb-32 space-y-4"
+        className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-4"
       >
         <DataFetchWrapper data={mindMap} isLoading={isLoading} error={error as Error | null} onRetry={() => refetch()}>
           {() => (

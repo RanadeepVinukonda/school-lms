@@ -234,7 +234,7 @@ export default function ClassSelectionPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="p-6 max-w-2xl mx-auto pb-32"
+      className="sm:p-6 p-4 max-w-2xl mx-auto pb-32"
     >
       <div className="space-y-16">
         <motion.div variants={cardStackReveal} custom={0}>
@@ -257,7 +257,7 @@ export default function ClassSelectionPage() {
         <motion.div variants={cardStackReveal} custom={0}>
           <div>
             <h2 className="text-lg font-semibold mb-3">Choose your classes</h2>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {activeClasses.map((cls) => {
                 const checked = selectedIds.has(cls.id);
                 return (

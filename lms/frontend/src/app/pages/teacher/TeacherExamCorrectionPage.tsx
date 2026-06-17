@@ -371,7 +371,7 @@ export default function TeacherExamCorrectionPage() {
 
   if (examLoading) {
     return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-5xl mx-auto pb-32">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-5xl mx-auto pb-32">
         <SEOHead title="Exam Correction" description="Grade student exam submissions" />
         <Card className="border-border/60">
           <CardContent className="flex items-center justify-center py-12">
@@ -383,7 +383,7 @@ export default function TeacherExamCorrectionPage() {
   }
 
   if (!exam) return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-5xl mx-auto pb-32">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-5xl mx-auto pb-32">
       <SEOHead title="Exam Correction" description="Grade student exam submissions" />
       <Card className="border-border/60"><CardContent className="flex flex-col items-center gap-3 py-12">
         <Icon name="fact_check" size={48} className="text-muted-foreground/40" />
@@ -395,7 +395,7 @@ export default function TeacherExamCorrectionPage() {
   );
 
   if (enrolled.length === 0) return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-5xl mx-auto pb-32">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-5xl mx-auto pb-32">
       <SEOHead title={`Correcting: ${exam.title}`} description={`Grade submissions for ${exam.title}`} />
       <div className="flex flex-col items-center gap-3 py-12">
         <Icon name="group_off" size={48} className="text-muted-foreground/40" />

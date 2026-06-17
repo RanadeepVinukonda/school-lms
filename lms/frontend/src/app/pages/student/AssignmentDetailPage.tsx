@@ -149,7 +149,7 @@ export default function AssignmentDetailPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-6xl mx-auto pb-32 space-y-16"
+        className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
       >
         <Button variant="ghost" size="sm" asChild className="mb-1">
           <Link to="/student/dashboard"><Icon name="arrow_back" size={18} className="mr-1" />Back</Link>

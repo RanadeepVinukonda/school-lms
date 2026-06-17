@@ -109,7 +109,7 @@ export default function TeacherStudentsPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-6xl mx-auto space-y-16 pb-32"
+        className="sm:p-6 p-4 max-w-6xl mx-auto space-y-16 pb-32"
       >
         <motion.div
           variants={cardStackReveal}

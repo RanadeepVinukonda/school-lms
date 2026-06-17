@@ -58,7 +58,7 @@ export default function NotificationsPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-3xl mx-auto pb-32"
+        className="sm:p-6 p-4 max-w-3xl mx-auto pb-32"
       >
         <div className="flex items-center gap-3 mb-8">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
@@ -77,7 +77,7 @@ export default function NotificationsPage() {
             <TabsContent value={filter} className="mt-6">
               {displayed.length === 0 ? (
                 <Card className="border-border/60">
-                  <CardContent className="flex flex-col items-center py-16 text-center p-5">
+                  <CardContent className="flex flex-col items-center py-16 text-center sm:p-5 p-4">
                     <Icon name="notifications_none" size={48} className="text-muted-foreground/30 mb-4" />
                     <p className="text-body-md text-muted-foreground">No notifications to show.</p>
                   </CardContent>

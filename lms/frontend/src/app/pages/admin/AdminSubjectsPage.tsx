@@ -277,7 +277,7 @@ export default function AdminSubjectsPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-6xl mx-auto pb-32"
+        className="sm:p-6 p-4 max-w-6xl mx-auto pb-32"
       >
         <DataFetchWrapper
           data={subjects}
@@ -496,7 +496,7 @@ export default function AdminSubjectsPage() {
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Code</Label>
                 <Input
@@ -564,7 +564,7 @@ export default function AdminSubjectsPage() {
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Code</Label>
                 <Input
