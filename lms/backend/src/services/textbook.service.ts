@@ -172,6 +172,13 @@ export async function createTextbook(data: {
   await collections.textbooks().doc(textbookId).set(textbookData);
 
   if (pdfUrl) {
+    const markFailed = (reason: string) =>
+      collections.textbooks().doc(textbookId).update({
+        status: 'failed',
+        failureReason: reason,
+        updatedAt: new Date().toISOString(),
+      }).catch((e: unknown) => logger.error('Failed to mark textbook as failed', { textbookId, e }));
+
     if (env.REDIS_URL) {
       try {
         const { addUploadJob } = require('../jobs/queue');
@@ -183,14 +190,18 @@ export async function createTextbook(data: {
         status = 'processing';
         const { processUploadInline } = require('./pipeline.service');
         processUploadInline(textbookId).catch((inlineErr: unknown) => {
+          const msg = inlineErr instanceof Error ? inlineErr.message : String(inlineErr);
           logger.error('Background inline pipeline failed', { textbookId, inlineErr });
+          markFailed(msg);
         });
       }
     } else {
       status = 'processing';
       const { processUploadInline } = require('./pipeline.service');
       processUploadInline(textbookId).catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err);
         logger.error('Background inline pipeline failed', { textbookId, err });
+        markFailed(msg);
       });
     }
   } else {
