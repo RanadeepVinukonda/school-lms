@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -81,6 +81,23 @@ export default function TeacherTextbookUploadPage() {
     return assignmentList.find((a) => a.id === id) ?? null;
   }, [fileAssignments, assignmentList, getDefaultAssignmentId]);
 
+  // Fill missing assignments when assignment list loads or files change
+  useEffect(() => {
+    if (!assignmentList.length) return;
+    setFileAssignments((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      const defaultId = getDefaultAssignmentId();
+      for (let i = 0; i < files.length; i++) {
+        if (!next[i]) {
+          next[i] = defaultId;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [files.length, assignmentList, getDefaultAssignmentId]);
+
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -161,7 +178,6 @@ export default function TeacherTextbookUploadPage() {
       `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`,
       cdFormData,
       {
-        headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (e) => {
           if (e.total) {
             const pct = Math.round((e.loaded / e.total) * 40);
@@ -203,66 +219,75 @@ export default function TeacherTextbookUploadPage() {
   const handleSubmit = async () => {
     if (files.length === 0) return;
 
-    const hasMissingAssignment = files.some((_, i) => !getAssignmentForFile(i));
-    if (hasMissingAssignment) {
-      toast.error('Please select a class & subject for each file');
-      return;
-    }
-
-    setIsUploading(true);
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const assignment = getAssignmentForFile(i)!;
-      const taskId = `upload_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      const addLog = (msg: string) => {
-        useUploadStore.setState((s) => ({
-          tasks: s.tasks.map((t) =>
-            t.id === taskId ? { ...t, log: [...t.log, msg] } : t
-          ),
-        }));
-      };
-
-      useUploadStore.setState((s) => ({
-        tasks: [
-          ...s.tasks,
-          {
-            id: taskId,
-            file,
-            subjectId: assignment.subjectId,
-            subjectName: assignment.subjectName,
-            classId: assignment.classId,
-            stage: 'uploading',
-            progress: 0,
-            textbookId: null,
-            log: [],
-            error: null,
-          },
-        ],
-      }));
-
-      addLog(`Uploading ${file.name} (${i + 1}/${files.length})...`);
-
-      try {
-        await uploadSingleFile(file, assignment, taskId, addLog);
-        toast.success(`${file.name} uploaded`);
-      } catch (err: unknown) {
-        const message =
-          err && typeof err === 'object' && 'message' in err
-            ? (err as { message: string }).message
-            : `${file.name} failed. Please try again.`;
-        useUploadStore.setState((s) => ({
-          tasks: s.tasks.map((t) =>
-            t.id === taskId ? { ...t, stage: 'error', error: message, progress: 0 } : t
-          ),
-        }));
-        toast.error(message);
+    try {
+      const hasMissingAssignment = files.some((_, i) => !getAssignmentForFile(i));
+      if (hasMissingAssignment) {
+        toast.error('Please select a class & subject for each file');
+        return;
       }
-    }
 
-    setIsUploading(false);
-    setFiles([]);
-    navigate(ROUTES.TEACHER_TEXTBOOKS);
+      setIsUploading(true);
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const assignment = getAssignmentForFile(i)!;
+        const taskId = `upload_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        const addLog = (msg: string) => {
+          useUploadStore.setState((s) => ({
+            tasks: s.tasks.map((t) =>
+              t.id === taskId ? { ...t, log: [...t.log, msg] } : t
+            ),
+          }));
+        };
+
+        useUploadStore.setState((s) => ({
+          tasks: [
+            ...s.tasks,
+            {
+              id: taskId,
+              file,
+              subjectId: assignment.subjectId,
+              subjectName: assignment.subjectName,
+              classId: assignment.classId,
+              stage: 'uploading',
+              progress: 0,
+              textbookId: null,
+              log: [],
+              error: null,
+            },
+          ],
+        }));
+
+        addLog(`Uploading ${file.name} (${i + 1}/${files.length})...`);
+
+        try {
+          await uploadSingleFile(file, assignment, taskId, addLog);
+          toast.success(`${file.name} uploaded`);
+        } catch (err: unknown) {
+          const message =
+            err && typeof err === 'object' && 'message' in err
+              ? (err as { message: string }).message
+              : `${file.name} failed. Please try again.`;
+          useUploadStore.setState((s) => ({
+            tasks: s.tasks.map((t) =>
+              t.id === taskId ? { ...t, stage: 'error', error: message, progress: 0 } : t
+            ),
+          }));
+          toast.error(message);
+        }
+      }
+
+      setIsUploading(false);
+      setFiles([]);
+      navigate(ROUTES.TEACHER_TEXTBOOKS);
+    } catch (err: unknown) {
+      setIsUploading(false);
+      const message =
+        err && typeof err === 'object' && 'message' in err
+          ? (err as { message: string }).message
+          : 'Upload failed unexpectedly';
+      toast.error(message);
+    }
   };
 
   if (assignmentsLoading) {
