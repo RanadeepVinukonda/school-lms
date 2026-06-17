@@ -480,7 +480,7 @@ export default function StudentQuizTakePageV2() {
       <div className="p-8 max-w-3xl mx-auto space-y-6">
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-48 rounded-2xl" />
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Skeleton className="h-24 rounded-xl" />
           <Skeleton className="h-24 rounded-xl" />
         </div>
@@ -554,7 +554,7 @@ export default function StudentQuizTakePageV2() {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto text-body-md">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-sm mx-auto text-body-md">
               <div className="bg-muted rounded-xl p-3 text-center">
                 <p className="text-display-xs font-bold">{assessmentInfo.questionsCount || '--'}</p>
                 <p className="text-label-xs text-muted-foreground">Questions</p>
@@ -970,7 +970,7 @@ export default function StudentQuizTakePageV2() {
               </p>
             </div>
 
-            <div className="p-3 bg-surface-variant/30 border-b border-outline-variant text-label-xs grid grid-cols-2 gap-2 text-on-surface-variant">
+            <div className="p-3 bg-surface-variant/30 border-b border-outline-variant text-label-xs grid grid-cols-1 sm:grid-cols-2 gap-2 text-on-surface-variant">
               <div className="flex items-center gap-1.5">
                 <div className="h-2.5 w-2.5 rounded-full bg-muted opacity-60" />
                 <span>Unvisited</span>
@@ -989,7 +989,7 @@ export default function StudentQuizTakePageV2() {
               </div>
             </div>
 
-            <div className="p-4 grid grid-cols-5 gap-2.5">
+            <div className="p-4 grid grid-cols-4 sm:grid-cols-5 gap-2.5">
               {questions.map((q, i) => {
                 const status = questionStatuses[q.id] || 'unvisited';
                 const isCurrent = currentIndex === i;

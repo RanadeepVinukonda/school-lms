@@ -50,7 +50,7 @@ export default function StudentLeaderboardPage() {
         </motion.div>
 
         <Tabs value={view} onValueChange={(v) => setView(v as 'global' | 'class')}>
-          <TabsList>
+          <TabsList className="w-full overflow-x-auto inline-flex">
             <TabsTrigger value="class" disabled={!classId}>My Class</TabsTrigger>
             <TabsTrigger value="global">Global</TabsTrigger>
           </TabsList>

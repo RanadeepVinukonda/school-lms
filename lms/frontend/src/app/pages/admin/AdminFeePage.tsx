@@ -101,7 +101,7 @@ export default function AdminFeePage() {
         </motion.div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
+          <TabsList className="w-full overflow-x-auto inline-flex">
             <TabsTrigger value="schedules">Fee Schedules</TabsTrigger>
             <TabsTrigger value="payments">Record Payment</TabsTrigger>
             <TabsTrigger value="outstanding">Outstanding Report</TabsTrigger>

@@ -80,7 +80,7 @@ export function QuestionRendererV2({
 
   if (question.type === 'true_false') {
     return (
-      <RadioGroup value={answer} onValueChange={onAnswerChange} disabled={disabled} className="grid grid-cols-2 gap-3">
+      <RadioGroup value={answer} onValueChange={onAnswerChange} disabled={disabled} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {['True', 'False'].map((opt) => {
           const isSelected = answer === opt;
           return (

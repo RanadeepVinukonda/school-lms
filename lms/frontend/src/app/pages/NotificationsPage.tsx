@@ -69,7 +69,7 @@ export default function NotificationsPage() {
 
         <motion.div variants={cardStackReveal} custom={0}>
           <Tabs value={filter} onValueChange={(v) => setFilter(v as 'all' | 'unread')}>
-            <TabsList>
+            <TabsList className="w-full overflow-x-auto inline-flex">
               <TabsTrigger value="all">All ({items.length})</TabsTrigger>
               <TabsTrigger value="unread">Unread ({items.filter((n) => !n.read).length})</TabsTrigger>
             </TabsList>

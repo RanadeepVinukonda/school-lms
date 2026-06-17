@@ -57,7 +57,7 @@ export default function K2DashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {quickActions.map((action) => (
           <button
             key={action.href}

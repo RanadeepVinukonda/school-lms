@@ -212,7 +212,7 @@ export default function NotificationDropdown() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" sideOffset={8} className="w-96 p-0 max-h-[480px]" onKeyDown={handleKeyDown}>
+      <PopoverContent align="end" sideOffset={8} className="w-96 max-w-[90vw] p-0 max-h-[480px]" onKeyDown={handleKeyDown}>
         <div className="flex items-center justify-between px-4 py-3">
           <h3 className="text-sm font-semibold">Notifications</h3>
           {unreadItems.length > 0 && (

@@ -311,7 +311,7 @@ export default function TeacherTextbookDetailPage() {
                   <DataFetchWrapper data={chaptersQuery.data} isLoading={chaptersQuery.isLoading} error={chaptersQuery.error} loadingType="list">
                     {(chapters) => (
                       <Tabs defaultValue="chapters">
-                        <TabsList>
+                        <TabsList className="w-full overflow-x-auto inline-flex">
                           <TabsTrigger value="chapters">
                             <Icon name="list" size={14} className="mr-1" />
                             Chapters

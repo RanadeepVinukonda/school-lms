@@ -270,7 +270,7 @@ export default function TeacherExamsPage() {
 
               <motion.div variants={cardStackReveal} custom={0}>
                 <Tabs defaultValue="to-correct" className="w-full">
-                  <TabsList>
+                  <TabsList className="w-full overflow-x-auto inline-flex">
                     <TabsTrigger value="to-correct" className="gap-2">
                       <Icon name="rate_review" size={16} />
                       To Correct

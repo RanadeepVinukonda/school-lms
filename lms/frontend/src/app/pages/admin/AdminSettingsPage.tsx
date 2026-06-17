@@ -341,7 +341,7 @@ export default function AdminSettingsPage() {
                 {() => (
                   <div className="space-y-6">
                     {/* System Stats Cards */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                       {statsConfig.map((stat) => (
                         <Card key={stat.label} className="border-border/60">
                           <CardContent className="p-5 flex items-center gap-3">
@@ -654,7 +654,7 @@ export default function AdminSettingsPage() {
                                 animate={{ height: 'auto', opacity: 1 }}
                                 className="mt-3 pt-3 border-t border-border/60 space-y-3 text-label-xs"
                               >
-                                <div className="grid grid-cols-2 gap-2 text-muted-foreground font-medium">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-muted-foreground font-medium">
                                   <div><span className="text-muted-foreground font-semibold">Target Object:</span> {log.targetType} "{log.targetName}"</div>
                                   <div><span className="text-muted-foreground font-semibold">Performed ID:</span> {log.performedBy}</div>
                                 </div>

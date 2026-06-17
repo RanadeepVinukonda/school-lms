@@ -117,7 +117,7 @@ export default function K2FlashcardsPage() {
           <h2 className="text-2xl font-bold text-yellow-700 mb-3 flex items-center gap-2">
             <span>🃏</span> Pick a Category
           </h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {categories.map((cat) => (
               <button
                 key={cat.id}

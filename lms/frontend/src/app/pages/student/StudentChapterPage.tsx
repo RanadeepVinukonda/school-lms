@@ -105,7 +105,7 @@ export default function StudentChapterPage() {
                 {concepts.length > 0 && (
                   <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
                     <Tabs defaultValue="list">
-                      <TabsList>
+                      <TabsList className="w-full overflow-x-auto inline-flex">
                         <TabsTrigger value="list"><Icon name="list" size={14} className="mr-1" />List</TabsTrigger>
                         <TabsTrigger value="mindmap"><Icon name="account_tree" size={14} className="mr-1" />Mind Map</TabsTrigger>
                       </TabsList>

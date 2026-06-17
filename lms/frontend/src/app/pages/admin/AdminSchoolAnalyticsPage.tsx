@@ -90,7 +90,7 @@ export default function AdminSchoolAnalyticsPage() {
         </motion.div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
+          <TabsList className="w-full overflow-x-auto inline-flex">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="grades">Grade Comparison</TabsTrigger>
             <TabsTrigger value="teachers">Teacher Comparison</TabsTrigger>

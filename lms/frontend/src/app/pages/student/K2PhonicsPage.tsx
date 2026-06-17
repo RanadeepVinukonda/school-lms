@@ -147,7 +147,7 @@ export default function K2PhonicsPage() {
 
         {gameMode === 'learn' && (
           <>
-            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-6 md:grid-cols-8 gap-2">
               {letters.map((card) => (
                 <button
                   key={card.letter}
@@ -181,7 +181,7 @@ export default function K2PhonicsPage() {
             >
               🔊
             </button>
-            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-6 md:grid-cols-8 gap-3">
               {shuffleArray(letters).slice(0, 12).map((card) => (
                 <button
                   key={card.letter}

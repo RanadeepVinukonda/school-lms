@@ -774,7 +774,7 @@ export default function AdminClassesPage() {
                                 </CardHeader>
 
                                 <CardContent className="space-y-3">
-                                  <div className="grid grid-cols-2 gap-2 text-body-md">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-body-md">
                                     <div className="flex items-center gap-2 text-muted-foreground">
                                       <Icon name="school" size={16} />
                                       <span>Grade {cls.grade || '\u2014'}</span>
@@ -1474,25 +1474,25 @@ export default function AdminClassesPage() {
           {createdCredentials && (
             <div className="space-y-4 bg-muted/40 p-4 rounded-lg border border-border font-mono text-sm">
               {createdCredentials.displayName && (
-                <div className="grid grid-cols-2 gap-2 border-b border-border/60 pb-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border-b border-border/60 pb-2">
                   <span className="font-bold text-muted-foreground">Name:</span>
-                  <span className="col-span-2 select-all font-sans font-medium">{createdCredentials.displayName}</span>
+                  <span className="sm:col-span-1 col-span-2 select-all font-sans font-medium">{createdCredentials.displayName}</span>
                 </div>
               )}
               {createdCredentials.studentId && (
-                <div className="grid grid-cols-2 gap-2 border-b border-border/60 pb-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border-b border-border/60 pb-2">
                   <span className="font-bold text-muted-foreground">Student ID:</span>
-                  <span className="col-span-2 select-all text-primary font-bold">{createdCredentials.studentId}</span>
+                  <span className="sm:col-span-1 col-span-2 select-all text-primary font-bold">{createdCredentials.studentId}</span>
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-2 border-b border-border/60 pb-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border-b border-border/60 pb-2">
                 <span className="font-bold text-muted-foreground">Email:</span>
-                <span className="col-span-2 select-all">{createdCredentials.email}</span>
+                <span className="sm:col-span-1 col-span-2 select-all">{createdCredentials.email}</span>
               </div>
               {createdCredentials.generatedPassword && (
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <span className="font-bold text-muted-foreground">Password:</span>
-                  <span className="col-span-2 select-all text-error font-bold bg-error-container/50 px-2 py-0.5 rounded">{createdCredentials.generatedPassword}</span>
+                  <span className="sm:col-span-1 col-span-2 select-all text-error font-bold bg-error-container/50 px-2 py-0.5 rounded">{createdCredentials.generatedPassword}</span>
                 </div>
               )}
             </div>

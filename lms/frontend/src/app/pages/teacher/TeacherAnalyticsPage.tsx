@@ -62,7 +62,7 @@ function AssessmentRow({ assessment }: { assessment: any }) {
       </button>
       {expanded && (
         <div className="px-4 pb-4 border-t pt-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <p className="text-label-xs text-muted-foreground">Pass Rate</p>
               <p className="font-semibold">{assessment.passRate}%</p>
@@ -153,7 +153,7 @@ export default function TeacherAnalyticsPage() {
         {selectedClassId && (
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <motion.div variants={cardStackReveal} custom={0}>
-              <TabsList>
+              <TabsList className="w-full overflow-x-auto inline-flex">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="concepts">Concept Mastery</TabsTrigger>
               </TabsList>
@@ -163,7 +163,7 @@ export default function TeacherAnalyticsPage() {
               <DataFetchWrapper data={classData} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="card">
                 {(data) => <div className="space-y-16">
                   <motion.div variants={cardStackReveal} custom={0}>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                       <StatCard icon="school" label="Students" value={data.totalStudents ?? 0} color="bg-blue-600" />
                       <StatCard icon="quiz" label="Assessments" value={data.totalAssessments ?? 0} color="bg-purple-600" />
                       <StatCard icon="trending_up" label="Avg Score" value={`${data.avgScore ?? 0}%`} color="bg-emerald-600" />

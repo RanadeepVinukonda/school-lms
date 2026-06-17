@@ -74,7 +74,7 @@ export default function StudentGamificationPage() {
 
         <DataFetchWrapper data={profile} isLoading={profileLoading} error={profileError as Error | null} loadingType="card">
           {(p) => (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card variant="filled" className="bg-primary/5 border-primary/20 relative">
                 <TooltipProvider delayDuration={300}>
                   <Tooltip>
@@ -195,7 +195,7 @@ export default function StudentGamificationPage() {
 
         {profile && <XPBar xp={xp} level={level} xpForCurrentLevel={xpForCurrentLevel} xpForNextLevel={xpForNextLevel} />}
 
-        <div className="grid gap-8 lg:grid-cols-2">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="space-y-6">
             <div>
               <h2 className="text-title-md font-bold tracking-tight">Daily Challenges</h2>
@@ -221,7 +221,7 @@ export default function StudentGamificationPage() {
             </div>
             <DataFetchWrapper data={badges} isLoading={badgesLoading} error={badgesError} loadingType="card">
               {(bData) => (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {bData?.map((b, i) => (
                     <BadgeCard key={b.id} badge={b} earned={b.earned} earnedAt={b.earnedAt} index={i} />
                   ))}

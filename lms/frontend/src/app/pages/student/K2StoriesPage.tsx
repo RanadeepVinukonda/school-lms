@@ -164,7 +164,7 @@ export default function K2StoriesPage() {
           {selectedStory.questions.map((q, qi) => (
             <div key={qi} className="mb-4">
               <p className="text-lg font-bold text-gray-700 mb-2">{q.question}</p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {q.options.map((opt, oi) => (
                   <button
                     key={oi}
