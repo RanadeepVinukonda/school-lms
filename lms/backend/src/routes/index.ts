@@ -43,6 +43,7 @@ import codingRoutes from './coding.routes';
 import prePrimaryRoutes from './pre-primary.routes';
 import nepQuestionsRoutes from './nep-questions.routes';
 import ocrRoutes from './ocr.routes';
+import cloudinaryRoutes from './cloudinary.routes';
 
 const router = Router();
 
@@ -90,6 +91,7 @@ router.use('/pre-primary', prePrimaryRoutes);
 router.use('/coding', codingRoutes);
 router.use('/nep-questions', nepQuestionsRoutes);
 router.use('/ocr', ocrRoutes);
+router.use('/cloudinary', cloudinaryRoutes);
 
 router.get('/health', (_req, res) => {
   res.json({

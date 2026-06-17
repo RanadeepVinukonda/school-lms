@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -117,12 +118,17 @@ export default function TeacherTextbookUploadPage() {
   }, []);
 
   const uploadSingleFile = async (file: File, taskId: string, addLog: (msg: string) => void) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('subjectId', selectedAssignment!.subjectId);
-    formData.append('classId', selectedAssignment!.classId);
-    formData.append('title', file.name.replace('.pdf', ''));
-    formData.append('description', file.name.replace('.pdf', ''));
+    addLog(`Requesting Cloudinary upload signature for ${file.name}...`);
+
+    const sigRes = await api.get('/cloudinary/signature?folder=textbooks');
+    const { signature, timestamp, apiKey, cloudName, folder } = sigRes.data.data;
+
+    const cdFormData = new FormData();
+    cdFormData.append('file', file);
+    cdFormData.append('api_key', apiKey);
+    cdFormData.append('timestamp', String(timestamp));
+    cdFormData.append('signature', signature);
+    cdFormData.append('folder', folder);
 
     useUploadStore.setState((s) => ({
       tasks: s.tasks.map((t) =>
@@ -130,18 +136,39 @@ export default function TeacherTextbookUploadPage() {
       ),
     }));
 
-    const res = await api.post('/textbooks', formData, {
-      headers: { 'Content-Type': undefined },
-      onUploadProgress: (e) => {
-        if (e.total) {
-          const pct = Math.round((e.loaded / e.total) * 40);
-          useUploadStore.setState((s) => ({
-            tasks: s.tasks.map((t) =>
-              t.id === taskId ? { ...t, progress: pct } : t
-            ),
-          }));
-        }
+    addLog(`Uploading ${file.name} directly to Cloudinary...`);
+
+    const cdRes = await axios.post(
+      `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`,
+      cdFormData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (e) => {
+          if (e.total) {
+            const pct = Math.round((e.loaded / e.total) * 40);
+            useUploadStore.setState((s) => ({
+              tasks: s.tasks.map((t) =>
+                t.id === taskId ? { ...t, progress: pct } : t
+              ),
+            }));
+          }
+        },
       },
+    );
+
+    const { secure_url, public_id } = cdRes.data;
+    addLog(`Cloudinary upload complete. Creating textbook record...`);
+
+    const bodyFormData = new FormData();
+    bodyFormData.append('cloudinaryUrl', secure_url);
+    bodyFormData.append('cloudinaryPublicId', public_id);
+    bodyFormData.append('subjectId', selectedAssignment!.subjectId);
+    bodyFormData.append('classId', selectedAssignment!.classId);
+    bodyFormData.append('title', file.name.replace('.pdf', ''));
+    bodyFormData.append('description', file.name.replace('.pdf', ''));
+
+    const res = await api.post('/textbooks', bodyFormData, {
+      headers: { 'Content-Type': undefined },
     });
 
     addLog(`${file.name} uploaded successfully!`);

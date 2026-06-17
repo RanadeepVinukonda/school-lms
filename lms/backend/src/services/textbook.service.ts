@@ -103,6 +103,8 @@ export async function createTextbook(data: {
   description?: string;
   coverImage?: string;
   pdfBuffer?: Buffer;
+  cloudinaryUrl?: string;
+  cloudinaryPublicId?: string;
   teacherRole?: string;
 }) {
   let assignment: Record<string, unknown> | null = null;
@@ -138,7 +140,11 @@ export async function createTextbook(data: {
   let pdfUrl = '';
   let status: 'processing' | 'ready' = 'ready';
 
-  if (data.pdfBuffer && data.pdfBuffer.length > 0) {
+  if (data.cloudinaryUrl && data.cloudinaryPublicId) {
+    pdfUrl = data.cloudinaryUrl;
+    storagePath = data.cloudinaryPublicId;
+    status = 'processing';
+  } else if (data.pdfBuffer && data.pdfBuffer.length > 0) {
     const { url, publicId } = await uploadBufferToCloudinary(data.pdfBuffer, `textbooks/${textbookId}`);
     storagePath = publicId;
     pdfUrl = url;
