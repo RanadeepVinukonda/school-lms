@@ -22,6 +22,19 @@ async function addTextbookLog(textbookId: string, message: string) {
   }
 }
 
+async function setStage(textbookId: string, processingStage: string, processingProgress: number) {
+  try {
+    const db = getAdminFirestore();
+    await db.collection('textbooks').doc(textbookId).update({
+      processingStage,
+      processingProgress,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    logger.error('Failed to update processing stage', { textbookId, err });
+  }
+}
+
 async function processConcept(
   textbookId: string, chapterId: string, conceptId: string,
   conceptTitle: string, chapterTitle: string, fullText: string,
@@ -180,15 +193,17 @@ export async function processUploadInline(textbookId: string) {
 
   const title = textbookDoc.data()!.title || 'Textbook';
 
-  await textbookRef.update({ status: 'processing', logs: [] });
+  await textbookRef.update({ status: 'processing', processingStage: 'Starting...', processingProgress: 0, logs: [] });
 
   // 1. Download PDF – single pass text extraction
   logger.info('Downloading and parsing PDF', { textbookId });
+  await setStage(textbookId, 'Downloading PDF...', 5);
   await addTextbookLog(textbookId, "Downloading textbook PDF from Cloudinary...");
   const response = await fetch(pdfUrl);
   if (!response.ok) throw new Error(`Failed to download PDF: ${response.statusText}`);
   const pdfBuffer = Buffer.from(await response.arrayBuffer());
 
+  await setStage(textbookId, 'Extracting text...', 10);
   await addTextbookLog(textbookId, "PDF downloaded. Extracting text content...");
 
   const { PDFParse } = require('pdf-parse');
@@ -196,7 +211,11 @@ export async function processUploadInline(textbookId: string) {
   let fullText = '';
   let pageCount = 0;
   try {
-    const parsed = await parser.getText();
+    const parsePromise = parser.getText();
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('PDF parsing timed out after 60s')), 60000)
+    );
+    const parsed = await Promise.race([parsePromise, timeout]);
     fullText = parsed.text;
     pageCount = parsed.total || parsed.pages?.length || 0;
   } finally {
@@ -218,7 +237,8 @@ export async function processUploadInline(textbookId: string) {
 
   // 2. AI TOC planning
   logger.info('Generating TOC structure', { textbookId });
-  await addTextbookLog(textbookId, "Analyzing syllabus layout and extracting Table of Contents (TOC) with Gemini AI...");
+  await setStage(textbookId, 'Analyzing syllabus layout...', 15);
+  await addTextbookLog(textbookId, "Analyzing syllabus layout and extracting Table of Contents (TOC) with AI...");
   let structure: { chapters: Array<{ title: string; order: number; summary: string; concepts: string[] }> };
 
   try {
@@ -330,6 +350,8 @@ ${fullText.slice(0, 120000)}`;
   await textbookRef.update({
     chapterCount: structure.chapters.length,
     totalConcepts,
+    processingStage: 'Curriculum layout saved',
+    processingProgress: 25,
     updatedAt: new Date().toISOString(),
   });
 
@@ -355,8 +377,11 @@ ${fullText.slice(0, 120000)}`;
       for (const r of results) {
         if (r.status === 'fulfilled' && r.value) {
           completedCount++;
+          const pct = 25 + Math.round((completedCount / totalConcepts) * 70);
           await textbookRef.update({
             completedConcepts: admin.firestore.FieldValue.increment(1),
+            processingStage: `Enriching concepts: ${completedCount} / ${totalConcepts}`,
+            processingProgress: pct,
             updatedAt: new Date().toISOString(),
           });
           await addTextbookLog(textbookId, `Enriched concept progress: ${completedCount} / ${totalConcepts} completed.`);
@@ -366,7 +391,12 @@ ${fullText.slice(0, 120000)}`;
   }
 
   // 5. Finalize
-  await textbookRef.update({ status: 'ready', updatedAt: new Date().toISOString() });
+  await textbookRef.update({
+    status: 'ready',
+    processingStage: 'Complete',
+    processingProgress: 100,
+    updatedAt: new Date().toISOString(),
+  });
 
   logger.info('Textbook processing complete', { textbookId, totalConcepts, completedCount });
   await addTextbookLog(textbookId, "Success! Textbook processing completed. Reloading database view...");
