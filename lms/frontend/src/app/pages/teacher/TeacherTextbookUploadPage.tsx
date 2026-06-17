@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -36,7 +36,7 @@ export default function TeacherTextbookUploadPage() {
   const user = useAuthStore((s) => s.user);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
-  const [selectedAssignmentId, setSelectedAssignmentId] = useState('');
+  const [fileAssignments, setFileAssignments] = useState<Record<number, string>>({});
   const [dragActive, setDragActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -65,27 +65,21 @@ export default function TeacherTextbookUploadPage() {
 
   const assignmentList: TeacherAssignment[] = assignments ?? [];
 
-  const selectedAssignment = assignmentList.find(
-    (a) => a.id === selectedAssignmentId
-  ) ?? (assignmentList.length === 1 ? assignmentList[0] : null);
-
-  useEffect(() => {
-    if (queryClassId && querySubjectId && assignmentList.length > 0) {
+  const getDefaultAssignmentId = useCallback(() => {
+    if (!assignmentList.length) return '';
+    if (queryClassId && querySubjectId) {
       const found = assignmentList.find(
         (a) => a.classId === queryClassId && a.subjectId === querySubjectId
       );
-      if (found) {
-        setSelectedAssignmentId(found.id);
-      }
-    } else if (queryClassId && assignmentList.length > 0) {
-      const found = assignmentList.find((a) => a.classId === queryClassId);
-      if (found) {
-        setSelectedAssignmentId(found.id);
-      }
-    } else if (assignmentList.length === 1 && !selectedAssignmentId) {
-      setSelectedAssignmentId(assignmentList[0].id);
+      if (found) return found.id;
     }
-  }, [assignmentList, selectedAssignmentId, queryClassId, querySubjectId]);
+    return assignmentList[0].id;
+  }, [assignmentList, queryClassId, querySubjectId]);
+
+  const getAssignmentForFile = useCallback((index: number): TeacherAssignment | null => {
+    const id = fileAssignments[index] || getDefaultAssignmentId();
+    return assignmentList.find((a) => a.id === id) ?? null;
+  }, [fileAssignments, assignmentList, getDefaultAssignmentId]);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -101,23 +95,48 @@ export default function TeacherTextbookUploadPage() {
     const droppedFiles = Array.from(e.dataTransfer.files).filter((f) => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
     if (droppedFiles.length > 0) {
       setFiles((prev) => [...prev, ...droppedFiles]);
+      setFileAssignments((prev) => {
+        const next = { ...prev };
+        const defaultId = getDefaultAssignmentId();
+        droppedFiles.forEach(() => {
+          const idx = Object.keys(next).length;
+          if (!next[idx]) next[idx] = defaultId;
+        });
+        return next;
+      });
     } else {
       toast.error('Please drop valid PDF files');
     }
-  }, []);
+  }, [getDefaultAssignmentId]);
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const selected = Array.from(e.target.files).filter((f) => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
       setFiles((prev) => [...prev, ...selected]);
+      setFileAssignments((prev) => {
+        const next = { ...prev };
+        const defaultId = getDefaultAssignmentId();
+        const start = Object.keys(next).length;
+        selected.forEach((_, i) => {
+          next[start + i] = defaultId;
+        });
+        return next;
+      });
     }
-  }, []);
+  }, [getDefaultAssignmentId]);
 
   const removeFile = useCallback((index: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
+    setFileAssignments((prev) => {
+      const next: Record<number, string> = {};
+      const ids = Object.values(prev);
+      ids.splice(index, 1);
+      ids.forEach((id, i) => { next[i] = id; });
+      return next;
+    });
   }, []);
 
-  const uploadSingleFile = async (file: File, taskId: string, addLog: (msg: string) => void) => {
+  const uploadSingleFile = async (file: File, assignment: TeacherAssignment, taskId: string, addLog: (msg: string) => void) => {
     addLog(`Requesting Cloudinary upload signature for ${file.name}...`);
 
     const sigRes = await api.get('/cloudinary/signature?folder=textbooks');
@@ -162,8 +181,8 @@ export default function TeacherTextbookUploadPage() {
     const bodyFormData = new FormData();
     bodyFormData.append('cloudinaryUrl', secure_url);
     bodyFormData.append('cloudinaryPublicId', public_id);
-    bodyFormData.append('subjectId', selectedAssignment!.subjectId);
-    bodyFormData.append('classId', selectedAssignment!.classId);
+    bodyFormData.append('subjectId', assignment.subjectId);
+    bodyFormData.append('classId', assignment.classId);
     bodyFormData.append('title', file.name.replace('.pdf', ''));
     bodyFormData.append('description', file.name.replace('.pdf', ''));
 
@@ -182,12 +201,19 @@ export default function TeacherTextbookUploadPage() {
   };
 
   const handleSubmit = async () => {
-    if (files.length === 0 || !selectedAssignment) return;
+    if (files.length === 0) return;
+
+    const hasMissingAssignment = files.some((_, i) => !getAssignmentForFile(i));
+    if (hasMissingAssignment) {
+      toast.error('Please select a class & subject for each file');
+      return;
+    }
 
     setIsUploading(true);
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+      const assignment = getAssignmentForFile(i)!;
       const taskId = `upload_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const addLog = (msg: string) => {
         useUploadStore.setState((s) => ({
@@ -203,9 +229,9 @@ export default function TeacherTextbookUploadPage() {
           {
             id: taskId,
             file,
-            subjectId: selectedAssignment.subjectId,
-            subjectName: selectedAssignment.subjectName,
-            classId: selectedAssignment.classId,
+            subjectId: assignment.subjectId,
+            subjectName: assignment.subjectName,
+            classId: assignment.classId,
             stage: 'uploading',
             progress: 0,
             textbookId: null,
@@ -218,7 +244,7 @@ export default function TeacherTextbookUploadPage() {
       addLog(`Uploading ${file.name} (${i + 1}/${files.length})...`);
 
       try {
-        await uploadSingleFile(file, taskId, addLog);
+        await uploadSingleFile(file, assignment, taskId, addLog);
         toast.success(`${file.name} uploaded`);
       } catch (err: unknown) {
         const message =
@@ -299,37 +325,11 @@ export default function TeacherTextbookUploadPage() {
           <Card className="border-border/60">
             <CardContent className="p-5 space-y-6">
 
-              {queryClassId && querySubjectId && selectedAssignment ? (
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Class &amp; Subject</label>
-                  <div className="w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground font-semibold">
-                    {selectedAssignment.className} — {selectedAssignment.subjectName}
-                  </div>
-                </div>
-              ) : assignmentList.length === 1 ? (
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Subject</label>
-                  <div className="w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-                    {assignmentList[0].subjectName}
-                  </div>
-                </div>
-              ) : assignmentList.length > 1 ? (
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Class &amp; Subject</label>
-                  <select
-                    value={selectedAssignmentId}
-                    onChange={(e) => setSelectedAssignmentId(e.target.value)}
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  >
-                    <option value="">Select a class &amp; subject...</option>
-                    {assignmentList.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.className} — {a.subjectName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : null}
+              {assignmentList.length > 1 && (
+                <p className="text-xs text-muted-foreground -mb-2">
+                  Each file can be assigned to a different class &amp; subject using the dropdown below.
+                </p>
+              )}
 
               <div
                 onDragEnter={handleDrag}
@@ -359,17 +359,42 @@ export default function TeacherTextbookUploadPage() {
               {files.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-sm font-medium">{files.length} file{files.length > 1 ? 's' : ''} selected</p>
-                  <div className="max-h-48 overflow-y-auto space-y-1.5">
-                    {files.map((f, i) => (
-                      <div key={i} className="flex items-center gap-3 bg-muted/30 rounded-lg px-3 py-2">
-                        <Icon name="picture_as_pdf" size={18} className="text-red-500 shrink-0" />
-                        <span className="text-sm truncate flex-1">{f.name}</span>
-                        <span className="text-xs text-muted-foreground shrink-0">{(f.size / 1024 / 1024).toFixed(1)} MB</span>
-                        <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); removeFile(i); }} className="shrink-0">
-                          <Icon name="close" size={16} />
-                        </Button>
-                      </div>
-                    ))}
+                  <div className="max-h-64 overflow-y-auto space-y-2">
+                    {files.map((f, i) => {
+                      const currentId = fileAssignments[i] || getDefaultAssignmentId();
+                      const currentAssignment = assignmentList.find((a) => a.id === currentId);
+                      return (
+                        <div key={i} className="flex flex-col sm:flex-row sm:items-center gap-2 bg-muted/30 rounded-lg px-3 py-2">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <Icon name="picture_as_pdf" size={18} className="text-red-500 shrink-0" />
+                            <span className="text-sm truncate flex-1">{f.name}</span>
+                            <span className="text-xs text-muted-foreground shrink-0">{(f.size / 1024 / 1024).toFixed(1)} MB</span>
+                          </div>
+                          {assignmentList.length > 1 ? (
+                            <select
+                              value={currentId}
+                              onChange={(e) =>
+                                setFileAssignments((prev) => ({ ...prev, [i]: e.target.value }))
+                              }
+                              className="w-full sm:w-auto text-xs rounded border border-border bg-background px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            >
+                              {assignmentList.map((a) => (
+                                <option key={a.id} value={a.id}>
+                                  {a.className} — {a.subjectName}
+                                </option>
+                              ))}
+                            </select>
+                          ) : currentAssignment ? (
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                              {currentAssignment.className} — {currentAssignment.subjectName}
+                            </span>
+                          ) : null}
+                          <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); removeFile(i); }} className="shrink-0">
+                            <Icon name="close" size={16} />
+                          </Button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -378,7 +403,7 @@ export default function TeacherTextbookUploadPage() {
                 className="w-full gap-2"
                 size="lg"
                 onClick={handleSubmit}
-                disabled={files.length === 0 || !selectedAssignment || isUploading}
+                disabled={files.length === 0 || isUploading}
               >
                 {isUploading ? (
                   <>
