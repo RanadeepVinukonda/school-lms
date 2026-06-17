@@ -320,7 +320,7 @@ export default function AdminSettingsPage() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full max-w-md grid-cols-4">
+            <TabsList className="w-full max-w-md inline-flex overflow-x-auto">
               <TabsTrigger value="general">General Settings</TabsTrigger>
               <TabsTrigger value="admins">Admin Users</TabsTrigger>
               <TabsTrigger value="parents">Parents</TabsTrigger>
@@ -372,7 +372,7 @@ export default function AdminSettingsPage() {
                             <Label>School Name</Label>
                             <Input className="border-border/60 placeholder:text-muted-foreground" value={schoolName} onChange={(e) => setSchoolName(e.target.value)} />
                           </div>
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                               <Label>Academic Year</Label>
                               <Input className="border-border/60 placeholder:text-muted-foreground" value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} />

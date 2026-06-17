@@ -503,7 +503,7 @@ export default function TeacherExamCreatePage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="time-limit">Time Limit (minutes)</Label>
                   <Input
@@ -528,7 +528,7 @@ export default function TeacherExamCreatePage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="passing-score">Passing Score (%)</Label>
                   <Input
@@ -556,7 +556,7 @@ export default function TeacherExamCreatePage() {
 
               <div className="space-y-2">
                 <Label>Question Models</Label>
-                <div className="grid grid-cols-2 gap-2 mt-1.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1.5">
                   {QUESTION_MODELS.map((model) => (
                     <label
                       key={model.value}

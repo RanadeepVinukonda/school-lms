@@ -782,7 +782,7 @@ export default function TeacherAssessmentCreatePage() {
                     <p className="text-label-xs text-muted-foreground mb-3">
                       Select which question types to pull from the concept&apos;s question bank
                     </p>
-                    <div className="grid grid-cols-2 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {QUESTION_MODELS.map((model) => (
                         <label
                           key={model.value}
@@ -1055,7 +1055,7 @@ export default function TeacherAssessmentCreatePage() {
                               />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div>
                                 <Label className="mb-1 block text-label-xs">Type</Label>
                                 <select

@@ -55,7 +55,7 @@ function ScheduleForm({ onSave, loading, defaultTemplateId }: { onSave: (data: a
         </select>
       </div>
       <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Test title" />
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div><label className="text-sm font-medium">Start Date/Time</label><Input type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
         <div><label className="text-sm font-medium">End Date/Time</label><Input type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
       </div>

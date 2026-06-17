@@ -483,7 +483,6 @@ export default function StudentQuizTakePageV2() {
         <div className="grid grid-cols-2 gap-4">
           <Skeleton className="h-24 rounded-xl" />
           <Skeleton className="h-24 rounded-xl" />
-          <Skeleton className="h-24 rounded-xl" />
         </div>
       </div>
     );

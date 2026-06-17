@@ -132,7 +132,7 @@ export default function StudentDashboardPage() {
                   initial="hidden"
                   whileInView="show"
                   viewport={{ once: true, margin: '-60px' }}
-                  className="grid grid-cols-2 lg:grid-cols-4 gap-4"
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
                 >
                   {[
                     { icon: 'school', label: 'Subjects', value: dash.subjectsCount, color: 'text-primary', bg: 'bg-primary-container' },

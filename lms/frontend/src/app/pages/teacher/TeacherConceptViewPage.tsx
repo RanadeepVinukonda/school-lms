@@ -446,7 +446,7 @@ export default function TeacherConceptViewPage() {
 
               <motion.div variants={cardStackReveal} custom={0}>
                 <Tabs defaultValue="teach">
-                  <TabsList className="w-full">
+                  <TabsList className="w-full overflow-x-auto inline-flex">
                     <TabsTrigger value="teach" className="flex-1">
                       <Icon name="school" size={14} className="mr-1.5" />Teach
                     </TabsTrigger>

@@ -309,7 +309,7 @@ export default function TeacherDashboardPage() {
                   initial="hidden"
                   whileInView="show"
                   viewport={{ once: true, margin: '-60px' }}
-                  className="grid grid-cols-2 lg:grid-cols-4 gap-4"
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
                 >
                   {QUICK_ACTIONS.map((action) => (
                     <motion.div key={action.label} variants={cardStackReveal} custom={0}>

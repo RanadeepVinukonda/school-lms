@@ -250,7 +250,7 @@ export default function StudentConceptPage() {
 
               <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
                 <Tabs defaultValue="learn">
-                  <TabsList className="w-full">
+                  <TabsList className="w-full overflow-x-auto inline-flex">
                     <TabsTrigger value="learn" className="flex-1">
                       <Icon name="menu_book" size={14} className="mr-1.5" />Learn
                     </TabsTrigger>

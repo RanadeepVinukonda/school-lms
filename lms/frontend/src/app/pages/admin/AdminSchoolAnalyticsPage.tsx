@@ -128,7 +128,7 @@ export default function AdminSchoolAnalyticsPage() {
                           <CardTitle className="text-title-sm">School Performance Summary</CardTitle>
                         </CardHeader>
                         <CardContent>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                             <div className="text-center p-4 rounded-xl bg-muted/30">
                               <p className="text-label-sm text-muted-foreground">Total Grades Recorded</p>
                               <p className="text-display-xs font-bold mt-1">{overviewData.totalGrades}</p>

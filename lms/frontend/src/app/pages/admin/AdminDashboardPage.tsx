@@ -683,7 +683,7 @@ export default function AdminDashboardPage() {
             </div>
           ) : inspectDetails ? (
             <div className="space-y-6 mt-4">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Card variant="outlined">
                   <CardContent className="p-4 flex flex-col items-center text-center">
                     <span className="text-label-sm text-muted-foreground">Total Submissions</span>

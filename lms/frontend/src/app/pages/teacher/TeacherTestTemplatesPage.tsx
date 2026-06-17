@@ -214,7 +214,7 @@ export default function TeacherTestTemplatesPage() {
               <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Template title" />
               <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description (optional)" />
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm font-medium">Class</label>
                   <select value={classId} onChange={(e) => { setClassId(e.target.value); setSubjectId(''); setTextbookId(''); setChapterId(''); }} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1">
@@ -231,7 +231,7 @@ export default function TeacherTestTemplatesPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm font-medium">Textbook (optional)</label>
                   <select value={textbookId} onChange={(e) => { setTextbookId(e.target.value); setChapterId(''); }} disabled={!subjectId} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1">
@@ -248,14 +248,14 @@ export default function TeacherTestTemplatesPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div><label className="text-sm font-medium">Time Limit (min)</label><Input type="number" value={timeLimit} onChange={(e) => setTimeLimit(Number(e.target.value))} min={1} /></div>
                 <div><label className="text-sm font-medium">Passing Score (%)</label><Input type="number" value={passingScore} onChange={(e) => setPassingScore(Number(e.target.value))} min={0} max={100} /></div>
                 <div><label className="text-sm font-medium">Max Attempts</label><Input type="number" value={maxAttempts} onChange={(e) => setMaxAttempts(Number(e.target.value))} min={1} /></div>
                 <div><label className="text-sm font-medium">Question Count</label><Input type="number" value={questionCount} onChange={(e) => setQuestionCount(Number(e.target.value))} min={1} /></div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div><label className="text-sm font-medium">Easy</label><Input type="number" value={easyCount} onChange={(e) => setEasyCount(Number(e.target.value))} min={0} /></div>
                 <div><label className="text-sm font-medium">Medium</label><Input type="number" value={mediumCount} onChange={(e) => setMediumCount(Number(e.target.value))} min={0} /></div>
                 <div><label className="text-sm font-medium">Hard</label><Input type="number" value={hardCount} onChange={(e) => setHardCount(Number(e.target.value))} min={0} /></div>

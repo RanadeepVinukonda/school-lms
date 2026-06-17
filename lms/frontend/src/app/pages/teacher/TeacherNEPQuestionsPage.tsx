@@ -72,7 +72,7 @@ export default function TeacherNEPQuestionsPage() {
         </motion.div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="w-full overflow-x-auto inline-flex">
             <TabsTrigger value="generate">Generate Questions</TabsTrigger>
             <TabsTrigger value="rubric">Rubric Generator</TabsTrigger>
             <TabsTrigger value="feedback">Feedback</TabsTrigger>

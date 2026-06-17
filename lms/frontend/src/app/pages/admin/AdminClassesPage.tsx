@@ -704,7 +704,7 @@ export default function AdminClassesPage() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full max-w-md grid-cols-3">
+            <TabsList className="w-full max-w-md overflow-x-auto inline-flex">
               <TabsTrigger value="classes">Classes</TabsTrigger>
               <TabsTrigger value="teachers">Teachers</TabsTrigger>
               <TabsTrigger value="students">Students</TabsTrigger>
@@ -1190,7 +1190,7 @@ export default function AdminClassesPage() {
               <Label>Code</Label>
               <Input value={editClassForm.code} onChange={(e) => setEditClassForm((f) => ({ ...f, code: e.target.value }))} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Grade</Label>
                 <Input value={editClassForm.grade} onChange={(e) => setEditClassForm((f) => ({ ...f, grade: e.target.value }))} />
@@ -1273,7 +1273,7 @@ export default function AdminClassesPage() {
               <Label>Subject Name</Label>
               <Input placeholder="Computer Science" value={subjectForm.name} onChange={(e) => setSubjectForm((f) => ({ ...f, name: e.target.value }))} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Code</Label>
                 <Input placeholder="CS" value={subjectForm.code} onChange={(e) => setSubjectForm((f) => ({ ...f, code: e.target.value }))} />
@@ -1338,7 +1338,7 @@ export default function AdminClassesPage() {
               <Label>Student Name</Label>
               <Input placeholder="John Doe" value={studentForm.displayName} onChange={(e) => setStudentForm((f) => ({ ...f, displayName: e.target.value }))} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Roll Number</Label>
                 <Input type="number" value={studentForm.rollNo} onChange={(e) => setStudentForm((f) => ({ ...f, rollNo: e.target.value }))} />
@@ -1440,7 +1440,7 @@ export default function AdminClassesPage() {
               <Label>Full Name</Label>
               <Input value={editStudentForm.displayName} onChange={(e) => setEditStudentForm((f) => ({ ...f, displayName: e.target.value }))} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Class</Label>
                 <OptionsSelect options={classOptions} placeholder="Select Class" value={editStudentForm.classId} onChange={(v: string) => setEditStudentForm((f) => ({ ...f, classId: v }))} />

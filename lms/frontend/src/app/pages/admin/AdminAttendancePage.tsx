@@ -157,7 +157,7 @@ export default function AdminAttendancePage() {
               >
                 {() => (
                   <div className="space-y-6">
-                    <div className="grid grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                       {Object.entries(todayAttendance).map(([status, count]) => (
                         <Card key={status} className="border-border/60">
                           <CardContent className="p-4 text-center">

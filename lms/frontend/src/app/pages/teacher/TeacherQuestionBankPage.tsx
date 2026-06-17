@@ -58,7 +58,7 @@ function QuestionForm({ initial, onSave, loading }: { initial?: any; onSave: (da
         <label className="text-sm font-medium">Question Text</label>
         <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1" placeholder="Enter question text..." />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="text-sm font-medium">Type</label>
           <select value={type} onChange={(e) => setType(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1">
@@ -78,7 +78,7 @@ function QuestionForm({ initial, onSave, loading }: { initial?: any; onSave: (da
           <textarea value={options} onChange={(e) => setOptions(e.target.value)} rows={4} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1" placeholder="Option A&#10;Option B&#10;Option C&#10;Option D" />
         </div>
       )}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="text-sm font-medium">Correct Answer</label>
           <Input value={correctAnswer} onChange={(e) => setCorrectAnswer(e.target.value)} placeholder="Correct answer" />
