@@ -285,9 +285,18 @@ export default function TeacherTextbooksPage() {
               {/* VIEW 3: Textbooks List */}
               {selectedClassId && selectedSubjectId && (
                 <div className="space-y-6">
-                  <div className="flex gap-2">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
                     <Button variant="ghost" size="sm" onClick={() => setSelectedSubjectId(null)} className="gap-1">
                       <Icon name="arrow_back" size={16} /> Back to Subjects
+                    </Button>
+                    <Button asChild size="sm">
+                      <Link
+                        to={`/teacher/textbooks/upload?classId=${selectedClassId}&subjectId=${selectedSubjectId}`}
+                        className="gap-1"
+                      >
+                        <Icon name="upload_file" size={16} />
+                        Upload Textbook
+                      </Link>
                     </Button>
                   </div>
                   {currentTextbooks.length === 0 ? (
@@ -300,15 +309,6 @@ export default function TeacherTextbooksPage() {
                             Upload a textbook PDF for {selectedSubject?.name} in {selectedClass?.name} to begin AI concept and question bank parsing.
                           </p>
                         </div>
-                        <Button asChild>
-                          <Link
-                            to={`/teacher/textbooks/upload?classId=${selectedClassId}&subjectId=${selectedSubjectId}`}
-                            className="gap-1 mx-auto"
-                          >
-                            <Icon name="upload_file" size={16} />
-                            Upload Textbook
-                          </Link>
-                        </Button>
                       </CardContent>
                     </Card>
                   ) : (
