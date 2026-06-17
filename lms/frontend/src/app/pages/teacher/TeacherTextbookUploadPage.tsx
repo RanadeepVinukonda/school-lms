@@ -34,9 +34,7 @@ export default function TeacherTextbookUploadPage() {
 
   const user = useAuthStore((s) => s.user);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [files, setFiles] = useState<File[]>([]);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -88,12 +86,6 @@ export default function TeacherTextbookUploadPage() {
     }
   }, [assignmentList, selectedAssignmentId, queryClassId, querySubjectId]);
 
-  useEffect(() => {
-    if (file && !title) {
-      setTitle(file.name.replace('.pdf', ''));
-    }
-  }, [file, title]);
-
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -105,110 +97,125 @@ export default function TeacherTextbookUploadPage() {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    const dropped = e.dataTransfer.files[0];
-    if (dropped?.type === 'application/pdf') setFile(dropped);
+    const droppedFiles = Array.from(e.dataTransfer.files).filter((f) => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
+    if (droppedFiles.length > 0) {
+      setFiles((prev) => [...prev, ...droppedFiles]);
+    } else {
+      toast.error('Please drop valid PDF files');
+    }
   }, []);
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) setFile(e.target.files[0]);
+    if (e.target.files) {
+      const selected = Array.from(e.target.files).filter((f) => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
+      setFiles((prev) => [...prev, ...selected]);
+    }
   }, []);
 
+  const removeFile = useCallback((index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const uploadSingleFile = async (file: File, taskId: string, addLog: (msg: string) => void) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('subjectId', selectedAssignment!.subjectId);
+    formData.append('classId', selectedAssignment!.classId);
+    formData.append('title', file.name.replace('.pdf', ''));
+    formData.append('description', file.name.replace('.pdf', ''));
+
+    useUploadStore.setState((s) => ({
+      tasks: s.tasks.map((t) =>
+        t.id === taskId ? { ...t, progress: 40 } : t
+      ),
+    }));
+
+    const res = await api.post('/textbooks', formData, {
+      headers: { 'Content-Type': undefined },
+      onUploadProgress: (e) => {
+        if (e.total) {
+          const pct = Math.round((e.loaded / e.total) * 40);
+          useUploadStore.setState((s) => ({
+            tasks: s.tasks.map((t) =>
+              t.id === taskId ? { ...t, progress: pct } : t
+            ),
+          }));
+        }
+      },
+    });
+
+    addLog(`${file.name} uploaded successfully!`);
+    useUploadStore.setState((s) => ({
+      tasks: s.tasks.map((t) =>
+        t.id === taskId ? { ...t, progress: 100, stage: 'complete' } : t
+      ),
+    }));
+
+    return res.data?.data?.id;
+  };
+
   const handleSubmit = async () => {
-    if (!file || !selectedAssignment) return;
+    if (files.length === 0 || !selectedAssignment) return;
 
     setIsUploading(true);
 
-    const taskId = `upload_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    const addLog = (msg: string) => {
-      useUploadStore.setState((s) => ({
-        tasks: s.tasks.map((t) =>
-          t.id === taskId ? { ...t, log: [...t.log, msg] } : t
-        ),
-      }));
-    };
-
-    useUploadStore.setState((s) => ({
-      tasks: [
-        ...s.tasks,
-        {
-          id: taskId,
-          file,
-          subjectId: selectedAssignment.subjectId,
-          subjectName: selectedAssignment.subjectName,
-          classId: selectedAssignment.classId,
-          stage: 'uploading',
-          progress: 0,
-          textbookId: null,
-          log: [],
-          error: null,
-        },
-      ],
-    }));
-
-    addLog('Uploading textbook to server...');
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('subjectId', selectedAssignment.subjectId);
-      formData.append('classId', selectedAssignment.classId);
-      formData.append('title', title || file.name.replace('.pdf', ''));
-      if (description) formData.append('description', description);
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const taskId = `upload_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const addLog = (msg: string) => {
+        useUploadStore.setState((s) => ({
+          tasks: s.tasks.map((t) =>
+            t.id === taskId ? { ...t, log: [...t.log, msg] } : t
+          ),
+        }));
+      };
 
       useUploadStore.setState((s) => ({
-        tasks: s.tasks.map((t) =>
-          t.id === taskId ? { ...t, progress: 40 } : t
-        ),
+        tasks: [
+          ...s.tasks,
+          {
+            id: taskId,
+            file,
+            subjectId: selectedAssignment.subjectId,
+            subjectName: selectedAssignment.subjectName,
+            classId: selectedAssignment.classId,
+            stage: 'uploading',
+            progress: 0,
+            textbookId: null,
+            log: [],
+            error: null,
+          },
+        ],
       }));
 
-      const res = await api.post('/textbooks', formData, {
-        headers: { 'Content-Type': undefined },
-        onUploadProgress: (e) => {
-          if (e.total) {
-            const pct = Math.round((e.loaded / e.total) * 40);
-            useUploadStore.setState((s) => ({
-              tasks: s.tasks.map((t) =>
-                t.id === taskId ? { ...t, progress: pct } : t
-              ),
-            }));
-          }
-        },
-      });
+      addLog(`Uploading ${file.name} (${i + 1}/${files.length})...`);
 
-      addLog('Textbook uploaded successfully!');
-      useUploadStore.setState((s) => ({
-        tasks: s.tasks.map((t) =>
-          t.id === taskId ? { ...t, progress: 100, stage: 'complete' } : t
-        ),
-      }));
-
-      toast.success('Textbook uploaded successfully!');
-      const textbookId = res.data?.data?.id;
-      if (textbookId) {
-        navigate(ROUTES.TEACHER_TEXTBOOK(textbookId));
-      } else {
-        navigate(ROUTES.TEACHER_TEXTBOOKS);
+      try {
+        await uploadSingleFile(file, taskId, addLog);
+        toast.success(`${file.name} uploaded`);
+      } catch (err: unknown) {
+        const message =
+          err && typeof err === 'object' && 'message' in err
+            ? (err as { message: string }).message
+            : `${file.name} failed. Please try again.`;
+        useUploadStore.setState((s) => ({
+          tasks: s.tasks.map((t) =>
+            t.id === taskId ? { ...t, stage: 'error', error: message, progress: 0 } : t
+          ),
+        }));
+        toast.error(message);
       }
-    } catch (err: unknown) {
-      const message =
-        err && typeof err === 'object' && 'message' in err
-          ? (err as { message: string }).message
-          : 'Upload failed. Please try again.';
-      useUploadStore.setState((s) => ({
-        tasks: s.tasks.map((t) =>
-          t.id === taskId ? { ...t, stage: 'error', error: message, progress: 0 } : t
-        ),
-      }));
-      toast.error(message);
-    } finally {
-      setIsUploading(false);
     }
+
+    setIsUploading(false);
+    setFiles([]);
+    navigate(ROUTES.TEACHER_TEXTBOOKS);
   };
 
   if (assignmentsLoading) {
     return (
       <>
-        <SEOHead title="Upload Textbook" description="Upload and process a textbook PDF" canonical="/teacher/textbooks/upload" />
+        <SEOHead title="Upload Textbook" description="Upload and process textbook PDFs" canonical="/teacher/textbooks/upload" />
         <div className="sm:p-6 p-4 max-w-3xl mx-auto space-y-6 pb-32">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-8 w-72 mt-2" />
@@ -221,7 +228,7 @@ export default function TeacherTextbookUploadPage() {
   if (!assignmentsLoading && assignmentList.length === 0) {
     return (
       <>
-        <SEOHead title="Upload Textbook" description="Upload and process a textbook PDF" canonical="/teacher/textbooks/upload" />
+        <SEOHead title="Upload Textbook" description="Upload and process textbook PDFs" canonical="/teacher/textbooks/upload" />
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-3xl mx-auto space-y-16 pb-32">
           <motion.div variants={cardStackReveal} custom={0}>
             <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
@@ -250,7 +257,7 @@ export default function TeacherTextbookUploadPage() {
 
   return (
     <>
-      <SEOHead title="Upload Textbook" description="Upload and process a textbook PDF" canonical="/teacher/textbooks/upload" />
+      <SEOHead title="Upload Textbook" description="Upload and process textbook PDFs" canonical="/teacher/textbooks/upload" />
       <UploadProgressBanner />
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-3xl mx-auto space-y-16 pb-32">
         <motion.div variants={cardStackReveal} custom={0}>
@@ -258,33 +265,12 @@ export default function TeacherTextbookUploadPage() {
             <Icon name="arrow_back" size={16} className="mr-1" />
             Back
           </Button>
-          <h1 className="text-headline-sm">Upload Textbook</h1>
+          <h1 className="text-headline-sm">Upload Textbooks</h1>
         </motion.div>
 
         <motion.div variants={cardStackReveal} custom={0}>
           <Card className="border-border/60">
             <CardContent className="p-5 space-y-6">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Title</label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Enter textbook title"
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">Description <span className="text-muted-foreground font-normal">(optional)</span></label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Brief description of the textbook"
-                  rows={3}
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
-                />
-              </div>
 
               {queryClassId && querySubjectId && selectedAssignment ? (
                 <div>
@@ -328,31 +314,44 @@ export default function TeacherTextbookUploadPage() {
                   dragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/30'
                 }`}
               >
-                <input ref={fileInputRef} type="file" accept=".pdf" onChange={handleFileChange} className="hidden" />
-                {file ? (
-                  <div className="space-y-2">
-                    <Icon name="picture_as_pdf" size={40} className="text-red-500 mx-auto" />
-                    <p className="font-medium">{file.name}</p>
-                    <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                    <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setFile(null); }}>
-                      <Icon name="close" size={14} className="mr-1" />
-                      Remove
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Icon name="cloud_upload" size={40} className="text-muted-foreground mx-auto" />
-                    <p className="font-medium">Drop your PDF here or click to browse</p>
-                    <p className="text-xs text-muted-foreground">Supports .pdf files up to 50MB</p>
-                  </div>
-                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf"
+                  multiple
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <div className="space-y-2">
+                  <Icon name="cloud_upload" size={40} className="text-muted-foreground mx-auto" />
+                  <p className="font-medium">Drop PDFs here or click to browse</p>
+                  <p className="text-xs text-muted-foreground">Select multiple PDFs or a folder containing PDFs</p>
+                </div>
               </div>
+
+              {files.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">{files.length} file{files.length > 1 ? 's' : ''} selected</p>
+                  <div className="max-h-48 overflow-y-auto space-y-1.5">
+                    {files.map((f, i) => (
+                      <div key={i} className="flex items-center gap-3 bg-muted/30 rounded-lg px-3 py-2">
+                        <Icon name="picture_as_pdf" size={18} className="text-red-500 shrink-0" />
+                        <span className="text-sm truncate flex-1">{f.name}</span>
+                        <span className="text-xs text-muted-foreground shrink-0">{(f.size / 1024 / 1024).toFixed(1)} MB</span>
+                        <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); removeFile(i); }} className="shrink-0">
+                          <Icon name="close" size={16} />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <Button
                 className="w-full gap-2"
                 size="lg"
                 onClick={handleSubmit}
-                disabled={!file || !selectedAssignment || isUploading}
+                disabled={files.length === 0 || !selectedAssignment || isUploading}
               >
                 {isUploading ? (
                   <>
@@ -362,7 +361,7 @@ export default function TeacherTextbookUploadPage() {
                 ) : (
                   <>
                     <Icon name="cloud_upload" size={18} />
-                    Upload Textbook
+                    {files.length > 1 ? `Upload ${files.length} Textbooks` : 'Upload Textbook'}
                   </>
                 )}
               </Button>
