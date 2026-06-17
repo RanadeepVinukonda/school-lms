@@ -19,8 +19,7 @@ function tryParseJson(raw: string, fallback: any): any {
 }
 import { AppError } from '../utils/errors';
 import { logger } from '../utils/logger';
-import * as aiService from './ai.service';
-import { env } from '../config/env';
+import { textbookChatCompletion } from './ai.service';
 
 export interface OCRBlock {
   text: string;
@@ -102,8 +101,7 @@ Extracted text from images (if any) is below. Use it as context.`;
   ];
 
   try {
-    const response = await aiService.chatCompletion({
-      model: env.AI_MODEL,
+    const response = await textbookChatCompletion({
       messages: aiMessages,
       temperature: 0.3,
       max_tokens: 2048,
@@ -202,8 +200,7 @@ Return a JSON object with the matched concept id and name:
 }`;
 
   try {
-    const response = await aiService.chatCompletion({
-      model: env.AI_MODEL,
+    const response = await textbookChatCompletion({
       messages: [
         { role: 'system', content: 'You are a textbook content classifier. Return only valid JSON.' },
         { role: 'user', content: prompt },
@@ -268,8 +265,7 @@ Example:
 }`;
 
   try {
-    const response = await aiService.chatCompletion({
-      model: env.AI_MODEL,
+    const response = await textbookChatCompletion({
       messages: [
         { role: 'system', content: 'You are an educational assignment generator. Return only valid JSON.' },
         { role: 'user', content: prompt },
@@ -342,8 +338,7 @@ Example:
 }`;
 
   try {
-    const response = await aiService.chatCompletion({
-      model: env.AI_MODEL,
+    const response = await textbookChatCompletion({
       messages: [
         { role: 'system', content: 'You are an educational assessment generator. Return only valid JSON.' },
         { role: 'user', content: prompt },

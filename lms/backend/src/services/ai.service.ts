@@ -8,7 +8,7 @@ interface ChatMessage {
 }
 
 interface ChatRequest {
-  model: string;
+  model?: string;
   messages: ChatMessage[];
   temperature?: number;
   max_tokens?: number;
@@ -303,10 +303,96 @@ async function openaiChatCompletion(
   throw new AppError(502, `AI API returned 429 after ${MAX_RETRIES} retries: ${(lastError || '').slice(0, 200)}`);
 }
 
+/* ── Textbook/OCR-specific dispatcher ─────────────────────────── */
+
+export async function textbookChatCompletion(params: ChatRequest): Promise<string> {
+  const { model: _fallback = '', messages, temperature = 0.7, max_tokens = 2048, jsonMode = false } = params;
+
+  const apiKey = env.AI_TEXTBOOK_API_KEY || env.AI_API_KEY;
+  const baseUrl = env.AI_TEXTBOOK_BASE_URL || env.AI_BASE_URL;
+  const model = env.AI_TEXTBOOK_MODEL || env.AI_MODEL || 'openai/gpt-4o-mini';
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    Authorization: `Bearer ${apiKey}`,
+  };
+
+  if (baseUrl.includes('openrouter.ai')) {
+    headers['HTTP-Referer'] = 'https://school-lms-nine-phi.vercel.app';
+    headers['X-Title'] = 'School LMS';
+  }
+
+  let useResponseFormat = jsonMode;
+  let lastError: string | null = null;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const payload: Record<string, unknown> = { model, messages, temperature, max_tokens };
+    if (useResponseFormat) payload.response_format = { type: 'json_object' };
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 120000);
+
+    try {
+      const res = await fetch(baseUrl, {
+        method: 'POST', headers, body: JSON.stringify(payload), signal: controller.signal,
+      });
+      clearTimeout(timer);
+
+      if (res.ok) {
+        const data = await res.json() as ChatResponse;
+        const content = data.choices?.[0]?.message?.content || '';
+        logger.info('Textbook AI response received', { model, attempt, contentLength: content.length, contentPreview: content.slice(0, 200) });
+
+        if (!jsonMode) return content;
+        const jsonBlock = extractJsonBlock(content);
+        const sanitized = sanitizeJson(jsonBlock);
+        try {
+          const parsed = JSON.parse(sanitized);
+          const text = parsed.answer || parsed.message || parsed.response || parsed.content || parsed.text || sanitized;
+          return typeof text === 'string' ? text : sanitized;
+        } catch {
+          logger.warn('Textbook AI response was not valid JSON, returning raw', { contentPreview: content.slice(0, 200) });
+          return content;
+        }
+      }
+
+      const errBody = await res.text();
+      if (res.status === 429 && attempt < MAX_RETRIES) {
+        const retryMs = parseRetryAfter(errBody) || BASE_DELAY_MS * Math.pow(2, attempt);
+        logger.warn(`Textbook AI rate limited, retrying in ${retryMs}ms`, { model, attempt: attempt + 1 });
+        await sleep(retryMs);
+        lastError = errBody;
+        continue;
+      }
+      if (res.status === 400 && useResponseFormat && (errBody.includes('response_format') || errBody.includes('json_object'))) {
+        logger.warn('Textbook AI model does not support response_format, retrying without it', { errBody: errBody.slice(0, 200) });
+        useResponseFormat = false;
+        continue;
+      }
+      logger.error('Textbook AI API error', { status: res.status, body: errBody, model, attempt });
+      if (res.status === 401) throw new AppError(502, 'Textbook AI key rejected. Check AI_TEXTBOOK_API_KEY or AI_API_KEY.');
+      throw new AppError(502, `Textbook AI error ${res.status}: ${errBody.slice(0, 500)}`);
+    } catch (err) {
+      clearTimeout(timer);
+      if (err instanceof AppError) throw err;
+      if (attempt < MAX_RETRIES) {
+        const delay = BASE_DELAY_MS * Math.pow(2, attempt);
+        logger.warn(`Textbook AI request failed, retrying in ${delay}ms`, { attempt: attempt + 1, error: err instanceof Error ? err.message : String(err) });
+        await sleep(delay);
+        lastError = String(err);
+        continue;
+      }
+      throw new AppError(504, `Textbook AI failed after ${MAX_RETRIES + 1} attempts: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+  throw new AppError(502, `Textbook AI returned 429 after ${MAX_RETRIES} retries: ${(lastError || '').slice(0, 200)}`);
+}
+
 /* ── Dispatcher ──────────────────────────────────────────────── */
 
 export async function chatCompletion(params: ChatRequest): Promise<string> {
-  const { model, messages, temperature = 0.7, max_tokens = 2048, jsonMode = false } = params;
+  const { model = 'openrouter/free', messages, temperature = 0.7, max_tokens = 2048, jsonMode = false } = params;
 
   if (env.GEMINI_API_KEY) {
     return geminiChatCompletion(model, messages, temperature, max_tokens);

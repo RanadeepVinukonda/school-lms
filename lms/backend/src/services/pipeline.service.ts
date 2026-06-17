@@ -1,14 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
 import admin from 'firebase-admin';
 import { getAdminFirestore } from '../firebase/admin';
-import { chatCompletion } from './ai.service';
+import { textbookChatCompletion } from './ai.service';
 import { getEmbedding } from './transformers.service';
 import { searchAndRankVideos } from './video-ranker.service';
 import { matchAndRankResources } from './resource-ranker.service';
 import { env } from '../config/env';
 import { logger } from '../utils/logger';
-
-const AI_MODEL = env.AI_MODEL;
 
 async function addTextbookLog(textbookId: string, message: string) {
   try {
@@ -70,8 +68,7 @@ ${contextText}`;
     r.status === 'rejected' ? (r.reason?.message || String(r.reason)) : 'unknown';
 
   const [aiResult, videosResult, resourcesResult, embeddingResult] = await Promise.allSettled([
-    chatCompletion({
-      model: AI_MODEL,
+    textbookChatCompletion({
       messages: [
         { role: 'system', content: 'You respond in valid JSON only.' },
         { role: 'user', content: prompt },
@@ -219,7 +216,7 @@ export async function processUploadInline(textbookId: string) {
     createdAt: new Date().toISOString(),
   });
 
-  // 2. Gemini TOC planning
+  // 2. AI TOC planning
   logger.info('Generating TOC structure', { textbookId });
   await addTextbookLog(textbookId, "Analyzing syllabus layout and extracting Table of Contents (TOC) with Gemini AI...");
   let structure: { chapters: Array<{ title: string; order: number; summary: string; concepts: string[] }> };
@@ -247,8 +244,7 @@ Return ONLY valid JSON:
 Textbook content:
 ${tocInput}`;
 
-    const raw = await chatCompletion({
-      model: AI_MODEL,
+    const raw = await textbookChatCompletion({
       messages: [
         { role: 'system', content: 'You respond in valid JSON only. Extract ALL chapters from the textbook content.' },
         { role: 'user', content: tocPrompt },
@@ -274,8 +270,7 @@ Return JSON: { "chapters": [{ "title": string, "order": number, "summary": strin
 Full textbook text:
 ${fullText.slice(0, 120000)}`;
 
-      const retryRaw = await chatCompletion({
-        model: AI_MODEL,
+      const retryRaw = await textbookChatCompletion({
         messages: [
           { role: 'system', content: 'You respond in valid JSON only. Extract ALL chapters.' },
           { role: 'user', content: retryPrompt },
