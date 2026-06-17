@@ -138,7 +138,8 @@ Extracted text from images (if any) is below. Use it as context.`;
       data: parsed,
     };
   } catch (error) {
-    logger.error('Chat processing failed', { error: error instanceof Error ? error.message : String(error) });
+    const errMsg = error instanceof Error ? error.message : String(error);
+    logger.error('Chat processing failed', { error: errMsg });
     if (extractedText) {
       return {
         role: 'assistant',
@@ -146,7 +147,7 @@ Extracted text from images (if any) is below. Use it as context.`;
         data: { action: 'chat', text: extractedText },
       };
     }
-    throw new AppError(502, 'AI service is currently unavailable. Please try again in a moment.');
+    throw new AppError(502, errMsg || 'AI service is currently unavailable. Please try again in a moment.');
   }
 }
 
