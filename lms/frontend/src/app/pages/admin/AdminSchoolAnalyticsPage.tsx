@@ -13,8 +13,8 @@ function BarChart({ data, labelKey, valueKey, color = 'bg-primary', maxValue }: 
   return (
     <div className="space-y-2">
       {data.map((item, i) => (
-        <div key={i} className="flex items-center gap-3">
-          <span className="text-label-sm font-medium w-32 truncate shrink-0 text-right">{item[labelKey]}</span>
+        <div key={i} className="flex items-center gap-2 sm:gap-3">
+          <span className="text-label-xs sm:text-label-sm font-medium w-20 sm:w-32 truncate shrink-0 text-right">{item[labelKey]}</span>
           <div className="flex-1 h-6 rounded-full bg-muted/40 overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
@@ -280,20 +280,20 @@ export default function AdminSchoolAnalyticsPage() {
                           <p className="text-muted-foreground text-center py-8">No trend data available</p>
                         ) : (
                           <div className="space-y-4">
-                            <div className="flex items-end gap-2 h-48">
+                            <div className="flex items-end gap-1 sm:gap-2 h-32 sm:h-48 overflow-x-auto pb-2">
                               {trendData.map((t, i) => {
                                 const maxVal = Math.max(...trendData.map((x) => x.averageScore), 1);
                                 const height = (t.averageScore / maxVal) * 100;
                                 return (
-                                  <div key={t.month} className="flex-1 flex flex-col items-center gap-1">
-                                    <span className="text-[10px] font-mono text-muted-foreground">{t.averageScore}%</span>
+                                  <div key={t.month} className="flex-1 flex flex-col items-center gap-1 min-w-[32px]">
+                                    <span className="text-[9px] sm:text-[10px] font-mono text-muted-foreground">{t.averageScore}%</span>
                                     <motion.div
                                       initial={{ height: 0 }}
                                       animate={{ height: `${height}%` }}
                                       transition={{ duration: 0.5, delay: i * 0.05 }}
-                                      className="w-full rounded-t-md bg-primary max-w-8"
+                                      className="w-full rounded-t-md bg-primary"
                                     />
-                                    <span className="text-[10px] text-muted-foreground rotate-45 origin-left whitespace-nowrap">
+                                    <span className="text-[9px] sm:text-[10px] text-muted-foreground sm:rotate-45 sm:origin-left whitespace-nowrap">
                                       {t.month.slice(5)}
                                     </span>
                                   </div>

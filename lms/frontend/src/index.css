@@ -268,6 +268,12 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #root {
+    overflow-x: hidden;
   }
 
   body::after {
@@ -280,6 +286,18 @@
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
     background-repeat: repeat;
     background-size: 256px 256px;
+  }
+
+  @media (max-width: 480px) {
+    :root {
+      --headline-lg: clamp(24px, 7vw, 32px);
+      --headline-md: clamp(22px, 6vw, 28px);
+      --headline-sm: clamp(20px, 5.5vw, 24px);
+      --title-lg: clamp(18px, 5vw, 22px);
+      --title-md: clamp(15px, 4vw, 16px);
+      --body-lg: clamp(14px, 4vw, 16px);
+      --body-md: clamp(13px, 3.8vw, 14px);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -448,6 +466,30 @@
   }
   .mobile-p-3 {
     padding: 0.75rem !important;
+  }
+  .card-content-mobile {
+    padding: 1rem !important;
+  }
+}
+
+@media (max-width: 375px) {
+  .xs\:grid-cols-1 {
+    grid-template-columns: repeat(1, 1fr) !important;
+  }
+  .xs\:flex-col {
+    flex-direction: column !important;
+  }
+  .xs\:gap-2 {
+    gap: 0.5rem !important;
+  }
+  .xs\:p-3 {
+    padding: 0.75rem !important;
+  }
+  .xs\:text-sm {
+    font-size: 0.875rem !important;
+  }
+  .xs\:w-full {
+    width: 100% !important;
   }
 }
 

@@ -94,7 +94,7 @@ export function MyLibraryTab({ onTabChange }: MyLibraryTabProps) {
         </div>
         <div className="flex items-center gap-2 flex-wrap sm:ml-auto">
           <Select value={selectedTextbookId} onValueChange={(v) => { setSelectedTextbookId(v); setSelectedChapterId(''); setSelectedConceptId(''); }}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="All textbooks" />
             </SelectTrigger>
             <SelectContent>
@@ -109,7 +109,7 @@ export function MyLibraryTab({ onTabChange }: MyLibraryTabProps) {
             onValueChange={(v) => { setSelectedChapterId(v); setSelectedConceptId(''); }}
             disabled={!selectedTextbookId}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="All chapters" />
             </SelectTrigger>
             <SelectContent>
@@ -124,7 +124,7 @@ export function MyLibraryTab({ onTabChange }: MyLibraryTabProps) {
             onValueChange={setSelectedConceptId}
             disabled={!selectedChapterId}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="All concepts" />
             </SelectTrigger>
             <SelectContent>

@@ -86,7 +86,7 @@ export function AttachToConceptTab() {
         </p>
         <div className="flex items-center gap-2 flex-wrap">
           <Select value={selectedTextbookId} onValueChange={(v) => { setSelectedTextbookId(v); setSelectedChapterId(''); setSelectedConceptId(''); }}>
-            <SelectTrigger className="w-[200px]">
+            <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="Select textbook" />
             </SelectTrigger>
             <SelectContent>
@@ -100,7 +100,7 @@ export function AttachToConceptTab() {
             onValueChange={(v) => { setSelectedChapterId(v); setSelectedConceptId(''); }}
             disabled={!selectedTextbookId}
           >
-            <SelectTrigger className="w-[200px]">
+            <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="Select chapter" />
             </SelectTrigger>
             <SelectContent>
@@ -114,7 +114,7 @@ export function AttachToConceptTab() {
             onValueChange={setSelectedConceptId}
             disabled={!selectedChapterId}
           >
-            <SelectTrigger className="w-[200px]">
+            <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="Select concept" />
             </SelectTrigger>
             <SelectContent>

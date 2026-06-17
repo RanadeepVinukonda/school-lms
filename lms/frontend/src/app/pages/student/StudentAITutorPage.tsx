@@ -513,7 +513,7 @@ export default function StudentAITutorPage() {
                 transition={{ duration: 0.25, ease: [0.05, 0, 0.133333, 0.06] }}
                 className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}
               >
-                <div className={cn('max-w-[85%] md:max-w-[75%]', msg.role === 'user' && 'order-1')}>
+                <div className={cn('max-w-[90%] sm:max-w-[85%] md:max-w-[75%]', msg.role === 'user' && 'order-1')}>
                   <div
                     className={cn(
                       'rounded-2xl px-4 py-3',

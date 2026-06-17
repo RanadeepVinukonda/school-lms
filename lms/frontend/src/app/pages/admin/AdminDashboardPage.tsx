@@ -204,7 +204,7 @@ export default function AdminDashboardPage() {
             <p className="text-body-md text-muted-foreground mt-1">Actionable oversight and analytics</p>
           </motion.div>
 
-          <div className="mt-6 flex gap-2 bg-muted/40 p-1.5 rounded-xl border border-border/60 w-fit overflow-x-auto">
+          <div className="mt-6 flex gap-2 bg-muted/40 p-1.5 rounded-xl border border-border/60 w-full sm:w-fit overflow-x-auto">
             {TABS.map((tab) => (
               <button
                 key={tab.key}

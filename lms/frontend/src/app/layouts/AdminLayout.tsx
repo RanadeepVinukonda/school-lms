@@ -155,10 +155,10 @@ export function AdminLayout() {
         )}
       >
         {/* Top app bar */}
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-outline-variant bg-surface/80 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-surface/60">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-2 sm:gap-4 border-b border-outline-variant bg-surface/80 px-3 sm:px-4 backdrop-blur-md supports-[backdrop-filter]:bg-surface/60">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="lg:hidden text-on-surface" aria-label="Menu">
+              <Button variant="ghost" size="icon" className="lg:hidden text-on-surface shrink-0" aria-label="Menu">
                 <Icon name="menu" size={24} />
               </Button>
             </SheetTrigger>
@@ -220,11 +220,11 @@ export function AdminLayout() {
             </SheetContent>
           </Sheet>
 
-          <span className="text-title-md font-bold text-primary hidden sm:block">Genesis</span>
-          <img src="/genesis_icon.png" alt="Genesis" className="h-full w-auto object-contain pt-1.5 sm:hidden" />
-          <div className="ml-auto flex items-center gap-2">
+          <span className="text-title-md font-bold text-primary hidden sm:block shrink-0">Genesis</span>
+          <img src="/genesis_icon.png" alt="Genesis" className="h-full w-auto object-contain pt-1.5 sm:hidden shrink-0" />
+          <div className="ml-auto flex items-center gap-1 sm:gap-2">
             <ThemeToggle />
-            <Button variant="ghost" size="icon" onClick={() => setSearchOpen(true)} aria-label="Search">
+            <Button variant="ghost" size="icon" onClick={() => setSearchOpen(true)} aria-label="Search" className="shrink-0">
               <Icon name="search" size={20} />
             </Button>
             {user && <NotificationDropdown />}
