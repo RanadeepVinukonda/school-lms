@@ -1,3 +1,4 @@
+import Tesseract from 'tesseract.js';
 import api from '@/services/api';
 import type { OCRResult, OCRMappingResult, ConceptOption } from '@/types/ocr';
 
@@ -38,13 +39,32 @@ function downscaleImage(file: File, maxDim = 1600): Promise<Blob> {
   });
 }
 
+let ocrWorker: Tesseract.Worker | null = null;
+async function getOcrWorker(): Promise<Tesseract.Worker> {
+  if (!ocrWorker) {
+    ocrWorker = await Tesseract.createWorker('eng', 1, {
+      logger: (m) => {
+        if (m.status === 'loading tesseract core') console.log('OCR: loading core');
+        else if (m.status === 'initializing tesseract') console.log('OCR: initializing');
+        else if (m.status === 'loading language traineddata') console.log('OCR: loading language data');
+        else if (m.status === 'initializing api') console.log('OCR: initializing API');
+        else if (m.status === 'recognizing text') console.log(`OCR: recognizing ${Math.round(m.progress * 100)}%`);
+      },
+    });
+  }
+  return ocrWorker;
+}
+
 export async function scanImage(image: File): Promise<OCRResult> {
   const blob = await downscaleImage(image);
-  const resized = new File([blob], image.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' });
-  const formData = new FormData();
-  formData.append('image', resized);
-  const res = await api.post('/ocr/scan', formData);
-  return res.data.data;
+  const worker = await getOcrWorker();
+  const { data } = await worker.recognize(blob);
+  const blocks = (data.blocks || []).map((block: any) => ({
+    text: block.text,
+    bbox: { x: block.bbox.x0, y: block.bbox.y0, width: block.bbox.x1 - block.bbox.x0, height: block.bbox.y1 - block.bbox.y0 },
+    confidence: block.confidence,
+  }));
+  return { text: data.text, confidence: data.confidence, blocks };
 }
 
 export async function scanMultipleImages(images: File[]): Promise<{ text: string; confidence: number; pages: Array<{ text: string; confidence: number }> }> {

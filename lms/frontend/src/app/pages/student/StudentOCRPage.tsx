@@ -139,7 +139,7 @@ export default function StudentOCRPage() {
                 <CardContent className="py-12">
                   <div className="flex flex-col items-center gap-4">
                     <Icon name="document_scanner" size={48} className="text-primary" />
-                    <Progress value={isProcessing ? 75 : 40} className="w-64" />
+                    <Progress className="w-64" />
                     <p className="text-sm text-on-surface-variant">
                       {isProcessing ? 'Generating quiz questions...' : 'Scanning and extracting text...'}
                     </p>
