@@ -179,7 +179,7 @@ export default function StudentGamificationPage() {
                         <li>Complete 5 high-accuracy assessments &mdash; <em>High Achiever</em></li>
                         <li>Score 3 perfect scores &mdash; <em>Perfect Score</em></li>
                         <li>Reach streaks of 3, 7, and 30 days</li>
-                        <li>Reach levels 5 and 10</li>
+                        <li>Each level you reach unlocks a new badge (Newcomer → Top Performer)</li>
                         <li>Collect 100 coins &mdash; <em>Coin Collector</em></li>
                         <li>Earn 1000 or 5000 total XP</li>
                         <li>Complete 10 daily challenges</li>

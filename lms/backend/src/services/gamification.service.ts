@@ -10,7 +10,27 @@ export const COIN_REWARDS = { lessonComplete: 5, assessmentComplete: 3, highAccu
 
 export interface BadgeDefinition { id: string; name: string; description: string; icon: string; condition: (profile: { xp: number; level: number; streak: number; coins: number; badges: string[]; lessonsCompleted: number; perfectScores: number; highAccuracyCount: number; challengesCompleted: number }) => boolean }
 
+export const LEVEL_BADGE_CONFIG = [
+  { icon: 'school', name: 'Newcomer' },
+  { icon: 'bolt', name: 'Apprentice' },
+  { icon: 'star', name: 'Learner' },
+  { icon: 'stars', name: 'Achiever' },
+  { icon: 'emoji_events', name: 'Rising Star' },
+  { icon: 'workspace_premium', name: 'Scholar' },
+  { icon: 'diamond', name: 'Expert' },
+  { icon: 'military_tech', name: 'Master' },
+  { icon: 'auto_awesome', name: 'Genius' },
+  { icon: 'rocket_launch', name: 'Top Performer' },
+];
+
 export const BADGE_DEFINITIONS: BadgeDefinition[] = [
+  ...LEVEL_BADGE_CONFIG.map((cfg, idx) => ({
+    id: `level_${idx + 1}`,
+    name: cfg.name,
+    description: `Reach Level ${idx + 1}`,
+    icon: cfg.icon,
+    condition: (p: { level: number }) => p.level >= idx + 1,
+  })),
   { id: 'first_lesson', name: 'First Steps', description: 'Complete your first lesson', icon: 'school', condition: (p) => p.lessonsCompleted >= 1 },
   { id: 'quick_learner', name: 'Quick Learner', description: 'Complete 5 lessons in a day', icon: 'bolt', condition: (p) => p.lessonsCompleted >= 5 },
   { id: 'perfect_score', name: 'Perfect Score', description: 'Get a perfect score on any assessment', icon: 'stars', condition: (p) => p.perfectScores >= 1 },
@@ -22,8 +42,6 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   { id: 'xp_chaser', name: 'XP Chaser', description: 'Reach 1000 XP', icon: 'trending_up', condition: (p) => p.xp >= 1000 },
   { id: 'xp_master', name: 'XP Master', description: 'Reach 5000 XP', icon: 'workspace_premium', condition: (p) => p.xp >= 5000 },
   { id: 'challenge_complete', name: 'Challenge Accepted', description: 'Complete 10 daily challenges', icon: 'task_alt', condition: (p) => p.challengesCompleted >= 10 },
-  { id: 'level_5', name: 'Rising Star', description: 'Reach Level 5', icon: 'star', condition: (p) => p.level >= 5 },
-  { id: 'level_10', name: 'Top Performer', description: 'Reach Level 10', icon: 'diamond', condition: (p) => p.level >= 10 },
 ];
 
 export const DAILY_CHALLENGE_TEMPLATES = [
