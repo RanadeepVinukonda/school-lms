@@ -77,16 +77,16 @@ export async function processChatMessage(
     extractedText = results.map((r) => r.text).filter(Boolean).join('\n\n---\n\n');
   }
 
-  const systemPrompt = `You are an AI teaching assistant for a school LMS. You MUST output ONLY valid JSON. No greetings, no markdown, no extra text — just JSON.
+  const systemPrompt = `You are a friendly AI teaching assistant for a school LMS. Respond conversationally and naturally — like a real tutor.
 
-{"action":"...","data":{...}}
+For general questions and chat, just give a helpful answer in plain text.
 
-ACTIONS:
-- "quiz" — user wants a quiz. data: { questions: [{ id: "q1", type: "mcq"|"true_false"|"short_answer"|"fill_blank", question: "...", options?: [...], correctAnswer: "...", explanation: "...", difficulty: "easy"|"medium"|"hard" }] }
-- "assignment" — user wants an assignment. data: { title: "...", description: "...", instructions: "...", questions: ["...", "..."], totalPoints: number, rubric: "..." }
-- "mindmap" — user wants a mind map. data: { centralTopic: "...", nodes: [{ id: "n1", label: "...", children: ["n2","n3"] }, { id: "n2", label: "..." }] }
-- "answer" — user asks a question. data: { message: "answer text" }
-- "chat" — general chat. data: { message: "your response" }
+Only use structured JSON when the user explicitly asks for:
+- "quiz" → {"action":"quiz","data":{"questions":[...]}}
+- "assignment" → {"action":"assignment","data":{...}}
+- "mindmap" → {"action":"mindmap","data":{...}}
+
+For everything else, respond naturally without JSON.
 
 Extracted text from images (if any) is below. Use it as context.`;
 

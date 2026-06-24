@@ -402,7 +402,7 @@ export async function textbookChatCompletion(params: ChatRequest): Promise<strin
 /* ── Dispatcher ──────────────────────────────────────────────── */
 
 function toGeminiModel(model: string): string {
-  const m = model.replace(/^google\//, '');
+  const m = model.trim().replace(/^google\//, '');
   return m || 'gemini-2.0-flash';
 }
 
