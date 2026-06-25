@@ -82,11 +82,11 @@ export async function processChatMessage(
 For general questions and chat, just give a helpful answer in plain text.
 
 Only use structured JSON when the user explicitly asks for:
-- "quiz" → {"action":"quiz","data":{"questions":[...]}}
+- "quiz" → {"action":"quiz","data":{"questions":[{"id":"q1","type":"mcq","question":"...","options":["A","B","C","D"],"correctAnswer":"A","explanation":"...","difficulty":"easy","points":1}, {"id":"q2","type":"true_false","question":"...","correctAnswer":"True","explanation":"...","difficulty":"medium","points":1}, {"id":"q3","type":"short_answer","question":"...","correctAnswer":"...","explanation":"...","difficulty":"hard","points":2}, {"id":"q4","type":"matching","question":"Match the following","options":["Term1 - Definition1","Term2 - Definition2"],"correctAnswer":"Term1:Definition1|Term2:Definition2","explanation":"...","difficulty":"medium","points":2}]}}
 - "assignment" → {"action":"assignment","data":{...}}
 - "mindmap" → {"action":"mindmap","data":{...}}
 
-For everything else, respond naturally without JSON.
+Support all question types: mcq, true_false, short_answer, and matching. When the user asks for matching questions, generate them with options in "Left - Right" format.
 
 Extracted text from images (if any) is below. Use it as context.`;
 

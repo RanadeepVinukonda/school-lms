@@ -335,20 +335,7 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
   const userData = userDoc.data() || {};
   const studentLevel: StudentLevel = (userData.level as StudentLevel) || 'beginner';
 
-  const conceptRef = collections.textbooks()
-    .doc(quizData.textbookId)
-    .collection('chapters')
-    .doc(quizData.chapterId)
-    .collection('concepts')
-    .doc(quizData.conceptId);
-
-  const conceptDoc = await conceptRef.get();
-  if (!conceptDoc.exists) {
-    throw new NotFoundError('Concept not found');
-  }
-
-  const questionsSnap = await conceptRef.collection('questions').get();
-  const questionBank = questionsSnap.docs.map(doc => doc.data() as {
+  let questionBank: Array<{
     id: string;
     type: string;
     difficulty?: Difficulty;
@@ -357,7 +344,45 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
     correctAnswer: string;
     explanation?: string;
     points: number;
-  });
+  }>;
+
+  if (quizData.ocrGenerated && Array.isArray(quizData.questions)) {
+    // OCR-generated quizzes have questions embedded in the document
+    questionBank = quizData.questions.map((q: any) => ({
+      id: q.id || uuidv4(),
+      type: q.type || 'short_answer',
+      difficulty: (q.difficulty as Difficulty) || 'medium',
+      text: q.text || q.question || '',
+      options: q.options || undefined,
+      correctAnswer: q.correctAnswer || '',
+      explanation: q.explanation || '',
+      points: q.points || 1,
+    }));
+  } else {
+    const conceptRef = collections.textbooks()
+      .doc(quizData.textbookId)
+      .collection('chapters')
+      .doc(quizData.chapterId)
+      .collection('concepts')
+      .doc(quizData.conceptId);
+
+    const conceptDoc = await conceptRef.get();
+    if (!conceptDoc.exists) {
+      throw new NotFoundError('Concept not found');
+    }
+
+    const questionsSnap = await conceptRef.collection('questions').get();
+    questionBank = questionsSnap.docs.map(doc => doc.data() as {
+      id: string;
+      type: string;
+      difficulty?: Difficulty;
+      text: string;
+      options?: string[];
+      correctAnswer: string;
+      explanation?: string;
+      points: number;
+    });
+  }
 
   const targetTypes = resolveTypes(selectedModels);
   let available = targetTypes.length > 0
@@ -444,17 +469,7 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     throw new ForbiddenError('Time limit exceeded');
   }
 
-  const conceptRef = collections.textbooks()
-    .doc(quizData.textbookId)
-    .collection('chapters')
-    .doc(quizData.chapterId)
-    .collection('concepts')
-    .doc(quizData.conceptId);
-
-  const conceptDoc = await conceptRef.get();
-  if (!conceptDoc.exists) throw new NotFoundError('Concept not found');
-  const questionsSnap = await conceptRef.collection('questions').get();
-  const questionBank = questionsSnap.docs.map(doc => doc.data() as {
+  let questionBank: Array<{
     id: string;
     type: string;
     difficulty?: Difficulty;
@@ -463,7 +478,41 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     correctAnswer: string;
     explanation?: string;
     points: number;
-  });
+  }>;
+
+  if (quizData.ocrGenerated && Array.isArray(quizData.questions)) {
+    questionBank = quizData.questions.map((q: any) => ({
+      id: q.id || uuidv4(),
+      type: q.type || 'short_answer',
+      difficulty: (q.difficulty as Difficulty) || 'medium',
+      text: q.text || q.question || '',
+      options: q.options || undefined,
+      correctAnswer: q.correctAnswer || '',
+      explanation: q.explanation || '',
+      points: q.points || 1,
+    }));
+  } else {
+    const conceptRef = collections.textbooks()
+      .doc(quizData.textbookId)
+      .collection('chapters')
+      .doc(quizData.chapterId)
+      .collection('concepts')
+      .doc(quizData.conceptId);
+
+    const conceptDoc = await conceptRef.get();
+    if (!conceptDoc.exists) throw new NotFoundError('Concept not found');
+    const questionsSnap = await conceptRef.collection('questions').get();
+    questionBank = questionsSnap.docs.map(doc => doc.data() as {
+      id: string;
+      type: string;
+      difficulty?: Difficulty;
+      text: string;
+      options?: string[];
+      correctAnswer: string;
+      explanation?: string;
+      points: number;
+    });
+  }
 
   let score = 0;
   const gradedAnswers = data.answers.map((answer) => {
@@ -474,14 +523,13 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     }
 
     let isCorrect = false;
+    const normalize = (v: unknown) => v?.toString().toLowerCase().trim() || '';
     if (question.type === 'multiple_choice' || question.type === 'mcq' || question.type === 'true_false' || question.type === 'passage') {
-      isCorrect = answer.answer === question.correctAnswer;
+      isCorrect = normalize(answer.answer) === normalize(question.correctAnswer);
     } else if (question.type === 'short_answer' || question.type === 'fill_blank') {
-      isCorrect = answer.answer.toString().toLowerCase().trim() ===
-        question.correctAnswer?.toString().toLowerCase().trim();
+      isCorrect = normalize(answer.answer) === normalize(question.correctAnswer);
     } else if (question.type === 'numerical' || question.type === 'matching') {
-      isCorrect = answer.answer.toString().toLowerCase().trim() ===
-        question.correctAnswer?.toString().toLowerCase().trim();
+      isCorrect = normalize(answer.answer) === normalize(question.correctAnswer);
     } else if (question.type === 'descriptive') {
       isCorrect = answer.answer.toString().trim().length > 5;
     }
@@ -489,13 +537,19 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     const pointsEarned = isCorrect ? (POINTS_BY_DIFFICULTY[question.difficulty || 'medium'] || 1) : 0;
     if (isCorrect) score += pointsEarned;
 
-    return {
+    const graded: Record<string, unknown> = {
       questionId: answer.questionId,
+      questionText: question.text,
       answer: answer.answer,
       isCorrect,
       pointsEarned,
       timeSpent: answer.timeSpent || 0,
     };
+    if (quizData.showResults) {
+      graded.correctAnswer = question.correctAnswer;
+      graded.explanation = question.explanation;
+    }
+    return graded;
   });
 
   const timeSpent = data.answers.reduce((sum, a) => sum + (a.timeSpent || 0), 0);
@@ -505,7 +559,7 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
 
   const accuracy = attemptData.totalPoints > 0 ? score / attemptData.totalPoints : 0;
   const avgReactionTime = gradedAnswers.length > 0
-    ? gradedAnswers.reduce((sum: number, a: { timeSpent: number }) => sum + a.timeSpent, 0) / gradedAnswers.length
+    ? gradedAnswers.reduce((sum: number, a: any) => sum + (a.timeSpent || 0), 0) / gradedAnswers.length
     : 0;
 
   const difficultyMap: Record<string, Difficulty> = {};
@@ -514,7 +568,7 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
   }
 
   const complexityHandled = computeComplexityHandled(
-    gradedAnswers.map((a: { questionId: string; isCorrect: boolean }) => ({ questionId: a.questionId, correct: a.isCorrect })),
+    gradedAnswers.map((a: any) => ({ questionId: a.questionId, correct: a.isCorrect })),
     difficultyMap,
   );
 
@@ -699,4 +753,30 @@ export async function republishQuiz(quizId: string, teacherId: string) {
   logger.info('Quiz V2 republished (interactive mode enabled)', { quizId, teacherId });
 
   return { ...updated.data() };
+}
+
+export async function deleteQuiz(quizId: string, teacherId: string) {
+  const ref = collections.quizV2().doc(quizId);
+  const doc = await ref.get();
+
+  if (!doc.exists) {
+    throw new NotFoundError('Quiz not found');
+  }
+
+  const quizData = doc.data()!;
+  if (quizData.teacherId !== teacherId) {
+    throw new ForbiddenError('You do not own this quiz');
+  }
+
+  // Delete all attempts for this quiz
+  const attemptsSnap = await collections.quizAttemptV2()
+    .where('quizId', '==', quizId)
+    .get();
+
+  const batch = collections.quizV2().firestore.batch();
+  attemptsSnap.docs.forEach((a) => batch.delete(a.ref));
+  batch.delete(ref);
+  await batch.commit();
+
+  logger.info('Quiz V2 deleted', { quizId, teacherId, attemptsDeleted: attemptsSnap.size });
 }

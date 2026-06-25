@@ -107,17 +107,22 @@ async function geminiChatCompletion(
   messages: ChatMessage[],
   temperature: number,
   max_tokens: number,
+  jsonMode = true,
 ): Promise<string> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
   const { systemInstruction, contents } = convertToGeminiMessages(messages);
 
+  const generationConfig: Record<string, unknown> = {
+    temperature,
+    maxOutputTokens: max_tokens,
+  };
+  if (jsonMode) {
+    generationConfig.responseMimeType = 'application/json';
+  }
+
   const body: Record<string, unknown> = {
     contents,
-    generationConfig: {
-      temperature,
-      maxOutputTokens: max_tokens,
-      responseMimeType: 'application/json',
-    },
+    generationConfig,
   };
 
   if (systemInstruction) {
@@ -311,7 +316,7 @@ export async function textbookChatCompletion(params: ChatRequest): Promise<strin
   // Use GEMINI_API_KEY for textbook/OCR tasks when available
   if (env.GEMINI_API_KEY) {
     const geminiModel = toGeminiModel(env.AI_TEXTBOOK_MODEL || env.AI_MODEL || 'gemini-2.0-flash');
-    return geminiChatCompletion(geminiModel, messages, temperature, max_tokens);
+    return geminiChatCompletion(geminiModel, messages, temperature, max_tokens, jsonMode);
   }
 
   const apiKey = env.AI_TEXTBOOK_API_KEY || env.AI_API_KEY;
@@ -410,7 +415,7 @@ export async function chatCompletion(params: ChatRequest): Promise<string> {
   const { model = 'gemini-2.0-flash', messages, temperature = 0.7, max_tokens = 2048, jsonMode = false } = params;
 
   if (env.GEMINI_API_KEY) {
-    return geminiChatCompletion(toGeminiModel(model), messages, temperature, max_tokens);
+    return geminiChatCompletion(toGeminiModel(model), messages, temperature, max_tokens, jsonMode);
   }
 
   if (!env.AI_API_KEY) {

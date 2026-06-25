@@ -125,6 +125,113 @@ export async function chat(req: Request, res: Response) {
   sendSuccess(res, result);
 }
 
+export async function pushQuiz(req: Request, res: Response) {
+  const { data: quizData, classId, subjectId } = req.body;
+  const userId = (req as any).user?.id || 'unknown';
+
+  if (!quizData?.questions || !Array.isArray(quizData.questions) || quizData.questions.length === 0) {
+    throw new ValidationError('Quiz data must contain a questions array');
+  }
+  if (!classId) {
+    throw new ValidationError('classId is required');
+  }
+
+  const normalizeType = (t: string): string => {
+    const raw = (t || '').toLowerCase().replace(/[\s-]/g, '_');
+    if (raw === 'mcq') return 'multiple_choice';
+    if (raw === 'fill_blank' || raw === 'fill_in_the_blanks') return 'short_answer';
+    if (['multiple_choice', 'true_false', 'short_answer', 'matching', 'numerical', 'descriptive', 'passage'].includes(raw)) return raw;
+    return 'short_answer';
+  };
+
+  const questions = quizData.questions.map((q: any) => {
+    const mapped: Record<string, unknown> = {
+      id: q.id || require('uuid').v4(),
+      text: q.question || q.questionText,
+      type: normalizeType(q.type),
+      points: q.points || 1,
+      correctAnswer: q.correctAnswer || '',
+      explanation: q.explanation || '',
+      difficulty: q.difficulty || 'medium',
+    };
+    if (Array.isArray(q.options) && q.options.length > 0) {
+      mapped.options = q.options;
+    }
+    return mapped;
+  });
+
+  const id = require('uuid').v4();
+  const now = new Date().toISOString();
+  const totalPoints = questions.reduce((s: number, q: any) => s + q.points, 0);
+
+  // Collect unique question types for selectedModels
+  const uniqueTypes = [...new Set(questions.map((q: any) => q.type))];
+
+  const doc = {
+    id,
+    title: quizData.title || `Quiz from OCR - ${new Date().toLocaleDateString()}`,
+    description: quizData.description || '',
+    classId,
+    subjectId: subjectId || null,
+    teacherId: userId,
+    questions,  // embed questions directly for OCR-generated quizzes
+    totalPoints,
+    timeLimitMinutes: quizData.timeLimitMinutes || 30,
+    selectedModels: uniqueTypes,
+    questionCount: questions.length,
+    passingScore: 50,
+    maxAttempts: 3,
+    shuffleQuestions: true,
+    showResults: true,  // students see correct answers after submitting
+    attemptCount: 0,
+    releasedAt: now,  // auto-release so students see it
+    ocrGenerated: true,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  await getCollection('quizV2').doc(id).set(doc);
+  logger.info('OCR quiz pushed to quizV2', { quizId: id, classId, questionCount: questions.length });
+  sendCreated(res, doc);
+}
+
+export async function pushAssignment(req: Request, res: Response) {
+  const { data: assignmentData, classId, subjectId } = req.body;
+  const userId = (req as any).user?.id || 'unknown';
+
+  if (!assignmentData?.title) {
+    throw new ValidationError('Assignment data must contain a title');
+  }
+  if (!classId) {
+    throw new ValidationError('classId is required');
+  }
+
+  const id = require('uuid').v4();
+  const now = new Date().toISOString();
+
+  const doc = {
+    id,
+    title: assignmentData.title,
+    description: assignmentData.description || assignmentData.instructions || '',
+    instructions: assignmentData.instructions || '',
+    questions: assignmentData.questions || [],
+    totalPoints: assignmentData.totalPoints || assignmentData.questions?.length * 10 || 0,
+    rubric: assignmentData.rubric || '',
+    classId,
+    subjectId: subjectId || null,
+    teacherId: userId,
+    submissionCount: 0,
+    releasedAt: now,  // auto-release so students see it
+    ocrGenerated: true,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  await getCollection('assignmentV2').doc(id).set(doc);
+  logger.info('OCR assignment pushed to assignmentV2', { assignmentId: id, classId });
+  sendCreated(res, doc);
+}
+
 export async function getConceptsForTextbook(req: Request, res: Response) {
   const { textbookId } = req.params;
 

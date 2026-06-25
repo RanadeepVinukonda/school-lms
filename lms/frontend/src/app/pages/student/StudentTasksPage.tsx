@@ -54,6 +54,19 @@ export default function StudentTasksPage() {
         .filter((q: any) => !!q.releasedAt)
         .map((q: any) => ({ id: q.id, ...q })) as QuizItem[];
 
+      // Fetch student's quiz attempts to determine completion status
+      const completedQuizIds = new Set<string>();
+      try {
+        const attemptsRes = await api.get(`/quizzes-v2/my`).then((r) => r.data.data ?? []);
+        for (const att of attemptsRes) {
+          if (att.status === 'completed') completedQuizIds.add(att.quizId);
+        }
+      } catch { /* ignore */ }
+
+      for (const q of allQuizzes) {
+        if (completedQuizIds.has(q.id)) (q as any).status = 'completed';
+      }
+
       // Fetch exams for the student's class using the newer exam-v2 API (class-scoped)
       const examsResponse = classId
         ? await api.get(`/exams-v2/class/${classId}`).then((r) => r.data.data ?? [])

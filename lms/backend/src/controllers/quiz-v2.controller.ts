@@ -71,3 +71,8 @@ export async function republishQuiz(req: Request, res: Response) {
   const result = await quizV2Service.republishQuiz(req.params.quizId, req.user!.uid);
   sendSuccess(res, result, 'Quiz republished in interactive mode');
 }
+
+export async function deleteQuiz(req: Request, res: Response) {
+  await quizV2Service.deleteQuiz(req.params.quizId, req.user!.uid);
+  sendSuccess(res, null, 'Quiz deleted');
+}
