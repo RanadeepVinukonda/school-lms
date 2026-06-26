@@ -112,13 +112,17 @@ async function geminiChatCompletion(
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
   const { systemInstruction, contents } = convertToGeminiMessages(messages);
 
+  const generationConfig: Record<string, unknown> = {
+    temperature,
+    maxOutputTokens: max_tokens,
+  };
+  if (jsonMode) {
+    generationConfig.responseMimeType = 'application/json';
+  }
+
   const body: Record<string, unknown> = {
     contents,
-    generationConfig: {
-      temperature,
-      maxOutputTokens: max_tokens,
-      ...(jsonMode ? { responseMimeType: 'application/json' } : {}),
-    },
+    generationConfig,
   };
 
   if (systemInstruction) {
@@ -312,7 +316,7 @@ export async function textbookChatCompletion(params: ChatRequest): Promise<strin
   // Use GEMINI_API_KEY for textbook/OCR tasks when available
   if (env.GEMINI_API_KEY) {
     const geminiModel = toGeminiModel(env.AI_TEXTBOOK_MODEL || env.AI_MODEL || 'gemini-2.0-flash');
-    return geminiChatCompletion(geminiModel, messages, temperature, max_tokens);
+    return geminiChatCompletion(geminiModel, messages, temperature, max_tokens, jsonMode);
   }
 
   const apiKey = env.AI_TEXTBOOK_API_KEY || env.GEMINI_API_KEY;

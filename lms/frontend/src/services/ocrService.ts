@@ -105,6 +105,16 @@ export async function sendChatMessage(
   return res.data.data;
 }
 
+export async function pushQuiz(data: any, classId: string): Promise<any> {
+  const res = await api.post('/ocr/push-quiz', { data, classId });
+  return res.data.data;
+}
+
+export async function pushAssignment(data: any, classId: string): Promise<any> {
+  const res = await api.post('/ocr/push-assignment', { data, classId });
+  return res.data.data;
+}
+
 export async function getConceptsForTextbook(textbookId: string): Promise<ConceptOption[]> {
   const res = await api.get(`/ocr/concepts/${textbookId}`);
   return res.data.data;

@@ -56,10 +56,12 @@ interface V2AnswerPayload {
 
 interface V2AnswerResult {
   questionId: string;
+  questionText?: string;
   answer: string;
   isCorrect?: boolean;
   pointsEarned?: number;
   correctAnswer?: string;
+  explanation?: string;
 }
 
 interface V2SubmitResult {
@@ -739,6 +741,34 @@ export default function StudentQuizTakePageV2() {
                 </CardContent>
               </Card>
             </div>
+
+            {result.showResults !== false && result.answers?.length > 0 && (
+              <Card className="border-border/60">
+                <CardHeader>
+                  <CardTitle className="text-title-sm">Answer Review</CardTitle>
+                  <CardDescription>Your answers and the correct answers</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {result.answers.map((a, i) => (
+                    <div key={a.questionId} className={cn('p-4 rounded-lg border', a.isCorrect ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-destructive/5 border-destructive/20')}>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="font-medium text-sm flex-1">{i + 1}. {a.questionText || `Question ${i + 1}`}</p>
+                        <Badge variant={a.isCorrect ? 'success' : 'destructive'} className="shrink-0">{a.isCorrect ? 'Correct' : 'Incorrect'}</Badge>
+                      </div>
+                      <div className="mt-2 text-sm space-y-1">
+                        <p><span className="text-muted-foreground">Your answer:</span> {a.answer || '(no answer)'}</p>
+                        {!a.isCorrect && a.correctAnswer && (
+                          <p><span className="text-emerald-600 font-medium">Correct answer:</span> {a.correctAnswer}</p>
+                        )}
+                      </div>
+                      {a.explanation && (
+                        <p className="mt-2 text-xs text-muted-foreground italic">{a.explanation}</p>
+                      )}
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
 
             <Button className="w-full" size="lg" onClick={handleBack}>
               <ArrowLeft className="h-4 w-4 mr-2" />

@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { sendChatMessage } from '@/services/ocrService';
+import { sendChatMessage, pushQuiz, pushAssignment } from '@/services/ocrService';
 import { getAllClasses } from '@/services/dataService';
+import api from '@/services/api';
 import LatexRenderer from '@/components/common/LatexRenderer';
 
 interface ChatMsg {
@@ -18,26 +19,33 @@ interface ChatMsg {
   data?: any;
 }
 
-function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string) => void }) {
+function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string) => Promise<void> }) {
   const [selectedClass, setSelectedClass] = useState('');
+  const [pushing, setPushing] = useState(false);
   const { data: classes } = useQuery({ queryKey: ['admin-classes'], queryFn: getAllClasses });
   const questions = data?.questions || [];
   return (
     <div className="space-y-3 mt-2">
       <p className="text-sm font-semibold text-primary">Generated Quiz ({questions.length} questions)</p>
-      {questions.slice(0, 3).map((q: any, i: number) => (
+      {questions.map((q: any, i: number) => (
         <div key={q.id || i} className="p-3 rounded-lg border border-border/60 text-sm">
           <p className="font-medium">{i + 1}. {q.question}</p>
-          {q.options && (
+          {q.options ? (
             <div className="mt-1 space-y-1">
               {q.options.map((o: string, j: number) => (
-                <div key={j} className={`px-2 py-1 rounded text-xs ${o === q.correctAnswer ? 'bg-success/10 text-success' : 'text-muted-foreground'}`}>{o}</div>
+                <div key={j} className={`px-2 py-1 rounded text-xs ${o === q.correctAnswer ? 'bg-success/10 text-success font-semibold' : 'text-muted-foreground'}`}>
+                  {o} {o === q.correctAnswer && '✓'}
+                </div>
               ))}
+            </div>
+          ) : (
+            <div className="mt-1 text-xs text-success font-semibold">
+              Answer: {q.correctAnswer}
             </div>
           )}
         </div>
       ))}
-      {questions.length > 3 && <p className="text-xs text-muted-foreground">...and {questions.length - 3} more</p>}
+
       <div className="flex items-center gap-2 mt-3">
         <Select value={selectedClass} onValueChange={setSelectedClass}>
           <SelectTrigger className="w-48"><SelectValue placeholder="Select class..." /></SelectTrigger>
@@ -45,16 +53,17 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string) =
             {classes?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Button size="sm" onClick={() => onPush(data, selectedClass)} disabled={!selectedClass}>
-          <Icon name="send" size={14} className="mr-1" /> Push to Quizzes
+        <Button size="sm" onClick={() => { setPushing(true); onPush(data, selectedClass).finally(() => setPushing(false)); }} disabled={!selectedClass || pushing} loading={pushing}>
+          <Icon name="send" size={14} className="mr-1" /> {pushing ? 'Pushing...' : 'Push to Quizzes'}
         </Button>
       </div>
     </div>
   );
 }
 
-function AssignmentView({ data, onPush }: { data: any; onPush: (d: any, cls: string) => void }) {
+function AssignmentView({ data, onPush }: { data: any; onPush: (d: any, cls: string) => Promise<void> }) {
   const [selectedClass, setSelectedClass] = useState('');
+  const [pushing, setPushing] = useState(false);
   const { data: classes } = useQuery({ queryKey: ['admin-classes'], queryFn: getAllClasses });
   return (
     <div className="space-y-3 mt-2">
@@ -73,8 +82,8 @@ function AssignmentView({ data, onPush }: { data: any; onPush: (d: any, cls: str
             {classes?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Button size="sm" onClick={() => onPush(data, selectedClass)} disabled={!selectedClass}>
-          <Icon name="send" size={14} className="mr-1" /> Push to Assignments
+        <Button size="sm" onClick={() => { setPushing(true); onPush(data, selectedClass).finally(() => setPushing(false)); }} disabled={!selectedClass || pushing} loading={pushing}>
+          <Icon name="send" size={14} className="mr-1" /> {pushing ? 'Pushing...' : 'Push to Assignments'}
         </Button>
       </div>
     </div>
@@ -164,12 +173,37 @@ export default function TeacherOCRPage() {
     setPendingFiles((prev) => prev.filter((_, idx) => idx !== i));
   }, [pendingImages]);
 
-  const handlePushQuiz = useCallback((data: any, classId: string) => {
-    setMessages((prev) => [...prev, { role: 'assistant', content: `✅ Quiz pushed to the selected class! (Push to quizzes coming soon)` }]);
+  const handleDeleteQuiz = useCallback(async (quizId: string) => {
+    try {
+      await api.delete(`/quizzes-v2/${quizId}`);
+      setMessages((prev) => [...prev, { role: 'assistant', content: `🗑️ Quiz deleted successfully.` }]);
+    } catch (err: any) {
+      setMessages((prev) => [...prev, { role: 'assistant', content: `❌ Failed to delete quiz: ${err?.message || 'Unknown error'}` }]);
+    }
   }, []);
 
-  const handlePushAssignment = useCallback((data: any, classId: string) => {
-    setMessages((prev) => [...prev, { role: 'assistant', content: `✅ Assignment pushed to the selected class! (Push to assignments coming soon)` }]);
+  const handlePushQuiz = useCallback(async (data: any, classId: string) => {
+    setMessages((prev) => [...prev, { role: 'assistant', content: `⏳ Pushing quiz to class...` }]);
+    try {
+      const result = await pushQuiz(data, classId);
+      setMessages((prev) => [...prev, {
+        role: 'assistant',
+        content: `✅ Quiz "${result.title || 'Untitled'}" pushed successfully! (${data.questions?.length || 0} questions)`,
+        data: { pushedQuizId: result.id, action: 'pushed_quiz' }
+      }]);
+    } catch (err: any) {
+      setMessages((prev) => [...prev, { role: 'assistant', content: `❌ Failed to push quiz: ${err?.message || 'Unknown error'}` }]);
+    }
+  }, []);
+
+  const handlePushAssignment = useCallback(async (data: any, classId: string) => {
+    setMessages((prev) => [...prev, { role: 'assistant', content: `⏳ Pushing assignment to class...` }]);
+    try {
+      const result = await pushAssignment(data, classId);
+      setMessages((prev) => [...prev, { role: 'assistant', content: `✅ Assignment "${result.title || 'Untitled'}" pushed successfully!` }]);
+    } catch (err: any) {
+      setMessages((prev) => [...prev, { role: 'assistant', content: `❌ Failed to push assignment: ${err?.message || 'Unknown error'}` }]);
+    }
   }, []);
 
   const handleViewMindMap = useCallback((data: any) => {
@@ -182,6 +216,16 @@ export default function TeacherOCRPage() {
     if (!msg.data) return <LatexRenderer content={msg.content} className="text-sm" />;
     const action = msg.data.data?.action || msg.data.action;
     const payload = msg.data.data?.data || msg.data.data || msg.data;
+    if (action === 'pushed_quiz' && msg.data.pushedQuizId) {
+      return (
+        <div className="space-y-2">
+          <LatexRenderer content={msg.content} className="text-sm" />
+          <Button variant="destructive" size="sm" onClick={() => handleDeleteQuiz(msg.data.pushedQuizId)}>
+            <Icon name="delete" size={14} className="mr-1" /> Delete Quiz
+          </Button>
+        </div>
+      );
+    }
     if (action === 'quiz' || payload?.questions) return <QuizView data={payload.questions ? payload : { questions: payload }} onPush={handlePushQuiz} />;
     if (action === 'assignment' || payload?.title) return <AssignmentView data={payload} onPush={handlePushAssignment} />;
     if (action === 'mindmap' || payload?.nodes || payload?.centralTopic) return <MindMapView data={payload} onView={handleViewMindMap} />;

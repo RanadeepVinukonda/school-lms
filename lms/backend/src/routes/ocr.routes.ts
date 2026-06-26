@@ -25,6 +25,10 @@ router.post('/scan-multiple', authenticate, uploadRateLimit, upload.array('image
 
 router.post('/chat', authenticate, upload.array('images', 10), asyncHandler(ocrController.chat));
 
+router.post('/push-quiz', authenticate, requireRole('admin', 'teacher'), asyncHandler(ocrController.pushQuiz));
+
+router.post('/push-assignment', authenticate, requireRole('admin', 'teacher'), asyncHandler(ocrController.pushAssignment));
+
 router.post('/map-to-concept', authenticate, asyncHandler(ocrController.mapToConcept));
 
 router.get('/concepts/:textbookId', authenticate, asyncHandler(ocrController.getConceptsForTextbook));

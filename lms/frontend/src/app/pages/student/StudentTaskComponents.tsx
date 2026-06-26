@@ -262,6 +262,9 @@ function TaskCard({ item }: { item: TaskItem }) {
                 )}
                 {item.type === 'quiz' && (
                   <>
+                    {item.status === 'completed' && (
+                      <Badge variant="success" className="text-[10px]">Completed</Badge>
+                    )}
                     {item.timeLimit !== undefined && (
                       <span className="flex items-center gap-1">
                         <Icon name="schedule" size={14} />
