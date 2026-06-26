@@ -9,7 +9,10 @@ cloudinary.v2.config({
 
 /** Delete a file from Cloudinary by its public id. */
 export async function deleteCloudinaryFile(publicId: string) {
-  const result = await cloudinary.v2.uploader.destroy(publicId, { resource_type: 'raw' });
+  let result = await cloudinary.v2.uploader.destroy(publicId, { resource_type: 'image' });
+  if (result.result === 'not found') {
+    result = await cloudinary.v2.uploader.destroy(publicId, { resource_type: 'raw' });
+  }
   return result;
 }
 
@@ -22,7 +25,7 @@ export async function uploadFromUrl(url: string, folder = 'genesis') {
 /** Upload a file buffer to Cloudinary under the given folder. */
 export async function uploadBufferToCloudinary(buffer: Buffer, folder = 'genesis') {
   return new Promise<{ url: string; publicId: string }>((resolve, reject) => {
-    const stream = cloudinary.v2.uploader.upload_stream({ folder, resource_type: 'raw' }, (error, result) => {
+    const stream = cloudinary.v2.uploader.upload_stream({ folder, resource_type: 'auto', access_mode: 'public' }, (error, result) => {
       if (error) {
         reject(error);
       } else {
@@ -33,5 +36,15 @@ export async function uploadBufferToCloudinary(buffer: Buffer, folder = 'genesis
   });
 }
 
+export async function getCloudinaryDownloadUrl(publicId: string): Promise<string> {
+  const resource = await cloudinary.v2.api.resource(publicId, { resource_type: 'image' })
+    .catch(() => cloudinary.v2.api.resource(publicId, { resource_type: 'raw' }));
+  return cloudinary.v2.utils.private_download_url(publicId, resource.format, {
+    type: resource.type,
+    resource_type: resource.resource_type,
+    expires_at: Math.floor(Date.now() / 1000) + 3600,
+    attachment: false,
+  });
+}
 
 export default cloudinary;

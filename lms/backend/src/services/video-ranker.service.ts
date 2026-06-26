@@ -10,7 +10,6 @@ import { chatCompletion } from './ai.service';
 async function generateSearchQueries(conceptTitle: string, subjectName: string): Promise<string[]> {
   try {
     const rawResponse = await chatCompletion({
-      model: 'gemini-2.0-flash',
       messages: [
         {
           role: 'system',
@@ -22,9 +21,14 @@ async function generateSearchQueries(conceptTitle: string, subjectName: string):
         },
       ],
       temperature: 0.3,
+      jsonMode: true,
     });
 
-    const parsed = JSON.parse(rawResponse.trim());
+    let cleaned = rawResponse.trim();
+    const match = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (match) cleaned = match[1];
+
+    const parsed = JSON.parse(cleaned);
     if (Array.isArray(parsed) && parsed.length > 0) {
       return parsed.map(String);
     }

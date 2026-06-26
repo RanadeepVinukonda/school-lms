@@ -10,6 +10,7 @@ export async function getUploadSignature(req: Request, res: Response) {
   const params: Record<string, string | number> = {
     timestamp,
     folder,
+    access_mode: 'public',
   };
 
   const signature = cloudinary.v2.utils.api_sign_request(params, env.CLOUDINARY_API_SECRET);

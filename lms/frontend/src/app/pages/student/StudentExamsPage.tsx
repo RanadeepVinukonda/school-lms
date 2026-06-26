@@ -10,7 +10,7 @@ import { formatDate } from '@/lib/utils';
 import { getLetterGrade } from '@/lib/format';
 import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/lib/motion';
 import { useQuery } from '@tanstack/react-query';
-import { getAllSubjects, getExamsBySubject, getCorrectionsByStudent } from '@/services/dataService';
+import { getAllSubjects, getClass, getExamsBySubject, getCorrectionsByStudent } from '@/services/dataService';
 import { useAuthStore } from '@/store/authStore';
 import type { ExamItem, CorrectionItem } from '@/services/dataService';
 
@@ -59,20 +59,25 @@ interface PastExamResult extends ExamWithSubject {
 }
 
 export default function StudentExamsPage() {
-  const studentId = useAuthStore((s) => s.user?.id);
+  const user = useAuthStore((s) => s.user);
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['student-exams', studentId],
+    queryKey: ['student-exams', user?.id, user?.classId],
     queryFn: async () => {
-      const [allSubjects, corrections] = await Promise.all([
+      if (!user?.classId) return { upcoming: [], past: [], subjects: [] };
+      const [allSubjects, studentClass, corrections] = await Promise.all([
         getAllSubjects(),
-        studentId ? getCorrectionsByStudent(studentId) : Promise.resolve([]),
+        getClass(user.classId),
+        user?.id ? getCorrectionsByStudent(user.id) : Promise.resolve([]),
       ]);
 
-      // Get all exams by subject
-      const subjectIds = allSubjects.map((s) => s.id);
-      const examPromises = subjectIds.map((sid) => getExamsBySubject(sid));
+      if (!studentClass || !studentClass.subjectIds || studentClass.subjectIds.length === 0) {
+        return { upcoming: [], past: [], subjects: [] };
+      }
+
+      const subjects = allSubjects.filter((s) => studentClass.subjectIds.includes(s.id));
+      const examPromises = subjects.map((s) => getExamsBySubject(s.id));
       const examResults = await Promise.all(examPromises);
       const allExams = examResults.flat();
 
@@ -81,7 +86,7 @@ export default function StudentExamsPage() {
       const past: PastExamResult[] = [];
 
       for (const exam of allExams) {
-        const subject = allSubjects.find((s) => s.id === exam.subjectId) ?? null;
+        const subject = subjects.find((s) => s.id === exam.subjectId) ?? null;
         const subjectData = subject
           ? { id: subject.id, name: subject.name, code: subject.code, icon: subject.icon, color: subject.color, category: subject.category }
           : null;
@@ -104,10 +109,10 @@ export default function StudentExamsPage() {
         }
       }
 
-      const uniqueSubjects = allSubjects.filter((s, i, arr) => arr.findIndex((x) => x.name === s.name) === i);
+      const uniqueSubjects = subjects.filter((s, i, arr) => arr.findIndex((x) => x.name === s.name) === i);
       return { upcoming, past, subjects: uniqueSubjects };
     },
-    enabled: !!studentId,
+    enabled: !!user,
   });
 
   return (

@@ -229,7 +229,7 @@ export default function TeacherAssessmentCreatePage() {
         if (data.aiErrorMessage) {
           toast.error(`AI Error: ${data.aiErrorMessage}`);
         } else if (data.aiGeneratedCount === 0 && data.questions.length < (questionCount || 0)) {
-          toast.error('AI generated 0 questions. Check AI_API_KEY or quota.');
+          toast.error('AI generated 0 questions. Check GEMINI_API_KEY or quota.');
         } else {
           toast.success(`Preview: ${data.questions.length} questions (${data.aiGeneratedCount ?? 0} AI)`);
         }

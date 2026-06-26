@@ -116,7 +116,7 @@ Return valid JSON: { "questions": [ ... ] }`;
 
     try {
       const raw = await chatCompletion({
-        model: 'gemini-2.0-flash',
+
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
@@ -206,7 +206,7 @@ Return valid JSON with this structure:
 }`;
 
   const raw = await chatCompletion({
-    model: 'gemini-2.0-flash',
+
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt },
@@ -291,7 +291,7 @@ Return valid JSON with this exact structure:
 }`;
 
   const raw = await chatCompletion({
-    model: 'gemini-2.0-flash',
+
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt },

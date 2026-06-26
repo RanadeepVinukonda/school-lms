@@ -42,7 +42,7 @@ FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY_HERE\n-----E
 FIREBASE_WEB_API_KEY="your-firebase-web-api-key"
 
 # LLM Providers (Gemini / OpenAI API)
-AI_API_KEY="your-api-key"
+GEMINI_API_KEY="your-api-key"
 AI_BASE_URL="https://api.openai.com/v1/chat/completions" # Or Gemini Beta OpenAI compatibility endpoint
 AI_MODEL="gpt-4o-mini" # Or gemini-2.0-flash
 

@@ -7,6 +7,7 @@ import { chatCompletion } from '../services/ai.service';
 import { getEmbedding } from '../services/transformers.service';
 import { searchAndRankVideos } from '../services/video-ranker.service';
 import { matchAndRankResources } from '../services/resource-ranker.service';
+import { getCloudinaryDownloadUrl } from '../services/cloudinary.service';
 import { logger } from '../utils/logger';
 
 const connection = getRedisConnection();
@@ -39,18 +40,29 @@ async function updateJobProgress(
   status: 'PROCESSING' | 'COMPLETED' | 'FAILED' = 'PROCESSING',
   error: string | null = null
 ) {
-  const { textbookRef, jobRef } = await getJobDbRefs(textbookId);
+  const { db, textbookRef, jobRef } = await getJobDbRefs(textbookId);
   const now = new Date().toISOString();
 
-  await jobRef.set({ id: textbookId, status, progress, currentStep, error, updatedAt: now }, { merge: true });
+  await db.runTransaction(async (t) => {
+    const tbDoc = await t.get(textbookRef);
+    if (!tbDoc.exists) return;
+    const currentStatus = tbDoc.data()?.status;
 
-  if (status === 'COMPLETED') {
-    await textbookRef.update({ status: 'ready', updatedAt: now, failureReason: null });
-  } else if (status === 'FAILED') {
-    await textbookRef.update({ status: 'failed', failureReason: error || 'Unknown pipeline failure', updatedAt: now });
-  } else {
-    await textbookRef.update({ status: 'processing', updatedAt: now });
-  }
+    // Do not downgrade status from ready/failed back to processing due to race conditions
+    if (status === 'PROCESSING' && (currentStatus === 'ready' || currentStatus === 'failed')) {
+      return;
+    }
+
+    t.set(jobRef, { id: textbookId, status, progress, currentStep, error, updatedAt: now }, { merge: true });
+
+    if (status === 'COMPLETED') {
+      t.update(textbookRef, { status: 'ready', updatedAt: now, failureReason: null });
+    } else if (status === 'FAILED') {
+      t.update(textbookRef, { status: 'failed', failureReason: error || 'Unknown pipeline failure', updatedAt: now });
+    } else {
+      t.update(textbookRef, { status: 'processing', updatedAt: now });
+    }
+  });
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -60,6 +72,7 @@ const uploadWorker = new Worker(
   'uploadQueue',
   async (job: Job) => {
     const { textbookId, storagePath } = job.data;
+
     logger.info('uploadWorker: Starting PDF extraction and TOC planning', { textbookId });
 
     const db = getAdminFirestore();
@@ -72,7 +85,8 @@ const uploadWorker = new Worker(
     await updateJobProgress(textbookId, 5, 'extract_text');
 
     // Download PDF
-    const response = await fetch(pdfUrl);
+    const signedUrl = await getCloudinaryDownloadUrl(storagePath);
+    const response = await fetch(signedUrl);
     if (!response.ok) throw new Error(`Failed to download PDF: ${response.statusText}`);
     const pdfBuffer = Buffer.from(await response.arrayBuffer());
 
@@ -145,16 +159,19 @@ Textbook content:
 ${tocText}`;
 
       const rawResponse = await chatCompletion({
-        model: 'gemini-2.0-flash',
         messages: [
           { role: 'system', content: 'You respond in valid JSON only.' },
           { role: 'user', content: prompt },
         ],
         temperature: 0.3,
         max_tokens: 8192,
+        jsonMode: true,
       });
 
-      const cleaned = rawResponse.trim().replace(/^```json/, '').replace(/```$/, '').trim();
+      let cleaned = rawResponse.trim();
+      const match = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (match) cleaned = match[1];
+      
       structure = JSON.parse(cleaned);
     } catch (err) {
       logger.error('uploadWorker: TOC Gemini call failed, using fallback structure', { err });
@@ -239,7 +256,7 @@ ${tocText}`;
       textbookId, totalConcepts, chapterCount: structure.chapters.length,
     });
   },
-  { connection }
+  { connection, lockDuration: 300000 }
 );
 
 // ──────────────────────────────────────────────────────────────
@@ -289,15 +306,19 @@ Context Text:
 ${contextText.slice(0, 15000)}`;
 
         const raw = await chatCompletion({
-          model: 'gemini-2.0-flash',
           messages: [
             { role: 'system', content: 'You respond in clean JSON only.' },
             { role: 'user', content: prompt },
           ],
           temperature: 0.3,
           max_tokens: 4096,
+          jsonMode: true,
         });
-        const cleaned = raw.trim().replace(/^```json/, '').replace(/```$/, '').trim();
+        
+        let cleaned = raw.trim();
+        const match = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+        if (match) cleaned = match[1];
+        
         return JSON.parse(cleaned);
       })(),
 
@@ -328,15 +349,19 @@ Chapter: ${chapterTitle}
 Context: ${contextText.slice(0, 8000)}`;
 
         const raw = await chatCompletion({
-          model: 'gemini-2.0-flash',
           messages: [
             { role: 'system', content: 'You respond in clean JSON only.' },
             { role: 'user', content: prompt },
           ],
           temperature: 0.4,
           max_tokens: 8192,
+          jsonMode: true,
         });
-        const cleaned = raw.trim().replace(/^```json/, '').replace(/```$/, '').trim();
+        
+        let cleaned = raw.trim();
+        const match = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+        if (match) cleaned = match[1];
+        
         return JSON.parse(cleaned);
       })(),
 
@@ -495,7 +520,7 @@ Context: ${contextText.slice(0, 8000)}`;
       await addTextbookLog(textbookId, `Enriched concept progress: ${completedCount} / ${totalConcepts} completed.`);
     }
   },
-  { connection }
+  { connection, lockDuration: 300000, concurrency: 2 }
 );
 
 // ── Global failure handler ─────────────────────────────────────

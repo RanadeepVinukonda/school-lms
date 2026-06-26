@@ -290,5 +290,14 @@ export async function deleteTextbook(textbookId: string) {
   const db = getDb();
   await db.recursiveDelete(ref);
 
+  if (env.REDIS_URL) {
+    try {
+      const { removeUploadJob } = require('../jobs/queue');
+      await removeUploadJob(textbookId);
+    } catch (e) {
+      logger.error('Failed to remove upload job during textbook deletion', { textbookId, e });
+    }
+  }
+
   logger.info('Textbook deleted', { textbookId });
 }

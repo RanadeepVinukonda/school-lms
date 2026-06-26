@@ -165,6 +165,7 @@ export default function TeacherTextbookUploadPage() {
     cdFormData.append('timestamp', String(timestamp));
     cdFormData.append('signature', signature);
     cdFormData.append('folder', folder);
+    cdFormData.append('access_mode', 'public');
 
     useUploadStore.setState((s) => ({
       tasks: s.tasks.map((t) =>
@@ -175,7 +176,7 @@ export default function TeacherTextbookUploadPage() {
     addLog(`Uploading ${file.name} directly to Cloudinary...`);
 
     const cdRes = await axios.post(
-      `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`,
+      `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
       cdFormData,
       {
         onUploadProgress: (e) => {

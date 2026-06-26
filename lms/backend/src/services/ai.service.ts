@@ -107,6 +107,7 @@ async function geminiChatCompletion(
   messages: ChatMessage[],
   temperature: number,
   max_tokens: number,
+  jsonMode = false,
 ): Promise<string> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
   const { systemInstruction, contents } = convertToGeminiMessages(messages);
@@ -116,7 +117,7 @@ async function geminiChatCompletion(
     generationConfig: {
       temperature,
       maxOutputTokens: max_tokens,
-      responseMimeType: 'application/json',
+      ...(jsonMode ? { responseMimeType: 'application/json' } : {}),
     },
   };
 
@@ -208,7 +209,7 @@ async function openaiChatCompletion(
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     Accept: 'application/json',
-    Authorization: `Bearer ${env.AI_API_KEY}`,
+    Authorization: `Bearer ${env.GEMINI_API_KEY}`,
   };
 
   if (env.AI_BASE_URL.includes('openrouter.ai')) {
@@ -280,7 +281,7 @@ async function openaiChatCompletion(
       }
 
       logger.error('AI API error', { status: res.status, body: errBody, model, attempt });
-      if (res.status === 401) throw new AppError(502, 'AI service rejected the API key. Check AI_API_KEY.');
+      if (res.status === 401) throw new AppError(502, 'AI service rejected the API key. Check GEMINI_API_KEY.');
       if (res.status === 404 && model !== 'openrouter/free') {
         logger.warn('AI model not found, retrying with openrouter/free', { model });
         return openaiChatCompletion('openrouter/free', messages, temperature, max_tokens, jsonMode);
@@ -314,7 +315,7 @@ export async function textbookChatCompletion(params: ChatRequest): Promise<strin
     return geminiChatCompletion(geminiModel, messages, temperature, max_tokens);
   }
 
-  const apiKey = env.AI_TEXTBOOK_API_KEY || env.AI_API_KEY;
+  const apiKey = env.AI_TEXTBOOK_API_KEY || env.GEMINI_API_KEY;
   const baseUrl = env.AI_TEXTBOOK_BASE_URL || env.AI_BASE_URL;
   const model = env.AI_TEXTBOOK_MODEL || env.AI_MODEL || 'openai/gpt-4o-mini';
 
@@ -377,7 +378,7 @@ export async function textbookChatCompletion(params: ChatRequest): Promise<strin
         continue;
       }
       logger.error('Textbook AI API error', { status: res.status, body: errBody, model, attempt });
-      if (res.status === 401) throw new AppError(502, 'Textbook AI key rejected. Check AI_TEXTBOOK_API_KEY or AI_API_KEY.');
+      if (res.status === 401) throw new AppError(502, 'Textbook AI key rejected. Check AI_TEXTBOOK_API_KEY or GEMINI_API_KEY.');
       if (res.status === 404 && model !== 'openrouter/free') {
         logger.warn('Textbook AI model not found, retrying with openrouter/free', { model });
         return textbookChatCompletion({ ...params, model: 'openrouter/free' });
@@ -407,14 +408,14 @@ function toGeminiModel(model: string): string {
 }
 
 export async function chatCompletion(params: ChatRequest): Promise<string> {
-  const { model = 'gemini-2.0-flash', messages, temperature = 0.7, max_tokens = 2048, jsonMode = false } = params;
+  const { model = env.AI_MODEL, messages, temperature = 0.7, max_tokens = 2048, jsonMode = false } = params;
 
   if (env.GEMINI_API_KEY) {
-    return geminiChatCompletion(toGeminiModel(model), messages, temperature, max_tokens);
+    return geminiChatCompletion(toGeminiModel(model), messages, temperature, max_tokens, jsonMode);
   }
 
-  if (!env.AI_API_KEY) {
-    throw new AppError(502, 'No AI provider configured. Set GEMINI_API_KEY or AI_API_KEY.');
+  if (!env.GEMINI_API_KEY) {
+    throw new AppError(502, 'No AI provider configured. Set GEMINI_API_KEY.');
   }
 
   return openaiChatCompletion(model, messages, temperature, max_tokens, jsonMode);

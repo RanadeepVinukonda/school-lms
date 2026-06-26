@@ -10,10 +10,10 @@ const envSchema = z.object({
   FIREBASE_PROJECT_ID: z.string().min(1),
   FIREBASE_CLIENT_EMAIL: z.string().email(),
   FIREBASE_PRIVATE_KEY: z.string().min(1).transform((key) => key.replace(/\\n/g, '\n')),
-  AI_API_KEY: z.string().min(1),
+  GEMINI_API_KEY: z.string().min(1),
   AI_BASE_URL: z.string().default('https://openrouter.ai/api/v1/chat/completions'),
   AI_MODEL: z.string().default('openai/gpt-4o-mini'),
-  GEMINI_API_KEY: z.string().optional(),
+
   AI_TEXTBOOK_API_KEY: z.string().optional(),
   AI_TEXTBOOK_BASE_URL: z.string().optional(),
   AI_TEXTBOOK_MODEL: z.string().optional(),

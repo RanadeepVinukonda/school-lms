@@ -6,6 +6,7 @@ import { getEmbedding } from './transformers.service';
 import { searchAndRankVideos } from './video-ranker.service';
 import { matchAndRankResources } from './resource-ranker.service';
 import { env } from '../config/env';
+import { getCloudinaryDownloadUrl } from './cloudinary.service';
 import { logger } from '../utils/logger';
 
 async function addTextbookLog(textbookId: string, message: string) {
@@ -189,7 +190,9 @@ export async function processUploadInline(textbookId: string) {
   if (!textbookDoc.exists) throw new Error('Textbook not found');
 
   const pdfUrl = textbookDoc.data()?.pdfUrl;
+  const storagePath = textbookDoc.data()?.storagePath;
   if (!pdfUrl) throw new Error('No PDF URL found for textbook');
+  if (!storagePath) throw new Error('No Cloudinary storage path found');
 
   const title = textbookDoc.data()!.title || 'Textbook';
 
@@ -199,7 +202,8 @@ export async function processUploadInline(textbookId: string) {
   logger.info('Downloading and parsing PDF', { textbookId });
   await setStage(textbookId, 'Downloading PDF...', 5);
   await addTextbookLog(textbookId, "Downloading textbook PDF from Cloudinary...");
-  const response = await fetch(pdfUrl);
+  const signedUrl = await getCloudinaryDownloadUrl(storagePath);
+  const response = await fetch(signedUrl);
   if (!response.ok) throw new Error(`Failed to download PDF: ${response.statusText}`);
   const pdfBuffer = Buffer.from(await response.arrayBuffer());
 

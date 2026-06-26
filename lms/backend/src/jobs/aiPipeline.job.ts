@@ -19,6 +19,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getAdminFirestore } from '../firebase/admin';
 // import { getBucket } from '../firebase/storage'; // Removed Firebase storage import
 import { chatCompletion } from '../services/ai.service';
+import { getCloudinaryDownloadUrl } from '../services/cloudinary.service';
 import { logger } from '../utils/logger';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -216,12 +217,8 @@ export async function runAIPipeline(textbookId: string): Promise<void> {
 
     // Step 2: Download PDF
     logger.info('Downloading PDF', { textbookId, storagePath });
-    // Retrieve the textbook document to get Cloudinary PDF URL
-    const pdfUrl = textbookData.pdfUrl;
-    if (!pdfUrl) {
-      throw new Error('PDF URL not found for textbook');
-    }
-    const response = await fetch(pdfUrl);
+    const signedUrl = await getCloudinaryDownloadUrl(storagePath);
+    const response = await fetch(signedUrl);
     if (!response.ok) {
       throw new Error(`Failed to download PDF from Cloudinary: ${response.statusText}`);
     }
@@ -246,7 +243,7 @@ export async function runAIPipeline(textbookId: string): Promise<void> {
 
     // Step 4-5: Call Gemini
     const rawResponse = await chatCompletion({
-      model: 'gemini-2.0-flash',
+
       messages: [
         { role: 'system', content: 'You are an expert curriculum designer. Respond with valid JSON only, no markdown.' },
         { role: 'user', content: buildPrompt(textContent) },
