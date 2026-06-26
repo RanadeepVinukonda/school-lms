@@ -1,5 +1,4 @@
-import { collection, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, query, where, Timestamp, orderBy } from 'firebase/firestore';
-import { db } from '@/firebase/config';
+import { supabase } from '@/firebase/config';
 import { logAudit } from '@/services/auditService';
 import api from '@/services/api';
 import type { Textbook, Chapter, Concept, GeneratedQuestion, GeneratedAssignment, CachedVideo, ConceptProgress, ConceptRelease } from '@/types/textbook';
@@ -10,31 +9,41 @@ const CONCEPTS_COLLECTION = 'concepts';
 const CONCEPT_PROGRESS_COLLECTION = 'conceptProgress';
 const CONCEPT_RELEASES_COLLECTION = 'conceptReleases';
 
-/** Create a new textbook document in Firestore. Returns the new document id. */
+const snakeToCamel = (obj: any): any => {
+  if (!obj || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(snakeToCamel);
+  return Object.keys(obj).reduce((acc, key) => {
+    const camel = key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+    acc[camel] = obj[key];
+    return acc;
+  }, {} as any);
+};
+
+/** Create a new textbook document in Supabase. Returns the new document id. */
 export async function createTextbook(data: Omit<Textbook, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-  const docRef = await addDoc(collection(db, TEXTBOOKS_COLLECTION), {
+  const { data: inserted } = await supabase.from(TEXTBOOKS_COLLECTION).insert({
     ...data,
-    createdAt: Timestamp.now().toDate().toISOString(),
-    updatedAt: Timestamp.now().toDate().toISOString(),
-  });
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }).select('id').single();
+  const id = inserted?.id || crypto.randomUUID();
   logAudit({
     action: 'textbook.create',
-    targetId: docRef.id,
+    targetId: id,
     targetType: 'textbook',
     targetName: data.title || 'Untitled',
     summary: `Created textbook "${data.title || 'Untitled'}" for subject ${data.subjectId}`,
     newValue: { ...data },
   });
-  return docRef.id;
+  return id;
 }
 
 /** Update a textbook document's fields. */
 export async function updateTextbook(id: string, data: Partial<Textbook>): Promise<void> {
-  const docRef = doc(db, TEXTBOOKS_COLLECTION, id);
-  await updateDoc(docRef, {
+  await supabase.from(TEXTBOOKS_COLLECTION).update({
     ...data,
-    updatedAt: Timestamp.now().toDate().toISOString(),
-  });
+    updatedAt: new Date().toISOString(),
+  }).eq('id', id);
   logAudit({
     action: 'textbook.update',
     targetId: id,
@@ -47,24 +56,20 @@ export async function updateTextbook(id: string, data: Partial<Textbook>): Promi
 
 /** Fetch a single textbook by id. Returns null if not found. */
 export async function getTextbook(id: string): Promise<Textbook | null> {
-  const docRef = doc(db, TEXTBOOKS_COLLECTION, id);
-  const snap = await getDoc(docRef);
-  if (!snap.exists()) return null;
-  return { id: snap.id, ...snap.data() } as Textbook;
+  const { data } = await supabase.from(TEXTBOOKS_COLLECTION).select('*').eq('id', id).maybeSingle();
+  return snakeToCamel(data) as Textbook | null;
 }
 
-/** Fetch all textbooks from Firestore. */
+/** Fetch all textbooks from Supabase. */
 export async function getAllTextbooks(): Promise<Textbook[]> {
-  const q = query(collection(db, TEXTBOOKS_COLLECTION));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Textbook));
+  const { data } = await supabase.from(TEXTBOOKS_COLLECTION).select('*');
+  return (snakeToCamel(data || []) as Textbook[]);
 }
 
 /** Fetch textbooks belonging to a specific subject. */
 export async function getTextbooksBySubject(subjectId: string): Promise<Textbook[]> {
-  const q = query(collection(db, TEXTBOOKS_COLLECTION), where('subjectId', '==', subjectId));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Textbook));
+  const { data } = await supabase.from(TEXTBOOKS_COLLECTION).select('*').eq('subject_id', subjectId);
+  return (snakeToCamel(data || []) as Textbook[]);
 }
 
 /** Delete a textbook via backend API. */
@@ -72,51 +77,58 @@ export async function deleteTextbook(id: string): Promise<void> {
   await api.delete(`/textbooks/${id}`);
 }
 
-/** Save chapter data to a textbook: creates subcollection documents for each chapter and concept. */
+/** Save chapter data to a textbook: creates records for each chapter and concept in flat tables. */
 export async function saveChapters(textbookId: string, chapters: Chapter[]): Promise<void> {
-  const textbookRef = doc(db, TEXTBOOKS_COLLECTION, textbookId);
-  const snap = await getDoc(textbookRef);
-  if (!snap.exists()) return;
-
-  const chaptersCollectionRef = collection(db, TEXTBOOKS_COLLECTION, textbookId, CHAPTERS_COLLECTION);
+  const { data: textbook } = await supabase.from(TEXTBOOKS_COLLECTION).select('id').eq('id', textbookId).maybeSingle();
+  if (!textbook) return;
 
   for (const chapter of chapters) {
     const { concepts, ...chapterData } = chapter;
-    const chapterRef = doc(chaptersCollectionRef, chapter.id);
-    await setDoc(chapterRef, {
+    await supabase.from(CHAPTERS_COLLECTION).upsert({
+      id: chapter.id,
+      textbook_id: textbookId,
       ...chapterData,
-      textbookId,
-      chapterCount: concepts.length,
-      createdAt: Timestamp.now().toDate().toISOString(),
+      order: chapterData.order ?? 0,
+      createdAt: new Date().toISOString(),
     });
 
-    const conceptsCollectionRef = collection(db, TEXTBOOKS_COLLECTION, textbookId, CHAPTERS_COLLECTION, chapter.id, CONCEPTS_COLLECTION);
     for (const concept of concepts) {
       const { questionBank, ...conceptData } = concept;
-      const conceptRef = doc(conceptsCollectionRef, concept.id);
-      await setDoc(conceptRef, {
+      await supabase.from(CONCEPTS_COLLECTION).upsert({
+        id: concept.id,
+        textbook_id: textbookId,
+        chapter_id: chapter.id,
         ...conceptData,
-        textbookId,
-        chapterId: chapter.id,
-        createdAt: Timestamp.now().toDate().toISOString(),
+        order: conceptData.order ?? 0,
+        createdAt: new Date().toISOString(),
       });
 
       if (Array.isArray(questionBank)) {
-        const questionsCollectionRef = collection(conceptRef, 'questions');
         for (const q of questionBank) {
-          await setDoc(doc(questionsCollectionRef, q.id), q);
+          await supabase.from('concept_questions').upsert({
+            id: q.id,
+            concept_id: concept.id,
+            textbook_id: textbookId,
+            chapter_id: chapter.id,
+            question: q.question,
+            type: q.type,
+            difficulty: q.difficulty,
+            answer: q.answer,
+            explanation: q.explanation || '',
+            created_at: new Date().toISOString(),
+          });
         }
       }
     }
   }
 
-  await updateDoc(textbookRef, {
-    chapterCount: chapters.length,
+  await supabase.from(TEXTBOOKS_COLLECTION).update({
+    chapter_count: chapters.length,
     status: 'ready',
-    processingProgress: 100,
-    processingStage: 'Complete',
-    updatedAt: Timestamp.now().toDate().toISOString(),
-  });
+    processing_progress: 100,
+    processing_stage: 'Complete',
+    updatedAt: new Date().toISOString(),
+  }).eq('id', textbookId);
 
   logAudit({
     action: 'textbook.chapters.save',
@@ -130,89 +142,96 @@ export async function saveChapters(textbookId: string, chapters: Chapter[]): Pro
 
 /** Save or update concept progress for a user. Creates a new document with defaults if none exists. */
 export async function saveConceptProgress(userId: string, conceptId: string, data: Partial<ConceptProgress>): Promise<void> {
-  const docRef = doc(db, CONCEPT_PROGRESS_COLLECTION, `${userId}_${conceptId}`);
-  const snap = await getDoc(docRef);
-  if (snap.exists()) {
-    await updateDoc(docRef, { ...data, lastAccessed: Timestamp.now().toDate().toISOString() });
-  } else {
-    await setDoc(docRef, {
-      userId,
-      conceptId,
-      quizScores: [],
-      quizAttempts: 0,
-      timeSpentMinutes: 0,
-      lessonCompleted: false,
-      videoCompleted: false,
-      questionAccuracy: 0,
-      assignmentScores: [],
-      masteryPercentage: 0,
-      skillLevel: 'beginner',
-      lastAccessed: Timestamp.now().toDate().toISOString(),
-      ...data,
-    });
-  }
+  const id = `${userId}_${conceptId}`;
+  const defaults = {
+    userId,
+    conceptId,
+    quizScores: [],
+    quizAttempts: 0,
+    timeSpentMinutes: 0,
+    lessonCompleted: false,
+    videoCompleted: false,
+    questionAccuracy: 0,
+    assignmentScores: [],
+    masteryPercentage: 0,
+    skillLevel: 'beginner',
+  };
+  await supabase.from(CONCEPT_PROGRESS_COLLECTION).upsert({
+    id,
+    ...defaults,
+    ...data,
+    lastAccessed: new Date().toISOString(),
+  });
 }
 
 /** Fetch concept progress for a specific user and concept. Returns null if not found. */
 export async function getConceptProgress(userId: string, conceptId: string): Promise<ConceptProgress | null> {
-  const docRef = doc(db, CONCEPT_PROGRESS_COLLECTION, `${userId}_${conceptId}`);
-  const snap = await getDoc(docRef);
-  if (!snap.exists()) return null;
-  return snap.data() as ConceptProgress;
+  const { data } = await supabase.from(CONCEPT_PROGRESS_COLLECTION).select('*').eq('id', `${userId}_${conceptId}`).maybeSingle();
+  return data as ConceptProgress | null;
 }
 
 /** Fetch all concepts progress for a given user. */
 export async function getAllConceptProgress(userId: string): Promise<ConceptProgress[]> {
-  const q = query(collection(db, CONCEPT_PROGRESS_COLLECTION), where('userId', '==', userId));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => d.data() as ConceptProgress);
+  const { data } = await supabase.from(CONCEPT_PROGRESS_COLLECTION).select('*').eq('userId', userId);
+  return (data || []) as ConceptProgress[];
 }
 
 /** Fetch all concept releases for a textbook and class. */
 export async function getAllConceptReleases(classId: string, textbookId: string): Promise<ConceptRelease[]> {
-  const q = query(
-    collection(db, CONCEPT_RELEASES_COLLECTION),
-    where('classId', '==', classId),
-    where('textbookId', '==', textbookId),
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as ConceptRelease);
+  const { data } = await supabase.from(CONCEPT_RELEASES_COLLECTION).select('*').eq('classId', classId).eq('textbookId', textbookId);
+  return (data || []) as ConceptRelease[];
 }
 
 /** Fetch the release status for a concept. Returns default (all false) if not found. */
 export async function getConceptRelease(classId: string, textbookId: string, conceptId: string): Promise<ConceptRelease | null> {
-  const docRef = doc(db, CONCEPT_RELEASES_COLLECTION, `${classId}_${textbookId}_${conceptId}`);
-  const snap = await getDoc(docRef);
-  if (!snap.exists()) return null;
-  return { id: snap.id, ...snap.data() } as ConceptRelease;
+  const { data } = await supabase.from(CONCEPT_RELEASES_COLLECTION).select('*').eq('id', `${classId}_${textbookId}_${conceptId}`).maybeSingle();
+  return data as ConceptRelease | null;
 }
 
 /** Fetch all chapters in a textbook, ordered by chapter order. */
 export async function getChaptersForTextbook(textbookId: string): Promise<Chapter[]> {
-  const q = query(
-    collection(db, TEXTBOOKS_COLLECTION, textbookId, CHAPTERS_COLLECTION),
-    orderBy('order'),
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Chapter));
+  const { data } = await supabase.from(CHAPTERS_COLLECTION).select('*').eq('textbook_id', textbookId).order('order');
+  return (data || []) as Chapter[];
 }
 
 /** Fetch all concepts in a chapter, ordered by concept order. */
 export async function getConceptsForChapter(textbookId: string, chapterId: string): Promise<Concept[]> {
-  const q = query(
-    collection(db, TEXTBOOKS_COLLECTION, textbookId, CHAPTERS_COLLECTION, chapterId, CONCEPTS_COLLECTION),
-    orderBy('order'),
-  );
-  const snap = await getDocs(q);
-  const concepts = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Concept));
+  const { data: concepts } = await supabase.from(CONCEPTS_COLLECTION).select('*').eq('chapter_id', chapterId).order('order');
+  const result = (concepts || []) as Concept[];
 
-  for (const concept of concepts) {
-    const qSnap = await getDocs(
-      collection(db, TEXTBOOKS_COLLECTION, textbookId, CHAPTERS_COLLECTION, chapterId, CONCEPTS_COLLECTION, concept.id, 'questions')
-    );
-    concept.questionBank = qSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as GeneratedQuestion));
+  for (const concept of result) {
+    const [questionsRes, notesRes, videosRes] = await Promise.all([
+      supabase.from('concept_questions').select('*').eq('concept_id', concept.id),
+      supabase.from('concept_notes').select('*').eq('concept_id', concept.id).maybeSingle(),
+      supabase.from('concept_videos').select('*').eq('concept_id', concept.id).order('score', { ascending: false }),
+    ]);
+    
+    concept.questionBank = (questionsRes.data || []).map((q: any) => ({
+      ...q,
+      text: q.question || q.text, // Map backend 'question' to frontend 'text'
+    })) as GeneratedQuestion[];
+    
+    if (notesRes.data) {
+      concept.notes = notesRes.data.notes || '';
+      concept.summary = notesRes.data.summary || '';
+    }
+    
+    if (videosRes.data) {
+      concept.videos = videosRes.data.map((v: any) => ({
+        id: v.id,
+        youtubeId: v.video_id,
+        title: v.title,
+        thumbnail: v.thumbnail,
+        duration: v.duration,
+        channelName: v.channel,
+        description: v.description,
+        embedUrl: `https://www.youtube.com/embed/${v.video_id}`
+      }));
+    } else {
+      concept.videos = [];
+    }
   }
-  return concepts;
+  return result;
 }
 
 /** Set or update concept release status (which content is pushed to students). */
@@ -224,31 +243,23 @@ export async function setConceptRelease(
   teacherId: string,
   data: Partial<Pick<ConceptRelease, 'questionBankReleased' | 'assignmentsReleased' | 'mindMapReleased'>>,
 ): Promise<void> {
-  const docRef = doc(db, CONCEPT_RELEASES_COLLECTION, `${classId}_${textbookId}_${conceptId}`);
-  const snap = await getDoc(docRef);
-  const payload = {
+  const id = `${classId}_${textbookId}_${conceptId}`;
+  await supabase.from(CONCEPT_RELEASES_COLLECTION).upsert({
+    id,
     classId,
     textbookId,
     chapterId,
     conceptId,
     teacherId,
+    questionBankReleased: false,
+    assignmentsReleased: false,
+    mindMapReleased: false,
     ...data,
-    updatedAt: Timestamp.now().toDate().toISOString(),
-  };
-  if (snap.exists()) {
-    await updateDoc(docRef, payload);
-  } else {
-    await setDoc(docRef, {
-      ...payload,
-      questionBankReleased: false,
-      assignmentsReleased: false,
-      mindMapReleased: false,
-      ...data,
-    });
-  }
+    updatedAt: new Date().toISOString(),
+  });
   logAudit({
     action: 'concept.release',
-    targetId: `${classId}_${textbookId}_${conceptId}`,
+    targetId: id,
     targetType: 'conceptRelease',
     targetName: `Concept ${conceptId}`,
     summary: `Updated release settings for concept ${conceptId} in textbook ${textbookId} for class ${classId}`,

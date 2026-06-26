@@ -1,12 +1,10 @@
 import dotenv from 'dotenv';
 import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
-import { initializeFirebase } from '../config/firebase';
 import { getAdminFirestore } from '../firebase/admin';
 import { processUploadInline } from '../services/pipeline.service';
 
 async function main() {
-  initializeFirebase();
   const db = getAdminFirestore();
   
   const tbId = 'ca1a8739-544f-4b81-8d6e-34fae0174a6e';

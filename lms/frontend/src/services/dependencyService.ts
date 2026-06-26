@@ -1,7 +1,6 @@
 import { getTextbooksBySubject } from './textbookService';
 import { getAssignmentsBySubject, getExamsBySubject, getAllGrades, getStudentsByClass, getTimetableByClass, getUser, getAllUsers } from './dataService';
-import { collection, query, where, getDocs, getDoc, doc } from 'firebase/firestore';
-import { db } from '@/firebase/config';
+import { supabase } from '@/firebase/config';
 
 export interface DependencyCategory {
   label: string;
@@ -21,8 +20,8 @@ export interface DependencyReport {
 
 async function countQuery(collectionName: string, field: string, value: string): Promise<number> {
   try {
-    const snapshot = await getDocs(query(collection(db, collectionName), where(field, '==', value)));
-    return snapshot.docs.length;
+    const { count } = await supabase.from(collectionName).select('*', { count: 'exact', head: true }).eq(field, value);
+    return count || 0;
   } catch {
     return 0;
   }
@@ -30,8 +29,8 @@ async function countQuery(collectionName: string, field: string, value: string):
 
 async function countArrayQuery(collectionName: string, field: string, value: string): Promise<number> {
   try {
-    const snapshot = await getDocs(query(collection(db, collectionName), where(field, 'array-contains', value)));
-    return snapshot.docs.length;
+    const { count } = await supabase.from(collectionName).select('*', { count: 'exact', head: true }).contains(field, [value]);
+    return count || 0;
   } catch {
     return 0;
   }
@@ -119,10 +118,6 @@ export async function getUserDependencies(userId: string): Promise<DependencyRep
     if (classCount > 0) {
       categories.push({ label: 'Classes assigned', count: classCount });
     }
-    const courseCount = await countQuery('courses', 'teacherId', userId);
-    if (courseCount > 0) {
-      categories.push({ label: 'Courses taught', count: courseCount });
-    }
   }
 
   if (user.role === 'student') {
@@ -179,8 +174,8 @@ export async function getCourseDependencies(courseId: string): Promise<Dependenc
 
 /** Analyze what depends on a lesson before deletion. */
 export async function getLessonDependencies(lessonId: string): Promise<DependencyReport> {
-  const lessonData = await getDoc(doc(db, 'lessons', lessonId)).then((s) => s.data()).catch(() => null);
-  const completedCount = lessonData?.completedBy?.length || 0;
+  const { data: lessonData } = await supabase.from('lessons').select('completedBy').eq('id', lessonId).maybeSingle();
+  const completedCount = (lessonData as any)?.completedBy?.length || 0;
 
   const categories: DependencyReport['categories'] = [];
   if (completedCount > 0) categories.push({ label: 'Students who completed', count: completedCount, action: 'Progress preserved' });
@@ -255,8 +250,8 @@ export async function getTextbookDependencies(textbookId: string): Promise<Depen
   const [progressCount, conceptCount, chapterCount] = await Promise.all([
     countQuery('conceptProgress', 'textbookId', textbookId),
     countQuery('conceptReleases', 'textbookId', textbookId),
-    getDoc(doc(db, 'textbooks', textbookId)).then(
-      (s) => (s.data()?.chapters?.length as number) || 0,
+    supabase.from('textbooks').select('chapter_count').eq('id', textbookId).maybeSingle().then(
+      (r) => r.data?.chapter_count || 0,
     ).catch(() => 0),
   ]);
 

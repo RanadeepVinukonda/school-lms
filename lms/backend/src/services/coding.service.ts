@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue } from '../firebase/firestore';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { writeFile, unlink } from 'fs/promises';

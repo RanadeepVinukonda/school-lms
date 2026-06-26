@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/firebase/config';
+import { supabase } from '@/firebase/config';
 import { useAuthStore } from '@/store/authStore';
 import {
   Dialog,
@@ -94,7 +93,7 @@ export function TutorialGuide({ open, onComplete }: TutorialGuideProps) {
   async function handleFinish() {
     if (!user) { onComplete(); return; }
     try {
-      await updateDoc(doc(db, 'users', user.id), { tutorialSeen: true });
+      await supabase.from('users').update({ tutorial_seen: true }).eq('id', user.id);
     } catch {
       // non-critical
     }

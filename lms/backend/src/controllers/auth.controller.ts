@@ -37,3 +37,11 @@ export async function changePassword(req: Request, res: Response) {
   await authService.changePassword(req.user!.uid, req.body.currentPassword, req.body.newPassword);
   sendSuccess(res, null, 'Password changed successfully');
 }
+
+export async function verifyToken(req: Request, res: Response) {
+  sendSuccess(res, { valid: true });
+}
+
+export async function logout(_req: Request, res: Response) {
+  sendSuccess(res, null, 'Logged out successfully');
+}

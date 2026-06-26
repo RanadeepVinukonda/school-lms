@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { collection, getDocs, doc, getDoc, addDoc, query, where } from 'firebase/firestore';
-import { db } from '@/firebase/config';
+import { supabase } from '@/firebase/config';
 import { useAuthStore } from '@/store/authStore';
 import { logAudit } from '@/services/auditService';
 import api from '@/services/api';
@@ -70,8 +69,8 @@ export default function ClassSelectionPage() {
   useEffect(() => {
     async function fetch() {
       try {
-        const snap = await getDocs(collection(db, 'classes'));
-        const items = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Class));
+        const { data: items } = await supabase.from('classes').select('*');
+        setClasses((items || []) as Class[]);
         setClasses(items);
       } catch {
         setError('Failed to load classes');
@@ -93,15 +92,8 @@ export default function ClassSelectionPage() {
       try {
         const newMap: Record<string, SubjectWithClassId[]> = {};
         for (const classId of selectedIds) {
-          const q = query(
-            collection(db, 'subjects'),
-            where('classId', '==', classId),
-          );
-          const snap = await getDocs(q);
-          newMap[classId] = snap.docs.map((d) => ({
-            id: d.id,
-            ...d.data(),
-          } as SubjectWithClassId));
+          const { data: subs } = await supabase.from('subjects').select('*').eq('classId', classId);
+          newMap[classId] = (subs || []) as SubjectWithClassId[];
         }
         setSubjectsMap(newMap);
       } catch {
@@ -148,29 +140,28 @@ export default function ClassSelectionPage() {
         subjectAssignments,
       });
 
-      const snap = await getDoc(doc(db, 'users', user.id));
-      if (snap.exists()) {
-        const d = snap.data();
+      const { data: d } = await supabase.from('users').select('*').eq('id', user.id).maybeSingle();
+      if (d) {
         setUser({
-          id: snap.id,
-          email: (d.email as string) || '',
-          displayName: (d.displayName as string) || '',
-          role: ((d.role as string) || 'teacher') as UserRole,
-          isActive: (d.isActive as boolean) ?? true,
-          classIds: d.classIds as string[] | undefined,
-          avatar: d.avatar as string | undefined,
-          firstName: d.firstName as string | undefined,
-          lastName: d.lastName as string | undefined,
-          phone: d.phone as string | undefined,
-          dateOfBirth: d.dateOfBirth as string | undefined,
-          bio: d.bio as string | undefined,
-          address: d.address as string | undefined,
-          studentId: d.studentId as string | undefined,
-          teacherId: d.teacherId as string | undefined,
-          classId: d.classId as string | undefined,
-          tutorialSeen: d.tutorialSeen as boolean | undefined,
-          createdAt: (d.createdAt as string) || '',
-          updatedAt: (d.updatedAt as string) || '',
+          id: d.id,
+          email: d.email || '',
+          displayName: d.display_name || '',
+          role: (d.role as UserRole) || 'teacher',
+          isActive: d.is_active ?? true,
+          classIds: d.class_ids as string[] | undefined,
+          avatar: d.photo_url || undefined,
+          firstName: d.display_name?.split(' ')[0] || undefined,
+          lastName: d.display_name?.split(' ').slice(1).join(' ') || undefined,
+          phone: d.phone_number || undefined,
+          dateOfBirth: undefined,
+          bio: undefined,
+          address: undefined,
+          studentId: d.student_id || undefined,
+          teacherId: undefined,
+          classId: d.class_id || undefined,
+          tutorialSeen: undefined,
+          createdAt: d.created_at || '',
+          updatedAt: d.updated_at || '',
         });
       }
 
@@ -188,7 +179,7 @@ export default function ClassSelectionPage() {
         newValue: { classIds: classIdArray, subjectAssignments },
       });
 
-      await addDoc(collection(db, 'notifications'), {
+      await supabase.from('notifications').insert({
         userId: user.id,
         type: 'welcome',
         title: 'Welcome to Genesis LMS!',

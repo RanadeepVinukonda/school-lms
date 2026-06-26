@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
+import { QuestionRenderer } from '@/components/teacher/QuestionRenderer';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { cardStackReveal } from '@/lib/motion';
@@ -186,7 +187,7 @@ export default function TeacherQuestionBankPage() {
                               <Badge variant="outline" className={`text-label-xs ${diffColors[q.difficulty] || ''}`}>{q.difficulty}</Badge>
                               {q.isPreviousYear && <Badge variant="secondary" className="text-label-xs">PYQ {q.year || ''}</Badge>}
                             </div>
-                            <p className="text-title-sm font-medium line-clamp-2">{q.text}</p>
+                            <QuestionRenderer question={{ type: q.type, text: q.text }} />
                             {q.explanation && <p className="text-label-xs text-muted-foreground mt-1 line-clamp-1">{q.explanation}</p>}
                             <p className="text-label-xs text-muted-foreground mt-1">{q.points} pt{q.points !== 1 ? 's' : ''}</p>
                           </div>

@@ -3,7 +3,6 @@ import path from 'path';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-import { initializeFirebase } from '../config/firebase';
 import { getAdminAuth, getAdminFirestore } from '../firebase/admin';
 
 const STUDENT = {
@@ -21,7 +20,6 @@ const TEACHER = {
 };
 
 async function main() {
-  initializeFirebase();
   const auth = getAdminAuth();
   const db = getAdminFirestore();
 

@@ -5,7 +5,6 @@ import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/lib/constants';
-import { isAdmin } from '@/utils/permissions';
 import NotificationDropdown from '@/components/common/NotificationDropdown';
 import GlobalSearchDialog from '@/components/common/GlobalSearchDialog';
 import { Icon } from '@/components/ui/Icon';
@@ -47,7 +46,7 @@ export function AdminLayout() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  if (!user || !isAdmin(user.role)) {
+  if (!user || (user.role !== 'super_admin' && user.role !== 'admin')) {
     return <Navigate to={ROUTES.ADMIN_DASHBOARD} replace />;
   }
 

@@ -11,13 +11,9 @@ import { sendChatMessage, pushQuiz, pushAssignment } from '@/services/ocrService
 import { getAllClasses } from '@/services/dataService';
 import api from '@/services/api';
 import LatexRenderer from '@/components/common/LatexRenderer';
+import { useAuthStore } from '@/store/authStore';
+import { useChatStore, ChatMsg } from '@/store/chatStore';
 
-interface ChatMsg {
-  role: 'user' | 'assistant';
-  content: string;
-  images?: string[];
-  data?: any;
-}
 
 function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string) => Promise<void> }) {
   const [selectedClass, setSelectedClass] = useState('');
@@ -113,9 +109,26 @@ function MindMapView({ data, onView }: { data: any; onView: (d: any) => void }) 
 }
 
 export default function TeacherOCRPage() {
-  const [messages, setMessages] = useState<ChatMsg[]>([
-    { role: 'assistant', content: 'Hello! I\'m your AI teaching assistant. Upload textbook images and tell me what you\'d like to create — a quiz, assignment, mind map, or just ask a question!' },
-  ]);
+  const user = useAuthStore((s) => s.user);
+  const userId = user?.id || 'anonymous';
+  
+  const messages = useChatStore((s) => s.teacherOcrMessages[userId] || []);
+  const setTeacherOcrMessages = useChatStore((s) => s.setTeacherOcrMessages);
+  const clearMessages = useChatStore((s) => s.clearTeacherOcrMessages);
+
+  const setMessages = useCallback((action: React.SetStateAction<ChatMsg[]>) => {
+    if (typeof action === 'function') {
+      setTeacherOcrMessages(userId, action(messages));
+    } else {
+      setTeacherOcrMessages(userId, action);
+    }
+  }, [messages, userId, setTeacherOcrMessages]);
+
+  useEffect(() => {
+    if (messages.length === 0) {
+      setTeacherOcrMessages(userId, [{ role: 'assistant', content: 'Hello! I\'m your AI teaching assistant. Upload textbook images and tell me what you\'d like to create — a quiz, assignment, mind map, or just ask a question!' }]);
+    }
+  }, [messages.length, userId, setTeacherOcrMessages]);
   const [input, setInput] = useState('');
   const [pendingImages, setPendingImages] = useState<string[]>([]);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);

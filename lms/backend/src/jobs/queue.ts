@@ -1,54 +1,45 @@
 import { env } from '../config/env';
 import { logger } from '../utils/logger';
 
-const hasRedis = !!env.REDIS_URL;
+let boss: any = null;
+let bossReady = false;
 
-let uploadQueue: any = null;
-let conceptQueue: any = null;
-let addUploadJob: (textbookId: string, storagePath: string) => Promise<void>;
-let removeUploadJob: (textbookId: string) => Promise<void>;
-
-if (hasRedis) {
-  const { Queue } = require('bullmq');
-  const { getRedisConnection } = require('../config/redis');
-  const connection = getRedisConnection();
-
-  uploadQueue = new Queue('uploadQueue', { connection });
-  conceptQueue = new Queue('conceptQueue', { connection });
-
-  logger.info('BullMQ queues initialized: uploadQueue, conceptQueue');
-
-  addUploadJob = async function (textbookId: string, storagePath: string) {
-    logger.info('Adding upload job to queue', { textbookId, storagePath });
-    await uploadQueue.add(
-      'process-pdf',
-      { textbookId, storagePath },
-      {
-        jobId: `upload_${textbookId}`,
-        removeOnComplete: true,
-        removeOnFail: false,
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 5000 },
-      }
-    );
-  };
-
-  removeUploadJob = async function (textbookId: string) {
-    const jobId = `upload_${textbookId}`;
-    const job = await uploadQueue.getJob(jobId);
-    if (job) {
-      await job.remove();
-      logger.info('Removed upload job from queue', { textbookId });
-    }
-  };
-} else {
-  logger.info('No REDIS_URL configured — BullMQ queues disabled');
-  addUploadJob = async function (_textbookId: string, _storagePath: string) {
-    logger.info('BullMQ not available (no Redis), skipping job');
-  };
-  removeUploadJob = async function (_textbookId: string) {
-    // noop
-  };
+async function getBoss() {
+  if (bossReady) return boss;
+  if (!env.DATABASE_URL) return null;
+  try {
+    const PgBoss = require('pg-boss');
+    boss = new PgBoss(env.DATABASE_URL);
+    await boss.start();
+    bossReady = true;
+    logger.info('pg-boss started');
+    return boss;
+  } catch (err) {
+    logger.error('pg-boss failed to start, falling back to inline processing', { err });
+    return null;
+  }
 }
 
-export { addUploadJob, removeUploadJob, uploadQueue, conceptQueue };
+export async function addUploadJob(textbookId: string, storagePath: string) {
+  const b = await getBoss();
+  if (!b) {
+    logger.info('pg-boss not available, skipping job send. Textbook will process inline.', { textbookId });
+    return;
+  }
+  await b.send('uploadQueue', { textbookId, storagePath }, {
+    jobId: `upload_${textbookId}`,
+    retryLimit: 3,
+    retryDelay: 5,
+    onComplete: true,
+  });
+  logger.info('Upload job sent to pg-boss', { textbookId });
+}
+
+export async function removeUploadJob(textbookId: string) {
+  const b = await getBoss();
+  if (!b) return;
+  await b.cancel('uploadQueue', `upload_${textbookId}`);
+  logger.info('Upload job cancelled', { textbookId });
+}
+
+export { getBoss };

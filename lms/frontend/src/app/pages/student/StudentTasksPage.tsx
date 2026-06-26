@@ -5,8 +5,6 @@ import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { useQuery } from '@tanstack/react-query';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/firebase/config';
 import api from '@/services/api';
 import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/lib/motion';
 import { getAllSubjects, getClass } from '@/services/dataService';

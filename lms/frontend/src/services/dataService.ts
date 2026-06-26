@@ -1,5 +1,4 @@
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, Timestamp } from 'firebase/firestore';
-import { db } from '@/firebase/config';
+import { supabase } from '@/firebase/config';
 import { logAudit } from '@/services/auditService';
 
 export interface Subject {
@@ -92,37 +91,34 @@ const CLASSES_COLLECTION = 'classes';
 const GRADES_COLLECTION = 'grades';
 const NOTIFICATIONS_COLLECTION = 'notifications';
 
-/** Fetch all subjects from Firestore. */
+/** Fetch all subjects from Supabase. */
 export async function getAllSubjects(): Promise<Subject[]> {
-  const q = query(collection(db, SUBJECTS_COLLECTION));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Subject));
+  const { data } = await supabase.from(SUBJECTS_COLLECTION).select('*');
+  return (data || []) as Subject[];
 }
 
 /** Fetch a single subject by id. */
 export async function getSubject(id: string): Promise<Subject | null> {
-  const docRef = doc(db, SUBJECTS_COLLECTION, id);
-  const snap = await getDoc(docRef);
-  if (!snap.exists()) return null;
-  return { id: snap.id, ...snap.data() } as Subject;
+  const { data } = await supabase.from(SUBJECTS_COLLECTION).select('*').eq('id', id).maybeSingle();
+  return data as Subject | null;
 }
 
 /** Fetch all students belonging to a class. */
 export async function getStudentsByClass(classId: string): Promise<UserDoc[]> {
-  const q = query(collection(db, 'users'), where('classId', '==', classId));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserDoc));
+  const { data } = await supabase.from('users').select('*').eq('class_id', classId);
+  return (data || []) as UserDoc[];
 }
 
 /** Create an enrollment linking a student to a course (subject). */
 export async function createEnrollment(studentId: string, courseId: string): Promise<void> {
   const eid = `${courseId}_${studentId}`;
-  await setDoc(doc(db, ENROLLMENT_COLLECTION, eid), {
+  await supabase.from(ENROLLMENT_COLLECTION).upsert({
+    id: eid,
     studentId,
     courseId,
     status: 'active',
     progress: 0,
-    enrolledAt: Timestamp.now().toDate().toISOString(),
+    enrolledAt: new Date().toISOString(),
   });
   logAudit({
     action: 'enrollment.create',
@@ -136,92 +132,67 @@ export async function createEnrollment(studentId: string, courseId: string): Pro
 
 /** Get all enrollments for a given student. */
 export async function getEnrollmentsByStudent(studentId: string): Promise<Enrollment[]> {
-  const q = query(collection(db, ENROLLMENT_COLLECTION), where('studentId', '==', studentId));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as unknown as Enrollment));
+  const { data } = await supabase.from(ENROLLMENT_COLLECTION).select('*').eq('studentId', studentId);
+  return (data || []) as unknown as Enrollment[];
 }
 
 /** Get classes by an array of class ids. */
 export async function getClassesByIds(ids: string[]): Promise<ClassEntry[]> {
   if (ids.length === 0) return [];
-  const q = query(collection(db, CLASSES_COLLECTION), where('__name__', 'in', ids));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as unknown as ClassEntry));
+  const { data } = await supabase.from(CLASSES_COLLECTION).select('*').in('id', ids);
+  return (data || []) as unknown as ClassEntry[];
 }
 
 /** Fetch a single class by id. */
 export async function getClass(id: string): Promise<ClassEntry | null> {
-  const docRef = doc(db, CLASSES_COLLECTION, id);
-  const snap = await getDoc(docRef);
-  if (!snap.exists()) return null;
-  return { id: snap.id, ...snap.data() } as unknown as ClassEntry;
+  const { data } = await supabase.from(CLASSES_COLLECTION).select('*').eq('id', id).maybeSingle();
+  return data as unknown as ClassEntry | null;
 }
 
-/** Fetch all classes from Firestore. */
+/** Fetch all classes from Supabase. */
 export async function getAllClasses(): Promise<ClassEntry[]> {
-  const snap = await getDocs(collection(db, CLASSES_COLLECTION));
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as unknown as ClassEntry));
+  const { data } = await supabase.from(CLASSES_COLLECTION).select('*');
+  return (data || []) as unknown as ClassEntry[];
 }
 
-/** Fetch all enrollment records from Firestore. */
+/** Fetch all enrollment records from Supabase. */
 export async function getAllEnrollments(): Promise<Enrollment[]> {
-  const snap = await getDocs(collection(db, ENROLLMENT_COLLECTION));
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as unknown as Enrollment));
+  const { data } = await supabase.from(ENROLLMENT_COLLECTION).select('*');
+  return (data || []) as unknown as Enrollment[];
 }
 
-/** Fetch all grade records from Firestore. */
+/** Fetch all grade records from Supabase. */
 export async function getAllGrades(): Promise<GradeEntry[]> {
-  const snap = await getDocs(collection(db, GRADES_COLLECTION));
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as unknown as GradeEntry));
+  const { data } = await supabase.from(GRADES_COLLECTION).select('*');
+  return (data || []) as unknown as GradeEntry[];
 }
 
 /** Fetch grades for a specific student. */
 export async function getGradesByStudent(studentId: string): Promise<GradeEntry[]> {
-  const q = query(collection(db, GRADES_COLLECTION), where('studentId', '==', studentId));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as unknown as GradeEntry));
+  const { data } = await supabase.from(GRADES_COLLECTION).select('*').eq('studentId', studentId);
+  return (data || []) as unknown as GradeEntry[];
 }
 
 /** Fetch notifications for a specific user. */
 export async function getNotificationsByUser(userId: string): Promise<NotificationItem[]> {
-  const q = query(
-    collection(db, NOTIFICATIONS_COLLECTION),
-    where('userId', '==', userId),
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as NotificationItem));
+  const { data } = await supabase.from(NOTIFICATIONS_COLLECTION).select('*').eq('userId', userId);
+  return (data || []) as NotificationItem[];
 }
 
 /** Get count of unread notifications for a user. */
 export async function getUnreadNotificationsCount(userId: string): Promise<number> {
-  const q = query(
-    collection(db, NOTIFICATIONS_COLLECTION),
-    where('userId', '==', userId),
-    where('read', '==', false),
-  );
-  const snap = await getDocs(q);
-  return snap.size;
+  const { count } = await supabase.from(NOTIFICATIONS_COLLECTION).select('*', { count: 'exact', head: true }).eq('userId', userId).eq('read', false);
+  return count || 0;
 }
 
 /** Mark a single notification as read. */
 export async function markNotificationRead(notificationId: string): Promise<void> {
-  const docRef = doc(db, NOTIFICATIONS_COLLECTION, notificationId);
-  await updateDoc(docRef, { read: true, readAt: Timestamp.now().toDate().toISOString() });
+  await supabase.from(NOTIFICATIONS_COLLECTION).update({ read: true, readAt: new Date().toISOString() }).eq('id', notificationId);
 }
 
 /** Mark all unread notifications as read for a user. */
 export async function markAllNotificationsRead(userId: string): Promise<void> {
-  const q = query(
-    collection(db, NOTIFICATIONS_COLLECTION),
-    where('userId', '==', userId),
-    where('read', '==', false),
-  );
-  const snap = await getDocs(q);
-  const batch = snap.docs.map((d) => updateDoc(doc(db, NOTIFICATIONS_COLLECTION, d.id), {
-    read: true,
-    readAt: Timestamp.now().toDate().toISOString(),
-  }));
-  await Promise.all(batch);
+  await supabase.from(NOTIFICATIONS_COLLECTION).update({ read: true, readAt: new Date().toISOString() }).eq('userId', userId).eq('read', false);
 }
 
 // ── Assignments ──
@@ -250,16 +221,14 @@ export interface AssignmentItem {
 
 /** Fetch assignments for a specific subject. */
 export async function getAssignmentsBySubject(subjectId: string): Promise<AssignmentItem[]> {
-  const q = query(collection(db, 'assignments'), where('subjectId', '==', subjectId));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as AssignmentItem));
+  const { data } = await supabase.from('assignments').select('*').eq('subjectId', subjectId);
+  return (data || []) as AssignmentItem[];
 }
 
 /** Fetch a single assignment by id. */
 export async function getAssignment(id: string): Promise<AssignmentItem | null> {
-  const snap = await getDoc(doc(db, 'assignments', id));
-  if (!snap.exists()) return null;
-  return { id: snap.id, ...snap.data() } as AssignmentItem;
+  const { data } = await supabase.from('assignments').select('*').eq('id', id).maybeSingle();
+  return data as AssignmentItem | null;
 }
 
 // ── Submissions ──
@@ -280,9 +249,8 @@ export interface SubmissionItem {
 
 /** Fetch submissions for a specific assignment. */
 export async function getSubmissionsByAssignment(assignmentId: string): Promise<SubmissionItem[]> {
-  const q = query(collection(db, 'submissions'), where('assignmentId', '==', assignmentId));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as SubmissionItem));
+  const { data } = await supabase.from('submissions').select('*').eq('assignmentId', assignmentId);
+  return (data || []) as SubmissionItem[];
 }
 
 // ── Exams ──
@@ -309,16 +277,14 @@ export interface ExamItem {
 
 /** Fetch exams for a specific subject. */
 export async function getExamsBySubject(subjectId: string): Promise<ExamItem[]> {
-  const q = query(collection(db, 'exams'), where('subjectId', '==', subjectId));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as ExamItem));
+  const { data } = await supabase.from('exams').select('*').eq('subjectId', subjectId);
+  return (data || []) as ExamItem[];
 }
 
 /** Fetch a single exam by id. */
 export async function getExam(id: string): Promise<ExamItem | null> {
-  const snap = await getDoc(doc(db, 'exams', id));
-  if (!snap.exists()) return null;
-  return { id: snap.id, ...snap.data() } as ExamItem;
+  const { data } = await supabase.from('exams').select('*').eq('id', id).maybeSingle();
+  return data as ExamItem | null;
 }
 
 // ── Corrections ──
@@ -336,16 +302,14 @@ export interface CorrectionItem {
 
 /** Fetch corrections for a specific student. */
 export async function getCorrectionsByStudent(studentId: string): Promise<CorrectionItem[]> {
-  const q = query(collection(db, 'corrections'), where('studentId', '==', studentId));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as CorrectionItem));
+  const { data } = await supabase.from('corrections').select('*').eq('studentId', studentId);
+  return (data || []) as CorrectionItem[];
 }
 
 /** Fetch corrections for a specific exam. */
 export async function getCorrectionsByExam(examId: string): Promise<CorrectionItem[]> {
-  const q = query(collection(db, 'corrections'), where('examId', '==', examId));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as CorrectionItem));
+  const { data } = await supabase.from('corrections').select('*').eq('examId', examId);
+  return (data || []) as CorrectionItem[];
 }
 
 // ── Quizzes ──
@@ -366,18 +330,18 @@ export interface QuizItem {
 
 /** Fetch a single quiz by id. Checks quizzes and quizV2 collections. */
 export async function getQuiz(id: string): Promise<QuizItem | null> {
-  let snap = await getDoc(doc(db, 'quizzes', id));
-  if (snap.exists()) return { id: snap.id, ...snap.data() } as QuizItem;
-  snap = await getDoc(doc(db, 'quizV2', id));
-  if (!snap.exists()) return null;
-  const quizData = snap.data() as Record<string, any>;
-  const result: QuizItem = { id: snap.id, ...quizData } as QuizItem;
-  if (quizData.textbookId && quizData.chapterId && quizData.conceptId) {
+  const { data: quizData } = await supabase.from('quizzes').select('*').eq('id', id).maybeSingle();
+  if (quizData) return quizData as unknown as QuizItem;
+  const { data: v2Data } = await supabase.from('quizV2').select('*').eq('id', id).maybeSingle();
+  if (!v2Data) return null;
+  const result: QuizItem = v2Data as unknown as QuizItem;
+  if (v2Data.textbookId && v2Data.chapterId && v2Data.conceptId) {
     try {
-      const questionsSnap = await getDocs(
-        collection(db, 'textbooks', quizData.textbookId, 'chapters', quizData.chapterId, 'concepts', quizData.conceptId, 'questions'),
-      );
-      result.questions = questionsSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as any[];
+      const { data: questions } = await supabase
+        .from('concept_questions')
+        .select('*')
+        .eq('concept_id', v2Data.conceptId);
+      result.questions = (questions || []) as any[];
     } catch { /* questions not available */ }
   }
   return result;
@@ -400,9 +364,8 @@ export interface TimetableEntry {
 
 /** Fetch timetable entries for a specific class. */
 export async function getTimetableByClass(classId: string): Promise<TimetableEntry[]> {
-  const q = query(collection(db, 'timetable'), where('classId', '==', classId));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as TimetableEntry));
+  const { data } = await supabase.from('timetable').select('*').eq('classId', classId);
+  return (data || []) as TimetableEntry[];
 }
 
 // ── Users ──
@@ -437,22 +400,55 @@ export interface UserDoc {
 
 /** Fetch all users with a specific role. */
 export async function getUserByRole(role: string): Promise<UserDoc[]> {
-  const q = query(collection(db, 'users'), where('role', '==', role));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserDoc));
+  const { data } = await supabase.from('users').select('*').eq('role', role);
+  return (data || []).map(mapUserRowToDoc);
 }
 
 /** Fetch a single user by id. */
 export async function getUser(id: string): Promise<UserDoc | null> {
-  const snap = await getDoc(doc(db, 'users', id));
-  if (!snap.exists()) return null;
-  return { id: snap.id, ...snap.data() } as UserDoc;
+  const { data } = await supabase.from('users').select('*').eq('id', id).maybeSingle();
+  return data ? mapUserRowToDoc(data) : null;
 }
 
-/** Fetch all users from Firestore. */
+/** Fetch all users from Supabase. */
 export async function getAllUsers(): Promise<UserDoc[]> {
-  const snap = await getDocs(collection(db, 'users'));
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserDoc));
+  const { data } = await supabase.from('users').select('*');
+  return (data || []).map(mapUserRowToDoc);
+}
+
+/** Map SQL snake_case row to frontend camelCase UserDoc. */
+export function mapUserRowToDoc(row: any): UserDoc {
+  return {
+    ...row,
+    displayName: row.display_name || row.displayName,
+    photoURL: row.photo_url || row.photoURL,
+    isActive: row.is_active !== undefined ? row.is_active : row.isActive,
+    classIds: row.class_ids || row.classIds,
+    classId: row.class_id || row.classId,
+    studentId: row.student_id || row.studentId,
+    rollNo: row.roll_no || row.rollNo,
+    academicYear: row.academic_year || row.academicYear,
+    childrenIds: row.children_ids || row.childrenIds,
+    lastActiveDate: row.last_active_date || row.lastActiveDate,
+    createdAt: row.created_at || row.createdAt,
+    updatedAt: row.updated_at || row.updatedAt,
+  };
+}
+
+/** Map frontend camelCase UserDoc to SQL snake_case row. */
+export function mapUserDocToRow(doc: Partial<UserDoc>): any {
+  const row: any = { ...doc };
+  if (doc.displayName !== undefined) { row.display_name = doc.displayName; delete row.displayName; }
+  if (doc.photoURL !== undefined) { row.photo_url = doc.photoURL; delete row.photoURL; }
+  if (doc.isActive !== undefined) { row.is_active = doc.isActive; delete row.isActive; }
+  if (doc.classIds !== undefined) { row.class_ids = doc.classIds; delete row.classIds; }
+  if (doc.classId !== undefined) { row.class_id = doc.classId; delete row.classId; }
+  if (doc.studentId !== undefined) { row.student_id = doc.studentId; delete row.studentId; }
+  if (doc.rollNo !== undefined) { row.roll_no = doc.rollNo; delete row.rollNo; }
+  if (doc.academicYear !== undefined) { row.academic_year = doc.academicYear; delete row.academicYear; }
+  if (doc.childrenIds !== undefined) { row.children_ids = doc.childrenIds; delete row.childrenIds; }
+  if (doc.lastActiveDate !== undefined) { row.last_active_date = doc.lastActiveDate; delete row.lastActiveDate; }
+  return row;
 }
 
 /** Update a user document, stripping undefined fields and merging with existing data. */
@@ -460,10 +456,8 @@ export async function updateUser(id: string, data: Partial<UserDoc>): Promise<vo
   const cleanData = Object.fromEntries(
     Object.entries(data).filter(([_, v]) => v !== undefined)
   );
-  await setDoc(doc(db, 'users', id), {
-    ...cleanData,
-    updatedAt: new Date().toISOString(),
-  }, { merge: true });
+  const rowData = mapUserDocToRow(cleanData);
+  await supabase.from('users').update({ ...rowData, updated_at: new Date().toISOString() }).eq('id', id);
   logAudit({
     action: 'profile.update',
     targetId: id,
@@ -491,14 +485,12 @@ export interface LessonItem {
 
 /** Fetch lessons belonging to a specific chapter. */
 export async function getLessonsByChapter(chapterId: string): Promise<LessonItem[]> {
-  const q = query(collection(db, 'lessons'), where('chapterId', '==', chapterId));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as LessonItem));
+  const { data } = await supabase.from('lessons').select('*').eq('chapterId', chapterId);
+  return (data || []) as LessonItem[];
 }
 
 /** Fetch a single lesson by id. */
 export async function getLesson(id: string): Promise<LessonItem | null> {
-  const snap = await getDoc(doc(db, 'lessons', id));
-  if (!snap.exists()) return null;
-  return { id: snap.id, ...snap.data() } as LessonItem;
+  const { data } = await supabase.from('lessons').select('*').eq('id', id).maybeSingle();
+  return data as LessonItem | null;
 }

@@ -1,12 +1,9 @@
 import { searchVideos } from './youtube.service';
 import { getEmbedding, cosineSimilarity } from './transformers.service';
+import { getSupabaseAdmin } from './supabase';
 import { logger } from '../utils/logger';
 import { chatCompletion } from './ai.service';
 
-/**
- * Generate 3-4 natural search queries for a concept using AI.
- * Falls back to basic variations of the concept title if AI is unavailable.
- */
 async function generateSearchQueries(conceptTitle: string, subjectName: string): Promise<string[]> {
   try {
     const rawResponse = await chatCompletion({
@@ -36,7 +33,6 @@ async function generateSearchQueries(conceptTitle: string, subjectName: string):
     logger.warn('Failed to generate search queries using LLM, using fallbacks', { conceptTitle, err });
   }
 
-  // Fallbacks
   return [
     `${conceptTitle} ${subjectName} tutorial`,
     `${conceptTitle} explained`,
@@ -45,21 +41,45 @@ async function generateSearchQueries(conceptTitle: string, subjectName: string):
   ];
 }
 
-/**
- * Search and rank YouTube videos for a concept using local embeddings.
- */
 export async function searchAndRankVideos(
   conceptTitle: string,
   conceptSummary: string,
   subjectName: string,
-  maxRankCount = 3
+  maxRankCount = 3,
+  conceptId?: string,
 ) {
   logger.info('Starting search and rank videos for concept', { conceptTitle, subjectName });
+
+  // Try pgvector first if conceptId is provided
+  if (conceptId) {
+    try {
+      const supabase = getSupabaseAdmin();
+      if (supabase) {
+        const conceptText = `${conceptTitle}. ${conceptSummary}`.slice(0, 1000);
+        const queryEmbedding = await getEmbedding(conceptText);
+
+        const { data: existing } = await supabase.rpc('pgvector_search', {
+          query_embedding: queryEmbedding,
+          match_threshold: 0.5,
+          match_count: maxRankCount,
+          input_concept_id: conceptId,
+        });
+
+        if (existing && existing.length > 0) {
+          logger.info('Video ranking returned from pgvector', { conceptTitle, count: existing.length });
+          return existing;
+        }
+      }
+    } catch (err) {
+      logger.warn('pgvector search unavailable, falling back to real-time search', { conceptTitle, err });
+    }
+  }
+
+  // Real-time YouTube search + local embedding ranking
   const queries = await generateSearchQueries(conceptTitle, subjectName);
-  
+
   const videoMap = new Map<string, any>();
 
-  // Fetch from YouTube for each query (deduplicating by videoId)
   for (const query of queries) {
     try {
       const results = await searchVideos(query, 5);
@@ -79,7 +99,6 @@ export async function searchAndRankVideos(
   }
 
   try {
-    // Generate embedding for the concept context
     const conceptText = `${conceptTitle}. ${conceptSummary}`.slice(0, 1000);
     const conceptVector = await getEmbedding(conceptText);
 
@@ -89,24 +108,15 @@ export async function searchAndRankVideos(
           const videoText = `${video.title}. ${video.description}`.slice(0, 1000);
           const videoVector = await getEmbedding(videoText);
           const score = cosineSimilarity(conceptVector, videoVector);
-          
-          return {
-            ...video,
-            score,
-            embedding: videoVector,
-          };
+
+          return { ...video, score, embedding: videoVector };
         } catch (err) {
           logger.error('Error generating embedding for video comparison', { title: video.title, err });
-          return {
-            ...video,
-            score: 0.1, // low default score
-            embedding: [],
-          };
+          return { ...video, score: 0.1, embedding: [] };
         }
       })
     );
 
-    // Sort descending by score
     scoredVideos.sort((a, b) => b.score - a.score);
 
     logger.info('Video ranking complete', {

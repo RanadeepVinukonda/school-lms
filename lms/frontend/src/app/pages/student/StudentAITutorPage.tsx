@@ -8,12 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { sendChatMessage } from '@/services/aiService';
 
-interface ChatMsg {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-}
+import { useAuthStore } from '@/store/authStore';
+import { useChatStore, ChatMsg } from '@/store/chatStore';
 
 const suggestedQuestions = [
   'Explain the concept of photosynthesis',
@@ -22,8 +18,10 @@ const suggestedQuestions = [
   'Explain Newton\'s laws of motion',
 ];
 
-function formatTime(d: Date) {
-  return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+function formatTime(d: Date | string | undefined) {
+  if (!d) return '';
+  const date = typeof d === 'string' ? new Date(d) : d;
+  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 }
 
 function CodeBlock({ language, code }: { language: string; code: string }) {
@@ -315,13 +313,13 @@ function LoadingDots() {
 }
 
 export default function StudentAITutorPage() {
-  const [messages, setMessages] = useState<ChatMsg[]>(() => {
-    try {
-      const saved = localStorage.getItem('ai-tutor-chat');
-      if (saved) return JSON.parse(saved, (key, val) => key === 'timestamp' ? new Date(val) : val);
-    } catch { /* ignore */ }
-    return [];
-  });
+  const user = useAuthStore((s) => s.user);
+  const userId = user?.id || 'anonymous';
+  
+  const messages = useChatStore((s) => s.aiTutorMessages[userId] || []);
+  const addMessage = useChatStore((s) => s.addAiTutorMessage);
+  const clearMessages = useChatStore((s) => s.clearAiTutorMessages);
+
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -339,12 +337,6 @@ export default function StudentAITutorPage() {
     scrollToBottom();
   }, [messages, isLoading, scrollToBottom]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('ai-tutor-chat', JSON.stringify(messages));
-    } catch { /* ignore */ }
-  }, [messages]);
-
   const sendMessage = useCallback(async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
@@ -356,8 +348,7 @@ export default function StudentAITutorPage() {
       content: trimmed,
       timestamp: new Date(),
     };
-
-    setMessages(prev => [...prev, userMsg]);
+    addMessage(userId, userMsg);
     setInput('');
     setIsLoading(true);
 
@@ -365,19 +356,18 @@ export default function StudentAITutorPage() {
 
     try {
       const { reply } = await sendChatMessage(trimmed, history);
-      const aiMsg: ChatMsg = {
+      addMessage(userId, {
         id: crypto.randomUUID(),
         role: 'assistant',
         content: reply,
         timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, aiMsg]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      });
+    } catch (err: any) {
+      setError(err.message || 'Failed to get response');
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, messages]);
+  }, [isLoading, messages, userId, addMessage]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -445,10 +435,9 @@ export default function StudentAITutorPage() {
   }, []);
 
   const clearChat = useCallback(() => {
-    setMessages([]);
+    clearMessages(userId);
     setError(null);
-    localStorage.removeItem('ai-tutor-chat');
-  }, []);
+  }, [userId, clearMessages]);
 
   return (
     <>

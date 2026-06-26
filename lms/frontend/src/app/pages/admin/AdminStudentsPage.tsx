@@ -127,8 +127,8 @@ export default function AdminStudentsPage() {
   const filtered = useMemo(
     () =>
       students.filter((s) => {
-        const nameMatch = s.displayName.toLowerCase().includes(search.toLowerCase());
-        const emailMatch = s.email.toLowerCase().includes(search.toLowerCase());
+        const nameMatch = (s.displayName || '').toLowerCase().includes(search.toLowerCase());
+        const emailMatch = (s.email || '').toLowerCase().includes(search.toLowerCase());
         const classMatch = classFilter === 'all' || s.classId === classFilter;
         return (nameMatch || emailMatch) && classMatch;
       }),

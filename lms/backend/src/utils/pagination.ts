@@ -1,4 +1,4 @@
-import { Query } from 'firebase-admin/firestore';
+import { Query } from '../firebase/firestore';
 
 export interface PaginationParams {
   page: number;

@@ -2,7 +2,6 @@ import dotenv from 'dotenv';
 import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-import { initializeFirebase } from '../config/firebase';
 import { getAdminFirestore } from '../firebase/admin';
 
 interface Question {
@@ -1521,7 +1520,6 @@ const CHAPTERS: ChapterData[] = [
 ];
 
 async function main() {
-  initializeFirebase();
   const db = getAdminFirestore();
   const now = new Date().toISOString();
 

@@ -2,14 +2,22 @@ import { Request, Response } from 'express';
 import * as textbookService from '../services/textbook.service';
 import { sendSuccess, sendCreated } from '../utils/response';
 
+import fs from 'fs/promises';
+
 export async function createTextbook(req: Request, res: Response) {
-  const result = await textbookService.createTextbook({
-    ...req.body,
-    pdfBuffer: req.file?.buffer,
-    teacherId: req.user!.uid,
-    teacherRole: req.user!.role,
-  });
-  sendCreated(res, result, 'Textbook created');
+  try {
+    const result = await textbookService.createTextbook({
+      ...req.body,
+      pdfFilePath: req.file?.path,
+      teacherId: req.user!.uid,
+      teacherRole: req.user!.role,
+    });
+    sendCreated(res, result, 'Textbook created');
+  } finally {
+    if (req.file?.path) {
+      await fs.unlink(req.file.path).catch(() => {});
+    }
+  }
 }
 
 export async function getTextbook(req: Request, res: Response) {

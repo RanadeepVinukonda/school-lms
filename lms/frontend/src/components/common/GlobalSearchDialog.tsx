@@ -8,8 +8,7 @@ import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
 import { useQuery } from '@tanstack/react-query';
 import { getAllSubjects, getAllUsers } from '@/services/dataService';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/firebase/config';
+import { supabase } from '@/firebase/config';
 import type { UserRole, Subject } from '@/types';
 import type { AssignmentItem, ExamItem, UserDoc, LessonItem, QuizItem } from '@/services/dataService';
 
@@ -102,20 +101,20 @@ export function GlobalSearchDialog({ isOpen, onClose }: Props) {
   const { data: searchData } = useQuery({
     queryKey: ['global-search-data'],
     queryFn: async (): Promise<SearchData> => {
-      const [subjects, users, assignmentsSnap, examsSnap, lessonsSnap] = await Promise.all([
+      const [subjects, users, assignmentsData, examsData, lessonsData] = await Promise.all([
         getAllSubjects(),
         getAllUsers(),
-        getDocs(collection(db, 'assignments')),
-        getDocs(collection(db, 'exams')),
-        getDocs(collection(db, 'lessons')),
+        supabase.from('assignments').select('*'),
+        supabase.from('exams').select('*'),
+        supabase.from('lessons').select('*'),
       ]);
 
       return {
         subjects: subjects as unknown as Subject[],
         users,
-        assignments: assignmentsSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as AssignmentItem),
-        exams: examsSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as ExamItem),
-        lessons: lessonsSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as LessonItem),
+        assignments: (assignmentsData.data || []) as unknown as AssignmentItem[],
+        exams: (examsData.data || []) as unknown as ExamItem[],
+        lessons: (lessonsData.data || []) as unknown as LessonItem[],
       };
     },
     enabled: isOpen,

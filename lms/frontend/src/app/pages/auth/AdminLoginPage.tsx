@@ -13,9 +13,7 @@ import { Icon } from '@/components/ui/Icon';
 import { pageTransition } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
-import { loginUser } from '@/firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/firebase/config';
+import { supabase } from '@/firebase/config';
 import { cardStackReveal } from '@/lib/motion';
 
 const adminLoginSchema = z.object({
@@ -32,6 +30,7 @@ type AdminLoginFormData = z.infer<typeof adminLoginSchema>;
 export default function AdminLoginPage() {
   const navigate = useNavigate();
   const setUser = useAuthStore((s) => s.setUser);
+  const setToken = useAuthStore((s) => s.setToken);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
@@ -47,26 +46,29 @@ export default function AdminLoginPage() {
   async function onSubmit(data: AdminLoginFormData) {
     setError('');
     try {
-      const firebaseUser = await loginUser(data.email, data.password);
-      const docRef = doc(db, 'users', firebaseUser.uid);
-      const snap = await getDoc(docRef);
-      if (!snap.exists()) {
+      const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+      if (signInError || !authData.user) throw signInError || new Error('Login failed');
+      setToken(authData.session?.access_token || '');
+      const { data: profileData } = await supabase.from('users').select('*').eq('id', authData.user.id).maybeSingle();
+      if (!profileData) {
         setError('User profile not found. Please contact your administrator.');
         return;
       }
-      const profileData = snap.data() as Record<string, unknown>;
       if (profileData.role !== 'admin' && profileData.role !== 'super_admin') {
         setError('This account is not an admin account. Please use the correct login page.');
         return;
       }
       setUser({
-        id: snap.id,
-        email: (profileData.email as string) || firebaseUser.email || '',
-        displayName: (profileData.displayName as string) || firebaseUser.displayName || '',
+        id: profileData.id,
+        email: profileData.email || authData.user.email || '',
+        displayName: profileData.display_name || '',
         role: profileData.role as 'admin' | 'super_admin',
-        isActive: profileData.isActive as boolean ?? true,
-        createdAt: (profileData.createdAt as string) || new Date().toISOString(),
-        updatedAt: (profileData.updatedAt as string) || new Date().toISOString(),
+        isActive: profileData.is_active ?? true,
+        createdAt: profileData.created_at || new Date().toISOString(),
+        updatedAt: profileData.updated_at || new Date().toISOString(),
       });
       navigate(ROUTES.ADMIN_DASHBOARD);
     } catch (err: any) {

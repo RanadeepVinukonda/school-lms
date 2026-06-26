@@ -1,10 +1,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
-import { initializeFirebase } from '../config/firebase';
 import { getAdminFirestore } from '../firebase/admin';
-
-initializeFirebase();
 const db = getAdminFirestore();
 
 async function main() {

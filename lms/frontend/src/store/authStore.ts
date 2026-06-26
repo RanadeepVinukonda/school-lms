@@ -1,8 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '@/firebase/config';
+import { supabase } from '@/firebase/config';
 import type { UserProfile, UserRole } from '@/types';
 
 interface AuthStore {
@@ -37,63 +35,77 @@ export const useAuthStore = create<AuthStore>()(
         return roles.includes(user.role);
       },
       logout: async () => {
-        await firebaseSignOut(auth);
+        await supabase.auth.signOut();
         set({ user: null, token: null, isAuthenticated: false, isLoading: false });
       },
       initialize: async () => {
         if (initialized) return;
         initialized = true;
         set({ isLoading: true });
-        onAuthStateChanged(auth, async (firebaseUser) => {
-          if (firebaseUser) {
-            try {
-              const token = await firebaseUser.getIdToken();
-              set({ token });
-              const docRef = doc(db, 'users', firebaseUser.uid);
-              const snap = await getDoc(docRef);
-              if (snap.exists()) {
-                const data = snap.data() as Record<string, unknown>;
-                const profile: UserProfile = {
-                  id: snap.id,
-                  email: (data.email as string) || firebaseUser.email || '',
-                  displayName: (data.displayName as string) || firebaseUser.displayName || '',
-                  role: (data.role as UserRole) || 'student',
-                  isActive: data.isActive as boolean ?? true,
-                  avatar: data.avatar as string | undefined,
-                  firstName: data.firstName as string | undefined,
-                  lastName: data.lastName as string | undefined,
-                  phone: data.phone as string | undefined,
-                  dateOfBirth: data.dateOfBirth as string | undefined,
-                  bio: data.bio as string | undefined,
-                  address: data.address as string | undefined,
-                  classIds: data.classIds as string[] | undefined,
-                  studentId: data.studentId as string | undefined,
-                  teacherId: data.teacherId as string | undefined,
-                  classId: (data.classId as string) || ((data.classIds as string[])?.[0]) || undefined,
-                  tutorialSeen: data.tutorialSeen as boolean | undefined,
-                  createdAt: (data.createdAt as string) || new Date().toISOString(),
-                  updatedAt: (data.updatedAt as string) || new Date().toISOString(),
-                };
-                set({ user: profile, isAuthenticated: true, isLoading: false });
-              } else {
-                set({ user: null, isAuthenticated: false, isLoading: false });
-              }
-            } catch (err) {
-              await firebaseSignOut(auth);
-              set({ user: null, token: null, isAuthenticated: false, isLoading: false });
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          try {
+            set({ token: session.access_token });
+            const { data: profile } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+
+            if (profile) {
+              const p = profile as Record<string, unknown>;
+              set({
+                user: {
+                  id: p.id as string,
+                  email: (p.email as string) || session.user.email || '',
+                  displayName: (p.display_name as string) || session.user.email?.split('@')[0] || 'User',
+                  role: (p.role as UserRole) || 'student',
+                  isActive: (p.is_active as boolean) ?? true,
+                  avatar: p.photo_url as string | undefined,
+                  firstName: p.first_name as string | undefined,
+                  lastName: p.last_name as string | undefined,
+                  phone: p.phone as string | undefined,
+                  dateOfBirth: p.date_of_birth as string | undefined,
+                  bio: p.bio as string | undefined,
+                  address: p.address as string | undefined,
+                  classIds: p.class_ids as string[] | undefined,
+                  studentId: p.student_id as string | undefined,
+                  teacherId: p.teacher_id as string | undefined,
+                  classId: (p.class_id as string) || ((p.class_ids as string[])?.[0]) || undefined,
+                  tutorialSeen: p.tutorial_seen as boolean | undefined,
+                  createdAt: (p.created_at as string) || new Date().toISOString(),
+                  updatedAt: (p.updated_at as string) || new Date().toISOString(),
+                },
+                isAuthenticated: true,
+                isLoading: false,
+              });
+            } else {
+              set({ user: null, isAuthenticated: false, isLoading: false });
             }
+          } catch {
+            await supabase.auth.signOut();
+            set({ user: null, token: null, isAuthenticated: false, isLoading: false });
+          }
+        } else {
+          set({ user: null, isAuthenticated: false, isLoading: false });
+        }
+
+        supabase.auth.onAuthStateChange((_event, session) => {
+          if (session) {
+            set({ token: session.access_token });
           } else {
-            set({ user: null, isAuthenticated: false, isLoading: false });
+            set({ user: null, token: null, isAuthenticated: false });
           }
         });
       },
     }),
     {
       name: 'lms-auth-v2',
-partialize: (state) => ({
-          token: state.token,
-          user: state.user,
-        }),
+      partialize: (state) => ({
+        token: state.token,
+        user: state.user,
+      }),
     },
   ),
 );

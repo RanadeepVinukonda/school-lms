@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyToken } from '../firebase/auth';
-import { getAdminFirestore } from '../firebase/admin';
+import { getSupabaseAdmin } from '../services/supabase';
 import { UnauthorizedError } from '../utils/errors';
 import { asyncHandler } from './asyncHandler';
 
@@ -18,7 +17,6 @@ declare global {
   }
 }
 
-/** Require a valid Firebase Auth token. Sets req.user with uid, email, role, and name. Falls back to Firestore for role if token lacks it. Throws UnauthorizedError if missing or invalid. */
 async function _authenticate(req: Request, _res: Response, next: NextFunction): Promise<void> {
   try {
     const authHeader = req.headers.authorization;
@@ -26,35 +24,34 @@ async function _authenticate(req: Request, _res: Response, next: NextFunction): 
       throw new UnauthorizedError('No token provided');
     }
 
-    const idToken = authHeader.split('Bearer ')[1];
-    if (!idToken) {
+    const token = authHeader.split('Bearer ')[1];
+    if (!token) {
       throw new UnauthorizedError('No token provided');
     }
 
-    const decoded = await verifyToken(idToken);
-
-    let role = decoded.role as string | undefined;
-    if (!role) {
-      try {
-        const snap = await getAdminFirestore().doc(`users/${decoded.uid}`).get();
-        if (snap.exists) {
-          role = snap.data()?.role as string | undefined;
-        }
-      } catch {
-        /* Firestore fallback not available */
-      }
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new UnauthorizedError('Supabase not configured');
     }
 
-    if (!role) {
-      throw new UnauthorizedError('User has no assigned role');
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user) {
+      throw new UnauthorizedError('Invalid or expired token');
     }
+
+    const { data: profile } = await supabase
+      .from('users')
+      .select('role, display_name')
+      .eq('id', user.id)
+      .single();
+
+    const role = (profile?.role as string) || 'student';
 
     req.user = {
-      ...decoded,
-      uid: decoded.uid,
-      email: decoded.email || '',
+      uid: user.id,
+      email: user.email || '',
       role,
-      name: decoded.name || decoded.email?.split('@')[0] || 'User',
+      name: profile?.display_name as string || user.email?.split('@')[0] || 'User',
     };
 
     next();
@@ -69,7 +66,6 @@ async function _authenticate(req: Request, _res: Response, next: NextFunction): 
 
 export const authenticate = asyncHandler(_authenticate);
 
-/** Optionally parse a Firebase Auth token if present. Does not throw on failure — req.user will remain undefined. */
 export function optionalAuth(req: Request, _res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -77,21 +73,39 @@ export function optionalAuth(req: Request, _res: Response, next: NextFunction): 
     return;
   }
 
-  const idToken = authHeader.split('Bearer ')[1];
-  if (!idToken) {
+  const token = authHeader.split('Bearer ')[1];
+  if (!token) {
     next();
     return;
   }
 
-  verifyToken(idToken)
-    .then((decoded) => {
-      req.user = {
-        ...decoded,
-        uid: decoded.uid,
-        email: decoded.email || '',
-        role: decoded.role as string,
-        name: decoded.name || decoded.email?.split('@')[0] || 'User',
-      };
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
+    next();
+    return;
+  }
+
+  supabase.auth.getUser(token)
+    .then(async ({ data: { user }, error }) => {
+      if (error || !user) {
+        next();
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('users')
+        .select('role, display_name')
+        .eq('id', user.id)
+        .single();
+
+      if (profile) {
+        req.user = {
+          uid: user.id,
+          email: user.email || '',
+          role: profile.role as string,
+          name: profile.display_name as string || user.email?.split('@')[0] || 'User',
+        };
+      }
       next();
     })
     .catch(() => {

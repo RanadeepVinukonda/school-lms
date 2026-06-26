@@ -48,15 +48,17 @@ export async function register(data: {
   return userData;
 }
 
-/** Authenticate a user by email and password using Firebase Auth REST API. */
+/** Authenticate a user by email and password using Supabase Auth REST API. */
 export async function login(email: string, password: string) {
-  const firebaseApiKey = env.FIREBASE_WEB_API_KEY;
   const response = await fetch(
-    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${firebaseApiKey}`,
+    `${env.SUPABASE_URL}/auth/v1/token?grant_type=password`,
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.toLowerCase(), password, returnSecureToken: true }),
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: env.SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ email: email.toLowerCase(), password }),
     }
   );
 
@@ -65,7 +67,8 @@ export async function login(email: string, password: string) {
     throw new UnauthorizedError('Invalid email or password');
   }
 
-  const userDoc = await collections.users().doc(data.localId).get();
+  const uid = data.user?.id;
+  const userDoc = await collections.users().doc(uid).get();
   if (!userDoc.exists) {
     throw new UnauthorizedError('User not found');
   }
@@ -75,12 +78,12 @@ export async function login(email: string, password: string) {
     throw new UnauthorizedError('Account is disabled');
   }
 
-  logger.info('User logged in', { uid: data.localId, email });
+  logger.info('User logged in', { uid, email });
 
   return {
     user: userData,
-    uid: data.localId,
-    token: data.idToken,
+    uid,
+    token: data.access_token,
   };
 }
 
@@ -160,20 +163,22 @@ export async function resetPassword(token: string, newPassword: string) {
   logger.info('Password reset completed', { uid: matchedDocId });
 }
 
-/** Change a user's password using Firebase Auth Admin SDK. */
+/** Change a user's password using Supabase Auth. Verifies current password via REST API, updates via Admin API. */
 export async function changePassword(uid: string, currentPassword: string, newPassword: string) {
   const userDoc = await collections.users().doc(uid).get();
   if (!userDoc.exists) {
     throw new NotFoundError('User not found');
   }
   const userData = userDoc.data()!;
-  const firebaseApiKey = env.FIREBASE_WEB_API_KEY;
   const response = await fetch(
-    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${firebaseApiKey}`,
+    `${env.SUPABASE_URL}/auth/v1/token?grant_type=password`,
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: userData.email, password: currentPassword, returnSecureToken: true }),
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: env.SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ email: userData.email, password: currentPassword }),
     }
   );
 

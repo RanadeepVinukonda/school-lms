@@ -1,16 +1,14 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { auth } from '@/firebase/config';
+import { supabase } from '@/firebase/config';
 import { API_BASE_URL } from '@/lib/constants';
 import { useAuthStore } from '@/store/authStore';
 import type { ApiError } from '@/types';
 
-/** Axios instance pre-configured with base URL, timeouts, and interceptors for auth tokens and error handling. */
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 600000,
 });
 
-/** Inject the Firebase Auth token from the auth store into every request. */
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = useAuthStore.getState().token;
@@ -30,16 +28,11 @@ let failedQueue: Array<{
 
 function processQueue(error: unknown, token: string | null = null) {
   failedQueue.forEach((p) => {
-    if (error) {
-      p.reject(error);
-    } else {
-      p.resolve(token);
-    }
+    if (error) { p.reject(error); } else { p.resolve(token); }
   });
   failedQueue = [];
 }
 
-/** On 401/403, attempt to refresh the Firebase token and retry the request. */
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError<ApiError>) => {
@@ -47,8 +40,7 @@ api.interceptors.response.use(
 
     if (
       (error.response?.status === 401 || error.response?.status === 403) &&
-      !originalRequest._retry &&
-      auth.currentUser
+      !originalRequest._retry
     ) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -65,11 +57,12 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const freshToken = await auth.currentUser.getIdToken(true);
-        useAuthStore.getState().setToken(freshToken);
-        processQueue(null, freshToken);
+        const { data: { session }, error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError || !session) throw refreshError || new Error('Session refresh failed');
+        useAuthStore.getState().setToken(session.access_token);
+        processQueue(null, session.access_token);
         if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${freshToken}`;
+          originalRequest.headers.Authorization = `Bearer ${session.access_token}`;
         }
         return api(originalRequest);
       } catch (refreshError) {

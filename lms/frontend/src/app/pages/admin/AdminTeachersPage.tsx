@@ -62,7 +62,7 @@ export default function AdminTeachersPage() {
     () =>
       teachers.filter((t) => {
         const q = search.toLowerCase();
-        return t.displayName.toLowerCase().includes(q) || t.email.toLowerCase().includes(q);
+        return (t.displayName || '').toLowerCase().includes(q) || (t.email || '').toLowerCase().includes(q);
       }),
     [teachers, search]
   );

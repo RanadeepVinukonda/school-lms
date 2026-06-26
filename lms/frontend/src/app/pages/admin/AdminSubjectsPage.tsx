@@ -19,8 +19,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { cardStackReveal } from '@/lib/motion';
-import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/firebase/config';
+import { supabase } from '@/firebase/config';
 import { getAllSubjects, getAllClasses } from '@/services/dataService';
 import { getAllTextbooks } from '@/services/textbookService';
 import { getSubjectDependencies } from '@/services/dependencyService';
@@ -124,7 +123,7 @@ export default function AdminSubjectsPage() {
       return;
     }
     try {
-      const docRef = await addDoc(collection(db, 'subjects'), {
+      const { data: newSubject } = await supabase.from('subjects').insert({
         name: form.name,
         code,
         icon: form.icon,
@@ -134,10 +133,10 @@ export default function AdminSubjectsPage() {
         isActive: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      });
+      }).select('id').single();
       logAudit({
         action: 'subject.create',
-        targetId: docRef.id,
+        targetId: newSubject?.id || '',
         targetType: 'subject',
         targetName: form.name,
         summary: `Created subject "${form.name}" (${code})`,
@@ -182,14 +181,14 @@ export default function AdminSubjectsPage() {
       toast.info(`${editTarget.name} is used by ${hasTextbooks} textbook${hasTextbooks !== 1 ? 's' : ''}. Changing ${fieldList} will update references across the system.`);
     }
     try {
-      await updateDoc(doc(db, 'subjects', editTarget.id), {
+      await supabase.from('subjects').update({
         name: form.name,
         code,
         icon: form.icon,
         category: form.category,
         classId: form.classId,
         updatedAt: new Date().toISOString(),
-      });
+      }).eq('id', editTarget.id);
       logAudit({
         action: 'subject.update',
         targetId: editTarget.id,
@@ -226,7 +225,7 @@ export default function AdminSubjectsPage() {
   const handleArchiveSubject = async () => {
     if (!deleteTarget) return;
     try {
-      await updateDoc(doc(db, 'subjects', deleteTarget.id), { isActive: false });
+      await supabase.from('subjects').update({ isActive: false }).eq('id', deleteTarget.id);
       logAudit({
         action: 'subject.archive',
         targetId: deleteTarget.id,
@@ -248,7 +247,7 @@ export default function AdminSubjectsPage() {
     if (!deleteTarget) return;
     setDeleteLoading(true);
     try {
-      await deleteDoc(doc(db, 'subjects', deleteTarget.id));
+      await supabase.from('subjects').delete().eq('id', deleteTarget.id);
       logAudit({
         action: 'subject.delete',
         targetId: deleteTarget.id,

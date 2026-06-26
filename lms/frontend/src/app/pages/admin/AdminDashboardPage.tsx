@@ -14,8 +14,7 @@ import { OptionsSelect } from '@/components/ui/select';
 import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { getAllUsers, getAllClasses, getAllGrades } from '@/services/dataService';
 import { analyticsService } from '@/services/analyticsService';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/firebase/config';
+import { supabase } from '@/firebase/config';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface ExamDoc { id: string; title: string; startDate?: string; endDate?: string; createdAt?: string; }
@@ -79,14 +78,14 @@ export default function AdminDashboardPage() {
   const { data: overviewData, isLoading: isOverviewLoading, isError: isOverviewError, refetch: refetchOverview } = useQuery({
     queryKey: ['admin-dashboard'],
     queryFn: async () => {
-      const [users, classes, grades, examsSnap, assignmentsSnap] = await Promise.all([
+      const [users, classes, grades, examsData, assignmentsData] = await Promise.all([
         getAllUsers(), getAllClasses(), getAllGrades(),
-        getDocs(collection(db, 'exams')),
-        getDocs(collection(db, 'assignments')),
+        supabase.from('exams').select('*'),
+        supabase.from('assignments').select('*'),
       ]);
 
-      const exams: ExamDoc[] = examsSnap.docs.map((d) => ({ id: d.id, ...d.data() } as ExamDoc));
-      const assignments: AssignmentDoc[] = assignmentsSnap.docs.map((d) => ({ id: d.id, ...d.data() } as AssignmentDoc));
+      const exams: ExamDoc[] = (examsData.data || []) as ExamDoc[];
+      const assignments: AssignmentDoc[] = (assignmentsData.data || []) as AssignmentDoc[];
 
       const studentCount = users.filter((u) => u.role === 'student').length;
       const teacherCount = users.filter((u) => u.role === 'teacher').length;

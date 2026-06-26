@@ -2,7 +2,6 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
 import { LoadingSkeleton } from '@/components/common/LoadingSkeleton';
-import { checkPermission } from '@/utils/permissions';
 import type { UserRole } from '@/types';
 
 function roleDashboard(role: UserRole): string {
@@ -23,11 +22,10 @@ function roleDashboard(role: UserRole): string {
 interface ProtectedRouteProps {
   children: React.ReactNode;
   roles?: UserRole[];
-  permission?: keyof typeof import('@/utils/permissions').PERMISSIONS;
   checkSetup?: boolean;
 }
 
-export function ProtectedRoute({ children, roles, permission, checkSetup }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, roles, checkSetup }: ProtectedRouteProps) {
   const { user, isAuthenticated, isLoading } = useAuthStore();
   const location = useLocation();
 
@@ -44,10 +42,6 @@ export function ProtectedRoute({ children, roles, permission, checkSetup }: Prot
   }
 
   if (roles && !roles.includes(user.role)) {
-    return <Navigate to={roleDashboard(user.role)} replace />;
-  }
-
-  if (permission && !checkPermission(user.role, permission)) {
     return <Navigate to={roleDashboard(user.role)} replace />;
   }
 

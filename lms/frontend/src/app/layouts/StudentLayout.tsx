@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/firebase/config';
+import { supabase } from '@/firebase/config';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
@@ -54,8 +53,8 @@ export default function StudentLayout() {
 
   useEffect(() => {
     if (!user) return;
-    getDoc(doc(db, 'users', user.id)).then((snap) => {
-      if (snap.exists() && snap.data().tutorialSeen === false) {
+    supabase.from('users').select('tutorial_seen').eq('id', user.id).maybeSingle().then(({ data }) => {
+      if (data && data.tutorial_seen === false) {
         setTutorialOpen(true);
       }
     }).catch(() => {});

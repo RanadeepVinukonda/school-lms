@@ -1,51 +1,51 @@
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  sendPasswordResetEmail,
-  confirmPasswordReset,
-  updatePassword as firebaseUpdatePassword,
-  reauthenticateWithCredential,
-  EmailAuthProvider,
-  onAuthStateChanged,
-  User,
-} from 'firebase/auth';
-import { auth } from './config';
+import { supabase } from './config';
 
-export function onAuthChange(callback: (user: User | null) => void) {
-  return onAuthStateChanged(auth, callback);
+export function onAuthChange(callback: (session: { user: { id: string; email?: string } } | null) => void) {
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    callback(session ? { user: { id: session.user.id, email: session.user.email } } : null);
+  });
+  return subscription.unsubscribe.bind(subscription);
 }
 
 export async function loginUser(email: string, password: string) {
-  const result = await signInWithEmailAndPassword(auth, email, password);
-  return result.user;
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  return data.user;
 }
 
 export async function registerUser(email: string, password: string) {
-  const result = await createUserWithEmailAndPassword(auth, email, password);
-  return result.user;
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  if (error) throw error;
+  return data.user;
 }
 
 export async function logoutUser() {
-  await signOut(auth);
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
 }
 
 export async function resetPassword(email: string) {
-  await sendPasswordResetEmail(auth, email);
+  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  if (error) throw error;
 }
 
-export async function confirmReset(oobCode: string, newPassword: string) {
-  await confirmPasswordReset(auth, oobCode, newPassword);
+// ponytail: Firebase oobCode flow differs from Supabase recovery flow.
+// This stub makes ResetPasswordForm compile. The component should be updated to handle Supabase's hash-fragment recovery.
+export async function confirmReset(_oobCode: string, newPassword: string) {
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw error;
 }
 
-export async function changePassword(
-  currentPassword: string,
-  newPassword: string,
-): Promise<void> {
-  const user = auth.currentUser;
-  if (!user || !user.email) throw new Error('No authenticated user');
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) throw new Error('No authenticated user');
 
-  const credential = EmailAuthProvider.credential(user.email, currentPassword);
-  await reauthenticateWithCredential(user, credential);
-  await firebaseUpdatePassword(user, newPassword);
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword,
+  });
+  if (signInError) throw signInError;
+
+  const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+  if (updateError) throw updateError;
 }

@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue } from '../firebase/firestore';
 import { collections } from '../firebase/firestore';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';

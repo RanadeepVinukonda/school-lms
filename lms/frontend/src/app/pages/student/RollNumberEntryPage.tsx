@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { doc, updateDoc, getDoc, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
-import { db } from '@/firebase/config';
+import { supabase } from '@/firebase/config';
 import { useAuthStore } from '@/store/authStore';
 import { logAudit } from '@/services/auditService';
 import type { UserRole } from '@/types';
@@ -36,51 +35,42 @@ export default function RollNumberEntryPage() {
       const grade = cleaned.slice(0, -2) || cleaned[0];
       const roll = cleaned.slice(-2);
 
-      const classesRef = collection(db, 'classes');
-      const q = query(classesRef, where('grade', '==', grade), where('isActive', '==', true));
-      const snap = await getDocs(q);
+      const { data: classRows } = await supabase.from('classes').select('*').eq('grade', grade).eq('isActive', true);
 
-      let classId: string;
-      if (snap.empty) {
+      if (!classRows || classRows.length === 0) {
         setError(`No class found for grade ${grade}. Contact your teacher.`);
         setLoading(false);
         return;
       }
-      classId = snap.docs[0].id;
+      const classId = classRows[0].id;
 
-      const duplicateCheck = query(
-        collection(db, 'users'),
-        where('classId', '==', classId),
-        where('studentId', '==', cleaned),
-      );
-      const duplicateSnap = await getDocs(duplicateCheck);
-      if (!duplicateSnap.empty) {
+      const { data: duplicates } = await supabase.from('users').select('id').eq('classId', classId).eq('studentId', cleaned);
+      if (duplicates && duplicates.length > 0) {
         setError(`Roll number ${cleaned} is already taken in this class.`);
         setLoading(false);
         return;
       }
 
-      await updateDoc(doc(db, 'users', user.id), {
+      await supabase.from('users').update({
         classId,
         studentId: cleaned,
         rollNumber: roll,
         tutorialSeen: false,
         updatedAt: new Date().toISOString(),
-      });
+      }).eq('id', user.id);
 
-      const updatedSnap = await getDoc(doc(db, 'users', user.id));
-      if (updatedSnap.exists()) {
-        const d = updatedSnap.data();
+      const { data: d } = await supabase.from('users').select('*').eq('id', user.id).maybeSingle();
+      if (d) {
         setUser({
-          id: updatedSnap.id,
-          email: (d.email as string) || '',
-          displayName: (d.displayName as string) || '',
-          role: ((d.role as string) || 'student') as UserRole,
-          isActive: (d.isActive as boolean) ?? true,
-          classId: d.classId as string | undefined,
-          studentId: d.studentId as string | undefined,
-          createdAt: (d.createdAt as string) || '',
-          updatedAt: (d.updatedAt as string) || '',
+          id: d.id,
+          email: d.email || '',
+          displayName: d.display_name || '',
+          role: (d.role as UserRole) || 'student',
+          isActive: d.is_active ?? true,
+          classId: d.class_id || undefined,
+          studentId: d.student_id || undefined,
+          createdAt: d.created_at || '',
+          updatedAt: d.updated_at || '',
         });
       }
 
@@ -93,7 +83,7 @@ export default function RollNumberEntryPage() {
         newValue: { studentId: cleaned, classId },
       });
 
-      await addDoc(collection(db, 'notifications'), {
+      await supabase.from('notifications').insert({
         userId: user.id,
         type: 'welcome',
         title: 'Welcome to Genesis LMS!',

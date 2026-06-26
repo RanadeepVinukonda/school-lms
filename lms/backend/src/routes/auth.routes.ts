@@ -14,6 +14,9 @@ router.post('/forgot-password', authRateLimit, validate(forgotPasswordSchema), a
 router.post('/reset-password', authRateLimit, validate(resetPasswordSchema), asyncHandler(authController.resetPassword));
 router.post('/change-password', authenticate, validate(changePasswordSchema), asyncHandler(authController.changePassword));
 router.get('/profile', authenticate, asyncHandler(authController.getProfile));
+router.get('/me', authenticate, asyncHandler(authController.getProfile));
+router.post('/verify-token', authenticate, asyncHandler(authController.verifyToken));
+router.post('/logout', authenticate, asyncHandler(authController.logout));
 router.put('/profile', authenticate, validate(updateProfileSchema), asyncHandler(authController.updateProfile));
 
 export default router;

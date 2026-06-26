@@ -1,5 +1,4 @@
-import { collection, addDoc, Timestamp } from 'firebase/firestore';
-import { db } from '@/firebase/config';
+import { supabase } from '@/firebase/config';
 import { useAuthStore } from '@/store/authStore';
 
 export type AuditAction =
@@ -30,7 +29,6 @@ export interface AuditEntry {
   timestamp: string;
 }
 
-/** Log an auditable action to Firestore. */
 export async function logAudit(entry: Omit<AuditEntry, 'performedBy' | 'performedByName' | 'performedByRole' | 'timestamp'>): Promise<void> {
   const user = useAuthStore.getState().user;
   const auditDoc: AuditEntry = {
@@ -38,11 +36,11 @@ export async function logAudit(entry: Omit<AuditEntry, 'performedBy' | 'performe
     performedBy: user?.id || 'unknown',
     performedByName: user?.displayName || 'Unknown',
     performedByRole: user?.role || 'unknown',
-    timestamp: Timestamp.now().toDate().toISOString(),
+    timestamp: new Date().toISOString(),
   };
   try {
-    await addDoc(collection(db, 'auditLogs'), auditDoc);
+    await supabase.from('auditLogs').insert(auditDoc);
   } catch {
-    // Silent — audit failures must never block the user's operation
+    // ponytail: silent catch — audit failures must never block the user's operation
   }
 }

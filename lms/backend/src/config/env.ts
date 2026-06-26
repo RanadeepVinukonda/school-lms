@@ -7,9 +7,6 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().positive().max(65535).default(3001),
   FRONTEND_URL: z.string().default('http://localhost:5173'),
-  FIREBASE_PROJECT_ID: z.string().min(1),
-  FIREBASE_CLIENT_EMAIL: z.string().email(),
-  FIREBASE_PRIVATE_KEY: z.string().min(1).transform((key) => key.replace(/\\n/g, '\n')),
   GEMINI_API_KEY: z.string().min(1),
   AI_API_KEY: z.string().optional(),
   AI_BASE_URL: z.string().default('https://openrouter.ai/api/v1/chat/completions'),
@@ -18,11 +15,17 @@ const envSchema = z.object({
   AI_TEXTBOOK_API_KEY: z.string().optional(),
   AI_TEXTBOOK_BASE_URL: z.string().optional(),
   AI_TEXTBOOK_MODEL: z.string().optional(),
+
   CLOUDINARY_CLOUD_NAME: z.string().min(1),
   CLOUDINARY_API_KEY: z.string().min(1),
   CLOUDINARY_API_SECRET: z.string().min(1),
-  FIREBASE_WEB_API_KEY: z.string().min(1),
-  REDIS_URL: z.string().optional(),
+
+  SUPABASE_URL: z.string().min(1),
+  SUPABASE_ANON_KEY: z.string().min(1),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  SUPABASE_STORAGE_BUCKET: z.string().optional(),
+
+  DATABASE_URL: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

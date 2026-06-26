@@ -92,10 +92,24 @@ export async function getClassImpact(classId: string): Promise<ImpactReport> {
   const categories: DependencyCategory[] = [];
   let total = 0;
 
-  const studentCount = await countArrayWhere('users', 'classIds', classId);
+  let studentCount = 0;
+  let teacherCount = 0;
+  try {
+    const sSnap = await collections.users().where('classIds', 'array-contains', classId).where('role', '==', 'student').count().get();
+    studentCount = sSnap.data().count;
+  } catch {}
+  try {
+    const tSnap = await collections.users().where('classIds', 'array-contains', classId).where('role', '==', 'teacher').count().get();
+    teacherCount = tSnap.data().count;
+  } catch {}
+
   if (studentCount > 0) {
     categories.push({ label: 'Students', count: studentCount, collection: 'users', filterField: 'classIds' });
     total += studentCount;
+  }
+  if (teacherCount > 0) {
+    categories.push({ label: 'Teachers', count: teacherCount, collection: 'users', filterField: 'classIds' });
+    total += teacherCount;
   }
 
   const timetableCount = await countWhere('timetable', 'classId', classId);
@@ -110,8 +124,8 @@ export async function getClassImpact(classId: string): Promise<ImpactReport> {
     totalDependents: total,
     categories,
     canArchive: true,
-    canDelete: studentCount === 0,
-    recommendedAction: studentCount > 0 ? 'archive' : 'delete',
+    canDelete: total === 0,
+    recommendedAction: total > 0 ? 'archive' : 'delete',
   };
 }
 

@@ -4,15 +4,12 @@ import path from 'path';
 // Load environmental variables first
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-import { initializeFirebase } from '../config/firebase';
 import { getAdminAuth, getAdminFirestore } from '../firebase/admin';
 import { collections } from '../firebase/firestore';
 import { createClass } from '../services/class.service';
 import { createSubject } from '../services/subject.service';
 import { assignTeacher } from '../services/teacher-class-subject.service';
 import { createTextbook } from '../services/textbook.service';
-
-initializeFirebase();
 const auth = getAdminAuth();
 const db = getAdminFirestore();
 

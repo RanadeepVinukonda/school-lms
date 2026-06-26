@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 
 import { toast } from 'sonner';
@@ -39,6 +39,8 @@ export default function TeacherTextbookUploadPage() {
   const [fileAssignments, setFileAssignments] = useState<Record<number, string>>({});
   const [dragActive, setDragActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+
+  const queryClient = useQueryClient();
 
   const { data: assignments, isLoading: assignmentsLoading } = useQuery({
     queryKey: ['teacher-assignments', user?.id],
@@ -154,57 +156,27 @@ export default function TeacherTextbookUploadPage() {
   }, []);
 
   const uploadSingleFile = async (file: File, assignment: TeacherAssignment, taskId: string, addLog: (msg: string) => void) => {
-    addLog(`Requesting Cloudinary upload signature for ${file.name}...`);
-
-    const sigRes = await api.get('/cloudinary/signature?folder=textbooks');
-    const { signature, timestamp, apiKey, cloudName, folder } = sigRes.data.data;
-
-    const cdFormData = new FormData();
-    cdFormData.append('file', file);
-    cdFormData.append('api_key', apiKey);
-    cdFormData.append('timestamp', String(timestamp));
-    cdFormData.append('signature', signature);
-    cdFormData.append('folder', folder);
-    cdFormData.append('access_mode', 'public');
-
-    useUploadStore.setState((s) => ({
-      tasks: s.tasks.map((t) =>
-        t.id === taskId ? { ...t, progress: 40 } : t
-      ),
-    }));
-
-    addLog(`Uploading ${file.name} directly to Cloudinary...`);
-
-    const cdRes = await axios.post(
-      `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
-      cdFormData,
-      {
-        onUploadProgress: (e) => {
-          if (e.total) {
-            const pct = Math.round((e.loaded / e.total) * 40);
-            useUploadStore.setState((s) => ({
-              tasks: s.tasks.map((t) =>
-                t.id === taskId ? { ...t, progress: pct } : t
-              ),
-            }));
-          }
-        },
-      },
-    );
-
-    const { secure_url, public_id } = cdRes.data;
-    addLog(`Cloudinary upload complete. Creating textbook record...`);
+    addLog(`Uploading ${file.name} to server...`);
 
     const bodyFormData = new FormData();
-    bodyFormData.append('cloudinaryUrl', secure_url);
-    bodyFormData.append('cloudinaryPublicId', public_id);
+    bodyFormData.append('file', file);
     bodyFormData.append('subjectId', assignment.subjectId);
     bodyFormData.append('classId', assignment.classId);
     bodyFormData.append('title', file.name.replace('.pdf', ''));
     bodyFormData.append('description', file.name.replace('.pdf', ''));
 
     const res = await api.post('/textbooks', bodyFormData, {
-      headers: { 'Content-Type': undefined },
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: (e) => {
+        if (e.total) {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          useUploadStore.setState((s) => ({
+            tasks: s.tasks.map((t) =>
+              t.id === taskId ? { ...t, progress: pct === 100 ? 99 : pct } : t
+            ),
+          }));
+        }
+      },
     });
 
     addLog(`${file.name} uploaded successfully!`);
@@ -228,6 +200,8 @@ export default function TeacherTextbookUploadPage() {
       }
 
       setIsUploading(true);
+
+      let lastTextbookId: string | null = null;
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
@@ -262,7 +236,7 @@ export default function TeacherTextbookUploadPage() {
         addLog(`Uploading ${file.name} (${i + 1}/${files.length})...`);
 
         try {
-          await uploadSingleFile(file, assignment, taskId, addLog);
+          lastTextbookId = await uploadSingleFile(file, assignment, taskId, addLog);
           toast.success(`${file.name} uploaded`);
         } catch (err: unknown) {
           const message =
@@ -280,7 +254,14 @@ export default function TeacherTextbookUploadPage() {
 
       setIsUploading(false);
       setFiles([]);
-      navigate(ROUTES.TEACHER_TEXTBOOKS);
+
+      queryClient.invalidateQueries({ queryKey: ['teacher-teaching-space'] });
+
+      if (lastTextbookId) {
+        navigate(ROUTES.TEACHER_TEXTBOOK(lastTextbookId));
+      } else {
+        navigate(ROUTES.TEACHER_TEXTBOOKS);
+      }
     } catch (err: unknown) {
       setIsUploading(false);
       const message =

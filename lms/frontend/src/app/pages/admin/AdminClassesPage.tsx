@@ -23,8 +23,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { OptionsSelect } from '@/components/ui/select';
 import { cardStackReveal } from '@/lib/motion';
 import { cn } from '@/lib/utils';
-import { collection, addDoc, deleteDoc, doc, updateDoc, getDoc } from 'firebase/firestore';
-import { db } from '@/firebase/config';
+import { supabase } from '@/firebase/config';
 import { getAllClasses, getAllUsers, getAllSubjects } from '@/services/dataService';
 import { getClassDependencies, getUserDependencies } from '@/services/dependencyService';
 import { logAudit } from '@/services/auditService';
@@ -154,7 +153,7 @@ export default function AdminClassesPage() {
     }
 
     try {
-      const classRef = await addDoc(collection(db, 'classes'), {
+      const { data: newClass } = await supabase.from('classes').insert({
         name: className,
         code: finalCode,
         grade: g,
@@ -168,10 +167,10 @@ export default function AdminClassesPage() {
         isActive: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      });
+      }).select('id').single();
       logAudit({
         action: 'class.create',
-        targetId: classRef.id,
+        targetId: newClass?.id || '',
         targetType: 'class',
         targetName: className,
         summary: `Created class "${className}" (${finalCode})`,
@@ -212,14 +211,14 @@ export default function AdminClassesPage() {
       return;
     }
     try {
-      await updateDoc(doc(db, 'classes', editClassTarget.id), {
+      await supabase.from('classes').update({
         name: editClassForm.name,
         code: editClassForm.code.toUpperCase(),
         grade: editClassForm.grade || null,
         section: editClassForm.section || null,
         roomNumber: editClassForm.roomNumber || null,
         updatedAt: new Date().toISOString(),
-      });
+      }).eq('id', editClassTarget.id);
       logAudit({
         action: 'class.update',
         targetId: editClassTarget.id,
@@ -256,7 +255,7 @@ export default function AdminClassesPage() {
     if (!classDeleteTarget) return;
     setClassDeleteLoading(true);
     try {
-      await updateDoc(doc(db, 'classes', classDeleteTarget.id), { isActive: false, updatedAt: new Date().toISOString() });
+      await supabase.from('classes').update({ isActive: false, updatedAt: new Date().toISOString() }).eq('id', classDeleteTarget.id);
       logAudit({
         action: 'class.archive',
         targetId: classDeleteTarget.id,
@@ -280,7 +279,7 @@ export default function AdminClassesPage() {
     if (!classDeleteTarget) return;
     setClassDeleteLoading(true);
     try {
-      await deleteDoc(doc(db, 'classes', classDeleteTarget.id));
+      await supabase.from('classes').delete().eq('id', classDeleteTarget.id);
       logAudit({
         action: 'class.delete',
         targetId: classDeleteTarget.id,
@@ -322,7 +321,7 @@ export default function AdminClassesPage() {
       return;
     }
     try {
-      const docRef = await addDoc(collection(db, 'subjects'), {
+      const { data: newSubject } = await supabase.from('subjects').insert({
         name: subjectForm.name,
         code,
         icon: subjectForm.icon,
@@ -332,23 +331,21 @@ export default function AdminClassesPage() {
         isActive: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      });
+      }).select('id').single();
 
       // Update class subjectIds
-      const classDocRef = doc(db, 'classes', addSubjectClassId);
-      const classSnap = await getDoc(classDocRef);
-      if (classSnap.exists()) {
-        const classData = classSnap.data();
-        const currentSubjectIds = classData.subjectIds || [];
-        await updateDoc(classDocRef, {
-          subjectIds: [...currentSubjectIds, docRef.id],
+      const { data: classRow } = await supabase.from('classes').select('subjectIds').eq('id', addSubjectClassId).maybeSingle();
+      if (classRow) {
+        const currentSubjectIds = classRow.subjectIds || [];
+        await supabase.from('classes').update({
+          subjectIds: [...currentSubjectIds, newSubject?.id],
           updatedAt: new Date().toISOString(),
-        });
+        }).eq('id', addSubjectClassId);
       }
 
       logAudit({
         action: 'subject.create',
-        targetId: docRef.id,
+        targetId: newSubject?.id || '',
         targetType: 'subject',
         targetName: subjectForm.name,
         summary: `Created subject "${subjectForm.name}" (${code})`,
@@ -534,7 +531,7 @@ export default function AdminClassesPage() {
   const filteredTeachers = useMemo(() => {
     return teachers.filter((t) => {
       const q = teacherSearch.toLowerCase();
-      return t.displayName.toLowerCase().includes(q) || t.email.toLowerCase().includes(q);
+      return (t.displayName?.toLowerCase() || '').includes(q) || (t.email?.toLowerCase() || '').includes(q);
     });
   }, [teachers, teacherSearch]);
 
@@ -545,7 +542,7 @@ export default function AdminClassesPage() {
     }
     setTeacherRegisterLoading(true);
     try {
-      const cleanName = teacherForm.displayName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const cleanName = (teacherForm.displayName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
       const defaultEmail = teacherForm.email.trim() || `${cleanName}@school.edu`;
 
       const res = await userService.create({
@@ -628,8 +625,8 @@ export default function AdminClassesPage() {
 
   const filteredStudents = useMemo(() => {
     return students.filter((s) => {
-      const nameMatch = s.displayName.toLowerCase().includes(studentSearch.toLowerCase());
-      const emailMatch = s.email.toLowerCase().includes(studentSearch.toLowerCase());
+      const nameMatch = (s.displayName || '').toLowerCase().includes(studentSearch.toLowerCase());
+      const emailMatch = (s.email || '').toLowerCase().includes(studentSearch.toLowerCase());
       const classMatch = studentClassFilter === 'all' || s.classId === studentClassFilter;
       return (nameMatch || emailMatch) && classMatch;
     });

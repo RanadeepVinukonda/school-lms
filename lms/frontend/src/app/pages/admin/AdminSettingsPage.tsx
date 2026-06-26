@@ -162,7 +162,7 @@ export default function AdminSettingsPage() {
 
   const filteredAdminUsers = useMemo(() => {
     const q = adminSearch.toLowerCase();
-    return adminUsers.filter((u) => u.displayName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+    return adminUsers.filter((u) => (u.displayName || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q));
   }, [adminUsers, adminSearch]);
 
   const createAdminMutation = useMutation({
@@ -213,7 +213,7 @@ export default function AdminSettingsPage() {
 
   const filteredParentUsers = useMemo(() => {
     const q = parentSearch.toLowerCase();
-    return parentUsers.filter((u) => u.displayName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+    return parentUsers.filter((u) => (u.displayName || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q));
   }, [parentUsers, parentSearch]);
 
   const [adminDeleteTarget, setAdminDeleteTarget] = useState<UserDoc | null>(null);

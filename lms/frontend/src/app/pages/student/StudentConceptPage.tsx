@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icon } from '@/components/ui/Icon';
+import { QuestionRenderer } from '@/components/teacher/QuestionRenderer';
 import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import { getTextbook, getChaptersForTextbook, getConceptsForChapter, getConceptProgress, saveConceptProgress, getConceptRelease } from '@/services/textbookService';
@@ -387,7 +388,7 @@ export default function StudentConceptPage() {
                                       <Badge variant="outline" className="text-[10px] capitalize">{q.difficulty}</Badge>
                                       <Badge variant="outline" className="text-[10px] capitalize">{questionConfig[q.type]?.label || q.type}</Badge>
                                     </div>
-                                    <p className="text-sm">{q.text}</p>
+                                    <QuestionRenderer question={{ type: q.type, text: q.text }} />
                                     <QuestionInput
                                       question={q}
                                       value={userAnswer}

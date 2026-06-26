@@ -17,46 +17,30 @@ function parseDuration(isoDuration: string): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+import ytSearch from 'yt-search';
+
 export async function searchVideos(query: string, maxResults = 5) {
-  if (!YOUTUBE_API_KEY) {
-    logger.warn('YouTube API key not configured, using AI fallback to generate mock videos.');
+  try {
+    const r = await ytSearch(query);
+    const videos = r.videos.slice(0, maxResults);
+    
+    return videos.map((v, index) => {
+      return {
+        id: `yt_${v.videoId}`,
+        youtubeId: v.videoId,
+        title: v.title,
+        thumbnail: v.thumbnail || '',
+        duration: v.timestamp || '0:00',
+        channelName: v.author?.name || 'Unknown Channel',
+        description: v.description || '',
+        embedUrl: `https://www.youtube.com/embed/${v.videoId}`,
+        relevance: 1.0 - index * 0.15,
+      };
+    });
+  } catch (error) {
+    logger.error('yt-search failed, using AI fallback to generate mock videos.', { error });
     return generateMockVideos(query, maxResults);
   }
-
-  const searchUrl = `${YOUTUBE_BASE}/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=${maxResults}&videoEmbeddable=true&key=${YOUTUBE_API_KEY}`;
-  const searchRes = await fetch(searchUrl);
-  if (!searchRes.ok) {
-    const err = await searchRes.text();
-    throw new Error(`YouTube search failed: ${err}`);
-  }
-
-  const searchData = (await searchRes.json()) as any;
-  const videoIds = searchData.items?.map((i: { id: { videoId: string } }) => i.id.videoId).join(',') || '';
-  if (!videoIds) return [];
-
-  const detailsUrl = `${YOUTUBE_BASE}/videos?part=contentDetails,snippet,statistics&id=${videoIds}&key=${YOUTUBE_API_KEY}`;
-  const detailsRes = await fetch(detailsUrl);
-  if (!detailsRes.ok) return [];
-
-  const detailsData = (await detailsRes.json()) as any;
-
-  return searchData.items?.map((item: {
-    id: { videoId: string };
-    snippet: { title: string; thumbnails: { high?: { url: string }; default?: { url: string } }; channelTitle: string; description: string };
-  }, index: number) => {
-    const detail = detailsData.items?.[index];
-    return {
-      id: `yt_${item.id.videoId}`,
-      youtubeId: item.id.videoId,
-      title: item.snippet.title,
-      thumbnail: item.snippet.thumbnails?.high?.url || item.snippet.thumbnails?.default?.url || '',
-      duration: detail ? parseDuration(detail.contentDetails.duration) : '0:00',
-      channelName: item.snippet.channelTitle,
-      description: item.snippet.description.slice(0, 200),
-      embedUrl: `https://www.youtube.com/embed/${item.id.videoId}`,
-      relevance: 1.0 - index * 0.15,
-    };
-  }) || [];
 }
 
 export async function searchVideosForConcept(subject: string, chapterTitle: string, conceptTitle: string) {

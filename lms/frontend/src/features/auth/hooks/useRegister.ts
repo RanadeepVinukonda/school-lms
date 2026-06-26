@@ -1,10 +1,8 @@
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { authService } from '@/services/authService';
-import { db } from '@/firebase/config';
-import { loginUser } from '@/firebase/auth';
+import { supabase } from '@/firebase/config';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
 import type { RegisterInput, ApiError, UserRole } from '@/types';
@@ -34,36 +32,39 @@ export function useRegister() {
         displayName: data.displayName,
         role: data.role,
       });
-      const firebaseUser = await loginUser(data.email, data.password);
-      const token = await firebaseUser.getIdToken();
-      return { uid: firebaseUser.uid, token, role: data.role };
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+      if (error) throw error;
+      const uid = authData.user?.id || '';
+      const token = authData.session?.access_token || '';
+      return { uid, token, role: data.role };
     },
     onSuccess: async ({ uid, token, role }) => {
       setToken(token);
-      const docRef = doc(db, 'users', uid);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
-        const d = snap.data();
+      const { data: userData } = await supabase.from('users').select('*').eq('id', uid).maybeSingle();
+      if (userData) {
         setUser({
-          id: snap.id,
-          email: (d.email as string) || '',
-          displayName: (d.displayName as string) || '',
-          role: (d.role as UserRole) || role,
-          isActive: (d.isActive as boolean) ?? true,
-          avatar: d.avatar as string | undefined,
-          studentId: d.studentId as string | undefined,
-          classId: d.classId as string | undefined,
-          tutorialSeen: d.tutorialSeen as boolean | undefined,
-          classIds: d.classIds as string[] | undefined,
-          teacherId: d.teacherId as string | undefined,
-          firstName: d.firstName as string | undefined,
-          lastName: d.lastName as string | undefined,
-          phone: d.phone as string | undefined,
-          dateOfBirth: d.dateOfBirth as string | undefined,
-          bio: d.bio as string | undefined,
-          address: d.address as string | undefined,
-          createdAt: (d.createdAt as string) || new Date().toISOString(),
-          updatedAt: (d.updatedAt as string) || new Date().toISOString(),
+          id: userData.id,
+          email: userData.email || '',
+          displayName: userData.display_name || '',
+          role: (userData.role as UserRole) || role,
+          isActive: userData.is_active ?? true,
+          avatar: userData.photo_url || undefined,
+          studentId: userData.student_id || undefined,
+          classId: userData.class_id || undefined,
+          tutorialSeen: undefined,
+          classIds: userData.class_ids || undefined,
+          teacherId: undefined,
+          firstName: userData.display_name?.split(' ')[0] || undefined,
+          lastName: userData.display_name?.split(' ').slice(1).join(' ') || undefined,
+          phone: userData.phone_number || undefined,
+          dateOfBirth: undefined,
+          bio: undefined,
+          address: undefined,
+          createdAt: userData.created_at || new Date().toISOString(),
+          updatedAt: userData.updated_at || new Date().toISOString(),
         });
       }
       toast.success('Account created successfully!');

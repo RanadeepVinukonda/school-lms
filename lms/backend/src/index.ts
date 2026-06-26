@@ -2,6 +2,7 @@ import app from './app';
 import { env } from './config/env';
 import { logger } from './utils/logger';
 import { startScheduler } from './jobs/scheduler';
+import { startWorkers } from './jobs/worker';
 
 function startServer() {
   try {
@@ -10,15 +11,7 @@ function startServer() {
       logger.info(`Health check: http://localhost:${env.PORT}/api/health`);
 
       startScheduler();
-
-      if (env.REDIS_URL && !process.env.VERCEL) {
-        logger.info('Initializing background workers...');
-        try {
-          require('./jobs/worker');
-        } catch (err) {
-          logger.error('Failed to initialize background workers', err);
-        }
-      }
+      startWorkers();
     });
   } catch (error) {
     logger.error('Failed to start server', error);

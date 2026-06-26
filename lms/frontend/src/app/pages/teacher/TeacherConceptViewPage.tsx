@@ -19,6 +19,7 @@ import { getTextbook, getChaptersForTextbook, getConceptsForChapter, getConceptR
 import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
 import { ConceptDetailMindMap } from '@/components/teacher/ConceptDetailMindMap';
+import { QuestionRenderer } from '@/components/teacher/QuestionRenderer';
 import type { CachedVideo } from '@/types/textbook';
 
 const YOUTUBE_ID_RE = /^[a-zA-Z0-9_-]{11}$/;
@@ -572,7 +573,7 @@ export default function TeacherConceptViewPage() {
                                   <Badge variant="outline" className="text-[10px] capitalize">{q.type.replace(/_/g, ' ')}</Badge>
                                   <Badge variant="outline" className="text-[10px] capitalize">{q.category}</Badge>
                                 </div>
-                                <p className="text-body-md">{q.text}</p>
+                                <QuestionRenderer question={{ type: q.type, text: q.text }} />
                                 {q.options && q.options.length > 0 && (
                                   <div className="mt-2 space-y-1">
                                     {q.options.map((opt, oi) => (
@@ -744,7 +745,7 @@ export default function TeacherConceptViewPage() {
                           </div>
                         </div>
 
-                        <p className="text-body-md font-semibold text-on-surface leading-snug">{q.text}</p>
+                        <QuestionRenderer question={{ type: q.type, text: q.text }} />
 
                         {q.options && q.options.length > 0 && (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">

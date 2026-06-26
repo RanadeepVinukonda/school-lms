@@ -12,8 +12,7 @@ import { OptionsSelect } from '@/components/ui/select';
 import { attendanceService } from '@/services/attendanceService';
 import { getStudentsByClass } from '@/services/dataService';
 import { useAuthStore } from '@/store/authStore';
-import { db } from '@/firebase/config';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { supabase } from '@/firebase/config';
 
 export default function TeacherAttendancePage() {
   const queryClient = useQueryClient();
@@ -27,9 +26,8 @@ export default function TeacherAttendancePage() {
   const { data: teacherClasses = [] } = useQuery({
     queryKey: ['teacher-classes', userId],
     queryFn: async () => {
-      const q = query(collection(db, 'classes'), where('teacherIds', 'array-contains', userId));
-      const snap = await getDocs(q);
-      return snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+      const { data } = await supabase.from('classes').select('*').contains('teacherIds', [userId]);
+      return (data || []).map((d: any) => ({ id: d.id, ...d }));
     },
     enabled: !!userId,
   });
