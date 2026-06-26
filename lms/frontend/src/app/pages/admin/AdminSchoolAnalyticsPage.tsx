@@ -159,7 +159,7 @@ export default function AdminSchoolAnalyticsPage() {
                           <BarChart data={gradeData} labelKey="grade" valueKey="averageScore" color="bg-primary" />
                         )}
                         {gradeData.length > 0 && (
-                          <div className="mt-6 border-t border-border/40 pt-4">
+                          <div className="mt-6 border-t border-border/40 pt-4 overflow-x-auto">
                             <table className="w-full text-left text-title-sm">
                               <thead>
                                 <tr className="text-label-sm text-muted-foreground uppercase tracking-wider">
@@ -196,7 +196,7 @@ export default function AdminSchoolAnalyticsPage() {
                           <BarChart data={teacherData} labelKey="teacherName" valueKey="averageScore" color="bg-secondary" />
                         )}
                         {teacherData.length > 0 && (
-                          <div className="mt-6 border-t border-border/40 pt-4">
+                          <div className="mt-6 border-t border-border/40 pt-4 overflow-x-auto">
                             <table className="w-full text-left text-title-sm">
                               <thead>
                                 <tr className="text-label-sm text-muted-foreground uppercase tracking-wider">
@@ -300,7 +300,7 @@ export default function AdminSchoolAnalyticsPage() {
                                 );
                               })}
                             </div>
-                            <div className="border-t border-border/40 pt-4">
+                            <div className="border-t border-border/40 pt-4 overflow-x-auto">
                               <table className="w-full text-left text-title-sm">
                                 <thead>
                                   <tr className="text-label-sm text-muted-foreground uppercase tracking-wider">

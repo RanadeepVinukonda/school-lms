@@ -46,6 +46,7 @@ const mobileNavItems: NavItem[] = [
   { label: 'Teaching', href: ROUTES.TEACHER_TEXTBOOKS, icon: 'menu_book' },
   { label: 'Mind Maps', href: ROUTES.TEACHER_MIND_MAPS, icon: 'psychology' },
   { label: 'Tests', href: ROUTES.TEACHER_TEST_SCHEDULE, icon: 'analytics' },
+  { label: 'OCR', href: ROUTES.TEACHER_OCR, icon: 'document_scanner' },
 ];
 
 export default function TeacherLayout() {
@@ -188,7 +189,7 @@ export default function TeacherLayout() {
       {/* Main content area */}
       <div
         className={cn(
-          'transition-all duration-300 ease-in-out pb-8',
+          'transition-all duration-300 ease-in-out pb-22 lg:pb-8',
           sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64',
         )}
       >
@@ -282,6 +283,36 @@ export default function TeacherLayout() {
         <main id="main-content" className="min-h-[calc(100vh-8rem)]">
           <Outlet />
         </main>
+
+        {/* Bottom navigation (mobile only) */}
+        <nav className="fixed bottom-0 left-0 right-0 z-40 h-20 bg-surface border-t border-outline-variant lg:hidden">
+          <div className="flex items-center justify-around h-full px-1">
+            {mobileNavItems.slice(0, 5).map((item) => (
+              <NavLink
+                key={item.href}
+                to={item.href}
+                className={({ isActive }) =>
+                  cn(
+                    'relative flex flex-col items-center justify-center gap-0.5 px-1.5 py-1 text-[10px] font-medium transition-colors rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-w-0 flex-1 h-full',
+                    isActive
+                      ? 'text-primary'
+                      : 'text-on-surface-variant hover:text-on-surface',
+                  )
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    {isActive && (
+                      <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
+                    )}
+                    <Icon name={item.icon} size={22} className={cn(isActive ? 'fill-icon' : '')} />
+                    <span className="text-label-sm leading-tight">{item.label}</span>
+                  </>
+                )}
+              </NavLink>
+            ))}
+          </div>
+        </nav>
       </div>
       <GlobalSearchDialog isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
       <TutorialGuide open={tutorialOpen} onComplete={() => setTutorialOpen(false)} />

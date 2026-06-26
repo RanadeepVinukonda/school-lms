@@ -31,6 +31,14 @@ const navItems: NavItem[] = [
   { label: 'Settings', href: ROUTES.ADMIN_SETTINGS, icon: 'settings' },
 ];
 
+const mobileNavItems: NavItem[] = [
+  { label: 'Home', href: ROUTES.ADMIN_DASHBOARD, icon: 'dashboard' },
+  { label: 'Academics', href: ROUTES.ADMIN_ACADEMIC_YEARS, icon: 'calendar_month' },
+  { label: 'Classes', href: ROUTES.ADMIN_CLASSES, icon: 'meeting_room' },
+  { label: 'Analytics', href: ROUTES.ADMIN_SCHOOL_ANALYTICS, icon: 'analytics' },
+  { label: 'Attendance', href: ROUTES.ADMIN_ATTENDANCE, icon: 'checklist' },
+];
+
 export function AdminLayout() {
   const { sidebarCollapsed, setSidebarCollapsed } = useUIStore();
   const user = useAuthStore((s) => s.user);
@@ -150,7 +158,7 @@ export function AdminLayout() {
       {/* Main content */}
       <div
         className={cn(
-          'transition-all duration-300 ease-in-out pb-8',
+          'transition-all duration-300 ease-in-out pb-22 lg:pb-8',
           sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64',
         )}
       >
@@ -236,6 +244,35 @@ export function AdminLayout() {
           <Outlet />
         </main>
 
+        {/* Bottom navigation (mobile only) */}
+        <nav className="fixed bottom-0 left-0 right-0 z-40 h-20 bg-surface border-t border-outline-variant lg:hidden">
+          <div className="flex items-center justify-around h-full px-1">
+            {mobileNavItems.slice(0, 5).map((item) => (
+              <NavLink
+                key={item.href}
+                to={item.href}
+                className={({ isActive }) =>
+                  cn(
+                    'relative flex flex-col items-center justify-center gap-0.5 px-1.5 py-1 text-[10px] font-medium transition-colors rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-w-0 flex-1 h-full',
+                    isActive
+                      ? 'text-primary'
+                      : 'text-on-surface-variant hover:text-on-surface',
+                  )
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    {isActive && (
+                      <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
+                    )}
+                    <Icon name={item.icon} size={22} className={cn(isActive ? 'fill-icon' : '')} />
+                    <span className="text-label-sm leading-tight">{item.label}</span>
+                  </>
+                )}
+              </NavLink>
+            ))}
+          </div>
+        </nav>
       </div>
       <GlobalSearchDialog isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
