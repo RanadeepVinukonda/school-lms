@@ -236,24 +236,39 @@ export async function listAllTextbooks() {
   return data || [];
 }
 
-export async function getTextbookById(textbookId: string) {
+export async function getTextbookById(textbookId: string, user?: Express.Request['user']) {
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error('Supabase not configured');
   const { data, error } = await supabase.from('textbooks').select('*').eq('id', textbookId).single();
   if (error || !data) throw new NotFoundError('Textbook not found');
+
+  if (user && user.role === 'student') {
+    if (!user.classIds?.includes(data.class_id)) {
+      throw new Error('Forbidden: You do not have access to this textbook');
+    }
+  }
+
   return data;
 }
 
-export async function getChapters(textbookId: string) {
+export async function getChapters(textbookId: string, user?: Express.Request['user']) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return [];
+  
+  // Verify user has access to this textbook
+  await getTextbookById(textbookId, user);
+
   const { data } = await supabase.from('chapters').select('*').eq('textbook_id', textbookId).order('order', { ascending: true });
   return data || [];
 }
 
-export async function getConcepts(textbookId: string, chapterId: string) {
+export async function getConcepts(textbookId: string, chapterId: string, user?: Express.Request['user']) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return [];
+  
+  // Verify user has access to this textbook
+  await getTextbookById(textbookId, user);
+
   const { data } = await supabase.from('concepts').select('*').eq('chapter_id', chapterId).eq('textbook_id', textbookId).order('order', { ascending: true });
   return data || [];
 }

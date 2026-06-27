@@ -11,6 +11,7 @@ declare global {
         email: string;
         role: string;
         name: string;
+        classIds?: string[];
         [key: string]: unknown;
       };
     }
@@ -41,7 +42,7 @@ async function _authenticate(req: Request, _res: Response, next: NextFunction): 
 
     const { data: profile } = await supabase
       .from('users')
-      .select('role, display_name')
+      .select('role, display_name, class_ids')
       .eq('id', user.id)
       .single();
 
@@ -52,6 +53,7 @@ async function _authenticate(req: Request, _res: Response, next: NextFunction): 
       email: user.email || '',
       role,
       name: profile?.display_name as string || user.email?.split('@')[0] || 'User',
+      classIds: profile?.class_ids || [],
     };
 
     next();

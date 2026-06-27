@@ -21,7 +21,7 @@ export async function createTextbook(req: Request, res: Response) {
 }
 
 export async function getTextbook(req: Request, res: Response) {
-  const result = await textbookService.getTextbookById(req.params.textbookId);
+  const result = await textbookService.getTextbookById(req.params.textbookId, req.user);
   sendSuccess(res, result);
 }
 
@@ -33,13 +33,13 @@ export async function listTextbooks(req: Request, res: Response) {
 
 // List chapters for a textbook
 export async function listChapters(req: Request, res: Response) {
-  const result = await textbookService.getChapters(req.params.textbookId);
+  const result = await textbookService.getChapters(req.params.textbookId, req.user);
   sendSuccess(res, result);
 }
 
 // List concepts for a chapter of a textbook
 export async function listConcepts(req: Request, res: Response) {
-  const result = await textbookService.getConcepts(req.params.textbookId, req.params.chapterId);
+  const result = await textbookService.getConcepts(req.params.textbookId, req.params.chapterId, req.user);
   sendSuccess(res, result);
 }
 
