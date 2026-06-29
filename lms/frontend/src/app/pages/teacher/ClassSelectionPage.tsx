@@ -47,6 +47,15 @@ export default function ClassSelectionPage() {
   const [takenSubjectIds, setTakenSubjectIds] = useState<Set<string>>(new Set());
   const [loadingSubjects, setLoadingSubjects] = useState(false);
 
+  // If teacher already has classIds (assigned by admin), skip to dashboard
+  useEffect(() => {
+    if (user && user.classIds && user.classIds.length > 0) {
+      const first = user.classIds[0];
+      localStorage.setItem('lms-selected-class', first);
+      navigate(ROUTES.TEACHER_DASHBOARD, { replace: true });
+    }
+  }, [user]);
+
   // Fetch existing teacher-class-subject assignments to know which subjects are taken
   useEffect(() => {
     async function fetchAssignments() {

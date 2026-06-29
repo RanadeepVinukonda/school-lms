@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '@/firebase/config';
+import api from '@/services/api';
 import type { UserProfile, UserRole } from '@/types';
 
 interface AuthStore {
@@ -55,6 +56,24 @@ export const useAuthStore = create<AuthStore>()(
 
             if (profile) {
               const p = profile as Record<string, unknown>;
+              let classIds = p.class_ids as string[] | undefined;
+              let classId = (p.class_id as string) || classIds?.[0];
+
+              if ((p.role as string) === 'teacher' && (!classIds || classIds.length === 0)) {
+                try {
+                  const tcsRes = await api.get('/teacher-class-subject/my');
+                  const assignments = tcsRes.data?.data || tcsRes.data || [];
+                  if (assignments.length > 0) {
+                    classIds = [...new Set(assignments.map((a: any) => a.classId))] as string[];
+                    classId = classIds[0];
+                  }
+                } catch { /* assignments not available yet */ }
+              }
+
+              if (classId && !localStorage.getItem('lms-selected-class')) {
+                localStorage.setItem('lms-selected-class', classId);
+              }
+
               set({
                 user: {
                   id: p.id as string,
@@ -69,10 +88,10 @@ export const useAuthStore = create<AuthStore>()(
                   dateOfBirth: p.date_of_birth as string | undefined,
                   bio: p.bio as string | undefined,
                   address: p.address as string | undefined,
-                  classIds: p.class_ids as string[] | undefined,
+                  classIds,
                   studentId: p.student_id as string | undefined,
                   teacherId: p.teacher_id as string | undefined,
-                  classId: (p.class_id as string) || ((p.class_ids as string[])?.[0]) || undefined,
+                  classId,
                   tutorialSeen: p.tutorial_seen as boolean | undefined,
                   createdAt: (p.created_at as string) || new Date().toISOString(),
                   updatedAt: (p.updated_at as string) || new Date().toISOString(),
