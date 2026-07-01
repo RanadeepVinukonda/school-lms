@@ -1,10 +1,16 @@
 import { getSupabaseAdmin } from './supabase';
+import { logger } from '../utils/logger';
 
 export async function createNotice(schoolId: string, userId: string, data: { title: string; content: string; priority?: string; expires_at?: string; target_class_id?: string | null }) {
   const supabase = getSupabaseAdmin(); if (!supabase) return null;
-  const insertData: Record<string, unknown> = { school_id: schoolId, created_by: userId, ...data };
-  if (!insertData.target_class_id) insertData.target_class_id = null;
-  const { data: result } = await supabase.from('notice_board').insert(insertData).select().single();
+  const { target_class_id, ...rest } = data;
+  const insertData: Record<string, unknown> = { school_id: schoolId, created_by: userId, ...rest };
+  if (target_class_id) insertData.target_class_id = target_class_id;
+  const { data: result, error } = await supabase.from('notice_board').insert(insertData).select().single();
+  if (error) {
+    logger.error('Failed to create notice', { error: error.message, data: insertData });
+    return null;
+  }
   return result;
 }
 
