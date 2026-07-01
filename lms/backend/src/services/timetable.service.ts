@@ -1,15 +1,23 @@
 import { getSupabaseAdmin } from './supabase';
+import { logger } from '../utils/logger';
 
 export async function createTimetableEntry(data: {
   classId: string; day: string; period: number; subjectId?: string; teacherId?: string; room?: string;
   startTime?: string; endTime?: string; schoolId: string;
 }) {
   const supabase = getSupabaseAdmin(); if (!supabase) return null;
-  const { data: result } = await supabase.from('timetable').insert({
-    class_id: data.classId, day: data.day, period: data.period, subject_id: data.subjectId,
-    teacher_id: data.teacherId, room: data.room, start_time: data.startTime, end_time: data.endTime,
-    school_id: data.schoolId,
-  }).select().single();
+  const toNull = (v: string | undefined | null) => (v && v.trim() ? v : null);
+  const insertData: Record<string, unknown> = {
+    class_id: data.classId, day: data.day, period: data.period,
+    subject_id: toNull(data.subjectId), teacher_id: toNull(data.teacherId),
+    room: data.room && data.room.trim() ? data.room : '', start_time: toNull(data.startTime),
+    end_time: toNull(data.endTime), school_id: data.schoolId,
+  };
+  const { data: result, error } = await supabase.from('timetable').insert(insertData).select().single();
+  if (error) {
+    logger.error('Failed to create timetable entry', { error: error.message, data: insertData });
+    return null;
+  }
   return result;
 }
 
@@ -30,18 +38,25 @@ export async function updateTimetableEntry(id: string, data: Record<string, unkn
   const snake: Record<string, unknown> = {};
   if (data.day) snake.day = data.day;
   if (data.period) snake.period = data.period;
-  if (data.subjectId) snake.subject_id = data.subjectId;
-  if (data.teacherId) snake.teacher_id = data.teacherId;
-  if (data.room) snake.room = data.room;
-  if (data.startTime) snake.start_time = data.startTime;
-  if (data.endTime) snake.end_time = data.endTime;
+  if (data.subjectId !== undefined) snake.subject_id = data.subjectId || null;
+  if (data.teacherId !== undefined) snake.teacher_id = data.teacherId || null;
+  if (data.room !== undefined) snake.room = data.room || '';
+  if (data.startTime !== undefined) snake.start_time = data.startTime || null;
+  if (data.endTime !== undefined) snake.end_time = data.endTime || null;
   if (data.classId) snake.class_id = data.classId;
   if (data.status) snake.status = data.status;
-  const { data: result } = await supabase.from('timetable').update(snake).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('timetable').update(snake).eq('id', id).select().single();
+  if (error) {
+    logger.error('Failed to update timetable entry', { error: error.message, id, data: snake });
+    return null;
+  }
   return result;
 }
 
 export async function deleteTimetableEntry(id: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return;
-  await supabase.from('timetable').delete().eq('id', id);
+  const { error } = await supabase.from('timetable').delete().eq('id', id);
+  if (error) {
+    logger.error('Failed to delete timetable entry', { error: error.message, id });
+  }
 }
