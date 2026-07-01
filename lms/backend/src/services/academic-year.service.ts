@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../firebase/firestore';
+import { collections } from '../database/adapter';
 import { NotFoundError, ConflictError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
@@ -81,7 +81,7 @@ export async function getAcademicYearById(id: string) {
 }
 
 export async function listAcademicYears(query: { status?: string; page?: string; limit?: string }) {
-  let baseQuery: FirebaseFirestore.Query = collections.academicYears()
+  let baseQuery = collections.academicYears()
     .orderBy('createdAt', 'desc');
 
   if (query.status) baseQuery = baseQuery.where('status', '==', query.status);

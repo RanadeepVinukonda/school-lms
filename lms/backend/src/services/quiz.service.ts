@@ -1,28 +1,28 @@
 import { v4 as uuidv4 } from 'uuid';
-import { FieldValue } from '../firebase/firestore';
-import { collections } from '../firebase/firestore';
+import { FieldValue } from '../database/adapter';
+import { collections } from '../database/adapter';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 
 /** List all quizzes with optional courseId filter, paginated by createdAt desc. */
-export async function listAllQuizzes(query: { page?: string; limit?: string; courseId?: string }) {
+export async function listAllQuizzes(query: { page?: string; limit?: string; courseId?: string; schoolId?: string }) {
   const { page, limit } = parsePagination(query);
-  let baseQuery: FirebaseFirestore.Query = collections.quizzes();
-
-  if (query.courseId) {
-    baseQuery = baseQuery.where('courseId', '==', query.courseId);
-  }
-
   const offset = (page - 1) * limit;
-  const snapshot = await baseQuery.get();
 
-  const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-  const sorted = items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  const total = sorted.length;
-  const paged = sorted.slice(offset, offset + limit);
+  let baseQuery: any = collections.quizzes();
+  if (query.schoolId) {
+    baseQuery = baseQuery.where('schoolId', '==', query.schoolId);
+  }
+  baseQuery = baseQuery.orderBy('createdAt', 'desc');
+  if (query.courseId) baseQuery = baseQuery.where('courseId', '==', query.courseId);
 
-  return { items: paged, total, page, limit };
+  const countSnap = await baseQuery.count().get();
+  const total = countSnap.data().count;
+  const snapshot = await baseQuery.offset(offset).limit(limit).get();
+  const items = snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id }));
+
+  return { items, total, page, limit };
 }
 
 /** Create a new quiz with calculated totalPoints. */
@@ -47,6 +47,7 @@ export async function createQuiz(data: {
   isPublished?: boolean;
   dueDate?: string;
   instructions?: string;
+  schoolId?: string;
 }) {
   const quizId = uuidv4();
   const now = new Date().toISOString();

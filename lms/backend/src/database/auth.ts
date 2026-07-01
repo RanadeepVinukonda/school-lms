@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '../services/supabase';
+import { AuthProvider, AuthUser as IAuthUser } from './interfaces/auth-provider';
 
 export interface AuthUser {
   uid: string;
@@ -152,3 +153,45 @@ export async function listUsers(
   if (error) return { users: [] };
   return { users: data.users.map(u => extractUser(u)) };
 }
+
+export class SupabaseAuthProvider implements AuthProvider {
+  async verifyToken(idToken: string): Promise<IAuthUser> {
+    const user = await verifyToken(idToken);
+    return {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      role: user.role,
+    };
+  }
+
+  async createUser(properties: { email: string; password?: string; displayName?: string }): Promise<IAuthUser> {
+    const user = await createUser({
+      email: properties.email,
+      password: properties.password || 'TemporaryPassword123!',
+      displayName: properties.displayName || '',
+    });
+    return {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      role: user.role,
+    };
+  }
+
+  async getUser(uid: string): Promise<IAuthUser> {
+    const user = await getUserById(uid);
+    if (!user) throw new Error('User not found');
+    return {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      role: user.role,
+    };
+  }
+
+  async deleteUser(uid: string): Promise<void> {
+    await deleteUser(uid);
+  }
+}
+

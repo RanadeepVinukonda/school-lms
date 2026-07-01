@@ -1,4 +1,4 @@
-import { supabase } from '@/firebase/config';
+import { supabase } from '@/supabase/config';
 import { useAuthStore } from '@/store/authStore';
 
 export type AuditAction =
@@ -39,7 +39,7 @@ export async function logAudit(entry: Omit<AuditEntry, 'performedBy' | 'performe
     timestamp: new Date().toISOString(),
   };
   try {
-    await supabase.from('auditLogs').insert(auditDoc);
+    await supabase.from('audit_logs').insert(auditDoc);
   } catch {
     // ponytail: silent catch — audit failures must never block the user's operation
   }

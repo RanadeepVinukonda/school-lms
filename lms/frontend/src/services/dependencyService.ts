@@ -1,6 +1,6 @@
 import { getTextbooksBySubject } from './textbookService';
 import { getAssignmentsBySubject, getExamsBySubject, getAllGrades, getStudentsByClass, getTimetableByClass, getUser, getAllUsers } from './dataService';
-import { supabase } from '@/firebase/config';
+import { supabase } from '@/supabase/config';
 
 export interface DependencyCategory {
   label: string;

@@ -1,10 +1,15 @@
 import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../firebase/firestore';
+import { collections } from '../database/adapter';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 import { getEnrollments } from './course.service';
 import { createBulkNotifications, createNotification } from './notification.service';
+import type { AssignmentCollection } from '../database/interfaces/collections';
+
+let _assignmentCollection: AssignmentCollection | null = null;
+export function setAssignmentCollection(col: AssignmentCollection): void { _assignmentCollection = col; }
+function assignmentCol() { return _assignmentCollection ?? (collections.assignments() as unknown as AssignmentCollection); }
 
 /** Create a new assignment and notify enrolled students. */
 export async function createAssignment(data: {
@@ -18,6 +23,7 @@ export async function createAssignment(data: {
   allowLateSubmission?: boolean;
   latePenaltyPercent?: number;
   isPublished?: boolean;
+  schoolId?: string;
 }) {
   const assignmentId = uuidv4();
   const now = new Date().toISOString();
@@ -96,10 +102,14 @@ export async function getAssignmentById(assignmentId: string) {
 }
 
 /** List all assignments with optional courseId filter, paginated by createdAt desc. */
-export async function listAllAssignments(query: { page?: string; limit?: string; courseId?: string }) {
+export async function listAllAssignments(query: { page?: string; limit?: string; courseId?: string; schoolId?: string }) {
   const { page, limit } = parsePagination(query);
-  let baseQuery: FirebaseFirestore.Query = collections.assignments()
-    .orderBy('createdAt', 'desc');
+  let baseQuery: any = collections.assignments();
+
+  if (query.schoolId) {
+    baseQuery = baseQuery.where('schoolId', '==', query.schoolId);
+  }
+  baseQuery = baseQuery.orderBy('createdAt', 'desc');
 
   if (query.courseId) {
     baseQuery = baseQuery.where('courseId', '==', query.courseId);
@@ -111,22 +121,31 @@ export async function listAllAssignments(query: { page?: string; limit?: string;
   const offset = (page - 1) * limit;
   const snapshot = await baseQuery.offset(offset).limit(limit).get();
 
-  const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const items = snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id }));
 
   return { items, total, page, limit };
 }
 
 /** List assignments for a specific course, paginated. */
-export async function listAssignmentsByCourse(courseId: string, query: { page?: string; limit?: string }) {
+export async function listAssignmentsByCourse(courseId: string, query: { page?: string; limit?: string; schoolId?: string }) {
   const { page, limit } = parsePagination(query);
-  // Fetch all assignments for the given course
-  const snapshot = await collections.assignments().where('courseId', '==', courseId).get();
-  const all = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-  // Sort by createdAt descending
-  const sorted = all.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  const total = sorted.length;
   const offset = (page - 1) * limit;
-  const items = sorted.slice(offset, offset + limit);
+
+  let baseQuery: any = collections.assignments()
+    .where('courseId', '==', courseId);
+
+  if (query.schoolId) {
+    baseQuery = baseQuery.where('schoolId', '==', query.schoolId);
+  }
+
+  baseQuery = baseQuery.orderBy('createdAt', 'desc');
+
+  const countSnap = await baseQuery.count().get();
+  const total = countSnap.data().count;
+
+  const snapshot = await baseQuery.offset(offset).limit(limit).get();
+  const items = snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id }));
+
   return { items, total, page, limit };
 }
 
@@ -239,15 +258,21 @@ export async function listSubmissions(assignmentId: string, query: {
   status?: string;
 }) {
   const { page, limit } = parsePagination(query);
-  let queryRef: FirebaseFirestore.Query = collections.submissions().where('assignmentId', '==', assignmentId);
+  const offset = (page - 1) * limit;
+
+  let queryRef = collections.submissions()
+    .where('assignmentId', '==', assignmentId)
+    .orderBy('submittedAt', 'desc');
+
   if (query.status) {
     queryRef = queryRef.where('status', '==', query.status);
   }
-  const snapshot = await queryRef.get();
-  const all = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-  const sorted = all.sort((a: any, b: any) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
-  const total = sorted.length;
-  const offset = (page - 1) * limit;
-  const items = sorted.slice(offset, offset + limit);
+
+  const countSnap = await queryRef.count().get();
+  const total = countSnap.data().count;
+
+  const snapshot = await queryRef.offset(offset).limit(limit).get();
+  const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+
   return { items, total, page, limit };
 }

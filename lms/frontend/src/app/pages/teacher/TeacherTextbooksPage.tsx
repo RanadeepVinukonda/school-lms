@@ -125,7 +125,7 @@ export default function TeacherTextbooksPage() {
                   ? 'Teaching Space'
                   : !selectedSubjectId
                   ? `${selectedClass?.name ?? ''} — Subjects`
-                  : `${selectedClass?.name ?? ''} &middot; ${selectedSubject?.name ?? ''} Textbooks`}
+                  : `${selectedClass?.name ?? ''} — ${selectedSubject?.name ?? ''} Textbooks`}
               </h1>
               <p className="text-sm text-muted-foreground">
                 {!selectedClassId

@@ -1,10 +1,25 @@
-self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', (e) => e.waitUntil((async () => {
-  const keys = await caches.keys();
-  await Promise.all(keys.map(k => caches.delete(k)));
-  const regs = await self.registration.getRegistrations?.() ?? [];
-  for (const r of regs) await r.unregister();
-  await self.registration.unregister();
+const CACHE_NAME = 'genesis-lms-v1';
+const STATIC_ASSETS = ['/', '/index.html'];
+
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+    )
+  );
   self.clients.claim();
-})()));
-self.addEventListener('fetch', (e) => e.respondWith(fetch(e.request)));
+});
+
+self.addEventListener('fetch', (e) => {
+  if (e.request.method !== 'GET') return;
+  e.respondWith(
+    caches.match(e.request).then((cached) => cached || fetch(e.request).catch(() => cached))
+  );
+});

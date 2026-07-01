@@ -3,17 +3,17 @@ import * as schoolAnalyticsService from '../services/school-analytics.service';
 import { sendSuccess } from '../utils/response';
 
 export async function getGradeComparison(req: Request, res: Response) {
-  const result = await schoolAnalyticsService.getGradeComparison();
+  const result = await schoolAnalyticsService.getGradeComparison(req.user!.school_id);
   sendSuccess(res, result);
 }
 
 export async function getTeacherComparison(req: Request, res: Response) {
-  const result = await schoolAnalyticsService.getTeacherComparison();
+  const result = await schoolAnalyticsService.getTeacherComparison(req.user!.school_id);
   sendSuccess(res, result);
 }
 
 export async function getClassComparison(req: Request, res: Response) {
-  const result = await schoolAnalyticsService.getClassComparison();
+  const result = await schoolAnalyticsService.getClassComparison(req.user!.school_id);
   sendSuccess(res, result);
 }
 
@@ -23,6 +23,6 @@ export async function getSchoolOverview(req: Request, res: Response) {
 }
 
 export async function getPerformanceTrends(req: Request, res: Response) {
-  const result = await schoolAnalyticsService.getPerformanceTrends();
+  const result = await schoolAnalyticsService.getPerformanceTrends(req.user!.school_id);
   sendSuccess(res, result);
 }

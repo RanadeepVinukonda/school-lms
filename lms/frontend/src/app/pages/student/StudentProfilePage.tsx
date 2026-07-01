@@ -17,7 +17,7 @@ import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { useQuery } from '@tanstack/react-query';
-import { changePassword } from '@/firebase/auth';
+import { changePassword } from '@/supabase/auth';
 import { getAllSubjects, getGradesByStudent, getUser, getClass } from '@/services/dataService';
 import { XPBar } from '@/components/gamification/XPBar';
 import { XP_THRESHOLDS } from '@/components/gamification/constants';

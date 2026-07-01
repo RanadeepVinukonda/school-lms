@@ -230,214 +230,144 @@ export default function StudentConceptPage() {
           loadingType="detail"
           emptyMessage="Concept not found"
         >
-          {(d) => (
-            <div className="space-y-16">
-              <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="secondary">{d.textbook.title}</Badge>
-                    <span className="text-sm text-muted-foreground">Chapter {d.chapter.order + 1}</span>
-                  </div>
-                  <h1 className="text-headline-sm md:text-headline-md font-bold tracking-tight">{d.concept.title}</h1>
-                  <p className="text-muted-foreground mt-1">{d.concept.summary}</p>
-                  {progress && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {practiceCompleted && <Badge variant="outline" className="text-[10px] text-green-600 dark:text-green-400 border-green-300 dark:border-green-700"><Icon name="check_circle" size={12} className="mr-1" />Practice done</Badge>}
-                      {(d.concept.questionBank || []).length > 0 && practiceCompleted && <Badge variant="outline" className="text-[10px] text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-700"><Icon name="bolt" size={12} className="mr-1" />Quiz ready</Badge>}
-                    </div>
-                  )}
+          {(d) => {
+            const isReleased = d.release?.mindMapReleased;
+
+            if (!isReleased) {
+              return (
+                <div className="space-y-16">
+                  <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                    <Link to={`${ROUTES.STUDENT_CHAPTER(textbookId, d.chapter.id)}?textbookId=${textbookId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+                      <Icon name="arrow_back" size={16} />
+                      Back to chapter
+                    </Link>
+                  </motion.div>
+                  <UnlockOverlay icon="lock" message="This concept has not yet been released by your teacher." />
                 </div>
-              </motion.div>
+              );
+            }
 
-              <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
-                <Tabs defaultValue="learn">
-                  <TabsList className="w-full overflow-x-auto inline-flex">
-                    <TabsTrigger value="learn" className="flex-1">
-                      <Icon name="menu_book" size={14} className="mr-1.5" />Learn
-                    </TabsTrigger>
-                    <TabsTrigger value="mindmap" className="flex-1">
-                      <Icon name="account_tree" size={14} className="mr-1.5" />Mind Map
-                    </TabsTrigger>
-                    <TabsTrigger value="practice" className="flex-1">
-                      <Icon name="quiz" size={14} className="mr-1.5" />Practice
-                      {practiceCompleted && <Icon name="check_circle" size={12} className="ml-1 text-green-500" />}
-                    </TabsTrigger>
-                    <TabsTrigger value="quiz" className="flex-1">
-                      <Icon name="bolt" size={14} className="mr-1.5" />Quiz
-                    </TabsTrigger>
-                  </TabsList>
+            return (
+              <div className="space-y-16">
+                <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant="secondary">{d.textbook.title}</Badge>
+                      <span className="text-sm text-muted-foreground">Chapter {d.chapter.order + 1}</span>
+                    </div>
+                    <h1 className="text-headline-sm md:text-headline-md font-bold tracking-tight">{d.concept.title}</h1>
+                    <p className="text-muted-foreground mt-1">{d.concept.summary}</p>
+                  </div>
+                </motion.div>
 
-                  <TabsContent value="learn" className="mt-4 space-y-4">
-                    <Card className="border-border/60">
-                      <CardContent className="p-5">
-                        <h2 className="font-semibold mb-3 flex items-center gap-2">
-                          <Icon name="menu_book" size={18} className="text-primary" />
-                          Study Notes
-                        </h2>
-                        <div className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">
-                          {d.concept.notes}
-                        </div>
-                      </CardContent>
-                    </Card>
+                <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                  <Tabs defaultValue="studyMaterial">
+                    <TabsList className="w-full overflow-x-auto inline-flex">
+                      <TabsTrigger value="studyMaterial" className="flex-1">
+                        <Icon name="menu_book" size={14} className="mr-1.5" />Study Material
+                      </TabsTrigger>
+                      <TabsTrigger value="mindmap" className="flex-1">
+                        <Icon name="account_tree" size={14} className="mr-1.5" />Mind Map
+                      </TabsTrigger>
+                      <TabsTrigger value="quiz" className="flex-1">
+                        <Icon name="bolt" size={14} className="mr-1.5" />Quiz
+                      </TabsTrigger>
+                    </TabsList>
 
-                    {(d.concept.learningObjectives || []).length > 0 && (
+                    <TabsContent value="studyMaterial" className="mt-4 space-y-4">
+                      {(d.concept.learningObjectives || []).length > 0 && (
+                        <Card className="border-border/60">
+                          <CardContent className="p-5">
+                            <h2 className="font-semibold mb-3 flex items-center gap-2">
+                              <Icon name="track_changes" size={18} className="text-tertiary" />
+                              Learning Objectives
+                            </h2>
+                            <ul className="space-y-1.5">
+                              {d.concept.learningObjectives!.map((obj, i) => (
+                                <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                                  <span className="text-tertiary mt-0.5">•</span>
+                                  {obj}
+                                </li>
+                              ))}
+                            </ul>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {d.concept.summary && (
+                        <Card className="border-border/60">
+                          <CardContent className="p-5">
+                            <h2 className="font-semibold mb-3 flex items-center gap-2">
+                              <Icon name="notes" size={18} className="text-primary" />
+                              Summary
+                            </h2>
+                            <div className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">
+                              {d.concept.summary}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
                       <Card className="border-border/60">
                         <CardContent className="p-5">
                           <h2 className="font-semibold mb-3 flex items-center gap-2">
-                            <Icon name="track_changes" size={18} className="text-tertiary" />
-                            Learning Objectives
+                            <Icon name="menu_book" size={18} className="text-primary" />
+                            Study Notes
                           </h2>
-                          <ul className="space-y-1.5">
-                            {d.concept.learningObjectives!.map((obj, i) => (
-                              <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                                <span className="text-tertiary mt-0.5">•</span>
-                                {obj}
-                              </li>
-                            ))}
-                          </ul>
-                        </CardContent>
-                      </Card>
-                    )}
-
-                    {(d.concept.keywords || []).length > 0 && (
-                      <Card className="border-border/60">
-                        <CardContent className="p-5">
-                          <h2 className="font-semibold mb-3 flex items-center gap-2">
-                            <Icon name="label" size={18} className="text-primary" />
-                            Keywords
-                          </h2>
-                          <div className="flex flex-wrap gap-1.5">
-                            {d.concept.keywords!.map((kw, i) => (
-                              <Badge key={i} variant="secondary" className="text-xs">{kw}</Badge>
-                            ))}
+                          <div className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">
+                            {d.concept.notes}
                           </div>
                         </CardContent>
                       </Card>
-                    )}
 
-                    {(d.concept.questionBank || []).length > 0 && (<>
-<Button variant="outline" className="flex-1" onClick={() => {
-                        const tab = document.querySelector('[data-value="practice"]') as HTMLElement;
-                        tab?.click();
-                      }}>
-                        <Icon name="quiz" size={16} className="mr-2" />
-                        Practice ({(d.concept.questionBank || []).length})
-                      </Button>
+                      {d.concept.keyPoints && (
+                        <Card className="border-border/60">
+                          <CardContent className="p-5">
+                            <h2 className="font-semibold mb-3 flex items-center gap-2">
+                              <Icon name="lightbulb" size={18} className="text-primary" />
+                              Key Points
+                            </h2>
+                            <div className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">
+                              {d.concept.keyPoints}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
 
-{/* Start Adaptive Quiz button */}
-<Button variant="default" className="flex-1" onClick={async () => {
-  try {
-    const res = await api.get(`/quizzes-v2/concept/${conceptId}`);
-    const quizId = res.data.data.id;
-    // Navigate to quiz take page
-    navigate(ROUTES.STUDENT_TAKE_ASSESSMENT(quizId) + '?type=quiz');
-  } catch (e) {
-    toast.error('Quiz not available');
-  }
-}}>
-  <Icon name="play_arrow" size={16} className="mr-2" />
-  Start Adaptive Quiz
-</Button>
-                    </>)}
-                  </TabsContent>
+                      {d.concept.formulas && (
+                        <Card className="border-border/60">
+                          <CardContent className="p-5">
+                            <h2 className="font-semibold mb-3 flex items-center gap-2">
+                              <Icon name="calculate" size={18} className="text-primary" />
+                              Formulas
+                            </h2>
+                            <div className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground font-mono">
+                              {d.concept.formulas}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
 
-                  <TabsContent value="mindmap" className="mt-4">
-                    {!release?.mindMapReleased ? (
-                      <UnlockOverlay icon="lock" message="The mind map has not yet been pushed by your teacher. It will be available once the concept is explained." />
-                    ) : (
+                      {d.concept.examples && (
+                        <Card className="border-border/60">
+                          <CardContent className="p-5">
+                            <h2 className="font-semibold mb-3 flex items-center gap-2">
+                              <Icon name="description" size={18} className="text-primary" />
+                              Examples
+                            </h2>
+                            <div className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">
+                              {d.concept.examples}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="mindmap" className="mt-4">
                       <ConceptDetailMindMap concept={d.concept} />
-                    )}
-                  </TabsContent>
+                    </TabsContent>
 
-                  <TabsContent value="practice" className="mt-4 space-y-4">
-                    {!questionBankReleased ? (
-                      <UnlockOverlay icon="lock" message="Practice questions are not yet released by your teacher. They will appear here once the teacher finishes explaining the concept." />
-                    ) : (d.concept.questionBank || []).length > 0 ? (
-                      <>
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm text-muted-foreground">
-                            {submitted
-                              ? `You scored ${(d.concept.questionBank || []).filter((q) => isCorrect(q, answers[q.id] ?? '')).length}/${(d.concept.questionBank || []).length}`
-                              : `${(d.concept.questionBank || []).length} questions`
-                            }
-                          </p>
-                          {submitted ? (
-                            <Button variant="outline" size="sm" onClick={handleRetakePractice}>
-                              <Icon name="refresh" size={14} className="mr-1" />
-                              Retake
-                            </Button>
-                          ) : (
-                            <p className="text-xs text-muted-foreground">Answer all questions then submit</p>
-                          )}
-                        </div>
-
-                        {(d.concept.questionBank || []).map((q, i) => {
-                          const userAnswer = answers[q.id] ?? '';
-                          const correct = isCorrect(q, userAnswer);
-                          return (
-                            <Card key={q.id} className={`border-border/60 ${submitted ? (correct ? 'border-green-300 dark:border-green-700' : 'border-red-300 dark:border-red-700') : ''}`}>
-                              <CardContent className="p-5">
-                                <div className="flex items-start gap-3">
-                                  <div className={`h-7 w-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${
-                                    submitted ? (correct ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300') : 'bg-primary/10 text-primary'
-                                  }`}>
-                                    {i + 1}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <Badge variant="outline" className="text-[10px] capitalize">{q.difficulty}</Badge>
-                                      <Badge variant="outline" className="text-[10px] capitalize">{questionConfig[q.type]?.label || q.type}</Badge>
-                                    </div>
-                                    <QuestionRenderer question={{ type: q.type, text: q.text }} />
-                                    <QuestionInput
-                                      question={q}
-                                      value={userAnswer}
-                                      onChange={(v) => handleAnswer(q.id, v)}
-                                      disabled={submitted}
-                                    />
-                                    {submitted && (
-                                      <div className={`mt-2 p-3 rounded-lg border ${
-                                        correct ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800'
-                                      }`}>
-                                        <p className={`text-xs font-medium flex items-center gap-1 ${correct ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
-                                          <Icon name={correct ? 'check_circle' : 'cancel'} size={14} />
-                                          {correct ? 'Correct!' : `Answer: ${Array.isArray(q.correctAnswer) ? q.correctAnswer.join(', ') : q.correctAnswer}`}
-                                        </p>
-                                        {q.explanation && (
-                                          <p className="text-xs text-muted-foreground mt-1">{q.explanation}</p>
-)}
-                                      </div>
-)}
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          );
-                        })}
-
-                        {!submitted && (
-                          <Button className="w-full gap-2" size="lg" onClick={handleSubmitPractice}>
-                            <Icon name="checklist" size={18} />
-                            Submit Answers
-                          </Button>
-                        )}
-                      </>
-                    ) : (
-                      <Card className="border-border/60">
-                        <CardContent className="p-12 text-center">
-                          <Icon name="quiz" size={48} className="text-muted-foreground/30 mx-auto mb-3" />
-                          <p className="text-muted-foreground">No questions generated yet.</p>
-                        </CardContent>
-                      </Card>
-                    )}
-                  </TabsContent>
-
-                  <TabsContent value="quiz" className="mt-4">
-                    {!questionBankReleased ? (
-                      <UnlockOverlay icon="lock" message="Questions are not yet released by your teacher. Check back later." />
-                    ) : !practiceCompleted && (d.concept.questionBank || []).length > 0 ? (
-                      <UnlockOverlay icon="lock" message="Complete the practice questions (60%+) to unlock the adaptive quiz." />
-                    ) : (
+                    <TabsContent value="quiz" className="mt-4">
                       <Card className="border-border/60">
                         <CardContent className="p-6 text-center">
                           <Icon name="bolt" size={48} className="text-primary/50 mx-auto mb-3" />
@@ -465,12 +395,12 @@ export default function StudentConceptPage() {
                           </Button>
                         </CardContent>
                       </Card>
-                    )}
-                  </TabsContent>
-                </Tabs>
-              </motion.div>
-            </div>
-          )}
+                    </TabsContent>
+                  </Tabs>
+                </motion.div>
+              </div>
+            );
+          }}
         </DataFetchWrapper>
       </motion.div>
     </>

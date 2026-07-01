@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { FieldValue } from '../firebase/firestore';
-import { collections } from '../firebase/firestore';
+import { FieldValue } from '../database/adapter';
+import { collections } from '../database/adapter';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
@@ -14,6 +14,7 @@ export async function createLesson(data: {
   videoUrl?: string;
   duration?: number;
   isPublished?: boolean;
+  schoolId?: string;
 }) {
   const lessonId = uuidv4();
   const now = new Date().toISOString();
@@ -104,9 +105,13 @@ export async function getLessonById(lessonId: string) {
 }
 
 /** List lessons for a course ordered by their `order` field ascending. */
-export async function listLessonsByCourse(courseId: string) {
-  const snapshot = await collections.lessons()
-    .where('courseId', '==', courseId)
+export async function listLessonsByCourse(courseId: string, schoolId?: string) {
+  let baseQuery = collections.lessons()
+    .where('courseId', '==', courseId);
+  if (schoolId) {
+    baseQuery = baseQuery.where('schoolId', '==', schoolId);
+  }
+  const snapshot = await baseQuery
     .orderBy('order', 'asc')
     .get();
 

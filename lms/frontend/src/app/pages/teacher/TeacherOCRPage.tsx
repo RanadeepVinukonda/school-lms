@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -112,7 +112,8 @@ export default function TeacherOCRPage() {
   const user = useAuthStore((s) => s.user);
   const userId = user?.id || 'anonymous';
   
-  const messages = useChatStore((s) => s.teacherOcrMessages[userId] || []);
+  const emptyMessages = useMemo(() => [] as ChatMsg[], []);
+  const messages = useChatStore((s) => s.teacherOcrMessages[userId] || emptyMessages);
   const setTeacherOcrMessages = useChatStore((s) => s.setTeacherOcrMessages);
   const clearMessages = useChatStore((s) => s.clearTeacherOcrMessages);
 

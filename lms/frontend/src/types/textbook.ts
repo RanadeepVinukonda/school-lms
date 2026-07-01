@@ -38,6 +38,9 @@ export interface Concept {
   summary: string;
   notes: string;
   learningObjectives: string[];
+  keyPoints?: string;
+  formulas?: string;
+  examples?: string;
   keywords: string[];
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   prerequisites: string[];

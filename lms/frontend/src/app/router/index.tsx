@@ -41,7 +41,18 @@ import StudentCodingPage from '@/app/pages/student/StudentCodingPage';
 import StudentCodingEditorPage from '@/app/pages/student/StudentCodingEditorPage';
 import StudentStreamProjectsPage from '@/app/pages/student/StudentStreamProjectsPage';
 import StudentOCRPage from '@/app/pages/student/StudentOCRPage';
+import SubjectsPage from '@/app/pages/student/SubjectsPage';
+import SubjectDetailPage from '@/app/pages/student/SubjectDetailPage';
+import TextbookDetailPage from '@/app/pages/student/TextbookDetailPage';
+import StudentChapterPage from '@/app/pages/student/StudentChapterPage';
+import LessonViewPage from '@/app/pages/student/LessonViewPage';
+import StudentQuizzesPage from '@/app/pages/student/StudentQuizzesPage';
+import AdaptiveQuizPage from '@/app/pages/student/AdaptiveQuizPage';
+import StudentNoticeBoardPage from '@/app/pages/student/StudentNoticeBoardPage';
+import StudentTimetablePage from '@/app/pages/student/StudentTimetablePage';
 import TeacherOCRPage from '@/app/pages/teacher/TeacherOCRPage';
+import TeacherUnifiedTestPage from '@/app/pages/teacher/TeacherUnifiedTestPage';
+import AboutSchoolPage from '@/app/pages/AboutSchoolPage';
 
 import TeacherDashboardPage from '@/app/pages/teacher/TeacherDashboardPage';
 import TeacherStudentsPage from '@/app/pages/teacher/TeacherStudentsPage';
@@ -71,6 +82,8 @@ import TeacherMindMapEditorPage from '@/app/pages/teacher/TeacherMindMapEditorPa
 import TeacherAttendancePage from '@/app/pages/teacher/TeacherAttendancePage';
 import TeacherNEPQuestionsPage from '@/app/pages/teacher/TeacherNEPQuestionsPage';
 import TeacherRubricPage from '@/app/pages/teacher/TeacherRubricPage';
+import TeacherNoticeBoardPage from '@/app/pages/teacher/TeacherNoticeBoardPage';
+import TeacherTimetablePage from '@/app/pages/teacher/TeacherTimetablePage';
 
 import AdminDashboardPage from '@/app/pages/admin/AdminDashboardPage';
 import AdminAcademicYearsPage from '@/app/pages/admin/AdminAcademicYearsPage';
@@ -85,6 +98,17 @@ import AdminAuditLogsPage from '@/app/pages/admin/AdminAuditLogsPage';
 import AdminSchoolAnalyticsPage from '@/app/pages/admin/AdminSchoolAnalyticsPage';
 import AdminAttendancePage from '@/app/pages/admin/AdminAttendancePage';
 import AdminFeePage from '@/app/pages/admin/AdminFeePage';
+import AdminTimetablePage from '@/app/pages/admin/AdminTimetablePage';
+import AdminNoticeBoardPage from '@/app/pages/admin/AdminNoticeBoardPage';
+import AdminErpDashboardPage from '@/app/pages/admin/AdminErpDashboardPage';
+import AdminTransportDashboard from '@/app/pages/admin/AdminTransportDashboard';
+import AdminTransportPage from '@/app/pages/admin/AdminTransportPage';
+import AdminInventoryPage from '@/app/pages/admin/AdminInventoryPage';
+import AdminStaffPage from '@/app/pages/admin/AdminStaffPage';
+import AdminLeavePage from '@/app/pages/admin/AdminLeavePage';
+import AdminPayrollPage from '@/app/pages/admin/AdminPayrollPage';
+import AdminClassroomPage from '@/app/pages/admin/AdminClassroomPage';
+import AdminLtiPage from '@/app/pages/admin/AdminLtiPage';
 
 import RollNumberEntryPage from '@/app/pages/student/RollNumberEntryPage';
 import ClassSelectionPage from '@/app/pages/teacher/ClassSelectionPage';
@@ -151,6 +175,15 @@ export const router = createBrowserRouter([
       { path: ROUTES.STUDENT_CODING_EDITOR(':id'), element: <StudentCodingEditorPage /> },
       { path: ROUTES.STUDENT_STREAM_PROJECTS, element: <StudentStreamProjectsPage /> },
       { path: ROUTES.STUDENT_OCR, element: <StudentOCRPage /> },
+      { path: ROUTES.STUDENT_SUBJECTS, element: <SubjectsPage /> },
+      { path: ROUTES.STUDENT_SUBJECT(':id'), element: <SubjectDetailPage /> },
+      { path: ROUTES.STUDENT_TEXTBOOK(':id'), element: <TextbookDetailPage /> },
+      { path: ROUTES.STUDENT_CHAPTER(':textbookId', ':chapterId'), element: <StudentChapterPage /> },
+      { path: ROUTES.STUDENT_LESSON(':id'), element: <LessonViewPage /> },
+      { path: ROUTES.STUDENT_CONCEPT_QUIZ(':conceptId'), element: <StudentQuizzesPage /> },
+      { path: ROUTES.STUDENT_ADAPTIVE_QUIZ(':conceptId'), element: <AdaptiveQuizPage /> },
+      { path: ROUTES.STUDENT_NOTICEBOARD, element: <StudentNoticeBoardPage /> },
+      { path: ROUTES.STUDENT_TIMETABLE, element: <StudentTimetablePage /> },
     ],
   },
 
@@ -191,6 +224,9 @@ export const router = createBrowserRouter([
       { path: ROUTES.TEACHER_NEP_QUESTIONS, element: <TeacherNEPQuestionsPage /> },
       { path: ROUTES.TEACHER_RUBRICS, element: <TeacherRubricPage /> },
       { path: ROUTES.TEACHER_OCR, element: <TeacherOCRPage /> },
+      { path: ROUTES.TEACHER_UNIFIED_TEST, element: <TeacherUnifiedTestPage /> },
+      { path: ROUTES.TEACHER_NOTICEBOARD, element: <TeacherNoticeBoardPage /> },
+      { path: ROUTES.TEACHER_TIMETABLE, element: <TeacherTimetablePage /> },
     ],
   },
 
@@ -215,6 +251,17 @@ export const router = createBrowserRouter([
       { path: ROUTES.ADMIN_SCHOOL_ANALYTICS, element: <AdminSchoolAnalyticsPage /> },
       { path: ROUTES.ADMIN_ATTENDANCE, element: <AdminAttendancePage /> },
       { path: ROUTES.ADMIN_FEE, element: <AdminFeePage /> },
+      { path: ROUTES.ADMIN_TIMETABLE, element: <AdminTimetablePage /> },
+      { path: ROUTES.ADMIN_NOTICEBOARD, element: <AdminNoticeBoardPage /> },
+      { path: ROUTES.ADMIN_ERP_DASHBOARD, element: <AdminErpDashboardPage /> },
+      { path: '/admin/transport', element: <AdminTransportDashboard /> },
+      { path: '/admin/transport/routes/:id', element: <AdminTransportPage /> },
+      { path: '/admin/inventory', element: <AdminInventoryPage /> },
+      { path: '/admin/hr', element: <AdminStaffPage /> },
+      { path: '/admin/hr/leaves', element: <AdminLeavePage /> },
+      { path: '/admin/hr/payroll', element: <AdminPayrollPage /> },
+      { path: '/admin/classroom', element: <AdminClassroomPage /> },
+      { path: '/admin/lti', element: <AdminLtiPage /> },
     ],
   },
 
@@ -254,6 +301,10 @@ export const router = createBrowserRouter([
   {
     path: ROUTES.NOTIFICATIONS,
     element: <NotificationsPage />,
+  },
+  {
+    path: ROUTES.ABOUT,
+    element: <AboutSchoolPage />,
   },
   {
     path: ROUTES.HOME,

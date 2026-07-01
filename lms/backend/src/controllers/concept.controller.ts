@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getCollection } from '../firebase/firestore';
+import { getCollection } from '../database/adapter';
 import { sendSuccess } from '../utils/response';
 import { logger } from '../utils/logger';
 

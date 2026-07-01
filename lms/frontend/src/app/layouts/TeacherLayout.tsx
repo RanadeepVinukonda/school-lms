@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { supabase } from '@/firebase/config';
+import { supabase } from '@/supabase/config';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
@@ -36,6 +36,8 @@ const navGroups: NavGroup[] = [
       { label: 'Mind Maps', href: ROUTES.TEACHER_MIND_MAPS, icon: 'psychology' },
       { label: 'Manage Tests & Review', href: ROUTES.TEACHER_TEST_SCHEDULE, icon: 'analytics' },
       { label: 'OCR Scanner', href: ROUTES.TEACHER_OCR, icon: 'document_scanner' },
+      { label: 'Timetable', href: ROUTES.TEACHER_TIMETABLE, icon: 'calendar_view_week' },
+      { label: 'Notice Board', href: ROUTES.TEACHER_NOTICEBOARD, icon: 'campaign' },
     ],
   },
 ];
@@ -45,6 +47,7 @@ const mobileNavItems: NavItem[] = [
   { label: 'Teaching', href: ROUTES.TEACHER_TEXTBOOKS, icon: 'menu_book' },
   { label: 'Mind Maps', href: ROUTES.TEACHER_MIND_MAPS, icon: 'psychology' },
   { label: 'Tests', href: ROUTES.TEACHER_TEST_SCHEDULE, icon: 'analytics' },
+  { label: 'Notice Board', href: ROUTES.TEACHER_NOTICEBOARD, icon: 'campaign' },
 ];
 
 export default function TeacherLayout() {

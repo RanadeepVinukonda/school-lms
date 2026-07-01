@@ -6,8 +6,16 @@ import SplashScreen from '@/components/common/SplashScreen';
 import UploadProgressBanner from '@/components/textbook/UploadProgressBanner';
 import { PWAInstallPrompt } from '@/components/common/PWAInstallPrompt';
 import { OfflineStatusBar } from '@/components/common/OfflineStatusBar';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useAuthStore } from '@/store/authStore';
 import { useLanguageStore } from '@/store/languageStore';
+
+import { ClassScopeProvider } from '@/contexts/ClassScopeContext';
+
+function PushNotificationManager() {
+  usePushNotifications();
+  return null;
+}
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const initialize = useAuthStore((s) => s.initialize);
@@ -39,13 +47,16 @@ export default function App() {
   return (
     <AuthGate>
       <MotionConfig reducedMotion="always" transition={{ duration: 0 }}>
-        <SplashScreen isLoading={showSplash} onFinish={() => setShowSplash(false)} />
-        <OfflineStatusBar />
-        <UploadProgressBanner />
-        <PWAInstallPrompt />
-        <div className="container mx-auto px-4">
-          <RouterProvider router={router} />
-        </div>
+        <ClassScopeProvider>
+          <SplashScreen isLoading={showSplash} onFinish={() => setShowSplash(false)} />
+          <OfflineStatusBar />
+          <UploadProgressBanner />
+          <PWAInstallPrompt />
+          <PushNotificationManager />
+          <div className="container mx-auto px-4">
+            <RouterProvider router={router} />
+          </div>
+        </ClassScopeProvider>
       </MotionConfig>
     </AuthGate>
   );

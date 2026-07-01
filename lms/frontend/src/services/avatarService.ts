@@ -1,4 +1,4 @@
-import { supabase } from '@/firebase/config';
+import { supabase } from '@/supabase/config';
 
 export async function uploadProfileImage(userId: string, file: File): Promise<string> {
   const fileExt = file.name.split('.').pop();

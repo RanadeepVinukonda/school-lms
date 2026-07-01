@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-import { getAdminFirestore } from '../firebase/admin';
+import { getAdminFirestore } from '../database/admin';
 
 interface Question {
   id: string;

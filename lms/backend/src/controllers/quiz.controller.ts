@@ -6,12 +6,15 @@ import { sendSuccess, sendCreated } from '../utils/response';
 import type { ReqWithUser, QueryParams } from '../types/common';
 
 export async function listAllQuizzes(req: Request, res: Response) {
-  const result = await quizService.listAllQuizzes(req.query as QueryParams);
+  const result = await quizService.listAllQuizzes({
+    ...(req.query as QueryParams),
+    schoolId: req.user!.school_id,
+  });
   sendSuccess(res, result);
 }
 
 export async function createQuiz(req: Request, res: Response) {
-  const result = await quizService.createQuiz(req.body);
+  const result = await quizService.createQuiz({ ...req.body, schoolId: req.user!.school_id });
   logAudit(adminAuditEntry(req as ReqWithUser, 'quiz.create', result.id, 'quiz', result.title, {
     newValue: result,
     summary: `Created quiz "${result.title}"`,

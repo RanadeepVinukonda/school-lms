@@ -47,7 +47,28 @@ export async function createStreamProject(req: Request, res: Response) {
   sendCreated(res, project, 'STREAM project created');
 }
 
+export async function getStreamProjectById(req: Request, res: Response) {
+  const project = await codingService.getStreamProjectById(req.params.id);
+  sendSuccess(res, project);
+}
+
+export async function updateStreamProject(req: Request, res: Response) {
+  const userId = (req as ReqWithUser).user!.uid;
+  const project = await codingService.updateStreamProject(req.params.id, req.body, userId);
+  sendSuccess(res, project, 'STREAM project updated');
+}
+
+export async function deleteStreamProject(req: Request, res: Response) {
+  await codingService.deleteStreamProject(req.params.id);
+  sendSuccess(res, null, 'STREAM project deleted');
+}
+
 export async function addStreamCollaborator(req: Request, res: Response) {
-  const result = await codingService.addStreamCollaborator(req.params.id, req.body.collaboratorId);
+  const result = await codingService.addStreamCollaborator(req.params.id, req.body.userId);
   sendSuccess(res, result, 'Collaborator added');
+}
+
+export async function removeStreamCollaborator(req: Request, res: Response) {
+  const result = await codingService.removeStreamCollaborator(req.params.id, req.params.userId);
+  sendSuccess(res, result, 'Collaborator removed');
 }

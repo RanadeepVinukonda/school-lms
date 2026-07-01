@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-import { getAdminAuth, getAdminFirestore, admin } from '../firebase/admin';
+import { getAdminAuth, getAdminFirestore, admin } from '../database/admin';
 import { v4 as uuidv4 } from 'uuid';
 const auth = getAdminAuth();
 const db = getAdminFirestore();
@@ -14,7 +14,7 @@ async function deleteCollection(name: string) {
   const snap = await db.collection(name).get();
   if (snap.empty) return;
   const batch = db.batch();
-  snap.docs.forEach((d) => batch.delete(d.ref));
+  snap.docs.forEach((d: any) => batch.delete(d.ref));
   await batch.commit();
   console.log(`  Deleted ${snap.size} docs from ${name}`);
 }
@@ -25,7 +25,7 @@ async function deleteSubcollections(docRef: FirebaseFirestore.DocumentReference)
     const snap = await col.get();
     if (!snap.empty) {
       const batch = db.batch();
-      snap.docs.forEach((d) => batch.delete(d.ref));
+      snap.docs.forEach((d: any) => batch.delete(d.ref));
       await batch.commit();
     }
   }
@@ -56,26 +56,26 @@ async function supplementalSeed() {
   // ── Fetch existing data from seedFull.ts ──
   console.log('Fetching existing data...');
   const usersSnap = await db.collection('users').get();
-  const allUsers = usersSnap.docs.map(d => ({ id: d.id, ...d.data() as any }));
-  const adminUser = allUsers.find(u => u.role === 'admin');
-  const teachers = allUsers.filter(u => u.role === 'teacher');
-  const students = allUsers.filter(u => u.role === 'student');
+  const allUsers = usersSnap.docs.map((d: any) => ({ id: d.id, ...d.data() as any }));
+  const adminUser = allUsers.find((u: any) => u.role === 'admin');
+  const teachers = allUsers.filter((u: any) => u.role === 'teacher');
+  const students = allUsers.filter((u: any) => u.role === 'student');
   if (!adminUser || teachers.length === 0 || students.length === 0) {
     console.error('ERROR: Required users not found. Run seedFull.ts first.');
     return;
   }
 
   const classesSnap = await db.collection('classes').get();
-  const classes = classesSnap.docs.map(d => ({ id: d.id, ...d.data() as any }));
+  const classes = classesSnap.docs.map((d: any) => ({ id: d.id, ...d.data() as any }));
 
   const subjectsSnap = await db.collection('subjects').get();
-  const subjects = subjectsSnap.docs.map(d => ({ id: d.id, ...d.data() as any }));
+  const subjects = subjectsSnap.docs.map((d: any) => ({ id: d.id, ...d.data() as any }));
 
   const enrollmentsSnap = await db.collection('enrollment').get();
-  const enrollments = enrollmentsSnap.docs.map(d => d.data() as any);
+  const enrollments = enrollmentsSnap.docs.map((d: any) => d.data() as any);
 
   const tcsSnap = await db.collection('teacherClassSubject').get();
-  const tcsList = tcsSnap.docs.map(d => ({ id: d.id, ...d.data() as any }));
+  const tcsList = tcsSnap.docs.map((d: any) => ({ id: d.id, ...d.data() as any }));
 
   console.log(`  Found: ${allUsers.length} users, ${classes.length} classes, ${subjects.length} subjects`);
   console.log(`  ${enrollments.length} enrollments, ${tcsList.length} teacher-class-subject assignments`);
@@ -108,9 +108,9 @@ async function supplementalSeed() {
   console.log('\nCreating courses...');
   const courseMap: Record<string, string> = {};
   for (const sub of subjects) {
-    const cls = classes.find(c => c.id === sub.classId);
-    const tcs = tcsList.find(t => t.subjectId === sub.id && t.classId === sub.classId);
-    const teacher = teachers.find(t => t.id === tcs?.teacherId);
+    const cls = classes.find((c: any) => c.id === sub.classId);
+    const tcs = tcsList.find((t: any) => t.subjectId === sub.id && t.classId === sub.classId);
+    const teacher = teachers.find((t: any) => t.id === tcs?.teacherId);
     if (!cls || !teacher) continue;
     const courseId = uid();
     await db.collection('courses').doc(courseId).set({
@@ -121,7 +121,7 @@ async function supplementalSeed() {
       classId: cls.id,
       teacherId: teacher.id,
       status: 'published',
-      enrollmentCount: students.filter(s => s.classId === cls.id).length,
+      enrollmentCount: students.filter((s: any) => s.classId === cls.id).length,
       lessonCount: 2,
       createdAt: now(),
       updatedAt: now(),
@@ -281,7 +281,7 @@ async function supplementalSeed() {
   let gradeCount = 0;
   for (const student of students) {
     const studentGrade = classGradeMap[student.classId] || '';
-    const classSubjects = subjects.filter(s => s.classId === student.classId);
+    const classSubjects = subjects.filter((s: any) => s.classId === student.classId);
     for (const subj of classSubjects) {
       const key = `${studentGrade}_${subj.name?.toLowerCase()}`;
       const courseId = courseMap[key];
@@ -371,7 +371,7 @@ async function supplementalSeed() {
   console.log('\nCreating conversations and messages...');
   for (let i = 0; i < teachers.length; i++) {
     const teacher = teachers[i];
-    const classStudents = students.filter(s => s.classId === classes[i]?.id);
+    const classStudents = students.filter((s: any) => s.classId === classes[i]?.id);
     for (const student of classStudents) {
       const convId = uid();
       await db.collection('conversations').doc(convId).set({
@@ -467,11 +467,11 @@ async function supplementalSeed() {
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
   let timetableCount = 0;
   for (const cls of classes) {
-    const classSubjects = subjects.filter(s => s.classId === cls.id);
+    const classSubjects = subjects.filter((s: any) => s.classId === cls.id);
     for (let d = 0; d < days.length; d++) {
       for (let p = 0; p < Math.min(classSubjects.length, 4); p++) {
         const sub = classSubjects[p];
-        const tcs = tcsList.find(t => t.subjectId === sub.id && t.classId === cls.id);
+        const tcs = tcsList.find((t: any) => t.subjectId === sub.id && t.classId === cls.id);
         const tId = uid();
         await db.collection('timetable').doc(tId).set({
           id: tId,
@@ -597,7 +597,7 @@ async function supplementalSeed() {
     const templateId = uid();
     await db.collection('testTemplates').doc(templateId).set({
       id: templateId,
-      title: `Weekly Test Template - ${subjects.find(s => s.id === tcs.subjectId)?.name || ''}`,
+      title: `Weekly Test Template - ${subjects.find((s: any) => s.id === tcs.subjectId)?.name || ''}`,
       description: 'Standard weekly test template with mixed question types.',
       classId: tcs.classId,
       subjectId: tcs.subjectId,
@@ -625,12 +625,12 @@ async function supplementalSeed() {
       status: 'scheduled',
       config: { timeLimitMinutes: 30, passingScore: 40, maxAttempts: 1, shuffleQuestions: true, showResults: true },
       requiresApproval: false,
-      totalStudents: students.filter(s => s.classId === tcs.classId).length,
+      totalStudents: students.filter((s: any) => s.classId === tcs.classId).length,
       attemptedCount: 0,
       createdAt: now(),
       updatedAt: now(),
     });
-    console.log(`  Created template + schedule for subject ${subjects.find(s => s.id === tcs.subjectId)?.name}`);
+    console.log(`  Created template + schedule for subject ${subjects.find((s: any) => s.id === tcs.subjectId)?.name}`);
   }
 
   // ════════════════════════════════════════════
@@ -641,7 +641,7 @@ async function supplementalSeed() {
     const paperId = uid();
     await db.collection('questionPapers').doc(paperId).set({
       id: paperId,
-      title: `Practice Paper - ${subjects.find(s => s.id === tcs.subjectId)?.name || ''}`,
+      title: `Practice Paper - ${subjects.find((s: any) => s.id === tcs.subjectId)?.name || ''}`,
       description: 'Comprehensive practice question paper.',
       classId: tcs.classId,
       subjectId: tcs.subjectId,

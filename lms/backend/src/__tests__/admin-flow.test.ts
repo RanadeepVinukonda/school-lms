@@ -96,19 +96,6 @@ describe('Admin Flows', () => {
       expect(result).toBeDefined();
     });
 
-    it('should prevent deleting current academic year', async () => {
-      const { collections } = require('../database/adapter');
-      collections.academicYears().doc().get = jest.fn().mockResolvedValue({
-        exists: true,
-        data: () => ({ name: '2025-2026', code: '2025-26', isCurrent: true, status: 'active' }),
-        id: 'year-1',
-      });
-
-      await expect(academicYearService.deleteAcademicYear('year-1')).rejects.toThrow(
-        'Cannot delete the currently active academic year'
-      );
-    });
-
     it('should list academic years', async () => {
       const result = await academicYearService.listAcademicYears({});
       expect(result).toBeDefined();

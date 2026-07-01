@@ -1,4 +1,4 @@
-import { supabase } from '@/firebase/config';
+import { supabase } from '@/supabase/config';
 import { logAudit } from '@/services/auditService';
 import api from '@/services/api';
 import type { Textbook, Chapter, Concept, GeneratedQuestion, GeneratedAssignment, CachedVideo, ConceptProgress, ConceptRelease } from '@/types/textbook';
@@ -214,6 +214,10 @@ export async function getConceptsForChapter(textbookId: string, chapterId: strin
     if (notesRes.data) {
       concept.notes = notesRes.data.notes || '';
       concept.summary = notesRes.data.summary || '';
+      concept.learningObjectives = (notesRes.data.learning_objectives || '').split('\n').filter(Boolean).map(s => s.trim()).filter(Boolean);
+      concept.keyPoints = notesRes.data.key_points || '';
+      concept.formulas = notesRes.data.formulas || '';
+      concept.examples = notesRes.data.examples || '';
     }
     
     if (videosRes.data) {

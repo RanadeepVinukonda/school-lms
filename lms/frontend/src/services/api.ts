@@ -1,5 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { supabase } from '@/firebase/config';
+import { supabase } from '@/supabase/config';
 import { API_BASE_URL } from '@/lib/constants';
 import { useAuthStore } from '@/store/authStore';
 import type { ApiError } from '@/types';

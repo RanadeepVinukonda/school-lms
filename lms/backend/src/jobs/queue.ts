@@ -42,4 +42,18 @@ export async function removeUploadJob(textbookId: string) {
   logger.info('Upload job cancelled', { textbookId });
 }
 
+export async function addMasteryJob(studentId: string, conceptId: string, accuracy: number): Promise<boolean> {
+  const b = await getBoss();
+  if (!b) {
+    logger.info('pg-boss not available, skipping job send. Mastery will process inline.', { studentId, conceptId });
+    return false;
+  }
+  await b.send('masteryQueue', { studentId, conceptId, accuracy }, {
+    retryLimit: 3,
+    retryDelay: 5,
+  });
+  logger.info('Mastery job sent to pg-boss', { studentId, conceptId });
+  return true;
+}
+
 export { getBoss };

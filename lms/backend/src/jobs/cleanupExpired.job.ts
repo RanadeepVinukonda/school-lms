@@ -1,4 +1,4 @@
-import { collections } from '../firebase/firestore';
+import { collections } from '../database/adapter';
 import { logger } from '../utils/logger';
 
 export async function cleanupExpiredData() {

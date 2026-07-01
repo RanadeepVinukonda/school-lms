@@ -265,13 +265,23 @@ export default function TeacherConceptViewPage() {
   }, [data]);
 
   // Dynamic Preview filter & shuffle logic
+  const QUESTION_TYPE_ALIASES: Record<string, string> = {
+    mcq: 'multiple_choice',
+    true_false: 'true_false',
+    fill_blank: 'fill_blank',
+    matching: 'matching',
+    numerical: 'numerical',
+    descriptive: 'descriptive',
+  };
+
   const previewQuestions = useMemo(() => {
     if (!data?.concept?.questionBank) return [];
     
     // 1. Filter by selected modularity types
     let filtered = data.concept.questionBank.filter((q: any) => {
-      const qType = q.type.toLowerCase();
-      return testSelectedTypes.includes(qType);
+      const qType = (q.type || '').toLowerCase();
+      const mappedType = QUESTION_TYPE_ALIASES[qType] || qType;
+      return testSelectedTypes.includes(mappedType);
     });
 
     // 2. Jumble (shuffle) if requested using testJumbleSeed
@@ -328,16 +338,18 @@ export default function TeacherConceptViewPage() {
     onError: () => toast.error('Failed to publish test'),
   });
 
-  const toggleReleaseMutation = useMutation({
-    mutationFn: async (field: 'questionBankReleased' | 'assignmentsReleased' | 'mindMapReleased') => {
+  const pushConceptMutation = useMutation({
+    mutationFn: async () => {
       if (!data) return;
-      const currentVal = data.release?.[field] ?? false;
+      const currentReleased = data.release?.mindMapReleased ?? false;
       await setConceptRelease(data.textbook.classId, textbookId!, conceptId!, chapterId!, teacherId, {
-        [field]: !currentVal,
+        questionBankReleased: !currentReleased,
+        assignmentsReleased: !currentReleased,
+        mindMapReleased: !currentReleased,
       });
     },
     onSuccess: () => {
-      toast.success('Release settings updated!');
+      toast.success(data?.release?.mindMapReleased ? 'Concept pulled back from students' : 'Concept pushed to students!');
       queryClient.invalidateQueries({ queryKey: ['teacher-concept', textbookId, conceptId] });
     },
     onError: () => {
@@ -387,7 +399,9 @@ export default function TeacherConceptViewPage() {
                   <h1 className="text-headline-sm font-bold">{d.concept.title}</h1>
                   <p className="text-body-md text-muted-foreground mt-1">{d.concept.summary}</p>
                   <div className="flex flex-wrap gap-2 mt-3">
-                    <Badge variant="outline" className="text-[10px] capitalize">{d.concept.difficulty}</Badge>
+                    {d.concept.difficulty && (
+                      <Badge variant="outline" className="text-[10px] capitalize">{d.concept.difficulty}</Badge>
+                    )}
                     <Badge variant="outline" className="text-[10px]">
                       <Icon name="smart_display" size={12} className="mr-1" />
                       {(d.concept.videos ?? []).length} video{(d.concept.videos ?? []).length !== 1 ? 's' : ''}
@@ -402,45 +416,27 @@ export default function TeacherConceptViewPage() {
 
               <motion.div variants={cardStackReveal} custom={0}>
                 <Card className="border-border/60 border-primary/20 bg-primary/5">
-                  <CardContent className="p-5 space-y-3">
-                    <h2 className="font-semibold text-title-sm flex items-center gap-2">
-                      <Icon name="rss_feed" size={16} className="text-primary" />
-                      Student Release &amp; Push Settings
-                    </h2>
-                    <p className="text-label-xs text-muted-foreground">
-                      Toggle what is visible and accessible to students in their portal.
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <Button
-                        variant={d.release?.questionBankReleased ? 'default' : 'outline'}
-                        onClick={() => toggleReleaseMutation.mutate('questionBankReleased')}
-                        disabled={toggleReleaseMutation.isPending}
-                        className="justify-start gap-2 h-10 px-3"
-                      >
-                        <Icon name={d.release?.questionBankReleased ? 'visibility' : 'visibility_off'} size={16} />
-                        <span className="text-label-xs truncate">Practice: {d.release?.questionBankReleased ? 'Released' : 'Locked'}</span>
-                      </Button>
-
-                      <Button
-                        variant={d.release?.assignmentsReleased ? 'default' : 'outline'}
-                        onClick={() => toggleReleaseMutation.mutate('assignmentsReleased')}
-                        disabled={toggleReleaseMutation.isPending}
-                        className="justify-start gap-2 h-10 px-3"
-                      >
-                        <Icon name={d.release?.assignmentsReleased ? 'visibility' : 'visibility_off'} size={16} />
-                        <span className="text-label-xs truncate">Assignments: {d.release?.assignmentsReleased ? 'Released' : 'Locked'}</span>
-                      </Button>
-
-                      <Button
-                        variant={d.release?.mindMapReleased ? 'default' : 'outline'}
-                        onClick={() => toggleReleaseMutation.mutate('mindMapReleased')}
-                        disabled={toggleReleaseMutation.isPending}
-                        className="justify-start gap-2 h-10 px-3"
-                      >
-                        <Icon name={d.release?.mindMapReleased ? 'send' : 'send_and_archive'} size={16} />
-                        <span className="text-label-xs truncate">Mind Map: {d.release?.mindMapReleased ? 'Pushed' : 'Not Pushed'}</span>
-                      </Button>
+                  <CardContent className="p-5 flex items-center justify-between">
+                    <div>
+                      <h2 className="font-semibold text-title-sm flex items-center gap-2">
+                        <Icon name="rss_feed" size={16} className="text-primary" />
+                        Student Access
+                      </h2>
+                      <p className="text-label-xs text-muted-foreground">
+                        {d.release?.mindMapReleased ? 'Concept is currently released to students.' : 'Release the concept to make it available to students.'}
+                      </p>
                     </div>
+                    <Button
+                      variant={d.release?.mindMapReleased ? 'outline' : 'default'}
+                      onClick={() => pushConceptMutation.mutate()}
+                      disabled={pushConceptMutation.isPending}
+                      className="gap-2"
+                    >
+                      <Icon name={d.release?.mindMapReleased ? 'undo' : 'send'} size={16} />
+                      <span className="text-label-xs truncate">
+                        {d.release?.mindMapReleased ? 'Pull from Students' : 'Push Concept to Students'}
+                      </span>
+                    </Button>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -451,15 +447,11 @@ export default function TeacherConceptViewPage() {
                     <TabsTrigger value="teach" className="flex-1">
                       <Icon name="school" size={14} className="mr-1.5" />Teach
                     </TabsTrigger>
-                    <TabsTrigger value="notes" className="flex-1">
-                      <Icon name="menu_book" size={14} className="mr-1.5" />Notes
+                    <TabsTrigger value="studyMaterial" className="flex-1">
+                      <Icon name="menu_book" size={14} className="mr-1.5" />Study Material
                     </TabsTrigger>
                     <TabsTrigger value="mindmap" className="flex-1">
                       <Icon name="account_tree" size={14} className="mr-1.5" />Mind Map
-                    </TabsTrigger>
-                    <TabsTrigger value="questions" className="flex-1">
-                      <Icon name="quiz" size={14} className="mr-1.5" />Questions
-                      <Badge variant="secondary" className="ml-1.5 text-[10px] px-1">{(d.concept.questionBank ?? []).length}</Badge>
                     </TabsTrigger>
                   </TabsList>
 
@@ -509,19 +501,7 @@ export default function TeacherConceptViewPage() {
                     <ConceptDetailMindMap concept={d.concept} />
                   </TabsContent>
 
-                  <TabsContent value="notes" className="mt-4 space-y-4">
-                    <Card className="border-border/60">
-                      <CardContent className="p-5">
-                        <h2 className="font-semibold mb-3 flex items-center gap-2">
-                          <Icon name="menu_book" size={18} className="text-primary" />
-                          Study Notes
-                        </h2>
-                        <div className="text-body-md leading-relaxed whitespace-pre-wrap text-muted-foreground">
-                          {d.concept.notes}
-                        </div>
-                      </CardContent>
-                    </Card>
-
+                  <TabsContent value="studyMaterial" className="mt-4 space-y-4">
                     {d.concept.learningObjectives?.length > 0 && (
                       <Card className="border-border/60">
                         <CardContent className="p-5">
@@ -541,71 +521,77 @@ export default function TeacherConceptViewPage() {
                       </Card>
                     )}
 
-                    {d.concept.keywords?.length > 0 && (
+                    {d.concept.summary && (
                       <Card className="border-border/60">
                         <CardContent className="p-5">
                           <h2 className="font-semibold mb-3 flex items-center gap-2">
-                            <Icon name="label" size={18} className="text-primary" />
-                            Keywords
+                            <Icon name="notes" size={18} className="text-primary" />
+                            Summary
                           </h2>
-                          <div className="flex flex-wrap gap-1.5">
-                            {d.concept.keywords.map((kw, i) => (
-                              <Badge key={i} variant="secondary" className="text-label-xs">{kw}</Badge>
-                            ))}
+                          <div className="text-body-md leading-relaxed whitespace-pre-wrap text-muted-foreground">
+                            {d.concept.summary}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    <Card className="border-border/60">
+                      <CardContent className="p-5">
+                        <h2 className="font-semibold mb-3 flex items-center gap-2">
+                          <Icon name="menu_book" size={18} className="text-primary" />
+                          Study Notes
+                        </h2>
+                        <div className="text-body-md leading-relaxed whitespace-pre-wrap text-muted-foreground">
+                          {d.concept.notes}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {d.concept.keyPoints && (
+                      <Card className="border-border/60">
+                        <CardContent className="p-5">
+                          <h2 className="font-semibold mb-3 flex items-center gap-2">
+                            <Icon name="lightbulb" size={18} className="text-primary" />
+                            Key Points
+                          </h2>
+                          <div className="text-body-md leading-relaxed whitespace-pre-wrap text-muted-foreground">
+                            {d.concept.keyPoints}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {d.concept.formulas && (
+                      <Card className="border-border/60">
+                        <CardContent className="p-5">
+                          <h2 className="font-semibold mb-3 flex items-center gap-2">
+                            <Icon name="calculate" size={18} className="text-primary" />
+                            Formulas
+                          </h2>
+                          <div className="text-body-md leading-relaxed whitespace-pre-wrap text-muted-foreground font-mono">
+                            {d.concept.formulas}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {d.concept.examples && (
+                      <Card className="border-border/60">
+                        <CardContent className="p-5">
+                          <h2 className="font-semibold mb-3 flex items-center gap-2">
+                            <Icon name="description" size={18} className="text-primary" />
+                            Examples
+                          </h2>
+                          <div className="text-body-md leading-relaxed whitespace-pre-wrap text-muted-foreground">
+                            {d.concept.examples}
                           </div>
                         </CardContent>
                       </Card>
                     )}
                   </TabsContent>
 
-                  <TabsContent value="questions" className="mt-4 space-y-4">
-                    {(d.concept.questionBank?.length ?? 0) > 0 ? (
-                      d.concept.questionBank.map((q, i) => (
-                        <Card key={q.id} className="border-border/60">
-                          <CardContent className="p-5">
-                            <div className="flex items-start gap-3">
-                              <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 text-xs font-bold text-primary">
-                                {i + 1}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <Badge variant="outline" className="text-[10px] capitalize">{q.difficulty}</Badge>
-                                  <Badge variant="outline" className="text-[10px] capitalize">{q.type.replace(/_/g, ' ')}</Badge>
-                                  <Badge variant="outline" className="text-[10px] capitalize">{q.category}</Badge>
-                                </div>
-                                <QuestionRenderer question={{ type: q.type, text: q.text }} />
-                                {q.options && q.options.length > 0 && (
-                                  <div className="mt-2 space-y-1">
-                                    {q.options.map((opt, oi) => (
-                                      <div key={oi} className="flex items-center gap-2 text-label-xs text-muted-foreground">
-                                        <span className="font-medium">{String.fromCharCode(65 + oi)}.</span>
-                                        {opt}
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                                <details className="mt-2">
-                                  <summary className="text-label-xs text-primary cursor-pointer">Answer</summary>
-                                  <p className="text-label-xs text-green-600 dark:text-green-400 mt-1">
-                                    {Array.isArray(q.correctAnswer) ? q.correctAnswer.join(', ') : q.correctAnswer}
-                                  </p>
-                                  {q.explanation && (
-                                    <p className="text-label-xs text-muted-foreground mt-1">{q.explanation}</p>
-                                  )}
-                                </details>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))
-                    ) : (
-                      <Card className="border-border/60">
-                        <CardContent className="p-5 text-center">
-                          <Icon name="quiz" size={48} className="text-muted-foreground/30 mx-auto mb-3" />
-                          <p className="text-muted-foreground">No questions in this concept.</p>
-                        </CardContent>
-                      </Card>
-                    )}
+                  <TabsContent value="mindmap" className="mt-4">
+                    <ConceptDetailMindMap concept={d.concept} />
                   </TabsContent>
                 </Tabs>
               </motion.div>

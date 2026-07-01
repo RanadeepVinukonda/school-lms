@@ -12,7 +12,7 @@ import { OptionsSelect } from '@/components/ui/select';
 import { attendanceService } from '@/services/attendanceService';
 import { getStudentsByClass } from '@/services/dataService';
 import { useAuthStore } from '@/store/authStore';
-import { supabase } from '@/firebase/config';
+import { supabase } from '@/supabase/config';
 
 export default function TeacherAttendancePage() {
   const queryClient = useQueryClient();

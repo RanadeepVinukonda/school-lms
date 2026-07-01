@@ -7,7 +7,7 @@ const client = new Client({ connectionString: process.env.DATABASE_URL, ssl: { r
 client.connect().then(async () => {
   try {
     const tablesRes = await client.query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';");
-    const tables = tablesRes.rows.map(r => r.table_name);
+    const tables = tablesRes.rows.map(r => r.table_name as string);
     
     for (const table of tables) {
       if (['nosql_docs', 'firestore_docs'].includes(table)) continue;

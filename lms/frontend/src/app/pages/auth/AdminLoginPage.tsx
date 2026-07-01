@@ -13,7 +13,7 @@ import { Icon } from '@/components/ui/Icon';
 import { pageTransition } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
-import { supabase } from '@/firebase/config';
+import { supabase } from '@/supabase/config';
 import { cardStackReveal } from '@/lib/motion';
 
 const adminLoginSchema = z.object({

@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { FieldValue } from '../firebase/firestore';
-import { collections } from '../firebase/firestore';
+import { FieldValue } from '../database/adapter';
+import { collections } from '../database/adapter';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
@@ -20,6 +20,7 @@ export async function createClass(data: {
   startDate?: string;
   endDate?: string;
   status?: string;
+  schoolId?: string;
 }) {
   const classId = uuidv4();
   const now = new Date().toISOString();
@@ -70,7 +71,7 @@ export async function deleteClass(classId: string) {
   logger.info('Class deleted', { classId });
 }
 
-/** List classes with optional filters (status, academicYear, teacherId, search), paginated. */
+/** List classes with optional filters (status, academicYear, teacherId, search, schoolId), paginated. */
 export async function listClasses(query: {
   page?: string;
   limit?: string;
@@ -78,16 +79,18 @@ export async function listClasses(query: {
   teacherId?: string;
   academicYear?: string;
   search?: string;
+  schoolId?: string;
 }) {
   const { page, limit } = parsePagination(query);
-  let baseQuery: FirebaseFirestore.Query = collections.classes();
+  let baseQuery: any = collections.classes();
 
+  if (query.schoolId) baseQuery = baseQuery.where('schoolId', '==', query.schoolId);
   if (query.status) baseQuery = baseQuery.where('status', '==', query.status);
   if (query.academicYear) baseQuery = baseQuery.where('academicYear', '==', query.academicYear);
 
   const snapshot = await baseQuery.get();
 
-  let items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  let items = snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id }));
   items = items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   if (query.teacherId) {

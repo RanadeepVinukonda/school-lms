@@ -8,6 +8,7 @@
   "theme_color": "#3B82F6",
   "orientation": "portrait-primary",
   "categories": ["education", "productivity"],
+  "gcm_sender_id": "103953800507",
   "lang": "en",
   "dir": "ltr",
   "icons": [

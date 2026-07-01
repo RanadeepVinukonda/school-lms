@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@/firebase/config';
+import { supabase } from '@/supabase/config';
 import { useAuthStore } from '@/store/authStore';
 import {
   Dialog,

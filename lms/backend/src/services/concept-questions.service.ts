@@ -17,7 +17,7 @@ export async function fetchConceptQuestions(
     .eq('chapter_id', chapterId)
     .eq('concept_id', conceptId);
   if (error) throw error;
-  return data as any[];
+  return (data ?? []) as Record<string, unknown>[];
 }
 
 /**

@@ -45,19 +45,16 @@ export default function StudentChapterPage() {
 
   function getReleaseBadge(release: ConceptRelease | undefined) {
     if (!release) {
-      return <Badge variant="outline" className="text-[10px] text-muted-foreground">Pending</Badge>;
+      return <Badge variant="outline" className="text-[10px] text-muted-foreground">Locked</Badge>;
     }
-    const released: string[] = [];
-    if (release.questionBankReleased) released.push('Questions');
-    if (release.assignmentsReleased) released.push('Assignments');
-    if (released.length === 0) {
-      return <Badge variant="outline" className="text-[10px] text-muted-foreground">Pending</Badge>;
+    if (release.mindMapReleased) {
+      return (
+        <Badge variant="outline" className="text-[10px] text-green-600 dark:text-green-400 border-green-300 dark:border-green-700">
+          Released
+        </Badge>
+      );
     }
-    return (
-      <Badge variant="outline" className="text-[10px] text-green-600 dark:text-green-400 border-green-300 dark:border-green-700">
-        {released.join(' + ')} released
-      </Badge>
-    );
+    return <Badge variant="outline" className="text-[10px] text-muted-foreground">Locked</Badge>;
   }
 
   return (

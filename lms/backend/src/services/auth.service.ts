@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../firebase/firestore';
-import { createUser as firebaseCreateUser, getUserByEmail, getUserById, setCustomClaims, updateUser as firebaseUpdateUser } from '../firebase/auth';
+import { collections } from '../database/adapter';
+import { createUser as firebaseCreateUser, getUserByEmail, getUserById, setCustomClaims, updateUser as firebaseUpdateUser } from '../database/auth';
 import { ConflictError, NotFoundError, UnauthorizedError, ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { env } from '../config/env';
@@ -62,7 +62,7 @@ export async function login(email: string, password: string) {
     }
   );
 
-  const data = (await response.json()) as any;
+  const data = (await response.json()) as { user?: { id: string }; access_token?: string; refresh_token?: string; error?: string; error_description?: string };
   if (!response.ok) {
     throw new UnauthorizedError('Invalid email or password');
   }

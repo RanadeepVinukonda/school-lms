@@ -1,0 +1,11 @@
+{
+  "name": "@genesis-lms/shared",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.108.2",
+    "axios": "^1.7.0",
+    "zustand": "^5.0.0"
+  }
+}

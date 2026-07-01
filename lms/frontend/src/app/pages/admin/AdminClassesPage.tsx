@@ -23,7 +23,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { OptionsSelect } from '@/components/ui/select';
 import { cardStackReveal } from '@/lib/motion';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/firebase/config';
+import { supabase } from '@/supabase/config';
 import { getAllClasses, getAllUsers, getAllSubjects } from '@/services/dataService';
 import { getClassDependencies, getUserDependencies } from '@/services/dependencyService';
 import { logAudit } from '@/services/auditService';

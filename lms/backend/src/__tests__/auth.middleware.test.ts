@@ -1,20 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { Request, Response, NextFunction } from 'express';
 
-const mockVerifyToken = jest.fn<any>();
-jest.mock('../firebase/auth', () => ({
-  verifyToken: mockVerifyToken,
-}));
-
-const mockGetDoc = jest.fn<any>();
-const mockDoc = jest.fn<any>().mockReturnValue({ get: mockGetDoc });
-const mockFirestore = {
-  doc: mockDoc,
-};
-jest.mock('../firebase/admin', () => ({
-  getAdminFirestore: () => mockFirestore,
-}));
-
 jest.mock('../utils/errors', () => ({
   UnauthorizedError: class extends Error {
     constructor(msg: string) {
@@ -22,6 +8,21 @@ jest.mock('../utils/errors', () => ({
       this.name = 'UnauthorizedError';
     }
   },
+}));
+
+const mockQuery = {
+  select: jest.fn<any>().mockReturnThis(),
+  eq: jest.fn<any>().mockReturnThis(),
+  single: jest.fn<any>(),
+};
+const mockSupabase = {
+  auth: {
+    getUser: jest.fn<any>(),
+  },
+  from: jest.fn<any>().mockReturnValue(mockQuery),
+};
+jest.mock('../services/supabase', () => ({
+  getSupabaseAdmin: jest.fn(() => mockSupabase),
 }));
 
 import { authenticate, optionalAuth } from '../middlewares/auth.middleware';
@@ -35,35 +36,41 @@ function mockRes(): Response {
 }
 
 describe('authenticate', () => {
-  let next: jest.Mock<any>;
+  let next: any;
 
   beforeEach(() => {
-    next = jest.fn<any>();
-    mockVerifyToken.mockReset();
-    mockGetDoc.mockReset();
+    next = jest.fn();
+    mockSupabase.auth.getUser.mockReset();
+    mockQuery.select.mockClear();
+    mockQuery.eq.mockClear();
+    mockQuery.single.mockReset();
   });
 
   it('throws if no token provided', async () => {
-    await authenticate(mockReq(), mockRes(), next);
+    authenticate(mockReq(), mockRes(), next);
+    await new Promise(process.nextTick);
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ name: 'UnauthorizedError' }));
   });
 
   it('throws if token is empty', async () => {
-    await authenticate(mockReq('Bearer '), mockRes(), next);
+    authenticate(mockReq('Bearer '), mockRes(), next);
+    await new Promise(process.nextTick);
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ name: 'UnauthorizedError' }));
   });
 
-  it('throws if token has no role', async () => {
-    mockVerifyToken.mockResolvedValue({ uid: 'u1', email: 'test@test.com' });
-    mockGetDoc.mockResolvedValue({ exists: false });
-    await authenticate(mockReq('Bearer valid-token'), mockRes(), next);
+  it('throws if token verification fails', async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null }, error: new Error('bad') });
+    authenticate(mockReq('Bearer bad-token'), mockRes(), next);
+    await new Promise(process.nextTick);
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ name: 'UnauthorizedError' }));
   });
 
   it('sets req.user on valid token', async () => {
-    mockVerifyToken.mockResolvedValue({ uid: 'u1', email: 'test@test.com', role: 'teacher' });
+    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: 'u1', email: 'test@test.com' } }, error: null });
+    mockQuery.single.mockResolvedValue({ data: { role: 'teacher', display_name: 'Test', class_ids: ['c1'] }, error: null });
     const req = mockReq('Bearer valid-token');
-    await authenticate(req, mockRes(), next);
+    authenticate(req, mockRes(), next);
+    await new Promise(process.nextTick);
     expect((req as any).user).toBeDefined();
     expect((req as any).user.uid).toBe('u1');
     expect((req as any).user.role).toBe('teacher');
@@ -72,12 +79,11 @@ describe('authenticate', () => {
 });
 
 describe('optionalAuth', () => {
-  let next: jest.Mock<any>;
+  let next: any;
 
   beforeEach(() => {
-    next = jest.fn<any>();
-    mockVerifyToken.mockReset();
-    mockGetDoc.mockReset();
+    next = jest.fn();
+    mockSupabase.auth.getUser.mockReset();
   });
 
   it('does nothing if no auth header', async () => {
@@ -86,7 +92,7 @@ describe('optionalAuth', () => {
   });
 
   it('does nothing if token verification fails', async () => {
-    mockVerifyToken.mockRejectedValue(new Error('invalid'));
+    mockSupabase.auth.getUser.mockRejectedValue(new Error('invalid'));
     optionalAuth(mockReq('Bearer bad-token'), mockRes(), next);
     await new Promise(process.nextTick);
     expect(next).toHaveBeenCalledWith();

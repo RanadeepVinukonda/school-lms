@@ -1,8 +1,14 @@
 import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../firebase/firestore';
+import { collections } from '../database/adapter';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
+import { sendPush, sendPushBulk } from './push.service';
+import type { NotificationCollection } from '../database/interfaces/collections';
+
+let _notificationCollection: NotificationCollection | null = null;
+export function setNotificationCollection(col: NotificationCollection): void { _notificationCollection = col; }
+function notifCol() { return _notificationCollection ?? (collections.notifications() as unknown as NotificationCollection); }
 
 /** Create a single notification for a user. */
 export async function createNotification(data: {
@@ -31,6 +37,8 @@ export async function createNotification(data: {
 
   await collections.notifications().doc(notificationId).set(notification);
 
+  sendPush(data.userId, data.type, data.title, data.body, data.data);
+
   return { ...notification };
 }
 
@@ -41,22 +49,24 @@ export async function getNotificationsByUser(userId: string, query: {
   unreadOnly?: string;
 }) {
   const { page, limit } = parsePagination(query);
-  let baseQuery: FirebaseFirestore.Query = collections.notifications()
-    .where('userId', '==', userId);
+  const offset = (page - 1) * limit;
+
+  // Push sort and pagination to the database
+  let baseQuery = collections.notifications()
+    .where('userId', '==', userId)
+    .orderBy('createdAt', 'desc');
 
   if (query.unreadOnly === 'true') {
     baseQuery = baseQuery.where('read', '==', false);
   }
 
-  const offset = (page - 1) * limit;
-  const snapshot = await baseQuery.get();
+  const countSnap = await baseQuery.count().get();
+  const total = countSnap.data().count;
 
+  const snapshot = await baseQuery.offset(offset).limit(limit).get();
   const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-  const sorted = items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  const total = sorted.length;
-  const paged = sorted.slice(offset, offset + limit);
 
-  return { items: paged, total, page, limit };
+  return { items, total, page, limit };
 }
 
 /** Mark a single notification as read. Verifies ownership. */
@@ -210,6 +220,8 @@ export async function createBulkNotifications(
 
   await batch.commit();
   logger.info('Bulk notifications created', { count: notifications.length });
+
+  sendPushBulk(notifications);
 
   return results;
 }

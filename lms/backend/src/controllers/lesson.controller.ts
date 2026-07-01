@@ -6,7 +6,7 @@ import { sendSuccess, sendCreated } from '../utils/response';
 import type { ReqWithUser, QueryParams } from '../types/common';
 
 export async function createLesson(req: Request, res: Response) {
-  const result = await lessonService.createLesson(req.body);
+  const result = await lessonService.createLesson({ ...req.body, schoolId: req.user!.school_id });
   logAudit(adminAuditEntry(req as ReqWithUser, 'lesson.create', result.id, 'lesson', result.title, {
     newValue: result,
     summary: `Created lesson "${result.title}"`,
@@ -39,7 +39,7 @@ export async function getLesson(req: Request, res: Response) {
 }
 
 export async function listLessonsByCourse(req: Request, res: Response) {
-  const result = await lessonService.listLessonsByCourse(req.params.courseId);
+  const result = await lessonService.listLessonsByCourse(req.params.courseId, req.user!.school_id);
   sendSuccess(res, result);
 }
 

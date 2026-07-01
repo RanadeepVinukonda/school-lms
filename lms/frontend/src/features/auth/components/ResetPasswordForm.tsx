@@ -20,7 +20,7 @@ import {
 } from '@/features/auth/schemas/authSchemas';
 import { ROUTES } from '@/lib/constants';
 import { useMutation } from '@tanstack/react-query';
-import { confirmReset } from '@/firebase/auth';
+import { confirmReset } from '@/supabase/auth';
 import { toast } from 'sonner';
 
 export function ResetPasswordForm() {

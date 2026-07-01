@@ -26,6 +26,8 @@ const envSchema = z.object({
   SUPABASE_STORAGE_BUCKET: z.string().optional(),
 
   DATABASE_URL: z.string().optional(),
+  SENTRY_DSN: z.string().optional(),
+  FIREBASE_SERVICE_ACCOUNT_KEY: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

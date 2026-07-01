@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { FieldValue } from '../firebase/firestore';
-import { collections } from '../firebase/firestore';
+import { FieldValue } from '../database/adapter';
+import { collections } from '../database/adapter';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { chatCompletion } from './ai.service';
@@ -9,6 +9,7 @@ import { getTeacherAssignment } from './teacher-class-subject.service';
 import { computeLevel, computeComplexityHandled } from './ai-level.service';
 import type { Difficulty, StudentLevel } from './ai-level.service';
 import * as gamificationService from './gamification.service';
+import { computeMastery } from './adaptive/mastery.service';
 
 const TYPE_MAP: Record<string, string[]> = {
   multiple_choice: ['mcq', 'multiple_choice'],
@@ -43,6 +44,7 @@ export async function createQuiz(data: {
   subjectId?: string;
   questions?: any[];
   preview?: boolean;
+  schoolId?: string;
 }) {
   const assignment = await getTeacherAssignment(data.teacherId, data.classId);
   if (!assignment) {
@@ -87,7 +89,7 @@ export async function createQuiz(data: {
   } else {
     // read existing from concept bank
     const questionsSnap = await conceptRef.collection('questions').get();
-    const questionBank = questionsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
+    const questionBank = questionsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Record<string, unknown> & { id: string }));
 
     matchingQuestions = targetTypes.length > 0
       ? questionBank.filter((q: any) => targetTypes.includes(q.type))
@@ -245,6 +247,7 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
     showResults: data.showResults ?? false,
     attemptCount: 0,
     releasedAt: null,
+    schoolId: data.schoolId || '',
     createdAt: now,
     updatedAt: now,
   };
@@ -608,6 +611,12 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     logger.error('Gamification reward failed', { studentId, quizId: attemptData.quizId, error: gamErr });
   }
 
+  if (quizData.conceptId) {
+    computeMastery(studentId, quizData.conceptId, accuracy).catch(err =>
+      logger.error('Mastery update failed', { studentId, conceptId: quizData.conceptId, error: err })
+    );
+  }
+
   return { id: attemptId, ...attemptData, ...result, level: newLevel };
 }
 
@@ -678,10 +687,13 @@ export async function getQuizById(quizId: string) {
   return { ...doc.data() };
 }
 
-export async function listQuizzesForClass(classId: string): Promise<any[]> {
-  const snapshot = await collections.quizV2()
-    .where('classId', '==', classId)
-    .get();
+export async function listQuizzesForClass(classId: string, schoolId?: string): Promise<any[]> {
+  let baseQuery = collections.quizV2()
+    .where('classId', '==', classId);
+  if (schoolId) {
+    baseQuery = baseQuery.where('schoolId', '==', schoolId);
+  }
+  const snapshot = await baseQuery.get();
 
   const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
   
@@ -716,10 +728,13 @@ export async function listQuizzesForClass(classId: string): Promise<any[]> {
   return resolvedItems.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
-export async function listQuizzesForTeacher(teacherId: string): Promise<any[]> {
-  const snapshot = await collections.quizV2()
-    .where('teacherId', '==', teacherId)
-    .get();
+export async function listQuizzesForTeacher(teacherId: string, schoolId?: string): Promise<any[]> {
+  let baseQuery = collections.quizV2()
+    .where('teacherId', '==', teacherId);
+  if (schoolId) {
+    baseQuery = baseQuery.where('schoolId', '==', schoolId);
+  }
+  const snapshot = await baseQuery.get();
 
   const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
   return items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -779,4 +794,11 @@ export async function deleteQuiz(quizId: string, teacherId: string) {
   await batch.commit();
 
   logger.info('Quiz V2 deleted', { quizId, teacherId, attemptsDeleted: attemptsSnap.size });
+}
+
+export async function getQuizAttemptsForStudent(studentId: string) {
+  const snapshot = await collections.quizAttemptV2()
+    .where('studentId', '==', studentId)
+    .get();
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 }

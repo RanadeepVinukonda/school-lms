@@ -1,0 +1,15 @@
+import { getSupabaseAdmin } from './supabase';
+
+export async function registerToken(userId: string, schoolId: string | undefined, token: string, platform: string) {
+  const supabase = getSupabaseAdmin(); if (!supabase) return;
+  await supabase.from('device_tokens').upsert(
+    { user_id: userId, school_id: schoolId, token, platform, updated_at: new Date().toISOString() },
+    { onConflict: 'token' }
+  );
+}
+
+export async function getTokensForUser(userId: string) {
+  const supabase = getSupabaseAdmin(); if (!supabase) return [];
+  const { data } = await supabase.from('device_tokens').select('token, platform').eq('user_id', userId);
+  return data || [];
+}

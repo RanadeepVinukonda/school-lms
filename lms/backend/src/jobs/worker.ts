@@ -7,9 +7,10 @@ import { matchAndRankResources } from '../services/resource-ranker.service';
 import { env } from '../config/env';
 import { logger } from '../utils/logger';
 import { getBoss } from './queue';
+import { computeMasteryInline } from '../services/adaptive/mastery.service';
 
 // ponytail: subject lookup is a deferred peripheral. Keep Firestore for read-only name resolution.
-import { getAdminFirestore } from '../firebase/admin';
+import { getAdminFirestore } from '../database/admin';
 
 async function addTextbookLog(textbookId: string, message: string) {
   try {
@@ -185,7 +186,7 @@ Context Text:\n${contextText.slice(0, 15000)}`;
     })(),
     (async () => {
       const prompt = `Generate a comprehensive question bank for: "${conceptTitle}".
-Generate exactly 3 questions for EACH type: mcq, fill_blank, true_false, matching, descriptive, numerical, passage, assertion_reason, case_study, application_based, hots, short_answer
+Generate exactly 3 questions for EACH type: mcq, true_false, fill_blank, matching, numerical, descriptive
 Return ONLY valid JSON: { "questions": [{ "question": "", "type": "", "difficulty": "easy|medium|hard|hots", "options": ["A","B","C","D"], "answer": "", "explanation": "", "passageText": null }] }
 Concept: ${conceptTitle} Chapter: ${chapterTitle} Context: ${contextText.slice(0, 8000)}`;
       const raw = await chatCompletion({ messages: [{ role: 'system', content: 'You respond in clean JSON only.' }, { role: 'user', content: prompt }], temperature: 0.4, max_tokens: 16384, jsonMode: true });
@@ -293,5 +294,18 @@ export async function startWorkers() {
     }
   });
 
-  logger.info('pg-boss workers registered: uploadQueue');
+  await b.work('masteryQueue', async (jobs: any | any[]) => {
+    const jobArray = Array.isArray(jobs) ? jobs : [jobs];
+    for (const job of jobArray) {
+      const { studentId, conceptId, accuracy } = job.data;
+      try {
+        await computeMasteryInline(studentId, conceptId, accuracy);
+      } catch (err: any) {
+        logger.error('pg-boss mastery worker failed', { studentId, conceptId, err: err.message });
+        throw err;
+      }
+    }
+  });
+
+  logger.info('pg-boss workers registered: uploadQueue, masteryQueue');
 }

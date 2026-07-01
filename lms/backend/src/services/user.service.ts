@@ -1,13 +1,19 @@
 import { v4 as uuidv4 } from 'uuid';
-import { collections, getDb } from '../firebase/firestore';
-import { createUser as firebaseCreateUser, updateUser as firebaseUpdateUser, deleteUser as firebaseDeleteUser, getUserById, setCustomClaims } from '../firebase/auth';
-import { NotFoundError, ConflictError } from '../utils/errors';
+import { collections, getDb } from '../database/adapter';
+import { createUser as firebaseCreateUser, updateUser as firebaseUpdateUser, deleteUser as firebaseDeleteUser, getUserById, setCustomClaims } from '../database/auth';
+import { NotFoundError, ConflictError, ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 import { generateStudentId } from '../utils/studentIdGenerator.js';
 import { generatePassword } from '../utils/passwordGenerator.js';
+import type { UserCollection } from '../database/interfaces/collections';
 
-/** List users with optional role/search/status/classId filters, paginated. Excludes password from results. */
+// Allow injection of a UserCollection implementation; falls back to global adapter.
+let _userCollection: UserCollection | null = null;
+export function setUserCollection(col: UserCollection): void { _userCollection = col; }
+function userCol() { return _userCollection ?? (collections.users() as unknown as UserCollection); }
+
+/** List users with optional role/search/status/classId/schoolId filters, paginated. Excludes password from results. */
 export async function listUsers(query: {
   page?: string;
   limit?: string;
@@ -17,44 +23,52 @@ export async function listUsers(query: {
   classId?: string;
   sortBy?: string;
   sortOrder?: string;
+  schoolId?: string;
 }) {
   const { page, limit } = parsePagination(query);
-  let baseQuery: FirebaseFirestore.Query = collections.users();
+  const offset = (page - 1) * limit;
+
+  // Build database-level query — push all filters to DB, not JS
+  let baseQuery: any = collections.users();
+  if (query.schoolId) baseQuery = baseQuery.where('schoolId', '==', query.schoolId);
+  baseQuery = baseQuery.orderBy('created_at', 'desc');
 
   if (query.role) baseQuery = baseQuery.where('role', '==', query.role);
-  if (query.status) {
-    baseQuery = baseQuery.where('isActive', '==', query.status === 'active');
+  if (query.status) baseQuery = baseQuery.where('isActive', '==', query.status === 'active');
+  if (query.classId) baseQuery = baseQuery.where('classIds', 'array-contains', query.classId);
+
+  // Text search can't be pushed to Supabase nosql_docs without full-text index;
+  // fetch a larger window and filter in memory only when search is provided.
+  if (query.search) {
+    const snapshot = await baseQuery.get();
+    const search = query.search.toLowerCase();
+    const filtered = snapshot.docs
+      .map((doc: any) => {
+        const data = doc.data();
+        const { password, ...safeData } = data;
+        return { id: doc.id, ...safeData };
+      })
+      .filter((item: any) =>
+        item.displayName?.toLowerCase().includes(search) ||
+        item.email?.toLowerCase().includes(search)
+      );
+    const total = filtered.length;
+    const paged = filtered.slice(offset, offset + limit);
+    return { items: paged, total, page, limit };
   }
 
-  const snapshot = await baseQuery.get();
+  // No search — use DB-level pagination
+  const countSnap = await baseQuery.count().get();
+  const total = countSnap.data().count;
+  const snapshot = await baseQuery.offset(offset).limit(limit).get();
 
-  let items = snapshot.docs.map((doc) => {
+  const items = snapshot.docs.map((doc: any) => {
     const data = doc.data();
     const { password, ...safeData } = data;
     return { id: doc.id, ...safeData };
   });
-  items = items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  if (query.search) {
-    const search = query.search.toLowerCase();
-    items = items.filter(
-      (item: { id?: string; displayName?: string; email?: string }) =>
-        item.displayName?.toLowerCase().includes(search) ||
-        item.email?.toLowerCase().includes(search)
-    );
-  }
-
-  if (query.classId) {
-    items = items.filter((item: { id?: string; classIds?: string[] }) =>
-      item.classIds?.includes(query.classId!)
-    );
-  }
-
-  const total = items.length;
-  const offset = (page - 1) * limit;
-  const paged = items.slice(offset, offset + limit);
-
-  return { items: paged, total, page, limit };
+  return { items, total, page, limit };
 }
 
 /** Fetch a single user by uid. Throws NotFoundError if missing. Excludes password. */
@@ -84,6 +98,7 @@ export async function createUser(data: {
   rollNo?: number;
   academicYear?: string;
   childrenIds?: string[];
+  schoolId?: string;
 }) {
   let studentId = '';
   let finalClassIds = data.classIds || [];
@@ -91,14 +106,14 @@ export async function createUser(data: {
 
   if (data.role === 'student') {
     if (!data.classId) {
-      throw new Error('Class ID is required for students');
+      throw new ValidationError('Class ID is required for students');
     }
     if (data.rollNo === undefined) {
-      throw new Error('Roll number is required for students');
+      throw new ValidationError('Roll number is required for students');
     }
     const classDoc = await collections.classes().doc(data.classId).get();
     if (!classDoc.exists) {
-      throw new Error('Assigned Class not found');
+      throw new NotFoundError('Assigned Class not found');
     }
     const classData = classDoc.data()!;
     const classCode = (classData.code || classData.section
@@ -156,6 +171,7 @@ export async function createUser(data: {
     academicYear: data.academicYear || null,
     childrenIds: resolvedChildrenIds,
     isActive: true,
+    schoolId: data.schoolId || '',
     createdAt: now,
     updatedAt: now,
   };
@@ -315,38 +331,36 @@ export async function assignRole(uid: string, role: string) {
   logger.info('User role assigned', { uid, role });
 }
 
-/** Ping active — update streakCount using a transaction to avoid race conditions. */
+/** Ping active — update streakCount with optimistic read-then-write. */
 export async function pingActive(uid: string) {
   const userRef = collections.users().doc(uid);
   const now = new Date();
   const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
 
-  return await getDb().runTransaction(async (transaction) => {
-    const snap = await transaction.get(userRef);
-    if (!snap.exists) throw new NotFoundError('User not found');
+  const snap = await userRef.get();
+  if (!snap.exists) throw new NotFoundError('User not found');
 
-    const data = snap.data()!;
-    const lastActive = data.lastActiveDate ? new Date(data.lastActiveDate) : null;
-    let streakCount = data.streakCount ?? 0;
+  const data = snap.data()!;
+  const lastActive = data.lastActiveDate ? new Date(data.lastActiveDate) : null;
+  let streakCount = data.streakCount ?? 0;
 
-    if (lastActive) {
-      const diffDays = Math.floor((today.getTime() - lastActive.getTime()) / (1000 * 60 * 60 * 24));
-      if (diffDays === 1) {
-        streakCount += 1;
-      } else if (diffDays > 1) {
-        streakCount = 1;
-      }
-    } else {
+  if (lastActive) {
+    const diffDays = Math.floor((today.getTime() - lastActive.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays === 1) {
+      streakCount += 1;
+    } else if (diffDays > 1) {
       streakCount = 1;
     }
+  } else {
+    streakCount = 1;
+  }
 
-    transaction.update(userRef, {
-      streakCount,
-      lastActiveDate: today.toISOString(),
-    });
-
-    return { streakCount, lastActiveDate: today.toISOString() };
+  await userRef.update({
+    streakCount,
+    lastActiveDate: today.toISOString(),
   });
+
+  return { streakCount, lastActiveDate: today.toISOString() };
 }
 
 /** Compute strengths and weaknesses from quizAttempts and examAttempts grouped by conceptId. */
@@ -360,7 +374,8 @@ export async function getStrengthsWeaknesses(uid: string) {
 
   const conceptScores: Record<string, { totalScore: number; totalMax: number; count: number }> = {};
 
-  const processAttempts = (docs: FirebaseFirestore.QueryDocumentSnapshot[]) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const processAttempts = (docs: any[]) => {
     for (const d of docs) {
       const data = d.data();
       const conceptIds: string[] = data.conceptIds ?? data.conceptId ? [data.conceptId] : [];

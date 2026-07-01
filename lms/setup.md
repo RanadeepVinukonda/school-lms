@@ -7,7 +7,7 @@ This document outlines the setup, local execution, Git integration, and Vercel C
 ## 1. Project Structure
 
 The project is structured as a monorepo containing two main folders:
-- **`backend/`**: Express.js API, Firestore triggers, database models, and background workers (BullMQ).
+- **`backend/`**: Express.js API, Supabase/Postgres database adapter, and background workers (pg-boss).
 - **`frontend/`**: React.js SPA built with Vite, Tailwind CSS, and Radix UI components.
 
 ---
@@ -35,11 +35,10 @@ NODE_ENV=development
 PORT=3001
 FRONTEND_URL=http://localhost:5173
 
-# Firebase Service Account Credentials (needed for Firebase Admin SDK)
-FIREBASE_PROJECT_ID="your-firebase-project-id"
-FIREBASE_CLIENT_EMAIL="your-firebase-client-email"
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY_HERE\n-----END PRIVATE KEY-----\n"
-FIREBASE_WEB_API_KEY="your-firebase-web-api-key"
+# Supabase Database Credentials
+DATABASE_URL="postgresql://postgres:password@db.your-project.supabase.co:5432/postgres"
+SUPABASE_URL="https://your-project.supabase.co"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
 
 # LLM Providers (Gemini / OpenAI API)
 GEMINI_API_KEY="your-api-key"
@@ -60,13 +59,8 @@ REDIS_URL="rediss://default:YOUR_PASSWORD@your-upstash-redis-endpoint:6379"
 Create a file named `.env` in `lms/frontend/` and configure the following:
 
 ```env
-VITE_FIREBASE_API_KEY="your-firebase-web-api-key"
-VITE_FIREBASE_AUTH_DOMAIN="your-project-id.firebaseapp.com"
-VITE_FIREBASE_PROJECT_ID="your-project-id"
-VITE_FIREBASE_STORAGE_BUCKET="your-project-id.firebasestorage.app"
-VITE_FIREBASE_MESSAGING_SENDER_ID="your-sender-id"
-VITE_FIREBASE_APP_ID="your-app-id"
-VITE_FIREBASE_MEASUREMENT_ID="your-measurement-id"
+VITE_SUPABASE_URL="https://your-project.supabase.co"
+VITE_SUPABASE_ANON_KEY="your-anon-key"
 ```
 
 ---
@@ -152,4 +146,4 @@ Because Vercel hosts code on **Serverless Functions** (which shut down after a r
 ### How Textbook Parsing Works:
 1. When a textbook upload or reprocess is requested, the Vercel API function pushes a parsing job into the **Upstash Redis queue** (`uploadQueue`) and returns `202 Accepted` to the teacher frontend.
 2. To consume and process this job (download PDF, extract text, trigger Gemini AI formatting, rank YouTube videos), **a persistent process must be running**.
-3. **To run this process**: Simply keep the backend running locally (`npm run dev` in the `backend` folder) on your machine or host it on a small VM/container (e.g. Render, Railway, AWS ECS) with the production `.env` config. The local instance will connect to Upstash, fetch the textbook job, perform the intensive processing, log updates directly to Firestore, and update status to `ready`. The student/teacher web browser will dynamically poll Firestore to show the logs terminal updating in real time.
+3. **To run this process**: Simply keep the backend running locally (`npm run dev` in the `backend` folder) on your machine or host it on a small VM/container (e.g. Render, Railway, AWS ECS) with the production `.env` config. The local instance will connect to the pg-boss queue in Postgres, fetch the textbook job, perform the intensive processing, log updates directly to the database, and update status to `ready`.

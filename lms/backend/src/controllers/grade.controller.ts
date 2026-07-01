@@ -5,12 +5,15 @@ import { sendSuccess } from '../utils/response';
 import type { ReqWithUser, QueryParams } from '../types/common';
 
 export async function getStudentGrades(req: Request, res: Response) {
-  const result = await gradeService.getStudentGrades(req.params.studentId, req.query.academicYear as string);
+  const result = await gradeService.getStudentGrades(req.params.studentId, req.query.academicYear as string, req.user!.school_id);
   sendSuccess(res, result);
 }
 
 export async function getGradebook(req: Request, res: Response) {
-  const result = await gradeService.getGradebook(req.query as QueryParams);
+  const result = await gradeService.getGradebook({
+    ...(req.query as QueryParams),
+    schoolId: req.user!.school_id,
+  });
   sendSuccess(res, result);
 }
 
@@ -24,7 +27,7 @@ export async function updateGrade(req: Request, res: Response) {
 }
 
 export async function bulkUpdateGrades(req: Request, res: Response) {
-  const result = await gradeService.bulkUpdate(req.body.grades, req.params.courseId, req.user!.uid);
+  const result = await gradeService.bulkUpdate(req.body.grades, req.params.courseId, req.user!.uid, req.user!.school_id);
   logAudit(adminAuditEntry(req as ReqWithUser, 'grade.bulk', req.params.courseId, 'grade', req.params.courseId, {
     summary: `Bulk updated ${req.body.grades?.length || 0} grades for course ${req.params.courseId}`,
   }));
@@ -32,6 +35,6 @@ export async function bulkUpdateGrades(req: Request, res: Response) {
 }
 
 export async function generateReport(req: Request, res: Response) {
-  const result = await gradeService.generateReport(req.params.studentId, req.query.academicYear as string, req.query.term as string);
+  const result = await gradeService.generateReport(req.params.studentId, req.query.academicYear as string, req.query.term as string, req.user!.school_id);
   sendSuccess(res, result);
 }

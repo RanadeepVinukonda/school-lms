@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
-import { FieldValue } from '../firebase/firestore';
-import { collections } from '../firebase/firestore';
+import { FieldValue } from '../database/adapter';
+import { collections } from '../database/adapter';
+import { getSupabaseAdmin } from './supabase';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
@@ -93,6 +94,34 @@ export async function markLabCompleted(studentId: string, labId: string) {
       score: 100,
     });
   }
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    const { data: concept } = await supabase
+      .from('curriculum_hierarchy')
+      .select('id')
+      .ilike('title', labSnap.data()?.topic)
+      .maybeSingle();
+    if (concept) {
+      try {
+        const { computeMastery } = await import('./adaptive/mastery.service');
+        computeMastery(studentId, concept.id, 90).catch((err: unknown) =>
+          logger.error('Mastery update failed (lab)', { studentId, labId, error: err })
+        );
+      } catch (_) { /* mastery non-critical */ }
+
+      try {
+        const quizSnap = await collections.quizV2()
+          .where('conceptId', '==', concept.id)
+          .limit(1)
+          .get();
+        if (!quizSnap.empty) {
+          const quizId = quizSnap.docs[0].id;
+          await progressRef.update({ quizUnlocked: true, unlockedQuizId: quizId });
+        }
+      } catch (_) { /* quiz unlock non-critical */ }
+    }
+  }
+
   logger.info('Virtual lab completed', { studentId, labId });
   return { completed: true, labId, studentId };
 }

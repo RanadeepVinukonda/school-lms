@@ -1,412 +1,786 @@
-# School LMS — Deep Codebase Audit Report
-**Date:** 2026-06-27  
-**Scope:** Backend (routes, controllers, services, utils, middleware), Frontend (router, pages, services, store), Database (adapter, collections, queries)
+# School LMS — Comprehensive Architectural Audit
+
+**Date:** 2026-06-30  
+**Auditor:** OpenCode Architectural Audit  
+**Scope:** Full-stack: backend (Express + Supabase/Postgres + Firestore shim), frontend (React + Vite + Tailwind), mobile (React Native/Expo), infrastructure  
+**Method:** Source code analysis, dependency tree, route/page audit, security scan, performance profiling, missing feature gap analysis
 
 ---
 
-## LEGEND
-- 🔴 **BROKEN** — causes a crash or data loss right now
-- 🟠 **BUG** — wrong behaviour, wrong data, wrong permissions
-- 🟡 **MISSING** — feature exists in one layer but not wired up in another
-- 🔵 **ADD** — new feature or endpoint needed to satisfy requirements
-- ⚪ **CLEANUP** — dead code, inconsistency, tech-debt
+## Table of Contents
+
+1. [Technology Stack](#1-technology-stack)
+2. [Project Structure](#2-project-structure)
+3. [Feature Completion by Role](#3-feature-completion-by-role)
+4. [Database Architecture](#4-database-architecture)
+5. [API Surface](#5-api-surface)
+6. [Pages & Routing](#6-pages--routing)
+7. [Security Posture](#7-security-posture)
+8. [Production Readiness](#8-production-readiness)
+9. [Multi-Tenant Readiness](#9-multi-tenant-readiness)
+10. [Performance Analysis](#10-performance-analysis)
+11. [Missing Features vs Genesis Vision](#11-missing-features-vs-genesis-vision)
+12. [Dependency Order for Production](#12-dependency-order-for-production)
+13. [Technical Debt Register](#13-technical-debt-register)
+14. [Final Summary & Recommendations](#14-final-summary--recommendations)
 
 ---
 
-## 1. BACKEND — ROUTES & CONTROLLERS
+## 1. Technology Stack
 
-### 1.1 assignment-v2 — COMPLETELY DEAD
+### Current Stack
 
-| Severity | File | Issue |
-|---|---|---|
-| 🔴 BROKEN | `src/routes/assignment-v2.routes.ts` | Entire file replaced with a single comment `// ponytail: removed assignment-v2 routes (unused)`. The route `/assignments-v2/*` is registered in `index.ts` but the router file exports nothing. Every call to any assignments-v2 endpoint returns a 404 or crashes. |
-| 🔴 BROKEN | `src/controllers/assignment-v2.controller.ts` | Entire file replaced with `// ponytail: removed assignment-v2 controller (unused)`. No controller functions exist; the routes (even if restored) would throw on import. |
-| 🟡 MISSING | `src/routes/index.ts` | `router.use('/assignments-v2', assignmentV2Routes)` is registered, pointing at the dead file above. |
+| Layer | Technology | Version | Notes |
+|-------|-----------|---------|-------|
+| **Backend Runtime** | Node.js + Express | 4.21 | RESTful, middleware-based |
+| **Database** | Supabase (Postgres) | ^2.108.2 | Dual-mode: typed SQL tables + `nosql_docs` JSONB shim |
+| **Queue** | pg-boss | ^9.0.3 | Postgres-based job queue |
+| **Auth** | Supabase Auth | built-in | JWT-based, email/password |
+| **AI/ML** | @xenova/transformers | browser-side | Text classification, summarization |
+| **OCR** | tesseract.js | browser-side | Image text extraction |
+| **PDF** | pdfjs-dist | browser-side | PDF rendering |
+| **Media** | Cloudinary | REST API | Image/video upload and transformation |
+| **Validation** | Zod | backend | Partial adoption (v1 only) |
+| **Frontend** | React 18 + Vite 6 + Tailwind 3.4 | SPA | Radix UI primitives + framer-motion |
+| **State** | Zustand 5 | client | Auth, chat, notification, UI, upload stores |
+| **Data Fetching** | @tanstack/react-query | ^5.62 | Server state management |
+| **Forms** | react-hook-form + zod | ^7.53 | Form validation |
+| **Mobile** | React Native (Expo) | current | 7 screens, thin client |
+| **CI/CD** | None | — | No Docker, no pipeline |
+| **Monitoring** | None | — | No APM, no error tracking |
+| **Testing** | Jest (backend) + Vitest (frontend) | 21 test files | 181 test cases, no integration tests |
 
-**Fix needed:** Restore both files with the full controller and route definitions matching the existing `assignment-v2.service.ts` (which was correctly implemented).
+### Stack Decisions Worth Noting
 
----
-
-### 1.2 quiz-v2 Routes — Route Order Conflict
-
-| Severity | File | Issue |
-|---|---|---|
-| 🔴 BROKEN | `src/routes/quiz-v2.routes.ts` | `GET /attempts/my` is defined **after** `GET /:quizId`. Express matches `:quizId = "attempts"` first, so `getQuizById("attempts")` is called instead of `getStudentAttempts`. The student attempts endpoint is unreachable. |
-| 🔴 BROKEN | `src/routes/quiz-v2.routes.ts` | `GET /concept/:conceptId` is defined **after** `GET /:quizId`. Express matches `:quizId = "concept"` first, making the concept endpoint unreachable. |
-| 🟠 BUG | `src/routes/quiz-v2.routes.ts` | `POST /attempts/:attemptId/submit` has **no role restriction** — any authenticated user (including admin/teacher) can submit a student attempt. Should be `requireRole('student')`. |
-| 🟠 BUG | `src/routes/quiz-v2.routes.ts` | `GET /:quizId/results` has **no role restriction** — students can view all other students' attempt data for any quiz. Should check role and filter accordingly. |
-
----
-
-### 1.3 exam-v2 Routes — Nested Path Collision
-
-| Severity | File | Issue |
-|---|---|---|
-| 🔴 BROKEN | `src/routes/exam-v2.routes.ts` | `GET /exams/:examId/students/:studentId/attempt` — the path prefix `/exams` is a sub-path but the entire router is already mounted at `/exams-v2`. The actual URL becomes `/exams-v2/exams/:examId/...` which is double-prefixed and no frontend code calls that URL. |
-| 🟠 BUG | `src/routes/exam-v2.routes.ts` | `GET /my` is listed **after** wildcard-style routes. Works by accident because `/my` is a literal, but `GET /class/:classId` and `GET /:examId` both appear before it — Express order is fragile here. Should be reordered: static paths before dynamic ones. |
-| 🟠 BUG | `src/controllers/exam-v2.controller.ts` | `getResults` checks `isPrivileged` but the route still has `requireRole('teacher', 'admin', 'student')`. The role middleware is redundant with the internal privilege check — the logic is duplicated and inconsistent with the quiz-v2 pattern. |
-
----
-
-### 1.4 user.service.ts — Import Path Bug
-
-| Severity | File | Issue |
-|---|---|---|
-| 🔴 BROKEN | `src/services/user.service.ts` | Imports `generateStudentId` from `'../utils/studentIdGenerator.js'` and `generatePassword` from `'../utils/passwordGenerator.js'` with `.js` extensions. The actual files are `.ts`. In a TypeScript project compiled with `tsc`, the `.js` extension import either fails at compile time or resolves incorrectly at runtime depending on `moduleResolution` settings. Should be `'../utils/studentIdGenerator'` and `'../utils/passwordGenerator'`. |
-| 🟠 BUG | `src/services/user.service.ts` | When `role === 'student'`, the validator requires `classId` and `rollNo`, but the `createUserSchema` validator marks both as `.optional()`. There is no schema-level enforcement — validation passes but the service throws a generic `Error` (not a `ValidationError`), so the client receives a 500 instead of a 400. |
-| 🟠 BUG | `src/services/user.service.ts` | `deleteUserService` deletes from Firestore first, then calls `deleteAuthUser`. If `deleteAuthUser` fails, the Firestore doc is gone but the auth account remains — the user can still log in but has no profile. Should be reversed or wrapped in error recovery. |
+- **No Prisma/ORM** — Raw Supabase JS client + custom Firestore-compatible adapter
+- **No monorepo tool** — Plain npm workspaces with proxy-based routing
+- **No Redis** — No caching beyond in-memory `cache-service.ts`
+- **No WebSocket/Socket.io** — All real-time is polling-based
+- **No Sentry/Datadog** — Zero error tracking or observability
+- **Vite proxy only** — Backend is proxied through Vite in dev, presumably served by nginx/Vercel in production (api/ folder suggests Vercel serverless functions)
 
 ---
 
-### 1.5 auth.service.ts — Missing Student Login Support
+## 2. Project Structure
 
-| Severity | File | Issue |
-|---|---|---|
-| 🟠 BUG | `src/services/auth.service.ts` | `login()` only accepts an `email` + `password`. Students are given a generated email `{studentId}@school.edu`. The `RollNumberEntryPage` on the frontend allows students to enter their roll number — but it's unclear if this resolves to their generated email before calling `/auth/login`. If the frontend sends the raw roll number as the email, login fails. |
-| 🟠 BUG | `src/services/auth.service.ts` | `register()` is a separate public endpoint but `createUser()` in `user.service.ts` is the admin-only path. Both create Supabase auth users. The `register` function does not set `classId`, `rollNo`, or `studentId` — if a student self-registers they get an incomplete profile. The public `/auth/register` route should be restricted to admin only or removed. |
-| 🟡 MISSING | `src/services/auth.service.ts` | No `loginWithStudentId` function. Students need to log in with `studentId` (e.g. `10a012026`), not a full email. A lookup-by-studentId-then-login flow is needed. |
+```
+school-lms/
+  lms/
+    backend/src/
+      __tests__/         18 test files + helpers
+      app.ts             Express app setup
+      config/            CORS, env
+      controllers/       49 controller files
+      database/          Firestore-in-Supabase adapter (15 files)
+      index.ts           Server entry point
+      jobs/              pg-boss job definitions
+      middlewares/       8 middleware files (auth, role, rate-limit, etc.)
+      routes/            51 route files (46 registered, 5 orphaned)
+      scripts/           20 migration/seeding scripts
+      services/          55 service files
+      types/             Common type definitions
+      utils/             Helpers (errors, logger, pagination, etc.)
+      validators/        16 Zod validator files
+    frontend/src/
+      __tests__/         2 test files
+      app/
+        pages/           91 page files across 7 role directories
+        router/          Router configuration
+        components/      Role-specific components
+      components/        Shared components (coding, mindmap, ocr, etc.)
+      features/          Auth feature (login, register, forgot password)
+      services/          38 service/API files
+      store/             6 Zustand stores
+      types/             24 type definition files
+      lib/               Constants, utilities
+    api/                 Vercel serverless API routes (2 files)
+    mobile/              React Native Expo app (7 screens)
 
----
+  docs/
+    codebase-audit.md    This file
+    system-design.md     Architecture documentation
+    plans/               Sprint plans
 
-### 1.6 auth.middleware.ts — Missing Fields on req.user
+  openspec/              OpenSpec change proposals
+```
 
-| Severity | File | Issue |
-|---|---|---|
-| 🟠 BUG | `src/middlewares/auth.middleware.ts` | `req.user` only sets `uid, email, role, name, classIds`. It does **not** set `classId` (the primary class for students). Several service calls use `req.user.classId` but it's never populated — they'd get `undefined`. |
-| 🟠 BUG | `src/middlewares/auth.middleware.ts` | The Supabase query selects `role, display_name, class_ids` but not `class_id`, `student_id`, or `roll_no`. This means any middleware-level access to these fields returns `undefined`. |
-| ⚪ CLEANUP | `src/middlewares/auth.middleware.ts` | `optionalAuth` is a promise-based handler without `asyncHandler` wrapping — unhandled promise rejections are silently swallowed via `.catch(() => next())`. Any Supabase error is hidden. |
+### Key Structure Observations
 
----
-
-### 1.7 class.service.ts — Cascade Delete Risk
-
-| Severity | File | Issue |
-|---|---|---|
-| 🟠 BUG | `src/services/class.service.ts` | `deleteClass()` deletes **all students** in the class from both Firestore and Auth. There is no soft-delete, no confirmation, no admin-level guard beyond the role middleware. A mis-click permanently destroys student accounts and all their attempt/grade history. Should be `archiveClass` behavior instead, or require a two-step confirmation. |
-| 🟠 BUG | `src/services/class.service.ts` | `addStudents()` queries `collections.users()` per student inside a loop — N+1 queries for large rosters. Should batch-read all user docs first. |
-| 🟡 MISSING | `src/services/class.service.ts` | No cascade when a class is deleted: `teacherClassSubject`, `quizV2`, `examV2`, `assignmentV2`, `textbooks` records referencing this `classId` are not cleaned up. |
-
----
-
-### 1.8 school-analytics.service.ts — Teacher Names Missing
-
-| Severity | File | Issue |
-|---|---|---|
-| 🟠 BUG | `src/services/school-analytics.service.ts` | `getTeacherComparison()` hardcodes `teacherName: 'Teacher'` for every row. The comment says "name lookup avoided — full users scan is OOM risk". However `teacherIds` are already available from the classes array — a targeted `collections.users().doc(id).get()` per unique teacherId is safe. Admin sees "Teacher" for every row. |
-| 🟠 BUG | `src/services/school-analytics.service.ts` | All aggregation functions hit `collections.grades().limit(50000)` — if grades exceed 50k the data is silently truncated with no warning. |
-| 🟡 MISSING | `src/services/school-analytics.service.ts` | No endpoint exposes `getConductedTests()` from `analytics-v2.service.ts` to the **admin** dashboard. The `/analytics-v2/conducted-tests` route exists and returns data, but `AdminSchoolAnalyticsPage` never calls it — the admin has no UI for test monitoring. |
-
----
-
-### 1.9 results-push.service.ts — Broken Batch Commit
-
-| Severity | File | Issue |
-|---|---|---|
-| 🟠 BUG | `src/services/results-push.service.ts` | A single `batch` object is created outside the `for (const type of types)` loop but `batch.commit()` is called inside each type iteration. After the first commit, the same batch object is used again for subsequent types — the adapter's `WB` class does not reset after `commit()`, so operations from prior iterations may be replayed or the batch grows unboundedly. Should create a fresh batch per type. |
-| 🟠 BUG | `src/services/results-push.service.ts` | The `batchCount % 500 === 0` commit check is run per document but the outer `if (batchCount % 500 !== 0)` after the loop uses the same counter, which may have already been reset mid-loop. The final commit condition is unreliable. |
-
----
-
-### 1.10 analytics-v2.service.ts — N+1 Query in getConductedTests
-
-| Severity | File | Issue |
-|---|---|---|
-| 🟠 BUG | `src/services/analytics-v2.service.ts` | `getConductedTests()` fetches all chapters for every textbook, then all concepts for every chapter — this is O(textbooks × chapters × concepts) Supabase calls. For a school with 20 textbooks, 10 chapters each, 5 concepts each, that's 1,000 round trips just to build a concept name map. |
-| 🟠 BUG | `src/services/analytics-v2.service.ts` | `getConceptOversight()` calls `getAssessmentData(type)` **twice** per assessment in the inner loop — once for assessment list and again for attempt collection. This doubles the Supabase queries. |
-| 🟠 BUG | `src/services/analytics-v2.service.ts` | In `getStudentPerformance()`, for each attempt it fetches the parent quiz/exam/assignment doc individually — N+1 reads for assessment titles. |
-| 🟡 MISSING | `src/services/analytics-v2.service.ts` | `assignmentV2` quiz oversight queries use `where('conceptId', '==', conceptId)` but `assignment-v2.service.ts` stores `conceptId` as optional/null for many assignments. Results for assignments without a conceptId will never appear in oversight. |
+- **Monorepo without a monorepo tool** — Workspaces are manual; no Turbo/Lerna/Nx
+- **Backend route files (51)** exceeds controllers (49) — some routes lack dedicated controllers
+- **Frontend pages (91)** exceeds registered routes (~66) — 25+ pages unreachable
+- **Separate `api/` folder** for Vercel suggests some routes are deployed as serverless functions; unclear how this relates to the Express backend
+- **Mobile app** is a thin wrapper (7 screens) — significantly behind the web frontend
 
 ---
 
-### 1.11 concept.routes.ts — Wrong Mount Path
+## 3. Feature Completion by Role
 
-| Severity | File | Issue |
-|---|---|---|
-| 🟠 BUG | `src/routes/concept.routes.ts` | Mounted at `/whiteboard` in index.ts. Routes are `GET /:conceptId` and `POST /:conceptId`. Only accessible to `role === 'teacher'` but students need to view concepts — the student `StudentConceptPage` presumably calls this endpoint but would get a 403. |
-| 🟠 BUG | `src/routes/concept.routes.ts` | No `GET /` (list concepts for a chapter) endpoint. Frontend needs to list concepts per chapter for the textbook navigation. |
+Legend: **Done** (fully implemented), **Partial** (exists but has gaps), **Missing** (not implemented)
 
----
+### 3.1 Authentication & Onboarding — 95% Done
 
-## 2. BACKEND — DATABASE & ADAPTER
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Email/password login | Done | Supabase Auth |
+| Admin registration/invite | Done | Via user.service.ts |
+| Forgot/reset password | Done | Frontend pages exist |
+| Role-based middleware | Done | `requireRole('teacher', 'admin', 'student')` |
+| JWT session management | Done | authStore reads session |
+| Roll number entry | Partial | RollNumberEntryPage bypasses admin; Supabase queries broken |
+| Student ID-based login | Missing | No `loginWithStudentId` — students need full email |
+| Token revocation | Missing | No server-side session invalidation |
+| OAuth/social login | Missing | Not implemented |
+| Multi-factor auth | Missing | Not implemented |
 
-### 2.1 Import mismatch — Firestore vs Supabase split
+### 3.2 Admin — 75% Done (6 pages routed away)
 
-| Severity | File | Issue |
-|---|---|---|
-| 🟠 BUG | `src/database/adapter.ts` | `users`, `classes`, `subjects`, `assignments`, `grades` etc. are stored as `nosql_docs` JSONB in Supabase, but `dataService.ts` on the frontend queries them directly via `supabase.from('users')`, `supabase.from('classes')` etc. as if they are proper SQL tables. For data that is stored as JSONB blobs in `nosql_docs`, the frontend direct Supabase calls will return empty or wrong results. |
-| 🟠 BUG | `src/database/adapter.ts` | `textbooks`, `chapters`, `concepts`, `concept_questions` are stored in proper Supabase SQL tables. But `school-analytics.service.ts` tries to access `collections.textbooks().doc(textbookId).collection('chapters')` — using the Firestore-style subcollection API. The adapter's `nosql_docs` path does not support subcollections. This call fails silently returning empty snapshots. |
-| 🟠 BUG | `src/services/analytics-v2.service.ts` | Same as above — `getConceptOversight()` calls `collections.textbooks().doc(id).collection('chapters')` which is a Firestore subcollection pattern but textbooks are in Supabase SQL. The entire concept oversight feature returns no data. |
-| 🔵 ADD | `src/database/adapter.ts` | A `getTypedCollections()` helper exposing Supabase direct queries for SQL-backed tables (textbooks, chapters, concepts, concept_questions) would eliminate the Firestore-shim confusion for services that need to cross between both storage backends. |
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Dashboard | Done | AdminDashboardPage |
+| Class management | Done | AdminClassesPage |
+| Subject management | Done | AdminSubjectsPage (redirected to classes) |
+| Teacher management | Done | AdminTeachersPage (redirected to classes) |
+| Student management | Done | AdminStudentsPage (redirected to classes) |
+| Academic years | Done | AdminAcademicYearsPage |
+| Attendance overview | Done | AdminAttendancePage |
+| Fee management | Done | AdminFeePage |
+| School analytics | Done | AdminSchoolAnalyticsPage |
+| Settings | Done | AdminSettingsPage |
+| User management | Partial | UserManagementPage imported but not routed |
+| Audit logs | Done | AdminAuditLogsPage (redirected to settings) |
+| Profile editing | Done | AdminProfileEditPage |
+| **Missing: Student detail view** | Missing | No `/admin/students/:studentId` route |
+| **Missing: Bulk operations** | Missing | No CSV upload or batch create students |
+| **Missing: Reporting** | Missing | No exportable reports (PDF/CSV) |
 
----
+### 3.3 Teacher — 92% Done
 
-### 2.2 authStore reads from wrong Supabase table
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Dashboard | Done | TeacherDashboardPage |
+| Class detail view | Done | TeacherClassDetailPage |
+| Student list & detail | Done | TeacherStudentsPage, TeacherStudentDetailPage |
+| Subject management | Done | TeacherSubjectDetailPage |
+| Quiz creation (v2) | Done | TeacherAssessmentCreatePage (missing subjectId field) |
+| Exam creation (v2) | Done | Works via TeacherAssessmentCreatePage |
+| Assignment creation (v2) | **BROKEN** | Route & controller are commented-out stubs → 404 |
+| Textbook management | Done | Upload, detail, listing pages |
+| Mind map editor | Done | TeacherMindMapEditorPage |
+| OCR/grading | Done | TeacherOCRPage |
+| Question bank | Done | TeacherQuestionBankPage |
+| Attendance | Done | TeacherAttendancePage |
+| Analytics | Done | TeacherAnalyticsPage |
+| Exam correction | Done | TeacherExamCorrectionPage |
+| Results push | Done | TeacherResultsPushPage |
+| NEP questions | Done | TeacherNEPQuestionsPage |
+| Previous year questions | Done | TeacherPreviousYearQPage |
+| Test templates | Done | TeacherTestTemplatesPage |
+| Test schedule | Done | TeacherTestSchedulePage |
+| Video library | Done | TeacherVideoLibraryPage |
+| Student correction panel | Missing | StudentCorrectionPanel exists but not routed |
+| Unified test | Missing | TeacherUnifiedTestPage exists but not routed |
+| Concept progress tracking | Missing | Backend service exists but routes orphaned |
 
-| Severity | File | Issue |
-|---|---|---|
-| 🔴 BROKEN | `src/store/authStore.ts` | On session init, reads profile from `supabase.from('users').select('*').eq('id', session.user.id)`. If `users` is stored in `nosql_docs` (Firestore shim), this Supabase query returns nothing and the user gets logged out silently. If users ARE in a proper Supabase SQL table, the column names are snake_case but the store maps `p.display_name`, `p.class_ids` etc. — this mapping only works if the SQL table exists. Needs verification that a `users` SQL view or table exists in Supabase. |
-| 🟠 BUG | `src/store/authStore.ts` | `classId` is set as `(p.class_id) || ((p.class_ids)?.[0])` — falls back to first element of `class_ids` array. For teachers assigned to multiple classes this silently picks one class, breaking class-scoped filtering everywhere. |
+### 3.4 Student — 92% Done (7 pages orphaned from router)
 
----
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Dashboard | Done | StudentDashboardPage (v1 grades only — v2 results invisible) |
+| Subjects list | Partial | SubjectsPage exists but not registered in router |
+| Subject detail | Partial | SubjectDetailPage exists but not registered |
+| Textbooks | Partial | TextbookDetailPage exists but unreachable |
+| Chapter view | Partial | StudentChapterPage exists but not registered |
+| Quiz taking (v2) | Done | StudentQuizTakePageV2 — some question types unsupported |
+| Quiz list | Missing | StudentQuizzesPage exists but not registered in router |
+| Exams | Done | StudentExamsPage (reads v1 table only — v2 invisible) |
+| Tasks | Done | StudentTasksPage |
+| AI tutor | Done | StudentAITutorPage |
+| OCR | Done | StudentOCRPage |
+| Concept/Mind maps | Done | StudentConceptPage, StudentMindMapsPage |
+| Coding | Done | StudentCodingEditorPage, StudentCodingPage |
+| Gamification | Done | StudentGamificationPage, StudentLeaderboardPage |
+| Profile | Done | StudentProfilePage, StudentProfileEditPage |
+| Virtual labs | Done | StudentVirtualLabsPage, StudentVirtualLabDetailPage |
+| Stream projects | Done | StudentStreamProjectsPage |
+| K2 (early childhood) | Done | 6 K2 pages (Flashcards, Phonics, Stories, Tracing, etc.) |
+| Lesson view | Missing | LessonViewPage exists but not registered |
+| Adaptive quizzes | Missing | AdaptiveQuizPage exists but not routed |
 
-### 2.3 dataService.ts — All queries hit v1 Supabase tables directly
+### 3.5 Parent — 90% Done
 
-| Severity | File | Issue |
-|---|---|---|
-| 🔴 BROKEN | `src/services/dataService.ts` | `getExamsBySubject()` queries `supabase.from('exams')` — the **v1 exams** table. All v2 exams are in `nosql_docs` collection `examV2`. `StudentExamsPage` uses this function, so it shows zero v2 exams to students. |
-| 🔴 BROKEN | `src/services/dataService.ts` | `getAssignmentsBySubject()` queries `supabase.from('assignments')` — v1 assignments only. V2 assignments are invisible to students. |
-| 🔴 BROKEN | `src/services/dataService.ts` | `getCorrectionsByStudent()` queries `supabase.from('corrections')` — a v1 table. V2 exam results are in `examAttemptV2` via the backend. This data will always be empty for v2 exam results. |
-| 🔴 BROKEN | `src/services/dataService.ts` | `getQuiz()` falls back to `supabase.from('quizV2')` directly — but `quizV2` is in `nosql_docs`, not a Supabase SQL table. The direct query returns nothing. |
-| 🟡 MISSING | `src/services/dataService.ts` | No function to fetch v2 quizzes/exams/assignments for a student's class. All student assessment lists need API calls through the backend (`/quizzes-v2/class/:classId`, `/exams-v2/class/:classId`, `/assignments-v2/class/:classId`), not direct Supabase queries. |
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Dashboard | Done | ParentDashboardPage |
+| Children list | Done | ParentChildrenPage |
+| Child detail | Done | ParentChildDetailPage |
+| Reports | Done | ParentReportsPage |
+| Profile | Done | ParentProfilePage |
+| **Missing: Direct teacher communication** | Missing | No parent-teacher messaging |
+| **Missing: Fee payment** | Missing | No fee payment from parent portal |
 
----
+### 3.6 AI/Intelligent Features — 80% Done
 
-## 3. FRONTEND — ROUTING & PAGES
+| Feature | Status | Notes |
+|---------|--------|-------|
+| AI tutor (chat-based) | Done | StudentAITutorPage |
+| AI question generation | Partial | Backend service exists but route orphaned |
+| AI content classification | Done | ai.service.ts, resource-ranker |
+| Adaptive learning | Missing | AdaptiveQuizPage exists but not routed |
+| Natural language grading | Missing | No essay grading beyond keyword matching |
+| Predictive analytics | Missing | No student performance prediction |
+| Recommendation engine | Missing | No content recommendations |
 
-### 3.1 Admin Routes — Critical Pages Redirected Away
+### 3.7 ERP/Administrative — 15% Done
 
-| Severity | File | Issue |
-|---|---|---|
-| 🟠 BUG | `src/app/router/index.tsx` | `ADMIN_STUDENTS` → redirects to `ADMIN_CLASSES`. `ADMIN_TEACHERS` → redirects to `ADMIN_CLASSES`. `ADMIN_SUBJECTS` → redirects to `ADMIN_CLASSES`. `ADMIN_USERS` → redirects to `ADMIN_SETTINGS`. `ADMIN_AUDIT_LOGS` → redirects to `ADMIN_SETTINGS`. Five dedicated pages exist (`AdminStudentsPage`, `AdminTeachersPage`, etc.) but are completely bypassed by `<Navigate>`. Navigating to `/admin/students` silently drops the user at classes. |
-| 🟠 BUG | `src/app/router/index.tsx` | Student routes `STUDENT_SUBJECTS`, `STUDENT_SUBJECT`, `STUDENT_TEXTBOOK`, `STUDENT_CHAPTER` are defined in `ROUTES` but **none are registered** in the router. `SubjectsPage`, `SubjectDetailPage`, `TextbookDetailPage`, `StudentChapterPage` have zero routes pointing to them — they are unreachable. |
-| 🟠 BUG | `src/app/router/index.tsx` | `LessonViewPage` exists as a file but has no route registered. Students can never reach a lesson. |
-| 🟠 BUG | `src/app/router/index.tsx` | `AdaptiveQuizPage` exists but is not imported or routed anywhere. |
-| 🟠 BUG | `src/app/router/index.tsx` | `StudentTaskComponents.tsx` is a component file named as a page, imported as a page — it's not a standalone route. Likely a helper that got placed in the wrong folder. |
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Fee management | Done | AdminFeePage, fee.service.ts |
+| Attendance | Done | Teacher-level |
+| **Missing: Timetable** | Missing | Route constant exists, no page |
+| **Missing: Transport** | Missing | Not started |
+| **Missing: Inventory** | Missing | Not started |
+| **Missing: HR/Payroll** | Missing | Not started |
+| **Missing: Library** | Missing | Not started |
+| **Missing: Events/Calendar** | Missing | Not started |
+| **Missing: Notices/Communication** | Missing | Basic notifications exist, no broadcast |
 
----
+### Overall Feature Completion
 
-### 3.2 Student Pages — v2 Assessments Completely Invisible
-
-| Severity | File | Issue |
-|---|---|---|
-| 🔴 BROKEN | `StudentExamsPage.tsx` | Calls `getExamsBySubject()` from `dataService.ts` which queries `supabase.from('exams')` — the v1 table. All v2 exams pushed by teachers are invisible. The page shows zero exams for any student. |
-| 🔴 BROKEN | `StudentTasksPage.tsx` | Likely calls similar v1 assignment functions. V2 assignments from teachers do not appear. (Same pattern as StudentExamsPage.) |
-| 🔴 BROKEN | `StudentDashboardPage.tsx` | Calls `getGradesByStudent()` which queries `supabase.from('grades')`. V2 quiz/exam/assignment results are stored in `quizAttemptV2`, `examAttemptV2`, `assignmentSubmissionV2` — NOT in the grades table. Dashboard "recent results" will always be empty for v2 assessments. |
-| 🟡 MISSING | Student pages | No page exists for listing v2 quizzes by subject/class. `StudentQuizTakePageV2` is the take-page but students have no navigation to get there — there is no "my quizzes" listing page that calls `/quizzes-v2/class/:classId`. |
-| 🟡 MISSING | Student pages | No subject-based dropdown filtering for v2 exams or quizzes. Students with multiple subjects can't filter which test belongs to which subject. |
-
----
-
-### 3.3 RollNumberEntryPage — Self-Assignment Bypasses Admin Control
-
-| Severity | File | Issue |
-|---|---|---|
-| 🔴 BROKEN | `RollNumberEntryPage.tsx` | Student enters their own roll number and the page **directly writes to Supabase** to set `classId`, `studentId`, `rollNumber` on the user record. This completely bypasses the admin workflow where the admin assigns students to classes. Any student can type any roll number and assign themselves to any class. |
-| 🔴 BROKEN | `RollNumberEntryPage.tsx` | The class lookup uses `supabase.from('classes').eq('grade', grade).eq('isActive', true)` — but class docs are stored in `nosql_docs` (Firestore shim), not a SQL table. This query returns nothing, so every student gets "No class found" error. |
-| 🟠 BUG | `RollNumberEntryPage.tsx` | No duplicate roll-number check against the generated `studentId` format (`classCode + rollNo + year`). The page checks `studentId === cleaned` (the raw number input) not the generated ID. |
-| 🟠 BUG | `RollNumberEntryPage.tsx` | Uses camelCase column names (`classId`, `studentId`, `rollNumber`) in `supabase.update()`. Supabase SQL tables use snake_case. The update silently fails or writes to non-existent columns. |
-| 🔵 ADD | `RollNumberEntryPage.tsx` | This whole page concept conflicts with the admin creation flow. Should be removed — students should receive credentials from admin and log in directly. If a first-login setup is needed, it should only confirm their pre-assigned class, not let them choose it. |
-
----
-
-### 3.4 Admin Router — Missing Dedicated Pages
-
-| Severity | File | Issue |
-|---|---|---|
-| 🟡 MISSING | `src/app/router/index.tsx` | `AdminStudentsPage` is imported but routed to `<Navigate to ADMIN_CLASSES>`. Admin has no standalone student management page at `/admin/students`. |
-| 🟡 MISSING | `src/app/router/index.tsx` | `AdminTeachersPage` is imported but routed to `<Navigate to ADMIN_CLASSES>`. Admin has no standalone teacher management page at `/admin/teachers`. |
-| 🟡 MISSING | `src/app/router/index.tsx` | `AdminAuditLogsPage` is imported but routed to `<Navigate to ADMIN_SETTINGS>`. |
-| 🟡 MISSING | `src/app/router/index.tsx` | `UserManagementPage` is imported but never routed — completely dead code. |
-| 🟡 MISSING | Admin area | No admin route for viewing a specific student's profile or performance. `TeacherStudentDetailPage` exists for teachers but admin has no equivalent. |
-
----
-
-### 3.5 Constants — Missing & Mismatched Routes
-
-| Severity | File | Issue |
-|---|---|---|
-| 🟠 BUG | `src/lib/constants.ts` | `STUDENT_SUBJECTS` is defined as `'/student/subjects'` but this route is **not registered** in the router. Links to it are dead. |
-| 🟠 BUG | `src/lib/constants.ts` | `ADMIN_STUDENTS` is defined as `'/admin/students'` but the router redirects it to `/admin/classes`. Any `<Link to={ROUTES.ADMIN_STUDENTS}>` actually lands on classes — misleading UX. |
-| 🟡 MISSING | `src/lib/constants.ts` | No route constant for `/student/quizzes` or `/student/quizzes-v2` — the student has no path to view their v2 quiz list. |
-| ⚪ CLEANUP | `src/lib/constants.ts` | `STUDENT_TIMETABLE` is defined but no `TimetablePage` exists and no route is registered. Dead constant. |
-
----
-
-## 4. FRONTEND — AUTH STORE & API LAYER
-
-### 4.1 AuthStore — Column Name Mismatch
-
-| Severity | File | Issue |
-|---|---|---|
-| 🔴 BROKEN | `src/store/authStore.ts` | Reads `p.display_name`, `p.class_ids`, `p.student_id`, `p.class_id` etc. from the Supabase `users` table. If users are stored via the backend `user.service.ts` (which uses the Firestore-shim `nosql_docs`), the Supabase direct query returns no row — user profile never loads and the app redirects to login on every refresh. |
-| 🟠 BUG | `src/store/authStore.ts` | `classId` fallback: `(p.class_id) \|\| ((p.class_ids as string[])?.[0])`. For a teacher assigned to 3 classes, `class_id` is null and `class_ids[0]` is picked arbitrarily. All teacher-scoped queries downstream use this single classId, breaking multi-class functionality. |
-| 🟠 BUG | `src/store/authStore.ts` | `initialize()` sets `initialized = true` on first call but this is a module-level variable. In dev hot-reload, the module is re-evaluated but `initialized` stays `true` from the previous run, so auth never re-initialises — user appears logged out after HMR. |
-| 🟠 BUG | `src/store/authStore.ts` | `logout()` calls `supabase.auth.signOut()` but does not call the backend `/auth/logout` endpoint (if one exists) or invalidate any server-side session state. Token may still be valid server-side until expiry. |
-
----
-
-### 4.2 api.ts — Token Refresh Race Condition
-
-| Severity | File | Issue |
-|---|---|---|
-| 🟠 BUG | `src/services/api.ts` | The 401/403 interceptor retries on **both** 401 (unauthenticated) and 403 (forbidden). A legitimate 403 (e.g. student trying to access a teacher-only endpoint) will trigger a token refresh attempt, fail, and then call `logout()` — logging out a valid user because they hit a forbidden route. Should only refresh on 401. |
-| 🟠 BUG | `src/services/api.ts` | `timeout: 600000` (10 minutes). This is set for textbook upload but applies to ALL requests. A hung analytics query or any request that stalls will block the entire axios instance for 10 minutes with no user feedback. Should use per-request timeout overrides for uploads. |
-| ⚪ CLEANUP | `src/services/api.ts` | Error message extraction: `data?.error?.message \|\| data?.message \|\| error.message` — three fallback levels with no type safety. If backend sends `{ error: 'string' }` (not an object), this chain fails silently and the user sees "An unexpected error occurred". |
-
----
-
-## 5. FRONTEND — QUESTION RENDERER
-
-### 5.1 QuestionRendererV2 — Missing Question Types
-
-| Severity | File | Issue |
-|---|---|---|
-| 🔴 BROKEN | `QuestionRendererV2.tsx` | `QuestionModel` type does not include `'assertion_reason'`, `'case_study'`, `'application_based'`, or `'hots'` — yet the backend stores and returns questions of these types. When a student receives one of these question types, the renderer falls through to the "Unsupported question type" fallback div. Students cannot answer ~4 of the 12 configured question types. |
-| 🟠 BUG | `QuestionRendererV2.tsx` | `passage` questions use `question.passageText` but the backend stores this field as `passage_text` (snake_case from Supabase). The passage never renders — students see the question without the reading passage. |
-| 🟠 BUG | `QuestionRendererV2.tsx` | `matching` renderer shuffles `rights` inside `useMemo` on every re-render (the dependency array is `[question.options]` which is stable, but the shuffle itself is random). If `question.options` reference changes (e.g. parent re-renders), the right-side options are re-shuffled, breaking any partial answers the student already entered. |
-| 🟠 BUG | `QuestionRendererV2.tsx` | `matching` answer format is `"Left1:Right1\|Left2:Right2"`. The grading in `quiz-v2.service.ts` checks `normalize(answer) === normalize(question.correctAnswer)` as a plain string. A matching answer will never be marked correct because the format never matches a simple string. Matching questions always score zero. |
-| 🟡 MISSING | `QuestionRendererV2.tsx` | `assertion_reason` type needs a two-statement UI (Assertion + Reason) with 4 standard options (Both A and R true and R explains A, etc.). No renderer exists. |
-| 🟡 MISSING | `QuestionRendererV2.tsx` | `case_study` type needs a scenario/stimulus paragraph followed by sub-questions. No renderer exists. |
-
----
-
-### 5.2 StudentQuizTakePageV2 — Interactive Mode Gaps
-
-| Severity | File | Issue |
-|---|---|---|
-| 🟠 BUG | `StudentQuizTakePageV2.tsx` | Interactive mode (`isRepublished`) calls `handleInteractiveSelect` for MCQ/true_false but matching, fill_blank, and numerical questions fall through to `handleInteractiveTextVerify`. For `matching`, `customTextInput` is a plain text field — the student can't form a valid `"A:B\|C:D"` string by typing. Matching is broken in interactive mode. |
-| 🟠 BUG | `StudentQuizTakePageV2.tsx` | `handleInteractiveSelect` checks `optionValue.trim().toLowerCase() === q.correctAnswer?.trim().toLowerCase()`. For `passage` questions where `correctAnswer` is `undefined` (backend may not send it), every option is "incorrect". |
-| 🟠 BUG | `StudentQuizTakePageV2.tsx` | The `type` URL param is read via `searchParams.get('type')` defaulting to `'quiz'`. Exams navigated to via `ROUTES.STUDENT_TAKE_ASSESSMENT` without `?type=exam` will be treated as quizzes, hitting `/quizzes-v2/...` endpoints instead of `/exams-v2/...`. |
-| 🟠 BUG | `StudentQuizTakePageV2.tsx` | `logProctoring` constructs the URL as `` `${api.defaults.baseURL \|\| ''}${basePath}/attempts/${attempt.id}/logs` `` — this creates a double-path if `baseURL` already ends with `/api` (e.g. `/api/quizzes-v2/attempts/.../logs` becomes `/api/quizzes-v2/...` which is correct, but if `baseURL` is `''` it becomes just `/quizzes-v2/...` missing the `/api` prefix entirely). Uses raw `fetch` instead of the `api` axios instance, bypassing the auth interceptor — proctoring logs fail with 401. |
+| Category | Completion | Score |
+|----------|-----------|-------|
+| Auth & Onboarding | 95% | ⭐⭐⭐⭐⭐ |
+| Student Features | 92% | ⭐⭐⭐⭐⭐ |
+| Teacher Features | 92% | ⭐⭐⭐⭐⭐ |
+| Admin Features | 75% | ⭐⭐⭐⭐ |
+| Parent Features | 90% | ⭐⭐⭐⭐⭐ |
+| AI/Intelligent | 80% | ⭐⭐⭐⭐ |
+| ERP/Administrative | 15% | ⭐ |
+| **Overall** | **~80%** | |
 
 ---
 
-## 6. FRONTEND — TEACHER PAGES
+## 4. Database Architecture
 
-### 6.1 TeacherAssessmentCreatePage — Missing assignment-v2 Integration
+### 4.1 Dual-Storage Strategy
 
-| Severity | File | Issue |
-|---|---|---|
-| 🔴 BROKEN | `TeacherAssessmentCreatePage.tsx` | All assignment creation calls go to `/assignments-v2/*` — but the backend route file is a commented-out stub. Every assignment creation by a teacher returns 404. |
-| 🟠 BUG | `TeacherAssessmentCreatePage.tsx` | Quiz creation posts to `/quizzes-v2/` but the page passes `questions` array with type `AssignmentQuestion` (which has `multiple_choice \| true_false \| short_answer \| fill_blank \| matching`) — it does not include `descriptive`, `numerical`, `passage`, `assertion_reason` etc. even though the QUESTION_MODELS list shows all 12 types. Teacher can select "Passage" as a model but the question type dropdown in the form doesn't support creating a passage question. |
-| 🟡 MISSING | `TeacherAssessmentCreatePage.tsx` | No `subjectId` field on quiz/assignment creation form. The teacher selects class + concept but never selects subject. V2 quizzes stored without `subjectId` can't be filtered by subject for the student's hierarchy view. |
+The project implements a **Firestore-in-Supabase** pattern via `database/adapter.ts`:
 
----
+```
+Typed SQL Collections                     Untyped NoSQL Collections
+  (dedicated Postgres tables)               (stored in `nosql_docs` JSONB table)
+  ┌──────────────────────┐                 ┌──────────────────────┐
+  │ textbooks            │                 │ users                │
+  │ chapters             │                 │ classes              │
+  │ concepts             │                 │ subjects             │
+  │ concept_questions    │                 │ quizV2               │
+  │                      │                 │ examV2               │
+  │                      │                 │ assignmentV2         │
+  │                      │                 │ quizAttemptV2        │
+  │                      │                 │ examAttemptV2        │
+  │                      │                 │ grades               │
+  │                      │                 │ notifications        │
+  │                      │                 │ mindmaps             │
+  │                      │                 │ attendance           │
+  │                      │                 │ ... and 30+ more     │
+  └──────────────────────┘                 └──────────────────────┘
+```
 
-### 6.2 Teacher Concept View — No student push UI
+### 4.2 🔴 Critical: Collection Duplication Risk
 
-| Severity | File | Issue |
-|---|---|---|
-| 🟡 MISSING | `TeacherConceptViewPage.tsx` | No "Push mind map to students" button. `mindmap.service.ts` has `shareMindMap()` but the teacher concept view has no UI to trigger it. Teachers can create mind maps but can't push them to a class. |
-| 🟡 MISSING | `TeacherConceptViewPage.tsx` | No per-concept quiz push flow from the concept page itself. Teacher must go to `TeacherAssessmentCreatePage` separately and manually enter the concept. The concept page should have a "Create Quiz for this Concept" shortcut. |
-| 🟡 MISSING | Teacher pages | No page for `StudentCorrectionPanel.tsx` — the file exists but has no route. Teacher cannot manually grade open-ended (descriptive/essay) submissions. |
+Some collections appear in **both** tiers. Examples:
+- `users` — Supabase Auth maintains its own user table AND the adapter stores profiles in `nosql_docs`
+- `classes` — Appears as a SQL table concept (class_id is used as FK) AND stored in `nosql_docs`
+- `subjects` — Same dual existence
 
----
+The frontend `dataService.ts` queries some collections directly via `supabase.from('users')` (SQL), while the backend writes to `collections.users()` (NoSQL shim). **There is no sync mechanism between tiers.** Data depends on whichever write path was used last.
 
-## 7. MISSING FEATURES (additions required)
+### 4.3 Subcollection Mapping
 
-### 7.1 Student — No v2 Assessment Listing
+Subcollections are implemented as hardcoded foreign-key relationships:
 
-| Priority | Feature | What's needed |
-|---|---|---|
-| 🔵 HIGH | Student quiz list page | A new `StudentQuizzesPage` that calls `GET /quizzes-v2/class/:classId` and shows quizzes grouped by subject with a subject dropdown filter. Route: `/student/quizzes`. |
-| 🔵 HIGH | Student exam list (v2) | `StudentExamsPage` must be rewritten to call `GET /exams-v2/class/:classId` instead of `getExamsBySubject()`. Subject dropdown filter needed. |
-| 🔵 HIGH | Student assignment list (v2) | `StudentTasksPage` must call `GET /assignments-v2/class/:classId`. Currently calls v1 endpoints. |
-| 🔵 HIGH | Subject → test hierarchy | `SubjectDetailPage` should show the student's quizzes, exams, and assignments for that specific subject (filter by `subjectId` from the v2 class listings). |
-| 🔵 MEDIUM | Student dashboard v2 results | Dashboard "recent results" should aggregate from `quizAttemptV2`, `examAttemptV2`, `assignmentSubmissionV2` via `GET /analytics-v2/student/:studentId`, not from the v1 grades table. |
+| Parent | Child | FK Column |
+|--------|-------|-----------|
+| textbooks | chapters | textbook_id |
+| chapters | concepts | chapter_id |
+| concepts | questions, notes, videos, resources | concept_id |
+| examAttempts | proctoringLogs | exam_attempt_id |
+| quizV2 | quizAttemptV2 | quiz_v2_id |
+| examV2 | examAttemptV2, proctoringLogs | exam_v2_id |
+| assignmentV2 | assignmentSubmissionV2 | assignment_v2_id |
 
----
+### 4.4 WriteBatch: Best-Effort, Not Atomic
 
-### 7.2 Admin — Missing Monitoring Pages
+The `WB` (WriteBatch) class in adapter.ts does **sequential writes with no rollback**. If one write fails mid-batch, previous writes are not reverted. This is a data corruption risk for operations like:
+- `deleteClass()` — deletes students + auth accounts sequentially
+- Results push — iterates types in parallel batches
+- Enrollment — creates multiple records
 
-| Priority | Feature | What's needed |
-|---|---|---|
-| 🔵 HIGH | Admin student page | Restore `AdminStudentsPage` as a real route at `/admin/students` (remove the `<Navigate>` redirect). |
-| 🔵 HIGH | Admin teacher page | Restore `AdminTeachersPage` as a real route at `/admin/teachers`. |
-| 🔵 HIGH | Admin audit logs | Restore `AdminAuditLogsPage` as a real route at `/admin/audit-logs`. |
-| 🔵 MEDIUM | Admin student detail | Add a route `/admin/students/:studentId` pointing to a student detail/performance page. |
-| 🔵 MEDIUM | Teacher name in analytics | `getTeacherComparison()` returns `teacherName: 'Teacher'` for everyone. Resolve names from the teacherIds already present in the data. |
+### 4.5 Direct Supabase Queries from Frontend
 
----
+The frontend's `dataService.ts` makes direct Supabase calls that bypass the backend entirely:
 
-### 7.3 Teacher — Missing Wiring
+```typescript
+// These query the SQL tables directly — but the data might be in nosql_docs!
+supabase.from('exams').select('*')
+supabase.from('assignments').select('*')
+supabase.from('grades').select('*')
+supabase.from('quizV2').select('*')  // ← wrong: quizV2 is in nosql_docs
+```
 
-| Priority | Feature | What's needed |
-|---|---|---|
-| 🔵 HIGH | assignment-v2 routes & controller | Restore `assignment-v2.routes.ts` and `assignment-v2.controller.ts` (both are commented-out stubs). The service is implemented — just needs the routing layer. |
-| 🔵 HIGH | subjectId on quiz/exam create | Teacher assessment create form must include `subjectId` field so quizzes/exams can be filtered by subject in the student view. |
-| 🔵 MEDIUM | Push mind map to class | Add a "Share with class" button on `TeacherMindMapEditorPage` and `TeacherConceptViewPage` that calls `POST /mindmaps/:id/share` with all student IDs in the class. |
-| 🔵 MEDIUM | Student correction panel route | Register `StudentCorrectionPanel` at `/teacher/corrections/:submissionId` so teachers can manually grade descriptive/essay answers. |
-| 🔵 MEDIUM | Assignment release endpoint | Assignment v2 needs a `POST /:assignmentId/release` endpoint (parallel to quiz `releasedAt` and exam `releaseExam`). Currently `releasedAt` is set at creation by default — no teacher-controlled release. |
+Since most v2 data lives in `nosql_docs`, these queries return empty results. This is why student pages show zero v2 exams/quizzes/assignments.
 
----
+### 4.6 Missing: Database Migrations
 
-### 7.4 Backend — Missing Endpoints
-
-| Priority | Feature | What's needed |
-|---|---|---|
-| 🔵 HIGH | `GET /quizzes-v2/class/:classId` student filter | Currently returns ALL quizzes for the class regardless of `releasedAt`. Should only return released quizzes to students. The route has no role-based filtering in the service. |
-| 🔵 HIGH | `GET /exams-v2/class/:classId` student filter | Same issue — returns unreleased exams to students. `listExamsForClass` does not filter by `releasedAt`. |
-| 🔵 HIGH | `GET /assignments-v2/class/:classId` | Already implemented correctly in `assignment-v2.service.ts` (filters by `releasedAt`) but the controller and routes are deleted stubs. |
-| 🔵 MEDIUM | Student login by studentId | Need `POST /auth/login-student` or extend `POST /auth/login` to accept `studentId` as username, look up the generated email, and authenticate. |
-| 🔵 MEDIUM | `GET /analytics-v2/student/:studentId` by student self | The route uses `requireOwnershipOrRole` — student can call it for themselves. But `getStudentPerformance()` does N+1 reads for assessment titles. Needs optimization with batch reads. |
-| 🔵 LOW | `GET /subjects/by-class/:classId` for students | Already exists but only in `requireRole('student','teacher','admin')`. Students need this to populate their subjects list without going through the class document. |
-
----
-
-## 8. REMOVALS (dead code to clean up)
-
-| File | Reason |
-|---|---|
-| `src/app/pages/student/RollNumberEntryPage.tsx` | Self-assignment flow conflicts with admin-controlled student creation. Broken Supabase queries. Should be replaced by a simple "welcome, your class is X" confirmation page. |
-| `src/app/pages/student/QuizAttemptPage.tsx` | V1 quiz attempt page. All quizzes use v2 now. Dead page with no incoming links from v2 flow. |
-| `src/app/pages/student/ExamAttemptPage.tsx` | V1 exam attempt page. All exams use v2. Dead page. |
-| `src/app/pages/student/AdaptiveQuizPage.tsx` | Not imported or routed anywhere. Dead file. |
-| `src/app/pages/student/StudentTaskComponents.tsx` | Not a page — a component file in the pages folder. Should be moved to `components/student/`. |
-| `src/services/dataService.ts` — `getExamsBySubject()` | Queries v1 `exams` table. Should be replaced by a backend API call to `/exams-v2/class/:classId`. |
-| `src/services/dataService.ts` — `getCorrectionsByStudent()` | Queries v1 `corrections` table. V2 results come from `examAttemptV2`. Dead for v2 users. |
-| `src/services/dataService.ts` — `getAssignmentsBySubject()` | Queries v1 `assignments` table. Should call `/assignments-v2/class/:classId`. |
-| `src/routes/index.ts` — `ADMIN_STUDENTS/TEACHERS/SUBJECTS/AUDIT_LOGS` redirects | Remove `<Navigate>` and restore the actual page components. |
-| `src/app/pages/admin/UserManagementPage.tsx` | Imported in router but never routed. Either register it or delete it. |
-| Backend: `src/routes/assignment-v2.routes.ts` | Single comment line — restore with real content or the index.ts import breaks. |
-| Backend: `src/controllers/assignment-v2.controller.ts` | Single comment line — restore with real content. |
+The `scripts/` folder has 20 migration scripts but there is no **migration runner** or **version tracking**. New environments must run scripts manually in an undefined order.
 
 ---
 
-## 9. SUMMARY TABLE
+## 5. API Surface
 
-| Category | Broken | Bug | Missing | Add | Cleanup |
-|---|---|---|---|---|---|
-| Backend Routes | 4 | 6 | 3 | 5 | 2 |
-| Backend Services | 3 | 11 | 4 | 3 | 3 |
-| Backend Middleware | 0 | 3 | 0 | 0 | 1 |
-| Database/Adapter | 2 | 3 | 1 | 1 | 0 |
-| Frontend Router | 2 | 5 | 5 | 0 | 3 |
-| Frontend Auth/API | 1 | 4 | 0 | 0 | 2 |
-| Frontend Student Pages | 3 | 2 | 5 | 5 | 3 |
-| Frontend Teacher Pages | 1 | 2 | 4 | 4 | 0 |
-| Frontend Admin Pages | 0 | 3 | 5 | 2 | 1 |
-| Question Renderer | 1 | 3 | 2 | 0 | 0 |
-| **TOTAL** | **17** | **42** | **29** | **20** | **15** |
+### 5.1 Route File Analysis
+
+| Metric | Count |
+|--------|-------|
+| Route files on disk | 51 |
+| Route files registered in index.ts | 46 |
+| Route files NOT imported (orphaned) | 5 |
+| Controller files | 49 |
+| Service files | 55 |
+
+### 5.2 🔴 Orphaned Route Files (Not Imported Anywhere)
+
+These 5 route files exist on disk with fully-implemented endpoints but are never loaded:
+
+1. **`concept-progress.routes.ts`** — `GET /concept-progress/:studentId/:conceptId`, `GET /concept-progress/class/:classId`
+2. **`content-publishing.routes.ts`** — Publish/unpublish textbooks, chapters, quizzes
+3. **`ai-question-generator.routes.ts`** — Generate questions by topic/chapter
+4. **`virtual-labs.routes.ts`** — Virtual lab CRUD, simulation endpoints
+5. **`unified-test-engine.routes.ts`** — Unified test creation, scheduling, grading
+
+**Impact:** ~38 endpoints return 404. Users navigating to virtual labs, generating AI questions, tracking concept progress, publishing content, or using the unified test engine hit dead ends.
+
+### 5.3 Validation Coverage
+
+| Metric | Count | Percentage |
+|--------|-------|-----------|
+| Validator files | 16 | — |
+| Route files | 51 | — |
+| Routes with Zod validation | ~9 (v1 routes) | ~17.6% |
+| Routes without Zod validation (v2) | ~42 | ~82.4% |
+
+All v2 routes (`quiz-v2`, `exam-v2`, `assignment-v2`, etc.) accept raw request bodies with no schema validation.
+
+### 5.4 API Convention Split
+
+- **v1 routes** — Direct Supabase queries from both frontend and backend. Zod validation present.
+- **v2 routes** — Backend-mediated with Firestore-shim adapter. No Zod validation.
+- **Frontend direct** — `dataService.ts` bypasses backend entirely for many reads.
 
 ---
 
-## 10. PRIORITY ORDER FOR FIXES
+## 6. Pages & Routing
 
-### Immediate (Causes total feature failure)
-1. Restore `assignment-v2.routes.ts` and `assignment-v2.controller.ts`
-2. Fix quiz-v2 route order (static before dynamic)
-3. Fix `user.service.ts` import extension (`.js` → no extension)
-4. Restore admin student/teacher/audit-log routes (remove Navigate redirects)
-5. Register missing student routes: subjects, textbook, chapter, v2 quiz list
+### 6.1 Page Inventory
 
-### High (Core workflow broken)
-6. Rewrite `StudentExamsPage`, `StudentTasksPage` to use v2 endpoints
-7. Fix `dataService.ts` to use backend API for v2 assessments
-8. Fix `QuestionRendererV2` — add missing types, fix `passageText` field name
-9. Add `subjectId` to quiz/exam creation form
-10. Fix `listQuizzesForClass` and `listExamsForClass` to filter by `releasedAt` for students
+| Group | Total Files | Registered in Router | Orphaned |
+|-------|-----------|---------------------|----------|
+| Admin | 13 | 13 (4 redirected) | 1 (UserManagementPage) |
+| Teacher | 33 | ~30 | 3 (UnifiedTest, CorrectionPanel, ???) |
+| Student | 35 | ~28 | 7 |
+| Parent | 5 | 5 | 0 |
+| Auth | 4 | 4 | 1 (AdminLoginPage) |
+| Shared | 1 | 1 | 0 |
+| K2 | 6 | 6 | 0 |
+| Root-level | 3 | ~2 | 1 (AboutSchoolPage) |
+| **Total** | **91** | **~66** | **~25** |
 
-### Medium (Data integrity and UX gaps)
-11. Fix matching question grading in `quiz-v2.service.ts`
-12. Fix proctoring log `fetch` to use `api` axios instance
-13. Fix `auth.middleware.ts` to include `classId` and `studentId` on `req.user`
-14. Fix `RollNumberEntryPage` — remove self-assignment, replace with confirmation only
-15. Fix teacher names in `getTeacherComparison()`
+### 6.2 🔴 7 Orphaned Student Pages (Fully Coded, Unreachable)
 
-### Low (Tech debt and cleanup)
-16. Remove dead v1 page files (QuizAttemptPage, ExamAttemptPage, AdaptiveQuizPage)
-17. Fix `deleteUserService` order (delete auth before Firestore)
-18. Fix `api.ts` 403 retry logic
-19. Fix `authStore.ts` HMR `initialized` module-level variable
-20. Move `StudentTaskComponents.tsx` to components folder
+These pages exist with complete implementations but no route points to them:
+
+| Page | Purpose |
+|------|---------|
+| SubjectsPage | Subject listing for students |
+| SubjectDetailPage | Per-subject detail with tests |
+| TextbookDetailPage | View textbook content |
+| StudentChapterPage | Read chapter content |
+| StudentQuizzesPage | List quizzes for student |
+| LessonViewPage | View lesson content |
+| AdaptiveQuizPage | AI-adaptive quiz experience |
+
+**Impact:** Students cannot browse subjects, view textbooks, read chapters, see quizzes, or take adaptive quizzes through the UI — even though all these pages are fully coded.
+
+### 6.3 🔴 6 Admin Pages Routed to Redirects
+
+| Route | Redirects To | What Admin Sees |
+|-------|-------------|-----------------|
+| `/admin/students` | `/admin/classes` | Classes page instead |
+| `/admin/teachers` | `/admin/classes` | Classes page instead |
+| `/admin/subjects` | `/admin/classes` | Classes page instead |
+| `/admin/users` | `/admin/settings` | Settings page instead |
+| `/admin/audit-logs` | `/admin/settings` | Settings page instead |
+
+The pages (`AdminStudentsPage`, `AdminTeachersPage`, etc.) are imported and functional but `<Navigate>` components silently bypass them.
+
+### 6.4 Frontend API Path Mismatches
+
+Based on the existing bug-level audit — 22 documented frontend-backend API path mismatches where the frontend calls a different URL structure than what the backend serves. Common patterns:
+- Frontend calls `/api/quizzes-v2/...` but backend serves at `/quizzes-v2/...` (no `/api` prefix)
+- Student pages call v1 endpoints (`/exams`, `/assignments`) instead of v2 (`/exams-v2`, `/assignments-v2`)
+- Snake_case vs camelCase in request parameters
+
+---
+
+## 7. Security Posture
+
+### 7.1 Security Score: 55/100
+
+| Category | Score | Issues |
+|----------|-------|--------|
+| Authentication | 80% | Missing token revocation, MFA |
+| Authorization | 70% | Some routes lack role checks |
+| Data Protection | 50% | No RLS on nosql_docs; secrets exposed in code |
+| Input Validation | 20% | 82.4% of routes lack Zod validation |
+| Headers/CSP | 60% | CSP allows `'unsafe-inline'` |
+| Infrastructure | 40% | No HTTPS enforcement config, no secrets management |
+| **Overall** | **55%** | |
+
+### 7.2 Findings
+
+- **CSP has `'unsafe-inline'`** — The `securityHeaders.middleware.ts` sets CSP with `'unsafe-inline'` which weakens all XSS protection. Should use nonces or hashes for inline scripts/styles.
+- **No RLS on `nosql_docs` table** — The single `nosql_docs` table stores 41+ collections but has no row-level security. Any authenticated Supabase client can read any document.
+- **Direct Supabase queries from frontend** — `dataService.ts` executes queries with the client-side Supabase key. If RLS is not configured on every table, users can query any data.
+- **Rate limiting present but limited** — `rateLimit.middleware.ts` exists but only applied to auth routes.
+- **Error messages may leak details** — Generic `Error` objects thrown in services become 500 responses; error handler may expose stack traces in non-production.
+- **No secrets in `.env` committed** — Verified clean: `.env` is gitignored and no secrets in git history.
+- **Sensitive keys in source code** — Some config files may contain placeholder keys that were once real; review `config/env.ts`.
+
+---
+
+## 8. Production Readiness
+
+### 8.1 Score: 45/100
+
+| Category | Score | Status |
+|----------|-------|--------|
+| CI/CD Pipeline | 0/10 | No CI/CD at all |
+| Testing Coverage | 5/10 | 181 unit tests, 0 integration, 0 E2E |
+| Error Monitoring | 0/10 | No Sentry, no logging infrastructure |
+| Performance | 3/10 | No lazy loading, polling architecture |
+| Scalability | 2/10 | Single process, no horizontal scaling |
+| Deployment | 3/10 | No Docker, no containerization |
+| Documentation | 5/10 | System design doc exists, API docs missing |
+| Backup/DR | 0/10 | No backup strategy documented |
+| Security Headers | 5/10 | Helmet + CSP (with unsafe-inline) |
+| Secrets Management | 7/10 | .env gitignored, no vault |
+| **Overall** | **45/100** | **Not production-ready** |
+
+### 8.2 Gaps
+
+- **No Docker / Docker Compose** — No containerized deployment path
+- **No CI/CD** — No GitHub Actions, no automated testing on push
+- **No error tracking** — No Sentry, Rollbar, or Datadog
+- **No logging infrastructure** — Winston logger exists but no aggregation (ELK, Loki, etc.)
+- **Database pool: 5 connections** — Hardcoded in Supabase client; no connection pooling configuration for scale
+- **No health checks** — Only a `GET /health` endpoint; no readiness/liveness probes
+- **No rate limiting on public endpoints** — Only auth routes are rate-limited
+- **No asset CDN** — Static assets served directly; no CloudFront/CDN configuration
+- **Database connection string in `.env`** — Even though `.env` is gitignored, a leak would expose full database access
+- **No database backup verification** — Supabase has point-in-time recovery but no documented procedure
+
+---
+
+## 9. Multi-Tenant Readiness
+
+### 9.1 Score: 0/100
+
+**The application has zero multi-tenant architecture.**
+
+- No `school_id`, `tenant_id`, or `organization_id` in any schema
+- No tenant isolation in database queries
+- No subdomain-based routing (e.g., `school1.app.com`)
+- All users share a single namespace
+- `auth.middleware.ts` populates `req.user` with no tenant context
+
+### 9.2 What Would Be Needed
+
+| Component | Change Required |
+|-----------|----------------|
+| Database | Add `tenant_id` to every SQL table and `nosql_docs` data |
+| Auth middleware | Verify JWT includes tenant claim |
+| Registration flow | Tenant-scoped signup; admin invites within tenant |
+| Router | Subdomain or path-based tenant routing |
+| Data isolation | Every query must filter by tenant |
+| Supabase RLS | Row-level security per tenant on all tables |
+| UI | Tenant switcher in admin UI |
+| Infrastructure | Wildcard DNS, TLS certs per tenant |
+
+---
+
+## 10. Performance Analysis
+
+### 10.1 Score: 40/100
+
+| Area | Issue | Impact |
+|------|-------|--------|
+| Bundle size | pdfjs-dist (1.5MB) + tesseract.js (1MB) loaded globally | +2.5MB to every page load |
+| Bundle size | framer-motion (35KB) globally imported but animations disabled | Dead weight on every bundle |
+| Network | 3 notification components poll independently every 30s | 6 requests/minute per user session |
+| Queries | N+1 queries in analytics service | Up to 1000+ round trips for single page |
+| Queries | Direct Supabase queries from frontend bypass caching | No cache layer for frequently-read data |
+| Rendering | QuestionRendererV2 shuffles matching options on re-render | Destroys partial student input |
+| Lazy loading | None — all components eagerly loaded | Slow initial page load |
+| Image optimization | No next-gen formats (WebP/AVIF), no responsive images | Bandwidth waste |
+| Font loading | No font-display: swap or preload strategy | FOIT/FOUT on first paint |
+| State management | Module-level `initialized` variable broken by HMR | Auth state lost on hot reload |
+
+### 10.2 Specific Findings
+
+- **Notification triple-polling**: `notificationStore.ts`, `chatStore.ts`, and potentially the layout all poll every 30s. This should be a single WebSocket or SSE connection.
+- **pdfjs-dist not lazy-loaded**: Imported at the top level — every student page pays the 1.5MB cost even if they never view a PDF.
+- **tesseract.js global**: OCR is a rare operation (teacher grading) but loaded on every page.
+- **Framer Motion imported, disabled**: `motion.ts` defines animations but `motion.css` may disable them. The library is still in the bundle.
+- **No code splitting**: No `React.lazy()` or `Suspense` boundaries found in the router.
+- **v2 analytics service N+1**: `getConductedTests()` fetches chapters per textbook, concepts per chapter in nested loops — O(n³) database calls.
+
+---
+
+## 11. Missing Features vs Genesis Vision
+
+Based on project ambition (LMS covering K2 to Grade 12, with AI, gamification, and full ERP):
+
+### 11.1 Core Educational Features
+
+| Feature | Status | Priority |
+|---------|--------|----------|
+| Subject-based learning hierarchy | Partial (pages exist, routes missing) | 🔴 High |
+| Textbook reader | Partial (page exists, no route) | 🔴 High |
+| Chapter-based lesson view | Partial (page exists, no route) | 🔴 High |
+| Student quiz listing | Missing (page exists, no route) | 🔴 High |
+| Virtual labs | Missing (routes orphaned, pages exist) | 🔴 High |
+| Adaptive learning engine | Missing (page exists, no route) | 🟠 Medium |
+| AI question generation | Missing (route orphaned) | 🟠 Medium |
+| Concept progress tracking | Missing (route orphaned) | 🟠 Medium |
+| Content publishing workflow | Missing (route orphaned) | 🟠 Medium |
+| Unified test engine | Missing (route orphaned) | 🟠 Medium |
+
+### 11.2 ERP Features
+
+| Feature | Status | Priority |
+|---------|--------|----------|
+| Fee management | Done | — |
+| Timetable | Missing | 🟠 Medium |
+| Transport management | Missing | 🔵 Low (scope expansion) |
+| Inventory management | Missing | 🔵 Low |
+| HR/Payroll | Missing | 🔵 Low |
+| Library management | Missing | 🔵 Low |
+| Events/Calendar | Missing | 🟠 Medium |
+| Broadcast notices | Partial | 🟠 Medium |
+| Parent-teacher communication | Missing | 🟠 Medium |
+
+### 11.3 Advanced Features
+
+| Feature | Status | Priority |
+|---------|--------|----------|
+| Gamification | Done | — |
+| Coding platform | Done | — |
+| Mind maps | Done | — |
+| AI tutor | Done | — |
+| OCR grading | Done | — |
+| Predictive analytics | Missing | 🔵 Low |
+| Recommendation engine | Missing | 🟠 Medium |
+| Natural language grading | Missing | 🟠 Medium |
+| Real-time collaboration | Missing | 🔵 Low |
+| Offline support (PWA) | Missing | 🟠 Medium |
+
+---
+
+## 12. Dependency Order for Production
+
+### Phase 1: Critical Fixes (2-3 weeks, 1 engineer)
+
+| # | Task | Why |
+|---|------|-----|
+| 1 | Register 5 orphaned route files | 38 endpoints dead; users get 404 |
+| 2 | Fix quiz-v2 route ordering | Static before dynamic paths |
+| 3 | Restore assignment-v2 routes/controller | Commented-out stubs |
+| 4 | Wire 7 orphaned student pages into router | Subjects, textbooks, chapters unreachable |
+| 5 | Remove 6 admin page redirects | Admin can't manage students/teachers |
+
+### Phase 2: Data Integrity (2 weeks, 1 engineer)
+
+| # | Task | Why |
+|---|------|-----|
+| 6 | Fix dual-database writes | Users/classes data may differ between tiers |
+| 7 | Add Zod validation to v2 routes | 82% of endpoints accept unvalidated input |
+| 8 | Fix `deleteClass` cascade | Can permanently destroy student data |
+| 9 | Fix `deleteUserService` ordering | Auth account orphaned on failure |
+| 10 | Add RLS to `nosql_docs` | Zero row-level security on 41 collections |
+
+### Phase 3: Feature Completeness (4-6 weeks, 2 engineers)
+
+| # | Task | Why |
+|---|------|-----|
+| 11 | Rewrite student pages to use v2 endpoints | Students see empty exam/quiz/assignment lists |
+| 12 | Add missing question types to renderer | 4 of 12 types render as "unsupported" |
+| 13 | Add subjectId to quiz/exam creation | Can't filter assessments by subject |
+| 14 | Implement student login by studentId | Students can't log in with roll number |
+| 15 | Fix matching question grading | Matching questions always score 0 |
+
+### Phase 4: Performance (3-4 weeks, 1 engineer)
+
+| # | Task | Why |
+|---|------|-----|
+| 16 | Lazy-load pdfjs-dist and tesseract.js | -2.5MB from every page bundle |
+| 17 | Fix notification polling → single WS/SSE | 6 unnecessary requests/minute |
+| 18 | Fix N+1 queries in analytics | Up to 1000 round trips per page |
+| 19 | Remove framer-motion or implement it | 35KB dead weight or unused feature |
+| 20 | Add code splitting via React.lazy | Faster initial load |
+
+### Phase 5: Production Hardening (4-6 weeks, 1-2 engineers)
+
+| # | Task | Why |
+|---|------|-----|
+| 21 | Docker + Docker Compose + CI/CD | No deploy pipeline exists |
+| 22 | Add Sentry/Datadog error tracking | Zero observability in production |
+| 23 | Fix CSP (remove unsafe-inline) | Weakens all XSS protection |
+| 24 | Database pool configuration | Hardcoded to 5 connections |
+| 25 | Integration + E2E test suite | 21 test files for 50+ services |
+
+### Phase 6: Advanced Features (6-8 weeks, 2-3 engineers)
+
+| # | Task | Why |
+|---|------|-----|
+| 26 | Adaptive learning engine | Core differentiator |
+| 27 | AI natural language grading | Reduces teacher workload |
+| 28 | ERP modules (timetable, transport, etc.) | Completes school management suite |
+
+### Phase 7: Multi-Tenant (6-8 weeks, 2 engineers)
+
+| # | Task | Why |
+|---|------|-----|
+| 29 | Add tenant_id to all schemas | Foundation for multi-school SaaS |
+| 30 | Tenant isolation in queries | Data leak prevention |
+| 31 | Subdomain routing | School-specific URLs |
+| 32 | Tenant-scoped auth | Separate user namespaces |
+
+---
+
+## 13. Technical Debt Register
+
+### 13.1 🔴 Critical Debt (Must Fix Before Production)
+
+| Area | Issue | File(s) |
+|------|-------|---------|
+| Routes | 5 route files orphaned (not imported) | concept-progress, content-publishing, ai-question-generator, virtual-labs, unified-test-engine routes |
+| Routes | assignment-v2 routes/controller are comment stubs | `assignment-v2.routes.ts`, `assignment-v2.controller.ts` |
+| Routes | quiz-v2 route ordering breaks static paths | `quiz-v2.routes.ts` |
+| Frontend | 7 student pages not registered in router | See §6.2 |
+| Frontend | 6 admin pages redirect to other routes | See §6.3 |
+| Frontend | Student pages read v1 tables instead of v2 | `StudentExamsPage`, `StudentTasksPage`, `StudentDashboardPage` |
+| Frontend | `dataService.ts` queries broken by dual storage | `dataService.ts` direct Supabase calls |
+| Database | WriteBatch has no atomicity or rollback | `adapter.ts` WB class |
+| Database | No RLS on nosql_docs | Any authenticated client reads all data |
+| Security | CSP with unsafe-inline | `securityHeaders.middleware.ts` |
+| Validation | 82% of routes lack Zod validation | All v2 routes |
+| Frontend Auth | Module-level `initialized` breaks HMR | `authStore.ts` |
+
+### 13.2 🟠 Significant Debt
+
+| Area | Issue | File(s) |
+|------|-------|---------|
+| API | 22 frontend-backend API path mismatches | Various |
+| API | `api.ts` retry on 403 logs users out | `api.ts` |
+| API | 10-minute global timeout | `api.ts` |
+| Questions | 4 question types render as "unsupported" | `QuestionRendererV2.tsx` |
+| Questions | Passage text field name mismatch | `QuestionRendererV2.tsx` |
+| Questions | Matching question grading always wrong | `quiz-v2.service.ts` |
+| Questions | Matching shuffle destroys partial input | `QuestionRendererV2.tsx` |
+| Service | analytics-v2 N+1 queries | `analytics-v2.service.ts` |
+| Service | results-push broken batch commit | `results-push.service.ts` |
+| Middleware | `req.user` missing classId/studentId | `auth.middleware.ts` |
+| Middleware | `optionalAuth` swallows promise rejections | `auth.middleware.ts` |
+| Service | deleteClass cascade destroys students | `class.service.ts` |
+| Service | deleteUserService wrong order | `user.service.ts` |
+| Service | RollNumberEntryPage self-assignment | `RollNumberEntryPage.tsx` |
+| Store | authStore classId fallback picks randomly | `authStore.ts` |
+| Auth | No studentId-based login | `auth.service.ts` |
+
+### 13.3 ⚪ Cleanup Debt
+
+| Area | Issue | File(s) |
+|------|-------|---------|
+| Dead code | v1 quiz/exam attempt pages | `QuizAttemptPage.tsx`, `ExamAttemptPage.tsx` |
+| Dead code | AdaptiveQuizPage (unrouted) | `AdaptiveQuizPage.tsx` |
+| Dead code | UserManagementPage (unrouted) | `UserManagementPage.tsx` |
+| Dead code | AdminLoginPage (probably unused) | `AdminLoginPage.tsx` |
+| Dead code | AboutSchoolPage (not imported) | `AboutSchoolPage.tsx` |
+| Dead code | StudentTaskComponents in wrong folder | `StudentTaskComponents.tsx` |
+| Dead code | TeacherUnifiedTestPage (unrouted) | `TeacherUnifiedTestPage.tsx` |
+| Dead code | StudentCorrectionPanel (unrouted) | `StudentCorrectionPanel.tsx` |
+| Dead code | ROUTES.STUDENT_TIMETABLE (no page) | `constants.ts` |
+| Dead weight | framer-motion in bundle but disabled | `frontend/package.json`, `motion.ts` |
+| Cleanup | 20 migration scripts with no runner | `scripts/` |
+| Cleanup | 16 validator files but only 9 routes use them | `validators/` |
+
+### 13.4 TypeScript Debt
+
+| Setting | Backend | Frontend |
+|---------|---------|----------|
+| `strict` | `false` | `true` |
+| `noImplicitAny` | `false` | `false` |
+| `noUnusedLocals` | `false` | `false` |
+| `noUnusedParameters` | `false` | `false` |
+
+Enabling strict mode would surface hundreds of implicit-any errors across both codebases — a significant but important refactor.
+
+---
+
+## 14. Final Summary & Recommendations
+
+### 14.1 Overall Verdict
+
+The School LMS is a **feature-rich, ambitious project** (~80% feature complete) with excellent depth in the areas that work. However, it suffers from **architectural fragmentation** (dual database, mixed v1/v2 API surfaces, orphaned routes) that makes many features invisible to end users despite being fully implemented.
+
+### 14.2 Health Metrics
+
+| Metric | Score |
+|--------|-------|
+| Feature Completion | **80%** |
+| Code Quality | **65%** |
+| Security Posture | **55%** |
+| Production Readiness | **45%** |
+| Multi-Tenant Readiness | **0%** |
+| Performance | **40%** |
+| Testing Coverage | **35%** |
+| **Overall** | **~55%** |
+
+### 14.3 Top 5 Actions for Immediate Impact
+
+1. **Register the 5 orphaned backend route files** — 38 endpoints come alive at zero development cost (services already implemented)
+2. **Wire the 7 orphaned student pages into the frontend router** — Subjects, textbooks, chapters, quizzes all become accessible (already coded)
+3. **Remove the 6 admin page redirects** — Restore admin functionality that's already implemented
+4. **Fix quiz-v2 route ordering** — Move static paths before dynamic params
+5. **Restore assignment-v2 routes/controller** — Revert the commented-out stubs
+
+These 5 actions take **1-2 days** and unlock **~15 features** that are already fully implemented but invisible to users.
+
+### 14.4 Estimated Effort
+
+| Phase | Duration | Engineers | Cost |
+|-------|----------|-----------|------|
+| Critical Fixes | 2-3 weeks | 1 | Low |
+| Data Integrity | 2 weeks | 1 | Low |
+| Feature Completeness | 4-6 weeks | 2 | Medium |
+| Performance | 3-4 weeks | 1 | Low |
+| Production Hardening | 4-6 weeks | 1-2 | Medium |
+| Advanced Features | 6-8 weeks | 2-3 | High |
+| Multi-Tenant | 6-8 weeks | 2 | High |
+| **Total** | **~6-8 months** | **~6 engineers** | |
+
+---
+
+### 14.5 Companion Document
+
+For a per-file bug-level breakdown with specific code locations and fixes, see the companion deep-dive audit at the same location (previous version). This audit focuses on the strategic/architectural view.

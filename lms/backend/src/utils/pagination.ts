@@ -1,4 +1,4 @@
-import { Query } from '../firebase/firestore';
+import { Query } from '../database/adapter';
 
 export interface PaginationParams {
   page: number;
@@ -40,7 +40,7 @@ export async function getDocumentById<T>(
   collectionPath: string,
   id: string
 ): Promise<{ id: string; data: T } | null> {
-  const { getCollection } = await import('../firebase/firestore');
+  const { getCollection } = await import('../database/adapter');
   const doc = await getCollection(collectionPath).doc(id).get();
   if (!doc.exists) return null;
   return { id: doc.id, data: doc.data() as T };

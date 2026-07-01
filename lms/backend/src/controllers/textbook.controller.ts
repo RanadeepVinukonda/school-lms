@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import * as textbookService from '../services/textbook.service';
 import { sendSuccess, sendCreated } from '../utils/response';
+import { logger } from '../utils/logger';
 
 import fs from 'fs/promises';
 
@@ -11,11 +12,17 @@ export async function createTextbook(req: Request, res: Response) {
       pdfFilePath: req.file?.path,
       teacherId: req.user!.uid,
       teacherRole: req.user!.role,
+      schoolId: req.user!.school_id,
     });
     sendCreated(res, result, 'Textbook created');
   } finally {
     if (req.file?.path) {
-      await fs.unlink(req.file.path).catch(() => {});
+      await fs.unlink(req.file.path).catch((err) => {
+        logger.warn('Failed to cleanup uploaded file after textbook creation', {
+          filePath: req.file!.path,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      });
     }
   }
 }
@@ -27,7 +34,7 @@ export async function getTextbook(req: Request, res: Response) {
 
 // List all textbooks (no filters)
 export async function listTextbooks(req: Request, res: Response) {
-  const result = await textbookService.listAllTextbooks();
+  const result = await textbookService.listAllTextbooks(req.user!.school_id);
   sendSuccess(res, result);
 }
 
@@ -47,6 +54,7 @@ export async function getTextbooksByClassAndSubject(req: Request, res: Response)
   const result = await textbookService.getTextbooksByClassAndSubject(
     req.params.classId,
     req.params.subjectId,
+    req.user!.school_id,
   );
   sendSuccess(res, result);
 }

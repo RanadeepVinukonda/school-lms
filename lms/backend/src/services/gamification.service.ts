@@ -1,14 +1,19 @@
 import { v4 as uuidv4 } from 'uuid';
-import { FieldValue, Timestamp } from '../firebase/firestore';
-import { collections } from '../firebase/firestore';
+import { FieldValue, Timestamp } from '../database/adapter';
+import { collections } from '../database/adapter';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
+import { TransactionManager } from '../database/transaction-manager';
 
 export const XP_THRESHOLDS = [0, 100, 250, 500, 800, 1200, 1700, 2300, 3000, 4000];
 export const XP_REWARDS = { lessonComplete: 25, assessmentComplete: 15, highAccuracy: 50, perfectScore: 100, dailyChallenge: 30, streakBonus: 10 };
 export const COIN_REWARDS = { lessonComplete: 5, assessmentComplete: 3, highAccuracy: 10, perfectScore: 25, dailyChallenge: 15, streakBonus: 5 };
 
-export interface BadgeDefinition { id: string; name: string; description: string; icon: string; condition: (profile: { xp: number; level: number; streak: number; coins: number; badges: string[]; lessonsCompleted: number; perfectScores: number; highAccuracyCount: number; challengesCompleted: number }) => boolean }
+export interface BadgeDefinition { id: string; name: string; description: string; icon: string; condition: (profile: {
+  xp: number; level: number; streak: number; coins: number; badges: string[];
+  lessonsCompleted: number; perfectScores: number; highAccuracyCount: number; challengesCompleted: number;
+  codingProjectsCompleted: number; codingChallengesCompleted: number;
+}) => boolean }
 
 export const LEVEL_BADGE_CONFIG = [
   { icon: 'school', name: 'Newcomer' },
@@ -42,6 +47,10 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   { id: 'xp_chaser', name: 'XP Chaser', description: 'Reach 1000 XP', icon: 'trending_up', condition: (p) => p.xp >= 1000 },
   { id: 'xp_master', name: 'XP Master', description: 'Reach 5000 XP', icon: 'workspace_premium', condition: (p) => p.xp >= 5000 },
   { id: 'challenge_complete', name: 'Challenge Accepted', description: 'Complete 10 daily challenges', icon: 'task_alt', condition: (p) => p.challengesCompleted >= 10 },
+  { id: 'first_project', name: 'First Project', description: 'Complete your first coding project', icon: 'code', condition: (p) => p.codingProjectsCompleted >= 1 },
+  { id: 'five_projects', name: 'Apprentice Dev', description: 'Complete 5 coding projects', icon: 'developer_mode', condition: (p) => p.codingProjectsCompleted >= 5 },
+  { id: 'ten_challenges', name: 'Codewarrior', description: 'Complete 10 coding challenges', icon: 'terminal', condition: (p) => p.codingChallengesCompleted >= 10 },
+  { id: 'project_master', name: 'Project Master', description: 'Complete 20 coding projects', icon: 'rocket', condition: (p) => p.codingProjectsCompleted >= 20 },
 ];
 
 export const DAILY_CHALLENGE_TEMPLATES = [
@@ -51,6 +60,20 @@ export const DAILY_CHALLENGE_TEMPLATES = [
   { title: 'Concept Explorer', description: 'Complete 5 concept quizzes', xpReward: 35, coinReward: 15, type: 'concept_quizzes', target: 5 },
   { title: 'Streak Keeper', description: 'Study for 20 minutes', xpReward: 20, coinReward: 10, type: 'study_time', target: 20 },
   { title: 'Perfect Practice', description: 'Get a perfect score on any assessment', xpReward: 60, coinReward: 25, type: 'perfect_score', target: 1 },
+];
+
+const WEEKLY_CHALLENGE_TEMPLATES = [
+  { title: 'Weekly Warrior', description: 'Complete 10 lessons this week', xpReward: 100, coinReward: 50, type: 'lessons', target: 10 },
+  { title: 'Accuracy Ace', description: 'Score 90%+ on 5 quizzes', xpReward: 150, coinReward: 75, type: 'high_accuracy', target: 5 },
+  { title: 'Challenge Conqueror', description: 'Complete 3 daily challenges', xpReward: 80, coinReward: 40, type: 'daily_challenges', target: 3 },
+  { title: 'Concept Master', description: 'Master 3 concepts (70%+)', xpReward: 200, coinReward: 100, type: 'concept_mastery', target: 3 },
+];
+
+const MONTHLY_CHALLENGE_TEMPLATES = [
+  { title: 'Diligent Scholar', description: 'Complete 30 lessons this month', xpReward: 300, coinReward: 150, type: 'lessons', target: 30 },
+  { title: 'Perfect Month', description: 'Score 100% on 10 quizzes', xpReward: 500, coinReward: 250, type: 'perfect_scores', target: 10 },
+  { title: 'Streak Legend', description: 'Maintain a 7-day streak', xpReward: 400, coinReward: 200, type: 'streak', target: 7 },
+  { title: 'Subject Star', description: 'Master 8 concepts across any subject', xpReward: 600, coinReward: 300, type: 'concept_mastery', target: 8 },
 ];
 
 export function calculateLevel(xp: number): number {
@@ -85,6 +108,8 @@ async function ensureProfile(userId: string) {
       perfectScores: 0,
       highAccuracyCount: 0,
       challengesCompleted: 0,
+      codingProjectsCompleted: 0,
+      codingChallengesCompleted: 0,
       lastActiveDate: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -92,7 +117,16 @@ async function ensureProfile(userId: string) {
     await ref.set(profile);
     return profile;
   }
-  return snap.data() as Record<string, unknown>;
+  const data = snap.data() as Record<string, unknown>;
+  if (data.codingProjectsCompleted === undefined) {
+    await ref.update({ codingProjectsCompleted: 0 });
+    data.codingProjectsCompleted = 0;
+  }
+  if (data.codingChallengesCompleted === undefined) {
+    await ref.update({ codingChallengesCompleted: 0 });
+    data.codingChallengesCompleted = 0;
+  }
+  return data;
 }
 
 export async function getProfile(userId: string) {
@@ -114,7 +148,7 @@ export async function awardXp(userId: string, amount: number, source: string) {
   });
   logger.info('XP awarded', { userId, amount, source, newXp, newLevel });
   const profile2 = await ensureProfile(userId);
-  const newBadges = await checkAndAwardBadges(userId, profile2 as any);
+  const newBadges = await checkAndAwardBadges(userId, profile2);
   return { xp: newXp, level: newLevel, newBadges };
 }
 
@@ -130,8 +164,50 @@ export async function awardCoins(userId: string, amount: number, source: string)
   });
   logger.info('Coins awarded', { userId, amount, source });
   const profile2 = await ensureProfile(userId);
-  const newBadges = await checkAndAwardBadges(userId, profile2 as any);
+  const newBadges = await checkAndAwardBadges(userId, profile2);
   return { coins: newCoins, newBadges };
+}
+
+/**
+ * Award XP and coins atomically in a single transaction.
+ * Used when both rewards must succeed together (e.g., lesson complete, daily challenge).
+ */
+export async function awardXpAndCoins(
+  userId: string,
+  xpAmount: number,
+  coinAmount: number,
+  source: string,
+): Promise<{ xp: number; coins: number; level: number; newBadges: string[] }> {
+  const profile = await ensureProfile(userId);
+  const newXp = (profile.xp as number) + xpAmount;
+  const newCoins = (profile.coins as number) + coinAmount;
+  const newLevel = calculateLevel(newXp);
+  const now = new Date().toISOString();
+
+  const txManager = new TransactionManager();
+  await txManager.runTransaction(async (tx) => {
+    await tx.update('gamificationProfiles', userId, {
+      xp: FieldValue.increment(xpAmount) as unknown as number,
+      coins: FieldValue.increment(coinAmount) as unknown as number,
+      level: newLevel,
+      updatedAt: now,
+    });
+  });
+
+  // Log transactions outside the atomic block (best-effort)
+  try {
+    await Promise.all([
+      collections.gamificationTransactions().add({ userId, amount: xpAmount, type: 'xp', source, createdAt: now }),
+      collections.gamificationTransactions().add({ userId, amount: coinAmount, type: 'coin', source, createdAt: now }),
+    ]);
+  } catch (err) {
+    logger.warn('Failed to log gamification transactions', { userId, source, error: err });
+  }
+
+  logger.info('XP and coins awarded atomically', { userId, xpAmount, coinAmount, source, newXp, newCoins, newLevel });
+  const updatedProfile = await ensureProfile(userId);
+  const newBadges = await checkAndAwardBadges(userId, updatedProfile);
+  return { xp: newXp, coins: newCoins, level: newLevel, newBadges };
 }
 
 export async function getBadges() {
@@ -158,6 +234,8 @@ async function checkAndAwardBadges(userId: string, profile: Record<string, unkno
     perfectScores: profile.perfectScores as number || 0,
     highAccuracyCount: profile.highAccuracyCount as number || 0,
     challengesCompleted: profile.challengesCompleted as number || 0,
+    codingProjectsCompleted: profile.codingProjectsCompleted as number || 0,
+    codingChallengesCompleted: profile.codingChallengesCompleted as number || 0,
   };
   for (const badge of BADGE_DEFINITIONS) {
     if (!earnedBadgeIds.has(badge.id) && badge.condition(p)) {
@@ -255,6 +333,19 @@ export async function getClassLeaderboard(classId: string, limit = 50) {
   return profiles.slice(0, limit).map((p, i) => ({ ...p, rank: i + 1 }));
 }
 
+function getWeekKey(date = new Date()): string {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNum = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+}
+
+function getMonthKey(date = new Date()): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
 export async function getDailyChallenges(userId: string) {
   const today = new Date().toISOString().split('T')[0];
   const snapshot = await collections.gamificationDailyChallenges()
@@ -262,7 +353,7 @@ export async function getDailyChallenges(userId: string) {
     .where('date', '==', today)
     .get();
   if (!snapshot.empty) {
-    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+    return snapshot.docs.map((d: any) => ({ id: d.id, ...d.data() }));
   }
   const count = Math.min(DAILY_CHALLENGE_TEMPLATES.length, 3);
   const shuffled = [...DAILY_CHALLENGE_TEMPLATES].sort(() => Math.random() - 0.5).slice(0, count);
@@ -300,6 +391,87 @@ export async function completeDailyChallenge(userId: string, challengeId: string
   return { xp: xpResult.xp, coins: coinResult.coins, alreadyCompleted: false };
 }
 
+async function getOrCreatePeriodChallenges(
+  userId: string,
+  periodKey: string,
+  templates: typeof WEEKLY_CHALLENGE_TEMPLATES,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  collection: any,
+) {
+  const snapshot = await collection
+    .where('userId', '==', userId)
+    .where('periodKey', '==', periodKey)
+    .get();
+  if (!snapshot.empty) {
+    return snapshot.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+  }
+  const shuffled = [...templates].sort(() => Math.random() - 0.5);
+  const challenges = shuffled.map((t) => ({
+    id: uuidv4(),
+    userId,
+    periodKey,
+    ...t,
+    progress: 0,
+    completed: false,
+    createdAt: new Date().toISOString(),
+  }));
+  const batch = collection.firestore.batch();
+  for (const c of challenges) {
+    batch.set(collection.doc(c.id), c);
+  }
+  await batch.commit();
+  return challenges;
+}
+
+export async function getWeeklyChallenges(userId: string) {
+  return getOrCreatePeriodChallenges(
+    userId,
+    getWeekKey(),
+    WEEKLY_CHALLENGE_TEMPLATES,
+    collections.gamificationWeeklyChallenges(),
+  );
+}
+
+export async function getMonthlyChallenges(userId: string) {
+  return getOrCreatePeriodChallenges(
+    userId,
+    getMonthKey(),
+    MONTHLY_CHALLENGE_TEMPLATES,
+    collections.gamificationMonthlyChallenges(),
+  );
+}
+
+async function completePeriodChallenge(
+  userId: string,
+  challengeId: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  collection: any,
+  source: string,
+) {
+  const ref = collection.doc(challengeId);
+  const snap = await ref.get();
+  if (!snap.exists) throw new NotFoundError('Challenge not found');
+  const challenge = snap.data()!;
+  if (challenge.userId !== userId) throw new NotFoundError('Challenge not found');
+  if (challenge.completed) return { alreadyCompleted: true };
+  await ref.update({ completed: true, progress: challenge.target, updatedAt: new Date().toISOString() });
+  const xpResult = await awardXp(userId, challenge.xpReward || 100, source);
+  const coinResult = await awardCoins(userId, challenge.coinReward || 50, source);
+  await collections.gamificationProfiles().doc(userId).update({
+    challengesCompleted: FieldValue.increment(1),
+  });
+  logger.info('Period challenge completed', { userId, challengeId, source });
+  return { xp: xpResult.xp, coins: coinResult.coins, alreadyCompleted: false };
+}
+
+export async function completeWeeklyChallenge(userId: string, challengeId: string) {
+  return completePeriodChallenge(userId, challengeId, collections.gamificationWeeklyChallenges(), 'weekly_challenge');
+}
+
+export async function completeMonthlyChallenge(userId: string, challengeId: string) {
+  return completePeriodChallenge(userId, challengeId, collections.gamificationMonthlyChallenges(), 'monthly_challenge');
+}
+
 export async function updateStreak(userId: string) {
   const profile = await ensureProfile(userId);
   const today = new Date().toISOString().split('T')[0];
@@ -321,7 +493,7 @@ export async function updateStreak(userId: string) {
     await awardCoins(userId, COIN_REWARDS.streakBonus * Math.floor(newStreak / 3), 'streak_bonus');
   }
   const profile2 = await ensureProfile(userId);
-  await checkAndAwardBadges(userId, profile2 as any);
+  await checkAndAwardBadges(userId, profile2);
   return { ...profile2, streak: newStreak };
 }
 
@@ -330,7 +502,7 @@ export async function incrementLessonsCompleted(userId: string) {
     lessonsCompleted: FieldValue.increment(1),
   });
   const profile = await ensureProfile(userId);
-  await checkAndAwardBadges(userId, profile as any);
+  await checkAndAwardBadges(userId, profile);
 }
 
 export async function recordAssessmentResult(userId: string, accuracy: number) {
@@ -345,5 +517,21 @@ export async function recordAssessmentResult(userId: string, accuracy: number) {
     await collections.gamificationProfiles().doc(userId).update(updates);
   }
   const profile = await ensureProfile(userId);
-  await checkAndAwardBadges(userId, profile as any);
+  await checkAndAwardBadges(userId, profile);
+}
+
+export async function recordCodingProjectCompleted(userId: string) {
+  await collections.gamificationProfiles().doc(userId).update({
+    codingProjectsCompleted: FieldValue.increment(1),
+  });
+  const profile = await ensureProfile(userId);
+  await checkAndAwardBadges(userId, profile);
+}
+
+export async function recordCodingChallengeCompleted(userId: string) {
+  await collections.gamificationProfiles().doc(userId).update({
+    codingChallengesCompleted: FieldValue.increment(1),
+  });
+  const profile = await ensureProfile(userId);
+  await checkAndAwardBadges(userId, profile);
 }

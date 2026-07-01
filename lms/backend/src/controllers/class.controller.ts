@@ -6,7 +6,7 @@ import { sendSuccess, sendCreated } from '../utils/response';
 import type { ReqWithUser, QueryParams } from '../types/common';
 
 export async function createClass(req: Request, res: Response) {
-  const result = await classService.createClass(req.body);
+  const result = await classService.createClass({ ...req.body, schoolId: req.user!.school_id });
   logAudit(adminAuditEntry(req as ReqWithUser, 'class.create', result.id, 'class', result.name, {
     newValue: result,
     summary: `Created class "${result.name}"`,
@@ -34,7 +34,10 @@ export async function deleteClass(req: Request, res: Response) {
 }
 
 export async function listClasses(req: Request, res: Response) {
-  const result = await classService.listClasses(req.query as QueryParams);
+  const result = await classService.listClasses({
+    ...(req.query as QueryParams),
+    schoolId: req.user!.school_id,
+  });
   sendSuccess(res, result);
 }
 

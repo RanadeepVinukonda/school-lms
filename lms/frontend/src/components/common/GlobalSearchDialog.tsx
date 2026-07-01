@@ -8,13 +8,14 @@ import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
 import { useQuery } from '@tanstack/react-query';
 import { getAllSubjects, getAllUsers } from '@/services/dataService';
-import { supabase } from '@/firebase/config';
+import { supabase } from '@/supabase/config';
+import api from '@/services/api';
 import type { UserRole, Subject } from '@/types';
 import type { AssignmentItem, ExamItem, UserDoc, LessonItem, QuizItem } from '@/services/dataService';
 
-type Cat = 'subjects' | 'assignments' | 'exams' | 'teachers' | 'students' | 'lessons';
+type Cat = 'subjects' | 'assignments' | 'exams' | 'teachers' | 'students' | 'lessons' | 'textbooks' | 'concepts';
 interface Item { id: string; title: string; subtitle: string; icon: string; url: string; category: Cat; }
-interface Results { subjects: Item[]; assignments: Item[]; exams: Item[]; teachers: Item[]; students: Item[]; lessons: Item[]; }
+interface Results { subjects: Item[]; assignments: Item[]; exams: Item[]; teachers: Item[]; students: Item[]; lessons: Item[]; textbooks: Item[]; concepts: Item[]; }
 
 const CFG: Record<Cat, { l: string; i: string }> = {
   subjects: { l: 'Subjects', i: 'school' },
@@ -23,13 +24,15 @@ const CFG: Record<Cat, { l: string; i: string }> = {
   teachers: { l: 'Teachers', i: 'person' },
   students: { l: 'Students', i: 'person' },
   lessons: { l: 'Lessons', i: 'book' },
+  textbooks: { l: 'Textbooks', i: 'menu_book' },
+  concepts: { l: 'Concepts', i: 'psychology' },
 };
 
 const CATS = Object.keys(CFG) as Cat[];
-const EMPTY: Results = { subjects: [], assignments: [], exams: [], teachers: [], students: [], lessons: [] };
+const EMPTY: Results = { subjects: [], assignments: [], exams: [], teachers: [], students: [], lessons: [], textbooks: [], concepts: [] };
 
 function link(cat: Cat, id: string, role: UserRole): string {
-  const m: Record<Cat, (i: string) => string> = {
+  const m: Partial<Record<Cat, (i: string) => string>> = {
     subjects: (i) => (role === 'admin' ? ROUTES.ADMIN_SUBJECTS : ROUTES.STUDENT_SUBJECT(i)),
     assignments: (i) => ROUTES.ASSIGNMENT_DETAIL(i),
     exams: (i) => ROUTES.EXAM_DETAIL(i),
@@ -37,7 +40,7 @@ function link(cat: Cat, id: string, role: UserRole): string {
     teachers: () => (role === 'admin' ? ROUTES.ADMIN_TEACHERS : ROUTES.TEACHER_DASHBOARD),
     students: () => (role === 'admin' ? ROUTES.ADMIN_STUDENTS : role === 'teacher' ? ROUTES.TEACHER_STUDENTS : ROUTES.STUDENT_DASHBOARD),
   };
-  return m[cat](id);
+  return m[cat]?.(id) || '#';
 }
 
 interface SearchData {
@@ -75,6 +78,8 @@ export function useSearch(
         .map((s) => ({ id: s.id, title: s.displayName, subtitle: s.studentId || 'Student', icon: 'person', url: '', category: 'students' as Cat })),
       lessons: ls.filter((l) => [l.title, l.content].some((f) => f?.toLowerCase().includes(q) ?? false))
         .map((l) => ({ id: l.id, title: l.title, subtitle: `Lesson · ${l.contentType}`, icon: 'book', url: '', category: 'lessons' as Cat })),
+      textbooks: [],
+      concepts: [],
     };
   }, [query, sb, as, ex, us, ls]);
 
@@ -97,6 +102,7 @@ export function GlobalSearchDialog({ isOpen, onClose }: Props) {
   const [query, setQuery] = useState('');
   const [sel, setSel] = useState(0);
   const role = useAuthStore((s) => s.user?.role ?? 'student');
+
 
   const { data: searchData } = useQuery({
     queryKey: ['global-search-data'],
@@ -121,15 +127,63 @@ export function GlobalSearchDialog({ isOpen, onClose }: Props) {
     staleTime: 60000,
   });
 
-  const { results, isLoading } = useSearch(query, searchData);
+  const { results: localResults, isLoading: localLoading } = useSearch(query, searchData);
+
+  const { data: esData, isLoading: esLoading } = useQuery({
+    queryKey: ['es-global-search', query],
+    queryFn: async () => {
+      if (!query.trim()) return null;
+      const res = await api.get('/search', { params: { q: query } });
+      return res.data?.data;
+    },
+    enabled: isOpen && query.trim().length > 0,
+    staleTime: 5000,
+  });
+
+  const results = useMemo((): Results => {
+    const res = { ...localResults };
+    if (esData) {
+      if (esData.textbooks) {
+        res.textbooks = esData.textbooks.map((tb: any) => ({
+          id: tb.id,
+          title: tb.title,
+          subtitle: `Textbook · ${tb.subject || ''}`,
+          icon: 'menu_book',
+          url: `/student/textbooks/${tb.id}`,
+          category: 'textbooks'
+        }));
+      }
+      if (esData.concepts) {
+        res.concepts = esData.concepts.map((cp: any) => ({
+          id: cp.id,
+          title: cp.title,
+          subtitle: `Concept`,
+          icon: 'psychology',
+          url: `/student/concepts/${cp.id}`,
+          category: 'concepts'
+        }));
+      }
+    }
+    return res as Results;
+  }, [localResults, esData]);
+
+  const isLoading = localLoading || esLoading;
 
   const flat = useMemo(() => {
     const items: (Item & { cl: string })[] = [];
-    for (const cat of CATS) for (const item of results[cat]) items.push({ ...item, cl: CFG[cat].l, url: link(cat, item.id, role) });
+    for (const cat of CATS) {
+      for (const item of results[cat]) {
+        items.push({
+          ...item,
+          cl: CFG[cat].l,
+          url: item.category === 'textbooks' || item.category === 'concepts' ? item.url : link(cat, item.id, role)
+        });
+      }
+    }
     return items;
   }, [results, role]);
 
-  const catsWithItems = CATS.filter((cat) => results[cat].length > 0);
+  const catsWithItems = CATS.filter((cat) => results[cat] && results[cat].length > 0);
 
   useEffect(() => {
     if (isOpen) { setQuery(''); setSel(0); requestAnimationFrame(() => inputRef.current?.focus()); }
@@ -229,7 +283,7 @@ export function GlobalSearchDialog({ isOpen, onClose }: Props) {
                           return (
                             <button key={`${cat}-${item.id}`} data-i={fi}
                               className={cn('w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors', fi === sel ? 'bg-secondary-container' : 'hover:bg-secondary-container/50')}
-                              onClick={() => pick({ ...item, url: link(cat, item.id, role) })} onMouseEnter={() => setSel(fi)}>
+                              onClick={() => pick({ ...item, url: item.category === 'textbooks' || item.category === 'concepts' ? item.url : link(cat, item.id, role) })} onMouseEnter={() => setSel(fi)}>
                               <Icon name={icon} size={20} className="text-on-surface-variant shrink-0" />
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-on-surface truncate">{item.title}</p>

@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { FieldValue } from '../firebase/firestore';
-import { collections } from '../firebase/firestore';
+import { FieldValue } from '../database/adapter';
+import { collections } from '../database/adapter';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { getTeacherAssignment } from './teacher-class-subject.service';
@@ -27,6 +27,7 @@ export async function createExam(data: {
   showResults?: boolean;
   startDate?: string;
   endDate?: string;
+  schoolId?: string;
 }) {
   const assignment = await getTeacherAssignment(data.teacherId, data.classId);
   if (!assignment) {
@@ -77,6 +78,7 @@ export async function createExam(data: {
     releasedAt: null,
     startDate: data.startDate || null,
     endDate: data.endDate || null,
+    schoolId: data.schoolId || '',
     createdAt: now,
     updatedAt: now,
   };
@@ -467,19 +469,25 @@ export async function getExamById(examId: string) {
   return { ...doc.data() };
 }
 
-export async function listExamsForClass(classId: string): Promise<any[]> {
-  const snapshot = await collections.examV2()
-    .where('classId', '==', classId)
-    .get();
+export async function listExamsForClass(classId: string, schoolId?: string): Promise<any[]> {
+  let baseQuery = collections.examV2()
+    .where('classId', '==', classId);
+  if (schoolId) {
+    baseQuery = baseQuery.where('schoolId', '==', schoolId);
+  }
+  const snapshot = await baseQuery.get();
 
   const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
   return items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
-export async function listExamsForTeacher(teacherId: string): Promise<any[]> {
-  const snapshot = await collections.examV2()
-    .where('teacherId', '==', teacherId)
-    .get();
+export async function listExamsForTeacher(teacherId: string, schoolId?: string): Promise<any[]> {
+  let baseQuery = collections.examV2()
+    .where('teacherId', '==', teacherId);
+  if (schoolId) {
+    baseQuery = baseQuery.where('schoolId', '==', schoolId);
+  }
+  const snapshot = await baseQuery.get();
 
   const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
   return items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());

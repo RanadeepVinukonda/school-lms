@@ -44,7 +44,33 @@ import prePrimaryRoutes from './pre-primary.routes';
 import nepQuestionsRoutes from './nep-questions.routes';
 import ocrRoutes from './ocr.routes';
 import cloudinaryRoutes from './cloudinary.routes';
-
+import virtualLabsRoutes from './virtual-labs.routes';
+import unifiedTestEngineRoutes from './unified-test-engine.routes';
+import aiQuestionGeneratorRoutes from './ai-question-generator.routes';
+import contentPublishingRoutes from './content-publishing.routes';
+import conceptProgressRoutes from './concept-progress.routes';
+import mfaRoutes from './mfa.routes';
+import schoolsRoutes from './schools.routes';
+import adaptiveRoutes from './adaptive.routes';
+import curriculumRoutes from './curriculum.routes';
+import aiTutorRoutes from './ai-tutor.routes';
+import noticeRoutes from './notice.routes';
+import deviceTokenRoutes from './device-token.routes';
+import codingChallengeRoutes from './coding-challenge.routes';
+import notificationPrefsRoutes from './notification-prefs.routes';
+import curriculumPlanRoutes from './curriculum-plan.routes';
+import reportsRoutes from './reports.routes';
+import timetableRoutes from './timetable.routes';
+import transportRoutes from './transport.routes';
+import inventoryRoutes from './inventory.routes';
+import staffRoutes from './staff.routes';
+import leaveRoutes from './leave.routes';
+import payrollRoutes from './payroll.routes';
+import searchRoutes from './search.routes';
+import classroomRoutes from './classroom.routes';
+import ltiRoutes from './lti.routes';
+import { metricsHandler } from '../middlewares/metrics.middleware';
+ 
 const router = Router();
 
 router.use('/auth', authRoutes);
@@ -92,6 +118,32 @@ router.use('/coding', codingRoutes);
 router.use('/nep-questions', nepQuestionsRoutes);
 router.use('/ocr', ocrRoutes);
 router.use('/cloudinary', cloudinaryRoutes);
+router.use('/virtual-labs', virtualLabsRoutes);
+router.use('/unified-test-engine', unifiedTestEngineRoutes);
+router.use('/ai-question-generator', aiQuestionGeneratorRoutes);
+router.use('/content-publishing', contentPublishingRoutes);
+router.use('/concept-progress', conceptProgressRoutes);
+router.use('/mfa', mfaRoutes);
+router.use('/schools', schoolsRoutes);
+router.use('/adaptive', adaptiveRoutes);
+router.use('/curriculum', curriculumRoutes);
+router.use('/ai-tutor', aiTutorRoutes);
+router.use('/fees', feeRoutes);
+router.use('/notices', noticeRoutes);
+router.use('/device-tokens', deviceTokenRoutes);
+router.use('/coding-challenges', codingChallengeRoutes);
+router.use('/notification-preferences', notificationPrefsRoutes);
+router.use('/reports', reportsRoutes);
+router.use('/timetable', timetableRoutes);
+router.use('/transport', transportRoutes);
+router.use('/inventory', inventoryRoutes);
+router.use('/staff', staffRoutes);
+router.use('/leaves', leaveRoutes);
+router.use('/payroll', payrollRoutes);
+router.use('/search', searchRoutes);
+router.use('/classroom', classroomRoutes);
+router.use('/lti', ltiRoutes);
+router.use('/', curriculumPlanRoutes);
 
 router.get('/health', (_req, res) => {
   res.json({
@@ -103,5 +155,18 @@ router.get('/health', (_req, res) => {
     },
   });
 });
+
+router.get('/ready', async (_req, res) => {
+  const { getSupabaseAdmin } = await import('../services/supabase');
+  const supabase = getSupabaseAdmin();
+  let dbOk = false;
+  try {
+    const { error } = await supabase!.from('users').select('id').limit(1);
+    dbOk = !error;
+  } catch { dbOk = false; }
+  res.status(dbOk ? 200 : 503).json({ status: dbOk ? 'ok' : 'degraded', database: dbOk });
+});
+
+router.get('/metrics', metricsHandler);
 
 export default router;

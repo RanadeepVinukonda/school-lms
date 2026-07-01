@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { uploadBufferToCloudinary, deleteCloudinaryFile } from './cloudinary.service';
-import { collections } from '../firebase/firestore';
+import { collections } from '../database/adapter';
 import { ValidationError, NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 

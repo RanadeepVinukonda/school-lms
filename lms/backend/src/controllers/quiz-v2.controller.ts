@@ -3,7 +3,7 @@ import * as quizV2Service from '../services/quiz-v2.service';
 import { sendSuccess, sendCreated } from '../utils/response';
 
 export async function createQuiz(req: Request, res: Response) {
-  const result = await quizV2Service.createQuiz({ ...req.body, teacherId: req.user!.uid });
+  const result = await quizV2Service.createQuiz({ ...req.body, teacherId: req.user!.uid, schoolId: req.user!.school_id });
   sendCreated(res, result, 'Quiz created');
 }
 
@@ -58,12 +58,12 @@ export async function getQuizByConcept(req: Request, res: Response) {
 }
 
 export async function listForClass(req: Request, res: Response) {
-  const result = await quizV2Service.listQuizzesForClass(req.params.classId);
+  const result = await quizV2Service.listQuizzesForClass(req.params.classId, req.user!.school_id);
   sendSuccess(res, result);
 }
 
 export async function listForTeacher(req: Request, res: Response) {
-  const result = await quizV2Service.listQuizzesForTeacher(req.user!.uid);
+  const result = await quizV2Service.listQuizzesForTeacher(req.user!.uid, req.user!.school_id);
   sendSuccess(res, result);
 }
 
@@ -75,4 +75,9 @@ export async function republishQuiz(req: Request, res: Response) {
 export async function deleteQuiz(req: Request, res: Response) {
   await quizV2Service.deleteQuiz(req.params.quizId, req.user!.uid);
   sendSuccess(res, null, 'Quiz deleted');
+}
+
+export async function getMyAttempts(req: Request, res: Response) {
+  const result = await quizV2Service.getQuizAttemptsForStudent(req.user!.uid);
+  sendSuccess(res, result);
 }

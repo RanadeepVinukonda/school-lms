@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { collections } from '../firebase/firestore';
+import { collections } from '../database/adapter';
 import * as analyticsV2Service from '../services/analytics-v2.service';
 import * as gradeService from '../services/grade.service';
 import { chatCompletion } from '../services/ai.service';

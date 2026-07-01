@@ -1,18 +1,20 @@
-import { collections } from '../firebase/firestore';
+import { collections } from '../database/adapter';
 import { logger } from '../utils/logger';
 import { getSettings } from './settings.service';
+
+type AssessmentRecord = Record<string, unknown> & { id: string };
 
 async function getAssessmentData(type: 'quiz' | 'assignment' | 'exam') {
   if (type === 'quiz') {
     const assessments = await collections.quizV2().get();
-    return { assessments: assessments.docs.map((d) => ({ ...d.data(), id: d.id } as any)), attemptCollection: collections.quizAttemptV2() };
+    return { assessments: assessments.docs.map((d) => ({ ...d.data(), id: d.id } as AssessmentRecord)), attemptCollection: collections.quizAttemptV2() };
   }
   if (type === 'assignment') {
     const assessments = await collections.assignmentV2().get();
-    return { assessments: assessments.docs.map((d) => ({ ...d.data(), id: d.id } as any)), attemptCollection: collections.assignmentSubmissionV2() };
+    return { assessments: assessments.docs.map((d) => ({ ...d.data(), id: d.id } as AssessmentRecord)), attemptCollection: collections.assignmentSubmissionV2() };
   }
   const assessments = await collections.examV2().get();
-  return { assessments: assessments.docs.map((d) => ({ ...d.data(), id: d.id } as any)), attemptCollection: collections.examAttemptV2() };
+  return { assessments: assessments.docs.map((d) => ({ ...d.data(), id: d.id } as AssessmentRecord)), attemptCollection: collections.examAttemptV2() };
 }
 
 export async function getClassPerformance(classId: string) {
@@ -30,24 +32,24 @@ export async function getClassPerformance(classId: string) {
   });
 
   const assessmentPromises = ['quiz', 'assignment', 'exam'].map(async (type) => {
-    const { assessments } = await getAssessmentData(type as any);
-    const classAssessments = assessments.filter((a: any) => a.classId === classId);
+    const { assessments } = await getAssessmentData(type as 'quiz' | 'assignment' | 'exam');
+    const classAssessments = assessments.filter((a) => a.classId === classId);
 
     if (classAssessments.length === 0) return [];
 
     const results = [];
     for (const a of classAssessments) {
-      const { attemptCollection } = await getAssessmentData(type as any);
+      const { attemptCollection } = await getAssessmentData(type as 'quiz' | 'assignment' | 'exam');
       const attemptsSnap = await attemptCollection
         .where((type === 'quiz' ? 'quizId' : type === 'assignment' ? 'assignmentId' : 'examId'), '==', a.id)
         .get();
 
-      const attempts = attemptsSnap.docs.map((d) => d.data());
-      const scored = attempts.filter((at: any) => at.percentage != null);
+      const attempts = attemptsSnap.docs.map((d) => d.data() as Record<string, unknown>);
+      const scored = attempts.filter((at) => at.percentage != null);
       const avgScore = scored.length > 0
-        ? Math.round(scored.reduce((s: number, at: any) => s + at.percentage, 0) / scored.length)
+        ? Math.round(scored.reduce((s: number, at) => s + (at.percentage as number), 0) / scored.length)
         : 0;
-      const passCount = scored.filter((at: any) => at.passed === true).length;
+      const passCount = scored.filter((at) => at.passed === true).length;
 
       results.push({
         id: a.id,
@@ -211,7 +213,7 @@ export async function getConceptsForClass(classId: string) {
 
 export async function getConceptOversight() {
   const tcsSnap = await collections.teacherClassSubject().get();
-  const assignments = tcsSnap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+  const assignments = tcsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
 
   const classIds = [...new Set(assignments.map(a => a.classId))];
   const subjectIds = [...new Set(assignments.map(a => a.subjectId))];

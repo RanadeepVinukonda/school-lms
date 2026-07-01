@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../firebase/firestore';
+import { collections } from '../database/adapter';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 

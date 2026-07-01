@@ -1,12 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { ProtectedRoute } from '@/app/router/ProtectedRoute';
 
 vi.mock('@/store/authStore', () => ({
   useAuthStore: vi.fn(),
 }));
 
-vi.mock('@/firebase/config', () => ({
+vi.mock('@/supabase/config', () => ({
   supabase: {
     auth: { getSession: vi.fn().mockResolvedValue({ data: { session: null } }) },
     from: vi.fn().mockReturnThis(),
@@ -32,7 +33,6 @@ describe('Route Guards', () => {
       hasRole: () => false,
     });
 
-    const { ProtectedRoute } = require('@/app/router/ProtectedRoute');
     const { container } = render(
       <MemoryRouter initialEntries={['/admin/dashboard']}>
         <ProtectedRoute roles={['admin', 'super_admin']}>
@@ -53,7 +53,6 @@ describe('Route Guards', () => {
       hasRole: (roles: string[]) => roles.includes('admin'),
     });
 
-    const { ProtectedRoute } = require('@/app/router/ProtectedRoute');
     const { container } = render(
       <MemoryRouter initialEntries={['/admin/dashboard']}>
         <ProtectedRoute roles={['admin', 'super_admin']}>
@@ -74,7 +73,6 @@ describe('Route Guards', () => {
       hasRole: (roles: string[]) => roles.includes('teacher'),
     });
 
-    const { ProtectedRoute } = require('@/app/router/ProtectedRoute');
     const { container } = render(
       <MemoryRouter initialEntries={['/admin/dashboard']}>
         <ProtectedRoute roles={['admin', 'super_admin']}>
@@ -95,7 +93,6 @@ describe('Route Guards', () => {
       hasRole: (roles: string[]) => roles.includes('student'),
     });
 
-    const { ProtectedRoute } = require('@/app/router/ProtectedRoute');
     const { container } = render(
       <MemoryRouter initialEntries={['/teacher/dashboard']}>
         <ProtectedRoute roles={['teacher']}>
@@ -116,7 +113,6 @@ describe('Route Guards', () => {
       hasRole: (roles: string[]) => roles.includes('super_admin'),
     });
 
-    const { ProtectedRoute } = require('@/app/router/ProtectedRoute');
     const { container } = render(
       <MemoryRouter initialEntries={['/admin/dashboard']}>
         <ProtectedRoute roles={['admin', 'super_admin']}>

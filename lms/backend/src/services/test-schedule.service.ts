@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Timestamp } from '../firebase/firestore';
-import { collections } from '../firebase/firestore';
+import { Timestamp } from '../database/adapter';
+import { collections } from '../database/adapter';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
@@ -103,7 +103,7 @@ export async function getSchedule(id: string) {
 export async function listSchedules(params: {
   classId?: string; subjectId?: string; createdBy?: string; status?: string;
 }) {
-  let query: FirebaseFirestore.Query = collections.testSchedule();
+  let query: any = collections.testSchedule();
 
   if (params.classId) query = query.where('classId', '==', params.classId);
   if (params.subjectId) query = query.where('subjectId', '==', params.subjectId);
@@ -111,7 +111,7 @@ export async function listSchedules(params: {
   if (params.status) query = query.where('status', '==', params.status);
 
   const snapshot = await query.get();
-  const results = snapshot.docs.map((d) => ({ ...d.data(), id: d.id }));
+  const results = snapshot.docs.map((d: any) => ({ ...d.data(), id: d.id }));
   results.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   return results;
 }

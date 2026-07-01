@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { FieldValue } from '../firebase/firestore';
-import { collections } from '../firebase/firestore';
+import { FieldValue } from '../database/adapter';
+import { collections } from '../database/adapter';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
@@ -8,18 +8,22 @@ import { getEnrollments } from './course.service';
 import { createBulkNotifications, createNotification } from './notification.service';
 
 /** List all exams with optional courseId filter, paginated by createdAt desc. */
-export async function listAllExams(query: { page?: string; limit?: string; courseId?: string }) {
+export async function listAllExams(query: { page?: string; limit?: string; courseId?: string; schoolId?: string }) {
   const { page, limit } = parsePagination(query);
-  let baseQuery: FirebaseFirestore.Query = collections.exams();
-  if (query.courseId) {
-    baseQuery = baseQuery.where('courseId', '==', query.courseId);
-  }
-  const snapshot = await baseQuery.get();
-  const all = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-  const sorted = all.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  const total = sorted.length;
   const offset = (page - 1) * limit;
-  const items = sorted.slice(offset, offset + limit);
+
+  let baseQuery: any = collections.exams();
+  if (query.schoolId) {
+    baseQuery = baseQuery.where('schoolId', '==', query.schoolId);
+  }
+  baseQuery = baseQuery.orderBy('createdAt', 'desc');
+  if (query.courseId) baseQuery = baseQuery.where('courseId', '==', query.courseId);
+
+  const countSnap = await baseQuery.count().get();
+  const total = countSnap.data().count;
+  const snapshot = await baseQuery.offset(offset).limit(limit).get();
+  const items = snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id }));
+
   return { items, total, page, limit };
 }
 
@@ -45,6 +49,7 @@ export async function createExam(data: {
   isPublished?: boolean;
   instructions?: string;
   proctored?: boolean;
+  schoolId?: string;
 }) {
   const examId = uuidv4();
   const now = new Date().toISOString();

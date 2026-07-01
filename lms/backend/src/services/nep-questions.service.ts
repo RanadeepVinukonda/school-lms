@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { chatCompletion } from './ai.service';
-import { collections } from '../firebase/firestore';
+import { collections } from '../database/adapter';
 import { logger } from '../utils/logger';
 import { NotFoundError } from '../utils/errors';
 
@@ -246,12 +246,12 @@ export async function saveRubric(data: {
 }
 
 export async function getRubrics(assignmentId?: string) {
-  let query: FirebaseFirestore.Query = collections.gradingRubrics();
+  let query: any = collections.gradingRubrics();
   if (assignmentId) {
     query = query.where('assignmentId', '==', assignmentId);
   }
   const snapshot = await query.orderBy('createdAt', 'desc').get();
-  return snapshot.docs.map((d) => ({ ...d.data(), id: d.id }));
+  return snapshot.docs.map((d: any) => ({ ...d.data(), id: d.id }));
 }
 
 export async function getRubricById(id: string) {

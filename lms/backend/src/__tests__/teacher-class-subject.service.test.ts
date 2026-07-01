@@ -2,13 +2,13 @@ import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { assignTeacher } from '../services/teacher-class-subject.service';
 
 // Mock the Firestore collections used by the service
-jest.mock('../firebase/firestore', () => ({
+jest.mock('../database/adapter', () => ({
   collections: {
     teacherClassSubject: jest.fn(),
   },
 }));
 
-import { collections } from '../firebase/firestore';
+import { collections } from '../database/adapter';
 
 beforeEach(() => {
   jest.clearAllMocks();

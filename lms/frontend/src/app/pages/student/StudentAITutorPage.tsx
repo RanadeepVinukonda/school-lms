@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Button } from '@/components/ui/button';
@@ -316,7 +316,8 @@ export default function StudentAITutorPage() {
   const user = useAuthStore((s) => s.user);
   const userId = user?.id || 'anonymous';
   
-  const messages = useChatStore((s) => s.aiTutorMessages[userId] || []);
+  const emptyMessages = useMemo(() => [] as ChatMsg[], []);
+  const messages = useChatStore((s) => s.aiTutorMessages[userId] || emptyMessages);
   const addMessage = useChatStore((s) => s.addAiTutorMessage);
   const clearMessages = useChatStore((s) => s.clearAiTutorMessages);
 

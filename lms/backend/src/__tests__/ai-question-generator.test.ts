@@ -42,11 +42,7 @@ jest.mock('../services/supabase', () => ({
 }));
 
 jest.mock('../services/ai.service', () => ({
-  chatCompletion: jest.fn().mockResolvedValue(JSON.stringify({
-    questions: [
-      { question: 'What is 2+2?', type: 'mcq', difficulty: 'easy', options: ['3', '4', '5'], answer: '4', explanation: 'Basic math', points: 1 },
-    ],
-  })),
+  chatCompletion: jest.fn(),
 }));
 
 jest.mock('../services/ai-level.service', () => ({
@@ -55,6 +51,7 @@ jest.mock('../services/ai-level.service', () => ({
 }));
 
 import * as aiGenerator from '../services/ai-question-generator.service';
+import * as aiService from '../services/ai.service';
 
 describe('AI Question Generator', () => {
   const mockBaseParams = {
@@ -65,6 +62,15 @@ describe('AI Question Generator', () => {
     types: ['multiple_choice', 'true_false'] as any[],
     count: 5,
   };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (aiService.chatCompletion as jest.Mock).mockResolvedValue(JSON.stringify({
+      questions: [
+        { question: 'What is 2+2?', type: 'mcq', difficulty: 'easy', options: ['3', '4', '5'], answer: '4', explanation: 'Basic math', points: 1 },
+      ],
+    }));
+  });
 
   describe('generateQuestionsForConcept', () => {
     it('should generate questions with valid params', async () => {
@@ -89,6 +95,20 @@ describe('AI Question Generator', () => {
 
       expect(Array.isArray(result)).toBe(true);
     });
+
+    it('should return empty array when AI returns invalid JSON', async () => {
+      (aiService.chatCompletion as jest.Mock).mockResolvedValueOnce('not json at all');
+
+      const result = await aiGenerator.generateQuestionsForConcept(mockBaseParams);
+      expect(result).toEqual([]);
+    });
+
+    it('should return empty array when AI service throws', async () => {
+      (aiService.chatCompletion as jest.Mock).mockRejectedValueOnce(new Error('AI service down'));
+
+      const result = await aiGenerator.generateQuestionsForConcept(mockBaseParams);
+      expect(result).toEqual([]);
+    });
   });
 
   describe('saveAiQuestions', () => {
@@ -100,4 +120,17 @@ describe('AI Question Generator', () => {
       await expect(aiGenerator.saveAiQuestions(mockQuestions as any, 'concept-1', 'textbook-1', 'chapter-1')).resolves.not.toThrow();
     });
   });
+
+  describe('generateQuestionsFromTextbook', () => {
+    it('should return empty when no concepts found', async () => {
+      const result = await aiGenerator.generateQuestionsFromTextbook({
+        textbookId: 'nonexistent',
+        types: ['multiple_choice'],
+        totalCount: 5,
+      });
+      expect(result).toEqual([]);
+    });
+  });
+
+  // generateQuestionsFromExistingBank tested via generateQuestionsForConcept coverage
 });

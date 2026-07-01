@@ -1,7 +1,8 @@
 import { logger } from '../utils/logger';
 import { checkUpcomingDeadlines } from './sendReminders.job';
 import { cleanupExpiredData } from './cleanupExpired.job';
-import { collections } from '../firebase/firestore';
+import { generateWeeklyReport, generateMonthlyReport } from './generateReports.job';
+import { collections } from '../database/adapter';
 
 const jobs: Map<string, NodeJS.Timeout> = new Map();
 
@@ -133,7 +134,25 @@ export function startScheduler() {
     );
   }, 15_000);
 
-  logger.info('Scheduler started with 3 jobs (sendReminders, cleanupExpired, overdueTests)');
+  // Weekly report — check every hour, run if Monday
+  const weeklyReportJob = setInterval(() => {
+    const now = new Date();
+    if (now.getDay() === 1 && now.getHours() === 6) {
+      generateWeeklyReport().catch(err => logger.error('Weekly report generation failed', err));
+    }
+  }, 60 * 60 * 1000);
+  jobs.set('weeklyReport', weeklyReportJob);
+
+  // Monthly report — check every hour, run if 1st of month
+  const monthlyReportJob = setInterval(() => {
+    const now = new Date();
+    if (now.getDate() === 1 && now.getHours() === 6) {
+      generateMonthlyReport().catch(err => logger.error('Monthly report generation failed', err));
+    }
+  }, 60 * 60 * 1000);
+  jobs.set('monthlyReport', monthlyReportJob);
+
+  logger.info('Scheduler started with 5 jobs (sendReminders, cleanupExpired, overdueTests, weeklyReport, monthlyReport)');
 }
 
 export function stopScheduler() {

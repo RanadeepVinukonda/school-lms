@@ -55,6 +55,7 @@ export const ROUTES = {
   TEACHER_PYQ: '/teacher/pyq',
   TEACHER_ATTENDANCE: '/teacher/attendance',
   TEACHER_OCR: '/teacher/ocr',
+  TEACHER_UNIFIED_TEST: '/teacher/unified-test',
 
   ADMIN_DASHBOARD: '/admin/dashboard',
   ADMIN_ACADEMIC_YEARS: '/admin/academic-years',
@@ -68,6 +69,12 @@ export const ROUTES = {
   ADMIN_SCHOOL_ANALYTICS: '/admin/school-analytics',
   ADMIN_ATTENDANCE: '/admin/attendance',
   ADMIN_FEE: '/admin/fee',
+  ADMIN_TIMETABLE: '/admin/timetable',
+  ADMIN_NOTICEBOARD: '/admin/noticeboard',
+  ADMIN_ERP_DASHBOARD: '/admin/erp',
+  TEACHER_TIMETABLE: '/teacher/timetable',
+  TEACHER_NOTICEBOARD: '/teacher/noticeboard',
+  STUDENT_NOTICEBOARD: '/student/noticeboard',
 
   ASSIGNMENT_DETAIL: (id: string) => `/assignments/${id}`,
   QUIZ_ATTEMPT: (id: string) => `/quizzes/${id}/attempt`,
@@ -95,6 +102,7 @@ export const ROUTES = {
   STUDENT_CODING_EDITOR: (id: string) => `/student/coding/${id}`,
   STUDENT_STREAM_PROJECTS: '/student/stream-projects',
   STUDENT_OCR: '/student/ocr',
+  STUDENT_ADAPTIVE_QUIZ: (conceptId: string) => `/student/concepts/${conceptId}/adaptive-quiz`,
   TEACHER_MIND_MAPS: '/teacher/mindmaps',
   TEACHER_MIND_MAP_EDITOR: (id: string) => `/teacher/mindmaps/${id}`,
   TEACHER_NEP_QUESTIONS: '/teacher/nep-questions',

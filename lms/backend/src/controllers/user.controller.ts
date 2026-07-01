@@ -20,7 +20,10 @@ type ListUsersQuery = {
 
 
 export async function listUsers(req: Request, res: Response) {
-  const { items, total, page, limit } = await userService.listUsers(req.query as unknown as ListUsersQuery);
+  const { items, total, page, limit } = await userService.listUsers({
+    ...(req.query as unknown as ListUsersQuery),
+    schoolId: req.user!.school_id,
+  });
   const pagination = buildPaginationMeta(total, page, limit);
   sendPaginated(res, items, pagination);
 }
@@ -31,7 +34,7 @@ export async function getUser(req: Request, res: Response) {
 }
 
 export async function createUser(req: Request, res: Response) {
-  const result = await userService.createUser(req.body);
+  const result = await userService.createUser({ ...req.body, schoolId: req.user!.school_id });
   logAudit(adminAuditEntry(req as ReqWithUser, 'user.create', result.uid, 'user', result.displayName, {
     newValue: { email: result.email, role: result.role, displayName: result.displayName },
     summary: `Created user "${result.displayName}" (${result.role})`,

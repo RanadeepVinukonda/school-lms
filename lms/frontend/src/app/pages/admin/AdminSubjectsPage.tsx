@@ -19,7 +19,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { cardStackReveal } from '@/lib/motion';
-import { supabase } from '@/firebase/config';
+import { supabase } from '@/supabase/config';
 import { getAllSubjects, getAllClasses } from '@/services/dataService';
 import { getAllTextbooks } from '@/services/textbookService';
 import { getSubjectDependencies } from '@/services/dependencyService';

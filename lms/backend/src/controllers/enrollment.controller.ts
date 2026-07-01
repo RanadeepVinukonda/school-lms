@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { collections, getCollection } from '../firebase/firestore';
+import { collections, getCollection } from '../database/adapter';
 
 /**
  * Get current student's enrollments and a consolidated list of concept release statuses 

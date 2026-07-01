@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { FieldValue } from '../firebase/firestore';
-import { collections } from '../firebase/firestore';
+import { FieldValue } from '../database/adapter';
+import { collections } from '../database/adapter';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
@@ -87,7 +87,7 @@ export async function getCourseById(courseId: string) {
   return { ...course.data() };
 }
 
-/** List courses with optional filters (status, subjectId, classId, teacherId, search), paginated. */
+/** List courses with optional filters (status, subjectId, classId, teacherId, search, schoolId), paginated. */
 export async function listCourses(query: {
   page?: string;
   limit?: string;
@@ -96,10 +96,12 @@ export async function listCourses(query: {
   classId?: string;
   teacherId?: string;
   search?: string;
+  schoolId?: string;
 }) {
   const { page, limit } = parsePagination(query);
-  let baseQuery: FirebaseFirestore.Query = collections.courses();
+  let baseQuery: any = collections.courses();
 
+  if (query.schoolId) baseQuery = baseQuery.where('schoolId', '==', query.schoolId);
   if (query.status) baseQuery = baseQuery.where('status', '==', query.status);
   if (query.subjectId) baseQuery = baseQuery.where('subjectId', '==', query.subjectId);
   if (query.classId) baseQuery = baseQuery.where('classId', '==', query.classId);
@@ -107,7 +109,7 @@ export async function listCourses(query: {
 
   const snapshot = await baseQuery.get();
 
-  let items = snapshot.docs.map((doc) => ({
+  let items = snapshot.docs.map((doc: any) => ({
     id: doc.id,
     ...doc.data(),
   }));

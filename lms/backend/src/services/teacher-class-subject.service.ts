@@ -1,4 +1,4 @@
-import { collections } from '../firebase/firestore';
+import { collections } from '../database/adapter';
 import { NotFoundError, ConflictError } from '../utils/errors';
 import { logger } from '../utils/logger';
 

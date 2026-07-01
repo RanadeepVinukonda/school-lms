@@ -3,7 +3,7 @@ import * as ocrService from '../services/ocr.service';
 import { sendSuccess, sendError } from '../utils/response';
 import { sendCreated } from '../utils/response';
 import { logger } from '../utils/logger';
-import { getCollection } from '../firebase/firestore';
+import { getCollection } from '../database/adapter';
 import { AppError, ValidationError } from '../utils/errors';
 
 export async function scanImage(req: Request, res: Response) {

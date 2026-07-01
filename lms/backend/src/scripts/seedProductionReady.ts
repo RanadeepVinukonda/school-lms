@@ -4,8 +4,8 @@ import path from 'path';
 // Load environmental variables first
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-import { getAdminAuth, getAdminFirestore } from '../firebase/admin';
-import { collections } from '../firebase/firestore';
+import { getAdminAuth, getAdminFirestore } from '../database/admin';
+import { collections } from '../database/adapter';
 import { createClass } from '../services/class.service';
 import { createSubject } from '../services/subject.service';
 import { assignTeacher } from '../services/teacher-class-subject.service';
@@ -17,7 +17,7 @@ async function deleteCollection(name: string) {
   const snap = await db.collection(name).get();
   if (snap.empty) return;
   const batch = db.batch();
-  snap.docs.forEach((d) => batch.delete(d.ref));
+  snap.docs.forEach((d: any) => batch.delete(d.ref));
   await batch.commit();
   console.log(`  Deleted ${snap.size} docs from ${name}`);
 }
@@ -26,7 +26,7 @@ async function clearAllData() {
   console.log('Clearing Firebase Auth users...');
   let listUsersResult = await auth.listUsers(1000);
   while (listUsersResult.users.length > 0) {
-    const uids = listUsersResult.users.map((u) => u.uid);
+    const uids = listUsersResult.users.map((u: any) => u.uid);
     await auth.deleteUsers(uids);
     console.log(`  Deleted ${uids.length} Auth users.`);
     listUsersResult = await auth.listUsers(1000);
@@ -52,7 +52,7 @@ async function clearAllData() {
     for (const chap of chaptersSnap.docs) {
       const conceptsSnap = await chap.ref.collection('concepts').get();
       const cBatch = db.batch();
-      conceptsSnap.docs.forEach((cDoc) => cBatch.delete(cDoc.ref));
+      conceptsSnap.docs.forEach((cDoc: any) => cBatch.delete(cDoc.ref));
       await cBatch.commit();
       await chap.ref.delete();
     }

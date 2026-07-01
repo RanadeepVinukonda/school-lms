@@ -1,12 +1,17 @@
-import { collections } from '../firebase/firestore';
+import { collections, QuerySnap } from '../database/adapter';
+import { getAdminDashboard } from './analytics.service';
 
-function docsToArray(snapshot: FirebaseFirestore.QuerySnapshot): any[] {
+function docsToArray(snapshot: QuerySnap): any[] {
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
-export async function getGradeComparison() {
-  const users = docsToArray(await collections.users().get());
-  const classes = docsToArray(await collections.classes().get());
+function schoolFilter(q: any, schoolId?: string) {
+  return schoolId ? q.where('schoolId', '==', schoolId) : q;
+}
+
+export async function getGradeComparison(schoolId?: string) {
+  const users = docsToArray(await schoolFilter(collections.users(), schoolId).get());
+  const classes = docsToArray(await schoolFilter(collections.classes(), schoolId).get());
   const grades = docsToArray(await collections.grades().get());
 
   const gradeMap: Record<string, { totalScore: number; totalPoints: number; count: number }> = {};
@@ -30,9 +35,9 @@ export async function getGradeComparison() {
   }));
 }
 
-export async function getTeacherComparison() {
-  const users = docsToArray(await collections.users().get());
-  const classes = docsToArray(await collections.classes().get());
+export async function getTeacherComparison(schoolId?: string) {
+  const users = docsToArray(await schoolFilter(collections.users(), schoolId).get());
+  const classes = docsToArray(await schoolFilter(collections.classes(), schoolId).get());
   const grades = docsToArray(await collections.grades().get());
 
   const teacherMap: Record<string, { totalScore: number; totalPoints: number; count: number; classIds: Set<string> }> = {};
@@ -72,8 +77,8 @@ export async function getTeacherComparison() {
   });
 }
 
-export async function getClassComparison() {
-  const classes = docsToArray(await collections.classes().get());
+export async function getClassComparison(schoolId?: string) {
+  const classes = docsToArray(await schoolFilter(collections.classes(), schoolId).get());
   const grades = docsToArray(await collections.grades().get());
 
   const classMap: Record<string, { totalScore: number; totalPoints: number; count: number }> = {};
@@ -99,32 +104,13 @@ export async function getClassComparison() {
   }).sort((a, b) => b.averageScore - a.averageScore);
 }
 
+/** @deprecated Use analytics.service.ts::getAdminDashboard for full school stats. Delegates to it. */
 export async function getSchoolOverview() {
-  const users = docsToArray(await collections.users().get());
-  const classes = docsToArray(await collections.classes().get());
-  const grades = docsToArray(await collections.grades().get());
-
-  const studentCount = users.filter((u) => u.role === 'student').length;
-  const teacherCount = users.filter((u) => u.role === 'teacher').length;
-
-  const totalScore = grades.reduce((s: number, g) => s + (g.score || 0), 0);
-  const totalPoints = grades.reduce((s: number, g) => s + (g.totalPoints || 0), 0);
-  const avgPerformance = totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0;
-
-  const atRisk = grades.filter((g: any) => g.percentage < 70).length;
-
-  return {
-    totalStudents: studentCount,
-    totalTeachers: teacherCount,
-    totalClasses: classes.length,
-    averagePerformance: avgPerformance,
-    atRiskCount: atRisk,
-    totalGrades: grades.length,
-  };
+  return getAdminDashboard();
 }
 
-export async function getPerformanceTrends() {
-  const grades = docsToArray(await collections.grades().get());
+export async function getPerformanceTrends(schoolId?: string) {
+  const grades = docsToArray(await schoolFilter(collections.grades(), schoolId).get());
 
   const monthMap: Record<string, { totalScore: number; totalPoints: number; count: number }> = {};
 

@@ -5,7 +5,7 @@ import { sendSuccess, sendCreated } from '../utils/response';
 import type { ReqWithUser, QueryParams } from '../types/common';
 
 export async function createAssignment(req: Request, res: Response) {
-  const result = await assignmentV2Service.createAssignment(req.body);
+  const result = await assignmentV2Service.createAssignment({ ...req.body, schoolId: req.user!.school_id });
   logAudit(adminAuditEntry(req as ReqWithUser, 'assignmentV2.create' as AuditAction, result.id, 'assignmentV2', result.title, {
     newValue: result,
     summary: `Created assignment V2 "${result.title}"`,
@@ -57,11 +57,17 @@ export async function getResults(req: Request, res: Response) {
 }
 
 export async function listForClass(req: Request, res: Response) {
-  const result = await assignmentV2Service.listAssignmentsForClass(req.params.classId, req.query as QueryParams);
+  const result = await assignmentV2Service.listAssignmentsForClass(req.params.classId, {
+    ...(req.query as QueryParams),
+    schoolId: req.user!.school_id,
+  });
   sendSuccess(res, result);
 }
 
 export async function listForTeacher(req: Request, res: Response) {
-  const result = await assignmentV2Service.listAssignmentsForTeacher(req.user!.uid, req.query as QueryParams);
+  const result = await assignmentV2Service.listAssignmentsForTeacher(req.user!.uid, {
+    ...(req.query as QueryParams),
+    schoolId: req.user!.school_id,
+  });
   sendSuccess(res, result);
 }

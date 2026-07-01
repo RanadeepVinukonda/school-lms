@@ -167,15 +167,86 @@ export async function extractText(imageBuffer: Buffer): Promise<OCRResult> {
       confidence: block.confidence,
     }));
 
-    return {
-      text: data.text,
-      confidence: data.confidence,
-      blocks,
-    };
+    const result: OCRResult = { text: data.text, confidence: data.confidence, blocks };
+
+    // Fall back to Google Vision API when Tesseract confidence is low (< 60%)
+    // Requires GOOGLE_VISION_API_KEY env var to be set
+    if (data.confidence < 60 && process.env.GOOGLE_VISION_API_KEY) {
+      try {
+        const visionResult = await extractTextVision(imageBuffer);
+        if (visionResult && visionResult.confidence > result.confidence) {
+          logger.info('Google Vision fallback used (better confidence)', {
+            tesseract: result.confidence,
+            vision: visionResult.confidence,
+          });
+          return visionResult;
+        }
+      } catch (visionErr) {
+        logger.warn('Google Vision fallback failed, using Tesseract result', {
+          error: visionErr instanceof Error ? visionErr.message : String(visionErr),
+        });
+      }
+    }
+
+    return result;
   } catch (error) {
     logger.error('OCR extraction failed', { error: error instanceof Error ? error.message : String(error) });
     throw new AppError(502, 'Failed to extract text from image');
   }
+}
+
+/**
+ * Google Cloud Vision API fallback for OCR.
+ * Used when Tesseract confidence is low (< 60%) and GOOGLE_VISION_API_KEY is configured.
+ */
+async function extractTextVision(imageBuffer: Buffer): Promise<OCRResult | null> {
+  const apiKey = process.env.GOOGLE_VISION_API_KEY;
+  if (!apiKey) return null;
+
+  const base64Image = imageBuffer.toString('base64');
+  const url = `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      requests: [{
+        image: { content: base64Image },
+        features: [{ type: 'DOCUMENT_TEXT_DETECTION', maxResults: 1 }],
+      }],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Google Vision API error: ${response.status} ${response.statusText}`);
+  }
+
+  const json = await response.json() as {
+    responses: Array<{
+      fullTextAnnotation?: { text: string; pages: Array<{ confidence?: number; blocks?: Array<{ boundingBox: { vertices: Array<{ x?: number; y?: number }> }; paragraphs: Array<{ words: Array<{ symbols: Array<{ text: string }> }> }> }> }> };
+      error?: { message: string };
+    }>;
+  };
+
+  const resp = json.responses?.[0];
+  if (resp?.error) throw new Error(resp.error.message);
+  if (!resp?.fullTextAnnotation) return null;
+
+  const fullText = resp.fullTextAnnotation.text || '';
+  const pageConfidence = resp.fullTextAnnotation.pages?.[0]?.confidence ?? 0.85;
+  const confidence = Math.round(pageConfidence * 100);
+
+  const blocks: OCRBlock[] = (resp.fullTextAnnotation.pages?.[0]?.blocks ?? []).map((b) => {
+    const verts = b.boundingBox?.vertices ?? [];
+    const x0 = verts[0]?.x ?? 0;
+    const y0 = verts[0]?.y ?? 0;
+    const x1 = verts[2]?.x ?? 0;
+    const y1 = verts[2]?.y ?? 0;
+    const text = b.paragraphs?.flatMap(p => p.words?.flatMap(w => w.symbols?.map(s => s.text) ?? []) ?? []).join('') ?? '';
+    return { text, bbox: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 }, confidence };
+  });
+
+  return { text: fullText, confidence, blocks };
 }
 
 export async function mapTextToConcept(

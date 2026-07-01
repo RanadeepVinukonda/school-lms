@@ -1,4 +1,4 @@
-import { collections, getCollection } from '../firebase/firestore';
+import { collections, getCollection } from '../database/adapter';
 import { logger } from '../utils/logger';
 
 const SENT_REMINDERS_COLLECTION = 'sentReminders';

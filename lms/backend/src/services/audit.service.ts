@@ -1,4 +1,4 @@
-import { getCollection } from '../firebase/firestore';
+import { getCollection } from '../database/adapter';
 import { logger } from '../utils/logger';
 import { NotFoundError } from '../utils/errors';
 import { parsePagination } from '../utils/pagination';
@@ -71,20 +71,22 @@ export function adminAuditEntry(
 /** List audit logs with optional action filter, paginated by timestamp desc. */
 export async function listAuditLogs(query: { page?: string; limit?: string; action?: string }) {
   const { page, limit } = parsePagination(query);
-  const baseQuery = getCollection('auditLogs').orderBy('timestamp', 'desc') as FirebaseFirestore.Query;
+  const offset = (page - 1) * limit;
 
-  let filteredQuery = baseQuery;
-  if (query.action) {
-    filteredQuery = baseQuery.where('action', '==', query.action);
-  }
+  // Build base collection query
+  let col = getCollection('auditLogs');
 
-  const countSnapshot = await filteredQuery.count().get();
+  // Apply action filter first, then order
+  let baseQuery = query.action
+    ? col.where('action', '==', query.action).orderBy('timestamp', 'desc')
+    : col.orderBy('timestamp', 'desc');
+
+  const countSnapshot = await baseQuery.count().get();
   const total = countSnapshot.data().count;
 
-  const offset = (page - 1) * limit;
-  const snapshot = await filteredQuery.offset(offset).limit(limit).get();
+  const snapshot = await baseQuery.offset(offset).limit(limit).get();
 
-  const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const items = snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id }));
   return { items, total, page, limit };
 }
 

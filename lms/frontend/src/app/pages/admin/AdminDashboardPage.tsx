@@ -14,7 +14,7 @@ import { OptionsSelect } from '@/components/ui/select';
 import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { getAllUsers, getAllClasses, getAllGrades } from '@/services/dataService';
 import { analyticsService } from '@/services/analyticsService';
-import { supabase } from '@/firebase/config';
+import { supabase } from '@/supabase/config';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface ExamDoc { id: string; title: string; startDate?: string; endDate?: string; createdAt?: string; }

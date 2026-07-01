@@ -19,7 +19,7 @@ import {
 } from '@/features/auth/schemas/authSchemas';
 import { ROUTES } from '@/lib/constants';
 import { useMutation } from '@tanstack/react-query';
-import { resetPassword } from '@/firebase/auth';
+import { resetPassword } from '@/supabase/auth';
 import { toast } from 'sonner';
 
 export function ForgotPasswordForm() {

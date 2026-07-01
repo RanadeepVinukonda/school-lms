@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { supabase } from '@/firebase/config';
+import { supabase } from '@/supabase/config';
 import { useAuthStore } from '@/store/authStore';
 import { logAudit } from '@/services/auditService';
 import type { UserRole } from '@/types';
@@ -44,7 +44,7 @@ export default function RollNumberEntryPage() {
       }
       const classId = classRows[0].id;
 
-      const { data: duplicates } = await supabase.from('users').select('id').eq('classId', classId).eq('studentId', cleaned);
+      const { data: duplicates } = await supabase.from('users').select('id').eq('class_id', classId).eq('student_id', cleaned);
       if (duplicates && duplicates.length > 0) {
         setError(`Roll number ${cleaned} is already taken in this class.`);
         setLoading(false);
@@ -52,11 +52,11 @@ export default function RollNumberEntryPage() {
       }
 
       await supabase.from('users').update({
-        classId,
-        studentId: cleaned,
-        rollNumber: roll,
-        tutorialSeen: false,
-        updatedAt: new Date().toISOString(),
+        class_id: classId,
+        student_id: cleaned,
+        roll_no: roll,
+        tutorial_seen: false,
+        updated_at: new Date().toISOString(),
       }).eq('id', user.id);
 
       const { data: d } = await supabase.from('users').select('*').eq('id', user.id).maybeSingle();
@@ -84,15 +84,15 @@ export default function RollNumberEntryPage() {
       });
 
       await supabase.from('notifications').insert({
-        userId: user.id,
+        user_id: user.id,
         type: 'welcome',
         title: 'Welcome to Genesis LMS!',
         body: `Hi ${user.displayName}! Your student account is now active. Explore your subjects, tasks, and exams to get started.`,
         data: { role: 'student' },
         priority: 'high',
         read: false,
-        readAt: null,
-        createdAt: new Date().toISOString(),
+        read_at: null,
+        created_at: new Date().toISOString(),
       });
 
       navigate(ROUTES.STUDENT_DASHBOARD, { replace: true });

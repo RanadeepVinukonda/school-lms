@@ -1,9 +1,14 @@
 import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../firebase/firestore';
+import { collections } from '../database/adapter';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
-import { getAdminFirestore } from '../firebase/admin';
+import { getAdminFirestore } from '../database/admin';
 import { createBulkNotifications } from './notification.service';
+import type { AttendanceCollection } from '../database/interfaces/collections';
+
+let _attendanceCollection: AttendanceCollection | null = null;
+export function setAttendanceCollection(col: AttendanceCollection): void { _attendanceCollection = col; }
+function attendanceCol() { return _attendanceCollection ?? (collections.attendance() as unknown as AttendanceCollection); }
 
 export async function markAttendance(data: {
   studentIds: string[];
@@ -41,10 +46,17 @@ export async function markAttendance(data: {
   // Send attendance notification to parents
   try {
     // Fetch student names
-    const studentDocs = await Promise.all(data.studentIds.map((sid: string) => collections.users().doc(sid).get()));
+    const studentDocs = await Promise.all(
+      data.studentIds.map((sid: string) =>
+        collections.users().doc(sid).get().catch((err) => {
+          logger.warn('Failed to fetch student for attendance notification', { studentId: sid, error: err instanceof Error ? err.message : String(err) });
+          return null;
+        }),
+      ),
+    );
     const studentNameMap: Record<string, string> = {};
     for (const snap of studentDocs) {
-      if (snap.exists) studentNameMap[snap.id] = snap.data()?.displayName || snap.id;
+      if (snap && snap.exists) studentNameMap[snap.id] = snap.data()?.displayName || snap.id;
     }
 
     // Find parents linked to any of these students
@@ -77,12 +89,12 @@ export async function markAttendance(data: {
 }
 
 export async function getClassAttendance(classId: string, date?: string) {
-  let query: FirebaseFirestore.Query = collections.attendance().where('classId', '==', classId);
+  let query = collections.attendance().where('classId', '==', classId);
   if (date) {
     query = query.where('date', '==', date);
   }
   const snapshot = await query.get();
-  return snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id } as any));
+  return snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id } as Record<string, unknown> & { id: string }));
 }
 
 export async function getStudentAttendance(studentId: string) {
@@ -116,8 +128,15 @@ export async function exportAttendanceCSV(classId: string): Promise<string> {
   const records = await getClassAttendance(classId);
 
   // Resolve student names
-  const studentIds = [...new Set(records.map((r: any) => r.studentId))];
-  const studentSnaps = await Promise.all(studentIds.map((sid: string) => collections.users().doc(sid).get().catch(() => null)));
+  const studentIds: string[] = [...new Set(records.map((r: any) => r.studentId))];
+  const studentSnaps = await Promise.all(
+    studentIds.map((sid: string) =>
+      collections.users().doc(sid).get().catch((err) => {
+        logger.warn('Failed to fetch student name for attendance CSV', { studentId: sid, error: err instanceof Error ? err.message : String(err) });
+        return null;
+      }),
+    ),
+  );
   const nameMap: Record<string, string> = {};
   for (const snap of studentSnaps) {
     if (snap?.exists) nameMap[snap.id] = snap.data()?.displayName || snap.id;

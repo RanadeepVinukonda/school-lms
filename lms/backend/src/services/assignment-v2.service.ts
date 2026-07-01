@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { FieldValue } from '../firebase/firestore';
-import { collections } from '../firebase/firestore';
+import { FieldValue } from '../database/adapter';
+import { collections } from '../database/adapter';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
@@ -28,6 +28,7 @@ export async function createAssignment(data: {
   shuffleQuestions?: boolean;
   showResults?: boolean;
   dueDate?: string;
+  schoolId?: string;
 }) {
   const assignmentId = uuidv4();
   const now = new Date().toISOString();
@@ -298,11 +299,14 @@ export async function getResults(assignmentId: string, studentId: string) {
   return items;
 }
 
-export async function listAssignmentsForClass(classId: string, query: { page?: string; limit?: string }) {
+export async function listAssignmentsForClass(classId: string, query: { page?: string; limit?: string; schoolId?: string }) {
   const { page, limit } = parsePagination(query);
-  const snapshot = await collections.assignmentV2()
-    .where('classId', '==', classId)
-    .get();
+  let baseQuery = collections.assignmentV2()
+    .where('classId', '==', classId);
+  if (query.schoolId) {
+    baseQuery = baseQuery.where('schoolId', '==', query.schoolId);
+  }
+  const snapshot = await baseQuery.get();
 
   const all: any[] = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
   all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -314,11 +318,14 @@ export async function listAssignmentsForClass(classId: string, query: { page?: s
   return { items, total, page, limit };
 }
 
-export async function listAssignmentsForTeacher(teacherId: string, query: { page?: string; limit?: string }) {
+export async function listAssignmentsForTeacher(teacherId: string, query: { page?: string; limit?: string; schoolId?: string }) {
   const { page, limit } = parsePagination(query);
-  const snapshot = await collections.assignmentV2()
-    .where('teacherId', '==', teacherId)
-    .get();
+  let baseQuery = collections.assignmentV2()
+    .where('teacherId', '==', teacherId);
+  if (query.schoolId) {
+    baseQuery = baseQuery.where('schoolId', '==', query.schoolId);
+  }
+  const snapshot = await baseQuery.get();
 
   const all: any[] = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
   all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());

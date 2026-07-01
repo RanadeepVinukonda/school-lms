@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import * as tcsService from '../services/teacher-class-subject.service';
-import { collections } from '../firebase/firestore';
+import { collections } from '../database/adapter';
 import { sendSuccess, sendCreated } from '../utils/response';
 
 export async function assignTeacher(req: Request, res: Response) {

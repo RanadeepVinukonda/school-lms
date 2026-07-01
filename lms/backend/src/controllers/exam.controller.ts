@@ -6,12 +6,15 @@ import { sendSuccess, sendCreated } from '../utils/response';
 import type { ReqWithUser, QueryParams } from '../types/common';
 
 export async function listAllExams(req: Request, res: Response) {
-  const result = await examService.listAllExams(req.query as QueryParams);
+  const result = await examService.listAllExams({
+    ...(req.query as QueryParams),
+    schoolId: req.user!.school_id,
+  });
   sendSuccess(res, result);
 }
 
 export async function createExam(req: Request, res: Response) {
-  const result = await examService.createExam(req.body);
+  const result = await examService.createExam({ ...req.body, schoolId: req.user!.school_id });
   logAudit(adminAuditEntry(req as ReqWithUser, 'exam.create', result.id, 'exam', result.title, {
     newValue: result,
     summary: `Created exam "${result.title}"`,

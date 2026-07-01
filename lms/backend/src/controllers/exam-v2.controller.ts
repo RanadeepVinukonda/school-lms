@@ -3,7 +3,7 @@ import * as examV2Service from '../services/exam-v2.service';
 import { sendSuccess, sendCreated } from '../utils/response';
 
 export async function createExam(req: Request, res: Response) {
-  const result = await examV2Service.createExam({ ...req.body, teacherId: req.user!.uid });
+  const result = await examV2Service.createExam({ ...req.body, teacherId: req.user!.uid, schoolId: req.user!.school_id });
   sendCreated(res, result, 'Exam created');
 }
 
@@ -31,7 +31,7 @@ export async function submitAttempt(req: Request, res: Response) {
 }
 
 export async function releaseGrades(req: Request, res: Response) {
-  const { showResults } = req.body;
+  const showResults = req.body?.showResults ?? true;
   const result = await examV2Service.releaseExamGrades(req.params.examId, showResults);
   sendSuccess(res, result, `Grades ${showResults ? 'released' : 'withheld'}`);
 }
@@ -42,12 +42,12 @@ export async function getResults(req: Request, res: Response) {
 }
 
 export async function listForClass(req: Request, res: Response) {
-  const result = await examV2Service.listExamsForClass(req.params.classId);
+  const result = await examV2Service.listExamsForClass(req.params.classId, req.user!.school_id);
   sendSuccess(res, result);
 }
 
 export async function listForTeacher(req: Request, res: Response) {
-  const result = await examV2Service.listExamsForTeacher(req.user!.uid);
+  const result = await examV2Service.listExamsForTeacher(req.user!.uid, req.user!.school_id);
   sendSuccess(res, result);
 }
 

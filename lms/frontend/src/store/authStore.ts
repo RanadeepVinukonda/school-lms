@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase } from '@/firebase/config';
+import { supabase } from '@/supabase/config';
 import api from '@/services/api';
 import type { UserProfile, UserRole } from '@/types';
 

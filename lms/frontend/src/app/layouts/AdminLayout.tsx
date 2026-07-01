@@ -13,6 +13,7 @@ import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { UserAvatar } from '@/components/layout/UserAvatar';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { pageTransition } from '@/lib/motion';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface NavItem {
   label: string;
@@ -27,6 +28,9 @@ const navItems: NavItem[] = [
   { label: 'School Analytics', href: ROUTES.ADMIN_SCHOOL_ANALYTICS, icon: 'analytics' },
   { label: 'Attendance', href: ROUTES.ADMIN_ATTENDANCE, icon: 'checklist' },
   { label: 'Fee Management', href: ROUTES.ADMIN_FEE, icon: 'payments' },
+  { label: 'Timetable', href: ROUTES.ADMIN_TIMETABLE, icon: 'calendar_view_week' },
+  { label: 'Notice Board', href: ROUTES.ADMIN_NOTICEBOARD, icon: 'campaign' },
+  { label: 'ERP Dashboard', href: ROUTES.ADMIN_ERP_DASHBOARD, icon: 'business' },
   { label: 'Settings', href: ROUTES.ADMIN_SETTINGS, icon: 'settings' },
 ];
 
@@ -34,6 +38,14 @@ export function AdminLayout() {
   const { sidebarCollapsed, setSidebarCollapsed } = useUIStore();
   const user = useAuthStore((s) => s.user);
   const [searchOpen, setSearchOpen] = useState(false);
+  const { t } = useTranslation();
+
+  const getLabel = (label: string) => {
+    const key = `nav.${label.toLowerCase().replace(/ /g, '')}`;
+    const val = t(key as any);
+    return val === key ? label : val;
+  };
+
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -114,7 +126,7 @@ export function AdminLayout() {
               }
             >
               <Icon name={item.icon} size={24} />
-              {!sidebarCollapsed && <span>{item.label}</span>}
+              {!sidebarCollapsed && <span>{getLabel(item.label)}</span>}
             </NavLink>
           ))}
         </nav>
@@ -187,7 +199,7 @@ export function AdminLayout() {
                       }
                     >
                       <Icon name={item.icon} size={24} />
-                      <span>{item.label}</span>
+                      <span>{getLabel(item.label)}</span>
                     </NavLink>
                   </SheetClose>
                 ))}

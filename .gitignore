@@ -4,11 +4,23 @@ dist/
 *.log
 .DS_Store
 _ignore_this/
-
 .vercel
 *_env.env
-
 .vscode/
 .kiro/
 
-.vercel
+# Agent config dirs
+.amazonq/
+.claude/
+.codex/
+.gemini/
+.kilocode/
+.opencode/
+
+# Build artifacts
+coverage/
+coverage-report/
+tsc_out.txt
+
+# Scratch
+scratch/

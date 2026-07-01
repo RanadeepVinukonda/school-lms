@@ -183,7 +183,7 @@ export async function publishContent(request: PublishRequest): Promise<Published
 }
 
 export async function getPublishedContent(classId: string, contentType?: PublishableContentType): Promise<PublishedContent[]> {
-  let query: FirebaseFirestore.Query = collections.quizV2()
+  let query = collections.quizV2()
     .where('classId', '==', classId);
 
   if (contentType) {

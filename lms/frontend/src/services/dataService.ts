@@ -1,4 +1,4 @@
-import { supabase } from '@/firebase/config';
+import { supabase } from '@/supabase/config';
 import { logAudit } from '@/services/auditService';
 
 export interface Subject {

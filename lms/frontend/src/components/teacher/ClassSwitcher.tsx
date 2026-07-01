@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/firebase/config';
+import { supabase } from '@/supabase/config';
 
 interface ClassItem {
   id: string;

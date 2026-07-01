@@ -222,7 +222,7 @@ Return valid JSON in this exact format — no markdown, no code fences:
   "estimatedMinutes": 15,
   "questionBank": [
     {
-      "type": "mcq|true_false|short_answer|numerical",
+      "type": "mcq|true_false|fill_blank|matching|numerical|descriptive",
       "difficulty": "easy|medium|hard",
       "category": "recall|application|critical_thinking",
       "text": "Question text",
@@ -247,7 +247,7 @@ Return valid JSON in this exact format — no markdown, no code fences:
 
 Generate:
 - 4-5 learning objectives
-- 8-12 questions: mix of easy (MCQ/T-F), medium (short answer), hard (numerical/problem-solving)
+- 18 questions: exactly 3 for each type: mcq, true_false, fill_blank, matching, numerical, descriptive
 - 2-3 assignments: at least one worksheet and one challenge/problem-solving task`;
 
   const result = await callAI(prompt, 'content');

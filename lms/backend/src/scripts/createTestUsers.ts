@@ -3,7 +3,7 @@ import path from 'path';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-import { getAdminAuth, getAdminFirestore } from '../firebase/admin';
+import { getAdminAuth, getAdminFirestore } from '../database/admin';
 
 const STUDENT = {
   email: 'student@genesis.edu',

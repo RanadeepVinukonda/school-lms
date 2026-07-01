@@ -1,11 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
-import { FieldValue } from '../firebase/firestore';
+import { FieldValue } from '../database/adapter';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { writeFile, unlink } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { collections } from '../firebase/firestore';
+import { collections } from '../database/adapter';
 import { NotFoundError, ValidationError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
@@ -113,7 +113,9 @@ export async function executeCode(code: string, language: string) {
         stdout = execError.stdout || '';
         stderr = execError.stderr || execError.message || '';
       }
-      await unlink(filePath).catch(() => {});
+      await unlink(filePath).catch((unlinkErr) => {
+        logger.warn('Failed to cleanup temp file', { filePath, error: unlinkErr instanceof Error ? unlinkErr.message : String(unlinkErr) });
+      });
     } else if (language === 'javascript') {
       const filePath = `${tmpFile}.js`;
       await writeFile(filePath, code);
@@ -125,7 +127,9 @@ export async function executeCode(code: string, language: string) {
         stdout = execError.stdout || '';
         stderr = execError.stderr || execError.message || '';
       }
-      await unlink(filePath).catch(() => {});
+      await unlink(filePath).catch((unlinkErr) => {
+        logger.warn('Failed to cleanup temp file', { filePath, error: unlinkErr instanceof Error ? unlinkErr.message : String(unlinkErr) });
+      });
     } else {
       return {
         language, code,
@@ -169,11 +173,45 @@ export async function createStreamProject(data: Omit<StreamProject, 'id' | 'crea
   return { id: ref.id, ...project };
 }
 
+export async function getStreamProjectById(id: string) {
+  const snap = await collections.streamProjects().doc(id).get();
+  if (!snap.exists) throw new NotFoundError('STREAM project not found');
+  return { id: snap.id, ...snap.data() };
+}
+
+export async function updateStreamProject(id: string, data: Partial<StreamProject>, userId: string) {
+  const snap = await collections.streamProjects().doc(id).get();
+  if (!snap.exists) throw new NotFoundError('STREAM project not found');
+  await collections.streamProjects().doc(id).update({
+    ...data,
+    updatedAt: new Date().toISOString(),
+  });
+  const updated = await collections.streamProjects().doc(id).get();
+  return { id: updated.id, ...updated.data() };
+}
+
+export async function deleteStreamProject(id: string) {
+  const snap = await collections.streamProjects().doc(id).get();
+  if (!snap.exists) throw new NotFoundError('STREAM project not found');
+  await collections.streamProjects().doc(id).delete();
+  logger.info('STREAM project deleted', { id });
+}
+
 export async function addStreamCollaborator(projectId: string, collaboratorId: string) {
   const snap = await collections.streamProjects().doc(projectId).get();
   if (!snap.exists) throw new NotFoundError('STREAM project not found');
   await collections.streamProjects().doc(projectId).update({
     collaborators: FieldValue.arrayUnion(collaboratorId),
+  });
+  const updated = await collections.streamProjects().doc(projectId).get();
+  return { id: updated.id, ...updated.data() };
+}
+
+export async function removeStreamCollaborator(projectId: string, collaboratorId: string) {
+  const snap = await collections.streamProjects().doc(projectId).get();
+  if (!snap.exists) throw new NotFoundError('STREAM project not found');
+  await collections.streamProjects().doc(projectId).update({
+    collaborators: FieldValue.arrayRemove(collaboratorId),
   });
   const updated = await collections.streamProjects().doc(projectId).get();
   return { id: updated.id, ...updated.data() };

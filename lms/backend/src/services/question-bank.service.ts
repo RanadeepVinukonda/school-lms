@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../firebase/firestore';
+import { collections } from '../database/adapter';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
@@ -115,7 +115,7 @@ export async function listQuestions(params: {
   page?: number;
   limit?: number;
 }) {
-  let query: FirebaseFirestore.Query = collections.questionBank();
+  let query: any = collections.questionBank();
 
   if (params.classId) query = query.where('classId', '==', params.classId);
   if (params.subjectId) query = query.where('subjectId', '==', params.subjectId);
@@ -130,7 +130,7 @@ export async function listQuestions(params: {
   if (params.tags?.length) query = query.where('tags', 'array-contains-any', params.tags);
 
   const snapshot = await query.get();
-  let results = snapshot.docs.map((d) => ({ ...d.data(), id: d.id }));
+  let results = snapshot.docs.map((d: any) => ({ ...d.data(), id: d.id }));
   results.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   if (params.search) {

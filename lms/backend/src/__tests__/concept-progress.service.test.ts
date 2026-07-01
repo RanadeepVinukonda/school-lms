@@ -16,15 +16,15 @@ beforeEach(() => {
 
 describe('toggleConceptCompletion', () => {
   it('creates a new progress record when none exists', async () => {
-    const mockSet = jest.fn().mockResolvedValue(undefined as any);
+    const mockSet = jest.fn<any>().mockResolvedValue(undefined);
     const mockDoc = {
       set: mockSet,
     } as any;
-    const mockGet = jest.fn().mockResolvedValue({ empty: true, docs: [] });
+    const mockGet = jest.fn<any>().mockResolvedValue({ empty: true, docs: [] });
     const mockCollection = {
-      where: jest.fn().mockReturnThis(),
+      where: jest.fn<any>().mockReturnThis(),
       get: mockGet,
-      doc: jest.fn(() => mockDoc),
+      doc: jest.fn<any>(() => mockDoc),
     } as any;
     (collections.conceptReleases as jest.Mock).mockReturnValue(mockCollection);
 
@@ -46,14 +46,14 @@ describe('toggleConceptCompletion', () => {
     const existingData = {
       completed: false,
     };
-    const mockUpdate = jest.fn().mockResolvedValue(undefined);
+    const mockUpdate = jest.fn<any>().mockResolvedValue(undefined);
     const mockDoc = {
       data: () => existingData,
       ref: { update: mockUpdate },
     } as any;
-    const mockGet = jest.fn().mockResolvedValue({ docs: [mockDoc] });
+    const mockGet = jest.fn<any>().mockResolvedValue({ docs: [mockDoc] });
     const mockCollection = {
-      where: jest.fn().mockReturnThis(),
+      where: jest.fn<any>().mockReturnThis(),
       get: mockGet,
     } as any;
     (collections.conceptReleases as jest.Mock).mockReturnValue(mockCollection);
@@ -74,9 +74,9 @@ describe('toggleConceptCompletion', () => {
 
 describe('getConceptCompletionStatus', () => {
   it('returns false when no record exists', async () => {
-    const mockGet = jest.fn().mockResolvedValue({ empty: true, docs: [] });
+    const mockGet = jest.fn<any>().mockResolvedValue({ empty: true, docs: [] });
     const mockCollection = {
-      where: jest.fn().mockReturnThis(),
+      where: jest.fn<any>().mockReturnThis(),
       get: mockGet,
     } as any;
     (collections.conceptReleases as jest.Mock).mockReturnValue(mockCollection);
@@ -87,9 +87,9 @@ describe('getConceptCompletionStatus', () => {
   });
 
   it('returns true when record indicates completed', async () => {
-    const mockGet = jest.fn().mockResolvedValue({ docs: [{ data: () => ({ completed: true }) }] });
+    const mockGet = jest.fn<any>().mockResolvedValue({ docs: [{ data: () => ({ completed: true }) }] });
     const mockCollection = {
-      where: jest.fn().mockReturnThis(),
+      where: jest.fn<any>().mockReturnThis(),
       get: mockGet,
     } as any;
     (collections.conceptReleases as jest.Mock).mockReturnValue(mockCollection);

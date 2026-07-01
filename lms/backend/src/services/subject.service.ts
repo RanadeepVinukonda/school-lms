@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../firebase/firestore';
+import { collections } from '../database/adapter';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
@@ -82,7 +82,7 @@ export async function listSubjects(query: {
   search?: string;
 }) {
   const { page, limit } = parsePagination(query);
-  let baseQuery: FirebaseFirestore.Query = collections.subjects();
+  let baseQuery: any = collections.subjects();
 
   if (query.status) baseQuery = baseQuery.where('status', '==', query.status);
   if (query.category) baseQuery = baseQuery.where('category', '==', query.category);
@@ -91,7 +91,7 @@ export async function listSubjects(query: {
 
   const snapshot = await baseQuery.get();
 
-  let items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  let items = snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id }));
   items = items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   if (query.search) {

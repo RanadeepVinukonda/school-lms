@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../firebase/firestore';
+import { collections } from '../database/adapter';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { searchVideos } from './youtube.service';
@@ -52,7 +52,7 @@ export async function listVideos(teacherId: string, query?: {
   conceptId?: string;
   tag?: string;
 }) {
-  let baseQuery: FirebaseFirestore.Query = collections.teacherVideos()
+  let baseQuery = collections.teacherVideos()
     .where('teacherId', '==', teacherId);
 
   if (query?.textbookId) {

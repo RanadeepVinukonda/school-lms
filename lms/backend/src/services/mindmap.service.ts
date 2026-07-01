@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { FieldValue, Timestamp } from '../firebase/firestore';
-import { collections } from '../firebase/firestore';
+import { FieldValue, Timestamp } from '../database/adapter';
+import { collections } from '../database/adapter';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 
 export interface MindMapNode {

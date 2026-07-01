@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-import { getAdminAuth, getAdminFirestore, admin } from '../firebase/admin';
+import { getAdminAuth, getAdminFirestore, admin } from '../database/admin';
 import { v4 as uuidv4 } from 'uuid';
 const auth = getAdminAuth();
 const db = getAdminFirestore();
@@ -28,7 +28,7 @@ async function deleteCollection(name: string) {
   const snap = await db.collection(name).get();
   if (snap.empty) return;
   const batch = db.batch();
-  snap.docs.forEach((d) => batch.delete(d.ref));
+  snap.docs.forEach((d: any) => batch.delete(d.ref));
   await batch.commit();
   console.log(`  Deleted ${snap.size} docs from ${name}`);
 }
@@ -405,7 +405,7 @@ async function main() {
         const questionsSnap = await conceptDoc.ref.collection('questions').get();
         if (!questionsSnap.empty) {
           const batch = db.batch();
-          questionsSnap.docs.forEach((qDoc) => batch.delete(qDoc.ref));
+          questionsSnap.docs.forEach((qDoc: any) => batch.delete(qDoc.ref));
           await batch.commit();
         }
         await conceptDoc.ref.delete();
@@ -420,7 +420,7 @@ async function main() {
   console.log('Clearing Firebase Auth users...');
   let listUsersResult = await auth.listUsers(1000);
   while (listUsersResult.users.length > 0) {
-    const uids = listUsersResult.users.map((u) => u.uid);
+    const uids = listUsersResult.users.map((u: any) => u.uid);
     await auth.deleteUsers(uids);
     console.log(`  Deleted ${uids.length} Auth users.`);
     listUsersResult = await auth.listUsers(1000);

@@ -22,6 +22,11 @@ export function RouteErrorFallback() {
       </div>
       <h2 className="text-headline-sm mb-2">{title}</h2>
       <p className="text-body-md text-on-surface-variant max-w-md mb-6">{message}</p>
+      {error instanceof Error && (
+        <pre className="text-left text-xs bg-red-100 text-red-800 p-4 rounded overflow-auto max-w-2xl max-h-60 mb-6 font-mono whitespace-pre-wrap">
+          {error.stack}
+        </pre>
+      )}
       <div className="flex gap-3">
         <Button variant="tonal" onClick={() => window.location.reload()} className="gap-2">
           <Icon name="refresh" size={18} />

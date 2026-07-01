@@ -6,7 +6,7 @@ import { env } from '../config/env';
 import { addUploadJob, removeUploadJob } from '../jobs/queue';
 
 // ponytail: teacherClassSubject is a deferred peripheral. Keep Firestore for just this one collection.
-import { collections } from '../firebase/firestore';
+import { collections } from '../database/adapter';
 
 async function populateMockContent(textbookId: string, textbookTitle: string): Promise<void> {
   const supabase = getSupabaseAdmin();
@@ -69,7 +69,7 @@ async function populateMockContent(textbookId: string, textbookTitle: string): P
       });
 
       for (const q of questionBank) {
-        await supabase.from('concept_questions').insert(q as any);
+        await supabase.from('concept_questions').insert(q as Record<string, unknown>);
       }
     }
   }
@@ -88,6 +88,7 @@ export async function createTextbook(data: {
   cloudinaryUrl?: string;
   cloudinaryPublicId?: string;
   teacherRole?: string;
+  schoolId?: string;
 }) {
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error('Supabase not configured');
@@ -160,6 +161,7 @@ export async function createTextbook(data: {
     chapter_count: 0,
     total_concepts: 0,
     completed_concepts: 0,
+    school_id: data.schoolId,
     created_at: now,
     updated_at: now,
   });
@@ -222,17 +224,25 @@ export async function reprocessTextbook(textbookId: string, requestingTeacherId:
   }
 }
 
-export async function getTextbooksByClassAndSubject(classId: string, subjectId: string) {
+export async function getTextbooksByClassAndSubject(classId: string, subjectId: string, schoolId?: string) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return [];
-  const { data } = await supabase.from('textbooks').select('*').eq('class_id', classId).eq('subject_id', subjectId);
+  let query = supabase.from('textbooks').select('*').eq('class_id', classId).eq('subject_id', subjectId);
+  if (schoolId) {
+    query = query.eq('school_id', schoolId);
+  }
+  const { data } = await query;
   return data || [];
 }
 
-export async function listAllTextbooks() {
+export async function listAllTextbooks(schoolId?: string) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return [];
-  const { data } = await supabase.from('textbooks').select('*');
+  let query = supabase.from('textbooks').select('*');
+  if (schoolId) {
+    query = query.eq('school_id', schoolId);
+  }
+  const { data } = await query;
   return data || [];
 }
 
@@ -244,7 +254,7 @@ export async function getTextbookById(textbookId: string, user?: Express.Request
 
   if (user && user.role === 'student') {
     if (!user.classIds?.includes(data.class_id)) {
-      throw new Error('Forbidden: You do not have access to this textbook');
+      throw new ForbiddenError('You do not have access to this textbook');
     }
   }
 

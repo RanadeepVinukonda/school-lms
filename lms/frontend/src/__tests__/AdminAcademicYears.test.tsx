@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { HelmetProvider } from 'react-helmet-async';
 
 vi.mock('@/store/authStore', () => ({
   useAuthStore: vi.fn().mockReturnValue({
@@ -9,7 +10,7 @@ vi.mock('@/store/authStore', () => ({
   }),
 }));
 
-vi.mock('@/firebase/config', () => ({
+vi.mock('@/supabase/config', () => ({
   supabase: {
     auth: { getSession: vi.fn().mockResolvedValue({ data: { session: null } }) },
     from: vi.fn().mockReturnThis(),
@@ -56,23 +57,39 @@ describe('Admin Academic Years Page', () => {
   });
 
   it('should render the page without crashing', () => {
-    const { container } = render(<AdminAcademicYearsPage />);
+    const { container } = render(
+      <HelmetProvider>
+        <AdminAcademicYearsPage />
+      </HelmetProvider>
+    );
     expect(container).toBeDefined();
   });
 
   it('should display the title', () => {
-    render(<AdminAcademicYearsPage />);
+    render(
+      <HelmetProvider>
+        <AdminAcademicYearsPage />
+      </HelmetProvider>
+    );
     expect(screen.getByText('Academic Years')).toBeDefined();
   });
 
   it('should show add year button', () => {
-    render(<AdminAcademicYearsPage />);
+    render(
+      <HelmetProvider>
+        <AdminAcademicYearsPage />
+      </HelmetProvider>
+    );
     const addButton = screen.getByText('Add Year');
     expect(addButton).toBeDefined();
   });
 
   it('should render with empty state', () => {
-    const { container } = render(<AdminAcademicYearsPage />);
+    const { container } = render(
+      <HelmetProvider>
+        <AdminAcademicYearsPage />
+      </HelmetProvider>
+    );
     expect(container.textContent).toContain('No academic years');
   });
 });

@@ -1,25 +1,35 @@
 import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../firebase/firestore';
+import { collections } from '../database/adapter';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 import { createNotification, createBulkNotifications } from './notification.service';
+import type { GradeCollection } from '../database/interfaces/collections';
 
-/** Get all grades for a student, optionally filtered by academic year. */
-export async function getStudentGrades(studentId: string, academicYear?: string) {
-  let query: FirebaseFirestore.Query = collections.grades()
+let _gradeCollection: GradeCollection | null = null;
+export function setGradeCollection(col: GradeCollection): void { _gradeCollection = col; }
+function gradeCol() { return _gradeCollection ?? (collections.grades() as unknown as GradeCollection); }
+
+/** Get all grades for a student, optionally filtered by academic year/schoolId. */
+export async function getStudentGrades(studentId: string, academicYear?: string, schoolId?: string) {
+  let query = collections.grades()
     .where('studentId', '==', studentId);
+
+  if (schoolId) {
+    query = query.where('schoolId', '==', schoolId);
+  }
+
+  query = query.orderBy('createdAt', 'desc');
 
   if (academicYear) {
     query = query.where('academicYear', '==', academicYear);
   }
 
   const snapshot = await query.get();
-  const grades = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-  return grades.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
 }
 
-/** Query the gradebook with filters (classId, courseId, subjectId, term, academicYear), paginated. */
+/** Query the gradebook with filters (classId, courseId, subjectId, term, academicYear, schoolId), paginated. */
 export async function getGradebook(query: {
   classId?: string;
   courseId?: string;
@@ -28,9 +38,18 @@ export async function getGradebook(query: {
   academicYear?: string;
   page?: string;
   limit?: string;
+  schoolId?: string;
 }) {
   const { page, limit } = parsePagination(query);
-  let baseQuery: FirebaseFirestore.Query = collections.grades();
+  const offset = (page - 1) * limit;
+
+  let baseQuery: any = collections.grades();
+
+  if (query.schoolId) {
+    baseQuery = baseQuery.where('schoolId', '==', query.schoolId);
+  }
+
+  baseQuery = baseQuery.orderBy('createdAt', 'desc');
 
   if (query.classId) baseQuery = baseQuery.where('classId', '==', query.classId);
   if (query.courseId) baseQuery = baseQuery.where('courseId', '==', query.courseId);
@@ -38,15 +57,13 @@ export async function getGradebook(query: {
   if (query.term) baseQuery = baseQuery.where('term', '==', query.term);
   if (query.academicYear) baseQuery = baseQuery.where('academicYear', '==', query.academicYear);
 
-  const offset = (page - 1) * limit;
-  const snapshot = await baseQuery.get();
+  const countSnap = await baseQuery.count().get();
+  const total = countSnap.data().count;
 
-  const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-  const sorted = items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  const total = sorted.length;
-  const paged = sorted.slice(offset, offset + limit);
+  const snapshot = await baseQuery.offset(offset).limit(limit).get();
+  const items = snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id }));
 
-  return { items: paged, total, page, limit };
+  return { items, total, page, limit };
 }
 
 /** Update a single grade record, calculate letter grade, and notify the student. */
@@ -102,7 +119,7 @@ export async function bulkUpdate(grades: Array<{
   score: number;
   totalPoints: number;
   feedback?: string;
-}>, courseId: string, gradedBy: string) {
+}>, courseId: string, gradedBy: string, schoolId?: string) {
   const results = [];
 
   for (const grade of grades) {
@@ -131,6 +148,7 @@ export async function bulkUpdate(grades: Array<{
         percentage,
         feedback: grade.feedback || '',
         gradedBy,
+        schoolId: schoolId || '',
         createdAt: now,
         updatedAt: now,
       });
@@ -159,12 +177,17 @@ export async function bulkUpdate(grades: Array<{
 }
 
 /** Generate a student's report card for a given academic year and term with overall GPA. */
-export async function generateReport(studentId: string, academicYear: string, term: string) {
-  const gradesSnapshot = await collections.grades()
+export async function generateReport(studentId: string, academicYear: string, term: string, schoolId?: string) {
+  let query = collections.grades()
     .where('studentId', '==', studentId)
     .where('academicYear', '==', academicYear)
-    .where('term', '==', term)
-    .get();
+    .where('term', '==', term);
+
+  if (schoolId) {
+    query = query.where('schoolId', '==', schoolId);
+  }
+
+  const gradesSnapshot = await query.get();
 
   const grades = gradesSnapshot.docs.map((d) => d.data());
 

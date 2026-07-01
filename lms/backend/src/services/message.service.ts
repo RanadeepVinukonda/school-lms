@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../firebase/firestore';
+import { collections } from '../database/adapter';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
@@ -98,18 +98,22 @@ export async function sendMessage(data: {
 /** Get all conversations for a user, ordered by lastMessageAt desc. Includes unread count for the given user. */
 export async function getConversations(userId: string, query: { page?: string; limit?: string }) {
   const { page, limit } = parsePagination(query);
-  const snapshot = await collections.conversations()
+  const offset = (page - 1) * limit;
+
+  const baseQuery = collections.conversations()
     .where('participants', 'array-contains', userId)
-    .get();
-  const all = snapshot.docs.map((doc) => ({
+    .orderBy('lastMessageAt', 'desc');
+
+  const countSnap = await baseQuery.count().get();
+  const total = countSnap.data().count;
+  const snapshot = await baseQuery.offset(offset).limit(limit).get();
+
+  const items = snapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
     unreadCount: (doc.data().unreadCount || {})[userId] || 0,
   }));
-  const sorted = all.sort((a: any, b: any) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
-  const total = sorted.length;
-  const offset = (page - 1) * limit;
-  const items = sorted.slice(offset, offset + limit);
+
   return { items, total, page, limit };
 }
 
@@ -134,14 +138,17 @@ export async function getMessages(conversationId: string, userId: string, query:
   }
 
   const { page, limit } = parsePagination(query);
-  const snapshot = await collections.messages()
-    .where('conversationId', '==', conversationId)
-    .get();
-  const all = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-  const sorted = all.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  const total = sorted.length;
   const offset = (page - 1) * limit;
-  const items = sorted.slice(offset, offset + limit);
+
+  const baseQuery = collections.messages()
+    .where('conversationId', '==', conversationId)
+    .orderBy('createdAt', 'desc');
+
+  const countSnap = await baseQuery.count().get();
+  const total = countSnap.data().count;
+  const snapshot = await baseQuery.offset(offset).limit(limit).get();
+  const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+
   return { items, total, page, limit };
 }
 

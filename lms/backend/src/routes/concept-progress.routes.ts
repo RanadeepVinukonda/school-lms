@@ -1,12 +1,21 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import { asyncHandler } from '../middlewares/asyncHandler';
 import { authenticate } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/role.middleware';
+import { validate } from '../middlewares/validate.middleware';
 import * as conceptProgressController from '../controllers/concept-progress.controller';
 
 const router = Router();
 
-router.post('/toggle', authenticate, requireRole('teacher'), asyncHandler(conceptProgressController.toggleCompletion));
+const toggleCompletionSchema = z.object({
+  conceptId: z.string().min(1),
+  classId: z.string().min(1),
+  studentId: z.string().min(1),
+  completed: z.boolean(),
+}).passthrough();
+
+router.post('/toggle', authenticate, requireRole('teacher'), validate(toggleCompletionSchema), asyncHandler(conceptProgressController.toggleCompletion));
 router.get('/status/:conceptId/:classId', authenticate, requireRole('teacher', 'student'), asyncHandler(conceptProgressController.getStatus));
 router.get('/class/:classId', authenticate, requireRole('teacher'), asyncHandler(conceptProgressController.getClassStatus));
 router.get('/subject/:subjectId/:classId', authenticate, requireRole('teacher'), asyncHandler(conceptProgressController.getSubjectProgress));

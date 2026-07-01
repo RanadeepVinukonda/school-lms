@@ -70,6 +70,32 @@ export async function completeDailyChallenge(req: Request, res: Response) {
   sendSuccess(res, result, 'Daily challenge completed');
 }
 
+export async function getWeeklyChallenges(req: Request, res: Response) {
+  const userId = (req as ReqWithUser).user!.uid;
+  const challenges = await gamificationService.getWeeklyChallenges(userId);
+  sendSuccess(res, challenges);
+}
+
+export async function completeWeeklyChallenge(req: Request, res: Response) {
+  const userId = (req as ReqWithUser).user!.uid;
+  const { id } = req.params;
+  const result = await gamificationService.completeWeeklyChallenge(userId, id);
+  sendSuccess(res, result, 'Weekly challenge completed');
+}
+
+export async function getMonthlyChallenges(req: Request, res: Response) {
+  const userId = (req as ReqWithUser).user!.uid;
+  const challenges = await gamificationService.getMonthlyChallenges(userId);
+  sendSuccess(res, challenges);
+}
+
+export async function completeMonthlyChallenge(req: Request, res: Response) {
+  const userId = (req as ReqWithUser).user!.uid;
+  const { id } = req.params;
+  const result = await gamificationService.completeMonthlyChallenge(userId, id);
+  sendSuccess(res, result, 'Monthly challenge completed');
+}
+
 export async function getStreak(req: Request, res: Response) {
   const { userId } = req.params;
   const profile = await gamificationService.getProfile(userId);

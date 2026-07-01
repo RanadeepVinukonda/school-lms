@@ -314,9 +314,9 @@ export async function createTest(data: {
     const classDoc = await collections.classes().doc(data.classId).get();
     const classData = classDoc.data();
 
-    if (data.publishedTo === 'students' && data.targetStudentIds.length > 0) {
+    if (data.publishedTo === 'students' && (data.targetStudentIds ?? []).length > 0) {
       await createBulkNotifications(
-        data.targetStudentIds.map((studentId) => ({
+        data.targetStudentIds!.map((studentId) => ({
           userId: studentId,
           type: 'test_published',
           title: `New ${data.testType}: ${data.title}`,
@@ -720,7 +720,7 @@ export async function submitTestAttempt(attemptId: string, studentId: string, da
   logger.info('Test attempt submitted', { attemptId, studentId, score, percentage, newLevel });
 
   try {
-    await gamificationService.recordAssessmentResult(studentId, percentage, testData.testType, timeSpent);
+    await gamificationService.recordAssessmentResult(studentId, percentage);
     await gamificationService.awardXp(studentId, gamificationService.XP_REWARDS.assessmentComplete, `Completed test: ${testData.title}`);
     await gamificationService.awardCoins(studentId, gamificationService.COIN_REWARDS.assessmentComplete, `Completed test: ${testData.title}`);
     if (percentage >= 80) {
@@ -760,7 +760,7 @@ export async function getTestResults(testId: string, studentId: string, isPrivil
   const testData = testDoc.data() as UnifiedTest;
   const resultsGated = !testData.showResults;
 
-  let query: FirebaseFirestore.Query = collections.quizAttemptV2()
+  let query = collections.quizAttemptV2()
     .where('quizId', '==', testId);
   if (!isPrivileged) {
     query = query.where('studentId', '==', studentId);

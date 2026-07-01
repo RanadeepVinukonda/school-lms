@@ -1,4 +1,4 @@
-import { collections } from '../firebase/firestore';
+import { collections } from '../database/adapter';
 import { logger } from '../utils/logger';
 
 /** Get a student's dashboard summary: total enrolled courses, unread notifications, overall grade, and stats. */
@@ -64,7 +64,7 @@ export async function getTeacherDashboard(teacherId: string) {
     .where('teacherId', '==', teacherId)
     .get();
 
-  const courses = coursesSnapshot.docs.map((d) => ({ id: d.id, ...d.data() } as any));
+  const courses = coursesSnapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Record<string, unknown> & { id: string }));
   const totalCourses = courses.length;
 
   const coursePromises = courses.map(async (course) => {
@@ -78,8 +78,8 @@ export async function getTeacherDashboard(teacherId: string) {
     };
   });
   const results = await Promise.all(coursePromises);
-  const totalStudents = results.reduce((sum, r) => sum + r.students, 0);
-  const pendingGrading = results.reduce((sum, r) => sum + r.pending, 0);
+  const totalStudents = results.reduce((sum, r) => sum + (r.students as number), 0);
+  const pendingGrading = results.reduce((sum, r) => sum + (r.pending as number), 0);
 
   const notificationsSnapshot = await collections.notifications()
     .where('userId', '==', teacherId)
