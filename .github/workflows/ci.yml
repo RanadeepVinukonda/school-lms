@@ -25,9 +25,6 @@ jobs:
       - run: npx tsc --noEmit
       - run: npm test -- --forceExit
   frontend:
-    defaults:
-      run:
-        working-directory: lms/frontend
     runs-on: ubuntu-latest
     env:
       VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
@@ -43,9 +40,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci
-      - run: npm run build
-      - name: Install Lighthouse CI CLI
-        run: npm install -g @lhci/cli@0.13.x
+      - name: Install frontend dependencies
+        working-directory: lms/frontend
+        run: npm ci
+      - name: Build frontend
+        working-directory: lms/frontend
+        run: npm run build
       - name: Run Web Vitals budget check
-        run: npx ts-node ../scripts/check-web-vitals.ts 45 0.02 1200
+        working-directory: lms/backend
+        run: npx ts-node src/utils/check-web-vitals.ts 45 0.02 1200
