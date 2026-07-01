@@ -20,8 +20,20 @@ export async function getNotices(schoolId: string, classId?: string) {
   if (classId) {
     query = query.or(`target_class_id.is.null,target_class_id.eq.${classId}`);
   }
-  const { data } = await query.order('created_at', { ascending: false });
-  return data || [];
+  const { data: notices } = await query.order('created_at', { ascending: false });
+  if (!notices || notices.length === 0) return [];
+
+  const userIds = [...new Set(notices.map(n => n.created_by).filter(Boolean))];
+  if (userIds.length > 0) {
+    const { data: users } = await supabase.from('users').select('id, display_name, role').in('id', userIds);
+    const userMap = Object.fromEntries((users || []).map(u => [u.id, { name: u.display_name, role: u.role }]));
+    return notices.map(n => ({
+      ...n,
+      created_by_name: userMap[n.created_by]?.name || 'Unknown',
+      created_by_role: userMap[n.created_by]?.role || '',
+    }));
+  }
+  return notices.map(n => ({ ...n, created_by_name: 'Unknown', created_by_role: '' }));
 }
 
 export async function deleteNotice(id: string) {

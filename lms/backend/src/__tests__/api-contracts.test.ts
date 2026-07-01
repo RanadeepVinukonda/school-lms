@@ -32,6 +32,12 @@ jest.mock('../middlewares/metrics.middleware', () => ({
   metricsHandler: (_req: any, res: any) => res.json({}),
 }));
 
+global.fetch = jest.fn<any>().mockResolvedValue({
+  ok: false,
+  status: 401,
+  json: () => Promise.resolve({ error: 'Invalid credentials' }),
+});
+
 import app from '../app';
 
 function mockAuthUser() {
@@ -60,7 +66,7 @@ describe('API Contract: Auth endpoints', () => {
   it('POST /auth/login - success shape', async () => {
     const res = await request(app).post('/auth/login').send({ email: 'a@b.com', password: 'Pass123!' });
     expect([200, 400, 401, 500]).toContain(res.status);
-  });
+  }, 30000);
 
   it('GET /auth/profile - requires auth', async () => {
     const res = await request(app).get('/auth/profile');

@@ -86,7 +86,7 @@ export default function StudentNoticeBoardPage() {
                                     <Badge variant="secondary" className="text-[10px]">All Classes</Badge>
                                   )}
                                 </div>
-                                <p className="text-body-sm text-muted-foreground whitespace-pre-wrap">{n.content}</p>
+                                <p className="text-body-md text-foreground whitespace-pre-wrap">{n.content}</p>
                                 <div className="flex items-center gap-3 mt-2 text-label-xs text-muted-foreground">
                                   <span className="flex items-center gap-1">
                                     <Icon name="calendar_today" size={14} />
@@ -98,7 +98,7 @@ export default function StudentNoticeBoardPage() {
                                       Expires {new Date(n.expires_at).toLocaleDateString()}
                                     </span>
                                   )}
-                                  {n.created_by && <span>by {n.created_by}</span>}
+                                  {n.created_by_name && <span>by {n.created_by_role ? `${n.created_by_role} - ` : ''}{n.created_by_name}</span>}
                                 </div>
                               </div>
                             </div>
