@@ -119,6 +119,7 @@ import ParentChildrenPage from '@/app/pages/parent/ParentChildrenPage';
 import ParentChildDetailPage from '@/app/pages/parent/ParentChildDetailPage';
 import ParentReportsPage from '@/app/pages/parent/ParentReportsPage';
 import ParentProfilePage from '@/app/pages/parent/ParentProfilePage';
+import ParentNoticeBoardPage from '@/app/pages/parent/ParentNoticeBoardPage';
 
 import NotificationsPage from '@/app/pages/NotificationsPage';
 
@@ -278,6 +279,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.PARENT_CHILD(':studentId'), element: <ParentChildDetailPage /> },
       { path: ROUTES.PARENT_REPORTS, element: <ParentReportsPage /> },
       { path: ROUTES.PARENT_PROFILE, element: <ParentProfilePage /> },
+      { path: ROUTES.PARENT_NOTICEBOARD, element: <ParentNoticeBoardPage /> },
     ],
   },
 

@@ -95,6 +95,7 @@ export const ROUTES = {
   PARENT_CHILD: (id: string) => `/parent/children/${id}`,
   PARENT_REPORTS: '/parent/reports',
   PARENT_PROFILE: '/parent/profile',
+  PARENT_NOTICEBOARD: '/parent/noticeboard',
 
   STUDENT_MIND_MAPS: '/student/mindmaps',
   STUDENT_MIND_MAP_EDITOR: (id: string) => `/student/mindmaps/${id}`,

@@ -17,14 +17,14 @@ function priorityBadge(p: string) {
   }
 }
 
-export default function StudentNoticeBoardPage() {
+export default function ParentNoticeBoardPage() {
   const { data: classes = [] } = useQuery({
     queryKey: ['all-classes'],
     queryFn: getAllClasses,
   });
 
   const { data: noticesRes, isLoading, error, refetch } = useQuery({
-    queryKey: ['student-notices'],
+    queryKey: ['parent-notices'],
     queryFn: () => noticeService.getNotices(),
   });
 

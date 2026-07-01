@@ -9,6 +9,15 @@ export interface Notice {
   created_by?: string;
   created_at: string;
   expires_at?: string;
+  target_class_id?: string | null;
+}
+
+export interface CreateNoticeData {
+  title: string;
+  content: string;
+  priority?: string;
+  expires_at?: string;
+  target_class_id?: string | null;
 }
 
 export const noticeService = {
@@ -17,7 +26,7 @@ export const noticeService = {
     return response.data;
   },
 
-  async createNotice(data: { title: string; content: string; priority?: string; expires_at?: string }) {
+  async createNotice(data: CreateNoticeData) {
     const response = await api.post<ApiResponse<Notice>>('/notices', data);
     return response.data;
   },

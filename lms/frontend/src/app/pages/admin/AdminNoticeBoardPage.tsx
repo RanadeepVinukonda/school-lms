@@ -12,6 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { OptionsSelect } from '@/components/ui/select';
 import { noticeService } from '@/services/noticeService';
+import { getAllClasses } from '@/services/dataService';
+import type { CreateNoticeData } from '@/services/noticeService';
 
 const priorityBadge = (p: string) => {
   switch (p) {
@@ -30,7 +32,12 @@ const priorityOptions = [
 
 export default function AdminNoticeBoardPage() {
   const queryClient = useQueryClient();
-  const [form, setForm] = useState({ title: '', content: '', priority: 'medium', expires_at: '' });
+  const [form, setForm] = useState<CreateNoticeData>({ title: '', content: '', priority: 'medium', expires_at: '', target_class_id: null });
+
+  const { data: classes = [] } = useQuery({
+    queryKey: ['admin-classes'],
+    queryFn: getAllClasses,
+  });
 
   const { data: noticesRes, isLoading, error, refetch } = useQuery({
     queryKey: ['admin-notices'],
@@ -40,10 +47,10 @@ export default function AdminNoticeBoardPage() {
   const notices = (noticesRes as any)?.data as any[] | undefined;
 
   const createMutation = useMutation({
-    mutationFn: (data: typeof form) => noticeService.createNotice(data),
+    mutationFn: (data: CreateNoticeData) => noticeService.createNotice(data),
     onSuccess: () => {
       toast.success('Notice created');
-      setForm({ title: '', content: '', priority: 'medium', expires_at: '' });
+      setForm({ title: '', content: '', priority: 'medium', expires_at: '', target_class_id: null });
       queryClient.invalidateQueries({ queryKey: ['admin-notices'] });
     },
     onError: (err: any) => toast.error(err?.message || 'Failed to create notice'),
@@ -97,6 +104,19 @@ export default function AdminNoticeBoardPage() {
                 />
               </div>
               <div>
+                <label className="text-label-sm text-muted-foreground mb-1 block">Target Class</label>
+                <select
+                  value={form.target_class_id ?? ''}
+                  onChange={(e) => setForm({ ...form, target_class_id: e.target.value || null })}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="">All Classes</option>
+                  {(classes as any[])?.map((cls: any) => (
+                    <option key={cls.id} value={cls.id}>{cls.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
                 <label className="text-label-sm text-muted-foreground mb-1 block">Expires At</label>
                 <Input
                   type="date"
@@ -148,6 +168,13 @@ export default function AdminNoticeBoardPage() {
                             <div className="flex items-center gap-2 flex-wrap mb-1">
                               <h3 className="text-title-sm font-semibold truncate">{n.title}</h3>
                               {priorityBadge(n.priority)}
+                              {n.target_class_id ? (
+                                <Badge variant="outline" className="text-[10px]">
+                                  {(classes as any[])?.find((c: any) => c.id === n.target_class_id)?.name || 'Specific Class'}
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary" className="text-[10px]">All Classes</Badge>
+                              )}
                             </div>
                             <p className="text-body-sm text-muted-foreground line-clamp-2 whitespace-pre-wrap">{n.content}</p>
                             <div className="flex items-center gap-3 mt-2 text-label-xs text-muted-foreground">
