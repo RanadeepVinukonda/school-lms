@@ -4,8 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Icon } from '@/components/ui/Icon';
 import { OptionsSelect } from '@/components/ui/select';
 import { timetableService } from '@/services/timetableService';
 import { getAllClasses, getAllSubjects, getAllTeachers } from '@/services/dataService';
@@ -142,34 +140,30 @@ export default function TeacherTimetablePage() {
                         {DAYS.map((day) => {
                           const entries = grid[day]?.[period] ?? [];
                           return (
-                            <td key={`${day}-${period}`} className="px-2 py-2 align-top min-w-[130px]">
+                            <td key={`${day}-${period}`} className="px-3 py-3 align-top min-w-[150px]">
                               {entries.length === 0 ? (
                                 <div className="min-h-[72px] flex items-center justify-center">
-                                  <span className="text-muted-foreground/20 text-label-xs">&mdash;</span>
+                                  <span className="text-muted-foreground/20">&mdash;</span>
                                 </div>
                               ) : (
-                                <div className="space-y-1.5">
+                                <div className="space-y-2">
                                   {entries.map((entry: any) => (
-                                    <div
-                                      key={entry.id}
-                                      className="rounded-lg border border-primary/20 bg-primary-container/40 p-2.5 shadow-sm"
-                                    >
-                                      <p className="text-label-sm font-semibold text-primary truncate">
+                                    <div key={entry.id}>
+                                      <p className="text-body-sm font-semibold text-primary">
                                         {subjectMap.get(entry.subject_id || entry.subjectId || '') || entry.subject_id || entry.subjectId || 'Subject'}
                                       </p>
                                       {(entry.teacher_id || entry.teacherId) && (
-                                        <p className="text-label-xs text-muted-foreground mt-0.5 truncate">
+                                        <p className="text-body-xs text-muted-foreground mt-0.5">
                                           {teacherMap.get(entry.teacher_id || entry.teacherId || '') || entry.teacher_id || entry.teacherId}
                                         </p>
                                       )}
                                       {entry.room && (
-                                        <Badge variant="outline" className="text-[10px] mt-1 py-0 h-4 px-1.5 border-primary/30">
-                                          <Icon name="meeting_room" size={10} className="mr-0.5" />
-                                          {entry.room}
-                                        </Badge>
+                                        <p className="text-body-xs text-muted-foreground mt-0.5">
+                                          Room {entry.room}
+                                        </p>
                                       )}
                                       {(entry.start_time || entry.startTime || entry.end_time || entry.endTime) && (
-                                        <p className="text-label-xs text-muted-foreground/70 mt-1 font-mono">
+                                        <p className="text-body-xs text-muted-foreground/60 mt-0.5">
                                           {entry.start_time || entry.startTime || '—'} &ndash; {entry.end_time || entry.endTime || '—'}
                                         </p>
                                       )}
