@@ -1250,19 +1250,19 @@ export default function TeacherAssessmentCreatePage() {
                           <CardContent className="p-5">
                             <div className="flex items-start justify-between gap-4">
                               <div className="flex items-start gap-3 min-w-0 flex-1">
-                                <div className={`h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                                <div className={`h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
                                   assessment.type === 'quiz'
-                                    ? 'bg-primary-container text-on-primary-container'
-                                    : 'bg-secondary-container text-on-secondary-container'
+                                    ? 'bg-primary/10 text-primary'
+                                    : 'bg-secondary/10 text-secondary'
                                 }`}>
                                   <Icon
                                     name={assessment.type === 'quiz' ? 'quiz' : 'note_alt'}
-                                    size={20}
+                                    size={18}
                                   />
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="font-medium text-sm truncate">{assessment.title}</span>
+                                    <span className="font-medium text-sm truncate">{assessment.title || 'Untitled'}</span>
                                     <Badge
                                       variant={assessment.status === 'released' ? 'success' : 'outline'}
                                       className="text-[10px] capitalize"
@@ -1273,17 +1273,18 @@ export default function TeacherAssessmentCreatePage() {
                                       {assessment.type}
                                     </Badge>
                                   </div>
-                                  <div className="flex items-center gap-3 mt-1 text-label-xs text-muted-foreground">
-                                    <span className="flex items-center gap-1">
-                                      <Icon name="people" size={12} />
-                                      {assessment.attemptCount ?? 0} attempt{(assessment.attemptCount ?? 0) !== 1 ? 's' : ''}
-                                    </span>
+                                  <div className="flex items-center gap-3 mt-1.5 text-label-xs text-muted-foreground flex-wrap">
+                                    <span>{assessment.attemptCount ?? 0} attempts</span>
+                                    {assessment.timeLimitMinutes && <span>{assessment.timeLimitMinutes}m</span>}
+                                    {assessment.totalPoints && <span>{assessment.totalPoints} pts</span>}
+                                    <span>Pass {assessment.passingScore ?? 50}%</span>
+                                    <span>Max {assessment.maxAttempts ?? 3}</span>
                                   </div>
                                 </div>
                               </div>
-                              <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                              <div className="flex items-center gap-2 flex-shrink-0">
                                 {assessment.type === 'quiz' && assessment.status === 'draft' && (
-                                  <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 mb-1">
+                                  <>
                                     <label className="flex items-center gap-1 cursor-pointer text-[10px]">
                                       <Switch
                                         checked={assessment.shuffleQuestions ?? true}
@@ -1300,37 +1301,6 @@ export default function TeacherAssessmentCreatePage() {
                                       />
                                       Results
                                     </label>
-                                    <label className="flex items-center gap-0.5 text-[10px]">
-                                      <span>Pass</span>
-                                      <input
-                                        type="number" min={0} max={100}
-                                        className="w-10 rounded border border-border px-1 py-0.5 text-[10px] text-center"
-                                        value={assessment.passingScore ?? 50}
-                                        onChange={(e) => updateQuizMutation.mutate({ quizId: assessment.id, data: { passingScore: Number(e.target.value) } })}
-                                      />
-                                    </label>
-                                    <label className="flex items-center gap-0.5 text-[10px]">
-                                      <span>Max</span>
-                                      <input
-                                        type="number" min={1}
-                                        className="w-8 rounded border border-border px-1 py-0.5 text-[10px] text-center"
-                                        value={assessment.maxAttempts ?? 3}
-                                        onChange={(e) => updateQuizMutation.mutate({ quizId: assessment.id, data: { maxAttempts: Number(e.target.value) } })}
-                                      />
-                                    </label>
-                                    <label className="flex items-center gap-0.5 text-[10px]">
-                                      <span>Time</span>
-                                      <input
-                                        type="number" min={1}
-                                        className="w-8 rounded border border-border px-1 py-0.5 text-[10px] text-center"
-                                        value={assessment.timeLimitMinutes ?? 30}
-                                        onChange={(e) => updateQuizMutation.mutate({ quizId: assessment.id, data: { timeLimitMinutes: Number(e.target.value) } })}
-                                      />
-                                    </label>
-                                  </div>
-                                )}
-                                <div className="flex items-center gap-2">
-                                  {assessment.status === 'draft' && (
                                     <Button
                                       variant="default"
                                       size="sm"
@@ -1346,50 +1316,48 @@ export default function TeacherAssessmentCreatePage() {
                                         (assessment.type === 'assignment' && releaseAssignmentMutation.isPending)
                                       }
                                     >
-                                      <Icon name="publish" size={12} className="mr-1" />
                                       Release
                                     </Button>
-                                  )}
-                                  {assessment.type === 'quiz' && assessment.status === 'released' && (
-                                    assessment.isRepublished ? (
-                                      <Badge variant="success" className="text-[10px] gap-1 py-1">
-                                        <Icon name="check" size={10} />
-                                        Republished
-                                      </Badge>
-                                    ) : (
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => republishQuizMutation.mutate(assessment.id)}
-                                        disabled={republishQuizMutation.isPending}
-                                        className="text-success border-success/30 hover:bg-success/5 hover:text-success"
-                                      >
-                                        <Icon name="refresh" size={12} className="mr-1" />
-                                        Republish
-                                      </Button>
-                                    )
-                                  )}
-                                  {assessment.status === 'released' && (
-                                    <label className="flex items-center gap-1 cursor-pointer text-[10px]">
-                                      <Switch
-                                        checked={assessment.showResults}
-                                        onCheckedChange={(checked) => {
-                                          if (assessment.type === 'quiz') {
-                                            toggleQuizGradesMutation.mutate({ id: assessment.id, showResults: checked });
-                                          } else {
-                                            toggleAssignmentGradesMutation.mutate({ id: assessment.id, showResults: checked });
-                                          }
-                                        }}
-                                        disabled={
-                                          (assessment.type === 'quiz' && toggleQuizGradesMutation.isPending) ||
-                                          (assessment.type === 'assignment' && toggleAssignmentGradesMutation.isPending)
+                                  </>
+                                )}
+                                {assessment.type === 'quiz' && assessment.status === 'released' && (
+                                  assessment.isRepublished ? (
+                                    <Badge variant="success" className="text-[10px] gap-1 py-1">
+                                      <Icon name="check" size={10} />
+                                      Republished
+                                    </Badge>
+                                  ) : (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => republishQuizMutation.mutate(assessment.id)}
+                                      disabled={republishQuizMutation.isPending}
+                                      className="text-success border-success/30"
+                                    >
+                                      Republish
+                                    </Button>
+                                  )
+                                )}
+                                {assessment.status === 'released' && (
+                                  <label className="flex items-center gap-1 cursor-pointer text-[10px]">
+                                    <Switch
+                                      checked={assessment.showResults}
+                                      onCheckedChange={(checked) => {
+                                        if (assessment.type === 'quiz') {
+                                          toggleQuizGradesMutation.mutate({ id: assessment.id, showResults: checked });
+                                        } else {
+                                          toggleAssignmentGradesMutation.mutate({ id: assessment.id, showResults: checked });
                                         }
-                                        className="scale-[0.6]"
-                                      />
-                                      Grades
-                                    </label>
-                                  )}
-                                </div>
+                                      }}
+                                      disabled={
+                                        (assessment.type === 'quiz' && toggleQuizGradesMutation.isPending) ||
+                                        (assessment.type === 'assignment' && toggleAssignmentGradesMutation.isPending)
+                                      }
+                                      className="scale-[0.6]"
+                                    />
+                                    Grades
+                                  </label>
+                                )}
                               </div>
                             </div>
                           </CardContent>
