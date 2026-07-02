@@ -105,10 +105,12 @@ export async function runUploadPipeline(textbookId: string, storagePath: string)
   await addTextbookLog(textbookId, "Analyzing syllabus layout and extracting Table of Contents (TOC) with Gemini AI...");
 
   const title = textbookDoc.title || 'Textbook';
-  const tocText = pageTexts.slice(0, 15).join('\n').slice(0, 35000);
+  // Use up to 80 pages / 120k chars for TOC extraction to capture all chapters
+  const tocText = pageTexts.slice(0, 80).join('\n').slice(0, 120000);
   let structure: { chapters: Array<{ title: string; order: number; summary: string; concepts: string[] }> } | null = null;
   try {
-    const prompt = `You are a professional syllabus compiler. Read this textbook's opening pages and generate a clean curriculum outline for "${title}".
+    const prompt = `You are a professional syllabus compiler. Read this textbook's opening pages and generate a complete curriculum outline for "${title}".
+Extract EVERY single chapter and section from the table of contents. Do not skip any chapters.
 Return ONLY valid JSON matching this schema (no markdown, no formatting):
 { "chapters": [{ "title": "Chapter title", "order": 1, "summary": "Short chapter description", "concepts": ["1.1 First Concept Name"] }] }
 Textbook content:\n${tocText}`;

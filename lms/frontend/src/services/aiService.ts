@@ -164,8 +164,9 @@ Return valid JSON in this exact format:
   ]
 }
 
+Extract EVERY single chapter and section. Do NOT skip any chapters - list all of them.
 Textbook content:
-${text.slice(0, 30000)}`;
+${text.slice(0, 100000)}`;
 
   const result = await callAI(prompt, 'extract');
   return safeParse(sanitizeJson(result)) as ReturnType<typeof extractChapters>;
