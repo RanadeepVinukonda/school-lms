@@ -132,9 +132,10 @@ Textbook content:\n${tocText}`;
   const chapterRows: Array<{ id: string; textbook_id: string; title: string; order: number; summary: string }> = [];
   const conceptRows: Array<{ id: string; chapter_id: string; textbook_id: string; title: string; order: number }> = [];
   let totalConcepts = 0;
-  for (const chap of structure.chapters) {
+  for (let chIdx = 0; chIdx < structure.chapters.length; chIdx++) {
+    const chap = structure.chapters[chIdx];
     const chapterId = uuidv4();
-    chapterRows.push({ id: chapterId, textbook_id: textbookId, title: chap.title, order: chap.order || totalConcepts + 1, summary: chap.summary || '' });
+    chapterRows.push({ id: chapterId, textbook_id: textbookId, title: chap.title, order: chIdx + 1, summary: chap.summary || '' });
     for (let cIdx = 0; cIdx < chap.concepts.length; cIdx++) {
       totalConcepts++;
       conceptRows.push({ id: uuidv4(), chapter_id: chapterId, textbook_id: textbookId, title: chap.concepts[cIdx], order: cIdx + 1 });
