@@ -60,3 +60,33 @@ export async function deleteTimetableEntry(id: string) {
     logger.error('Failed to delete timetable entry', { error: error.message, id });
   }
 }
+
+export async function saveTimetableDay(data: {
+  classId: string; day: string; schoolId: string;
+  periods: Array<{ period: number; subjectId?: string; teacherId?: string; room?: string; startTime?: string; endTime?: string }>;
+}) {
+  const supabase = getSupabaseAdmin(); if (!supabase) return [];
+  const toNull = (v: string | undefined | null) => (v && v.trim() ? v : null);
+  const rows = data.periods.map(p => ({
+    class_id: data.classId, day: data.day, period: p.period,
+    subject_id: toNull(p.subjectId), teacher_id: toNull(p.teacherId),
+    room: p.room && p.room.trim() ? p.room : '',
+    start_time: toNull(p.startTime), end_time: toNull(p.endTime),
+    school_id: data.schoolId,
+  }));
+  const { data: result, error } = await supabase
+    .from('timetable')
+    .upsert(rows, { onConflict: 'class_id,day,period', ignoreDuplicates: false })
+    .select();
+  if (error) {
+    logger.error('Failed to save timetable day', { error: error.message, classId: data.classId, day: data.day });
+    return [];
+  }
+  return result;
+}
+
+export async function getTimetableByClassAndDay(classId: string, day: string) {
+  const supabase = getSupabaseAdmin(); if (!supabase) return [];
+  const { data } = await supabase.from('timetable').select('*').eq('class_id', classId).eq('day', day).order('period');
+  return data || [];
+}

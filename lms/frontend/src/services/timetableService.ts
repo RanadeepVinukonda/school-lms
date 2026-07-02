@@ -44,4 +44,14 @@ export const timetableService = {
     const response = await api.delete<ApiResponse<null>>(`/timetable/${id}`);
     return response.data;
   },
+
+  async saveDay(data: { classId: string; day: string; periods: Array<{ period: number; subjectId?: string; teacherId?: string; room?: string; startTime?: string; endTime?: string }> }) {
+    const response = await api.post<ApiResponse<TimetableEntry[]>>('/timetable/day', data);
+    return response.data;
+  },
+
+  async getByClassAndDay(classId: string, day: string) {
+    const response = await api.get<ApiResponse<TimetableEntry[]>>(`/timetable/class/${classId}/day/${day}`);
+    return response.data;
+  },
 };

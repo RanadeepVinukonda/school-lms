@@ -35,6 +35,29 @@ router.put('/:id', authenticate, requireRole('admin', 'super_admin'),
   })
 );
 
+router.post('/day', authenticate, requireRole('admin', 'super_admin'),
+  validate(z.object({
+    classId: z.string(), day: z.string(),
+    periods: z.array(z.object({
+      period: z.number(),
+      subjectId: z.string().optional(),
+      teacherId: z.string().optional(),
+      room: z.string().optional(),
+      startTime: z.string().optional(),
+      endTime: z.string().optional(),
+    })),
+  })),
+  asyncHandler(async (req, res) => {
+    const result = await timetableService.saveTimetableDay({ ...req.body, schoolId: req.user!.school_id || '' });
+    sendSuccess(res, result);
+  })
+);
+
+router.get('/class/:classId/day/:day', authenticate, asyncHandler(async (req, res) => {
+  const items = await timetableService.getTimetableByClassAndDay(req.params.classId, req.params.day);
+  sendSuccess(res, items);
+}));
+
 router.delete('/:id', authenticate, requireRole('admin', 'super_admin'), asyncHandler(async (req, res) => {
   await timetableService.deleteTimetableEntry(req.params.id);
   sendSuccess(res, null, 'Timetable entry deleted');
