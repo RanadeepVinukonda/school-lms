@@ -5,6 +5,7 @@ import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { OptionsSelect } from '@/components/ui/select';
+import { Icon } from '@/components/ui/Icon';
 import { timetableService } from '@/services/timetableService';
 import { getAllClasses, getAllSubjects, getAllTeachers } from '@/services/dataService';
 
@@ -140,31 +141,31 @@ export default function TeacherTimetablePage() {
                         {DAYS.map((day) => {
                           const entries = grid[day]?.[period] ?? [];
                           return (
-                            <td key={`${day}-${period}`} className="px-3 py-3 align-top min-w-[150px]">
+                            <td key={`${day}-${period}`} className="px-4 py-4 align-top min-w-[180px]">
                               {entries.length === 0 ? (
-                                <div className="min-h-[72px] flex items-center justify-center">
+                                <div className="min-h-[80px] flex items-center justify-center">
                                   <span className="text-muted-foreground/20">&mdash;</span>
                                 </div>
                               ) : (
-                                <div className="space-y-2">
+                                <div className="space-y-3">
                                   {entries.map((entry: any) => (
                                     <div key={entry.id}>
-                                      <p className="text-body-sm font-semibold text-primary">
+                                      <p className="text-body-md font-semibold text-primary">
                                         {subjectMap.get(entry.subject_id || entry.subjectId || '') || entry.subject_id || entry.subjectId || 'Subject'}
                                       </p>
                                       {(entry.teacher_id || entry.teacherId) && (
-                                        <p className="text-body-xs text-muted-foreground mt-0.5">
+                                        <p className="text-body-sm text-muted-foreground mt-1">
                                           {teacherMap.get(entry.teacher_id || entry.teacherId || '') || entry.teacher_id || entry.teacherId}
                                         </p>
                                       )}
                                       {entry.room && (
-                                        <p className="text-body-xs text-muted-foreground mt-0.5">
-                                          Room {entry.room}
+                                        <p className="text-body-sm text-muted-foreground mt-1">
+                                          {entry.room}
                                         </p>
                                       )}
                                       {(entry.start_time || entry.startTime || entry.end_time || entry.endTime) && (
-                                        <p className="text-body-xs text-muted-foreground/60 mt-0.5">
-                                          {entry.start_time || entry.startTime || '—'} &ndash; {entry.end_time || entry.endTime || '—'}
+                                        <p className="text-body-sm text-muted-foreground/60 mt-1">
+                                          {(entry.start_time || entry.startTime || '—').slice(0, 5)} &ndash; {(entry.end_time || entry.endTime || '—').slice(0, 5)}
                                         </p>
                                       )}
                                     </div>
