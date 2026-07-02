@@ -1,16 +1,23 @@
+import { useSyncExternalStore } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useLanguageStore } from '@/store/languageStore';
 import { translations, LanguageCode, TranslationKeys } from '@/i18n';
 
-export function useTranslation() {
-  const user = useAuthStore((state) => state.user);
-  const storeLang = useLanguageStore((s) => s.language);
-  const setStoreLang = useLanguageStore((s) => s.setLanguage);
-  
+function getLang(): LanguageCode {
+  const user = useAuthStore.getState().user;
+  const storeLang = useLanguageStore.getState().language;
   const userLang = (user?.language as LanguageCode) || storeLang || 'en';
-  
-  // Safe fallback to 'en'
-  const lang: LanguageCode = translations[userLang] ? userLang : 'en';
+  return translations[userLang] ? userLang : 'en';
+}
+
+function subscribe(cb: () => void) {
+  const unsub1 = useAuthStore.subscribe(cb);
+  const unsub2 = useLanguageStore.subscribe(cb);
+  return () => { unsub1(); unsub2(); };
+}
+
+export function useTranslation() {
+  const lang = useSyncExternalStore(subscribe, getLang, getLang);
   const resource = translations[lang];
 
   function t<K extends keyof TranslationKeys>(key: K): TranslationKeys[K];
@@ -32,12 +39,11 @@ export function useTranslation() {
   }
 
   const changeLanguage = async (newLang: LanguageCode) => {
-    setStoreLang(newLang);
-    const setUser = useAuthStore.getState().setUser;
+    useLanguageStore.getState().setLanguage(newLang);
+    const user = useAuthStore.getState().user;
     if (user) {
       const updatedUser = { ...user, language: newLang };
-      setUser(updatedUser);
-      
+      useAuthStore.getState().setUser(updatedUser);
       const { supabase } = await import('@/supabase/config');
       await supabase.from('users').update({ language: newLang }).eq('id', user.id);
     }
