@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { FieldValue } from '../database/adapter';
 import { collections } from '../database/adapter';
-import { NotFoundError, ForbiddenError } from '../utils/errors';
+import { NotFoundError, ForbiddenError, AppError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { chatCompletion } from './ai.service';
 import { env } from '../config/env';
@@ -241,6 +241,16 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
     selectedModels,
     questionCount,
     totalPoints,
+    questions: matchingQuestions.map((q: any) => ({
+      id: q.id,
+      type: q.type,
+      text: q.text,
+      options: q.options || undefined,
+      correctAnswer: q.correctAnswer || '',
+      explanation: q.explanation || '',
+      difficulty: q.difficulty || 'medium',
+      points: q.points || 1,
+    })),
     passingScore: data.passingScore ?? 50,
     maxAttempts: data.maxAttempts ?? 3,
     shuffleQuestions: data.shuffleQuestions ?? true,
@@ -350,8 +360,7 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
     points: number;
   }>;
 
-  if (quizData.ocrGenerated && Array.isArray(quizData.questions)) {
-    // OCR-generated quizzes have questions embedded in the document
+  if (Array.isArray(quizData.questions) && quizData.questions.length > 0) {
     questionBank = quizData.questions.map((q: any) => ({
       id: q.id || uuidv4(),
       type: q.type || 'short_answer',
@@ -362,7 +371,7 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
       explanation: q.explanation || '',
       points: q.points || 1,
     }));
-  } else {
+  } else if (quizData.textbookId && quizData.chapterId && quizData.conceptId) {
     const conceptRef = collections.textbooks()
       .doc(quizData.textbookId)
       .collection('chapters')
@@ -386,6 +395,8 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
       explanation?: string;
       points: number;
     });
+  } else {
+    questionBank = [];
   }
 
   const targetTypes = resolveTypes(selectedModels);
@@ -399,6 +410,10 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
   }
 
   const selected = available.slice(0, Math.min(quizData.questionCount, available.length));
+
+  if (selected.length === 0) {
+    throw new AppError(400, 'No questions match the selected formats. Please contact your teacher.');
+  }
 
   const questionsForStudent = selected.map((q) => {
     if (quizData.isRepublished) {

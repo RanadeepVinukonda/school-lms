@@ -38,6 +38,7 @@ interface AssessmentInfo {
   showResults: boolean;
   passingScore: number;
   isRepublished?: boolean;
+  questions?: V2Question[];
 }
 
 interface V2AttemptStarted {
@@ -741,7 +742,10 @@ export default function StudentQuizTakePageV2() {
     );
   }
 
-  const questions = attemptData?.questions || [];
+  let questions = attemptData?.questions || [];
+  if (questions.length === 0 && Array.isArray(assessmentInfo?.questions)) {
+    questions = assessmentInfo.questions;
+  }
   const currentQuestion = questions[currentIndex];
   const answeredCount = Object.keys(answers).length;
   const totalQuestions = questions.length;

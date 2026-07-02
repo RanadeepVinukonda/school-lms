@@ -153,6 +153,7 @@ export function buildTasks(
       linkTo: `/student/assessments/${q.id}/take`,
       timeLimit: q.timeLimit,
       questionCount: q.questionCount ?? (Array.isArray(q.questions) ? q.questions.length : 0),
+      status: q.status,
     });
   }
 
@@ -236,7 +237,11 @@ function TaskCard({ item }: { item: TaskItem }) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2">
                 <p className="font-semibold text-title-sm truncate">{item.title}</p>
-                <UrgencyBadge urgency={item.urgency} date={item.date} />
+                {item.status === 'completed' ? (
+                  <Badge variant="success" className="text-[10px]">Completed</Badge>
+                ) : (
+                  <UrgencyBadge urgency={item.urgency} date={item.date} />
+                )}
               </div>
               <p className="text-body-md text-muted-foreground mt-0.5">{item.subjectName}</p>
               <p className="text-body-md text-muted-foreground mt-1 line-clamp-1">{item.description}</p>
@@ -262,9 +267,6 @@ function TaskCard({ item }: { item: TaskItem }) {
                 )}
                 {item.type === 'quiz' && (
                   <>
-                    {item.status === 'completed' && (
-                      <Badge variant="success" className="text-[10px]">Completed</Badge>
-                    )}
                     {item.timeLimit !== undefined && (
                       <span className="flex items-center gap-1">
                         <Icon name="schedule" size={14} />
