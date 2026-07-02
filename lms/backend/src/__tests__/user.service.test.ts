@@ -55,6 +55,7 @@ jest.mock('../database/auth', () => ({
   updateUser: jest.fn(() => Promise.resolve()),
   deleteUser: jest.fn(() => Promise.resolve()),
   getUserById: jest.fn(() => Promise.resolve({ uid: 'user-1' })),
+  getUserByEmail: jest.fn(() => Promise.resolve(null)),
   setCustomClaims: jest.fn(() => Promise.resolve()),
 }));
 
