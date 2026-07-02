@@ -100,6 +100,7 @@ export const useAuthStore = create<AuthStore>()(
                   studentId: p.student_id as string | undefined,
                   teacherId: p.teacher_id as string | undefined,
                   classId,
+                  language: p.language as string | undefined,
                   tutorialSeen: p.tutorial_seen as boolean | undefined,
                   createdAt: (p.created_at as string) || new Date().toISOString(),
                   updatedAt: (p.updated_at as string) || new Date().toISOString(),

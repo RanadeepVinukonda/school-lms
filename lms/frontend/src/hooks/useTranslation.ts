@@ -1,9 +1,13 @@
 import { useAuthStore } from '@/store/authStore';
+import { useLanguageStore } from '@/store/languageStore';
 import { translations, LanguageCode, TranslationKeys } from '@/i18n';
 
 export function useTranslation() {
   const user = useAuthStore((state) => state.user);
-  const userLang = (user?.language as LanguageCode) || 'en';
+  const storeLang = useLanguageStore((s) => s.language);
+  const setStoreLang = useLanguageStore((s) => s.setLanguage);
+  
+  const userLang = (user?.language as LanguageCode) || storeLang || 'en';
   
   // Safe fallback to 'en'
   const lang: LanguageCode = translations[userLang] ? userLang : 'en';
@@ -28,6 +32,7 @@ export function useTranslation() {
   }
 
   const changeLanguage = async (newLang: LanguageCode) => {
+    setStoreLang(newLang);
     const setUser = useAuthStore.getState().setUser;
     if (user) {
       const updatedUser = { ...user, language: newLang };
