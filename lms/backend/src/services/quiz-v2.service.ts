@@ -391,6 +391,7 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
   let available = targetTypes.length > 0
     ? questionBank.filter((q) => targetTypes.includes(q.type))
     : [...questionBank];
+  if (available.length === 0) available = [...questionBank];
 
   if (quizData.shuffleQuestions !== false) {
     available = [...available].sort(() => Math.random() - 0.5);
