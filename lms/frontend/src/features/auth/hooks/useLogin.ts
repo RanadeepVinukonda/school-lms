@@ -4,10 +4,12 @@ import { toast } from 'sonner';
 import { supabase } from '@/supabase/config';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
+import { getPrimaryRole } from '@/lib/roleHelpers';
 import type { LoginInput, ApiError, UserRole } from '@/types';
 
-function setupDashboard(role: UserRole): string {
-  switch (role) {
+function setupDashboard(role: string): string {
+  const primaryRole = getPrimaryRole(role);
+  switch (primaryRole) {
     case 'admin':
     case 'super_admin':
       return ROUTES.ADMIN_DASHBOARD;
@@ -48,7 +50,22 @@ export function useLogin() {
       }
 
       const p = profile as Record<string, unknown>;
-      const role = (p.role as UserRole) || 'student';
+      let role = (p.role as string) || 'student';
+
+      // Check if parent user also has teacher assignments
+      if (role === 'parent') {
+        try {
+          const { data: tcsData } = await supabase
+            .from('nosql_docs')
+            .select('doc_id')
+            .eq('collection', 'teacherClassSubject')
+            .filter('data->>teacherId', 'eq', authData.user.id)
+            .limit(1);
+          if (tcsData && tcsData.length > 0) {
+            role = 'parent,teacher';
+          }
+        } catch { /* ignore */ }
+      }
 
       return {
         uid: authData.user.id,

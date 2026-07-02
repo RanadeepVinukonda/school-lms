@@ -28,6 +28,12 @@ const envSchema = z.object({
   DATABASE_URL: z.string().optional(),
   SENTRY_DSN: z.string().optional(),
   FIREBASE_SERVICE_ACCOUNT_KEY: z.string().optional(),
+
+  SMTP_HOST: z.string().default('smtp.gmail.com'),
+  SMTP_PORT: z.coerce.number().default(587),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().default('noreply@school-lms.com'),
 });
 
 const parsed = envSchema.safeParse(process.env);

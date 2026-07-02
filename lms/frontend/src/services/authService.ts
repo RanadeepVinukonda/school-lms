@@ -32,9 +32,9 @@ export const authService = {
     return response.data;
   },
 
-  /** Reset password using a token. */
-  async resetPassword(token: string, password: string) {
-    const response = await api.post<ApiResponse<null>>('/auth/reset-password', { token, password });
+  /** Reset password using user uid and new password. */
+  async resetPassword(uid: string, newPassword: string) {
+    const response = await api.post<ApiResponse<null>>('/auth/reset-password', { uid, newPassword });
     return response.data;
   },
 

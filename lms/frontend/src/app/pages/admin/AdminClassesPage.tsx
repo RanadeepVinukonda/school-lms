@@ -24,6 +24,7 @@ import { OptionsSelect } from '@/components/ui/select';
 import { cardStackReveal } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/supabase/config';
+import { hasRole } from '@/lib/roleHelpers';
 import { getAllClasses, getAllUsers, getAllSubjects } from '@/services/dataService';
 import { getClassDependencies, getUserDependencies } from '@/services/dependencyService';
 import { logAudit } from '@/services/auditService';
@@ -454,7 +455,7 @@ export default function AdminClassesPage() {
   const [studentRegisterLoading, setStudentRegisterLoading] = useState(false);
 
   const getNextRollNo = (classId: string) => {
-    const classStudents = users.filter((u: UserDoc) => u.role === 'student' && u.classId === classId);
+    const classStudents = users.filter((u: UserDoc) => hasRole(u.role, 'student') && u.classId === classId);
     if (classStudents.length === 0) return 1;
     const rolls = classStudents.map((s: UserDoc) => s.rollNo).filter((r): r is number => typeof r === 'number');
     if (rolls.length === 0) return 1;
@@ -508,7 +509,7 @@ export default function AdminClassesPage() {
 
   // Helpers
   const getClassSubjects = (classId: string) => subjects.filter((s) => s.classId === classId);
-  const getClassStudents = (classId: string) => users.filter((u) => u.role === 'student' && u.classId === classId);
+  const getClassStudents = (classId: string) => users.filter((u) => hasRole(u.role, 'student') && u.classId === classId);
   const getSubjectTeacher = (classId: string, subjectId: string): UserDoc | undefined => {
     const assignment = tcAssignments.find((a) => a.classId === classId && a.subjectId === subjectId);
     if (!assignment) return undefined;
@@ -527,7 +528,7 @@ export default function AdminClassesPage() {
   const [userDependencyReport, setUserDependencyReport] = useState<DependencyReport | null>(null);
   const [showUserDependencyDialog, setShowUserDependencyDialog] = useState(false);
 
-  const teachers = useMemo(() => users.filter((u) => u.role === 'teacher'), [users]);
+  const teachers = useMemo(() => users.filter((u) => hasRole(u.role, 'teacher')), [users]);
   const filteredTeachers = useMemo(() => {
     return teachers.filter((t) => {
       const q = teacherSearch.toLowerCase();
@@ -620,7 +621,7 @@ export default function AdminClassesPage() {
   const [editStudentForm, setEditStudentForm] = useState({ displayName: '', rollNo: '', classId: '', academicYear: '' });
   const [studentSaveLoading, setStudentSaveLoading] = useState(false);
 
-  const students = useMemo(() => users.filter((u) => u.role === 'student'), [users]);
+  const students = useMemo(() => users.filter((u) => hasRole(u.role, 'student')), [users]);
   const classOptions = useMemo(() => fetchedClasses.map((c) => ({ value: c.id, label: c.name })), [fetchedClasses]);
 
   const filteredStudents = useMemo(() => {
@@ -1301,7 +1302,7 @@ export default function AdminClassesPage() {
               <div className="space-y-2">
                 <Label>Select Teacher</Label>
                 <OptionsSelect
-                  options={users.filter((u) => u.role === 'teacher').map((t) => ({ value: t.id, label: t.displayName }))}
+                  options={users.filter((u) => hasRole(u.role, 'teacher')).map((t) => ({ value: t.id, label: t.displayName }))}
                   placeholder="Choose a teacher..."
                   value={selectedTeacherId}
                   onChange={(v: string) => setSelectedTeacherId(v)}
@@ -1497,7 +1498,7 @@ export default function AdminClassesPage() {
           <DialogFooter className="flex gap-2">
             <Button className="flex-1" variant="outline" onClick={() => {
               if (createdCredentials) {
-                const parts = [];
+                const parts: string[] = [];
                 if (createdCredentials.displayName) parts.push(`Name: ${createdCredentials.displayName}`);
                 if (createdCredentials.studentId) parts.push(`Student ID: ${createdCredentials.studentId}`);
                 if (createdCredentials.email) parts.push(`Email: ${createdCredentials.email}`);

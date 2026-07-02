@@ -16,6 +16,11 @@ export async function register(data: {
 }) {
   const existingUser = await getUserByEmail(data.email);
   if (existingUser) {
+    if (data.role === 'parent' && existingUser.role === 'teacher') {
+      // Teacher can also register as parent — keep role as teacher, return success
+      logger.info('Teacher re-registered as parent', { uid: existingUser.uid, email: data.email });
+      return { uid: existingUser.uid, email: data.email, displayName: data.displayName, role: existingUser.role };
+    }
     throw new ConflictError('A user with this email already exists');
   }
 
@@ -102,65 +107,80 @@ export async function verifyUserToken(uid: string) {
   return userDoc.data()!;
 }
 
-/** Generate a password reset token. Always returns the same message to avoid email enumeration. */
+/** Send password reset email via Supabase Admin REST API. */
 export async function forgotPassword(email: string) {
-  const user = await getUserByEmail(email);
-  if (!user) {
-    return { message: 'If the email exists, a reset link has been sent' };
-  }
+  const redirectTo = `${env.FRONTEND_URL}/reset-password`;
+  const headers = {
+    'Content-Type': 'application/json',
+    apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+    Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+  };
 
-  const resetToken = uuidv4();
-
-  await collections.tokens().doc(user.uid).set({
-    type: 'password_reset',
-    token: resetToken,
-    email: email,
-    createdAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + 3600000).toISOString(),
-    used: false,
+  const res = await fetch(`${env.SUPABASE_URL}/auth/v1/recover`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ email: email.toLowerCase(), redirect_to: redirectTo }),
   });
 
-  logger.info('Password reset token generated', { uid: user.uid, email });
+  if (!res.ok) {
+    const body = await res.text();
+    logger.error('Failed to send password reset email', { email, status: res.status, body });
+    if (res.status === 429) {
+      throw new Error('Too many requests. Please wait at least 60 seconds and try again.');
+    }
+    throw new Error('Failed to send reset email. Please try again later.');
+  }
 
-  return {
-    message: 'If the email exists, a reset link has been sent',
-    resetToken: resetToken,
-  };
+  logger.info('Password reset email sent via Supabase', { email });
+  return { message: 'If the email exists, a reset link has been sent' };
 }
 
-/** Reset a password using a valid, non-expired reset token. Uses Firebase Auth Admin SDK. */
-export async function resetPassword(token: string, newPassword: string) {
-  const tokensSnapshot = await collections.tokens()
-    .where('type', '==', 'password_reset')
-    .where('used', '==', false)
-    .get();
+/** Reset password using a Supabase access token (from recovery hash). */
+export async function resetWithToken(accessToken: string, newPassword: string) {
+  // Get user info from the access token
+  const headers = {
+    Authorization: `Bearer ${accessToken}`,
+    apikey: env.SUPABASE_ANON_KEY,
+  };
 
-  let matchedToken: FirebaseFirestore.DocumentData | null = null;
-  let matchedDocId = '';
+  const userRes = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, { headers });
+  if (!userRes.ok) {
+    const body = await userRes.text();
+    logger.error('Invalid or expired access token', { status: userRes.status, body });
+    throw new UnauthorizedError('Invalid or expired reset link. Please request a new one.');
+  }
 
-  for (const doc of tokensSnapshot.docs) {
-    const data = doc.data();
-    if (data.token === token) {
-      matchedToken = data;
-      matchedDocId = doc.id;
-      break;
+  const userData = await userRes.json() as { id?: string };
+  const uid = userData.id;
+  if (!uid) {
+    throw new UnauthorizedError('Invalid or expired reset link. Please request a new one.');
+  }
+
+  await resetPassword(uid, newPassword);
+}
+
+/** Reset a password using Supabase Admin REST API (bypasses client rate limits). */
+export async function resetPassword(uid: string, newPassword: string) {
+  const response = await fetch(
+    `${env.SUPABASE_URL}/auth/v1/admin/users/${uid}`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({ password: newPassword }),
     }
+  );
+
+  if (!response.ok) {
+    const body = await response.text();
+    logger.error('Failed to reset password', { uid, status: response.status, body });
+    throw new Error('Failed to reset password');
   }
 
-  if (!matchedToken) {
-    throw new ValidationError('Invalid or expired reset token');
-  }
-
-  if (new Date(matchedToken.expiresAt) < new Date()) {
-    await collections.tokens().doc(matchedDocId).update({ used: true });
-    throw new ValidationError('Reset token has expired');
-  }
-
-  await firebaseUpdateUser(matchedDocId, { password: newPassword });
-
-  await collections.tokens().doc(matchedDocId).update({ used: true });
-
-  logger.info('Password reset completed', { uid: matchedDocId });
+  logger.info('Password reset completed via Supabase Admin', { uid });
 }
 
 /** Change a user's password using Supabase Auth. Verifies current password via REST API, updates via Admin API. */

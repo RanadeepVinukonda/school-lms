@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { collections, getDb } from '../database/adapter';
-import { createUser as firebaseCreateUser, updateUser as firebaseUpdateUser, deleteUser as firebaseDeleteUser, getUserById, setCustomClaims } from '../database/auth';
-import { NotFoundError, ConflictError, ValidationError } from '../utils/errors';
+import { createUser as firebaseCreateUser, updateUser as firebaseUpdateUser, deleteUser as firebaseDeleteUser, getUserByEmail, getUserById, setCustomClaims } from '../database/auth';
+import { NotFoundError, ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 import { generateStudentId } from '../utils/studentIdGenerator.js';
@@ -133,6 +133,34 @@ export async function createUser(data: {
     : `${data.displayName.toLowerCase().replace(/[^a-z0-9]/g, '')}@school.edu`);
 
   const generatedPassword = data.password || generatePassword();
+
+  if (generatedEmail) {
+    const existingUser = await getUserByEmail(generatedEmail);
+    if (existingUser) {
+      if (data.role === 'parent' && existingUser.role === 'teacher') {
+        // Teacher — add childrenIds and return
+        const now = new Date().toISOString();
+        const updateData: Record<string, unknown> = {
+          updatedAt: now,
+        };
+        if (data.childrenIds?.length) updateData.childrenIds = data.childrenIds;
+        await collections.users().doc(existingUser.uid).update(updateData);
+        logger.info('Teacher updated with childrenIds by admin', { uid: existingUser.uid, email: generatedEmail });
+        const userDoc = await collections.users().doc(existingUser.uid).get();
+        const userData = userDoc.data()!;
+        const { password: _pw, ...safeData } = userData;
+        return { ...safeData, uid: existingUser.uid, generatedPassword: undefined };
+      }
+      // For other cases (e.g. creating teacher with existing parent email),
+      // keep the existing user as-is — teacher portal access is granted
+      // via teacherClassSubject assignments, not by changing the role.
+      const userDoc = await collections.users().doc(existingUser.uid).get();
+      const userData = userDoc.data()!;
+      const { password: _pw, ...safeData } = userData;
+      logger.info('Existing user reused by admin (no role change)', { uid: existingUser.uid, email: generatedEmail, role: existingUser.role });
+      return { ...safeData, uid: existingUser.uid, generatedPassword: undefined };
+    }
+  }
 
   const firebaseUser = await firebaseCreateUser({
     email: generatedEmail,

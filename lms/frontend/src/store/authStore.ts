@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '@/supabase/config';
 import api from '@/services/api';
+import { hasRole as userHasRole } from '@/lib/roleHelpers';
 import type { UserProfile, UserRole } from '@/types';
 
 interface AuthStore {
@@ -33,7 +34,7 @@ export const useAuthStore = create<AuthStore>()(
       hasRole: (roles) => {
         const user = get().user;
         if (!user) return false;
-        return roles.includes(user.role);
+        return roles.some(r => userHasRole(user.role, r));
       },
       logout: async () => {
         await supabase.auth.signOut();
@@ -59,15 +60,22 @@ export const useAuthStore = create<AuthStore>()(
               let classIds = p.class_ids as string[] | undefined;
               let classId = (p.class_id as string) || classIds?.[0];
 
-              if ((p.role as string) === 'teacher' && (!classIds || classIds.length === 0)) {
-                try {
-                  const tcsRes = await api.get('/teacher-class-subject/my');
-                  const assignments = tcsRes.data?.data || tcsRes.data || [];
-                  if (assignments.length > 0) {
-                    classIds = [...new Set(assignments.map((a: any) => a.classId))] as string[];
-                    classId = classIds[0];
-                  }
-                } catch { /* assignments not available yet */ }
+              // Always fetch teacher assignments — even parents may have teacher access
+              let hasTeacherAssignments = false;
+              try {
+                const tcsRes = await api.get('/teacher-class-subject/my');
+                const assignments = tcsRes.data?.data || tcsRes.data || [];
+                if (assignments.length > 0) {
+                  hasTeacherAssignments = true;
+                  classIds = [...new Set(assignments.map((a: any) => a.classId))] as string[];
+                  classId = classId || classIds[0];
+                }
+              } catch { /* assignments not available yet */ }
+
+              // Compute effective roles — parents with teacher assignments can also access teacher portal
+              let effectiveRole = (p.role as string) || 'student';
+              if (effectiveRole === 'parent' && hasTeacherAssignments) {
+                effectiveRole = 'parent,teacher';
               }
 
               if (classId && !localStorage.getItem('lms-selected-class')) {
@@ -79,7 +87,7 @@ export const useAuthStore = create<AuthStore>()(
                   id: p.id as string,
                   email: (p.email as string) || session.user.email || '',
                   displayName: (p.display_name as string) || session.user.email?.split('@')[0] || 'User',
-                  role: (p.role as UserRole) || 'student',
+                  role: effectiveRole,
                   isActive: (p.is_active as boolean) ?? true,
                   avatar: p.photo_url as string | undefined,
                   firstName: p.first_name as string | undefined,

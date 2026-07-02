@@ -6,7 +6,7 @@ export interface UserProfile {
   displayName: string;
   firstName?: string;
   lastName?: string;
-  role: UserRole;
+  role: string;
   avatar?: string;
   phone?: string;
   dateOfBirth?: string;

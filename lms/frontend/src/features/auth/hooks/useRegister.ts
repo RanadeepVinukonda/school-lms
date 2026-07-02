@@ -5,10 +5,12 @@ import { authService } from '@/services/authService';
 import { supabase } from '@/supabase/config';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
-import type { RegisterInput, ApiError, UserRole } from '@/types';
+import { getPrimaryRole } from '@/lib/roleHelpers';
+import type { RegisterInput, ApiError } from '@/types';
 
-function setupDashboard(role: UserRole): string {
-  switch (role) {
+function setupDashboard(role: string): string {
+  const primaryRole = getPrimaryRole(role);
+  switch (primaryRole) {
     case 'admin':
     case 'super_admin':
       return ROUTES.ADMIN_DASHBOARD;
@@ -49,7 +51,7 @@ export function useRegister() {
           id: userData.id,
           email: userData.email || '',
           displayName: userData.display_name || '',
-          role: (userData.role as UserRole) || role,
+          role: (userData.role as string) || role,
           isActive: userData.is_active ?? true,
           avatar: userData.photo_url || undefined,
           studentId: userData.student_id || undefined,

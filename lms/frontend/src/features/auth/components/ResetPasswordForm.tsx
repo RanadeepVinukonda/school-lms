@@ -1,8 +1,8 @@
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Eye, EyeOff, ShieldCheck } from 'lucide-react';
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,14 +20,48 @@ import {
 } from '@/features/auth/schemas/authSchemas';
 import { ROUTES } from '@/lib/constants';
 import { useMutation } from '@tanstack/react-query';
-import { confirmReset } from '@/supabase/auth';
+import { authService } from '@/services/authService';
+import { supabase } from '@/supabase/config';
 import { toast } from 'sonner';
 
 export function ResetPasswordForm() {
-  const [searchParams] = useSearchParams();
-  const oobCode = searchParams.get('oobCode') || '';
+  const [recoveryState, setRecoveryState] = useState<'loading' | 'valid' | 'invalid'>('loading');
+  const [uid, setUid] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    let subscription: { unsubscribe: () => void } | null = null;
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled) return;
+      if (session) {
+        setUid(session.user.id);
+        setRecoveryState('valid');
+        return;
+      }
+      const { data } = supabase.auth.onAuthStateChange((event, session) => {
+        if (cancelled) return;
+        if ((event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') && session) {
+          setUid(session.user.id);
+          setRecoveryState('valid');
+          subscription?.unsubscribe();
+        }
+      });
+      subscription = data.subscription;
+      setTimeout(() => {
+        if (cancelled) return;
+        setRecoveryState((s) => (s === 'loading' ? 'invalid' : s));
+        subscription?.unsubscribe();
+      }, 15000);
+    });
+
+    return () => {
+      cancelled = true;
+      subscription?.unsubscribe();
+    };
+  }, []);
 
   const {
     register,
@@ -35,16 +69,13 @@ export function ResetPasswordForm() {
     formState: { errors },
   } = useForm<ResetPasswordFormData>({
     resolver: zodResolver(resetPasswordSchema),
-    defaultValues: {
-      password: '',
-      confirmPassword: '',
-    },
+    defaultValues: { password: '', confirmPassword: '' },
   });
 
   const mutation = useMutation({
     mutationFn: async (data: ResetPasswordFormData) => {
-      if (!oobCode) throw new Error('Invalid or missing reset code');
-      await confirmReset(oobCode, data.password);
+      if (!uid) throw new Error('Session expired. Please request a new reset link.');
+      await authService.resetPassword(uid, data.password);
     },
     onSuccess: () => {
       toast.success('Password has been reset successfully');
@@ -58,7 +89,20 @@ export function ResetPasswordForm() {
     mutation.mutate(data);
   }
 
-  if (!oobCode) {
+  if (recoveryState === 'loading') {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="text-center">Checking reset link...</CardTitle>
+          <CardDescription className="text-center">
+            Please wait while we verify your reset link.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  if (recoveryState === 'invalid') {
     return (
       <Card className="w-full">
         <CardHeader>

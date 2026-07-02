@@ -13,6 +13,7 @@ import { Icon } from '@/components/ui/Icon';
 import { pageTransition } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
+import { hasRole } from '@/lib/roleHelpers';
 import { supabase } from '@/supabase/config';
 import { cardStackReveal } from '@/lib/motion';
 
@@ -57,7 +58,7 @@ export default function AdminLoginPage() {
         setError('User profile not found. Please contact your administrator.');
         return;
       }
-      if (profileData.role !== 'admin' && profileData.role !== 'super_admin') {
+      if (!hasRole(profileData.role, 'admin') && !hasRole(profileData.role, 'super_admin')) {
         setError('This account is not an admin account. Please use the correct login page.');
         return;
       }

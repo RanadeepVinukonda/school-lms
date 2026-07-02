@@ -16,11 +16,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
+import { hasRole, getPrimaryRole } from '@/lib/roleHelpers';
 import { useTranslation } from '@/hooks/useTranslation';
-import type { UserRole } from '@/types';
 
-function roleProfileRoute(role: UserRole): string {
-  switch (role) {
+function roleProfileRoute(role: string): string {
+  const primaryRole = getPrimaryRole(role);
+  switch (primaryRole) {
     case 'admin':
     case 'super_admin':
       return ROUTES.ADMIN_SETTINGS;
@@ -60,7 +61,7 @@ export function UserAvatar() {
         <DropdownMenuLabel>
           <div className="flex flex-col">
             <span>{user.displayName}</span>
-            <span className="text-xs text-muted-foreground font-normal capitalize">{user.role.replace(/_/g, ' ')}</span>
+            <span className="text-xs text-muted-foreground font-normal capitalize">{getPrimaryRole(user.role).replace(/_/g, ' ')}</span>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -69,13 +70,13 @@ export function UserAvatar() {
             <User className="h-4 w-4" />
             Profile
           </DropdownMenuItem>
-          {(user.role === 'admin' || user.role === 'super_admin') && (
+          {(hasRole(user.role, 'admin') || hasRole(user.role, 'super_admin')) && (
             <DropdownMenuItem onClick={() => navigate(ROUTES.ADMIN_SETTINGS)} className="gap-2">
               <Settings className="h-4 w-4" />
               Settings
             </DropdownMenuItem>
           )}
-          {user.role === 'teacher' && (
+          {hasRole(user.role, 'teacher') && (
             <DropdownMenuItem onClick={() => navigate(ROUTES.TEACHER_PROFILE)} className="gap-2">
               <Settings className="h-4 w-4" />
               Settings

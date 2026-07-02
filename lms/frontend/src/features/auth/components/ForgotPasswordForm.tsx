@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from 'react-router-dom';
@@ -19,10 +20,12 @@ import {
 } from '@/features/auth/schemas/authSchemas';
 import { ROUTES } from '@/lib/constants';
 import { useMutation } from '@tanstack/react-query';
-import { resetPassword } from '@/supabase/auth';
+import { authService } from '@/services/authService';
 import { toast } from 'sonner';
 
 export function ForgotPasswordForm() {
+  const [cooldown, setCooldown] = useState(0);
+
   const {
     register,
     handleSubmit,
@@ -33,12 +36,25 @@ export function ForgotPasswordForm() {
   });
 
   const mutation = useMutation({
-    mutationFn: (data: ForgotPasswordFormData) => resetPassword(data.email),
+    mutationFn: (data: ForgotPasswordFormData) =>
+      authService.forgotPassword(data.email),
     onSuccess: () => {
       toast.success('Password reset email sent. Check your inbox.');
+      setCooldown(60);
+      const interval = setInterval(() => {
+        setCooldown((prev) => {
+          if (prev <= 1) { clearInterval(interval); return 0; }
+          return prev - 1;
+        });
+      }, 1000);
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to send reset email');
+      const msg = error.message || '';
+      if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('too many')) {
+        toast.error('Too many requests. Please wait a minute before trying again.');
+      } else {
+        toast.error(msg || 'Failed to send reset email');
+      }
     },
   });
 
@@ -74,7 +90,7 @@ export function ForgotPasswordForm() {
                 placeholder="name@example.com"
                 {...register('email')}
                 error={errors.email?.message}
-                disabled={mutation.isPending}
+                disabled={mutation.isPending || cooldown > 0}
                 autoComplete="email"
               />
             </div>
@@ -82,10 +98,10 @@ export function ForgotPasswordForm() {
               type="submit"
               className="w-full"
               size="lg"
-              disabled={mutation.isPending}
+              disabled={mutation.isPending || cooldown > 0}
               loading={mutation.isPending}
             >
-              {mutation.isPending ? 'Sending...' : 'Send reset link'}
+              {cooldown > 0 ? `Retry in ${cooldown}s` : mutation.isPending ? 'Sending...' : 'Send reset link'}
             </Button>
           </form>
         )}

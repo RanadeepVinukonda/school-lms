@@ -6,11 +6,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
+import { hasRole } from '@/lib/roleHelpers';
 import { useQuery } from '@tanstack/react-query';
 import { getAllSubjects, getAllUsers } from '@/services/dataService';
 import { supabase } from '@/supabase/config';
 import api from '@/services/api';
-import type { UserRole, Subject } from '@/types';
+import type { Subject } from '@/types';
 import type { AssignmentItem, ExamItem, UserDoc, LessonItem, QuizItem } from '@/services/dataService';
 
 type Cat = 'subjects' | 'assignments' | 'exams' | 'teachers' | 'students' | 'lessons' | 'textbooks' | 'concepts';
@@ -31,14 +32,14 @@ const CFG: Record<Cat, { l: string; i: string }> = {
 const CATS = Object.keys(CFG) as Cat[];
 const EMPTY: Results = { subjects: [], assignments: [], exams: [], teachers: [], students: [], lessons: [], textbooks: [], concepts: [] };
 
-function link(cat: Cat, id: string, role: UserRole): string {
+function link(cat: Cat, id: string, role: string): string {
   const m: Partial<Record<Cat, (i: string) => string>> = {
-    subjects: (i) => (role === 'admin' ? ROUTES.ADMIN_SUBJECTS : ROUTES.STUDENT_SUBJECT(i)),
+    subjects: (i) => (hasRole(role, 'admin') ? ROUTES.ADMIN_SUBJECTS : ROUTES.STUDENT_SUBJECT(i)),
     assignments: (i) => ROUTES.ASSIGNMENT_DETAIL(i),
     exams: (i) => ROUTES.EXAM_DETAIL(i),
     lessons: (i) => ROUTES.STUDENT_LESSON(i),
-    teachers: () => (role === 'admin' ? ROUTES.ADMIN_TEACHERS : ROUTES.TEACHER_DASHBOARD),
-    students: () => (role === 'admin' ? ROUTES.ADMIN_STUDENTS : role === 'teacher' ? ROUTES.TEACHER_STUDENTS : ROUTES.STUDENT_DASHBOARD),
+    teachers: () => (hasRole(role, 'admin') ? ROUTES.ADMIN_TEACHERS : ROUTES.TEACHER_DASHBOARD),
+    students: () => (hasRole(role, 'admin') ? ROUTES.ADMIN_STUDENTS : hasRole(role, 'teacher') ? ROUTES.TEACHER_STUDENTS : ROUTES.STUDENT_DASHBOARD),
   };
   return m[cat]?.(id) || '#';
 }
@@ -72,9 +73,9 @@ export function useSearch(
         .map((a) => ({ id: a.id, title: a.title, subtitle: `Due ${a.dueDate ? new Date(a.dueDate).toLocaleDateString() : 'N/A'}`, icon: 'assignment', url: '', category: 'assignments' as Cat })),
       exams: ex.filter((e) => [e.title, e.description].some((f) => f?.toLowerCase().includes(q) ?? false))
         .map((e) => ({ id: e.id, title: e.title, subtitle: `${e.startDate ? new Date(e.startDate).toLocaleDateString() : ''} · ${e.duration}min`, icon: 'quiz', url: '', category: 'exams' as Cat })),
-      teachers: us.filter((t) => t.role === 'teacher' && t.displayName.toLowerCase().includes(q))
+      teachers: us.filter((t) => hasRole(t.role, 'teacher') && t.displayName.toLowerCase().includes(q))
         .map((t) => ({ id: t.id, title: t.displayName, subtitle: 'Teacher', icon: 'person', url: '', category: 'teachers' as Cat })),
-      students: us.filter((s) => s.role === 'student' && s.displayName.toLowerCase().includes(q))
+      students: us.filter((s) => hasRole(s.role, 'student') && s.displayName.toLowerCase().includes(q))
         .map((s) => ({ id: s.id, title: s.displayName, subtitle: s.studentId || 'Student', icon: 'person', url: '', category: 'students' as Cat })),
       lessons: ls.filter((l) => [l.title, l.content].some((f) => f?.toLowerCase().includes(q) ?? false))
         .map((l) => ({ id: l.id, title: l.title, subtitle: `Lesson · ${l.contentType}`, icon: 'book', url: '', category: 'lessons' as Cat })),

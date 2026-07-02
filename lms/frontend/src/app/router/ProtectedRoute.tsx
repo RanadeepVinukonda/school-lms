@@ -1,11 +1,12 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
+import { hasAnyRole, getPrimaryRole } from '@/lib/roleHelpers';
 import { LoadingSkeleton } from '@/components/common/LoadingSkeleton';
-import type { UserRole } from '@/types';
 
-function roleDashboard(role: UserRole): string {
-  switch (role) {
+function roleDashboard(userRole: string): string {
+  const primaryRole = getPrimaryRole(userRole);
+  switch (primaryRole) {
     case 'admin':
     case 'super_admin':
       return ROUTES.ADMIN_DASHBOARD;
@@ -21,7 +22,7 @@ function roleDashboard(role: UserRole): string {
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  roles?: UserRole[];
+  roles?: string[];
   checkSetup?: boolean;
 }
 
@@ -41,12 +42,12 @@ export function ProtectedRoute({ children, roles, checkSetup }: ProtectedRoutePr
     return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
   }
 
-  if (roles && !roles.includes(user.role)) {
+  if (roles && !hasAnyRole(user.role, roles)) {
     return <Navigate to={roleDashboard(user.role)} replace />;
   }
 
   if (checkSetup) {
-    if (user.role === 'student' && !user.classId) {
+    if (hasAnyRole(user.role, ['student']) && !user.classId) {
       return <Navigate to={ROUTES.STUDENT_ROLL_NUMBER} replace />;
     }
   }

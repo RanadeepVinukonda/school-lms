@@ -25,13 +25,12 @@ export async function logoutUser() {
 }
 
 export async function resetPassword(email: string) {
-  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  const redirectTo = `${window.location.origin}/reset-password`;
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
   if (error) throw error;
 }
 
-// ponytail: Firebase oobCode flow differs from Supabase recovery flow.
-// This stub makes ResetPasswordForm compile. The component should be updated to handle Supabase's hash-fragment recovery.
-export async function confirmReset(_oobCode: string, newPassword: string) {
+export async function resetUserPassword(newPassword: string) {
   const { error } = await supabase.auth.updateUser({ password: newPassword });
   if (error) throw error;
 }
