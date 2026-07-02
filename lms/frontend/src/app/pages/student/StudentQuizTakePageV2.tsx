@@ -201,12 +201,10 @@ export default function StudentQuizTakePageV2() {
     },
   });
 
-  // Auto-start quiz with teacher-configured models, skip student selection
-  const hasAutoStarted = useRef(false);
+  // Pre-select teacher-configured models once loaded
   useEffect(() => {
-    if (assessmentInfo && phase === 'select-models' && !hasAutoStarted.current) {
-      hasAutoStarted.current = true;
-      startMutation.mutate(assessmentInfo.selectedModels ?? []);
+    if (assessmentInfo?.selectedModels?.length) {
+      setSelectedModels(assessmentInfo.selectedModels);
     }
   }, [assessmentInfo?.id]);
 
