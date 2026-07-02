@@ -126,10 +126,11 @@ export async function chat(req: Request, res: Response) {
 }
 
 export async function pushQuiz(req: Request, res: Response) {
-  const { data: quizData, classId, subjectId } = req.body;
+  const { classId, subjectId, questions: reqQuestions } = req.body;
+  const questionsRaw = reqQuestions || req.body.data?.questions;
   const userId = (req as any).user?.id || 'unknown';
 
-  if (!quizData?.questions || !Array.isArray(quizData.questions) || quizData.questions.length === 0) {
+  if (!questionsRaw || !Array.isArray(questionsRaw) || questionsRaw.length === 0) {
     throw new ValidationError('Quiz data must contain a questions array');
   }
   if (!classId) {
@@ -144,7 +145,7 @@ export async function pushQuiz(req: Request, res: Response) {
     return 'short_answer';
   };
 
-  const questions = quizData.questions.map((q: any) => {
+  const questions = questionsRaw.map((q: any) => {
     const mapped: Record<string, unknown> = {
       id: q.id || require('uuid').v4(),
       text: q.question || q.questionText,
@@ -169,14 +170,14 @@ export async function pushQuiz(req: Request, res: Response) {
 
   const doc = {
     id,
-    title: quizData.title || `Quiz from OCR - ${new Date().toLocaleDateString()}`,
-    description: quizData.description || '',
+    title: req.body.title || req.body.data?.title || `Quiz from OCR - ${new Date().toLocaleDateString()}`,
+    description: req.body.description || req.body.data?.description || '',
     classId,
     subjectId: subjectId || null,
     teacherId: userId,
     questions,  // embed questions directly for OCR-generated quizzes
     totalPoints,
-    timeLimitMinutes: quizData.timeLimitMinutes || 30,
+    timeLimitMinutes: req.body.timeLimitMinutes || req.body.data?.timeLimitMinutes || 30,
     selectedModels: uniqueTypes,
     questionCount: questions.length,
     passingScore: 50,
@@ -196,10 +197,14 @@ export async function pushQuiz(req: Request, res: Response) {
 }
 
 export async function pushAssignment(req: Request, res: Response) {
-  const { data: assignmentData, classId, subjectId } = req.body;
+  const { classId, subjectId, title, instructions, questions: reqQuestions, description: reqDesc } = req.body;
+  const assignmentTitle = title || req.body.data?.title;
+  const assignmentInstructions = instructions || req.body.data?.instructions;
+  const assignmentQuestions = reqQuestions || req.body.data?.questions || [];
+  const assignmentDescription = reqDesc || req.body.data?.description || '';
   const userId = (req as any).user?.id || 'unknown';
 
-  if (!assignmentData?.title) {
+  if (!assignmentTitle) {
     throw new ValidationError('Assignment data must contain a title');
   }
   if (!classId) {
@@ -211,12 +216,12 @@ export async function pushAssignment(req: Request, res: Response) {
 
   const doc = {
     id,
-    title: assignmentData.title,
-    description: assignmentData.description || assignmentData.instructions || '',
-    instructions: assignmentData.instructions || '',
-    questions: assignmentData.questions || [],
-    totalPoints: assignmentData.totalPoints || assignmentData.questions?.length * 10 || 0,
-    rubric: assignmentData.rubric || '',
+    title: assignmentTitle,
+    description: assignmentDescription || assignmentInstructions || '',
+    instructions: assignmentInstructions || '',
+    questions: assignmentQuestions,
+    totalPoints: req.body.totalPoints || req.body.data?.totalPoints || assignmentQuestions.length * 10 || 0,
+    rubric: req.body.rubric || req.body.data?.rubric || '',
     classId,
     subjectId: subjectId || null,
     teacherId: userId,

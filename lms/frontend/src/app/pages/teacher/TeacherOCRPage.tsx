@@ -227,7 +227,7 @@ export default function TeacherOCRPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const renderContent = (msg: ChatMsg) => {
-    if (!msg.data) return <LatexRenderer content={msg.content} className="text-sm" />;
+    if (!msg.data) return <LatexRenderer content={msg.content} className="text-body-md leading-relaxed" />;
     const action = msg.data.data?.action || msg.data.action;
     const payload = msg.data.data?.data || msg.data.data || msg.data;
     if (action === 'pushed_quiz' && msg.data.pushedQuizId) {
@@ -249,17 +249,17 @@ export default function TeacherOCRPage() {
   return (
     <>
       <SEOHead title="AI Teaching Assistant" description="Chat with AI to create quizzes, assignments, and mind maps from textbook images" />
-      <div className="max-w-4xl mx-auto px-4 py-6 h-[calc(100vh-80px)] flex flex-col">
-        <div className="mb-4">
-          <h1 className="text-title-lg font-bold">AI Teaching Assistant</h1>
-          <p className="text-on-surface-variant text-sm">Upload textbook images and tell me what to create — quiz, assignment, mind map, or ask a question</p>
+      <div className="max-w-5xl mx-auto px-6 py-6 h-[calc(100vh-80px)] flex flex-col">
+        <div className="mb-6">
+          <h1 className="text-headline-md font-bold">AI Teaching Assistant</h1>
+          <p className="text-muted-foreground text-sm mt-1">Upload textbook images and tell me what to create — quiz, assignment, mind map, or ask a question</p>
         </div>
 
-        <Card className="flex-1 flex flex-col overflow-hidden border-border/60">
-          <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
+        <Card className="flex-1 flex flex-col overflow-hidden shadow-md">
+          <CardContent className="flex-1 overflow-y-auto p-5 space-y-4 scroll-smooth">
             {messages.map((msg, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-md' : 'bg-muted/50 rounded-bl-md'}`}>
+                <div className={`max-w-[85%] rounded-2xl px-5 py-3.5 ${msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-md shadow-sm' : 'bg-card text-card-foreground rounded-bl-md border border-border/60 shadow-sm'}`}>
                   {msg.images && (
                     <div className="flex gap-2 mb-2 flex-wrap">
                       {msg.images.map((url, j) => (
@@ -273,7 +273,7 @@ export default function TeacherOCRPage() {
             ))}
             {isLoading && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-                <div className="bg-muted/50 rounded-2xl rounded-bl-md px-4 py-3">
+                <div className="bg-card rounded-2xl rounded-bl-md px-5 py-3.5 border border-border/60 shadow-sm">
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                     <span className="text-xs text-muted-foreground">{loadingPhase || 'Processing...'}</span>
@@ -284,7 +284,7 @@ export default function TeacherOCRPage() {
             <div ref={chatEndRef} />
           </CardContent>
 
-          <div className="border-t border-border/60 p-4">
+          <div className="border-t border-border/60 p-4 bg-muted/20">
             {pendingImages.length > 0 && (
               <div className="flex gap-2 mb-3 flex-wrap">
                 {pendingImages.map((url, i) => (

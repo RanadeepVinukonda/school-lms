@@ -106,12 +106,12 @@ export async function sendChatMessage(
 }
 
 export async function pushQuiz(data: any, classId: string): Promise<any> {
-  const res = await api.post('/ocr/push-quiz', { data, classId });
+  const res = await api.post('/ocr/push-quiz', { ...data, classId });
   return res.data.data;
 }
 
 export async function pushAssignment(data: any, classId: string): Promise<any> {
-  const res = await api.post('/ocr/push-assignment', { data, classId });
+  const res = await api.post('/ocr/push-assignment', { ...data, classId });
   return res.data.data;
 }
 
