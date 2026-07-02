@@ -301,11 +301,8 @@ export async function getResults(assignmentId: string, studentId: string) {
 
 export async function listAssignmentsForClass(classId: string, query: { page?: string; limit?: string; schoolId?: string }) {
   const { page, limit } = parsePagination(query);
-  let baseQuery = collections.assignmentV2()
+  const baseQuery = collections.assignmentV2()
     .where('classId', '==', classId);
-  if (query.schoolId) {
-    baseQuery = baseQuery.where('schoolId', '==', query.schoolId);
-  }
   const snapshot = await baseQuery.get();
 
   const all: any[] = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));

@@ -168,15 +168,12 @@ export async function pushQuiz(req: Request, res: Response) {
   // Collect unique question types for selectedModels
   const uniqueTypes = [...new Set(questions.map((q: any) => q.type))];
 
-  const schoolId = (req as any).user?.school_id || req.body.schoolId || null;
-
   const doc = {
     id,
     title: req.body.title || req.body.data?.title || `Quiz from OCR - ${new Date().toLocaleDateString()}`,
     description: req.body.description || req.body.data?.description || '',
     classId,
     subjectId: subjectId || null,
-    schoolId,
     teacherId: userId,
     questions,  // embed questions directly for OCR-generated quizzes
     totalPoints,

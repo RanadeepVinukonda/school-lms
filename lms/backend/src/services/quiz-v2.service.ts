@@ -687,12 +687,9 @@ export async function getQuizById(quizId: string) {
   return { ...doc.data() };
 }
 
-export async function listQuizzesForClass(classId: string, schoolId?: string): Promise<any[]> {
-  let baseQuery = collections.quizV2()
+export async function listQuizzesForClass(classId: string, _schoolId?: string): Promise<any[]> {
+  const baseQuery = collections.quizV2()
     .where('classId', '==', classId);
-  if (schoolId) {
-    baseQuery = baseQuery.where('schoolId', '==', schoolId);
-  }
   const snapshot = await baseQuery.get();
 
   const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
