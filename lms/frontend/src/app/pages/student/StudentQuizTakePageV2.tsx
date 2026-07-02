@@ -34,7 +34,7 @@ interface AssessmentInfo {
   timeLimitMinutes: number;
   selectedModels: QuestionModel[];
   totalPoints: number;
-  questionsCount: number;
+  questionCount: number;
   showResults: boolean;
   passingScore: number;
   isRepublished?: boolean;
@@ -558,7 +558,7 @@ export default function StudentQuizTakePageV2() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-sm mx-auto text-body-md">
               <div className="bg-muted rounded-xl p-3 text-center">
-                <p className="text-display-xs font-bold">{assessmentInfo.questionsCount || '--'}</p>
+                <p className="text-display-xs font-bold">{assessmentInfo.questionCount ?? '--'}</p>
                 <p className="text-label-xs text-muted-foreground">Questions</p>
               </div>
               <div className="bg-muted rounded-xl p-3 text-center">
@@ -570,43 +570,6 @@ export default function StudentQuizTakePageV2() {
                 <p className="text-label-xs text-muted-foreground">Points</p>
               </div>
             </div>
-
-            <Card className="border-border/60">
-              <CardHeader>
-                <CardTitle className="text-title-md flex items-center gap-2">
-                  <Brain className="h-5 w-5 text-primary" />
-                  Select Formats to Include
-                </CardTitle>
-                <CardDescription>
-                  Check the formats you wish to practice or test on.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-5 grid grid-cols-1 gap-3">
-                {questionModels.map((model) => (
-                  <div
-                    key={model}
-                    className={cn(
-                      'flex items-start gap-4 p-4 rounded-xl border-2 transition-all cursor-pointer',
-                      selectedModels.includes(model)
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-primary/30 hover:bg-accent/50',
-                    )}
-                    onClick={() => toggleModel(model)}
-                  >
-                    <Checkbox
-                      checked={selectedModels.includes(model)}
-                      onCheckedChange={() => toggleModel(model)}
-                      className="mt-0.5"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <Label className="text-body-lg font-semibold cursor-pointer">
-                        {MODEL_LABELS[model] || model.toUpperCase()}
-                      </Label>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
 
             {assessmentInfo.isRepublished && (
               <div className="bg-success-container/10 border border-success/30 rounded-xl p-4 text-body-md space-y-2">
