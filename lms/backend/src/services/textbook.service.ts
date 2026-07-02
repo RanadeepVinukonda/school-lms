@@ -109,17 +109,6 @@ export async function createTextbook(data: {
     assignment = { id: assignmentSnap.docs[0].id, ...assignmentSnap.docs[0].data() } as Record<string, unknown>;
   }
 
-  const { data: existing } = await supabase
-    .from('textbooks')
-    .select('id')
-    .eq('class_id', data.classId)
-    .eq('subject_id', data.subjectId)
-    .limit(1);
-
-  if (existing && existing.length > 0) {
-    throw new ConflictError('A textbook already exists for this class and subject. Remove it first.');
-  }
-
   const textbookId = uuidv4();
   const now = new Date().toISOString();
   let storagePath = '';

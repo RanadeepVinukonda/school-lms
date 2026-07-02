@@ -329,7 +329,7 @@ export default function TeacherTextbookDetailPage() {
                                 <Card className="border-border/60">
                                   <CardContent className="p-5">
                                     <h3 className="font-semibold">
-                                      {ch.order + 1}. {ch.title}
+                                      {ch.order}. {ch.title}
                                     </h3>
                                     <p className="text-xs text-muted-foreground mt-1">{ch.description}</p>
                                     <div className="mt-3 space-y-2">
