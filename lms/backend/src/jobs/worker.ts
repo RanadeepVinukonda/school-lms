@@ -105,8 +105,7 @@ export async function runUploadPipeline(textbookId: string, storagePath: string)
   await addTextbookLog(textbookId, "Analyzing syllabus layout and extracting Table of Contents (TOC) with Gemini AI...");
 
   const title = textbookDoc.title || 'Textbook';
-  // Use up to 80 pages / 120k chars for TOC extraction to capture all chapters
-  const tocText = pageTexts.slice(0, 80).join('\n').slice(0, 120000);
+  const tocText = pageTexts.slice(0, 100).join('\n').slice(0, 120000);
   let structure: { chapters: Array<{ title: string; order: number; summary: string; concepts: string[] }> } | null = null;
   try {
     const prompt = `You are a professional syllabus compiler. Read this textbook's opening pages and generate a complete curriculum outline for "${title}".
