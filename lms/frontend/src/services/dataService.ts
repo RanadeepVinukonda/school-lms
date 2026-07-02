@@ -97,6 +97,12 @@ export async function getAllSubjects(): Promise<Subject[]> {
   return (data || []) as Subject[];
 }
 
+/** Fetch all teachers from Supabase. */
+export async function getAllTeachers(): Promise<any[]> {
+  const { data } = await supabase.from('users').select('id, display_name, email').eq('role', 'teacher');
+  return (data || []) as any[];
+}
+
 /** Fetch a single subject by id. */
 export async function getSubject(id: string): Promise<Subject | null> {
   const { data } = await supabase.from(SUBJECTS_COLLECTION).select('*').eq('id', id).maybeSingle();
