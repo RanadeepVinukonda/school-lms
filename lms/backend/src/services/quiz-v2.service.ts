@@ -329,8 +329,9 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
     .where('studentId', '==', studentId)
     .get();
 
+  const completedAttempts = attemptsSnapshot.docs.filter((d) => d.data()?.status === 'completed').length;
   const maxAttempts = quizData.maxAttempts || 3;
-  if (attemptsSnapshot.size >= maxAttempts) {
+  if (completedAttempts >= maxAttempts) {
     throw new ForbiddenError('Maximum attempts reached');
   }
 
