@@ -725,12 +725,9 @@ export async function listQuizzesForClass(classId: string, _schoolId?: string): 
   return resolvedItems.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
-export async function listQuizzesForTeacher(teacherId: string, schoolId?: string): Promise<any[]> {
-  let baseQuery = collections.quizV2()
+export async function listQuizzesForTeacher(teacherId: string, _schoolId?: string): Promise<any[]> {
+  const baseQuery = collections.quizV2()
     .where('teacherId', '==', teacherId);
-  if (schoolId) {
-    baseQuery = baseQuery.where('schoolId', '==', schoolId);
-  }
   const snapshot = await baseQuery.get();
 
   const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));

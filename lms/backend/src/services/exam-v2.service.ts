@@ -478,12 +478,9 @@ export async function listExamsForClass(classId: string, _schoolId?: string): Pr
   return items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
-export async function listExamsForTeacher(teacherId: string, schoolId?: string): Promise<any[]> {
-  let baseQuery = collections.examV2()
+export async function listExamsForTeacher(teacherId: string, _schoolId?: string): Promise<any[]> {
+  const baseQuery = collections.examV2()
     .where('teacherId', '==', teacherId);
-  if (schoolId) {
-    baseQuery = baseQuery.where('schoolId', '==', schoolId);
-  }
   const snapshot = await baseQuery.get();
 
   const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
