@@ -55,7 +55,7 @@ export default function StudentTasksPage() {
       // Fetch student's quiz attempts to determine completion status
       const completedQuizIds = new Set<string>();
       try {
-        const attemptsRes = await api.get(`/quizzes-v2/my`).then((r) => r.data.data ?? []);
+        const attemptsRes = await api.get(`/quizzes-v2/attempts/my`).then((r) => r.data.data ?? []);
         for (const att of attemptsRes) {
           if (att.status === 'completed') completedQuizIds.add(att.quizId);
         }
