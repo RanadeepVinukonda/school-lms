@@ -34,6 +34,8 @@ const navGroups: NavGroup[] = [
       { label: 'Home', href: ROUTES.TEACHER_DASHBOARD, icon: 'home' },
       { label: 'Teaching Space', href: ROUTES.TEACHER_TEXTBOOKS, icon: 'menu_book' },
       { label: 'Mind Maps', href: ROUTES.TEACHER_MIND_MAPS, icon: 'psychology' },
+      { label: 'Quizzes & Tasks', href: ROUTES.TEACHER_ASSESSMENTS, icon: 'quiz' },
+      { label: 'Exams', href: ROUTES.TEACHER_EXAMS, icon: 'fact_check' },
       { label: 'Manage Tests & Review', href: ROUTES.TEACHER_TEST_SCHEDULE, icon: 'analytics' },
       { label: 'OCR Scanner', href: ROUTES.TEACHER_OCR, icon: 'document_scanner' },
       { label: 'Timetable', href: ROUTES.TEACHER_TIMETABLE, icon: 'calendar_view_week' },
@@ -46,6 +48,8 @@ const mobileNavItems: NavItem[] = [
   { label: 'Home', href: ROUTES.TEACHER_DASHBOARD, icon: 'home' },
   { label: 'Teaching', href: ROUTES.TEACHER_TEXTBOOKS, icon: 'menu_book' },
   { label: 'Mind Maps', href: ROUTES.TEACHER_MIND_MAPS, icon: 'psychology' },
+  { label: 'Quizzes', href: ROUTES.TEACHER_ASSESSMENTS, icon: 'quiz' },
+  { label: 'Exams', href: ROUTES.TEACHER_EXAMS, icon: 'fact_check' },
   { label: 'Tests', href: ROUTES.TEACHER_TEST_SCHEDULE, icon: 'analytics' },
   { label: 'Notice Board', href: ROUTES.TEACHER_NOTICEBOARD, icon: 'campaign' },
 ];
