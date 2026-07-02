@@ -625,7 +625,7 @@ export default function StudentQuizTakePageV2() {
 
     return (
       <>
-        <SEOHead title={`${assessmentInfo.title} - Results`} description="Test results" />
+        <SEOHead title={`${assessmentInfo?.title || 'Results'}`} description="Test results" />
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -699,7 +699,7 @@ export default function StudentQuizTakePageV2() {
                   </div>
                   <p className="text-display-xs font-bold font-mono">{fmt(result.timeSpent)}</p>
                   <p className="text-label-xs text-muted-foreground">
-                    out of {assessmentInfo.timeLimitMinutes} minutes
+                    out of {assessmentInfo?.timeLimitMinutes ?? '--'} minutes
                   </p>
                 </CardContent>
               </Card>
@@ -749,6 +749,21 @@ export default function StudentQuizTakePageV2() {
   const totalQuestions = questions.length;
   const progress = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
   const warn = timeLeft > 0 && timeLeft <= 180;
+
+  if (!currentQuestion) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] p-6">
+        <Card className="w-full max-w-sm border-border/60">
+          <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
+            <AlertCircle className="h-10 w-10 text-destructive" />
+            <p className="font-semibold text-headline-sm">No questions available</p>
+            <p className="text-body-md text-muted-foreground">This quiz has no questions matching the selected formats.</p>
+            <Button variant="outline" onClick={handleBack}>Go Back</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const currentStatus = questionStatuses[currentQuestion.id] || 'unvisited';
 
