@@ -112,7 +112,9 @@ export default function AdminNoticeBoardPage() {
                 >
                   <option value="">All Classes</option>
                   {(classes as any[])?.map((cls: any) => (
-                    <option key={cls.id} value={cls.id}>{cls.name}</option>
+                    <option key={cls.id} value={cls.id}>
+                      {cls.name}{cls.section ? ` - Section ${cls.section}` : ''}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -170,7 +172,10 @@ export default function AdminNoticeBoardPage() {
                               {priorityBadge(n.priority)}
                               {n.target_class_id ? (
                                 <Badge variant="outline" className="text-[10px]">
-                                  {(classes as any[])?.find((c: any) => c.id === n.target_class_id)?.name || 'Specific Class'}
+                                  {(() => {
+                                    const targetCls = (classes as any[])?.find((c: any) => c.id === n.target_class_id);
+                                    return targetCls ? `${targetCls.name}${targetCls.section ? ` - Section ${targetCls.section}` : ''}` : 'Specific Class';
+                                  })()}
                                 </Badge>
                               ) : (
                                 <Badge variant="secondary" className="text-[10px]">All Classes</Badge>

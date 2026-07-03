@@ -1,4 +1,3 @@
-import { useLanguageStore } from '@/store/languageStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { languages } from '@/i18n';
 import {
@@ -14,8 +13,7 @@ interface LanguageSwitcherProps {
 }
 
 export function LanguageSwitcher({ variant = 'dropdown' }: LanguageSwitcherProps) {
-  const { language, setLanguage } = useLanguageStore();
-  const { t } = useTranslation();
+  const { t, lang, changeLanguage } = useTranslation();
 
   if (variant === 'compact') {
     return (
@@ -23,9 +21,9 @@ export function LanguageSwitcher({ variant = 'dropdown' }: LanguageSwitcherProps
         {languages.map((l) => (
           <button
             key={l.value}
-            onClick={() => setLanguage(l.value)}
+            onClick={() => changeLanguage(l.value as any)}
             className={`px-2 py-1 text-xs rounded-md transition-colors ${
-              language === l.value
+              lang === l.value
                 ? 'bg-primary text-primary-foreground'
                 : 'text-on-surface-variant hover:bg-surface-variant/50'
             }`}
@@ -38,7 +36,7 @@ export function LanguageSwitcher({ variant = 'dropdown' }: LanguageSwitcherProps
   }
 
   return (
-    <Select value={language} onValueChange={(v) => setLanguage(v as typeof language)}>
+    <Select value={lang} onValueChange={(v) => changeLanguage(v as any)}>
       <SelectTrigger className="w-40" aria-label={t('language.select')}>
         <SelectValue placeholder={t('language.select')} />
       </SelectTrigger>
