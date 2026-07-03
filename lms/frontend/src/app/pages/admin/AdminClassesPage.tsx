@@ -451,7 +451,7 @@ export default function AdminClassesPage() {
   // INLINE REGISTER STUDENT FOR A CLASS
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [addStudentClassId, setAddStudentClassId] = useState('');
-  const [studentForm, setStudentForm] = useState({ displayName: '', rollNo: '', academicYear: '' });
+  const [studentForm, setStudentForm] = useState({ displayName: '', rollNo: '', academicYear: '', gender: '' });
   const [studentRegisterLoading, setStudentRegisterLoading] = useState(false);
 
   const getNextRollNo = (classId: string) => {
@@ -469,6 +469,7 @@ export default function AdminClassesPage() {
       displayName: '',
       rollNo: String(nextRoll),
       academicYear: cls.academicYear || new Date().getFullYear().toString(),
+      gender: '',
     });
     setShowAddStudent(true);
   };
@@ -486,6 +487,7 @@ export default function AdminClassesPage() {
         classId: addStudentClassId,
         rollNo: parseInt(studentForm.rollNo, 10),
         academicYear: studentForm.academicYear,
+        gender: studentForm.gender || undefined,
       });
 
       const studentData = res.data as any;
@@ -1346,7 +1348,20 @@ export default function AdminClassesPage() {
                 <Input value={studentForm.academicYear} onChange={(e) => setStudentForm((f) => ({ ...f, academicYear: e.target.value }))} />
               </div>
             </div>
-            <Button className="w-full" onClick={handleRegisterStudent} disabled={studentRegisterLoading || !studentForm.displayName}>
+            <div className="space-y-2">
+              <Label>Gender</Label>
+              <OptionsSelect
+                placeholder="Select Gender"
+                options={[
+                  { value: 'male', label: 'Male' },
+                  { value: 'female', label: 'Female' },
+                  { value: 'other', label: 'Other' },
+                ]}
+                value={studentForm.gender}
+                onChange={(v: string) => setStudentForm((f) => ({ ...f, gender: v }))}
+              />
+            </div>
+            <Button className="w-full" onClick={handleRegisterStudent} disabled={studentRegisterLoading || !studentForm.displayName || !studentForm.gender}>
               {studentRegisterLoading ? 'Registering...' : 'Register Student'}
             </Button>
           </div>

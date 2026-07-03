@@ -31,6 +31,7 @@ export default function AdminStudentsPage() {
     rollNo: '',
     classId: '',
     academicYear: new Date().getFullYear().toString(),
+    gender: '',
   });
   const [createdCredentials, setCreatedCredentials] = useState<{
     studentId: string;
@@ -59,6 +60,7 @@ export default function AdminStudentsPage() {
         classId: createForm.classId,
         rollNo: createForm.rollNo ? parseInt(createForm.rollNo, 10) : undefined,
         academicYear: createForm.academicYear,
+        gender: createForm.gender || undefined,
       }),
     onSuccess: (res: any) => {
       const studentData = res.data;
@@ -74,6 +76,7 @@ export default function AdminStudentsPage() {
         rollNo: '',
         classId: '',
         academicYear: new Date().getFullYear().toString(),
+        gender: '',
       });
       queryClient.invalidateQueries({ queryKey: ['admin-students'] });
     },
@@ -89,6 +92,7 @@ export default function AdminStudentsPage() {
     rollNo: '',
     classId: '',
     academicYear: '',
+    gender: '',
   });
 
   const [page, setPage] = useState(1);
@@ -101,6 +105,7 @@ export default function AdminStudentsPage() {
         classId: editForm.classId,
         rollNo: editForm.rollNo ? parseInt(editForm.rollNo, 10) : undefined,
         academicYear: editForm.academicYear,
+        gender: editForm.gender || undefined,
       }),
     onSuccess: () => {
       toast.success('Student updated successfully');
@@ -120,6 +125,7 @@ export default function AdminStudentsPage() {
       rollNo: student.rollNo ? String(student.rollNo) : '',
       classId: student.classId || '',
       academicYear: student.academicYear || '',
+      gender: student.gender || '',
     });
     setShowEdit(true);
   };
@@ -234,6 +240,7 @@ export default function AdminStudentsPage() {
                     <thead>
                       <tr className="border-b border-border/60 bg-muted/30">
                         <th className="text-left text-label-sm font-bold text-muted-foreground uppercase tracking-wider px-4 py-3">Name</th>
+                        <th className="text-left text-label-sm font-bold text-muted-foreground uppercase tracking-wider px-4 py-3">Gender</th>
                         <th className="text-left text-label-sm font-bold text-muted-foreground uppercase tracking-wider px-4 py-3">Email</th>
                         <th className="text-left text-label-sm font-bold text-muted-foreground uppercase tracking-wider px-4 py-3">Student ID</th>
                         <th className="text-left text-label-sm font-bold text-muted-foreground uppercase tracking-wider px-4 py-3">Class</th>
@@ -249,6 +256,7 @@ export default function AdminStudentsPage() {
                             <td className="px-4 py-3">
                               <span className="text-body-md font-medium">{student.displayName}</span>
                             </td>
+                            <td className="px-4 py-3 text-body-md text-muted-foreground capitalize">{student.gender || '\u2014'}</td>
                             <td className="px-4 py-3 text-body-md text-muted-foreground">{student.email}</td>
                             <td className="px-4 py-3 text-body-md text-muted-foreground font-mono">{student.studentId || '\u2014'}</td>
                             <td className="px-4 py-3 text-body-md">{className}</td>
@@ -308,37 +316,50 @@ export default function AdminStudentsPage() {
             <DialogTitle>Register Student</DialogTitle>
             <DialogDescription>Create a new student account. Unique Student ID and login credentials will be generated automatically.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label>Full Name</Label>
-              <Input
-                placeholder="John Doe"
-                className="border-border/60 placeholder:text-muted-foreground"
-                value={createForm.displayName}
-                onChange={(e) => setCreateForm((f) => ({ ...f, displayName: e.target.value }))}
-              />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label>Class</Label>
-                <OptionsSelect
-                  options={classOptions}
-                  placeholder="Select Class"
-                  value={createForm.classId}
-                  onChange={(v: string) => setCreateForm((f) => ({ ...f, classId: v }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Roll Number</Label>
+                <Label>Full Name</Label>
                 <Input
-                  type="number"
-                  placeholder="e.g. 5"
+                  placeholder="John Doe"
                   className="border-border/60 placeholder:text-muted-foreground"
-                  value={createForm.rollNo}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, rollNo: e.target.value }))}
+                  value={createForm.displayName}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, displayName: e.target.value }))}
                 />
               </div>
-            </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Class</Label>
+                  <OptionsSelect
+                    options={classOptions}
+                    placeholder="Select Class"
+                    value={createForm.classId}
+                    onChange={(v: string) => setCreateForm((f) => ({ ...f, classId: v }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Roll Number</Label>
+                  <Input
+                    type="number"
+                    placeholder="e.g. 5"
+                    className="border-border/60 placeholder:text-muted-foreground"
+                    value={createForm.rollNo}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, rollNo: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Gender</Label>
+                <OptionsSelect
+                  placeholder="Select Gender"
+                  options={[
+                    { value: 'male', label: 'Male' },
+                    { value: 'female', label: 'Female' },
+                    { value: 'other', label: 'Other' },
+                  ]}
+                  value={createForm.gender}
+                  onChange={(v: string) => setCreateForm((f) => ({ ...f, gender: v }))}
+                />
+              </div>
             <div className="space-y-2">
               <Label>Academic Year</Label>
               <Input
@@ -353,7 +374,7 @@ export default function AdminStudentsPage() {
             <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
             <Button
               onClick={() => createMutation.mutate()}
-              disabled={!createForm.displayName || !createForm.classId || !createForm.rollNo || createMutation.isPending}
+              disabled={!createForm.displayName || !createForm.classId || !createForm.rollNo || !createForm.gender || createMutation.isPending}
             >
               {createMutation.isPending ? (
                 <><Icon name="sync" size={16} className="mr-2 animate-spin" />Registering...</>
@@ -426,37 +447,50 @@ export default function AdminStudentsPage() {
             <DialogTitle>Edit Student Profile</DialogTitle>
             <DialogDescription>Update the student's name, class mapping, or roll number.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label>Full Name</Label>
-              <Input
-                placeholder="John Doe"
-                className="border-border/60 placeholder:text-muted-foreground"
-                value={editForm.displayName}
-                onChange={(e) => setEditForm((f) => ({ ...f, displayName: e.target.value }))}
-              />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label>Class</Label>
-                <OptionsSelect
-                  options={classOptions}
-                  placeholder="Select Class"
-                  value={editForm.classId}
-                  onChange={(v: string) => setEditForm((f) => ({ ...f, classId: v }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Roll Number</Label>
+                <Label>Full Name</Label>
                 <Input
-                  type="number"
-                  placeholder="e.g. 5"
+                  placeholder="John Doe"
                   className="border-border/60 placeholder:text-muted-foreground"
-                  value={editForm.rollNo}
-                  onChange={(e) => setEditForm((f) => ({ ...f, rollNo: e.target.value }))}
+                  value={editForm.displayName}
+                  onChange={(e) => setEditForm((f) => ({ ...f, displayName: e.target.value }))}
                 />
               </div>
-            </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Class</Label>
+                  <OptionsSelect
+                    options={classOptions}
+                    placeholder="Select Class"
+                    value={editForm.classId}
+                    onChange={(v: string) => setEditForm((f) => ({ ...f, classId: v }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Roll Number</Label>
+                  <Input
+                    type="number"
+                    placeholder="e.g. 5"
+                    className="border-border/60 placeholder:text-muted-foreground"
+                    value={editForm.rollNo}
+                    onChange={(e) => setEditForm((f) => ({ ...f, rollNo: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Gender</Label>
+                <OptionsSelect
+                  placeholder="Select Gender"
+                  options={[
+                    { value: 'male', label: 'Male' },
+                    { value: 'female', label: 'Female' },
+                    { value: 'other', label: 'Other' },
+                  ]}
+                  value={editForm.gender}
+                  onChange={(v: string) => setEditForm((f) => ({ ...f, gender: v }))}
+                />
+              </div>
             <div className="space-y-2">
               <Label>Academic Year</Label>
               <Input
@@ -471,7 +505,7 @@ export default function AdminStudentsPage() {
             <Button variant="outline" onClick={() => { setShowEdit(false); setEditTarget(null); }}>Cancel</Button>
             <Button
               onClick={() => editMutation.mutate()}
-              disabled={!editForm.displayName || !editForm.classId || !editForm.rollNo || editMutation.isPending}
+              disabled={!editForm.displayName || !editForm.classId || !editForm.rollNo || !editForm.gender || editMutation.isPending}
             >
               {editMutation.isPending ? (
                 <><Icon name="sync" size={16} className="mr-2 animate-spin" />Saving...</>

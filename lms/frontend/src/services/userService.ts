@@ -9,6 +9,7 @@ export interface CreateUserInput {
   classId?: string;
   rollNo?: number;
   academicYear?: string;
+  gender?: string;
 }
 
 /** API service for user management (admin) and profile updates. */

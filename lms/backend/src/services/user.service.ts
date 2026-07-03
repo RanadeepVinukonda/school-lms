@@ -97,6 +97,7 @@ export async function createUser(data: {
   classId?: string;
   rollNo?: number;
   academicYear?: string;
+  gender?: string;
   childrenIds?: string[];
   schoolId?: string;
 }) {
@@ -134,43 +135,7 @@ export async function createUser(data: {
 
   const generatedPassword = data.password || generatePassword();
 
-  if (generatedEmail) {
-    const existingUser = await getUserByEmail(generatedEmail);
-    if (existingUser) {
-      if (data.role === 'parent' && existingUser.role === 'teacher') {
-        // Teacher — add childrenIds and return
-        const now = new Date().toISOString();
-        const updateData: Record<string, unknown> = {
-          updatedAt: now,
-        };
-        if (data.childrenIds?.length) updateData.childrenIds = data.childrenIds;
-        await collections.users().doc(existingUser.uid).update(updateData);
-        logger.info('Teacher updated with childrenIds by admin', { uid: existingUser.uid, email: generatedEmail });
-        const userDoc = await collections.users().doc(existingUser.uid).get();
-        const userData = userDoc.data()!;
-        const { password: _pw, ...safeData } = userData;
-        return { ...safeData, uid: existingUser.uid, generatedPassword: undefined };
-      }
-      // For other cases (e.g. creating teacher with existing parent email),
-      // keep the existing user as-is — teacher portal access is granted
-      // via teacherClassSubject assignments, not by changing the role.
-      const userDoc = await collections.users().doc(existingUser.uid).get();
-      const userData = userDoc.data()!;
-      const { password: _pw, ...safeData } = userData;
-      logger.info('Existing user reused by admin (no role change)', { uid: existingUser.uid, email: generatedEmail, role: existingUser.role });
-      return { ...safeData, uid: existingUser.uid, generatedPassword: undefined };
-    }
-  }
-
-  const firebaseUser = await firebaseCreateUser({
-    email: generatedEmail,
-    password: generatedPassword,
-    displayName: data.displayName,
-    phoneNumber: data.phoneNumber,
-    photoURL: data.photoURL,
-  });
-
-  // Resolve student IDs (e.g. "1a012025") to Firebase UIDs
+  // Resolve student IDs (e.g. "1a012025") to Firebase UIDs — hoisted before existing-user check
   let resolvedChildrenIds = data.childrenIds || [];
   if (resolvedChildrenIds.length > 0) {
     const resolved = await Promise.all(
@@ -182,6 +147,81 @@ export async function createUser(data: {
     );
     resolvedChildrenIds = resolved;
   }
+
+  if (generatedEmail) {
+    const existingUser = await getUserByEmail(generatedEmail);
+    if (existingUser) {
+      if (data.role === 'parent' && existingUser.role === 'teacher') {
+        // Teacher — add childrenIds and return
+        const now = new Date().toISOString();
+        const updateData: Record<string, unknown> = {
+          updatedAt: now,
+        };
+        if (data.childrenIds?.length) updateData.childrenIds = resolvedChildrenIds;
+        await collections.users().doc(existingUser.uid).set(updateData, { merge: true });
+        logger.info('Teacher updated with childrenIds by admin', { uid: existingUser.uid, email: generatedEmail });
+        const userDoc = await collections.users().doc(existingUser.uid).get();
+        if (userDoc.exists) {
+          const userData = userDoc.data()!;
+          const { password: _pw, ...safeData } = userData;
+          return { ...safeData, uid: existingUser.uid, generatedPassword: undefined };
+        }
+      }
+      // For other cases (e.g. creating teacher with existing parent email),
+      // keep the existing user as-is — teacher portal access is granted
+      // via teacherClassSubject assignments, not by changing the role.
+      const userDoc = await collections.users().doc(existingUser.uid).get();
+      if (userDoc.exists) {
+        const userData = userDoc.data()!;
+        const { password: _pw, ...safeData } = userData;
+        logger.info('Existing user reused by admin (no role change)', { uid: existingUser.uid, email: generatedEmail, role: existingUser.role });
+        return { ...safeData, uid: existingUser.uid, generatedPassword: undefined };
+      }
+      // Existing Auth user but Firestore doc missing — update password in Auth and create Firestore doc
+      // Firestore doc missing — create one using the existing Firebase Auth UID
+      const now2 = new Date().toISOString();
+      const userData2 = {
+        uid: existingUser.uid,
+        email: generatedEmail,
+        displayName: data.displayName,
+        role: data.role,
+        phoneNumber: data.phoneNumber || '',
+        photoURL: data.photoURL || '',
+        classIds: finalClassIds,
+        classId: studentClassId || null,
+        studentId: studentId || null,
+        rollNo: data.rollNo || null,
+        academicYear: data.academicYear || null,
+        gender: data.gender || null,
+        childrenIds: resolvedChildrenIds,
+        isActive: true,
+        schoolId: data.schoolId || '',
+        createdAt: now2,
+        updatedAt: now2,
+      };
+      await collections.users().doc(existingUser.uid).set(userData2);
+      await firebaseUpdateUser(existingUser.uid, { password: generatedPassword });
+      await setCustomClaims(existingUser.uid, { role: data.role });
+      logger.info('User Firestore doc created (auth user existed)', { uid: existingUser.uid, email: generatedEmail, role: data.role });
+      if (data.role === 'student') {
+        const classRef = collections.classes().doc(data.classId!);
+        const classDoc = await classRef.get();
+        if (classDoc.exists) {
+          const currentCount = classDoc.data()!.studentCount || 0;
+          await classRef.update({ studentCount: currentCount + 1, updatedAt: now2 });
+        }
+      }
+      return { ...userData2, generatedPassword };
+    }
+  }
+
+  const firebaseUser = await firebaseCreateUser({
+    email: generatedEmail,
+    password: generatedPassword,
+    displayName: data.displayName,
+    phoneNumber: data.phoneNumber,
+    photoURL: data.photoURL,
+  });
 
   const now = new Date().toISOString();
 
@@ -197,6 +237,7 @@ export async function createUser(data: {
     studentId: studentId || null,
     rollNo: data.rollNo || null,
     academicYear: data.academicYear || null,
+    gender: data.gender || null,
     childrenIds: resolvedChildrenIds,
     isActive: true,
     schoolId: data.schoolId || '',
@@ -232,6 +273,7 @@ export async function updateUser(uid: string, data: {
   rollNo?: number;
   academicYear?: string;
   childrenIds?: string[];
+  gender?: string;
 }) {
   const userRef = collections.users().doc(uid);
   const existing = await userRef.get();
@@ -249,17 +291,18 @@ export async function updateUser(uid: string, data: {
   if (data.photoURL !== undefined) updateData.photoURL = data.photoURL;
   if (data.disabled !== undefined) updateData.isActive = !data.disabled;
   if (data.classIds !== undefined) updateData.classIds = data.classIds;
-  if (data.childrenIds !== undefined) {
-    const resolved = await Promise.all(
-      data.childrenIds.map(async (id) => {
-        const snapshot = await collections.users().where('studentId', '==', id).get();
-        if (!snapshot.empty) return snapshot.docs[0].id;
-        return id;
-      }),
-    );
-    updateData.childrenIds = resolved;
-  }
-  
+    if (data.childrenIds !== undefined) {
+      const resolved = await Promise.all(
+        data.childrenIds.map(async (id) => {
+          const snapshot = await collections.users().where('studentId', '==', id).get();
+          if (!snapshot.empty) return snapshot.docs[0].id;
+          return id;
+        }),
+      );
+      updateData.childrenIds = resolved;
+    }
+    if (data.gender !== undefined) updateData.gender = data.gender;
+    
   const existingData = existing.data()!;
   const isStudent = existingData.role === 'student';
 
