@@ -231,6 +231,7 @@ export async function updateUser(uid: string, data: {
   classId?: string;
   rollNo?: number;
   academicYear?: string;
+  childrenIds?: string[];
 }) {
   const userRef = collections.users().doc(uid);
   const existing = await userRef.get();
@@ -248,6 +249,16 @@ export async function updateUser(uid: string, data: {
   if (data.photoURL !== undefined) updateData.photoURL = data.photoURL;
   if (data.disabled !== undefined) updateData.isActive = !data.disabled;
   if (data.classIds !== undefined) updateData.classIds = data.classIds;
+  if (data.childrenIds !== undefined) {
+    const resolved = await Promise.all(
+      data.childrenIds.map(async (id) => {
+        const snapshot = await collections.users().where('studentId', '==', id).get();
+        if (!snapshot.empty) return snapshot.docs[0].id;
+        return id;
+      }),
+    );
+    updateData.childrenIds = resolved;
+  }
   
   const existingData = existing.data()!;
   const isStudent = existingData.role === 'student';

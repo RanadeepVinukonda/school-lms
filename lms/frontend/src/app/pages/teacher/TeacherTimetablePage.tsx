@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -9,13 +10,13 @@ import { Icon } from '@/components/ui/Icon';
 import { timetableService } from '@/services/timetableService';
 import { getAllClasses, getAllSubjects, getAllTeachers } from '@/services/dataService';
 
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const DAY_SHORT: Record<string, string> = {
-  Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed',
-  Thursday: 'Thu', Friday: 'Fri', Saturday: 'Sat',
-};
-
 export default function TeacherTimetablePage() {
+  const { _ } = useTranslation();
+  const DAYS = [_('Monday'), _('Tuesday'), _('Wednesday'), _('Thursday'), _('Friday'), _('Saturday')];
+  const DAY_SHORT: Record<string, string> = {
+    [_('Monday')]: _('Mon'), [_('Tuesday')]: _('Tue'), [_('Wednesday')]: _('Wed'),
+    [_('Thursday')]: _('Thu'), [_('Friday')]: _('Fri'), [_('Saturday')]: _('Sat'),
+  };
   const [selectedClassId, setSelectedClassId] = useState('');
 
   const { data: classesData = [] } = useQuery({
@@ -84,21 +85,21 @@ export default function TeacherTimetablePage() {
 
   return (
     <>
-      <SEOHead title="Timetable" description="View class timetable by period and day" />
+      <SEOHead title={_('Timetable')} description={_('View class timetable by period and day')} />
       <div className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-8">
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">Class Timetable</h1>
-          <p className="text-body-md text-muted-foreground mt-1">View timetable by class, period, and day</p>
+          <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">{_('Class Timetable')}</h1>
+          <p className="text-body-md text-muted-foreground mt-1">{_('View timetable by class, period, and day')}</p>
         </motion.div>
 
         <Card className="border-border/60">
           <CardHeader className="pb-3">
-            <CardTitle className="text-title-sm">Select Class</CardTitle>
+            <CardTitle className="text-title-sm">{_('Select Class')}</CardTitle>
           </CardHeader>
           <CardContent>
             <OptionsSelect
               options={classOptions}
-              placeholder="Choose a class..."
+              placeholder={_('Choose a class...')}
               value={selectedClassId}
               onValueChange={setSelectedClassId}
               className="w-full sm:w-64"
@@ -109,24 +110,24 @@ export default function TeacherTimetablePage() {
         {!selectedClassId ? (
           <div className="flex flex-col items-center py-16 text-muted-foreground">
             <Icon name="calendar_month" size={64} className="text-muted-foreground/30 mb-3" />
-            <p className="text-title-sm font-semibold">Select a class to view timetable</p>
-            <p className="text-body-sm text-muted-foreground mt-1">Choose a class from the dropdown above</p>
+            <p className="text-title-sm font-semibold">{_('Select a class to view timetable')}</p>
+            <p className="text-body-sm text-muted-foreground mt-1">{_('Choose a class from the dropdown above')}</p>
           </div>
         ) : (
           <DataFetchWrapper
             data={timetableEntries}
             isLoading={isLoading}
-            error={error ? new Error('Failed to load timetable') : null}
+            error={error ? new Error(_('Failed to load timetable')) : null}
             onRetry={refetch}
             loadingType="table"
-            emptyMessage="No timetable entries for this class"
+            emptyMessage={_('No timetable entries for this class')}
           >
             {() => (
               <div className="border border-border/60 rounded-xl overflow-x-auto bg-surface">
                 <table className="w-full text-left min-w-[750px]">
                   <thead>
                     <tr className="border-b border-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
-                      <th className="px-3 py-3 text-center w-16">Period</th>
+                      <th className="px-3 py-3 text-center w-16">{_('Period')}</th>
                       {DAYS.map((day) => (
                         <th key={day} className="px-3 py-3 text-center">{DAY_SHORT[day] || day.slice(0, 3)}</th>
                       ))}
@@ -151,7 +152,7 @@ export default function TeacherTimetablePage() {
                                   {entries.map((entry: any) => (
                                     <div key={entry.id}>
                                       <p className="text-body-md font-semibold text-primary">
-                                        {subjectMap.get(entry.subject_id || entry.subjectId || '') || entry.subject_id || entry.subjectId || 'Subject'}
+                                        {subjectMap.get(entry.subject_id || entry.subjectId || '') || entry.subject_id || entry.subjectId || _('Subject')}
                                       </p>
                                       {(entry.teacher_id || entry.teacherId) && (
                                         <p className="text-body-sm text-muted-foreground mt-1">

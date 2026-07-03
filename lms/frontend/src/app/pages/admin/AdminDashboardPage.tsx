@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { motion, useInView } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -38,6 +39,7 @@ function SectionTitle({ label, title }: { label: string; title: string }) {
 }
 
 export default function AdminDashboardPage() {
+  const { _ } = useTranslation();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'overview' | 'oversight' | 'tests_monitor' | 'monitor'>('overview');
   const [oversightSearch, setOversightSearch] = useState('');
@@ -161,10 +163,10 @@ export default function AdminDashboardPage() {
   }, [oversightData, oversightSearch, oversightStatusFilter]);
 
   const statCards = useMemo(() => [
-    { icon: 'groups', label: 'Total Students', value: overviewData?.studentCount ?? 0, color: 'text-primary', bg: 'bg-primary-container' },
-    { icon: 'badge', label: 'Total Teachers', value: overviewData?.teacherCount ?? 0, color: 'text-success', bg: 'bg-success-container' },
-    { icon: 'meeting_room', label: 'Active Classes', value: overviewData?.classCount ?? 0, color: 'text-warning', bg: 'bg-warning-container' },
-    { icon: 'calendar_month', label: 'Upcoming Exams', value: overviewData?.upcomingExamCount ?? 0, color: 'text-error', bg: 'bg-error-container' },
+    { icon: 'groups', label: _('Total Students'), value: overviewData?.studentCount ?? 0, color: 'text-primary', bg: 'bg-primary-container' },
+    { icon: 'badge', label: _('Total Teachers'), value: overviewData?.teacherCount ?? 0, color: 'text-success', bg: 'bg-success-container' },
+    { icon: 'meeting_room', label: _('Active Classes'), value: overviewData?.classCount ?? 0, color: 'text-warning', bg: 'bg-warning-container' },
+    { icon: 'calendar_month', label: _('Upcoming Exams'), value: overviewData?.upcomingExamCount ?? 0, color: 'text-error', bg: 'bg-error-container' },
   ], [overviewData]);
 
   const isTabLoading = activeTab === 'overview' ? isOverviewLoading
@@ -183,10 +185,10 @@ export default function AdminDashboardPage() {
     : () => { refetchOverview(); };
 
   const TABS = [
-    { key: 'overview' as const, icon: 'dashboard', label: 'Overview' },
-    { key: 'oversight' as const, icon: 'flag', label: 'Concept Oversight' },
-    { key: 'tests_monitor' as const, icon: 'analytics', label: 'Test Monitor' },
-    { key: 'monitor' as const, icon: 'monitor_heart', label: 'Full Monitor' },
+    { key: 'overview' as const, icon: 'dashboard', label: _('Overview') },
+    { key: 'oversight' as const, icon: 'flag', label: _('Concept Oversight') },
+    { key: 'tests_monitor' as const, icon: 'analytics', label: _('Test Monitor') },
+    { key: 'monitor' as const, icon: 'monitor_heart', label: _('Full Monitor') },
   ];
 
   return (
@@ -199,8 +201,8 @@ export default function AdminDashboardPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.05, 0, 0.133333, 0.06] }}
           >
-            <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">School Dashboard</h1>
-            <p className="text-body-md text-muted-foreground mt-1">Actionable oversight and analytics</p>
+            <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">{_('School Dashboard')}</h1>
+            <p className="text-body-md text-muted-foreground mt-1">{_('Actionable oversight and analytics')}</p>
           </motion.div>
 
           <div className="mt-6 flex gap-2 bg-muted/40 p-1.5 rounded-xl border border-border/60 w-full sm:w-fit overflow-x-auto">
@@ -243,7 +245,7 @@ export default function AdminDashboardPage() {
               {activeTab === 'overview' && (
                 <div className="space-y-16">
                   <section>
-                    <SectionTitle label="Metrics" title="School-wide statistics" />
+                    <SectionTitle label={_('Metrics')} title={_('School-wide statistics')} />
                     <motion.div
                       variants={staggerContainer}
                       initial="hidden"
@@ -269,21 +271,21 @@ export default function AdminDashboardPage() {
 
                   <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div>
-                      <SectionTitle label="Students" title="At-risk & performance" />
+                      <SectionTitle label={_('Students')} title={_('At-risk & performance')} />
                       <motion.div variants={cardStackReveal} custom={0}>
                         <Card className="border-border/60">
                           <CardHeader className="pb-3">
                             <CardTitle className="text-title-sm flex items-center gap-2">
                               <Icon name="warning" size={18} className="text-error" />
-                              At-Risk Students
+                              {_('At-Risk Students')}
                             </CardTitle>
                           </CardHeader>
                           <CardContent>
                             {overviewData?.atRiskStudents?.length === 0 ? (
                               <div className="flex flex-col items-center py-10 text-muted-foreground">
                                 <Icon name="trending_up" size={40} className="text-muted-foreground/30 mb-3" />
-                                <p className="text-title-sm font-semibold">All students performing well</p>
-                                <p className="text-label-sm text-muted-foreground">No grades below 70% threshold</p>
+                                <p className="text-title-sm font-semibold">{_('All students performing well')}</p>
+                                <p className="text-label-sm text-muted-foreground">{_('No grades below 70% threshold')}</p>
                               </div>
                             ) : (
                               <div className="space-y-2">
@@ -297,7 +299,7 @@ export default function AdminDashboardPage() {
                                   </div>
                                 ))}
                                 <Button variant="outline" size="sm" className="w-full mt-3" asChild>
-                                  <Link to="/admin/students">View All Students</Link>
+                                  <Link to="/admin/students">{_('View All Students')}</Link>
                                 </Button>
                               </div>
                             )}
@@ -307,20 +309,20 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <div>
-                      <SectionTitle label="Staff" title="Teacher workload" />
+                      <SectionTitle label={_('Staff')} title={_('Teacher workload')} />
                       <motion.div variants={cardStackReveal} custom={0}>
                         <Card className="border-border/60">
                           <CardHeader className="pb-3">
                             <CardTitle className="text-title-sm flex items-center gap-2">
                               <Icon name="badge" size={18} className="text-muted-foreground" />
-                              Teacher Workload
+                              {_('Teacher Workload')}
                             </CardTitle>
                           </CardHeader>
                           <CardContent>
                             {overviewData?.teacherWorkload?.length === 0 ? (
                               <div className="flex flex-col items-center py-10 text-muted-foreground">
                                 <Icon name="badge" size={40} className="text-muted-foreground/30 mb-3" />
-                                <p className="text-title-sm font-semibold">No teachers assigned</p>
+                                <p className="text-title-sm font-semibold">{_('No teachers assigned')}</p>
                               </div>
                             ) : (
                               <div className="space-y-2">
@@ -339,20 +341,20 @@ export default function AdminDashboardPage() {
                   </section>
 
                   <section>
-                    <SectionTitle label="Activity" title="Recent activity feed" />
+                    <SectionTitle label={_('Activity')} title={_('Recent activity feed')} />
                     <motion.div variants={cardStackReveal} custom={0}>
                       <Card className="border-border/60">
                         <CardHeader className="pb-3">
                           <CardTitle className="text-title-sm flex items-center gap-2">
                             <Icon name="history" size={18} className="text-muted-foreground" />
-                            Recent Activity
+                            {_('Recent Activity')}
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
                           {overviewData?.activityFeed?.length === 0 ? (
                             <div className="flex flex-col items-center py-10 text-muted-foreground">
                               <Icon name="history" size={40} className="text-muted-foreground/30 mb-3" />
-                              <p className="text-title-sm font-semibold">No recent activity</p>
+                              <p className="text-title-sm font-semibold">{_('No recent activity')}</p>
                             </div>
                           ) : (
                             <div className="relative pl-6 border-l-2 border-muted-foreground/20 space-y-4">
@@ -381,7 +383,7 @@ export default function AdminDashboardPage() {
                     <div className="relative flex-1 min-w-[200px]">
                       <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                       <Input
-                        placeholder="Search concept oversight..."
+                        placeholder={_('Search concept oversight...')}
                         className="pl-10"
                         value={oversightSearch}
                         onChange={(e) => setOversightSearch(e.target.value)}
@@ -389,9 +391,9 @@ export default function AdminDashboardPage() {
                     </div>
                     <OptionsSelect
                       options={[
-                        { value: 'all', label: 'All Concepts' },
-                        { value: 'low', label: 'Low Mastery (Alert)' },
-                        { value: 'normal', label: 'Normal Mastery' },
+                        { value: 'all', label: _('All Concepts') },
+                        { value: 'low', label: _('Low Mastery (Alert)') },
+                        { value: 'normal', label: _('Normal Mastery') },
                       ]}
                       value={oversightStatusFilter}
                       onChange={(v: string) => setOversightStatusFilter(v)}
@@ -404,7 +406,7 @@ export default function AdminDashboardPage() {
                       <Card className="border-border/60">
                         <CardContent className="flex flex-col items-center gap-4 py-16 text-muted-foreground">
                           <Icon name="search_off" size={48} className="opacity-50" />
-                          <p className="text-title-sm font-semibold">No concepts match your criteria</p>
+                          <p className="text-title-sm font-semibold">{_('No concepts match your criteria')}</p>
                         </CardContent>
                       </Card>
                     ) : (
@@ -412,13 +414,13 @@ export default function AdminDashboardPage() {
                         <table className="w-full">
                           <thead>
                             <tr className="border-b border-b-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
-                              <th className="text-left px-4 py-3">Class / Subject</th>
-                              <th className="text-left px-4 py-3">Concept</th>
-                              <th className="text-left px-4 py-3">Teacher</th>
-                              <th className="text-left px-4 py-3">Avg Score</th>
-                              <th className="text-left px-4 py-3">Attempts</th>
-                              <th className="text-center px-4 py-3">Status</th>
-                              <th className="text-right px-4 py-3">Action</th>
+                              <th className="text-left px-4 py-3">{_('Class / Subject')}</th>
+                              <th className="text-left px-4 py-3">{_('Concept')}</th>
+                              <th className="text-left px-4 py-3">{_('Teacher')}</th>
+                              <th className="text-left px-4 py-3">{_('Avg Score')}</th>
+                              <th className="text-left px-4 py-3">{_('Attempts')}</th>
+                              <th className="text-center px-4 py-3">{_('Status')}</th>
+                              <th className="text-right px-4 py-3">{_('Action')}</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-border/40">
@@ -444,7 +446,7 @@ export default function AdminDashboardPage() {
                                     {item.attemptCount > 0 ? (
                                       <Badge variant={isLow ? 'destructive' : 'success'} className="text-[10px] uppercase font-bold">{isLow ? 'Alert' : 'Good'}</Badge>
                                     ) : (
-                                      <Badge variant="secondary" className="text-[10px] uppercase font-bold">Untested</Badge>
+                                      <Badge variant="secondary" className="text-[10px] uppercase font-bold">{_('Untested')}</Badge>
                                     )}
                                   </td>
                                   <td className="px-4 py-3 text-right">
@@ -471,17 +473,17 @@ export default function AdminDashboardPage() {
                   <div className="flex gap-3 items-center flex-wrap">
                     <div className="relative flex-1 min-w-[200px]">
                       <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                      <Input placeholder="Search tests..." className="pl-10" value={testsSearch} onChange={(e) => setTestsSearch(e.target.value)} />
+                      <Input placeholder={_('Search tests...')} className="pl-10" value={testsSearch} onChange={(e) => setTestsSearch(e.target.value)} />
                     </div>
                     <select
                       className="h-10 px-3 rounded-lg border border-border/60 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary w-48 text-sm"
                       value={testsTypeFilter}
                       onChange={(e) => setTestsTypeFilter(e.target.value)}
                     >
-                      <option value="all">All Types</option>
-                      <option value="quiz">Quizzes</option>
-                      <option value="exam">Exams</option>
-                      <option value="assignment">Assignments</option>
+                      <option value="all">{_('All Types')}</option>
+                      <option value="quiz">{_('Quizzes')}</option>
+                      <option value="exam">{_('Exams')}</option>
+                      <option value="assignment">{_('Assignments')}</option>
                     </select>
                   </div>
 
@@ -490,7 +492,7 @@ export default function AdminDashboardPage() {
                       <Card className="border-border/60">
                         <CardContent className="flex flex-col items-center gap-4 py-16 text-muted-foreground">
                           <Icon name="search_off" size={48} className="opacity-50" />
-                          <p className="text-title-sm font-semibold">No conducted tests match your filters</p>
+                          <p className="text-title-sm font-semibold">{_('No conducted tests match your filters')}</p>
                         </CardContent>
                       </Card>
                     ) : (
@@ -498,13 +500,13 @@ export default function AdminDashboardPage() {
                         <table className="w-full text-left">
                           <thead>
                             <tr className="border-b border-b-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
-                              <th className="px-4 py-3">Test Details</th>
-                              <th className="px-4 py-3">Class & Subject</th>
-                              <th className="px-4 py-3">Teacher</th>
-                              <th className="px-4 py-3">Concept</th>
-                              <th className="px-4 py-3 text-center">Attempts</th>
-                              <th className="px-4 py-3 text-center">Avg Score</th>
-                              <th className="px-4 py-3 text-right">Action</th>
+                              <th className="px-4 py-3">{_('Test Details')}</th>
+                              <th className="px-4 py-3">{_('Class & Subject')}</th>
+                              <th className="px-4 py-3">{_('Teacher')}</th>
+                              <th className="px-4 py-3">{_('Concept')}</th>
+                              <th className="px-4 py-3 text-center">{_('Attempts')}</th>
+                              <th className="px-4 py-3 text-center">{_('Avg Score')}</th>
+                              <th className="px-4 py-3 text-right">{_('Action')}</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-border/40 text-title-sm">
@@ -535,7 +537,7 @@ export default function AdminDashboardPage() {
                                 </td>
                                 <td className="px-4 py-3 text-right">
                                   <Button size="sm" variant="outline" onClick={() => setInspectTest(test)}>
-                                    <Icon name="visibility" size={16} className="mr-1" />Results
+                                    <Icon name="visibility" size={16} className="mr-1" />{_('Results')}
                                   </Button>
                                 </td>
                               </tr>
@@ -552,12 +554,12 @@ export default function AdminDashboardPage() {
                 <div className="space-y-8">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div>
-                      <SectionTitle label="Staff" title={`Teachers (${teachersData.length})`} />
+                      <SectionTitle label={_('Staff')} title={_('Teachers') + ` (${teachersData.length})`} />
                       <motion.div variants={cardStackReveal} custom={0}>
                         <Card className="border-border/60">
                           <CardContent className="max-h-[400px] overflow-y-auto space-y-1 p-5">
                             {teachersData.length === 0 ? (
-                              <p className="text-title-sm text-muted-foreground text-center py-4">No teachers</p>
+                              <p className="text-title-sm text-muted-foreground text-center py-4">{_('No teachers')}</p>
                             ) : (
                               teachersData.slice(0, 20).map((t: any) => (
                                 <div key={t.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50">
@@ -572,12 +574,12 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <div>
-                      <SectionTitle label="Students" title={`Students (${studentsData.length})`} />
+                      <SectionTitle label={_('Students')} title={_('Students') + ` (${studentsData.length})`} />
                       <motion.div variants={cardStackReveal} custom={0}>
                         <Card className="border-border/60">
                           <CardContent className="max-h-[400px] overflow-y-auto space-y-1 p-5">
                             {studentsData.length === 0 ? (
-                              <p className="text-title-sm text-muted-foreground text-center py-4">No students</p>
+                              <p className="text-title-sm text-muted-foreground text-center py-4">{_('No students')}</p>
                             ) : (
                               studentsData.slice(0, 20).map((s: any) => (
                                 <div key={s.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50">
@@ -596,12 +598,12 @@ export default function AdminDashboardPage() {
                   </div>
 
                   <section>
-                    <SectionTitle label="Alerts" title="At-risk students" />
+                    <SectionTitle label={_('Alerts')} title={_('At-risk students')} />
                     <motion.div variants={cardStackReveal} custom={0}>
                       <Card className="border-border/60">
                         <CardContent className="max-h-[400px] overflow-y-auto p-5">
                           {overviewData?.atRiskStudents?.length === 0 ? (
-                            <p className="text-title-sm text-muted-foreground text-center py-4">All students performing well</p>
+                            <p className="text-title-sm text-muted-foreground text-center py-4">{_('All students performing well')}</p>
                           ) : (
                             <div className="space-y-2">
                               {(overviewData?.atRiskStudents ?? []).slice(0, 15).map((s: any) => (
@@ -621,12 +623,12 @@ export default function AdminDashboardPage() {
                   </section>
 
                   <section>
-                    <SectionTitle label="Activity" title="Recent activity" />
+                    <SectionTitle label={_('Activity')} title={_('Recent Activity')} />
                     <motion.div variants={cardStackReveal} custom={0}>
                       <Card className="border-border/60">
                         <CardContent className="p-5">
                           {overviewData?.activityFeed?.length === 0 ? (
-                            <p className="text-title-sm text-muted-foreground text-center py-4">No recent activity</p>
+                            <p className="text-title-sm text-muted-foreground text-center py-4">{_('No recent activity')}</p>
                           ) : (
                             <div className="space-y-2">
                               {overviewData?.activityFeed?.map((item: any) => (
@@ -664,66 +666,66 @@ export default function AdminDashboardPage() {
                   <Badge variant={inspectTest?.type === 'Quiz' ? 'default' : inspectTest?.type === 'Exam' ? 'destructive' : 'warning'} className="text-[10px] uppercase font-bold py-0.5">
                     {inspectTest?.type}
                   </Badge>
-                  <span>Class: {inspectTest?.className}</span>
+                  <span>{_('Class')}: {inspectTest?.className}</span>
                   <span>&bull;</span>
-                  <span>Subject: {inspectTest?.subjectName}</span>
+                  <span>{_('Subject')}: {inspectTest?.subjectName}</span>
                 </span>
               </div>
             </DialogTitle>
             <DialogDescription className="text-label-sm text-muted-foreground mt-1">
-              Conducted by {inspectTest?.teacherName} on {inspectTest?.conceptName || 'General Concept'}
+              {_('Conducted by')} {inspectTest?.teacherName} {_('on')} {inspectTest?.conceptName || _('General Concept')}
             </DialogDescription>
           </DialogHeader>
 
           {isInspectLoading ? (
             <div className="flex flex-col items-center justify-center py-12 gap-2">
               <Icon name="progress_activity" size={32} className="animate-spin text-primary" />
-              <p className="text-title-sm text-muted-foreground">Loading results data...</p>
+              <p className="text-title-sm text-muted-foreground">{_('Loading results data...')}</p>
             </div>
           ) : inspectDetails ? (
             <div className="space-y-6 mt-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Card variant="outlined">
                   <CardContent className="p-4 flex flex-col items-center text-center">
-                    <span className="text-label-sm text-muted-foreground">Total Submissions</span>
+                    <span className="text-label-sm text-muted-foreground">{_('Total Submissions')}</span>
                     <span className="text-display-xs font-bold font-mono mt-1">{inspectDetails.attemptCount}</span>
                   </CardContent>
                 </Card>
                 <Card variant="outlined">
                   <CardContent className="p-4 flex flex-col items-center text-center">
-                    <span className="text-label-sm text-muted-foreground">Average Score</span>
+                    <span className="text-label-sm text-muted-foreground">{_('Average Score')}</span>
                     <span className={`text-display-xs font-bold font-mono mt-1 ${inspectDetails.avgScore < 70 ? 'text-error' : 'text-success'}`}>{inspectDetails.avgScore}%</span>
                   </CardContent>
                 </Card>
                 <Card variant="outlined">
                   <CardContent className="p-4 flex flex-col items-center text-center">
-                    <span className="text-label-sm text-muted-foreground">Passing Rate</span>
+                    <span className="text-label-sm text-muted-foreground">{_('Passing Rate')}</span>
                     <span className="text-display-xs font-bold font-mono mt-1 text-primary">{inspectDetails.passRate}%</span>
                   </CardContent>
                 </Card>
               </div>
 
               <div className="space-y-3">
-                <h3 className="text-title-sm font-bold flex items-center gap-2">
-                  <Icon name="list" size={18} />
-                  Individual Student Results
-                </h3>
-                {(!inspectDetails.studentAttempts || inspectDetails.studentAttempts.length === 0) ? (
-                  <div className="flex flex-col items-center py-8 text-muted-foreground bg-muted/20 rounded-xl border border-border/60">
-                    <Icon name="info" size={32} />
-                    <p className="text-title-sm mt-2">No scored submissions found</p>
+                  <h3 className="text-title-sm font-bold flex items-center gap-2">
+                    <Icon name="list" size={18} />
+                    {_('Individual Student Results')}
+                  </h3>
+                  {(!inspectDetails.studentAttempts || inspectDetails.studentAttempts.length === 0) ? (
+                    <div className="flex flex-col items-center py-8 text-muted-foreground bg-muted/20 rounded-xl border border-border/60">
+                      <Icon name="info" size={32} />
+                      <p className="text-title-sm mt-2">{_('No scored submissions found')}</p>
                   </div>
                 ) : (
                   <div className="border border-border/60 rounded-xl overflow-x-auto bg-surface">
                     <table className="w-full text-left">
                       <thead>
                         <tr className="border-b border-b-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
-                          <th className="px-4 py-2.5">Roll No</th>
-                          <th className="px-4 py-2.5">Student ID</th>
-                          <th className="px-4 py-2.5">Name</th>
-                          <th className="px-4 py-2.5">Submitted At</th>
-                          <th className="px-4 py-2.5 text-center">Score</th>
-                          <th className="px-4 py-2.5 text-center">Status</th>
+                          <th className="px-4 py-2.5">{_('Roll No')}</th>
+                          <th className="px-4 py-2.5">{_('Student ID')}</th>
+                          <th className="px-4 py-2.5">{_('Name')}</th>
+                          <th className="px-4 py-2.5">{_('Submitted At')}</th>
+                          <th className="px-4 py-2.5 text-center">{_('Score')}</th>
+                          <th className="px-4 py-2.5 text-center">{_('Status')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/40 text-title-sm">

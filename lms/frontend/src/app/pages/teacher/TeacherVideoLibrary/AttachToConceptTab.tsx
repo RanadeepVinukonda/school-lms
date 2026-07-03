@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useTranslation } from '@/hooks/useTranslation';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Icon } from '@/components/ui/Icon';
 import {
@@ -18,6 +19,7 @@ import type { TeacherVideo } from './types';
 import type { Textbook, Chapter, Concept } from '@/types/textbook';
 
 export function AttachToConceptTab() {
+  const { _ } = useTranslation();
   const queryClient = useQueryClient();
   const [selectedTextbookId, setSelectedTextbookId] = useState('');
   const [selectedChapterId, setSelectedChapterId] = useState('');
@@ -53,20 +55,20 @@ export function AttachToConceptTab() {
     mutationFn: ({ videoId, textbookId, chapterId, conceptId }: { videoId: string; textbookId: string; chapterId: string; conceptId: string }) =>
       api.put(`/api/teacher-videos/${videoId}/attach`, { textbookId, chapterId, conceptId }),
     onSuccess: () => {
-      toast.success('Video attached to concept');
+      toast.success(_('Video attached to concept'));
       queryClient.invalidateQueries({ queryKey: ['teacher-videos'] });
     },
-    onError: () => toast.error('Failed to attach video'),
+    onError: () => toast.error(_('Failed to attach video')),
   });
 
   const detachMutation = useMutation({
     mutationFn: (videoId: string) =>
       api.put(`/api/teacher-videos/${videoId}/attach`, {}),
     onSuccess: () => {
-      toast.success('Video detached from concept');
+      toast.success(_('Video detached from concept'));
       queryClient.invalidateQueries({ queryKey: ['teacher-videos'] });
     },
-    onError: () => toast.error('Failed to detach video'),
+    onError: () => toast.error(_('Failed to detach video')),
   });
 
   const textbooks = textbooksQuery.data ?? [];
@@ -82,12 +84,12 @@ export function AttachToConceptTab() {
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <p className="text-sm text-muted-foreground whitespace-nowrap">
-          Select a concept then attach videos from your library:
+          {_('Select a concept then attach videos from your library:')}
         </p>
         <div className="flex items-center gap-2 flex-wrap">
           <Select value={selectedTextbookId} onValueChange={(v) => { setSelectedTextbookId(v); setSelectedChapterId(''); setSelectedConceptId(''); }}>
             <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder="Select textbook" />
+              <SelectValue placeholder={_('Select textbook')} />
             </SelectTrigger>
             <SelectContent>
               {textbooks.map((tb) => (
@@ -101,7 +103,7 @@ export function AttachToConceptTab() {
             disabled={!selectedTextbookId}
           >
             <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder="Select chapter" />
+              <SelectValue placeholder={_('Select chapter')} />
             </SelectTrigger>
             <SelectContent>
               {chapters.map((ch) => (
@@ -115,7 +117,7 @@ export function AttachToConceptTab() {
             disabled={!selectedChapterId}
           >
             <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder="Select concept" />
+              <SelectValue placeholder={_('Select concept')} />
             </SelectTrigger>
             <SelectContent>
               {concepts.map((c) => (
@@ -131,9 +133,9 @@ export function AttachToConceptTab() {
           <div className="mb-5 text-muted-foreground/40">
             <Icon name="attach_file" size={64} />
           </div>
-          <h3 className="text-headline-sm mb-1">Attach Videos to Concepts</h3>
+          <h3 className="text-headline-sm mb-1">{_('Attach Videos to Concepts')}</h3>
           <p className="text-body-md text-muted-foreground max-w-sm">
-            Select a textbook, chapter, and concept above to attach videos from your library.
+            {_('Select a textbook, chapter, and concept above to attach videos from your library.')}
           </p>
         </div>
       )}
@@ -145,7 +147,7 @@ export function AttachToConceptTab() {
           error={videosQuery.error}
           onRetry={() => videosQuery.refetch()}
           loadingType="card"
-          emptyMessage="All videos are already attached to this concept or your library is empty"
+          emptyMessage={_('All videos are already attached to this concept or your library is empty')}
         >
           {(videos) => (
             <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">

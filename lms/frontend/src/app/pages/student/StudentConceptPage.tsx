@@ -18,6 +18,7 @@ import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/
 import { ROUTES } from '@/lib/constants';
 import { getTextbook, getChaptersForTextbook, getConceptsForChapter, getConceptProgress, saveConceptProgress, getConceptRelease } from '@/services/textbookService';
 import { useAuthStore } from '@/store/authStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { ConceptDetailMindMap } from '@/components/teacher/ConceptDetailMindMap';
 import type { GeneratedQuestion } from '@/types/textbook';
 
@@ -135,6 +136,7 @@ function UnlockOverlay({ icon, message }: { icon: string; message: string }) {
 }
 
 export default function StudentConceptPage() {
+  const { _ } = useTranslation();
   const { conceptId } = useParams<{ conceptId: string }>();
   const [searchParams] = useSearchParams();
   const textbookId = searchParams.get('textbookId') || '';
@@ -208,7 +210,7 @@ export default function StudentConceptPage() {
 
   return (
     <>
-      <SEOHead title={concept?.title || 'Concept'} description={concept?.summary || ''} />
+      <SEOHead title={concept?.title || _('Concept')} description={concept?.summary || ''} />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -218,17 +220,17 @@ export default function StudentConceptPage() {
         <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
           <Link to={ROUTES.STUDENT_CHAPTER(textbookId, data?.chapter.id || '')} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
             <Icon name="arrow_back" size={16} />
-            Back to chapter
+            {_('Back to chapter')}
           </Link>
         </motion.div>
 
         <DataFetchWrapper
           data={data}
           isLoading={isLoading}
-          error={isError ? error ?? new Error('Failed to load concept') : null}
+          error={isError ? error ?? new Error(_('Failed to load concept')) : null}
           onRetry={() => refetch()}
           loadingType="detail"
-          emptyMessage="Concept not found"
+          emptyMessage={_('Concept not found')}
         >
           {(d) => {
             const isReleased = d.release?.mindMapReleased;
@@ -239,10 +241,10 @@ export default function StudentConceptPage() {
                   <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
                     <Link to={`${ROUTES.STUDENT_CHAPTER(textbookId, d.chapter.id)}?textbookId=${textbookId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
                       <Icon name="arrow_back" size={16} />
-                      Back to chapter
+                      {_('Back to chapter')}
                     </Link>
                   </motion.div>
-                  <UnlockOverlay icon="lock" message="This concept has not yet been released by your teacher." />
+                  <UnlockOverlay icon="lock" message={_('This concept has not yet been released by your teacher.')} />
                 </div>
               );
             }
@@ -253,7 +255,7 @@ export default function StudentConceptPage() {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <Badge variant="secondary">{d.textbook.title}</Badge>
-                      <span className="text-sm text-muted-foreground">Chapter {d.chapter.order + 1}</span>
+                      <span className="text-sm text-muted-foreground">{_('Chapter')} {d.chapter.order + 1}</span>
                     </div>
                     <h1 className="text-headline-sm md:text-headline-md font-bold tracking-tight">{d.concept.title}</h1>
                     <p className="text-muted-foreground mt-1">{d.concept.summary}</p>
@@ -264,13 +266,13 @@ export default function StudentConceptPage() {
                   <Tabs defaultValue="studyMaterial">
                     <TabsList className="w-full overflow-x-auto inline-flex">
                       <TabsTrigger value="studyMaterial" className="flex-1">
-                        <Icon name="menu_book" size={14} className="mr-1.5" />Study Material
+                        <Icon name="menu_book" size={14} className="mr-1.5" />{_('Study Material')}
                       </TabsTrigger>
                       <TabsTrigger value="mindmap" className="flex-1">
-                        <Icon name="account_tree" size={14} className="mr-1.5" />Mind Map
+                        <Icon name="account_tree" size={14} className="mr-1.5" />{_('Mind Map')}
                       </TabsTrigger>
                       <TabsTrigger value="quiz" className="flex-1">
-                        <Icon name="bolt" size={14} className="mr-1.5" />Quiz
+                        <Icon name="bolt" size={14} className="mr-1.5" />{_('Quiz')}
                       </TabsTrigger>
                     </TabsList>
 
@@ -280,7 +282,7 @@ export default function StudentConceptPage() {
                           <CardContent className="p-5">
                             <h2 className="font-semibold mb-3 flex items-center gap-2">
                               <Icon name="track_changes" size={18} className="text-tertiary" />
-                              Learning Objectives
+                              {_('Learning Objectives')}
                             </h2>
                             <ul className="space-y-1.5">
                               {d.concept.learningObjectives!.map((obj, i) => (
@@ -299,7 +301,7 @@ export default function StudentConceptPage() {
                           <CardContent className="p-5">
                             <h2 className="font-semibold mb-3 flex items-center gap-2">
                               <Icon name="notes" size={18} className="text-primary" />
-                              Summary
+                              {_('Summary')}
                             </h2>
                             <div className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">
                               {d.concept.summary}
@@ -312,7 +314,7 @@ export default function StudentConceptPage() {
                         <CardContent className="p-5">
                           <h2 className="font-semibold mb-3 flex items-center gap-2">
                             <Icon name="menu_book" size={18} className="text-primary" />
-                            Study Notes
+                            {_('Study Notes')}
                           </h2>
                           <div className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">
                             {d.concept.notes}
@@ -325,7 +327,7 @@ export default function StudentConceptPage() {
                           <CardContent className="p-5">
                             <h2 className="font-semibold mb-3 flex items-center gap-2">
                               <Icon name="lightbulb" size={18} className="text-primary" />
-                              Key Points
+                              {_('Key Points')}
                             </h2>
                             <div className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">
                               {d.concept.keyPoints}
@@ -339,7 +341,7 @@ export default function StudentConceptPage() {
                           <CardContent className="p-5">
                             <h2 className="font-semibold mb-3 flex items-center gap-2">
                               <Icon name="calculate" size={18} className="text-primary" />
-                              Formulas
+                              {_('Formulas')}
                             </h2>
                             <div className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground font-mono">
                               {d.concept.formulas}
@@ -353,7 +355,7 @@ export default function StudentConceptPage() {
                           <CardContent className="p-5">
                             <h2 className="font-semibold mb-3 flex items-center gap-2">
                               <Icon name="description" size={18} className="text-primary" />
-                              Examples
+                              {_('Examples')}
                             </h2>
                             <div className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">
                               {d.concept.examples}
@@ -371,26 +373,26 @@ export default function StudentConceptPage() {
                       <Card className="border-border/60">
                         <CardContent className="p-6 text-center">
                           <Icon name="bolt" size={48} className="text-primary/50 mx-auto mb-3" />
-                          <h2 className="text-title-md font-semibold mb-2">Adaptive Quiz</h2>
+                          <h2 className="text-title-md font-semibold mb-2">{_('Adaptive Quiz')}</h2>
                           <p className="text-sm text-muted-foreground mb-4">
-                            Take an adaptive quiz that adjusts to your skill level. Questions are selected from {(d.concept.questionBank || []).length} available questions.
+                            {_('Take an adaptive quiz that adjusts to your skill level. Questions are selected from')} {(d.concept.questionBank || []).length} {_('available questions.')}
                           </p>
                           {progress && (
                             <div className="flex flex-wrap justify-center gap-3 mb-4">
                               {(progress.quizScores || []).length > 0 && (
                                 <Badge variant="secondary" className="text-xs">
-                                  Best: {Math.max(...(progress.quizScores || [0]))}%
+                                  {_('Best')}: {Math.max(...(progress.quizScores || [0]))}%
                                 </Badge>
                               )}
                               <Badge variant="secondary" className="text-xs">
-                                Attempts: {progress.quizAttempts || 0}
+                                {_('Attempts')}: {progress.quizAttempts || 0}
                               </Badge>
                             </div>
                           )}
                           <Button asChild size="lg">
                             <Link to={`${ROUTES.STUDENT_CONCEPT_QUIZ(conceptId!)}?textbookId=${textbookId}`}>
                               <Icon name="play_arrow" size={18} className="mr-2" />
-                              Start Adaptive Quiz
+                              {_('Start Adaptive Quiz')}
                             </Link>
                           </Button>
                         </CardContent>

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { cardStackReveal } from '@/lib/motion';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { TeacherVideo, YouTubeSearchResult } from './types';
 
 interface VideoCardProps {
@@ -15,6 +16,7 @@ interface VideoCardProps {
 }
 
 export function VideoCard({ video, onDelete, onAttach, onSave, saved }: VideoCardProps) {
+  const { _ } = useTranslation();
   return (
     <motion.div variants={cardStackReveal} custom={0}>
       <Card className="border-border/60 overflow-hidden hover:shadow-md transition-shadow group h-full">
@@ -31,13 +33,13 @@ export function VideoCard({ video, onDelete, onAttach, onSave, saved }: VideoCar
             {onSave && (
               <Button variant={saved ? 'secondary' : 'default'} size="sm" onClick={onSave} disabled={saved} className="gap-1 flex-1">
                 <Icon name={saved ? 'check' : 'save'} size={14} />
-                {saved ? 'Saved' : 'Save'}
+                {saved ? _('Saved') : _('Save')}
               </Button>
             )}
             {onAttach && (
               <Button variant="outline" size="sm" onClick={onAttach} className="gap-1 flex-1">
                 <Icon name="attach_file" size={14} />
-                Attach
+                {_('Attach')}
               </Button>
             )}
             {onDelete && (

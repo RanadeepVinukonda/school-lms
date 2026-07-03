@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const navItems = [
   { label: 'Home', href: ROUTES.K2_DASHBOARD, icon: 'home' },
@@ -15,6 +16,12 @@ export default function K2Layout() {
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
+  const { t } = useTranslation();
+  const getLabel = (label: string) => {
+    const key = `nav.${label.toLowerCase().replace(/ /g, '')}`;
+    const val = t(key as any);
+    return val === key ? label : val;
+  };
 
   const handleLogout = async () => {
     const { useAuthStore: auth } = await import('@/store/authStore');
@@ -66,7 +73,7 @@ export default function K2Layout() {
               {({ isActive }) => (
                 <>
                   <span className="material-symbols-outlined text-3xl">{item.icon}</span>
-                  <span className="text-sm">{item.label}</span>
+                  <span className="text-sm">{getLabel(item.label)}</span>
                   {isActive && <span className="w-6 h-1 bg-purple-500 rounded-full mt-0.5" />}
                 </>
               )}

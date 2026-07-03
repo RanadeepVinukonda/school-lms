@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from '@/hooks/useTranslation';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import {
@@ -32,6 +33,7 @@ function QuizSkeleton() {
 }
 
 export default function QuizAttemptPage() {
+  const { _ } = useTranslation();
   const { quizId } = useParams();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<'intro' | 'taking' | 'results'>('intro');
@@ -72,7 +74,7 @@ export default function QuizAttemptPage() {
       return () => clearInterval(timer);
     }
     if (timeLeft === 0 && phase === 'taking') {
-      toast.error('Time is up!');
+      toast.error(_('Time is up!'));
       setPhase('results');
     }
   }, [phase, timeLeft]);
@@ -80,7 +82,7 @@ export default function QuizAttemptPage() {
   const handleSubmit = useCallback(() => {
     setPhase('results');
     setShowConfirm(false);
-    toast.success('Quiz submitted!');
+    toast.success(_('Quiz submitted!'));
   }, []);
 
   if (isLoading) return <QuizSkeleton />;
@@ -90,8 +92,8 @@ export default function QuizAttemptPage() {
       <div className="sm:p-6 p-4">
         <Card className="border-border/60"><CardContent className="flex flex-col items-center gap-4 py-12">
           <AlertCircle className="h-8 w-8 text-destructive" />
-          <p className="font-medium text-headline-sm">Failed to load quiz</p>
-          <Button variant="outline" onClick={() => window.history.back()}>Go Back</Button>
+          <p className="font-medium text-headline-sm">{_('Failed to load quiz')}</p>
+          <Button variant="outline" onClick={() => window.history.back()}>{_('Go Back')}</Button>
         </CardContent></Card>
       </div>
     );
@@ -107,8 +109,8 @@ export default function QuizAttemptPage() {
       <div className="sm:p-6 p-4">
         <Card className="border-border/60"><CardContent className="flex flex-col items-center gap-4 py-12">
           <AlertCircle className="h-8 w-8 text-destructive" />
-          <p className="font-medium text-headline-sm">No questions found</p>
-          <Button variant="outline" onClick={() => navigate('/student/dashboard')}>Back to Dashboard</Button>
+          <p className="font-medium text-headline-sm">{_('No questions found')}</p>
+          <Button variant="outline" onClick={() => navigate('/student/dashboard')}>{_('Back to Dashboard')}</Button>
         </CardContent></Card>
       </div>
     );
@@ -122,11 +124,11 @@ export default function QuizAttemptPage() {
   if (phase === 'intro') {
     return (
       <>
-        <SEOHead title={quiz.title} description={`Quiz: ${quiz.title}`} canonical={`/quizzes/${quizId}`} />
+        <SEOHead title={quiz.title} description={`${_('Quiz')}: ${quiz.title}`} canonical={`/quizzes/${quizId}`} />
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16">
           <motion.div variants={cardStackReveal} custom={0} className="max-w-lg mx-auto">
             <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
-              <ArrowLeft className="h-4 w-4 mr-1" />Back
+              <ArrowLeft className="h-4 w-4 mr-1" />{_('Back')}
             </Button>
             <Card className="border-border/60">
               <CardContent className="p-6 text-center space-y-4">
@@ -136,16 +138,16 @@ export default function QuizAttemptPage() {
                 <CardTitle className="text-headline-sm">{quiz.title}</CardTitle>
                 <CardDescription className="text-body-lg">{quiz.description}</CardDescription>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-body-md">
-                  <div className="bg-muted rounded-lg p-3"><p className="text-display-xs font-bold">{totalQuestions}</p><p className="text-label-xs text-muted-foreground">Questions</p></div>
-                  <div className="bg-muted rounded-lg p-3"><p className="text-display-xs font-bold">{quiz.timeLimit}m</p><p className="text-label-xs text-muted-foreground">Time Limit</p></div>
-                  <div className="bg-muted rounded-lg p-3"><p className="text-display-xs font-bold">{quiz.questions?.reduce((s, q) => s + q.points, 0) || 0}</p><p className="text-label-xs text-muted-foreground">Points</p></div>
+                  <div className="bg-muted rounded-lg p-3"><p className="text-display-xs font-bold">{totalQuestions}</p><p className="text-label-xs text-muted-foreground">{_('Questions')}</p></div>
+                  <div className="bg-muted rounded-lg p-3"><p className="text-display-xs font-bold">{quiz.timeLimit}m</p><p className="text-label-xs text-muted-foreground">{_('Time Limit')}</p></div>
+                  <div className="bg-muted rounded-lg p-3"><p className="text-display-xs font-bold">{quiz.questions?.reduce((s, q) => s + q.points, 0) || 0}</p><p className="text-label-xs text-muted-foreground">{_('Points')}</p></div>
                 </div>
                 <div className="text-left text-body-md text-muted-foreground bg-muted rounded-lg p-3">
-                  <p className="font-medium mb-1">Instructions:</p>
+                  <p className="font-medium mb-1">{_('Instructions:')}</p>
                   <p>{(quiz as any).instructions || quiz.description}</p>
-                  <p className="mt-1">Passing score: {quiz.passingScore}%</p>
+                  <p className="mt-1">{_('Passing score')}: {quiz.passingScore}%</p>
                 </div>
-                <Button className="w-full" onClick={handleStart}><Play className="h-4 w-4 mr-2" />Start Quiz</Button>
+                <Button className="w-full" onClick={handleStart}><Play className="h-4 w-4 mr-2" />{_('Start Quiz')}</Button>
               </CardContent>
             </Card>
           </motion.div>
@@ -163,7 +165,7 @@ export default function QuizAttemptPage() {
   if (phase === 'results') {
     return (
       <>
-        <SEOHead title={`${quiz.title} - Results`} description="Quiz results" />
+        <SEOHead title={`${quiz.title} - ${_('Results')}`} description={_('Quiz results')} />
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16">
           <motion.div variants={cardStackReveal} custom={0} className="max-w-lg mx-auto">
             <Card className="border-border/60">
@@ -171,22 +173,22 @@ export default function QuizAttemptPage() {
                 <div className={cn('h-12 w-12 rounded-xl mx-auto flex items-center justify-center', quizPassed ? 'bg-emerald-500/10' : 'bg-destructive/10')}>
                   {quizPassed ? <CheckCircle className="h-6 w-6 text-emerald-500" /> : <XCircle className="h-6 w-6 text-destructive" />}
                 </div>
-                <CardTitle className="text-headline-sm">{quizPassed ? 'Congratulations!' : 'Keep Practicing'}</CardTitle>
+                <CardTitle className="text-headline-sm">{quizPassed ? _('Congratulations!') : _('Keep Practicing')}</CardTitle>
                 <p className="text-display-xs font-bold">{quizTotalScore}/{quizTotalPoints}</p>
-                <p className="text-body-md text-muted-foreground">{quizPercentage}% &middot; {quizTotalCorrect}/{totalQuestions} correct</p>
-                <Badge variant={quizPassed ? 'success' : 'destructive'} className="mx-auto">{quizPassed ? 'Passed' : 'Failed'}</Badge>
+                <p className="text-body-md text-muted-foreground">{quizPercentage}% &middot; {quizTotalCorrect}/{totalQuestions} {_('correct')}</p>
+                <Badge variant={quizPassed ? 'success' : 'destructive'} className="mx-auto">{quizPassed ? _('Passed') : _('Failed')}</Badge>
                 <div className="text-left space-y-2 mt-4">
                   {quiz.questions?.map((question, i) => (
                     <div key={question.id} className={cn('p-3 rounded-lg text-body-md', answers[question.id] === question.correctAnswer ? 'bg-emerald-500/5 border border-emerald-500/20' : 'bg-destructive/5 border border-destructive/20')}>
                       <p className="font-medium mb-1">Q{i + 1}. {question.text}</p>
-                      <p className="text-label-xs text-muted-foreground">Your answer: {answers[question.id] || 'Not answered'}</p>
+                      <p className="text-label-xs text-muted-foreground">{_('Your answer:')} {answers[question.id] || _('Not answered')}</p>
                       {answers[question.id] !== question.correctAnswer && (
-                        <p className="text-label-xs text-emerald-500">Correct: {question.correctAnswer}</p>
+                        <p className="text-label-xs text-emerald-500">{_('Correct:')} {question.correctAnswer}</p>
                       )}
                     </div>
                   ))}
                 </div>
-                <Button className="w-full" onClick={() => navigate('/student/dashboard')}>Back to Dashboard</Button>
+                <Button className="w-full" onClick={() => navigate('/student/dashboard')}>{_('Back to Dashboard')}</Button>
               </CardContent>
             </Card>
           </motion.div>
@@ -200,7 +202,7 @@ export default function QuizAttemptPage() {
 
   return (
     <>
-      <SEOHead title={`${quiz.title} - In Progress`} description="Quiz in progress" />
+      <SEOHead title={`${quiz.title} - ${_('In Progress')}`} description={_('Quiz in progress')} />
       <div className="p-4 max-w-2xl mx-auto pb-32">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -229,8 +231,8 @@ export default function QuizAttemptPage() {
         <Card className="border-border/60">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
-              <Badge variant="outline" className="text-body-md">Question {currentQ + 1} of {totalQuestions}</Badge>
-              <span className="text-label-xs text-muted-foreground">{q.points} pts</span>
+              <Badge variant="outline" className="text-body-md">{_('Question')} {currentQ + 1} {_('of')} {totalQuestions}</Badge>
+              <span className="text-label-xs text-muted-foreground">{q.points} {_('pts')}</span>
             </div>
             <p className="font-medium text-body-lg mb-4">{q.text}</p>
 
@@ -258,7 +260,7 @@ export default function QuizAttemptPage() {
 
             {q.type === 'short_answer' && (
               <Textarea
-                placeholder="Type your answer..."
+                placeholder={_('Type your answer...')}
                 rows={3}
                 value={answers[q.id] || ''}
                 onChange={e => setAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
@@ -269,15 +271,15 @@ export default function QuizAttemptPage() {
 
         <div className="flex justify-between mt-4">
           <Button variant="outline" onClick={() => setCurrentQ(i => Math.max(0, i - 1))} disabled={currentQ === 0}>
-            <ChevronLeft className="h-4 w-4 mr-1" />Previous
+            <ChevronLeft className="h-4 w-4 mr-1" />{_('Previous')}
           </Button>
           {currentQ < totalQuestions - 1 ? (
             <Button onClick={() => setCurrentQ(i => i + 1)} disabled={currentQ === totalQuestions - 1}>
-              Next<ChevronRight className="h-4 w-4 ml-1" />
+              {_('Next')}<ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           ) : (
             <Button onClick={() => setShowConfirm(true)}>
-              <Send className="h-4 w-4 mr-1" />Submit
+              <Send className="h-4 w-4 mr-1" />{_('Submit')}
             </Button>
           )}
         </div>
@@ -285,10 +287,10 @@ export default function QuizAttemptPage() {
         {showConfirm && (
           <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
             <Card className="w-full max-w-sm border-border/60">
-              <CardHeader><CardTitle className="text-title-sm">Submit Quiz</CardTitle><CardDescription>You have answered {answeredCount} of {totalQuestions} questions. Unanswered questions will be marked wrong.</CardDescription></CardHeader>
+              <CardHeader><CardTitle className="text-title-sm">{_('Submit Quiz')}</CardTitle><CardDescription>{_('You have answered')} {answeredCount} {_('of')} {totalQuestions} {_('questions.')} {_('Unanswered questions will be marked wrong.')}</CardDescription></CardHeader>
               <CardContent className="p-5 flex gap-3">
-                <Button variant="outline" className="flex-1" onClick={() => setShowConfirm(false)}>Review</Button>
-                <Button className="flex-1" onClick={handleSubmit}>Submit</Button>
+                <Button variant="outline" className="flex-1" onClick={() => setShowConfirm(false)}>{_('Review')}</Button>
+                <Button className="flex-1" onClick={handleSubmit}>{_('Submit')}</Button>
               </CardContent>
             </Card>
           </div>

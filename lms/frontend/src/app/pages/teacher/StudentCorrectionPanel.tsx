@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Icon } from '@/components/ui/Icon';
 import { getInitials } from '@/lib/utils';
 import { cardStackReveal } from '@/lib/motion';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { UserDoc, CorrectionItem, ExamItem } from '@/services/dataService';
 
 interface MarkEntry {
@@ -52,6 +53,7 @@ export function StudentCorrectionPanel({
   onOverallFeedbackChange,
   onPublish,
 }: StudentCorrectionPanelProps) {
+  const { _ } = useTranslation();
   const isExpanded = expandedStudent === student.id;
 
   const examQuestions = (exam.questions as { id: string; type: string; question: string; points: number; options?: string[]; correctAnswer?: string }[]) ?? [];
@@ -79,7 +81,7 @@ export function StudentCorrectionPanel({
             {submitted && correction ? (
               <>
                 <Badge variant="success" className="text-[10px]">
-                  Submitted
+                  {_('Submitted')}
                 </Badge>
                 <span className="text-sm font-semibold tabular-nums">
                   {correction.totalMarks}/
@@ -88,7 +90,7 @@ export function StudentCorrectionPanel({
               </>
             ) : (
               <Badge variant="secondary" className="text-[10px]">
-                Pending
+                {_('Pending')}
               </Badge>
             )}
             <Icon
@@ -116,14 +118,14 @@ export function StudentCorrectionPanel({
                           Q{qi + 1}
                         </Badge>
                         <Badge variant="secondary" className="text-[10px]">
-                          {question.type === 'multiple_choice' ? 'MCQ' : 'Essay'} &middot;{' '}
-                          {question.points} pts
+                          {question.type === 'multiple_choice' ? _('MCQ') : _('Essay')} &middot;{' '}
+                          {question.points} {_('pts')}
                         </Badge>
                       </div>
                       <p className="text-sm mt-1">{question.question}</p>
                       {question.type === 'multiple_choice' && (
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          Options: {question.options?.join(', ') ?? 'N/A'}
+                          {_('Options')}: {question.options?.join(', ') ?? _('N/A')}
                         </p>
                       )}
                       <p className="text-xs text-on-success-container mt-0.5">

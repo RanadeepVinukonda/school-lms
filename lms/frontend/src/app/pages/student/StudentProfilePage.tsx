@@ -22,6 +22,7 @@ import { getAllSubjects, getGradesByStudent, getUser, getClass } from '@/service
 import { XPBar } from '@/components/gamification/XPBar';
 import { XP_THRESHOLDS } from '@/components/gamification/constants';
 import api from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 
 function EmptySection({ icon, message }: { icon: string; message: string }) {
   return (
@@ -33,6 +34,7 @@ function EmptySection({ icon, message }: { icon: string; message: string }) {
 }
 
 export default function StudentProfilePage() {
+  const { _ } = useTranslation();
   const authUser = useAuthStore((s) => s.user);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -76,7 +78,7 @@ export default function StudentProfilePage() {
 
   return (
     <>
-      <SEOHead title="My Profile" description="Your student profile and academic summary" />
+      <SEOHead title={_('My Profile')} description={_('Your student profile and academic summary')} />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -84,9 +86,9 @@ export default function StudentProfilePage() {
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
       >
         <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
-          <h1 className="text-headline-sm md:text-headline-md font-bold tracking-tight">My Profile</h1>
+          <h1 className="text-headline-sm md:text-headline-md font-bold tracking-tight">{_('My Profile')}</h1>
         </motion.div>
-        <DataFetchWrapper data={data} isLoading={isLoading} error={isError ? error ?? new Error('Failed to load profile') : null} loadingType="profile" emptyMessage="Could not load profile information" onRetry={() => refetch()} errorTitle="Failed to load profile">
+        <DataFetchWrapper data={data} isLoading={isLoading} error={isError ? error ?? new Error(_('Failed to load profile')) : null} loadingType="profile" emptyMessage={_('Could not load profile information')} onRetry={() => refetch()} errorTitle={_('Failed to load profile')}>
           {(d) => (
             <div className="space-y-16">
               {/* School Information */}
@@ -94,23 +96,23 @@ export default function StudentProfilePage() {
                 <Card className="border-border/60 rounded-2xl">
                   <CardContent className="p-6">
                     <div className="flex items-start gap-5">
-                      <img src="/genesis_icon.png" alt="Genesis School Crest" className="h-20 w-auto object-contain shrink-0" />
+                      <img src="/genesis_icon.png" alt={_('Genesis School Crest')} className="h-20 w-auto object-contain shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <h2 className="text-headline-sm font-bold">Genesis International Montessori &amp; STEM School</h2>
-                        <p className="text-warning uppercase text-xs tracking-wider font-semibold mt-0.5">Learn &middot; Lead &middot; Achieve</p>
-                        <p className="text-body-sm text-muted-foreground mt-2">A premier institution dedicated to academic excellence, leadership development, and holistic student growth.</p>
+                        <h2 className="text-headline-sm font-bold">{_('Genesis International Montessori & STEM School')}</h2>
+                        <p className="text-warning uppercase text-xs tracking-wider font-semibold mt-0.5">{_('Learn · Lead · Achieve')}</p>
+                        <p className="text-body-sm text-muted-foreground mt-2">{_('A premier institution dedicated to academic excellence, leadership development, and holistic student growth.')}</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-border">
                           <div>
-                            <p className="text-xs text-muted-foreground">Academic Year</p>
+                            <p className="text-xs text-muted-foreground">{_('Academic Year')}</p>
                             <p className="text-sm font-semibold">2025&ndash;2026</p>
                           </div>
                           <div>
-                            <p className="text-xs text-muted-foreground">Campus</p>
-                            <p className="text-sm font-semibold">Main Campus</p>
+                            <p className="text-xs text-muted-foreground">{_('Campus')}</p>
+                            <p className="text-sm font-semibold">{_('Main Campus')}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-muted-foreground">School Motto</p>
-                            <p className="text-sm font-semibold">Learn &middot; Lead &middot; Achieve</p>
+                            <p className="text-xs text-muted-foreground">{_('School Motto')}</p>
+                            <p className="text-sm font-semibold">{_('Learn · Lead · Achieve')}</p>
                           </div>
                         </div>
                       </div>
@@ -129,14 +131,14 @@ export default function StudentProfilePage() {
                     </Avatar>
                     <div className="flex-1 text-center sm:text-left">
                       <h2 className="text-title-md font-bold">{d.user.displayName}</h2>
-                      <p className="text-body-md text-muted-foreground">Student &middot; Roll No: {d.user.studentId ?? 'N/A'}</p>
+                      <p className="text-body-md text-muted-foreground">{_('Student')} &middot; {_('Roll No')}: {d.user.studentId ?? _('N/A')}</p>
                       <div className="flex items-center justify-center sm:justify-start gap-3 mt-2 flex-wrap">
                         <Badge variant="secondary" className="text-xs gap-1"><Icon name="mail" size={12} />{d.user.email}</Badge>
-                        {d.className && <Badge variant="info" className="text-xs gap-1"><Icon name="school" size={12} />{d.className}{d.classGrade ? ` (Grade ${d.classGrade})` : ''}</Badge>}
+                        {d.className && <Badge variant="info" className="text-xs gap-1"><Icon name="school" size={12} />{d.className}{d.classGrade ? ` (${_('Grade')} ${d.classGrade})` : ''}</Badge>}
                       </div>
                     </div>
                     <Button variant="outline" size="sm" className="gap-2" asChild>
-                      <Link to="/student/profile/edit"><Icon name="edit" size={14} />Edit</Link>
+                      <Link to="/student/profile/edit"><Icon name="edit" size={14} />{_('Edit')}</Link>
                     </Button>
                   </CardContent>
                 </Card>
@@ -154,19 +156,19 @@ export default function StudentProfilePage() {
                   <motion.div variants={cardStackReveal} custom={0}>
                     <Card className="p-5 flex items-center gap-4 border-border/60">
                       <div className="h-12 w-12 rounded-xl bg-primary-container flex items-center justify-center shrink-0"><Icon name="school" size={20} className="text-primary" /></div>
-                      <div><p className="text-label-xs text-muted-foreground">Subjects</p><p className="text-display-xs font-bold">{d.totalSubjects}</p></div>
+                      <div><p className="text-label-xs text-muted-foreground">{_('Subjects')}</p><p className="text-display-xs font-bold">{d.totalSubjects}</p></div>
                     </Card>
                   </motion.div>
                   <motion.div variants={cardStackReveal} custom={1}>
                     <Card className="p-5 flex items-center gap-4 border-border/60">
                       <div className="h-12 w-12 rounded-xl bg-success-container flex items-center justify-center shrink-0"><Icon name="grade" size={20} className="text-success" /></div>
-                      <div><p className="text-label-xs text-muted-foreground">Avg Grade</p><p className="text-display-xs font-bold">{d.avgPercentage.toFixed(0)}%</p></div>
+                      <div><p className="text-label-xs text-muted-foreground">{_('Avg Grade')}</p><p className="text-display-xs font-bold">{d.avgPercentage.toFixed(0)}%</p></div>
                     </Card>
                   </motion.div>
                   <motion.div variants={cardStackReveal} custom={2}>
                     <Card className="p-5 flex items-center gap-4 border-border/60">
                       <div className="h-12 w-12 rounded-xl bg-warning-container flex items-center justify-center shrink-0"><Icon name="assignment" size={20} className="text-warning" /></div>
-                      <div><p className="text-label-xs text-muted-foreground">Completed</p><p className="text-display-xs font-bold">{d.grades.length}</p></div>
+                      <div><p className="text-label-xs text-muted-foreground">{_('Completed')}</p><p className="text-display-xs font-bold">{d.grades.length}</p></div>
                     </Card>
                   </motion.div>
                 </motion.div>
@@ -176,27 +178,27 @@ export default function StudentProfilePage() {
               {d.gamification && (
                 <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
                   <div className="mb-6">
-                    <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">PERFORMANCE</p>
-                    <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">Gamification &amp; Activity</h2>
+                    <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">{_('PERFORMANCE')}</p>
+                    <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">{_('Gamification & Activity')}</h2>
                   </div>
                   <Card className="border-border/60">
                     <CardContent className="p-5 space-y-6">
                       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-xl bg-primary-container flex items-center justify-center shrink-0"><Icon name="emoji_events" size={18} className="text-primary" /></div>
-                          <div><p className="text-label-xs text-muted-foreground">Level</p><p className="text-title-sm font-bold">{d.gamification.level ?? 1}</p></div>
+                          <div><p className="text-label-xs text-muted-foreground">{_('Level')}</p><p className="text-title-sm font-bold">{d.gamification.level ?? 1}</p></div>
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-xl bg-warning-container flex items-center justify-center shrink-0"><Icon name="monetization_on" size={18} className="text-warning" /></div>
-                          <div><p className="text-label-xs text-muted-foreground">Coins</p><p className="text-title-sm font-bold">{d.gamification.coins ?? 0}</p></div>
+                          <div><p className="text-label-xs text-muted-foreground">{_('Coins')}</p><p className="text-title-sm font-bold">{d.gamification.coins ?? 0}</p></div>
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-xl bg-success-container flex items-center justify-center shrink-0"><Icon name="local_fire_department" size={18} className="text-success" /></div>
-                          <div><p className="text-label-xs text-muted-foreground">Streak</p><p className="text-title-sm font-bold">{d.gamification.streak ?? 0} days</p></div>
+                          <div><p className="text-label-xs text-muted-foreground">{_('Streak')}</p><p className="text-title-sm font-bold">{d.gamification.streak ?? 0} {_('days')}</p></div>
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-xl bg-info-container flex items-center justify-center shrink-0"><Icon name="assessment" size={18} className="text-info" /></div>
-                          <div><p className="text-label-xs text-muted-foreground">Badges</p><p className="text-title-sm font-bold">{d.gamification.badges?.length ?? 0}</p></div>
+                          <div><p className="text-label-xs text-muted-foreground">{_('Badges')}</p><p className="text-title-sm font-bold">{d.gamification.badges?.length ?? 0}</p></div>
                         </div>
                       </div>
                       {(() => {
@@ -215,7 +217,7 @@ export default function StudentProfilePage() {
                 <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
                   <Card className="border-border/60">
                     <CardHeader>
-                      <CardTitle className="text-title-sm flex items-center gap-2"><Icon name="history" size={18} />Recent Activity</CardTitle>
+                      <CardTitle className="text-title-sm flex items-center gap-2"><Icon name="history" size={18} />{_('Recent Activity')}</CardTitle>
                     </CardHeader>
                     <CardContent className="p-5 pt-0">
                       <div className="space-y-2">
@@ -239,12 +241,12 @@ export default function StudentProfilePage() {
               {/* Assignment History */}
               <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
                 <div className="mb-6">
-                  <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">ACADEMICS</p>
-                  <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">Assignment History</h2>
+                  <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">{_('ACADEMICS')}</p>
+                  <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">{_('Assignment History')}</h2>
                 </div>
                 <Card className="border-border/60">
                   <CardContent className="p-5">
-                    {d.assignmentGrades.length === 0 ? <EmptySection icon="assignment" message="No assignments graded yet" /> : (
+                    {d.assignmentGrades.length === 0 ? <EmptySection icon="assignment" message={_('No assignments graded yet')} /> : (
                       <div className="space-y-2">
                         {d.assignmentGrades.map((g) => {
                           const letter = getLetterGrade(g.percentage);
@@ -252,7 +254,7 @@ export default function StudentProfilePage() {
                           return (
                             <div key={g.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-accent transition-colors">
                               <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium truncate">{g.itemName ?? 'Assessment'}</p>
+                                <p className="text-sm font-medium truncate">{g.itemName ?? _('Assessment')}</p>
                                 <p className="text-xs text-muted-foreground">{g.subject} &middot; {formatDate(g.createdAt)}</p>
                               </div>
                               <div className="flex items-center gap-3 shrink-0 ml-3">
@@ -271,15 +273,15 @@ export default function StudentProfilePage() {
               {/* Settings */}
               <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
                 <div className="mb-6">
-                  <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">PREFERENCES</p>
-                  <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">Settings</h2>
+                  <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">{_('PREFERENCES')}</p>
+                  <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">{_('Settings')}</h2>
                 </div>
                 <Card className="border-border/60">
                   <CardContent className="p-5">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <PasswordChangeDialog />
                       <Button variant="outline" className="justify-start gap-2" asChild>
-                        <Link to="/notifications"><Icon name="notifications" size={16} />Notifications</Link>
+                        <Link to="/notifications"><Icon name="notifications" size={16} />{_('Notifications')}</Link>
                       </Button>
                       <ThemeToggleButton />
                     </div>
@@ -295,6 +297,7 @@ export default function StudentProfilePage() {
 }
 
 function PasswordChangeDialog() {
+  const { _ } = useTranslation();
   const [current, setCurrent] = useState('');
   const [newPw, setNewPw] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -306,8 +309,8 @@ function PasswordChangeDialog() {
   const handleSubmit = async () => {
     setError('');
     setSuccess(false);
-    if (newPw !== confirm) { setError('Passwords do not match'); return; }
-    if (newPw.length < 6) { setError('Password must be at least 6 characters'); return; }
+    if (newPw !== confirm) { setError(_('Passwords do not match')); return; }
+    if (newPw.length < 6) { setError(_('Password must be at least 6 characters')); return; }
     setLoading(true);
     try {
       await changePassword(current, newPw);
@@ -316,9 +319,9 @@ function PasswordChangeDialog() {
       setNewPw('');
       setConfirm('');
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Failed to change password';
-      if (msg.includes('auth/invalid-credential')) setError('Current password is incorrect');
-      else if (msg.includes('auth/requires-recent-login')) setError('Please log out and log in again');
+      const msg = e instanceof Error ? e.message : _('Failed to change password');
+      if (msg.includes('auth/invalid-credential')) setError(_('Current password is incorrect'));
+      else if (msg.includes('auth/requires-recent-login')) setError(_('Please log out and log in again'));
       else setError(msg);
     } finally {
       setLoading(false);
@@ -328,22 +331,22 @@ function PasswordChangeDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="justify-start gap-2"><Icon name="lock" size={16} />Change Password</Button>
+        <Button variant="outline" className="justify-start gap-2"><Icon name="lock" size={16} />{_('Change Password')}</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Change Password</DialogTitle>
-          <DialogDescription>Enter your current password and a new password.</DialogDescription>
+          <DialogTitle>{_('Change Password')}</DialogTitle>
+          <DialogDescription>{_('Enter your current password and a new password.')}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
-          <Input type="password" placeholder="Current password" value={current} onChange={(e) => { setCurrent(e.target.value); setError(''); setSuccess(false); }} />
-          <Input type="password" placeholder="New password" value={newPw} onChange={(e) => { setNewPw(e.target.value); setError(''); setSuccess(false); }} />
-          <Input type="password" placeholder="Confirm new password" value={confirm} onChange={(e) => { setConfirm(e.target.value); setError(''); setSuccess(false); }} />
+          <Input type="password" placeholder={_('Current password')} value={current} onChange={(e) => { setCurrent(e.target.value); setError(''); setSuccess(false); }} />
+          <Input type="password" placeholder={_('New password')} value={newPw} onChange={(e) => { setNewPw(e.target.value); setError(''); setSuccess(false); }} />
+          <Input type="password" placeholder={_('Confirm new password')} value={confirm} onChange={(e) => { setConfirm(e.target.value); setError(''); setSuccess(false); }} />
           {error && <p className="text-sm text-destructive">{error}</p>}
-          {success && <p className="text-sm text-success">Password changed successfully!</p>}
+          {success && <p className="text-sm text-success">{_('Password changed successfully!')}</p>}
           <div className="flex justify-end gap-2">
-            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-            <Button onClick={handleSubmit} disabled={loading}>{loading ? 'Changing...' : 'Change Password'}</Button>
+            <DialogClose asChild><Button variant="outline">{_('Cancel')}</Button></DialogClose>
+            <Button onClick={handleSubmit} disabled={loading}>{loading ? _('Changing...') : _('Change Password')}</Button>
           </div>
         </div>
       </DialogContent>
@@ -352,13 +355,14 @@ function PasswordChangeDialog() {
 }
 
 function ThemeToggleButton() {
+  const { _ } = useTranslation();
   const { theme, setTheme } = useUIStore();
   const cycleTheme = () => {
     const next: Record<string, 'light' | 'dark' | 'system'> = { light: 'dark', dark: 'system', system: 'light' };
     setTheme(next[theme]);
   };
   const icon = theme === 'dark' ? 'dark_mode' : theme === 'light' ? 'light_mode' : 'contrast';
-  const label = theme === 'dark' ? 'Dark Mode' : theme === 'light' ? 'Light Mode' : 'System Theme';
+  const label = theme === 'dark' ? _('Dark Mode') : theme === 'light' ? _('Light Mode') : _('System Theme');
   return (
     <Button variant="outline" className="justify-start gap-2" onClick={cycleTheme}>
       <Icon name={icon} size={16} />{label}

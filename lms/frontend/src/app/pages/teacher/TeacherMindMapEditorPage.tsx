@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from '@/hooks/useTranslation';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ import { ROUTES } from '@/lib/constants';
 import type { MindMapNode, MindMapEdge } from '@/types/mindmap';
 
 export default function TeacherMindMapEditorPage() {
+  const { _ } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -89,7 +91,7 @@ export default function TeacherMindMapEditorPage() {
 
   return (
     <>
-      <SEOHead title={title || 'Mind Map Editor'} description="Edit your mind map" />
+      <SEOHead title={title || _('Mind Map Editor')} description={_('Edit your mind map')} />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -115,46 +117,46 @@ export default function TeacherMindMapEditorPage() {
                     <DialogTrigger asChild>
                       <Button variant="outline" size="sm" className="gap-1">
                         <Icon name="push_pin" size={16} />
-                        Pin Resource
+                          {_('Pin Resource')}
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Pin Resource to Node</DialogTitle>
+                        <DialogTitle>{_('Pin Resource to Node')}</DialogTitle>
                       </DialogHeader>
                       <div className="space-y-4 pt-4">
                         <div>
-                          <label className="text-sm font-medium mb-1 block">Node ID</label>
+                          <label className="text-sm font-medium mb-1 block">{_('Node ID')}</label>
                           <select
                             className="w-full px-3 py-2 border rounded-lg text-sm"
                             value={pinNodeId}
                             onChange={(e) => setPinNodeId(e.target.value)}
                           >
-                            <option value="">Select a node</option>
+                            <option value="">{_('Select a node')}</option>
                             {nodes.map((n) => (
                               <option key={n.id} value={n.id}>{n.label} ({n.id.slice(0, 8)})</option>
                             ))}
                           </select>
                         </div>
                         <div>
-                          <label className="text-sm font-medium mb-1 block">Resource ID</label>
+                          <label className="text-sm font-medium mb-1 block">{_('Resource ID')}</label>
                           <input
                             className="w-full px-3 py-2 border rounded-lg text-sm"
-                            placeholder="Enter resource ID..."
+                            placeholder={_('Enter resource ID...')}
                             value={pinResourceId}
                             onChange={(e) => setPinResourceId(e.target.value)}
                           />
                         </div>
                         <div>
-                          <label className="text-sm font-medium mb-1 block">Resource Type</label>
+                          <label className="text-sm font-medium mb-1 block">{_('Resource Type')}</label>
                           <select
                             className="w-full px-3 py-2 border rounded-lg text-sm"
                             value={pinResourceType}
                             onChange={(e) => setPinResourceType(e.target.value as any)}
                           >
-                            <option value="concept">Concept</option>
-                            <option value="lesson">Lesson</option>
-                            <option value="video">Video</option>
+                            <option value="concept">{_('Concept')}</option>
+                            <option value="lesson">{_('Lesson')}</option>
+                            <option value="video">{_('Video')}</option>
                           </select>
                         </div>
                         <Button
@@ -163,7 +165,7 @@ export default function TeacherMindMapEditorPage() {
                           disabled={!pinNodeId || !pinResourceId || pinMutation.isPending}
                           loading={pinMutation.isPending}
                         >
-                          Pin Resource
+                        {_('Pin Resource')}
                         </Button>
                       </div>
                     </DialogContent>
@@ -172,19 +174,19 @@ export default function TeacherMindMapEditorPage() {
                     <DialogTrigger asChild>
                       <Button variant="outline" size="sm" className="gap-1">
                         <Icon name="share" size={16} />
-                        Share
+                        {_('Share')}
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Share Mind Map</DialogTitle>
+                        <DialogTitle>{_('Share Mind Map')}</DialogTitle>
                       </DialogHeader>
                       <div className="space-y-4 pt-4">
                         <div>
-                          <label className="text-sm font-medium mb-1 block">Share with (user IDs)</label>
+                          <label className="text-sm font-medium mb-1 block">{_('Share with (user IDs)')}</label>
                           <input
                             className="w-full px-3 py-2 border rounded-lg text-sm"
-                            placeholder="Enter IDs, comma separated"
+                            placeholder={_('Enter IDs, comma separated')}
                             value={shareInput}
                             onChange={(e) => setShareInput(e.target.value)}
                           />
@@ -195,7 +197,7 @@ export default function TeacherMindMapEditorPage() {
                           disabled={!shareInput.trim() || shareMutation.isPending}
                           loading={shareMutation.isPending}
                         >
-                          Share
+                          {_('Share')}
                         </Button>
                       </div>
                     </DialogContent>
@@ -208,7 +210,7 @@ export default function TeacherMindMapEditorPage() {
                     loading={saveMutation.isPending}
                   >
                     <Icon name="save" size={16} />
-                    Save
+                    {_('Save')}
                   </Button>
                 </div>
               </div>

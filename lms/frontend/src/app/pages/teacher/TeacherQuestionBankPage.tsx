@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -27,6 +28,7 @@ const QUESTION_TYPES = [
 const DIFFICULTIES = ['easy', 'medium', 'hard'];
 
 function QuestionForm({ initial, onSave, loading }: { initial?: any; onSave: (data: any) => void; loading: boolean }) {
+  const { _ } = useTranslation();
   const [text, setText] = useState(initial?.text || '');
   const [type, setType] = useState(initial?.type || 'multiple_choice');
   const [difficulty, setDifficulty] = useState(initial?.difficulty || 'medium');
@@ -37,8 +39,8 @@ function QuestionForm({ initial, onSave, loading }: { initial?: any; onSave: (da
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!text.trim()) { toast.error('Question text is required'); return; }
-    if (!correctAnswer.trim()) { toast.error('Correct answer is required'); return; }
+    if (!text.trim()) { toast.error(_('Question text is required')); return; }
+    if (!correctAnswer.trim()) { toast.error(_('Correct answer is required')); return; }
     onSave({
       text,
       type,
@@ -56,49 +58,50 @@ function QuestionForm({ initial, onSave, loading }: { initial?: any; onSave: (da
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="text-sm font-medium">Question Text</label>
-        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1" placeholder="Enter question text..." />
+        <label className="text-sm font-medium">{_('Question Text')}</label>
+        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1" placeholder={_('Enter question text...')} />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className="text-sm font-medium">Type</label>
+          <label className="text-sm font-medium">{_('Type')}</label>
           <select value={type} onChange={(e) => setType(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1">
-            {QUESTION_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+            {QUESTION_TYPES.map((t) => <option key={t.value} value={t.value}>{_(t.label)}</option>)}
           </select>
         </div>
         <div>
-          <label className="text-sm font-medium">Difficulty</label>
+          <label className="text-sm font-medium">{_('Difficulty')}</label>
           <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1">
-            {DIFFICULTIES.map((d) => <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>)}
+            {DIFFICULTIES.map((d) => <option key={d} value={d}>{_(d.charAt(0).toUpperCase() + d.slice(1))}</option>)}
           </select>
         </div>
       </div>
       {(type === 'multiple_choice' || type === 'matching') && (
         <div>
-          <label className="text-sm font-medium">Options (one per line)</label>
-          <textarea value={options} onChange={(e) => setOptions(e.target.value)} rows={4} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1" placeholder="Option A&#10;Option B&#10;Option C&#10;Option D" />
+          <label className="text-sm font-medium">{_('Options (one per line)')}</label>
+          <textarea value={options} onChange={(e) => setOptions(e.target.value)} rows={4} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1" placeholder={_('Option A\nOption B\nOption C\nOption D')} />
         </div>
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className="text-sm font-medium">Correct Answer</label>
-          <Input value={correctAnswer} onChange={(e) => setCorrectAnswer(e.target.value)} placeholder="Correct answer" />
+          <label className="text-sm font-medium">{_('Correct Answer')}</label>
+          <Input value={correctAnswer} onChange={(e) => setCorrectAnswer(e.target.value)} placeholder={_('Correct answer')} />
         </div>
         <div>
-          <label className="text-sm font-medium">Points</label>
+          <label className="text-sm font-medium">{_('Points')}</label>
           <Input type="number" value={points} onChange={(e) => setPoints(e.target.value)} min={1} />
         </div>
       </div>
       <div>
-        <label className="text-sm font-medium">Explanation (optional)</label>
-        <textarea value={explanation} onChange={(e) => setExplanation(e.target.value)} rows={2} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1" placeholder="Explain the answer..." />
+        <label className="text-sm font-medium">{_('Explanation (optional)')}</label>
+        <textarea value={explanation} onChange={(e) => setExplanation(e.target.value)} rows={2} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1" placeholder={_('Explain the answer...')} />
       </div>
-      <Button type="submit" disabled={loading}>{initial ? 'Update' : 'Create'} Question</Button>
+      <Button type="submit" disabled={loading}>{_(initial ? 'Update' : 'Create')} {_('Question')}</Button>
     </form>
   );
 }
 
 export default function TeacherQuestionBankPage() {
+  const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
@@ -115,14 +118,14 @@ export default function TeacherQuestionBankPage() {
 
   const createMutation = useMutation({
     mutationFn: (body: any) => editing ? api.put(`/question-bank/${editing.id}`, body) : api.post('/question-bank', body),
-    onSuccess: () => { toast.success(editing ? 'Question updated' : 'Question created'); setShowCreate(false); setEditing(null); queryClient.invalidateQueries({ queryKey: ['question-bank'] }); },
-    onError: () => toast.error('Failed to save question'),
+    onSuccess: () => { toast.success(_(editing ? 'Question updated' : 'Question created')); setShowCreate(false); setEditing(null); queryClient.invalidateQueries({ queryKey: ['question-bank'] }); },
+    onError: () => toast.error(_('Failed to save question')),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/question-bank/${id}`),
-    onSuccess: () => { toast.success('Question deleted'); queryClient.invalidateQueries({ queryKey: ['question-bank'] }); },
-    onError: () => toast.error('Failed to delete question'),
+    onSuccess: () => { toast.success(_('Question deleted')); queryClient.invalidateQueries({ queryKey: ['question-bank'] }); },
+    onError: () => toast.error(_('Failed to delete question')),
   });
 
   const items: any[] = (data?.items || []).filter((q: any) => !search || q.text.toLowerCase().includes(search.toLowerCase()));
@@ -132,7 +135,7 @@ export default function TeacherQuestionBankPage() {
 
   return (
     <>
-      <SEOHead title="Question Bank" description="Create and manage your question bank" canonical="/teacher/question-bank" />
+      <SEOHead title={_('Question Bank')} description={_('Create and manage your question bank')} canonical="/teacher/question-bank" />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -142,25 +145,25 @@ export default function TeacherQuestionBankPage() {
         <motion.div variants={cardStackReveal} custom={0}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-headline-sm">Question Bank</h1>
-              <p className="text-body-md text-muted-foreground">Create, manage, and organize your questions</p>
+              <h1 className="text-headline-sm">{_('Question Bank')}</h1>
+              <p className="text-body-md text-muted-foreground">{_('Create, manage, and organize your questions')}</p>
             </div>
             <Button onClick={() => { setEditing(null); setShowCreate(true); }}>
-              <Icon name="add" size={16} className="mr-1" />New Question
+              <Icon name="add" size={16} className="mr-1" />{_('New Question')}
             </Button>
           </div>
         </motion.div>
 
         <motion.div variants={cardStackReveal} custom={0}>
           <div className="flex flex-wrap gap-2">
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search questions..." className="max-w-xs" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={_('Search questions...')} className="max-w-xs" />
             <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background">
-              <option value="">All Types</option>
-              {QUESTION_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+              <option value="">{_('All Types')}</option>
+              {QUESTION_TYPES.map((t) => <option key={t.value} value={t.value}>{_(t.label)}</option>)}
             </select>
             <select value={diffFilter} onChange={(e) => setDiffFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background">
-              <option value="">All Difficulties</option>
-              {DIFFICULTIES.map((d) => <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>)}
+              <option value="">{_('All Difficulties')}</option>
+              {DIFFICULTIES.map((d) => <option key={d} value={d}>{_(d.charAt(0).toUpperCase() + d.slice(1))}</option>)}
             </select>
           </div>
         </motion.div>
@@ -173,7 +176,7 @@ export default function TeacherQuestionBankPage() {
                   <Card className="border-border/60">
                     <CardContent className="p-8 text-center text-muted-foreground">
                       <Icon name="quiz" size={48} className="mx-auto mb-3 opacity-40" />
-                      <p className="text-body-md">No questions found. Create your first question!</p>
+                      <p className="text-body-md">{_('No questions found. Create your first question!')}</p>
                     </CardContent>
                   </Card>
                 ) : (
@@ -193,7 +196,7 @@ export default function TeacherQuestionBankPage() {
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
                             <Button variant="ghost" size="icon-sm" onClick={() => { setEditing(q); setShowCreate(true); }}><Icon name="edit" size={16} /></Button>
-                            <Button variant="ghost" size="icon-sm" onClick={() => { if (confirm('Delete this question?')) deleteMutation.mutate(q.id); }}><Icon name="delete" size={16} /></Button>
+                            <Button variant="ghost" size="icon-sm" onClick={() => { if (confirm(_('Delete this question?'))) deleteMutation.mutate(q.id); }}><Icon name="delete" size={16} /></Button>
                           </div>
                         </div>
                       </CardContent>
@@ -208,8 +211,8 @@ export default function TeacherQuestionBankPage() {
         <Dialog open={showCreate} onOpenChange={(o) => { if (!o) { setShowCreate(false); setEditing(null); } }}>
           <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editing ? 'Edit Question' : 'Create Question'}</DialogTitle>
-              <DialogDescription>Fill in the question details below.</DialogDescription>
+              <DialogTitle>{_(editing ? 'Edit Question' : 'Create Question')}</DialogTitle>
+              <DialogDescription>{_('Fill in the question details below.')}</DialogDescription>
             </DialogHeader>
             <QuestionForm initial={editing} onSave={(formData) => createMutation.mutate(formData)} loading={createMutation.isPending} />
           </DialogContent>

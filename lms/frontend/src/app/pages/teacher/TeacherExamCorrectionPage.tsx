@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -41,12 +42,6 @@ const studentAnswers: Record<string, Record<string, string>> = {
   s3: { eq1: 'x = b²-4ac', eq2: 'I think you complete the square by adding and subtracting the same value to both sides of the equation.' },
 };
 const selectedWrong: Record<string, Record<string, string>> = { s3: { eq1: 'x = b²-4ac' } };
-const shortcuts = [
-  { k: 'Ctrl+Enter', a: 'Save & advance' },
-  { k: 'Ctrl+←', a: 'Previous question' },
-  { k: 'Ctrl+→', a: 'Next question' },
-  { k: 'Ctrl+S', a: 'Save all' },
-];
 
 interface QuestionMark {
   questionId: string;
@@ -60,9 +55,16 @@ function getMark(marks: Record<string, number>, correction: CorrectionItem | nul
 }
 
 export default function TeacherExamCorrectionPage() {
+  const { _ } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const saveTimer = useRef<SaveHandler>();
   const [qIdx, setQIdx] = useState(0);
+  const shortcuts = [
+    { k: 'Ctrl+Enter', a: _('Save & advance') },
+    { k: 'Ctrl+←', a: _('Previous question') },
+    { k: 'Ctrl+→', a: _('Next question') },
+    { k: 'Ctrl+S', a: _('Save all') },
+  ];
   const [studentId, setStudentId] = useState('');
   const [marks, setMarks] = useState<Record<string, number>>({});
   const [feedback, setFeedback] = useState<Record<string, string>>({});
@@ -174,7 +176,7 @@ export default function TeacherExamCorrectionPage() {
 
   function saveAndAdvance() {
     setSaveStatus('saving');
-    toast.success('Mark saved');
+    toast.success(_('Mark saved'));
     setTimeout(() => setSaveStatus('saved'), 400);
     if (qIdx < questions.length - 1) setQIdx((p) => p + 1);
   }
@@ -188,7 +190,7 @@ export default function TeacherExamCorrectionPage() {
     if (ctrl && e.key === 'Enter') { e.preventDefault(); saveAndAdvance(); }
     else if (ctrl && e.key === 'ArrowLeft' && !isInput) { e.preventDefault(); setQIdx((p) => Math.max(0, p - 1)); }
     else if (ctrl && e.key === 'ArrowRight' && !isInput) { e.preventDefault(); setQIdx((p) => Math.min(qsRef.current.length - 1, p + 1)); }
-    else if (ctrl && (e.key === 's' || e.key === 'S')) { e.preventDefault(); toast.success('All marks saved'); setSaveStatus('saved'); }
+    else if (ctrl && (e.key === 's' || e.key === 'S')) { e.preventDefault(); toast.success(_('All marks saved')); setSaveStatus('saved'); }
   }, []);
 
   useEffect(() => {
@@ -226,7 +228,7 @@ export default function TeacherExamCorrectionPage() {
 
   function renderAnswer() {
     if (!question) return null;
-    const answer = studentAnswers[studentId]?.[question.id] ?? 'No answer submitted';
+    const answer = studentAnswers[studentId]?.[question.id] ?? _('No answer submitted');
     const wrongSel = selectedWrong[studentId]?.[question.id];
 
     return (
@@ -243,7 +245,7 @@ export default function TeacherExamCorrectionPage() {
           </div>
           <Separator />
           <div>
-            <p className="text-label-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Student Answer</p>
+            <p className="text-label-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">{_('Student Answer')}</p>
             {question.type === 'multiple_choice' ? (
               <div className="space-y-2">
                 {question.options?.map((opt) => {
@@ -255,8 +257,8 @@ export default function TeacherExamCorrectionPage() {
                         {(correct || selected) && <span className={`w-2 h-2 rounded-full ${correct ? 'bg-success' : 'bg-error'}`} />}
                       </span>
                       <span className="flex-1 text-foreground">{opt}</span>
-                      {correct && <Badge variant="success" className="text-[10px]">Correct</Badge>}
-                      {selected && !correct && <Badge variant="destructive" className="text-[10px]">Selected</Badge>}
+                      {correct && <Badge variant="success" className="text-[10px]">{_('Correct')}</Badge>}
+                      {selected && !correct && <Badge variant="destructive" className="text-[10px]">{_('Selected')}</Badge>}
                       {correct && selected && <Icon name="check" size={16} className="text-success shrink-0" />}
                     </div>
                   );
@@ -270,7 +272,7 @@ export default function TeacherExamCorrectionPage() {
           </div>
           {question.type === 'multiple_choice' && (
             <div className="rounded-lg bg-success/5 border border-success/20 p-3">
-              <p className="text-label-xs text-on-success-container"><span className="font-semibold">Correct answer: </span>{question.correctAnswer}</p>
+              <p className="text-label-xs text-on-success-container"><span className="font-semibold">{_('Correct answer:')} </span>{question.correctAnswer}</p>
             </div>
           )}
         </div>
@@ -282,9 +284,9 @@ export default function TeacherExamCorrectionPage() {
     if (!question) return null;
     return (
       <div className="lg:w-80 border-l border-border p-4 lg:p-6 space-y-5 shrink-0">
-        <h4 className="text-title-sm font-semibold">Marking Tools</h4>
+        <h4 className="text-title-sm font-semibold">{_('Marking Tools')}</h4>
         <div className="space-y-1.5">
-          <label className="text-label-xs text-muted-foreground font-medium">Score (max {question.points})</label>
+          <label className="text-label-xs text-muted-foreground font-medium">{_('Score (max')} {question.points})</label>
           <Input type="number" min={0} max={question.points}
             value={marks[question.id] ?? ''}
             placeholder={`0 \u2013 ${question.points}`}
@@ -298,23 +300,23 @@ export default function TeacherExamCorrectionPage() {
             className="h-10 tabular-nums" />
         </div>
         <div className="space-y-1.5">
-          <label className="text-label-xs text-muted-foreground font-medium">Feedback</label>
+          <label className="text-label-xs text-muted-foreground font-medium">{_('Feedback')}</label>
           <Textarea value={feedback[question.id] ?? ''}
             onChange={(e) => { setFeedback((p) => ({ ...p, [question.id]: e.target.value })); markUnsaved(); }}
-            placeholder="Write feedback for this question..." className="min-h-[120px] resize-y" />
+            placeholder={_('Write feedback for this question...')} className="min-h-[120px] resize-y" />
         </div>
         <div className="flex flex-col gap-2">
           <Button onClick={saveAndAdvance} className="w-full gap-1" size="sm">
-            <Icon name="save" size={15} /> Save &amp; Next
+            <Icon name="save" size={15} /> {_('Save & Next')}
           </Button>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" className="flex-1 gap-1"
               onClick={() => setQIdx((p) => Math.max(0, p - 1))} disabled={qIdx === 0}>
-              <Icon name="chevron_left" size={15} /> Prev
+              <Icon name="chevron_left" size={15} /> {_('Prev')}
             </Button>
             <Button variant="outline" size="sm" className="flex-1 gap-1"
               onClick={() => setQIdx((p) => Math.min(questions.length - 1, p + 1))} disabled={qIdx === questions.length - 1}>
-              Next <Icon name="chevron_right" size={15} />
+              {_('Next')} <Icon name="chevron_right" size={15} />
             </Button>
           </div>
         </div>
@@ -322,7 +324,7 @@ export default function TeacherExamCorrectionPage() {
         {/* Proctoring Violations Card */}
         <div className="border-t border-border pt-4 mt-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h5 className="text-label-xs font-bold uppercase tracking-wider text-muted-foreground">Proctoring Log</h5>
+            <h5 className="text-label-xs font-bold uppercase tracking-wider text-muted-foreground">{_('Proctoring Log')}</h5>
             {proctoringLogs.length > 0 && (
               <Badge variant="destructive" className="text-[10px] gap-1 px-1.5 py-0.5">
                 <Icon name="gavel" size={11} />
@@ -332,21 +334,21 @@ export default function TeacherExamCorrectionPage() {
           </div>
           
           {loadingLogs ? (
-            <p className="text-label-xs text-muted-foreground animate-pulse">Loading proctoring logs...</p>
+            <p className="text-label-xs text-muted-foreground animate-pulse">{_('Loading proctoring logs...')}</p>
           ) : proctoringLogs.length === 0 ? (
             <div className="rounded-lg bg-success-container/10 border border-success/30 p-2.5 flex items-center gap-2 text-success">
               <Icon name="check_circle" size={14} />
-              <span className="text-label-xs font-medium">Clean attempt. No violations.</span>
+              <span className="text-label-xs font-medium">{_('Clean attempt. No violations.')}</span>
             </div>
           ) : (
             <div className="space-y-2 max-h-48 overflow-y-auto pr-1 border rounded-lg bg-muted/20 p-2.5">
               {proctoringLogs.map((log, li) => {
                 const isViolation = ['tab_focus_lost', 'fullscreen_exit'].includes(log.event);
                 const eventLabel =
-                  log.event === 'tab_focus_lost' ? 'Left Exam Window' :
-                  log.event === 'tab_focus_gained' ? 'Returned to Exam' :
-                  log.event === 'fullscreen_exit' ? 'Exited Fullscreen' :
-                  log.event === 'fullscreen_enter' ? 'Entered Fullscreen' : log.event;
+                log.event === 'tab_focus_lost' ? _('Left Exam Window') :
+                log.event === 'tab_focus_gained' ? _('Returned to Exam') :
+                log.event === 'fullscreen_exit' ? _('Exited Fullscreen') :
+                log.event === 'fullscreen_enter' ? _('Entered Fullscreen') : log.event;
                   
                 return (
                   <div key={log.id || li} className="flex items-start gap-2 text-[11px] leading-normal">
@@ -366,16 +368,16 @@ export default function TeacherExamCorrectionPage() {
   }
 
   const saveIcon = saveStatus === 'saved' ? 'cloud_done' : saveStatus === 'saving' ? 'cloud_sync' : 'cloud_off';
-  const saveLabel = saveStatus === 'saved' ? 'Saved' : saveStatus === 'saving' ? 'Saving...' : 'Unsaved';
+  const saveLabel = saveStatus === 'saved' ? _('Saved') : saveStatus === 'saving' ? _('Saving...') : _('Unsaved');
   const saveVariant = saveStatus === 'saved' ? 'success' : saveStatus === 'saving' ? 'warning' : 'outline';
 
   if (examLoading) {
     return (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-5xl mx-auto pb-32">
-        <SEOHead title="Exam Correction" description="Grade student exam submissions" />
-        <Card className="border-border/60">
-          <CardContent className="flex items-center justify-center py-12">
-            <p className="text-muted-foreground">Loading exam...</p>
+          <SEOHead title={_('Exam Correction')} description={_('Grade student exam submissions')} />
+          <Card className="border-border/60">
+            <CardContent className="flex items-center justify-center py-12">
+              <p className="text-muted-foreground">{_('Loading exam...')}</p>
           </CardContent>
         </Card>
       </motion.div>
@@ -384,31 +386,31 @@ export default function TeacherExamCorrectionPage() {
 
   if (!exam) return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-5xl mx-auto pb-32">
-      <SEOHead title="Exam Correction" description="Grade student exam submissions" />
+      <SEOHead title={_('Exam Correction')} description={_('Grade student exam submissions')} />
       <Card className="border-border/60"><CardContent className="flex flex-col items-center gap-3 py-12">
         <Icon name="fact_check" size={48} className="text-muted-foreground/40" />
-        <p className="text-title-md font-medium">Exam not found</p>
-        <p className="text-body-md text-muted-foreground">The exam you&apos;re looking for doesn&apos;t exist.</p>
-        <Button asChild><Link to="/teacher/exams"><Icon name="arrow_back" size={16} className="mr-1" /> Back to Exams</Link></Button>
+        <p className="text-title-md font-medium">{_('Exam not found')}</p>
+        <p className="text-body-md text-muted-foreground">{_('The exam you\'re looking for doesn\'t exist.')}</p>
+        <Button asChild><Link to="/teacher/exams"><Icon name="arrow_back" size={16} className="mr-1" /> {_('Back to Exams')}</Link></Button>
       </CardContent></Card>
     </motion.div>
   );
 
   if (enrolled.length === 0) return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-5xl mx-auto pb-32">
-      <SEOHead title={`Correcting: ${exam.title}`} description={`Grade submissions for ${exam.title}`} />
+      <SEOHead title={_('Correcting') + `: ${exam.title}`} description={_('Grade submissions for') + ` ${exam.title}`} />
       <div className="flex flex-col items-center gap-3 py-12">
         <Icon name="group_off" size={48} className="text-muted-foreground/40" />
-        <p className="text-title-md font-medium">No students assigned</p>
-        <p className="text-body-md text-muted-foreground">There are no students assigned to this class/subject.</p>
-        <Button asChild><Link to="/teacher/exams"><Icon name="arrow_back" size={16} className="mr-1" /> Back to Exams</Link></Button>
+        <p className="text-title-md font-medium">{_('No students assigned')}</p>
+        <p className="text-body-md text-muted-foreground">{_('There are no students assigned to this class/subject.')}</p>
+        <Button asChild><Link to="/teacher/exams"><Icon name="arrow_back" size={16} className="mr-1" /> {_('Back to Exams')}</Link></Button>
       </div>
     </motion.div>
   );
 
   return (
     <>
-      <SEOHead title={`Correcting: ${exam.title}`} description={`Grade submissions for ${exam.title}`} />
+      <SEOHead title={_('Correcting') + `: ${exam.title}`} description={_('Grade submissions for') + ` ${exam.title}`} />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -446,23 +448,23 @@ export default function TeacherExamCorrectionPage() {
               <Badge variant={saveVariant} className="text-[10px] gap-1"><Icon name={saveIcon} size={12} />{saveLabel}</Badge>
             </div>
             <div className="flex-1 w-full lg:w-auto">
-              <label className="text-label-xs text-muted-foreground font-medium mb-1 block">Overall Feedback</label>
+              <label className="text-label-xs text-muted-foreground font-medium mb-1 block">{_('Overall Feedback')}</label>
               <Textarea value={overallFb} onChange={(e) => { setOverallFb(e.target.value); markUnsaved(); }}
-                placeholder="Write overall feedback for this student..." className="min-h-[48px] h-10 resize-none text-sm" />
+                placeholder={_('Write overall feedback for this student...')} className="min-h-[48px] h-10 resize-none text-sm" />
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <Button variant="default" size="sm" onClick={() => {
-                if (!student) return toast.error('No student selected');
-                toast.success(`Published grades for ${student.displayName} \u2014 ${totalGiven}/${totalMax}`);
-              }} className="gap-1"><Icon name="send" size={15} /> Publish</Button>
-              <Button variant="outline" size="sm" onClick={() => toast.success(`Published grades for ${enrolled.length} students`)} className="gap-1"><Icon name="publish" size={15} /> All</Button>
+                if (!student) return toast.error(_('No student selected'));
+                toast.success(_('Published grades for') + ` ${student.displayName} \u2014 ${totalGiven}/${totalMax}`);
+              }} className="gap-1"><Icon name="send" size={15} /> {_('Publish')}</Button>
+              <Button variant="outline" size="sm" onClick={() => toast.success(_('Published grades for') + ` ${enrolled.length} ${_('students')}`)} className="gap-1"><Icon name="publish" size={15} /> {_('All')}</Button>
             </div>
           </div>
         </motion.div>
 
         <motion.div variants={cardStackReveal} custom={0} className="border-t bg-muted/30 px-4 lg:px-6 py-2">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            <span className="text-label-xs text-muted-foreground font-medium">Shortcuts:</span>
+            <span className="text-label-xs text-muted-foreground font-medium">{_('Shortcuts:')}</span>
             {shortcuts.map((s) => (
               <kbd key={s.k} className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                 <span className="inline-flex rounded border bg-background px-1.5 py-0.5 font-mono text-[10px] shadow-sm">{s.k}</span>

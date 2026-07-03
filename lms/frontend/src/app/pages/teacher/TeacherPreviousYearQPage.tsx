@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from '@/hooks/useTranslation';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,6 +14,7 @@ import api from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
 
 export default function TeacherPreviousYearQPage() {
+  const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [search, setSearch] = useState('');
   const [yearFilter, setYearFilter] = useState('');
@@ -32,7 +34,7 @@ export default function TeacherPreviousYearQPage() {
 
   return (
     <>
-      <SEOHead title="Previous Year Questions" description="Browse and use previous year question papers" canonical="/teacher/pyq" />
+      <SEOHead title={_('Previous Year Questions')} description={_('Browse and use previous year question papers')} canonical="/teacher/pyq" />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -40,25 +42,25 @@ export default function TeacherPreviousYearQPage() {
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
       >
         <motion.div variants={cardStackReveal} custom={0}>
-          <h1 className="text-headline-sm">Previous Year Questions</h1>
-          <p className="text-body-md text-muted-foreground">Browse archive of previous year exam questions</p>
+          <h1 className="text-headline-sm">{_('Previous Year Questions')}</h1>
+          <p className="text-body-md text-muted-foreground">{_('Browse archive of previous year exam questions')}</p>
         </motion.div>
 
         <motion.div variants={cardStackReveal} custom={0}>
           <div className="flex flex-wrap gap-2">
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search PYQs..." className="max-w-xs" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={_('Search PYQs...')} className="max-w-xs" />
             <select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background">
-              <option value="">All Years</option>
+              <option value="">{_('All Years')}</option>
               {years.map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
             <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background">
-              <option value="">All Types</option>
-              <option value="multiple_choice">Multiple Choice</option>
-              <option value="true_false">True/False</option>
-              <option value="short_answer">Short Answer</option>
-              <option value="fill_blank">Fill Blank</option>
-              <option value="matching">Matching</option>
-              <option value="essay">Essay</option>
+              <option value="">{_('All Types')}</option>
+              <option value="multiple_choice">{_('Multiple Choice')}</option>
+              <option value="true_false">{_('True/False')}</option>
+              <option value="short_answer">{_('Short Answer')}</option>
+              <option value="fill_blank">{_('Fill Blank')}</option>
+              <option value="matching">{_('Matching')}</option>
+              <option value="essay">{_('Essay')}</option>
             </select>
           </div>
         </motion.div>
@@ -71,7 +73,7 @@ export default function TeacherPreviousYearQPage() {
                   <Card className="border-border/60">
                     <CardContent className="p-8 text-center text-muted-foreground">
                       <Icon name="archive" size={48} className="mx-auto mb-3 opacity-40" />
-                      <p className="text-body-md">No previous year questions found. Tag questions as PYQ in the Question Bank.</p>
+                      <p className="text-body-md">{_('No previous year questions found. Tag questions as PYQ in the Question Bank.')}</p>
                     </CardContent>
                   </Card>
                 ) : (
@@ -86,7 +88,7 @@ export default function TeacherPreviousYearQPage() {
                               {q.year && <Badge variant="secondary" className="text-label-xs">{q.year}</Badge>}
                             </div>
                             <p className="text-title-sm font-medium">{q.text}</p>
-                            <p className="text-label-xs text-muted-foreground mt-1">{q.points} pt{q.points !== 1 ? 's' : ''}</p>
+                            <p className="text-label-xs text-muted-foreground mt-1">{q.points} {_('pt')}{q.points !== 1 ? _('s') : ''}</p>
                           </div>
                         </div>
                       </CardContent>

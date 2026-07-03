@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from '@/hooks/useTranslation';
 import { virtualLabsService } from '@/services/virtualLabsService';
 import { useAuthStore } from '@/store/authStore';
 import type { VirtualLab } from '@/types/virtualLab';
@@ -25,6 +26,7 @@ const DIFFICULTY_BADGES: Record<string, string> = {
 };
 
 export default function StudentVirtualLabsPage() {
+  const { _ } = useTranslation();
   const [labs, setLabs] = useState<VirtualLab[]>([]);
   const [filter, setFilter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
@@ -51,8 +53,8 @@ export default function StudentVirtualLabsPage() {
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-on-surface">Virtual Labs</h1>
-          <p className="text-on-surface-variant mt-1">Interactive science simulations</p>
+          <h1 className="text-2xl font-bold text-on-surface">{_('Virtual Labs')}</h1>
+          <p className="text-on-surface-variant mt-1">{_('Interactive science simulations')}</p>
         </div>
       </div>
 
@@ -67,7 +69,7 @@ export default function StudentVirtualLabsPage() {
                 : 'bg-surface border border-outline-variant text-on-surface-variant hover:bg-surface-variant'
             }`}
           >
-            {s === 'all' ? 'All' : s}
+            {s === 'all' ? _('All') : s}
           </button>
         ))}
       </div>
@@ -81,7 +83,7 @@ export default function StudentVirtualLabsPage() {
       ) : filteredLabs.length === 0 ? (
         <div className="text-center py-16">
           <Icon name="science" size={48} className="text-on-surface-variant/40 mx-auto" />
-          <p className="text-on-surface-variant mt-4">No labs available yet</p>
+          <p className="text-on-surface-variant mt-4">{_('No labs available yet')}</p>
         </div>
       ) : (
         <div className="space-y-8">
@@ -110,6 +112,7 @@ export default function StudentVirtualLabsPage() {
 }
 
 function LabCard({ lab }: { lab: VirtualLab }) {
+  const { _ } = useTranslation();
   return (
     <Link
       to={ROUTES.STUDENT_LAB_DETAIL(lab.id)}
@@ -130,7 +133,7 @@ function LabCard({ lab }: { lab: VirtualLab }) {
         <span className="text-label-xs text-on-surface-variant capitalize">{lab.type}</span>
         {lab.completed !== undefined && (
           <span className={`text-label-xs font-medium ${lab.completed ? 'text-green-600' : 'text-amber-600'}`}>
-            {lab.completed ? 'Completed' : 'Not started'}
+            {lab.completed ? _('Completed') : _('Not started')}
           </span>
         )}
       </div>

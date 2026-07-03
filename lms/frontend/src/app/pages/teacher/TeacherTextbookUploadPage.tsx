@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -28,6 +29,7 @@ interface TeacherAssignment {
 }
 
 export default function TeacherTextbookUploadPage() {
+  const { _ } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryClassId = searchParams.get('classId') ?? '';
@@ -56,9 +58,9 @@ export default function TeacherTextbookUploadPage() {
         return {
           id: data.id,
           classId: data.classId,
-          className: cls?.name ?? 'Unknown Class',
+          className: cls?.name ?? _('Unknown Class'),
           subjectId: data.subjectId,
-          subjectName: subject?.name ?? 'Unknown Subject',
+          subjectName: subject?.name ?? _('Unknown Subject'),
         } as TeacherAssignment;
       });
     },
@@ -124,7 +126,7 @@ export default function TeacherTextbookUploadPage() {
         return next;
       });
     } else {
-      toast.error('Please drop valid PDF files');
+      toast.error(_('Please drop valid PDF files'));
     }
   }, [getDefaultAssignmentId]);
 
@@ -195,7 +197,7 @@ export default function TeacherTextbookUploadPage() {
     try {
       const hasMissingAssignment = files.some((_, i) => !getAssignmentForFile(i));
       if (hasMissingAssignment) {
-        toast.error('Please select a class & subject for each file');
+        toast.error(_('Please select a class & subject for each file'));
         return;
       }
 
@@ -237,7 +239,7 @@ export default function TeacherTextbookUploadPage() {
 
         try {
           lastTextbookId = await uploadSingleFile(file, assignment, taskId, addLog);
-          toast.success(`${file.name} uploaded`);
+          toast.success(`${file.name} ${_('uploaded')}`);
         } catch (err: unknown) {
           const message =
             err && typeof err === 'object' && 'message' in err
@@ -267,7 +269,7 @@ export default function TeacherTextbookUploadPage() {
       const message =
         err && typeof err === 'object' && 'message' in err
           ? (err as { message: string }).message
-          : 'Upload failed unexpectedly';
+          : _('Upload failed unexpectedly');
       toast.error(message);
     }
   };
@@ -275,7 +277,7 @@ export default function TeacherTextbookUploadPage() {
   if (assignmentsLoading) {
     return (
       <>
-        <SEOHead title="Upload Textbook" description="Upload and process textbook PDFs" canonical="/teacher/textbooks/upload" />
+      <SEOHead title={_('Upload Textbook')} description={_('Upload and process textbook PDFs')} canonical="/teacher/textbooks/upload" />
         <div className="sm:p-6 p-4 max-w-3xl mx-auto space-y-6 pb-32">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-8 w-72 mt-2" />
@@ -288,24 +290,24 @@ export default function TeacherTextbookUploadPage() {
   if (!assignmentsLoading && assignmentList.length === 0) {
     return (
       <>
-        <SEOHead title="Upload Textbook" description="Upload and process textbook PDFs" canonical="/teacher/textbooks/upload" />
+        <SEOHead title={_('Upload Textbook')} description={_('Upload and process textbook PDFs')} canonical="/teacher/textbooks/upload" />
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-3xl mx-auto space-y-16 pb-32">
           <motion.div variants={cardStackReveal} custom={0}>
             <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
               <Icon name="arrow_back" size={16} className="mr-1" />
-              Back
+              {_('Back')}
             </Button>
-            <h1 className="text-headline-sm">Upload Textbook</h1>
+            <h1 className="text-headline-sm">{_('Upload Textbook')}</h1>
           </motion.div>
           <motion.div variants={cardStackReveal} custom={0}>
             <Card className="border-border/60">
               <CardContent className="p-12 text-center space-y-4">
                 <Icon name="school" size={48} className="text-muted-foreground mx-auto" />
                 <p className="text-muted-foreground">
-                  You haven't been assigned to any class/subject yet. Contact your administrator.
+                  {_("You haven't been assigned to any class/subject yet. Contact your administrator.")}
                 </p>
                 <Button variant="outline" onClick={() => navigate(ROUTES.TEACHER_DASHBOARD)}>
-                  Go to Dashboard
+                  {_('Go to Dashboard')}
                 </Button>
               </CardContent>
             </Card>
@@ -323,9 +325,9 @@ export default function TeacherTextbookUploadPage() {
         <motion.div variants={cardStackReveal} custom={0}>
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
             <Icon name="arrow_back" size={16} className="mr-1" />
-            Back
+            {_('Back')}
           </Button>
-          <h1 className="text-headline-sm">Upload Textbooks</h1>
+          <h1 className="text-headline-sm">{_('Upload Textbooks')}</h1>
         </motion.div>
 
         <motion.div variants={cardStackReveal} custom={0}>
@@ -334,7 +336,7 @@ export default function TeacherTextbookUploadPage() {
 
               {assignmentList.length > 1 && (
                 <p className="text-xs text-muted-foreground -mb-2">
-                  Each file can be assigned to a different class &amp; subject using the dropdown below.
+                  {_('Each file can be assigned to a different class & subject using the dropdown below.')}
                 </p>
               )}
 
@@ -358,14 +360,14 @@ export default function TeacherTextbookUploadPage() {
                 />
                 <div className="space-y-2">
                   <Icon name="cloud_upload" size={40} className="text-muted-foreground mx-auto" />
-                  <p className="font-medium">Drop PDFs here or click to browse</p>
-                  <p className="text-xs text-muted-foreground">Select multiple PDFs or a folder containing PDFs</p>
+                  <p className="font-medium">{_('Drop PDFs here or click to browse')}</p>
+                  <p className="text-xs text-muted-foreground">{_('Select multiple PDFs or a folder containing PDFs')}</p>
                 </div>
               </div>
 
               {files.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">{files.length} file{files.length > 1 ? 's' : ''} selected</p>
+                  <p className="text-sm font-medium">{files.length} {files.length > 1 ? _('files selected') : _('file selected')}</p>
                   <div className="max-h-64 overflow-y-auto space-y-2">
                     {files.map((f, i) => {
                       const currentId = fileAssignments[i] || getDefaultAssignmentId();
@@ -415,12 +417,12 @@ export default function TeacherTextbookUploadPage() {
                 {isUploading ? (
                   <>
                     <Icon name="hourglass_top" size={18} className="animate-spin" />
-                    Uploading...
+                    {_('Uploading...')}
                   </>
                 ) : (
                   <>
                     <Icon name="cloud_upload" size={18} />
-                    {files.length > 1 ? `Upload ${files.length} Textbooks` : 'Upload Textbook'}
+                    {files.length > 1 ? `${_('Upload')} ${files.length} ${_('Textbooks')}` : _('Upload Textbook')}
                   </>
                 )}
               </Button>

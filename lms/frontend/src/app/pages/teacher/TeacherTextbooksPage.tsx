@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -14,6 +15,7 @@ import { getAllSubjects, getAllClasses } from '@/services/dataService';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
 
 export default function TeacherTextbooksPage() {
+  const { _ } = useTranslation();
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
 
@@ -76,7 +78,7 @@ export default function TeacherTextbooksPage() {
 
   return (
     <>
-      <SEOHead title="Teaching Space" description="Manage textbooks, classes, and subjects" canonical="/teacher/textbooks" />
+      <SEOHead title={_('Teaching Space')} description={_('Manage textbooks, classes, and subjects')} canonical="/teacher/textbooks" />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -93,7 +95,7 @@ export default function TeacherTextbooksPage() {
                 setSelectedSubjectId(null);
               }}
             >
-              Classes
+              {_('Classes')}
             </span>
             {selectedClass && (
               <>
@@ -122,17 +124,17 @@ export default function TeacherTextbooksPage() {
             <div>
               <h1 className="text-headline-sm font-bold tracking-tight">
                 {!selectedClassId
-                  ? 'Teaching Space'
+                  ? _('Teaching Space')
                   : !selectedSubjectId
-                  ? `${selectedClass?.name ?? ''} — Subjects`
-                  : `${selectedClass?.name ?? ''} — ${selectedSubject?.name ?? ''} Textbooks`}
+                  ? `${selectedClass?.name ?? ''} — ${_('Subjects')}`
+                  : `${selectedClass?.name ?? ''} — ${selectedSubject?.name ?? ''} ${_('Textbooks')}`}
               </h1>
               <p className="text-sm text-muted-foreground">
                 {!selectedClassId
-                  ? `Select a class to manage. You teach in ${assignedClasses.length} class${assignedClasses.length !== 1 ? 'es' : ''}.`
+                  ? `${_('Select a class to manage. You teach in')} ${assignedClasses.length} ${_('class')}${assignedClasses.length !== 1 ? 'es' : ''}.`
                   : !selectedSubjectId
-                  ? `Manage subjects you teach in ${selectedClass?.name ?? ''}.`
-                  : `Browse textbooks or upload materials for ${selectedSubject?.name ?? ''}.`}
+                  ? `${_('Manage subjects you teach in')} ${selectedClass?.name ?? ''}.`
+                  : `${_('Browse textbooks or upload materials for')} ${selectedSubject?.name ?? ''}.`}
               </p>
             </div>
             {selectedClassId && selectedSubjectId && currentTextbooks.length > 0 && (
@@ -142,7 +144,7 @@ export default function TeacherTextbooksPage() {
                   className="gap-1"
                 >
                   <Icon name="upload_file" size={16} />
-                  Upload Textbook
+                  {_('Upload Textbook')}
                 </Link>
               </Button>
             )}
@@ -164,7 +166,7 @@ export default function TeacherTextbooksPage() {
                   <Card className="border-border/60">
                     <CardContent className="p-12 text-center space-y-4">
                       <Icon name="school" size={48} className="text-muted-foreground mx-auto" />
-                      <p className="text-muted-foreground">You are not assigned to any classes yet. Contact your administrator.</p>
+                      <p className="text-muted-foreground">{_('You are not assigned to any classes yet. Contact your administrator.')}</p>
                     </CardContent>
                   </Card>
                 ) : (
@@ -192,18 +194,18 @@ export default function TeacherTextbooksPage() {
                                 </div>
                                 {cls.roomNumber && (
                                   <Badge variant="outline" className="text-xs bg-muted/40">
-                                    Room {cls.roomNumber}
+                                    {_('Room')} {cls.roomNumber}
                                   </Badge>
                                 )}
                               </div>
                               <div className="mt-6">
                                 <h3 className="text-title-md font-bold group-hover:text-primary transition-colors">{cls.name}</h3>
-                                <p className="text-body-sm text-muted-foreground mt-1">Code: {cls.code}</p>
-                                {cls.academicYear && <p className="text-body-xs text-muted-foreground mt-0.5">Year: {cls.academicYear}</p>}
+                                <p className="text-body-sm text-muted-foreground mt-1">{_('Code:')} {cls.code}</p>
+                                {cls.academicYear && <p className="text-body-xs text-muted-foreground mt-0.5">{_('Year:')} {cls.academicYear}</p>}
                               </div>
                             </CardContent>
                             <div className="px-6 py-4 bg-muted/20 border-t border-border/40 flex items-center justify-between">
-                              <span className="text-xs font-semibold text-muted-foreground">{subjectsCount} Subject{subjectsCount !== 1 ? 's' : ''} Taught</span>
+                              <span className="text-xs font-semibold text-muted-foreground">{subjectsCount} {subjectsCount !== 1 ? _('Subjects') : _('Subject')} {_('Taught')}</span>
                               <Icon name="arrow_forward" size={16} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                             </div>
                           </Card>
@@ -223,14 +225,14 @@ export default function TeacherTextbooksPage() {
                     </Button>
                     <Card className="border-border/60">
                       <CardContent className="p-12 text-center">
-                        <p className="text-muted-foreground">No subjects assigned in this class.</p>
+                        <p className="text-muted-foreground">{_('No subjects assigned in this class.')}</p>
                       </CardContent>
                     </Card>
                   </div>
                 ) : (
                   <div className="space-y-6">
                     <Button variant="ghost" size="sm" onClick={() => setSelectedClassId(null)} className="gap-1">
-                      <Icon name="arrow_back" size={16} /> Back to Classes
+                      <Icon name="arrow_back" size={16} /> {_('Back to Classes')}
                     </Button>
                     <motion.div
                       variants={staggerContainer}
@@ -261,16 +263,16 @@ export default function TeacherTextbooksPage() {
                                     <Icon name={sub.icon ?? 'menu_book'} size={24} style={{ color: sub.color ?? '#6366f1' }} />
                                   </div>
                                   <Badge variant="secondary" className="text-xs">
-                                    {sub.category ?? 'General'}
+                                    {sub.category ?? _('General')}
                                   </Badge>
                                 </div>
                                 <div className="mt-6">
                                   <h3 className="text-title-md font-bold group-hover:text-primary transition-colors" style={{ color: sub.color }}>{sub.name}</h3>
-                                  <p className="text-body-sm text-muted-foreground mt-1">Code: {sub.code}</p>
+                                  <p className="text-body-sm text-muted-foreground mt-1">{_('Code:')} {sub.code}</p>
                                 </div>
                               </CardContent>
                               <div className="px-6 py-4 bg-muted/20 border-t border-border/40 flex items-center justify-between">
-                                <span className="text-xs font-semibold text-muted-foreground">{subTextbooksCount} Textbook{subTextbooksCount !== 1 ? 's' : ''}</span>
+                                <span className="text-xs font-semibold text-muted-foreground">{subTextbooksCount} {subTextbooksCount !== 1 ? _('Textbooks') : _('Textbook')}</span>
                                 <Icon name="arrow_forward" size={16} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                               </div>
                             </Card>
@@ -287,7 +289,7 @@ export default function TeacherTextbooksPage() {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <Button variant="ghost" size="sm" onClick={() => setSelectedSubjectId(null)} className="gap-1">
-                      <Icon name="arrow_back" size={16} /> Back to Subjects
+                      <Icon name="arrow_back" size={16} /> {_('Back to Subjects')}
                     </Button>
                     <Button asChild size="sm">
                       <Link
@@ -295,7 +297,7 @@ export default function TeacherTextbooksPage() {
                         className="gap-1"
                       >
                         <Icon name="upload_file" size={16} />
-                        Upload Textbook
+                        {_('Upload Textbook')}
                       </Link>
                     </Button>
                   </div>
@@ -304,9 +306,9 @@ export default function TeacherTextbooksPage() {
                       <CardContent className="p-12 text-center space-y-6">
                         <Icon name="auto_stories" size={48} className="text-muted-foreground/30 mx-auto" />
                         <div className="space-y-2">
-                          <p className="text-title-md font-bold">No textbooks uploaded yet</p>
+                          <p className="text-title-md font-bold">{_('No textbooks uploaded yet')}</p>
                           <p className="text-body-sm text-muted-foreground max-w-sm mx-auto">
-                            Upload a textbook PDF for {selectedSubject?.name} in {selectedClass?.name} to begin AI concept and question bank parsing.
+                            {_('Upload a textbook PDF for')} {selectedSubject?.name} {_('in')} {selectedClass?.name} {_('to begin AI concept and question bank parsing.')}
                           </p>
                         </div>
                       </CardContent>
@@ -340,15 +342,15 @@ export default function TeacherTextbooksPage() {
                               <div className="px-6 py-4 bg-muted/20 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground font-semibold">
                                 {tb.status === 'processing' ? (
                                   <Badge variant="outline" className="text-[10px] bg-blue-50/50 text-blue-600 border-blue-200 py-0 px-2 font-semibold">
-                                    <Icon name="sync" className="animate-spin mr-1" size={12} /> Processing
+                                    <Icon name="sync" className="animate-spin mr-1" size={12} /> {_('Processing')}
                                   </Badge>
                                 ) : tb.status === 'failed' ? (
                                   <Badge variant="outline" className="text-[10px] bg-red-50/50 text-red-600 border-red-200 py-0 px-2 font-semibold">
-                                    <Icon name="error" className="mr-1" size={12} /> Failed
+                                    <Icon name="error" className="mr-1" size={12} /> {_('Failed')}
                                   </Badge>
                                 ) : (
                                   <Badge variant="secondary" className="text-[10px]">
-                                    {tb.chapterCount ?? 0} Chapter{(tb.chapterCount ?? 0) !== 1 ? 's' : ''}
+                                    {tb.chapterCount ?? 0} {(tb.chapterCount ?? 0) !== 1 ? _('Chapters') : _('Chapter')}
                                   </Badge>
                                 )}
                               </div>

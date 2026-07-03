@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useTranslation } from '@/hooks/useTranslation';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,7 @@ import { VideoCard } from './VideoCard';
 import type { TeacherVideo, YouTubeSearchResult } from './types';
 
 export function SearchYouTubeTab() {
+  const { _ } = useTranslation();
   const queryClient = useQueryClient();
   const [query, setQuery] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,10 +44,10 @@ export function SearchYouTubeTab() {
         embedUrl: video.embedUrl,
       }),
     onSuccess: () => {
-      toast.success('Video saved to your library');
+      toast.success(_('Video saved to your library'));
       queryClient.invalidateQueries({ queryKey: ['teacher-videos'] });
     },
-    onError: () => toast.error('Failed to save video'),
+    onError: () => toast.error(_('Failed to save video')),
   });
 
   const searchAndSaveMutation = useMutation({
@@ -53,11 +55,11 @@ export function SearchYouTubeTab() {
       api.post('/api/teacher-videos/search-and-save', { query: sq, maxResults: 12 }),
     onSuccess: (res) => {
       const count = res.data?.data?.length ?? 0;
-      toast.success(`Saved ${count} video${count !== 1 ? 's' : ''}`);
+      toast.success(`${_('Saved')} ${count} ${_('video')}${count !== 1 ? _('s') : ''}`);
       queryClient.invalidateQueries({ queryKey: ['teacher-videos'] });
       queryClient.invalidateQueries({ queryKey: ['youtube-search'] });
     },
-    onError: () => toast.error('Failed to search and save videos'),
+    onError: () => toast.error(_('Failed to search and save videos')),
   });
 
   const savedVideoIds = new Set(
@@ -75,7 +77,7 @@ export function SearchYouTubeTab() {
         <div className="relative flex-1">
           <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search YouTube for educational videos..."
+            placeholder={_('Search YouTube for educational videos...')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="pl-10"
@@ -83,7 +85,7 @@ export function SearchYouTubeTab() {
         </div>
         <Button type="submit" disabled={!query.trim()} className="gap-2">
           <Icon name="search" size={16} />
-          Search
+          {_('Search')}
         </Button>
         {searchQuery && (
           <Button
@@ -94,7 +96,7 @@ export function SearchYouTubeTab() {
             className="gap-2"
           >
             <Icon name="playlist_add" size={16} />
-            Save All
+            {_('Save All')}
           </Button>
         )}
       </form>
@@ -104,9 +106,9 @@ export function SearchYouTubeTab() {
           <div className="mb-5 text-muted-foreground/40">
             <Icon name="smart_display" size={64} />
           </div>
-          <h3 className="text-headline-sm mb-1">Search YouTube Videos</h3>
+          <h3 className="text-headline-sm mb-1">{_('Search YouTube Videos')}</h3>
           <p className="text-body-md text-muted-foreground max-w-sm">
-            Find educational videos to add to your library. Search by topic, keyword, or subject.
+            {_('Find educational videos to add to your library. Search by topic, keyword, or subject.')}
           </p>
         </div>
       )}
@@ -118,11 +120,11 @@ export function SearchYouTubeTab() {
           error={searchResultsQuery.error}
           onRetry={() => searchResultsQuery.refetch()}
           loadingType="card"
-          emptyMessage={`No results found for "${searchQuery}"`}
+          emptyMessage={`${_('No results found for')} "${searchQuery}"`}
           emptyAction={
             <Button variant="outline" onClick={() => setSearchQuery('')} className="gap-2">
               <Icon name="refresh" size={16} />
-              Try another search
+              {_('Try another search')}
             </Button>
           }
         >

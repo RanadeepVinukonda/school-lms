@@ -13,6 +13,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/lib/constants';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface NavItem {
   label: string;
@@ -41,6 +42,12 @@ export default function StudentLayout() {
   const { sidebarCollapsed, setSidebarCollapsed } = useUIStore();
   const [searchOpen, setSearchOpen] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
+  const { t } = useTranslation();
+  const getLabel = (label: string) => {
+    const key = `nav.${label.toLowerCase().replace(/ /g, '')}`;
+    const val = t(key as any);
+    return val === key ? label : val;
+  };
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -132,7 +139,7 @@ export default function StudentLayout() {
               }
             >
               <Icon name={item.icon} size={24} className={cn(sidebarCollapsed && '')} />
-              {!sidebarCollapsed && <span>{item.label}</span>}
+              {!sidebarCollapsed && <span>{getLabel(item.label)}</span>}
             </NavLink>
           ))}
         </nav>
@@ -200,7 +207,7 @@ export default function StudentLayout() {
                       }
                     >
                       <Icon name={item.icon} size={24} />
-                      <span>{item.label}</span>
+                      <span>{getLabel(item.label)}</span>
                     </NavLink>
                   </SheetClose>
                 ))}
@@ -266,7 +273,7 @@ export default function StudentLayout() {
                       <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
                     )}
                     <Icon name={item.icon} size={22} className={cn(isActive ? 'fill-icon' : '')} />
-                    <span className="text-label-sm leading-tight">{item.label}</span>
+                    <span className="text-label-sm leading-tight">{getLabel(item.label)}</span>
                   </>
                 )}
               </NavLink>

@@ -16,6 +16,8 @@ function subscribe(cb: () => void) {
   return () => { unsub1(); unsub2(); };
 }
 
+type FlatDict = Record<string, string>;
+
 export function useTranslation() {
   const lang = useSyncExternalStore(subscribe, getLang, getLang);
   const resource = translations[lang];
@@ -38,6 +40,12 @@ export function useTranslation() {
     return current;
   }
 
+  // Flat lookup: English text as key, falls back to English if not found
+  function _(text: string): string {
+    if (lang === 'en') return text;
+    return (resource as any as FlatDict)[text] || text;
+  }
+
   const changeLanguage = async (newLang: LanguageCode) => {
     useLanguageStore.getState().setLanguage(newLang);
     const user = useAuthStore.getState().user;
@@ -49,6 +57,6 @@ export function useTranslation() {
     }
   };
 
-  return { t, lang, changeLanguage };
+  return { t, _, lang, changeLanguage };
 }
 export default useTranslation;

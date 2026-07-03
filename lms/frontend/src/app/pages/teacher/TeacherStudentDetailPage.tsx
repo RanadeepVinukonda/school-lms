@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Link, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -43,6 +44,7 @@ function pctColor(pct: number) {
 }
 
 export default function TeacherStudentDetailPage() {
+  const { _ } = useTranslation();
   const { id } = useParams<{ id: string }>();
 
   const { isLoading, error, refetch, data } = useQuery({
@@ -114,8 +116,8 @@ export default function TeacherStudentDetailPage() {
   return (
     <>
       <SEOHead
-        title={data ? `${data.student.displayName} - Student Details` : 'Student Details'}
-        description={data ? `Performance and grades for ${data.student.displayName}` : 'View student details'}
+        title={data ? `${data.student.displayName} - ${_('Student Details')}` : _('Student Details')}
+        description={data ? `${_('Performance and grades for')} ${data.student.displayName}` : _('View student details')}
       />
       <motion.div
         initial={{ opacity: 0 }}
@@ -127,14 +129,14 @@ export default function TeacherStudentDetailPage() {
           <Card className="border-border/60">
             <CardContent className="flex flex-col items-center gap-3 py-12">
               <Icon name="person_off" size={48} className="text-muted-foreground/40" />
-              <p className="text-lg font-medium">Student not found</p>
+              <p className="text-lg font-medium">{_('Student not found')}</p>
               <p className="text-sm text-muted-foreground">
-                The student you&apos;re looking for doesn&apos;t exist.
+                {_("The student you're looking for doesn't exist.")}
               </p>
               <Button asChild>
                 <Link to="/teacher/students">
                   <Icon name="arrow_back" size={16} className="mr-1" />
-                  Back to Students
+                  {_('Back to Students')}
                 </Link>
               </Button>
             </CardContent>
@@ -153,7 +155,7 @@ export default function TeacherStudentDetailPage() {
                   <Button variant="ghost" size="sm" asChild className="gap-1 -ml-2">
                     <Link to="/teacher/students">
                       <Icon name="arrow_back" size={16} />
-                      Back to Students
+                      {_('Back to Students')}
                     </Link>
                   </Button>
                 </motion.div>
@@ -174,7 +176,7 @@ export default function TeacherStudentDetailPage() {
                             </span>
                             <span className="flex items-center gap-1">
                               <Icon name="school" size={15} />
-                              {d.studentClass?.name ?? 'Unknown Class'}
+                              {d.studentClass?.name ?? _('Unknown Class')}
                             </span>
                             <span className="flex items-center gap-1">
                               <Icon name="email" size={15} />
@@ -192,14 +194,14 @@ export default function TeacherStudentDetailPage() {
                     <CardHeader className="pb-3">
                       <CardTitle className="text-title-md flex items-center gap-2">
                         <Icon name="menu_book" size={18} className="text-muted-foreground" />
-                        Subject Performance
+                        {_('Subject Performance')}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-5">
                       {d.subjectPerformance.length === 0 ? (
                         <div className="flex flex-col items-center gap-2 py-6 text-center">
                           <Icon name="graded" size={32} className="text-muted-foreground/40" />
-                          <p className="text-sm text-muted-foreground">No grades recorded yet</p>
+                          <p className="text-sm text-muted-foreground">{_('No grades recorded yet')}</p>
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3">
@@ -232,25 +234,25 @@ export default function TeacherStudentDetailPage() {
                     <CardHeader className="pb-3">
                       <CardTitle className="text-title-md flex items-center gap-2">
                         <Icon name="graded" size={18} className="text-muted-foreground" />
-                        All Grades
+                        {_('All Grades')}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
                       {d.grades.length === 0 ? (
                         <div className="flex flex-col items-center gap-2 py-8 text-center">
                           <Icon name="graded" size={32} className="text-muted-foreground/40" />
-                          <p className="text-sm text-muted-foreground">No grades yet</p>
+                          <p className="text-sm text-muted-foreground">{_('No grades yet')}</p>
                         </div>
                       ) : (
                         <div className="overflow-x-auto">
                           <table className="w-full text-sm">
                             <thead>
                               <tr className="border-b bg-muted/30">
-                                <th className="text-left font-medium text-muted-foreground px-4 py-3">Item</th>
-                                <th className="text-left font-medium text-muted-foreground px-4 py-3">Subject</th>
-                                <th className="text-center font-medium text-muted-foreground px-4 py-3">Score</th>
-                                <th className="text-center font-medium text-muted-foreground px-4 py-3">Percentage</th>
-                                <th className="text-right font-medium text-muted-foreground px-4 py-3">Date</th>
+                                <th className="text-left font-medium text-muted-foreground px-4 py-3">{_('Item')}</th>
+                                <th className="text-left font-medium text-muted-foreground px-4 py-3">{_('Subject')}</th>
+                                <th className="text-center font-medium text-muted-foreground px-4 py-3">{_('Score')}</th>
+                                <th className="text-center font-medium text-muted-foreground px-4 py-3">{_('Percentage')}</th>
+                                <th className="text-right font-medium text-muted-foreground px-4 py-3">{_('Date')}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -263,7 +265,7 @@ export default function TeacherStudentDetailPage() {
                                     </Badge>
                                   </td>
                                   <td className="px-4 py-3 text-muted-foreground">
-                                    {grade.subject?.name ?? 'Unknown'}
+                                    {grade.subject?.name ?? _('Unknown')}
                                   </td>
                                   <td className="px-4 py-3 text-center tabular-nums">
                                     {grade.score}/{grade.totalPoints}
@@ -289,7 +291,7 @@ export default function TeacherStudentDetailPage() {
                     <CardHeader className="pb-3">
                       <CardTitle className="text-title-md flex items-center gap-2">
                         <Icon name="trending_up" size={18} className="text-muted-foreground" />
-                        Performance Trend
+                        {_('Performance Trend')}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-5">
@@ -297,7 +299,7 @@ export default function TeacherStudentDetailPage() {
                         <div className="flex flex-col items-center gap-2 py-6 text-center">
                           <Icon name="show_chart" size={32} className="text-muted-foreground/40" />
                           <p className="text-sm text-muted-foreground">
-                            Need at least 2 graded items to show a trend
+                            {_('Need at least 2 graded items to show a trend')}
                           </p>
                         </div>
                       ) : (
@@ -314,7 +316,7 @@ export default function TeacherStudentDetailPage() {
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium truncate">{grade.itemName}</p>
                                   <p className="text-xs text-muted-foreground">
-                                    {grade.subject?.name ?? 'Unknown'} &middot; {formatDate(grade.createdAt)}
+                                    {grade.subject?.name ?? _('Unknown')} &middot; {formatDate(grade.createdAt)}
                                   </p>
                                 </div>
                                 <div className="text-right flex items-center gap-2">
@@ -342,19 +344,19 @@ export default function TeacherStudentDetailPage() {
                     <CardHeader className="pb-3">
                       <CardTitle className="text-title-md flex items-center gap-2">
                         <Icon name="notes" size={18} className="text-muted-foreground" />
-                        Feedback &amp; Notes
+                        {_('Feedback & Notes')}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-5">
                       <div className="space-y-4">
                         <p className="text-sm text-muted-foreground">
-                          Add private notes about this student. These are only visible to you.
+                          {_('Add private notes about this student. These are only visible to you.')}
                         </p>
-                        <Textarea placeholder="Write your notes here..." className="min-h-[100px]" />
+                        <Textarea placeholder={_('Write your notes here...')} className="min-h-[100px]" />
                         <div className="flex justify-end">
                           <Button size="sm" className="gap-1">
                             <Icon name="save" size={16} />
-                            Save Notes
+                            {_('Save Notes')}
                           </Button>
                         </div>
                       </div>

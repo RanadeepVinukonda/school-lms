@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -30,6 +31,7 @@ interface StudentRow {
 }
 
 export default function TeacherStudentsPage() {
+  const { _ } = useTranslation();
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('all');
 
   const { isLoading, error, refetch, data } = useQuery({
@@ -62,7 +64,7 @@ export default function TeacherStudentsPage() {
 
   const subjectOptions = useMemo(
     () => [
-      { value: 'all', label: 'All Subjects' },
+      { value: 'all', label: _('All Subjects') },
       ...teacherSubjects.map((s) => ({ value: s.id, label: s.name })),
     ],
     [teacherSubjects],
@@ -94,7 +96,7 @@ export default function TeacherStudentsPage() {
           id: user.id,
           displayName: user.displayName,
           studentId: user.studentId ?? user.id,
-          className: studentClass?.name ?? 'Unknown',
+          className: studentClass?.name ?? _('Unknown'),
           overallPercentage,
           subjectCount: studentClass?.subjectIds?.length ?? 0,
         } as StudentRow;
@@ -104,7 +106,7 @@ export default function TeacherStudentsPage() {
 
   return (
     <>
-      <SEOHead title="My Students" description="View and manage your students" canonical="/teacher/students" />
+      <SEOHead title={_('My Students')} description={_('View and manage your students')} canonical="/teacher/students" />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -117,15 +119,15 @@ export default function TeacherStudentsPage() {
           className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
         >
           <div>
-            <h1 className="text-headline-sm">My Students</h1>
+            <h1 className="text-headline-sm">{_('My Students')}</h1>
             <p className="text-sm text-muted-foreground">
-              {students.length} student{students.length !== 1 ? 's' : ''} total
+              {students.length} {students.length !== 1 ? _('students total') : _('student total')}
             </p>
           </div>
           <div className="w-full sm:w-56">
             <OptionsSelect
               options={subjectOptions}
-              placeholder="All Subjects"
+              placeholder={_('All Subjects')}
               value={selectedSubjectId}
               onValueChange={setSelectedSubjectId}
             />
@@ -140,13 +142,13 @@ export default function TeacherStudentsPage() {
           loadingType="list"
           emptyMessage={
             allSubjects.length > 0
-              ? 'No students found in the assigned classes.'
-              : 'No subjects available. Contact your administrator.'
+              ? _('No students found in the assigned classes.')
+              : _('No subjects available. Contact your administrator.')
           }
           emptyAction={
             <Link to="/teacher/subjects" className="gap-1 inline-flex items-center">
               <Icon name="menu_book" size={16} />
-              View Subjects
+              {_('View Subjects')}
             </Link>
           }
         >
@@ -198,7 +200,7 @@ export default function TeacherStudentsPage() {
                                 </span>
                                 <span className="flex items-center gap-1">
                                   <Icon name="menu_book" size={13} />
-                                  {student.subjectCount} subject{student.subjectCount !== 1 ? 's' : ''}
+                                  {student.subjectCount} {student.subjectCount !== 1 ? _('subjects') : _('subject')}
                                 </span>
                               </div>
                             </div>
@@ -214,7 +216,7 @@ export default function TeacherStudentsPage() {
                               >
                                 {student.overallPercentage}%
                               </p>
-                              <p className="text-[10px] text-muted-foreground">overall</p>
+                              <p className="text-[10px] text-muted-foreground">{_('overall')}</p>
                             </div>
                             <Icon
                               name="chevron_right"

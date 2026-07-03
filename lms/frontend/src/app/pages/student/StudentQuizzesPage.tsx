@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from '@/hooks/useTranslation';
 import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -41,6 +42,7 @@ interface V2QuizWithMeta extends V2Quiz {
 export default function StudentQuizzesPage() {
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
+  const { _ } = useTranslation();
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
 
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -101,21 +103,21 @@ export default function StudentQuizzesPage() {
 
   return (
     <>
-      <SEOHead title="Quizzes" description="View and take your quizzes" />
+      <SEOHead title={_('Quizzes')} description={_('View and take your quizzes')} />
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16">
 
         <motion.div>
           <div className="flex flex-col gap-4">
             <div>
-              <h1 className="text-headline-sm font-bold">Quizzes</h1>
-              <p className="text-body-md text-muted-foreground">Practice and test your knowledge</p>
+              <h1 className="text-headline-sm font-bold">{_('Quizzes')}</h1>
+              <p className="text-body-md text-muted-foreground">{_('Practice and test your knowledge')}</p>
             </div>
             {(data?.subjects?.length ?? 0) > 0 && (
               <div className="flex flex-wrap items-center gap-1.5 pt-1">
                 <button onClick={() => setSelectedSubjectId('')}
                   className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border shrink-0 flex items-center gap-1.5 ${selectedSubjectId === '' ? 'bg-primary text-white border-primary shadow-sm' : 'bg-surface text-on-surface hover:bg-surface-variant/40 border-border/60'}`}>
-                  <Icon name="select_all" size={14} />All Subjects
+                  <Icon name="select_all" size={14} />{_('All Subjects')}
                 </button>
                 {data!.subjects.map((sub: any) => {
                   const isSelected = selectedSubjectId === sub.id;
@@ -134,18 +136,18 @@ export default function StudentQuizzesPage() {
         </motion.div>
 
         <DataFetchWrapper data={data} isLoading={isLoading}
-          error={isError ? error ?? new Error('Failed to load quizzes') : null}
-          loadingType="list" onRetry={() => refetch()} errorTitle="Failed to load quizzes"
-          emptyMessage="No quizzes available yet" emptyIcon={<Icon name="quiz" size={40} />}>
+          error={isError ? error ?? new Error(_('Failed to load quizzes')) : null}
+          loadingType="list" onRetry={() => refetch()} errorTitle={_('Failed to load quizzes')}
+          emptyMessage={_('No quizzes available yet')} emptyIcon={<Icon name="quiz" size={40} />}>
           {() => (
             <div className="space-y-16">
               {/* Pending quizzes */}
               {pending.length > 0 && (
                 <section>
                   <div className="mb-6">
-                    <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">PENDING</p>
+                    <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">{_('PENDING')}</p>
                     <h2 className="text-headline-sm font-bold flex items-center gap-2">
-                      New Quizzes
+                      {_('New Quizzes')}
                       <Badge variant="destructive" className="text-xs">{pending.length}</Badge>
                     </h2>
                   </div>
@@ -165,14 +167,14 @@ export default function StudentQuizzesPage() {
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <p className="font-semibold">{quiz.title}</p>
                                   {quiz.isRepublished && (
-                                    <Badge variant="success" className="text-[10px]">Practice Mode</Badge>
+                                    <Badge variant="success" className="text-[10px]">{_('Practice Mode')}</Badge>
                                   )}
                                 </div>
                                 <p className="text-body-sm text-muted-foreground mt-0.5">{quiz.subjectName}</p>
                                 <div className="flex items-center gap-3 mt-2 text-label-xs text-muted-foreground flex-wrap">
                                   <span className="flex items-center gap-1"><Icon name="timer" size={12} />{quiz.timeLimitMinutes}m</span>
-                                  <span className="flex items-center gap-1"><Icon name="star" size={12} />{quiz.totalPoints} pts</span>
-                                  <span className="flex items-center gap-1"><Icon name="replay" size={12} />Max {quiz.maxAttempts}</span>
+                                  <span className="flex items-center gap-1"><Icon name="star" size={12} />{quiz.totalPoints} {_('pts')}</span>
+                                  <span className="flex items-center gap-1"><Icon name="replay" size={12} />{_('Max')} {quiz.maxAttempts}</span>
                                   {(quiz.selectedModels?.length ?? 0) > 0 && (
                                     <span className="flex items-center gap-1 text-[10px]">
                                       {quiz.selectedModels.slice(0, 3).join(', ')}{quiz.selectedModels.length > 3 ? ` +${quiz.selectedModels.length - 3}` : ''}
@@ -180,7 +182,7 @@ export default function StudentQuizzesPage() {
                                   )}
                                 </div>
                               </div>
-                              <Button size="sm" className="shrink-0">Start</Button>
+                              <Button size="sm" className="shrink-0">{_('Start')}</Button>
                             </div>
                           </CardContent>
                         </Card>
@@ -194,8 +196,8 @@ export default function StudentQuizzesPage() {
               {attempted.length > 0 && (
                 <section>
                   <div className="mb-6">
-                    <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">HISTORY</p>
-                    <h2 className="text-headline-sm font-bold">Attempted</h2>
+                    <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">{_('HISTORY')}</p>
+                    <h2 className="text-headline-sm font-bold">{_('Attempted')}</h2>
                   </div>
                   <motion.div className="space-y-3">
                     {attempted.filter(Boolean).map((quiz: any) => (
@@ -213,20 +215,20 @@ export default function StudentQuizzesPage() {
                                   <p className="font-semibold">{quiz.title}</p>
                                   {quiz.bestPercentage !== null && (
                                     <Badge variant={quiz.bestPassed ? 'success' : 'destructive'} className="text-xs shrink-0">
-                                      Best: {quiz.bestPercentage}%
+                                      {_('Best')}: {quiz.bestPercentage}%
                                     </Badge>
                                   )}
                                 </div>
                                 <p className="text-body-sm text-muted-foreground mt-0.5">{quiz.subjectName}</p>
                                 <div className="flex items-center gap-3 mt-2 text-label-xs text-muted-foreground">
-                                  <span className="flex items-center gap-1"><Icon name="history" size={12} />{quiz.myAttempts} attempt{quiz.myAttempts !== 1 ? 's' : ''}</span>
+                                  <span className="flex items-center gap-1"><Icon name="history" size={12} />{quiz.myAttempts} {quiz.myAttempts !== 1 ? _('attempts') : _('attempt')}</span>
                                   {quiz.myAttempts < quiz.maxAttempts && (
-                                    <span className="flex items-center gap-1 text-primary"><Icon name="replay" size={12} />{quiz.maxAttempts - quiz.myAttempts} left</span>
+                                    <span className="flex items-center gap-1 text-primary"><Icon name="replay" size={12} />{quiz.maxAttempts - quiz.myAttempts} {_('left')}</span>
                                   )}
                                 </div>
                               </div>
                               {quiz.myAttempts < quiz.maxAttempts && (
-                                <Button size="sm" variant="outline" className="shrink-0">Retry</Button>
+                                <Button size="sm" variant="outline" className="shrink-0">{_('Retry')}</Button>
                               )}
                             </div>
                           </CardContent>
@@ -241,8 +243,8 @@ export default function StudentQuizzesPage() {
                 <Card className="border-border/60">
                   <CardContent className="flex flex-col items-center gap-3 py-16">
                     <Icon name="quiz" size={48} className="text-muted-foreground/30" />
-                    <p className="text-title-sm font-semibold">No quizzes yet</p>
-                    <p className="text-body-md text-muted-foreground text-center">Your teacher hasn't pushed any quizzes yet. Check back later.</p>
+                    <p className="text-title-sm font-semibold">{_('No quizzes yet')}</p>
+                    <p className="text-body-md text-muted-foreground text-center">{_("Your teacher hasn't pushed any quizzes yet. Check back later.")}</p>
                   </CardContent>
                 </Card>
               )}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface LetterCard {
   letter: string;
@@ -7,38 +8,39 @@ interface LetterCard {
   color: string;
 }
 
-const letters: LetterCard[] = [
-  { letter: 'A', word: 'Apple', image: '🍎', color: 'from-red-400 to-red-500' },
-  { letter: 'B', word: 'Ball', image: '⚽', color: 'from-blue-400 to-blue-500' },
-  { letter: 'C', word: 'Cat', image: '🐱', color: 'from-orange-400 to-orange-500' },
-  { letter: 'D', word: 'Dog', image: '🐶', color: 'from-yellow-400 to-yellow-500' },
-  { letter: 'E', word: 'Elephant', image: '🐘', color: 'from-purple-400 to-purple-500' },
-  { letter: 'F', word: 'Fish', image: '🐟', color: 'from-cyan-400 to-cyan-500' },
-  { letter: 'G', word: 'Goat', image: '🐐', color: 'from-green-400 to-green-500' },
-  { letter: 'H', word: 'Hat', image: '🎩', color: 'from-pink-400 to-pink-500' },
-  { letter: 'I', word: 'Ice Cream', image: '🍦', color: 'from-indigo-400 to-indigo-500' },
-  { letter: 'J', word: 'Jug', image: '🏺', color: 'from-teal-400 to-teal-500' },
-  { letter: 'K', word: 'Kite', image: '🪁', color: 'from-rose-400 to-rose-500' },
-  { letter: 'L', word: 'Lion', image: '🦁', color: 'from-amber-400 to-amber-500' },
-  { letter: 'M', word: 'Moon', image: '🌙', color: 'from-sky-400 to-sky-500' },
-  { letter: 'N', word: 'Nest', image: '🪺', color: 'from-lime-400 to-lime-500' },
-  { letter: 'O', word: 'Orange', image: '🍊', color: 'from-orange-400 to-orange-500' },
-  { letter: 'P', word: 'Penguin', image: '🐧', color: 'from-violet-400 to-violet-500' },
-  { letter: 'Q', word: 'Queen', image: '👑', color: 'from-fuchsia-400 to-fuchsia-500' },
-  { letter: 'R', word: 'Rabbit', image: '🐰', color: 'from-pink-400 to-pink-500' },
-  { letter: 'S', word: 'Sun', image: '☀️', color: 'from-yellow-400 to-yellow-500' },
-  { letter: 'T', word: 'Tiger', image: '🐯', color: 'from-orange-400 to-orange-500' },
-  { letter: 'U', word: 'Umbrella', image: '☂️', color: 'from-blue-400 to-blue-500' },
-  { letter: 'V', word: 'Violin', image: '🎻', color: 'from-purple-400 to-purple-500' },
-  { letter: 'W', word: 'Watermelon', image: '🍉', color: 'from-green-400 to-green-500' },
-  { letter: 'X', word: 'Xylophone', image: '🎵', color: 'from-red-400 to-red-500' },
-  { letter: 'Y', word: 'Yak', image: '🐂', color: 'from-amber-400 to-amber-500' },
-  { letter: 'Z', word: 'Zebra', image: '🦓', color: 'from-gray-400 to-gray-500' },
-];
-
-const simpleWords = ['CAT', 'DOG', 'BAT', 'FAN', 'HAT', 'CUP', 'BUS', 'SUN', 'BED', 'BAG'];
-
 export default function K2PhonicsPage() {
+  const { _ } = useTranslation();
+
+  const letters: LetterCard[] = [
+    { letter: 'A', word: _('Apple'), image: '🍎', color: 'from-red-400 to-red-500' },
+    { letter: 'B', word: _('Ball'), image: '⚽', color: 'from-blue-400 to-blue-500' },
+    { letter: 'C', word: _('Cat'), image: '🐱', color: 'from-orange-400 to-orange-500' },
+    { letter: 'D', word: _('Dog'), image: '🐶', color: 'from-yellow-400 to-yellow-500' },
+    { letter: 'E', word: _('Elephant'), image: '🐘', color: 'from-purple-400 to-purple-500' },
+    { letter: 'F', word: _('Fish'), image: '🐟', color: 'from-cyan-400 to-cyan-500' },
+    { letter: 'G', word: _('Goat'), image: '🐐', color: 'from-green-400 to-green-500' },
+    { letter: 'H', word: _('Hat'), image: '🎩', color: 'from-pink-400 to-pink-500' },
+    { letter: 'I', word: _('Ice Cream'), image: '🍦', color: 'from-indigo-400 to-indigo-500' },
+    { letter: 'J', word: _('Jug'), image: '🏺', color: 'from-teal-400 to-teal-500' },
+    { letter: 'K', word: _('Kite'), image: '🪁', color: 'from-rose-400 to-rose-500' },
+    { letter: 'L', word: _('Lion'), image: '🦁', color: 'from-amber-400 to-amber-500' },
+    { letter: 'M', word: _('Moon'), image: '🌙', color: 'from-sky-400 to-sky-500' },
+    { letter: 'N', word: _('Nest'), image: '🪺', color: 'from-lime-400 to-lime-500' },
+    { letter: 'O', word: _('Orange'), image: '🍊', color: 'from-orange-400 to-orange-500' },
+    { letter: 'P', word: _('Penguin'), image: '🐧', color: 'from-violet-400 to-violet-500' },
+    { letter: 'Q', word: _('Queen'), image: '👑', color: 'from-fuchsia-400 to-fuchsia-500' },
+    { letter: 'R', word: _('Rabbit'), image: '🐰', color: 'from-pink-400 to-pink-500' },
+    { letter: 'S', word: _('Sun'), image: '☀️', color: 'from-yellow-400 to-yellow-500' },
+    { letter: 'T', word: _('Tiger'), image: '🐯', color: 'from-orange-400 to-orange-500' },
+    { letter: 'U', word: _('Umbrella'), image: '☂️', color: 'from-blue-400 to-blue-500' },
+    { letter: 'V', word: _('Violin'), image: '🎻', color: 'from-purple-400 to-purple-500' },
+    { letter: 'W', word: _('Watermelon'), image: '🍉', color: 'from-green-400 to-green-500' },
+    { letter: 'X', word: _('Xylophone'), image: '🎵', color: 'from-red-400 to-red-500' },
+    { letter: 'Y', word: _('Yak'), image: '🐂', color: 'from-amber-400 to-amber-500' },
+    { letter: 'Z', word: _('Zebra'), image: '🦓', color: 'from-gray-400 to-gray-500' },
+  ];
+
+  const simpleWords = ['CAT', 'DOG', 'BAT', 'FAN', 'HAT', 'CUP', 'BUS', 'SUN', 'BED', 'BAG'];
   const [selectedLetter, setSelectedLetter] = useState<LetterCard | null>(null);
   const [gameMode, setGameMode] = useState<'learn' | 'match' | 'word'>('learn');
   const [targetLetter, setTargetLetter] = useState<LetterCard | null>(null);
@@ -136,13 +138,13 @@ export default function K2PhonicsPage() {
     <div className="space-y-4">
       <div className="bg-white rounded-3xl p-4 shadow-lg border-2 border-green-200">
         <h2 className="text-2xl font-bold text-green-700 mb-3 flex items-center gap-2">
-          <span>🔊</span> Phonics Fun
+          <span>🔊</span> {_('Phonics Fun')}
         </h2>
 
         <div className="flex gap-2 mb-4">
-          <button onClick={() => setGameMode('learn')} className={`px-6 py-3 rounded-2xl text-lg font-bold transition-all ${gameMode === 'learn' ? 'bg-green-500 text-white shadow-lg scale-105' : 'bg-gray-100 text-gray-600'}`}>📖 Learn</button>
-          <button onClick={() => setGameMode('match')} className={`px-6 py-3 rounded-2xl text-lg font-bold transition-all ${gameMode === 'match' ? 'bg-green-500 text-white shadow-lg scale-105' : 'bg-gray-100 text-gray-600'}`}>🎯 Match</button>
-          <button onClick={() => setGameMode('word')} className={`px-6 py-3 rounded-2xl text-lg font-bold transition-all ${gameMode === 'word' ? 'bg-green-500 text-white shadow-lg scale-105' : 'bg-gray-100 text-gray-600'}`}>🔤 Words</button>
+          <button onClick={() => setGameMode('learn')} className={`px-6 py-3 rounded-2xl text-lg font-bold transition-all ${gameMode === 'learn' ? 'bg-green-500 text-white shadow-lg scale-105' : 'bg-gray-100 text-gray-600'}`}>📖 {_('Learn')}</button>
+          <button onClick={() => setGameMode('match')} className={`px-6 py-3 rounded-2xl text-lg font-bold transition-all ${gameMode === 'match' ? 'bg-green-500 text-white shadow-lg scale-105' : 'bg-gray-100 text-gray-600'}`}>🎯 {_('Match')}</button>
+          <button onClick={() => setGameMode('word')} className={`px-6 py-3 rounded-2xl text-lg font-bold transition-all ${gameMode === 'word' ? 'bg-green-500 text-white shadow-lg scale-105' : 'bg-gray-100 text-gray-600'}`}>🔤 {_('Words')}</button>
         </div>
 
         {gameMode === 'learn' && (
@@ -165,7 +167,7 @@ export default function K2PhonicsPage() {
                 <p className="text-2xl text-gray-700 mt-1">{selectedLetter.word}</p>
                 <p className="text-4xl mt-2">{selectedLetter.image}</p>
                 <button onClick={() => speak(selectedLetter.letter)} className="mt-2 px-6 py-2 bg-purple-500 text-white rounded-2xl text-lg font-bold hover:bg-purple-600 transition-colors">
-                  🔁 Say it again
+                  🔁 {_('Say it again')}
                 </button>
               </div>
             )}
@@ -174,7 +176,7 @@ export default function K2PhonicsPage() {
 
         {gameMode === 'match' && targetLetter && (
           <div className="text-center">
-            <p className="text-2xl font-bold text-purple-600 mb-4">Find the letter that sounds like...</p>
+            <p className="text-2xl font-bold text-purple-600 mb-4">{_('Find the letter that sounds like...')}</p>
             <button
               onClick={() => speak(targetLetter.letter)}
               className="text-7xl mb-6 p-4 bg-purple-100 rounded-3xl hover:bg-purple-200 transition-colors animate-pulse"
@@ -198,7 +200,7 @@ export default function K2PhonicsPage() {
 
         {gameMode === 'word' && (
           <div className="text-center">
-            <p className="text-2xl font-bold text-purple-600 mb-4">Drag letters to make the word!</p>
+            <p className="text-2xl font-bold text-purple-600 mb-4">{_('Drag letters to make the word!')}</p>
 
             <div className="flex justify-center gap-3 mb-6 min-h-[70px]">
               {Array.from({ length: currentWord.length }).map((_, i) => (
@@ -230,13 +232,13 @@ export default function K2PhonicsPage() {
 
             {wordResult === 'correct' && (
               <div className="mt-4 p-4 bg-green-100 rounded-2xl border-2 border-green-300 text-green-700 animate-bounce-in">
-                <p className="text-3xl font-bold">🎉 Correct! {currentWord}</p>
-                <button onClick={startWordGame} className="mt-2 px-6 py-2 bg-green-500 text-white rounded-2xl text-lg font-bold hover:bg-green-600">Next Word</button>
+                <p className="text-3xl font-bold">🎉 {_('Correct!')} {currentWord}</p>
+                <button onClick={startWordGame} className="mt-2 px-6 py-2 bg-green-500 text-white rounded-2xl text-lg font-bold hover:bg-green-600">{_('Next Word')}</button>
               </div>
             )}
             {wordResult === 'wrong' && (
               <div className="mt-4 p-4 bg-red-100 rounded-2xl border-2 border-red-300 text-red-700">
-                <p className="text-2xl font-bold">Try again! 🤔</p>
+                <p className="text-2xl font-bold">{_('Try again!')} 🤔</p>
                 <button
                   onClick={() => {
                     setDraggedLetters([]);
@@ -245,12 +247,12 @@ export default function K2PhonicsPage() {
                   }}
                   className="mt-2 px-6 py-2 bg-red-500 text-white rounded-2xl text-lg font-bold"
                 >
-                  🔄 Retry
+                  🔄 {_('Retry')}
                 </button>
               </div>
             )}
 
-            <p className="text-xl font-bold text-green-600 mt-4">Score: {score} ⭐</p>
+            <p className="text-xl font-bold text-green-600 mt-4">{_('Score')}: {score} ⭐</p>
           </div>
         )}
       </div>

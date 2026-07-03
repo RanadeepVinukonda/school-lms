@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useTranslation } from '@/hooks/useTranslation';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +16,7 @@ import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
 
 export default function TeacherQuestionPapersPage() {
+  const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
@@ -31,19 +33,19 @@ export default function TeacherQuestionPapersPage() {
 
   const createMutation = useMutation({
     mutationFn: () => api.post('/question-papers', { title, description: description || undefined, sections: sections.filter((s) => s.title.trim()), duration, createdBy: user?.id }),
-    onSuccess: () => { toast.success('Question paper created'); setShowCreate(false); resetForm(); queryClient.invalidateQueries({ queryKey: ['question-papers'] }); },
-    onError: () => toast.error('Failed to create question paper'),
+    onSuccess: () => { toast.success(_('Question paper created')); setShowCreate(false); resetForm(); queryClient.invalidateQueries({ queryKey: ['question-papers'] }); },
+    onError: () => toast.error(_('Failed to create question paper')),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/question-papers/${id}`),
-    onSuccess: () => { toast.success('Question paper deleted'); queryClient.invalidateQueries({ queryKey: ['question-papers'] }); },
-    onError: () => toast.error('Failed to delete question paper'),
+    onSuccess: () => { toast.success(_('Question paper deleted')); queryClient.invalidateQueries({ queryKey: ['question-papers'] }); },
+    onError: () => toast.error(_('Failed to delete question paper')),
   });
 
   const markReadyMutation = useMutation({
     mutationFn: (id: string) => api.put(`/question-papers/${id}`, { status: 'ready' }),
-    onSuccess: () => { toast.success('Paper marked as ready'); queryClient.invalidateQueries({ queryKey: ['question-papers'] }); },
+    onSuccess: () => { toast.success(_('Paper marked as ready')); queryClient.invalidateQueries({ queryKey: ['question-papers'] }); },
   });
 
   function resetForm() { setTitle(''); setDescription(''); setDuration(60); setSections([{ title: 'Section A', instructions: '', questionIds: [''], pointsPerQuestion: 1 }]); }
@@ -58,7 +60,7 @@ export default function TeacherQuestionPapersPage() {
 
   return (
     <>
-      <SEOHead title="Question Papers" description="Compose and manage question papers" canonical="/teacher/question-papers" />
+      <SEOHead title={_('Question Papers')} description={_('Compose and manage question papers')} canonical="/teacher/question-papers" />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -68,10 +70,10 @@ export default function TeacherQuestionPapersPage() {
         <motion.div variants={cardStackReveal} custom={0}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-headline-sm">Question Papers</h1>
-              <p className="text-body-md text-muted-foreground">Compose reusable question papers from your question bank</p>
+              <h1 className="text-headline-sm">{_('Question Papers')}</h1>
+              <p className="text-body-md text-muted-foreground">{_('Compose reusable question papers from your question bank')}</p>
             </div>
-            <Button onClick={() => setShowCreate(true)}><Icon name="add" size={16} className="mr-1" />New Paper</Button>
+            <Button onClick={() => setShowCreate(true)}><Icon name="add" size={16} className="mr-1" />{_('New Paper')}</Button>
           </div>
         </motion.div>
 
@@ -83,7 +85,7 @@ export default function TeacherQuestionPapersPage() {
                   <Card className="border-border/60">
                     <CardContent className="p-8 text-center text-muted-foreground">
                       <Icon name="description" size={48} className="mx-auto mb-3 opacity-40" />
-                      <p className="text-body-md">No question papers yet.</p>
+                      <p className="text-body-md">{_('No question papers yet.')}</p>
                     </CardContent>
                   </Card>
                 ) : (
@@ -104,8 +106,8 @@ export default function TeacherQuestionPapersPage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
-                            {p.status === 'draft' && <Button variant="outline" size="sm" onClick={() => markReadyMutation.mutate(p.id)}>Mark Ready</Button>}
-                            <Button variant="ghost" size="icon-sm" onClick={() => { if (confirm('Delete this paper?')) deleteMutation.mutate(p.id); }}><Icon name="delete" size={16} /></Button>
+                            {p.status === 'draft' && <Button variant="outline" size="sm" onClick={() => markReadyMutation.mutate(p.id)}>{_('Mark Ready')}</Button>}
+                            <Button variant="ghost" size="icon-sm" onClick={() => { if (confirm(_('Delete this paper?'))) deleteMutation.mutate(p.id); }}><Icon name="delete" size={16} /></Button>
                           </div>
                         </div>
                       </CardContent>
@@ -120,42 +122,42 @@ export default function TeacherQuestionPapersPage() {
         <Dialog open={showCreate} onOpenChange={(o) => { if (!o) resetForm(); setShowCreate(o); }}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Create Question Paper</DialogTitle>
-              <DialogDescription>Add sections and reference questions by their IDs from the question bank.</DialogDescription>
+              <DialogTitle>{_('Create Question Paper')}</DialogTitle>
+              <DialogDescription>{_('Add sections and reference questions by their IDs from the question bank.')}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Paper title" />
-              <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description (optional)" />
-              <Input type="number" value={duration} onChange={(e) => setDuration(Number(e.target.value))} placeholder="Duration (minutes)" min={1} />
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={_('Paper title')} />
+              <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder={_('Description (optional)')} />
+              <Input type="number" value={duration} onChange={(e) => setDuration(Number(e.target.value))} placeholder={_('Duration (minutes)')} min={1} />
 
               {sections.map((sec, i) => (
                 <Card key={i} className="border-border/60">
                   <CardContent className="p-5 space-y-2">
                     <div className="flex items-center justify-between">
-                      <Input value={sec.title} onChange={(e) => updateSection(i, 'title', e.target.value)} placeholder="Section title" className="max-w-xs" />
+                      <Input value={sec.title} onChange={(e) => updateSection(i, 'title', e.target.value)} placeholder={_('Section title')} className="max-w-xs" />
                       {sections.length > 1 && <Button variant="ghost" size="icon-sm" onClick={() => setSections(sections.filter((_, j) => j !== i))}><Icon name="close" size={16} /></Button>}
                     </div>
-                    <Input value={sec.instructions || ''} onChange={(e) => updateSection(i, 'instructions', e.target.value)} placeholder="Instructions (optional)" />
-                    <Input type="number" value={sec.pointsPerQuestion} onChange={(e) => updateSection(i, 'pointsPerQuestion', Number(e.target.value))} placeholder="Points per question" min={1} className="max-w-[180px]" />
+                    <Input value={sec.instructions || ''} onChange={(e) => updateSection(i, 'instructions', e.target.value)} placeholder={_('Instructions (optional)')} />
+                    <Input type="number" value={sec.pointsPerQuestion} onChange={(e) => updateSection(i, 'pointsPerQuestion', Number(e.target.value))} placeholder={_('Points per question')} min={1} className="max-w-[180px]" />
                     <div className="space-y-1">
-                      <p className="text-label-xs text-muted-foreground">Question IDs (Firestore document IDs from question bank):</p>
+                      <p className="text-label-xs text-muted-foreground">{_('Question IDs (Firestore document IDs from question bank):')}</p>
                       {sec.questionIds.map((qid, qi) => (
                         <div key={qi} className="flex items-center gap-1">
-                          <Input value={qid} onChange={(e) => { const c = [...sections]; c[i].questionIds[qi] = e.target.value; setSections(c); }} placeholder="Question ID" className="text-label-xs font-mono" />
+                          <Input value={qid} onChange={(e) => { const c = [...sections]; c[i].questionIds[qi] = e.target.value; setSections(c); }} placeholder={_('Question ID')} className="text-label-xs font-mono" />
                           {sec.questionIds.length > 1 && <Button variant="ghost" size="icon-sm" onClick={() => { const c = [...sections]; c[i].questionIds.splice(qi, 1); setSections(c); }}><Icon name="close" size={14} /></Button>}
                         </div>
                       ))}
-                      <Button variant="outline" size="sm" onClick={() => addQuestionId(i)}><Icon name="add" size={14} className="mr-1" />Add Question</Button>
+                      <Button variant="outline" size="sm" onClick={() => addQuestionId(i)}><Icon name="add" size={14} className="mr-1" />{_('Add Question')}</Button>
                     </div>
                   </CardContent>
                 </Card>
               ))}
 
-              <Button variant="outline" onClick={addSection}><Icon name="add" size={16} className="mr-1" />Add Section</Button>
+              <Button variant="outline" onClick={addSection}><Icon name="add" size={16} className="mr-1" />{_('Add Section')}</Button>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => { resetForm(); setShowCreate(false); }}>Cancel</Button>
-              <Button onClick={() => createMutation.mutate()} disabled={!title.trim() || createMutation.isPending}>Create Paper</Button>
+              <Button variant="outline" onClick={() => { resetForm(); setShowCreate(false); }}>{_('Cancel')}</Button>
+              <Button onClick={() => createMutation.mutate()} disabled={!title.trim() || createMutation.isPending}>{_('Create Paper')}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

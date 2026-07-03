@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -208,6 +209,7 @@ function MarkerCanvas() {
 }
 
 export default function TeacherConceptViewPage() {
+  const { _ } = useTranslation();
   const { textbookId, chapterId, conceptId } = useParams<{
     textbookId: string;
     chapterId: string;
@@ -332,10 +334,10 @@ export default function TeacherConceptViewPage() {
       });
     },
     onSuccess: () => {
-      toast.success('Test published to your class students!');
+      toast.success(_('Test published to your class students!'));
       setShowPublishTestModal(false);
     },
-    onError: () => toast.error('Failed to publish test'),
+    onError: () => toast.error(_('Failed to publish test')),
   });
 
   const pushConceptMutation = useMutation({
@@ -349,11 +351,11 @@ export default function TeacherConceptViewPage() {
       });
     },
     onSuccess: () => {
-      toast.success(data?.release?.mindMapReleased ? 'Concept pulled back from students' : 'Concept pushed to students!');
+      toast.success(data?.release?.mindMapReleased ? _('Concept pulled back from students') : _('Concept pushed to students!'));
       queryClient.invalidateQueries({ queryKey: ['teacher-concept', textbookId, conceptId] });
     },
     onError: () => {
-      toast.error('Failed to update release settings');
+      toast.error(_('Failed to update release settings'));
     },
   });
 
@@ -363,7 +365,7 @@ export default function TeacherConceptViewPage() {
 
   return (
     <>
-      <SEOHead title={concept?.title || 'Teaching'} description={`Teach ${concept?.title || ''}`} />
+      <SEOHead title={concept?.title || _('Teaching')} description={`${_('Teach')} ${concept?.title || ''}`} />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -376,7 +378,7 @@ export default function TeacherConceptViewPage() {
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
           >
             <Icon name="arrow_back" size={16} />
-            Back to textbook
+            {_('Back to textbook')}
           </Link>
         </motion.div>
 
@@ -386,7 +388,7 @@ export default function TeacherConceptViewPage() {
           error={isError ? error ?? new Error('Failed to load') : null}
           onRetry={() => refetch()}
           loadingType="detail"
-          emptyMessage="Concept not found"
+          emptyMessage={_('Concept not found')}
         >
           {(d) => (
             <div className="space-y-16">
@@ -420,10 +422,10 @@ export default function TeacherConceptViewPage() {
                     <div>
                       <h2 className="font-semibold text-title-sm flex items-center gap-2">
                         <Icon name="rss_feed" size={16} className="text-primary" />
-                        Student Access
+                        {_('Student Access')}
                       </h2>
                       <p className="text-label-xs text-muted-foreground">
-                        {d.release?.mindMapReleased ? 'Concept is currently released to students.' : 'Release the concept to make it available to students.'}
+                        {d.release?.mindMapReleased ? _('Concept is currently released to students.') : _('Release the concept to make it available to students.')}
                       </p>
                     </div>
                     <Button
@@ -434,7 +436,7 @@ export default function TeacherConceptViewPage() {
                     >
                       <Icon name={d.release?.mindMapReleased ? 'undo' : 'send'} size={16} />
                       <span className="text-label-xs truncate">
-                        {d.release?.mindMapReleased ? 'Pull from Students' : 'Push Concept to Students'}
+                        {d.release?.mindMapReleased ? _('Pull from Students') : _('Push Concept to Students')}
                       </span>
                     </Button>
                   </CardContent>
@@ -445,13 +447,13 @@ export default function TeacherConceptViewPage() {
                 <Tabs defaultValue="teach">
                   <TabsList className="w-full overflow-x-auto inline-flex">
                     <TabsTrigger value="teach" className="flex-1">
-                      <Icon name="school" size={14} className="mr-1.5" />Teach
+                      <Icon name="school" size={14} className="mr-1.5" />{_('Teach')}
                     </TabsTrigger>
                     <TabsTrigger value="studyMaterial" className="flex-1">
-                      <Icon name="menu_book" size={14} className="mr-1.5" />Study Material
+                      <Icon name="menu_book" size={14} className="mr-1.5" />{_('Study Material')}
                     </TabsTrigger>
                     <TabsTrigger value="mindmap" className="flex-1">
-                      <Icon name="account_tree" size={14} className="mr-1.5" />Mind Map
+                      <Icon name="account_tree" size={14} className="mr-1.5" />{_('Mind Map')}
                     </TabsTrigger>
                   </TabsList>
 
@@ -474,7 +476,7 @@ export default function TeacherConceptViewPage() {
                       <CardContent className="p-5">
                         <div className="flex items-center gap-2 mb-3">
                           <Icon name="draw" size={18} className="text-primary" />
-                          <h2 className="font-semibold text-title-sm">Marker Board</h2>
+                          <h2 className="font-semibold text-title-sm">{_('Marker Board')}</h2>
                         </div>
                         <MarkerCanvas />
                       </CardContent>
@@ -484,14 +486,14 @@ export default function TeacherConceptViewPage() {
                       <CardContent className="p-5">
                         <h2 className="font-semibold text-title-sm mb-3 flex items-center gap-2">
                           <Icon name="assignment" size={16} className="text-primary" />
-                          After Lecture Actions
+                          {_('After Lecture Actions')}
                         </h2>
                         <p className="text-label-xs text-muted-foreground mb-4">
-                          Auto-generate assessments from the concept's question bank and release instantly.
+                          {_('Auto-generate assessments from the concept\'s question bank and release instantly.')}
                         </p>
                           <Button onClick={() => setShowPublishTestModal(true)} disabled={(d.concept.questionBank?.length ?? 0) === 0} className="w-full sm:w-auto">
                             <Icon name="send" size={16} className="mr-1.5" />
-                            Publish Test
+                            {_('Publish Test')}
                           </Button>
                       </CardContent>
                     </Card>
@@ -507,7 +509,7 @@ export default function TeacherConceptViewPage() {
                         <CardContent className="p-5">
                           <h2 className="font-semibold mb-3 flex items-center gap-2">
                             <Icon name="track_changes" size={18} className="text-tertiary" />
-                            Learning Objectives
+                            {_('Learning Objectives')}
                           </h2>
                           <ul className="space-y-1.5">
                             {d.concept.learningObjectives.map((obj, i) => (
@@ -526,7 +528,7 @@ export default function TeacherConceptViewPage() {
                         <CardContent className="p-5">
                           <h2 className="font-semibold mb-3 flex items-center gap-2">
                             <Icon name="notes" size={18} className="text-primary" />
-                            Summary
+                            {_('Summary')}
                           </h2>
                           <div className="text-body-md leading-relaxed whitespace-pre-wrap text-muted-foreground">
                             {d.concept.summary}
@@ -539,8 +541,8 @@ export default function TeacherConceptViewPage() {
                       <CardContent className="p-5">
                         <h2 className="font-semibold mb-3 flex items-center gap-2">
                           <Icon name="menu_book" size={18} className="text-primary" />
-                          Study Notes
-                        </h2>
+                            {_('Study Notes')}
+                          </h2>
                         <div className="text-body-md leading-relaxed whitespace-pre-wrap text-muted-foreground">
                           {d.concept.notes}
                         </div>
@@ -552,7 +554,7 @@ export default function TeacherConceptViewPage() {
                         <CardContent className="p-5">
                           <h2 className="font-semibold mb-3 flex items-center gap-2">
                             <Icon name="lightbulb" size={18} className="text-primary" />
-                            Key Points
+                            {_('Key Points')}
                           </h2>
                           <div className="text-body-md leading-relaxed whitespace-pre-wrap text-muted-foreground">
                             {d.concept.keyPoints}
@@ -566,7 +568,7 @@ export default function TeacherConceptViewPage() {
                         <CardContent className="p-5">
                           <h2 className="font-semibold mb-3 flex items-center gap-2">
                             <Icon name="calculate" size={18} className="text-primary" />
-                            Formulas
+                            {_('Formulas')}
                           </h2>
                           <div className="text-body-md leading-relaxed whitespace-pre-wrap text-muted-foreground font-mono">
                             {d.concept.formulas}
@@ -580,7 +582,7 @@ export default function TeacherConceptViewPage() {
                         <CardContent className="p-5">
                           <h2 className="font-semibold mb-3 flex items-center gap-2">
                             <Icon name="description" size={18} className="text-primary" />
-                            Examples
+                            {_('Examples')}
                           </h2>
                           <div className="text-body-md leading-relaxed whitespace-pre-wrap text-muted-foreground">
                             {d.concept.examples}
@@ -606,10 +608,10 @@ export default function TeacherConceptViewPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-primary">
               <Icon name="assignment" size={24} />
-              Test Template Creator &amp; Live Preview
+              {_('Test Template Creator & Live Preview')}
             </DialogTitle>
             <DialogDescription>
-              Configure test template inputs. The live preview updates in real-time.
+              {_('Configure test template inputs. The live preview updates in real-time.')}
             </DialogDescription>
           </DialogHeader>
 
@@ -617,18 +619,18 @@ export default function TeacherConceptViewPage() {
             {/* Left Column: Settings (5 cols) */}
             <div className="md:col-span-5 space-y-4 pr-0 md:pr-4 md:border-r border-outline-variant/60">
               <div className="space-y-1">
-                <Label className="font-semibold text-label-xs text-on-surface-variant">Test Title</Label>
+                <Label className="font-semibold text-label-xs text-on-surface-variant">{_('Test Title')}</Label>
                 <Input value={testTitle} onChange={(e) => setTestTitle(e.target.value)} />
               </div>
 
               <div className="space-y-1">
-                <Label className="font-semibold text-label-xs text-on-surface-variant">Time Limit (minutes)</Label>
+                <Label className="font-semibold text-label-xs text-on-surface-variant">{_('Time Limit (minutes)')}</Label>
                 <Input type="number" min={1} value={testTimeLimit} onChange={(e) => setTestTimeLimit(Number(e.target.value))} />
               </div>
 
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <Label className="font-semibold text-label-xs text-on-surface-variant">Question Count</Label>
+                  <Label className="font-semibold text-label-xs text-on-surface-variant">{_('Question Count')}</Label>
                   <Badge variant="secondary" className="font-bold text-[10px]">{testQuestionCount} / {concept?.questionBank?.length || 0}</Badge>
                 </div>
                 <input
@@ -643,8 +645,8 @@ export default function TeacherConceptViewPage() {
 
               <div className="flex items-center justify-between py-2 border-b border-t border-outline-variant/40">
                 <div className="space-y-0.5">
-                  <Label className="cursor-pointer text-label-xs font-semibold text-on-surface-variant" htmlFor="jumble-switch">Jumble Questions</Label>
-                  <p className="text-label-xs text-muted-foreground">Shuffle order for students</p>
+                  <Label className="cursor-pointer text-label-xs font-semibold text-on-surface-variant" htmlFor="jumble-switch">{_('Jumble Questions')}</Label>
+                  <p className="text-label-xs text-muted-foreground">{_('Shuffle order for students')}</p>
                 </div>
                 <input
                   type="checkbox"
@@ -660,20 +662,20 @@ export default function TeacherConceptViewPage() {
 
               {testJumble && (
                 <Button variant="outline" size="sm" className="w-full h-8 text-label-xs font-semibold" onClick={() => setTestJumbleSeed(Math.random())}>
-                  <Icon name="shuffle" size={12} className="mr-1" /> Re-shuffle Order
+                  <Icon name="shuffle" size={12} className="mr-1" /> {_('Re-shuffle Order')}
                 </Button>
               )}
 
               <div className="space-y-2">
-                <Label className="text-label-xs font-bold text-muted-foreground uppercase tracking-wider">Modularities (Include types)</Label>
+                <Label className="text-label-xs font-bold text-muted-foreground uppercase tracking-wider">{_('Modularities (Include types)')}</Label>
                 <div className="space-y-1.5 max-h-40 overflow-y-auto">
                   {[
-                    { value: 'multiple_choice', label: 'Multiple Choice (MCQ)' },
-                    { value: 'true_false', label: 'True / False' },
-                    { value: 'fill_blank', label: 'Fill in the Blank' },
-                    { value: 'matching', label: 'Matching' },
-                    { value: 'numerical', label: 'Numerical' },
-                    { value: 'descriptive', label: 'Descriptive' },
+                    { value: 'multiple_choice', label: _('Multiple Choice (MCQ)') },
+                    { value: 'true_false', label: _('True / False') },
+                    { value: 'fill_blank', label: _('Fill in the Blank') },
+                    { value: 'matching', label: _('Matching') },
+                    { value: 'numerical', label: _('Numerical') },
+                    { value: 'descriptive', label: _('Descriptive') },
                   ].map((type) => {
                     const checked = testSelectedTypes.includes(type.value);
                     return (
@@ -702,17 +704,17 @@ export default function TeacherConceptViewPage() {
             <div className="md:col-span-7 flex flex-col h-[480px]">
               <div className="flex items-center justify-between pb-2 border-b border-outline-variant/60 shrink-0">
                 <h3 className="text-label-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                  <Icon name="visibility" size={14} /> Live Interactive Preview
+                  <Icon name="visibility" size={14} /> {_('Live Interactive Preview')}
                 </h3>
-                <span className="text-[9px] text-muted-foreground font-mono font-bold bg-muted px-1.5 py-0.5 rounded">Student Preview Mode</span>
+                <span className="text-[9px] text-muted-foreground font-mono font-bold bg-muted px-1.5 py-0.5 rounded">{_('Student Preview Mode')}</span>
               </div>
 
               <div className="flex-1 overflow-y-auto pt-4 space-y-4 pr-1">
                 {previewQuestions.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-center p-6 text-muted-foreground gap-2 bg-surface-variant/10 rounded-xl border border-dashed border-outline-variant">
                     <Icon name="find_in_page" size={36} className="opacity-40" />
-                    <p className="text-label-xs font-bold text-on-surface-variant">No questions match current configuration</p>
-                    <p className="text-[10px] opacity-75">Adjust modularity types or counts to load questions.</p>
+                    <p className="text-label-xs font-bold text-on-surface-variant">{_('No questions match current configuration')}</p>
+                    <p className="text-[10px] opacity-75">{_('Adjust modularity types or counts to load questions.')}</p>
                   </div>
                 ) : (
                   previewQuestions.map((q: any, i: number) => (
@@ -723,7 +725,7 @@ export default function TeacherConceptViewPage() {
                             <span className="h-4 w-4 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[9px] font-bold">
                               {i + 1}
                             </span>
-                            Question
+                            {_('Question')}
                           </span>
                           <div className="flex gap-1.5">
                             <Badge variant="outline" className="text-[9px] uppercase tracking-wide py-0 px-1 font-semibold">{q.type.replace(/_/g, ' ')}</Badge>
@@ -746,11 +748,11 @@ export default function TeacherConceptViewPage() {
 
                         <div className="pt-2 flex items-center justify-between text-[10px]">
                           <span className="text-green-600 dark:text-green-400 font-bold flex items-center gap-1 font-mono">
-                            <Icon name="check" size={12} /> Key: {Array.isArray(q.correctAnswer) ? q.correctAnswer.join(', ') : q.correctAnswer}
+                            <Icon name="check" size={12} /> {_('Key:')} {Array.isArray(q.correctAnswer) ? q.correctAnswer.join(', ') : q.correctAnswer}
                           </span>
                           {q.explanation && (
                             <details className="cursor-pointer text-primary">
-                              <summary className="hover:underline font-bold">Show Explanation</summary>
+                              <summary className="hover:underline font-bold">{_('Show Explanation')}</summary>
                               <p className="text-muted-foreground mt-1 select-all font-sans leading-relaxed text-[11px] p-2 bg-muted rounded border border-outline-variant/40">
                                 {q.explanation}
                               </p>
@@ -766,12 +768,12 @@ export default function TeacherConceptViewPage() {
           </div>
 
           <DialogFooter className="border-t border-outline-variant/40 pt-3">
-            <Button variant="outline" onClick={() => setShowPublishTestModal(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setShowPublishTestModal(false)}>{_('Cancel')}</Button>
             <Button onClick={() => createCustomQuizMutation.mutate()} disabled={previewQuestions.length === 0 || createCustomQuizMutation.isPending}>
               {createCustomQuizMutation.isPending ? (
-                <><Icon name="sync" size={14} className="mr-1 animate-spin" />Publishing...</>
+                <><Icon name="sync" size={14} className="mr-1 animate-spin" />{_('Publishing...')}</>
               ) : (
-                <><Icon name="send" size={14} className="mr-1" />Publish Test to Students</>
+                <><Icon name="send" size={14} className="mr-1" />{_('Publish Test to Students')}</>
               )}
             </Button>
           </DialogFooter>

@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from '@/hooks/useTranslation';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,6 +15,7 @@ import { ROUTES } from '@/lib/constants';
 import { useAuthStore } from '@/store/authStore';
 
 export default function TeacherSubjectDetailPage() {
+  const { _ } = useTranslation();
   const { classId, subjectId } = useParams<{ classId: string; subjectId: string }>();
   const user = useAuthStore((s) => s.user);
 
@@ -46,7 +48,7 @@ export default function TeacherSubjectDetailPage() {
 
   return (
     <>
-      <SEOHead title={data?.subjectName ?? 'Subject'} description={`Textbooks for ${data?.subjectName}`} />
+      <SEOHead title={data?.subjectName ?? _('Subject')} description={_('Textbooks for') + ` ${data?.subjectName}`} />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -61,7 +63,7 @@ export default function TeacherSubjectDetailPage() {
               </Link>
             </Button>
             <div>
-              <h1 className="text-headline-sm">{data?.subjectName ?? 'Loading...'}</h1>
+              <h1 className="text-headline-sm">{data?.subjectName ?? _('Loading...')}</h1>
               {data?.className && (
                 <p className="text-sm text-muted-foreground">{data.className}</p>
               )}
@@ -80,14 +82,14 @@ export default function TeacherSubjectDetailPage() {
               {d.textbooks.length === 0 ? (
                 <div className="col-span-full flex flex-col items-center gap-3 py-16 text-center">
                   <Icon name="menu_book" size={48} className="text-muted-foreground/30" />
-                  <p className="text-base font-medium text-muted-foreground">No textbooks yet</p>
+                  <p className="text-base font-medium text-muted-foreground">{_('No textbooks yet')}</p>
                   <p className="text-sm text-muted-foreground/60">
-                    There are no textbooks assigned to this subject.
+                    {_('There are no textbooks assigned to this subject.')}
                   </p>
                   <Button asChild variant="outline" className="mt-2">
                     <Link to={ROUTES.TEACHER_TEXTBOOK_UPLOAD}>
                       <Icon name="add" size={16} className="mr-2" />
-                      Upload Textbook
+                      {_('Upload Textbook')}
                     </Link>
                   </Button>
                 </div>
@@ -114,9 +116,9 @@ export default function TeacherSubjectDetailPage() {
                                 <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{tb.description}</p>
                               )}
                               {tb.gradeLevel && (
-                                <p className="text-xs text-muted-foreground mt-2">Grade {tb.gradeLevel}</p>
+                                <p className="text-xs text-muted-foreground mt-2">{_('Grade')} {tb.gradeLevel}</p>
                               )}
-                              <p className="text-xs text-primary mt-2">Open textbook &rarr;</p>
+                              <p className="text-xs text-primary mt-2">{_('Open textbook')} &rarr;</p>
                             </div>
                           </div>
                         </CardContent>

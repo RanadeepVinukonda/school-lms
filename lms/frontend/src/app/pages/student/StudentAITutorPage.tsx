@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { sendChatMessage } from '@/services/aiService';
+import { useTranslation } from '@/hooks/useTranslation';
 
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore, ChatMsg } from '@/store/chatStore';
@@ -315,7 +316,8 @@ function LoadingDots() {
 export default function StudentAITutorPage() {
   const user = useAuthStore((s) => s.user);
   const userId = user?.id || 'anonymous';
-  
+  const { _ } = useTranslation();
+
   const emptyMessages = useMemo(() => [] as ChatMsg[], []);
   const messages = useChatStore((s) => s.aiTutorMessages[userId] || emptyMessages);
   const addMessage = useChatStore((s) => s.addAiTutorMessage);
@@ -364,7 +366,7 @@ export default function StudentAITutorPage() {
         timestamp: new Date(),
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to get response');
+      setError(err.message || _('Failed to get response'));
     } finally {
       setIsLoading(false);
     }
@@ -380,7 +382,7 @@ export default function StudentAITutorPage() {
   const startListening = useCallback(() => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) {
-      setError('Speech recognition is not supported in this browser');
+      setError(_('Speech recognition is not supported in this browser'));
       return;
     }
 
@@ -397,7 +399,7 @@ export default function StudentAITutorPage() {
 
     recognition.onerror = () => {
       setIsListening(false);
-      setError('Voice recognition failed. Please try again.');
+      setError(_('Voice recognition failed. Please try again.'));
     };
 
     recognition.onend = () => {
@@ -442,7 +444,7 @@ export default function StudentAITutorPage() {
 
   return (
     <>
-      <SEOHead title="AI Tutor" description="24/7 AI Tutor Chatbot" />
+      <SEOHead title={_('AI Tutor')} description={_('24/7 AI Tutor Chatbot')} />
       <div className="flex flex-col h-[calc(100vh-8rem)] max-w-4xl mx-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant shrink-0">
           <div className="flex items-center gap-3">
@@ -450,19 +452,19 @@ export default function StudentAITutorPage() {
               <Icon name="smart_toy" size={22} className="text-primary" />
             </div>
             <div>
-              <h1 className="text-title-md font-bold">AI Tutor</h1>
-              <p className="text-label-sm text-on-surface-variant">24/7 learning assistant</p>
+              <h1 className="text-title-md font-bold">{_('AI Tutor')}</h1>
+              <p className="text-label-sm text-on-surface-variant">{_('24/7 learning assistant')}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {messages.length > 0 && (
-              <Button variant="ghost" size="icon-sm" onClick={clearChat} aria-label="Clear chat">
+              <Button variant="ghost" size="icon-sm" onClick={clearChat} aria-label={_('Clear chat')}>
                 <Icon name="delete" size={18} />
               </Button>
             )}
             <Badge variant="success" className="text-[10px] gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-              Online
+              {_('Online')}
             </Badge>
           </div>
         </div>
@@ -473,9 +475,9 @@ export default function StudentAITutorPage() {
               <div className="h-20 w-20 rounded-2xl bg-primary-container/40 flex items-center justify-center mb-6">
                 <Icon name="smart_toy" size={48} className="text-primary/60" />
               </div>
-              <h2 className="text-headline-sm font-bold mb-2">Hi, I'm your AI Tutor</h2>
+              <h2 className="text-headline-sm font-bold mb-2">{_("Hi, I'm your AI Tutor")}</h2>
               <p className="text-body-md text-on-surface-variant max-w-md mb-8">
-                Ask me anything about your studies. I can help with math, science, programming, and more.
+                {_('Ask me anything about your studies. I can help with math, science, programming, and more.')}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
                 {suggestedQuestions.map((q) => (
@@ -487,7 +489,7 @@ export default function StudentAITutorPage() {
                     onClick={() => sendMessage(q)}
                   >
                     <Icon name="bolt" size={14} className="shrink-0 mr-2 text-primary" />
-                    <span className="line-clamp-2">{q}</span>
+                    <span className="line-clamp-2">{_(q)}</span>
                   </Button>
                 ))}
               </div>
@@ -524,7 +526,7 @@ export default function StudentAITutorPage() {
                       <button
                         onClick={() => speakingId === msg.id ? stopSpeaking() : speak(msg.content, msg.id)}
                         className="text-on-surface-variant/50 hover:text-primary transition-colors"
-                        aria-label={speakingId === msg.id ? 'Stop' : 'Read aloud'}
+                        aria-label={speakingId === msg.id ? _('Stop') : _('Read aloud')}
                       >
                         <Icon name={speakingId === msg.id ? 'stop_circle' : 'volume_up'} size={14} />
                       </button>
@@ -571,7 +573,7 @@ export default function StudentAITutorPage() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask a question..."
+                placeholder={_('Ask a question...')}
                 className="min-h-[48px] max-h-[120px] pr-12 resize-none rounded-xl bg-surface-variant/30 border-outline-variant/60 focus-visible:ring-primary"
                 rows={1}
               />
@@ -581,7 +583,7 @@ export default function StudentAITutorPage() {
                   size="icon-sm"
                   onClick={isListening ? stopListening : startListening}
                   className={cn(isListening && 'text-error animate-pulse')}
-                  aria-label={isListening ? 'Stop listening' : 'Voice input'}
+                  aria-label={isListening ? _('Stop listening') : _('Voice input')}
                 >
                   <Icon name={isListening ? 'mic_off' : 'mic'} size={18} />
                 </Button>
@@ -597,7 +599,7 @@ export default function StudentAITutorPage() {
             </Button>
           </div>
           <p className="text-[10px] text-on-surface-variant/40 text-center mt-2">
-            AI responses are generated by an AI model and may not always be accurate
+            {_('AI responses are generated by an AI model and may not always be accurate')}
           </p>
         </div>
       </div>

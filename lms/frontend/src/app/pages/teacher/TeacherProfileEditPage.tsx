@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -18,6 +19,7 @@ import { getUser, updateUser } from '@/services/dataService';
 import { ROUTES } from '@/lib/constants';
 
 export default function TeacherProfileEditPage() {
+  const { _ } = useTranslation();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
@@ -52,7 +54,7 @@ export default function TeacherProfileEditPage() {
         }
         setLoadingProfile(false);
       })
-      .catch(() => { setLoadingProfile(false); toast.error('Failed to load profile data'); });
+      .catch(() => { setLoadingProfile(false); toast.error(_('Failed to load profile data')); });
   }, [user?.id]);
 
   const handleChange = (field: string, value: string) => {
@@ -66,9 +68,9 @@ export default function TeacherProfileEditPage() {
     try {
       const url = await uploadProfileImage(user?.id || 'temp', file);
       setAvatarPreview(url);
-      toast.success('Avatar uploaded');
+      toast.success(_('Avatar uploaded'));
     } catch {
-      toast.error('Avatar upload failed. Check Cloudinary config.');
+      toast.error(_('Avatar upload failed. Check Cloudinary config.'));
     } finally {
       setUploading(false);
     }
@@ -82,10 +84,10 @@ export default function TeacherProfileEditPage() {
       if (avatarPreview) data.avatar = avatarPreview;
       await updateUser(user.id, data);
       setUser({ ...user, ...data } as typeof user);
-      toast.success('Profile updated');
+      toast.success(_('Profile updated'));
       navigate(ROUTES.TEACHER_PROFILE);
     } catch {
-      toast.error('Failed to update profile');
+      toast.error(_('Failed to update profile'));
     } finally {
       setSaving(false);
     }
@@ -93,7 +95,7 @@ export default function TeacherProfileEditPage() {
 
   return (
     <>
-      <SEOHead title="Edit Profile" description="Update your teacher profile" />
+      <SEOHead title={_('Edit Profile')} description={_('Update your teacher profile')} />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -105,7 +107,7 @@ export default function TeacherProfileEditPage() {
             <Button variant="ghost" size="sm" onClick={() => navigate(ROUTES.TEACHER_PROFILE)}>
               <Icon name="arrow_back" size={18} />
             </Button>
-            <h1 className="text-headline-sm font-bold">Edit Profile</h1>
+            <h1 className="text-headline-sm font-bold">{_('Edit Profile')}</h1>
           </div>
         </motion.div>
 
@@ -120,39 +122,39 @@ export default function TeacherProfileEditPage() {
                 <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
                 <Button variant="outline" size="sm" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
                   <Icon name="camera_alt" size={15} className="mr-1" />
-                  {uploading ? 'Uploading...' : 'Change Photo'}
+                  {uploading ? _('Uploading...') : _('Change Photo')}
                 </Button>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Full Name</Label>
+                  <Label>{_('Full Name')}</Label>
                   <Input value={form.displayName} onChange={(e) => handleChange('displayName', e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Email</Label>
+                  <Label>{_('Email')}</Label>
                   <Input value={form.email} onChange={(e) => handleChange('email', e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Phone</Label>
-                  <Input value={form.phone} onChange={(e) => handleChange('phone', e.target.value)} placeholder="+1 555 123 4567" />
+                  <Label>{_('Phone')}</Label>
+                  <Input value={form.phone} onChange={(e) => handleChange('phone', e.target.value)} placeholder={_('+1 555 123 4567')} />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Bio</Label>
-                <Textarea value={form.bio} onChange={(e) => handleChange('bio', e.target.value)} rows={3} placeholder="Tell us about yourself..." />
+                <Label>{_('Bio')}</Label>
+                <Textarea value={form.bio} onChange={(e) => handleChange('bio', e.target.value)} rows={3} placeholder={_('Tell us about yourself...')} />
               </div>
 
               <div className="space-y-2">
-                <Label>Address</Label>
-                <Input value={form.address} onChange={(e) => handleChange('address', e.target.value)} placeholder="Your address" />
+                <Label>{_('Address')}</Label>
+                <Input value={form.address} onChange={(e) => handleChange('address', e.target.value)} placeholder={_('Your address')} />
               </div>
 
               <div className="flex gap-3 pt-2">
-                <Button variant="outline" className="flex-1" onClick={() => navigate(ROUTES.TEACHER_PROFILE)}>Cancel</Button>
+                <Button variant="outline" className="flex-1" onClick={() => navigate(ROUTES.TEACHER_PROFILE)}>{_('Cancel')}</Button>
                 <Button className="flex-1" onClick={handleSave} disabled={saving || loadingProfile}>
-                  {saving ? 'Saving...' : loadingProfile ? 'Loading...' : 'Save Changes'}
+                  {saving ? _('Saving...') : loadingProfile ? _('Loading...') : _('Save Changes')}
                 </Button>
               </div>
             </CardContent>

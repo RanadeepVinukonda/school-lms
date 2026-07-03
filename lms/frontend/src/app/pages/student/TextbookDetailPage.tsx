@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,6 +18,7 @@ import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
 
 export default function TextbookDetailPage() {
+  const { _ } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const [expandedChapter, setExpandedChapter] = useState<string | null>(null);
   const authUser = useAuthStore((state) => state.user);
@@ -90,7 +92,7 @@ export default function TextbookDetailPage() {
           <Button variant="ghost" size="sm" asChild className="mb-1">
             <Link to={data?.subject ? ROUTES.STUDENT_SUBJECT(data.subject.id) : ROUTES.STUDENT_SUBJECTS} className="gap-2">
               <Icon name="arrow_back" size={16} />
-              {data?.subject ? `Back to ${data.subject.name}` : 'Back to Subjects'}
+              {data?.subject ? _('Back to') + ' ' + data.subject.name : _('Back to Subjects')}
             </Link>
           </Button>
         </motion.div>
@@ -100,15 +102,15 @@ export default function TextbookDetailPage() {
           isLoading={isLoading}
           error={isError ? error ?? new Error('Failed to load textbook') : null}
           loadingType="detail"
-          emptyMessage="Textbook not found"
+          emptyMessage={_('Textbook not found')}
           emptyIcon={<Icon name="auto_stories" size={32} />}
           emptyAction={
             <Button asChild>
-              <Link to={ROUTES.STUDENT_SUBJECTS}>Back to Subjects</Link>
+              <Link to={ROUTES.STUDENT_SUBJECTS}>{_('Back to Subjects')}</Link>
             </Button>
           }
           onRetry={() => refetch()}
-          errorTitle="Failed to load textbook"
+          errorTitle={_('Failed to load textbook')}
         >
           {(d) => (
             <div className="space-y-16">
@@ -139,14 +141,14 @@ export default function TextbookDetailPage() {
                 <Card className="border-border/60">
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-title-sm font-semibold">Your Progress</span>
+                      <span className="text-title-sm font-semibold">{_('Your Progress')}</span>
                       <span className="text-body-sm text-muted-foreground">
-                        {d.completedCount}/{d.totalChapters} chapters
+                        {d.completedCount}/{d.totalChapters} {_('chapters')}
                       </span>
                     </div>
                     <Progress value={d.progressPct} size="lg" />
                     <p className="text-body-sm text-muted-foreground mt-1">
-                      {d.progressPct}% complete
+                      {d.progressPct}% {_('complete')}
                     </p>
                   </CardContent>
                 </Card>
@@ -155,8 +157,8 @@ export default function TextbookDetailPage() {
               {/* Learning Roadmap */}
               <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
                 <div className="mb-6">
-                  <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">ROADMAP</p>
-                  <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">Learning Roadmap</h2>
+                  <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">{_('ROADMAP')}</p>
+                  <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">{_('Learning Roadmap')}</h2>
                 </div>
                 <div className="relative pl-16">
                   {/* Vertical timeline line */}
@@ -216,7 +218,7 @@ export default function TextbookDetailPage() {
                                   ch.status === 'future' && 'text-muted-foreground',
                                 )}
                               >
-                                Chapter {ch.order}
+                                {_('Chapter')} {ch.order}
                               </p>
                               <p
                                 className={cn(
@@ -231,12 +233,12 @@ export default function TextbookDetailPage() {
                               <Link to={ROUTES.STUDENT_CHAPTER(d.textbook.id, ch.id)} onClick={(e) => e.stopPropagation()}>
                                 <Button variant="outline" size="sm" className="gap-1">
                                   <Icon name="menu_book" size={13} />
-                                  Study
+                                  {_('Study')}
                                 </Button>
                               </Link>
                               <Badge variant="secondary" className="text-[10px]">
                                 {ch.chapterLessons.length}{' '}
-                                {ch.chapterLessons.length === 1 ? 'lesson' : 'lessons'}
+                                {ch.chapterLessons.length === 1 ? _('lesson') : _('lessons')}
                               </Badge>
                               <Icon
                                 name={expandedChapter === ch.id ? 'expand_less' : 'expand_more'}
@@ -261,7 +263,7 @@ export default function TextbookDetailPage() {
                               <div className="px-5 pb-5 pt-3 border-t border-border space-y-1">
                                 {ch.chapterLessons.length === 0 ? (
                                   <p className="text-body-sm text-muted-foreground italic py-2">
-                                    No lessons published yet.
+                                    {_('No lessons published yet.')}
                                   </p>
                                 ) : (
                                   ch.chapterLessons.map((lesson) => (

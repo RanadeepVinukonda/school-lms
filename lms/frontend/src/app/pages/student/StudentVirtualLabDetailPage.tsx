@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from '@/hooks/useTranslation';
 import { virtualLabsService } from '@/services/virtualLabsService';
 import { useAuthStore } from '@/store/authStore';
 import type { VirtualLab } from '@/types/virtualLab';
@@ -24,6 +25,7 @@ const SIMULATION_COMPONENTS: Record<string, React.FC> = {
 };
 
 export default function StudentVirtualLabDetailPage() {
+  const { _ } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
@@ -75,7 +77,7 @@ export default function StudentVirtualLabDetailPage() {
         className="flex items-center gap-1 text-label-sm text-on-surface-variant hover:text-on-surface transition-colors"
       >
         <Icon name="arrow_back" size={16} />
-        Back to Labs
+        {_('Back to Labs')}
       </button>
 
       <div className="flex items-start justify-between flex-wrap gap-4">
@@ -98,9 +100,9 @@ export default function StudentVirtualLabDetailPage() {
 
       <div className="rounded-xl border border-outline-variant bg-surface p-4 sm:p-6">
         <div className="mb-4 pb-3 border-b border-outline-variant/50">
-          <p className="text-label-sm font-medium text-on-surface-variant">Instructions</p>
+          <p className="text-label-sm font-medium text-on-surface-variant">{_('Instructions')}</p>
           <p className="text-sm text-on-surface mt-1">
-            Interact with the simulation below. Drag components, adjust controls, and observe the results. Click "Complete Lab" when you are done.
+            {_('Interact with the simulation below. Drag components, adjust controls, and observe the results. Click "Complete Lab" when you are done.')}
           </p>
         </div>
 
@@ -109,7 +111,7 @@ export default function StudentVirtualLabDetailPage() {
         ) : (
           <div className="text-center py-16">
             <Icon name="construction" size={48} className="text-on-surface-variant/40 mx-auto" />
-            <p className="text-on-surface-variant mt-4">Simulation type "{lab.type}" is coming soon</p>
+            <p className="text-on-surface-variant mt-4">{_('Simulation type')} "{lab.type}" {_('is coming soon')}</p>
           </div>
         )}
       </div>
@@ -124,7 +126,7 @@ export default function StudentVirtualLabDetailPage() {
               : 'bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50'
           }`}
         >
-          {completing ? 'Completing...' : completed ? '✓ Completed!' : 'Complete Lab'}
+          {completing ? _('Completing...') : completed ? '✓ ' + _('Completed!') : _('Complete Lab')}
         </button>
       </div>
 
@@ -132,8 +134,8 @@ export default function StudentVirtualLabDetailPage() {
         <div className="p-4 rounded-xl bg-green-50 border border-green-200 flex items-center gap-3">
           <Icon name="emoji_events" size={24} className="text-amber-500" />
           <div>
-            <p className="text-sm font-semibold text-green-800">Lab Completed! +100 XP</p>
-            <p className="text-label-sm text-green-600">Great work exploring the simulation.</p>
+            <p className="text-sm font-semibold text-green-800">{_('Lab Completed! +100 XP')}</p>
+            <p className="text-label-sm text-green-600">{_('Great work exploring the simulation.')}</p>
           </div>
         </div>
       )}

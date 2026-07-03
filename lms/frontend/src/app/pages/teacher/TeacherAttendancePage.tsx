@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -15,6 +16,7 @@ import { useAuthStore } from '@/store/authStore';
 import { supabase } from '@/supabase/config';
 
 export default function TeacherAttendancePage() {
+  const { _ } = useTranslation();
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
   const userId = user?.id || '';
@@ -42,10 +44,10 @@ export default function TeacherAttendancePage() {
     mutationFn: (data: { studentIds: string[]; classId: string; date: string; status: 'present' | 'absent' | 'late' | 'holiday'; markedBy: string }) =>
       attendanceService.markAttendance(data),
     onSuccess: () => {
-      toast.success('Attendance marked');
+      toast.success(_('Attendance marked'));
       setSelectedStudentIds([]);
     },
-    onError: (err: any) => toast.error(err.message || 'Failed to mark attendance'),
+    onError: (err: any) => toast.error(err.message || _('Failed to mark attendance')),
   });
 
   const toggleStudent = (id: string) => {
@@ -54,11 +56,11 @@ export default function TeacherAttendancePage() {
 
   const handleMarkSelected = () => {
     if (!selectedClass || !selectedDate) {
-      toast.error('Select a class and date');
+      toast.error(_('Select a class and date'));
       return;
     }
     if (selectedStudentIds.length === 0) {
-      toast.error('Select students');
+      toast.error(_('Select students'));
       return;
     }
     markMutation.mutate({ studentIds: selectedStudentIds, classId: selectedClass, date: selectedDate, status: attendanceStatus, markedBy: user?.displayName || 'teacher' });
@@ -73,11 +75,11 @@ export default function TeacherAttendancePage() {
 
   return (
     <>
-      <SEOHead title="Mark Attendance" description="Mark your class attendance" />
+      <SEOHead title={_('Mark Attendance')} description={_('Mark your class attendance')} />
       <div className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-8">
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <h1 className="text-headline-md font-bold tracking-tight">Mark Attendance</h1>
-          <p className="text-body-md text-muted-foreground mt-1">Record daily attendance for your classes</p>
+          <h1 className="text-headline-md font-bold tracking-tight">{_('Mark Attendance')}</h1>
+          <p className="text-body-md text-muted-foreground mt-1">{_('Record daily attendance for your classes')}</p>
         </motion.div>
 
         <div className="flex gap-3 items-center flex-wrap">
@@ -86,7 +88,7 @@ export default function TeacherAttendancePage() {
             value={selectedClass}
             onChange={(e) => setSelectedClass(e.target.value)}
           >
-            <option value="">Select your class...</option>
+            <option value="">{_('Select your class...')}</option>
             {teacherClasses.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
           <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-44" />
@@ -97,10 +99,10 @@ export default function TeacherAttendancePage() {
             <div className="flex gap-3 items-center flex-wrap">
               <OptionsSelect
                 options={[
-                  { value: 'present', label: 'Present' },
-                  { value: 'absent', label: 'Absent' },
-                  { value: 'late', label: 'Late' },
-                  { value: 'holiday', label: 'Holiday' },
+                  { value: 'present', label: _('Present') },
+                  { value: 'absent', label: _('Absent') },
+                  { value: 'late', label: _('Late') },
+                  { value: 'holiday', label: _('Holiday') },
                 ]}
                 value={attendanceStatus}
                 onChange={(v: string) => setAttendanceStatus(v as any)}
@@ -108,10 +110,10 @@ export default function TeacherAttendancePage() {
               />
               <Button onClick={handleMarkSelected} loading={markMutation.isPending}>
                 <Icon name="check" size={16} className="mr-1.5" />
-                Mark Selected
+                {_('Mark Selected')}
               </Button>
-              <Button variant="outline" onClick={() => handleMarkAll('present')}>All Present</Button>
-              <Button variant="destructive" onClick={() => handleMarkAll('absent')}>All Absent</Button>
+              <Button variant="outline" onClick={() => handleMarkAll('present')}>{_('All Present')}</Button>
+              <Button variant="destructive" onClick={() => handleMarkAll('absent')}>{_('All Absent')}</Button>
             </div>
 
             <Card className="border-border/60">
@@ -123,7 +125,7 @@ export default function TeacherAttendancePage() {
                 ) : classStudents.length === 0 ? (
                   <div className="flex flex-col items-center gap-4 py-16 text-muted-foreground">
                     <Icon name="search_off" size={48} className="opacity-50" />
-                    <p className="text-title-sm font-semibold">No students in this class</p>
+                    <p className="text-title-sm font-semibold">{_('No students in this class')}</p>
                   </div>
                 ) : (
                   <div className="border border-border/60 rounded-xl overflow-x-auto">
@@ -144,8 +146,8 @@ export default function TeacherAttendancePage() {
                               }}
                             />
                           </th>
-                          <th className="px-4 py-3">Student Name</th>
-                          <th className="px-4 py-3">Roll No</th>
+                          <th className="px-4 py-3">{_('Student Name')}</th>
+                          <th className="px-4 py-3">{_('Roll No')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/40 text-title-sm">

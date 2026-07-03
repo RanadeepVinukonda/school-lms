@@ -1,29 +1,31 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { prePrimaryService } from '@/services/prePrimaryService';
 import { ROUTES } from '@/lib/constants';
 import type { K2DashboardData } from '@/types/prePrimary';
 
-const mascotMessages = [
-  'Ready to learn something fun today?',
-  'Let\'s trace some letters!',
-  'Time for a story!',
-  'Can you say the sounds?',
-  'You are doing great!',
-];
-
-const quickActions = [
-  { label: 'Learn Letters', icon: 'abc', href: ROUTES.K2_TRACING, color: 'from-red-400 to-red-500', emoji: '✏️' },
-  { label: 'Phonics', icon: 'music_note', href: ROUTES.K2_PHONICS, color: 'from-green-400 to-green-500', emoji: '🔊' },
-  { label: 'Stories', icon: 'book', href: ROUTES.K2_STORIES, color: 'from-blue-400 to-blue-500', emoji: '📖' },
-  { label: 'Flashcards', icon: 'credit_card', href: ROUTES.K2_FLASHCARDS, color: 'from-yellow-400 to-yellow-500', emoji: '🃏' },
-  { label: 'Tracing', icon: 'draw', href: ROUTES.K2_TRACING, color: 'from-purple-400 to-purple-500', emoji: '🎨' },
-];
-
 export default function K2DashboardPage() {
+  const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
+
+  const mascotMessages = [
+    _('Ready to learn something fun today?'),
+    _('Let\'s trace some letters!'),
+    _('Time for a story!'),
+    _('Can you say the sounds?'),
+    _('You are doing great!'),
+  ];
+
+  const quickActions = [
+    { label: _('Learn Letters'), icon: 'abc', href: ROUTES.K2_TRACING, color: 'from-red-400 to-red-500', emoji: '✏️' },
+    { label: _('Phonics'), icon: 'music_note', href: ROUTES.K2_PHONICS, color: 'from-green-400 to-green-500', emoji: '🔊' },
+    { label: _('Stories'), icon: 'book', href: ROUTES.K2_STORIES, color: 'from-blue-400 to-blue-500', emoji: '📖' },
+    { label: _('Flashcards'), icon: 'credit_card', href: ROUTES.K2_FLASHCARDS, color: 'from-yellow-400 to-yellow-500', emoji: '🃏' },
+    { label: _('Tracing'), icon: 'draw', href: ROUTES.K2_TRACING, color: 'from-purple-400 to-purple-500', emoji: '🎨' },
+  ];
   const [data, setData] = useState<K2DashboardData | null>(null);
   const [greeting] = useState(() => mascotMessages[Math.floor(Math.random() * mascotMessages.length)]);
 
@@ -37,7 +39,7 @@ export default function K2DashboardPage() {
       <div className="bg-white rounded-3xl p-6 shadow-lg border-2 border-yellow-200 flex items-center gap-4">
         <span className="text-6xl animate-bounce">🦁</span>
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Hi, {data?.profile.displayName || 'Little Learner'}!</h2>
+          <h2 className="text-2xl font-bold text-gray-800">{_('Hi')}, {data?.profile.displayName || _('Little Learner')}!</h2>
           <p className="text-lg text-purple-600 font-medium">{greeting}</p>
         </div>
       </div>
@@ -47,7 +49,7 @@ export default function K2DashboardPage() {
           <div className="flex items-center gap-2">
             <span className="text-4xl">⭐</span>
             <span className="text-3xl font-bold text-yellow-700">{data?.totalStars || 0}</span>
-            <span className="text-xl text-yellow-600 font-medium">Stars</span>
+            <span className="text-xl text-yellow-600 font-medium">{_('Stars')}</span>
           </div>
           <div className="flex gap-1">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -72,7 +74,7 @@ export default function K2DashboardPage() {
 
       {data?.progress && Object.keys(data.progress).length > 0 && (
         <div className="bg-white rounded-3xl p-6 shadow-lg border-2 border-purple-200">
-          <h3 className="text-xl font-bold text-purple-700 mb-4">Your Progress</h3>
+          <h3 className="text-xl font-bold text-purple-700 mb-4">{_('Your Progress')}</h3>
           <div className="space-y-3">
             {Object.entries(data.progress).map(([subject, completed]) => (
               <div key={subject} className="flex items-center gap-3">

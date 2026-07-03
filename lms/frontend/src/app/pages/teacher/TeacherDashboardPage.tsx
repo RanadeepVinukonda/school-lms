@@ -1,4 +1,5 @@
 import { useMemo, useRef, useEffect } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Link } from 'react-router-dom';
 import { motion, useInView } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -33,13 +34,6 @@ interface DashboardData {
     subjects?: { id: string; name: string }[];
   };
 }
-
-const QUICK_ACTIONS = [
-  { icon: 'add_circle', label: 'Create Exam', link: '/teacher/exams/create', bg: 'bg-primary-container', color: 'text-primary' },
-  { icon: 'note_add', label: 'Create Quiz/Task', link: '/teacher/assessments', bg: 'bg-secondary-container', color: 'text-secondary' },
-  { icon: 'group', label: 'View Students', link: '/teacher/students', bg: 'bg-success-container', color: 'text-success' },
-  { icon: 'analytics', label: 'View Analytics', link: '/teacher/analytics', bg: 'bg-warning-container', color: 'text-warning' },
-] as const;
 
 function SectionTitle({ label, title }: { label: string; title: string }) {
   const ref = useRef(null);
@@ -80,7 +74,14 @@ function NeedsAttentionCard({ item }: { item: NeedsAttentionItem }) {
 }
 
 export default function TeacherDashboardPage() {
+  const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
+  const QUICK_ACTIONS = [
+    { icon: 'add_circle', label: _('Create Exam'), link: '/teacher/exams/create', bg: 'bg-primary-container', color: 'text-primary' },
+    { icon: 'note_add', label: _('Create Quiz/Task'), link: '/teacher/assessments', bg: 'bg-secondary-container', color: 'text-secondary' },
+    { icon: 'group', label: _('View Students'), link: '/teacher/students', bg: 'bg-success-container', color: 'text-success' },
+    { icon: 'analytics', label: _('View Analytics'), link: '/teacher/analytics', bg: 'bg-warning-container', color: 'text-warning' },
+  ] as const;
   useEffect(() => {
     if (user?.id) { void getNotificationsByUser(user.id); }
   }, [user?.id]);
@@ -137,14 +138,14 @@ export default function TeacherDashboardPage() {
 
       return {
         needsAttention: [
-          { icon: 'rate_review', label: 'Awaiting Grading', count: awaitingGradingCount, color: 'text-warning', bg: 'bg-warning-container', link: '/teacher/assignments', description: 'Assignments to review' },
-          { icon: 'fact_check', label: 'Need Correction', count: awaitingCorrectionCount, color: 'text-error', bg: 'bg-error-container', link: '/teacher/exams', description: 'Exams to mark' },
-          { icon: 'warning', label: 'Late Submissions', count: lateAssignmentsCount, color: 'text-destructive', bg: 'bg-destructive/10', link: '/teacher/assignments?filter=late', description: 'Past due date' },
+          { icon: 'rate_review', label: _('Awaiting Grading'), count: awaitingGradingCount, color: 'text-warning', bg: 'bg-warning-container', link: '/teacher/assignments', description: _('Assignments to review') },
+          { icon: 'fact_check', label: _('Need Correction'), count: awaitingCorrectionCount, color: 'text-error', bg: 'bg-error-container', link: '/teacher/exams', description: _('Exams to mark') },
+          { icon: 'warning', label: _('Late Submissions'), count: lateAssignmentsCount, color: 'text-destructive', bg: 'bg-destructive/10', link: '/teacher/assignments?filter=late', description: _('Past due date') },
         ],
         stats: [
-          { icon: 'trending_up', label: 'Avg Score', value: `${avgScore}%`, color: 'text-success', bg: 'bg-success-container' },
-          { icon: 'school', label: 'Total Students', value: teachingStudentCount, color: 'text-primary', bg: 'bg-primary-container' },
-          { icon: 'assignment', label: 'Exams Created', value: allExams.length, color: 'text-secondary', bg: 'bg-secondary-container' },
+          { icon: 'trending_up', label: _('Avg Score'), value: `${avgScore}%`, color: 'text-success', bg: 'bg-success-container' },
+          { icon: 'school', label: _('Total Students'), value: teachingStudentCount, color: 'text-primary', bg: 'bg-primary-container' },
+          { icon: 'assignment', label: _('Exams Created'), value: allExams.length, color: 'text-secondary', bg: 'bg-secondary-container' },
         ],
         teaching: {
           classes: myClasses.map((c) => ({ id: c.id, name: c.name })),
@@ -156,11 +157,11 @@ export default function TeacherDashboardPage() {
     },
   });
 
-  const teacherName = user?.displayName?.split(' ')[0] ?? 'Teacher';
+  const teacherName = user?.displayName?.split(' ')[0] ?? _('Teacher');
 
   return (
     <>
-      <SEOHead title="Teacher Dashboard" description="Your classroom tasks and schedule at a glance" canonical="/teacher/dashboard" />
+      <SEOHead title={_('Teacher Dashboard')} description={_('Your classroom tasks and schedule at a glance')} canonical="/teacher/dashboard" />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -178,14 +179,14 @@ export default function TeacherDashboardPage() {
               <section>
                 <motion.div variants={cardStackReveal} custom={0}>
                   <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">
-                    Welcome, {teacherName}
+                    {_('Welcome')}, {teacherName}
                   </h1>
-                  <p className="text-body-md text-muted-foreground mt-1">Overview of your classroom today</p>
+                  <p className="text-body-md text-muted-foreground mt-1">{_('Overview of your classroom today')}</p>
                 </motion.div>
               </section>
 
               <section>
-                <SectionTitle label="Alerts" title="Needs your attention" />
+                <SectionTitle label={_('Alerts')} title={_('Needs your attention')} />
                 <motion.div
                   variants={staggerContainer}
                   initial="hidden"
@@ -202,7 +203,7 @@ export default function TeacherDashboardPage() {
               </section>
 
               <section>
-                <SectionTitle label="Performance" title="Class metrics" />
+                <SectionTitle label={_('Performance')} title={_('Class metrics')} />
                 <motion.div
                   variants={staggerContainer}
                   initial="hidden"
@@ -230,7 +231,7 @@ export default function TeacherDashboardPage() {
 
               {(d.teaching.classes.length > 0 || d.teaching.textbooks.length > 0 || (d.teaching.subjects?.length ?? 0) > 0) && (
                 <section>
-                  <SectionTitle label="Teaching" title="Your classes & resources" />
+                  <SectionTitle label={_('Teaching')} title={_('Your classes & resources')} />
                   <motion.div
                     variants={staggerContainer}
                     initial="hidden"
@@ -252,7 +253,7 @@ export default function TeacherDashboardPage() {
                                 </div>
                                 <div className="min-w-0">
                                   <p className="text-title-sm font-bold">{cls.name}</p>
-                                  <p className="text-label-sm text-muted-foreground mt-1">View subjects &rarr;</p>
+                                  <p className="text-label-sm text-muted-foreground mt-1">{_('View subjects')} &rarr;</p>
                                 </div>
                               </div>
                             </CardContent>
@@ -270,8 +271,8 @@ export default function TeacherDashboardPage() {
                                   <Icon name="menu_book" size={22} className="text-secondary" />
                                 </div>
                                 <div className="min-w-0">
-                                  <p className="text-title-sm font-bold">All Textbooks</p>
-                                  <p className="text-label-sm text-muted-foreground mt-1">{d.teaching.textbooks.length} textbook{d.teaching.textbooks.length > 1 ? 's' : ''}</p>
+                                  <p className="text-title-sm font-bold">{_('All Textbooks')}</p>
+                                  <p className="text-label-sm text-muted-foreground mt-1">{d.teaching.textbooks.length} {_('textbook')}{d.teaching.textbooks.length > 1 ? _('s') : ''}</p>
                                 </div>
                               </div>
                             </CardContent>
@@ -289,8 +290,8 @@ export default function TeacherDashboardPage() {
                                   <Icon name="group" size={22} className="text-success" />
                                 </div>
                                 <div className="min-w-0">
-                                  <p className="text-title-sm font-bold">My Students</p>
-                                  <p className="text-label-sm text-muted-foreground mt-1">{d.teaching.studentCount} student{d.teaching.studentCount > 1 ? 's' : ''}</p>
+                                  <p className="text-title-sm font-bold">{_('My Students')}</p>
+                                  <p className="text-label-sm text-muted-foreground mt-1">{d.teaching.studentCount} {_('student')}{d.teaching.studentCount > 1 ? _('s') : ''}</p>
                                 </div>
                               </div>
                             </CardContent>
@@ -303,7 +304,7 @@ export default function TeacherDashboardPage() {
               )}
 
               <section>
-                <SectionTitle label="Actions" title="Quick tasks" />
+                <SectionTitle label={_('Actions')} title={_('Quick tasks')} />
                 <motion.div
                   variants={staggerContainer}
                   initial="hidden"

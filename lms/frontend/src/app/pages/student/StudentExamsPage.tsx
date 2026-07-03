@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from '@/hooks/useTranslation';
 import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -15,6 +16,7 @@ import { useAuthStore } from '@/store/authStore';
 import type { ExamItem, CorrectionItem } from '@/services/dataService';
 
 function Countdown({ endDate }: { endDate: string }) {
+  const { _ } = useTranslation();
   const [remaining, setRemaining] = useState('');
 
   useEffect(() => {
@@ -24,7 +26,7 @@ function Countdown({ endDate }: { endDate: string }) {
       const diff = end.getTime() - now.getTime();
 
       if (diff <= 0) {
-        setRemaining('Started');
+        setRemaining(_('Started'));
         return;
       }
 
@@ -33,11 +35,11 @@ function Countdown({ endDate }: { endDate: string }) {
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
       if (days > 0) {
-        setRemaining(`${days}d ${hours}h remaining`);
+        setRemaining(`${days}${_('d')} ${hours}${_('h')} ${_('remaining')}`);
       } else if (hours > 0) {
-        setRemaining(`${hours}h ${minutes}m remaining`);
+        setRemaining(`${hours}${_('h')} ${minutes}${_('m')} ${_('remaining')}`);
       } else {
-        setRemaining(`${minutes}m remaining`);
+        setRemaining(`${minutes}${_('m')} ${_('remaining')}`);
       }
     }
 
@@ -59,6 +61,7 @@ interface PastExamResult extends ExamWithSubject {
 }
 
 export default function StudentExamsPage() {
+  const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
 
@@ -117,7 +120,7 @@ export default function StudentExamsPage() {
 
   return (
     <>
-      <SEOHead title="Exams" description="View upcoming and past exam results" />
+      <SEOHead title={_('Exams')} description={_('View upcoming and past exam results')} />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -127,8 +130,8 @@ export default function StudentExamsPage() {
         <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
           <div className="flex flex-col gap-4">
             <div>
-              <h1 className="text-headline-sm font-bold">Exams</h1>
-              <p className="text-body-md text-muted-foreground">Track upcoming exams and past results</p>
+              <h1 className="text-headline-sm font-bold">{_('Exams')}</h1>
+              <p className="text-body-md text-muted-foreground">{_('Track upcoming exams and past results')}</p>
             </div>
             {data?.subjects && data.subjects.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5 pt-1">
@@ -141,7 +144,7 @@ export default function StudentExamsPage() {
                   }`}
                 >
                   <Icon name="select_all" size={14} />
-                  All Subjects
+                  {_('All Subjects')}
                 </button>
                 {data.subjects.map((sub: any) => {
                   const isSelected = selectedSubjectId === sub.id;
@@ -169,10 +172,10 @@ export default function StudentExamsPage() {
         <DataFetchWrapper
           data={data}
           isLoading={isLoading}
-          error={isError ? error ?? new Error('Failed to load exams') : null}
+          error={isError ? error ?? new Error(_('Failed to load exams')) : null}
           loadingType="list"
           onRetry={() => refetch()}
-          errorTitle="Failed to load exams"
+          errorTitle={_('Failed to load exams')}
         >
           {(d) => {
             const filteredUpcoming = selectedSubjectId
@@ -186,14 +189,14 @@ export default function StudentExamsPage() {
               <div className="space-y-16">
                 <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
                   <div className="mb-6">
-                    <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">SCHEDULED</p>
-                    <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">Upcoming Exams</h2>
+                    <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">{_('SCHEDULED')}</p>
+                    <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">{_('Upcoming Exams')}</h2>
                   </div>
                   {filteredUpcoming.length === 0 ? (
                     <Card className="border-border/60">
                       <CardContent className="flex flex-col items-center gap-3 py-10">
                         <Icon name="fact_check" size={40} className="text-muted-foreground/50" />
-                        <p className="text-body-md text-muted-foreground">No upcoming exams scheduled</p>
+                        <p className="text-body-md text-muted-foreground">{_('No upcoming exams scheduled')}</p>
                       </CardContent>
                     </Card>
                   ) : (
@@ -225,7 +228,7 @@ export default function StudentExamsPage() {
                                       </Badge>
                                     </div>
                                     <p className="text-body-sm text-muted-foreground mt-0.5">
-                                      {exam.subject?.name ?? 'Unknown Subject'}
+                                      {exam.subject?.name ?? _('Unknown Subject')}
                                     </p>
                                     <p className="text-body-sm text-muted-foreground mt-1 line-clamp-1">
                                       {exam.description}
@@ -233,15 +236,15 @@ export default function StudentExamsPage() {
                                     <div className="flex items-center gap-4 mt-2 text-body-sm text-muted-foreground flex-wrap">
                                       <span className="flex items-center gap-1">
                                         <Icon name="schedule" size={14} />
-                                        {exam.duration} min
+                                        {exam.duration} {_('min')}
                                       </span>
                                       <span className="flex items-center gap-1">
                                         <Icon name="quiz" size={14} />
-                                        {Array.isArray(exam.questions) ? exam.questions.length : 0} questions
+                                        {Array.isArray(exam.questions) ? exam.questions.length : 0} {_('questions')}
                                       </span>
                                       <span className="flex items-center gap-1">
                                         <Icon name="calendar_today" size={14} />
-                                        {exam.startDate ? formatDate(exam.startDate) : 'N/A'}
+                                        {exam.startDate ? formatDate(exam.startDate) : _('N/A')}
                                       </span>
                                     </div>
                                   </div>
@@ -262,14 +265,14 @@ export default function StudentExamsPage() {
 
                 <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
                   <div className="mb-6">
-                    <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">HISTORY</p>
-                    <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">Past Results</h2>
+                    <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">{_('HISTORY')}</p>
+                    <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">{_('Past Results')}</h2>
                   </div>
                   {filteredPast.length === 0 ? (
                     <Card className="border-border/60">
                       <CardContent className="flex flex-col items-center gap-3 py-10">
                         <Icon name="fact_check" size={40} className="text-muted-foreground/50" />
-                        <p className="text-body-md text-muted-foreground">No past exam results yet</p>
+                        <p className="text-body-md text-muted-foreground">{_('No past exam results yet')}</p>
                       </CardContent>
                     </Card>
                   ) : (
@@ -306,7 +309,7 @@ export default function StudentExamsPage() {
                                       </Badge>
                                     </div>
                                     <p className="text-body-sm text-muted-foreground mt-0.5">
-                                      {exam.subject?.name ?? 'Unknown Subject'}
+                                      {exam.subject?.name ?? _('Unknown Subject')}
                                     </p>
                                     <div className="flex items-center gap-4 mt-2 text-body-sm text-muted-foreground flex-wrap">
                                       <span className="flex items-center gap-1">
@@ -317,7 +320,7 @@ export default function StudentExamsPage() {
                                       </span>
                                       <span className="flex items-center gap-1">
                                         <Icon name="calendar_today" size={14} />
-                                        {exam.correction.correctedAt ? formatDate(exam.correction.correctedAt) : 'N/A'}
+                                        {exam.correction.correctedAt ? formatDate(exam.correction.correctedAt) : _('N/A')}
                                       </span>
                                       <Badge variant="outline" className="text-[10px]">
                                         {exam.correction.status}
@@ -342,14 +345,14 @@ export default function StudentExamsPage() {
                                   <div className="flex-1 min-w-0">
                                     <p className="font-semibold truncate">{exam.title}</p>
                                     <p className="text-body-sm text-muted-foreground mt-0.5">
-                                      {exam.subject?.name ?? 'Unknown Subject'}
+                                      {exam.subject?.name ?? _('Unknown Subject')}
                                     </p>
                                     <p className="text-body-sm text-muted-foreground mt-1">
-                                      Taken on {exam.endDate ? formatDate(exam.endDate) : 'N/A'} &middot; Results pending
+                                      {_('Taken on')} {exam.endDate ? formatDate(exam.endDate) : _('N/A')} &middot; {_('Results pending')}
                                     </p>
                                   </div>
                                   <Badge variant="secondary" className="text-[10px] flex-shrink-0">
-                                    Pending
+                                    {_('Pending')}
                                   </Badge>
                                 </div>
                               </CardContent>

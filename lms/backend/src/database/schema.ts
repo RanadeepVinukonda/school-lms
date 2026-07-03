@@ -18,7 +18,7 @@ export const TYPED_TABLES: Record<string, Set<string>> = {
   subjects: new Set(['id','name','code','description','type','creditHours','icon','color','classId','teacherId','isActive','createdAt','updatedAt','category','school_id']),
   enrollments: new Set(['id','studentId','courseId','status','role']),
   classes: new Set(['id','name','code','description','grade','section','academicYear','roomNumber','teacherIds','subjectIds','studentCount','teacherCount','maxStudents','startDate','endDate','status','isActive','createdAt','updatedAt','school_id']),
-  grades: new Set(['id','studentId','courseId','assignmentId','score','maxScore','letterGrade','comments','date','semester']),
+  grades: new Set(['id','studentId','courseId','assignmentId','score','maxScore','letterGrade','comments','date','semester','createdAt','created_at']),
   assignments: new Set(['id','title','description','subjectId','subjectName','chapterId','textbookId','lessonId','courseId','dueDate','points','maxAttempts','allowLateSubmission','latePenaltyPercent','passingGrade','status','submissionCount','isPublished','createdAt','updatedAt','school_id']),
   exams: new Set(['id','title','description','subjectId','subjectName','courseId','duration','totalPoints','passingScore','questions','status','startDate','endDate','isProctored','shuffleQuestions','showResults','createdAt','updatedAt','school_id']),
   notifications: new Set(['id','userId','title','message','type','read','readAt','createdAt','school_id']),
@@ -62,6 +62,8 @@ const CAMEL_OVERRIDES: Record<string, string> = {
   pdf_url: 'pdfUrl',
   cover_image: 'coverImage',
   storage_path: 'storagePath',
+  class_id: 'classId',
+  class_ids: 'classIds',
 };
 
 export function toJsCol(_tableName: string, sqlKey: string): string {

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useTranslation } from '@/hooks/useTranslation';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,6 +17,7 @@ import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
 
 function ScheduleForm({ onSave, loading, defaultTemplateId }: { onSave: (data: any) => void; loading: boolean; defaultTemplateId?: string }) {
+  const { _ } = useTranslation();
   const [templateId, setTemplateId] = useState(defaultTemplateId || '');
 
   useEffect(() => {
@@ -37,34 +39,34 @@ function ScheduleForm({ onSave, loading, defaultTemplateId }: { onSave: (data: a
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!templateId || !title.trim() || !startDate || !endDate) { toast.error('Please fill all required fields'); return; }
+    if (!templateId || !title.trim() || !startDate || !endDate) { toast.error(_('Please fill all required fields')); return; }
     onSave({ templateId, title, startDate, endDate: endDate, durationMinutes: duration, requiresApproval });
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="text-sm font-medium">Template</label>
+        <label className="text-sm font-medium">{_('Template')}</label>
         <select value={templateId} onChange={(e) => {
           setTemplateId(e.target.value);
           const t = (templates || []).find((tm: any) => tm.id === e.target.value);
           if (t) setTitle(t.title);
         }} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1">
-          <option value="">Select a template...</option>
+          <option value="">{_('Select a template...')}</option>
           {(templates || []).map((t: any) => <option key={t.id} value={t.id}>{t.title} ({t.status})</option>)}
         </select>
       </div>
-      <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Test title" />
+      <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={_('Test title')} />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div><label className="text-sm font-medium">Start Date/Time</label><Input type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
-        <div><label className="text-sm font-medium">End Date/Time</label><Input type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
+        <div><label className="text-sm font-medium">{_('Start Date/Time')}</label><Input type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
+        <div><label className="text-sm font-medium">{_('End Date/Time')}</label><Input type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
       </div>
-      <div><label className="text-sm font-medium">Duration (minutes)</label><Input type="number" value={duration} onChange={(e) => setDuration(Number(e.target.value))} min={1} /></div>
+      <div><label className="text-sm font-medium">{_('Duration (minutes)')}</label><Input type="number" value={duration} onChange={(e) => setDuration(Number(e.target.value))} min={1} /></div>
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={requiresApproval} onChange={(e) => setRequiresApproval(e.target.checked)} />
-        Requires approval before publishing
+        {_('Requires approval before publishing')}
       </label>
-      <Button type="submit" disabled={loading}>Schedule Test</Button>
+      <Button type="submit" disabled={loading}>{_('Schedule Test')}</Button>
     </form>
   );
 }
@@ -80,6 +82,7 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export default function TeacherTestSchedulePage() {
+  const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
@@ -93,34 +96,34 @@ export default function TeacherTestSchedulePage() {
 
   const createMutation = useMutation({
     mutationFn: (body: any) => api.post('/test-schedule', body),
-    onSuccess: () => { toast.success('Test scheduled'); setShowCreate(false); queryClient.invalidateQueries({ queryKey: ['test-schedules'] }); },
-    onError: () => toast.error('Failed to schedule test'),
+    onSuccess: () => { toast.success(_('Test scheduled')); setShowCreate(false); queryClient.invalidateQueries({ queryKey: ['test-schedules'] }); },
+    onError: () => toast.error(_('Failed to schedule test')),
   });
 
   const approveMutation = useMutation({
     mutationFn: (id: string) => api.put(`/test-schedule/${id}/approve`),
-    onSuccess: () => { toast.success('Schedule approved'); queryClient.invalidateQueries({ queryKey: ['test-schedules'] }); },
+    onSuccess: () => { toast.success(_('Schedule approved')); queryClient.invalidateQueries({ queryKey: ['test-schedules'] }); },
   });
 
   const cancelMutation = useMutation({
     mutationFn: (id: string) => api.put(`/test-schedule/${id}/status`, { status: 'cancelled' }),
-    onSuccess: () => { toast.success('Schedule cancelled'); queryClient.invalidateQueries({ queryKey: ['test-schedules'] }); },
+    onSuccess: () => { toast.success(_('Schedule cancelled')); queryClient.invalidateQueries({ queryKey: ['test-schedules'] }); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/test-schedule/${id}`),
-    onSuccess: () => { toast.success('Schedule deleted'); queryClient.invalidateQueries({ queryKey: ['test-schedules'] }); },
+    onSuccess: () => { toast.success(_('Schedule deleted')); queryClient.invalidateQueries({ queryKey: ['test-schedules'] }); },
   });
 
   return (
     <>
-      <SEOHead title="Test Schedule" description="Schedule and manage tests" canonical="/teacher/test-schedule" />
+      <SEOHead title={_('Test Schedule')} description={_('Schedule and manage tests')} canonical="/teacher/test-schedule" />
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-6xl mx-auto space-y-16 pb-32">
         <motion.div variants={cardStackReveal} custom={0} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-headline-sm">Test Schedule</h1>
+            <h1 className="text-headline-sm">{_('Test Schedule')}</h1>
           </div>
-          <Button onClick={() => setShowCreate(true)}><Icon name="add" size={16} className="mr-1" />Schedule Test</Button>
+          <Button onClick={() => setShowCreate(true)}><Icon name="add" size={16} className="mr-1" />{_('Schedule Test')}</Button>
         </motion.div>
 
         <motion.div variants={cardStackReveal} custom={0}>
@@ -128,7 +131,7 @@ export default function TeacherTestSchedulePage() {
             {(schedules: any[]) => (
               <div className="space-y-2">
                 {schedules.length === 0 ? (
-                  <Card className="border-border/60"><CardContent className="p-8 text-center text-muted-foreground"><Icon name="calendar_month" size={48} className="mx-auto mb-3 opacity-40" /><p>No scheduled tests.</p></CardContent></Card>
+                  <Card className="border-border/60"><CardContent className="p-8 text-center text-muted-foreground"><Icon name="calendar_month" size={48} className="mx-auto mb-3 opacity-40" /><p>{_('No scheduled tests.')}</p></CardContent></Card>
                 ) : (
                   schedules.map((s: any) => (
                     <Card key={s.id} className="border-border/60">
@@ -146,12 +149,12 @@ export default function TeacherTestSchedulePage() {
                               <span>{s.totalStudents || 0} students</span>
                               <span>{s.attemptedCount || 0} attempts</span>
                             </div>
-                            {s.approvedBy && <p className="text-xs text-muted-foreground mt-1">Approved by: {s.approvedBy}</p>}
+                            {s.approvedBy && <p className="text-xs text-muted-foreground mt-1">{_('Approved by')}: {s.approvedBy}</p>}
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
-                            {s.status === 'pending_approval' && <Button size="sm" onClick={() => approveMutation.mutate(s.id)}><Icon name="check" size={14} className="mr-1" />Approve</Button>}
-                            {(s.status === 'scheduled' || s.status === 'approved') && <Button variant="outline" size="sm" onClick={() => cancelMutation.mutate(s.id)}>Cancel</Button>}
-                            {(s.status === 'draft' || s.status === 'cancelled') && <Button variant="ghost" size="icon-sm" onClick={() => { if (confirm('Delete?')) deleteMutation.mutate(s.id); }}><Icon name="delete" size={16} /></Button>}
+                            {s.status === 'pending_approval' && <Button size="sm" onClick={() => approveMutation.mutate(s.id)}><Icon name="check" size={14} className="mr-1" />{_('Approve')}</Button>}
+                            {(s.status === 'scheduled' || s.status === 'approved') && <Button variant="outline" size="sm" onClick={() => cancelMutation.mutate(s.id)}>{_('Cancel')}</Button>}
+                            {(s.status === 'draft' || s.status === 'cancelled') && <Button variant="ghost" size="icon-sm" onClick={() => { if (confirm(_('Delete?'))) deleteMutation.mutate(s.id); }}><Icon name="delete" size={16} /></Button>}
                           </div>
                         </div>
                       </CardContent>
@@ -166,8 +169,8 @@ export default function TeacherTestSchedulePage() {
         <Dialog open={showCreate} onOpenChange={setShowCreate}>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>Schedule a Test</DialogTitle>
-              <DialogDescription>Select a template and set the schedule.</DialogDescription>
+              <DialogTitle>{_('Schedule a Test')}</DialogTitle>
+              <DialogDescription>{_('Select a template and set the schedule.')}</DialogDescription>
             </DialogHeader>
             <ScheduleForm onSave={(formData) => createMutation.mutate(formData)} loading={createMutation.isPending} defaultTemplateId={searchParams.get('templateId') || undefined} />
           </DialogContent>

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -29,6 +30,7 @@ interface ChapterWithConcepts extends Chapter {
 }
 
 export default function TeacherTextbookDetailPage() {
+  const { _ } = useTranslation();
   const { textbookId } = useParams<{ textbookId: string }>();
   const navigate = useNavigate();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -86,11 +88,11 @@ export default function TeacherTextbookDetailPage() {
       await reprocessTextbook(textbookId);
     },
     onSuccess: () => {
-      toast.success('Reprocessing triggered! AI pipeline is starting...');
+      toast.success(_('Reprocessing triggered! AI pipeline is starting...'));
       textbookQuery.refetch();
     },
     onError: (err: any) => {
-      toast.error(err?.message || 'Failed to trigger reprocessing.');
+      toast.error(err?.message || _('Failed to trigger reprocessing.'));
     },
   });
 
@@ -100,11 +102,11 @@ export default function TeacherTextbookDetailPage() {
       await deleteTextbook(textbookId);
     },
     onSuccess: () => {
-      toast.success('Textbook deleted');
+      toast.success(_('Textbook deleted'));
       navigate('/teacher/textbooks');
     },
     onError: (err: any) => {
-      toast.error(err?.message || 'Failed to delete textbook.');
+      toast.error(err?.message || _('Failed to delete textbook.'));
       setDeleteDialogOpen(false);
     },
   });
@@ -117,7 +119,7 @@ export default function TeacherTextbookDetailPage() {
     const total = tb.totalConcepts || 0;
     const completed = tb.completedConcepts || 0;
     const progressVal = total > 0 ? Math.round(25 + (completed / total) * 75) : 5;
-    const stage = total > 0 ? `${completed} / ${total} concepts` : 'Extracting text...';
+    const stage = total > 0 ? `${completed} / ${total} ${_('concepts')}` : _('Extracting text...');
 
     return (
       <Card className="border-border/60">
@@ -128,19 +130,19 @@ export default function TeacherTextbookDetailPage() {
                 {isFailed ? (
                   <>
                     <Icon name="error" className="text-red-500 animate-pulse" />
-                    Processing Failed
+                    {_('Processing Failed')}
                   </>
                 ) : (
                   <>
                     <Icon name="hourglass_top" className="text-primary animate-spin" />
-                    AI Processing Pipeline Active
+                    {_('AI Processing Pipeline Active')}
                   </>
                 )}
               </h2>
               <p className="text-body-sm text-muted-foreground mt-1">
                 {isFailed
-                  ? 'The extraction pipeline encountered an error.'
-                  : 'Your textbook is being parsed by AI to generate chapters, concepts, study notes, videos, and questions.'}
+                  ? _('The extraction pipeline encountered an error.')
+                  : _('Your textbook is being parsed by AI to generate chapters, concepts, study notes, videos, and questions.')}
               </p>
             </div>
             <div className="flex gap-2 self-start md:self-auto shrink-0">
@@ -148,26 +150,26 @@ export default function TeacherTextbookDetailPage() {
                 <DialogTrigger asChild>
                   <Button variant="destructive" size="sm" className="gap-1.5">
                     <Icon name="delete" size={16} />
-                    Delete
+                    {_('Delete')}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Delete Textbook</DialogTitle>
+                    <DialogTitle>{_('Delete Textbook')}</DialogTitle>
                     <DialogDescription>
-                      Are you sure you want to delete "{tb.title}"? This action cannot be undone and will remove all chapters, concepts, and uploaded files.
+                      {_('Are you sure you want to delete')} "{tb.title}"? {_('This action cannot be undone and will remove all chapters, concepts, and uploaded files.')}
                     </DialogDescription>
                   </DialogHeader>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-                      Cancel
+                      {_('Cancel')}
                     </Button>
                     <Button
                       variant="destructive"
                       onClick={() => deleteMutation.mutate()}
                       disabled={deleteMutation.isPending}
                     >
-                      {deleteMutation.isPending ? 'Deleting...' : 'Delete Forever'}
+                      {deleteMutation.isPending ? _('Deleting...') : _('Delete Forever')}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -182,12 +184,12 @@ export default function TeacherTextbookDetailPage() {
                   {reprocessMutation.isPending ? (
                     <>
                       <Icon name="sync" className="animate-spin" size={16} />
-                      Starting...
+                      {_('Starting...')}
                     </>
                   ) : (
                     <>
                       <Icon name="replay" size={16} />
-                      Reprocess
+                      {_('Reprocess')}
                     </>
                   )}
                 </Button>
@@ -198,7 +200,7 @@ export default function TeacherTextbookDetailPage() {
           {!isFailed && (
             <div className="space-y-2">
               <div className="flex justify-between items-center text-sm font-semibold">
-                <span>Overall Progress</span>
+                <span>{_('Overall Progress')}</span>
                 <span>{progressVal}%</span>
               </div>
               <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
@@ -215,7 +217,7 @@ export default function TeacherTextbookDetailPage() {
             <div className="rounded-xl border border-border/80 bg-slate-950 p-4 space-y-2">
               <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-800 pb-2">
                 <Icon name="terminal" size={14} className="text-emerald-500 animate-pulse" />
-                Live Processing Terminal
+                {_('Live Processing Terminal')}
               </h4>
               <div className="max-h-48 overflow-y-auto font-mono text-xs text-slate-300 space-y-1.5 pr-2">
                 {tb.logs.map((log: string, idx: number) => {
@@ -241,7 +243,7 @@ export default function TeacherTextbookDetailPage() {
             <div className="rounded-xl border border-red-200 bg-red-50/50 dark:bg-red-950/10 p-4 space-y-2">
               <h4 className="text-xs font-bold text-red-700 dark:text-red-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Icon name="terminal" size={14} />
-                Error Logs
+                {_('Error Logs')}
               </h4>
               <p className="text-xs font-mono text-red-600 dark:text-red-300 whitespace-pre-wrap leading-relaxed select-all">
                 {errorLog}
@@ -255,7 +257,7 @@ export default function TeacherTextbookDetailPage() {
 
   return (
     <>
-      <SEOHead title={textbookQuery.data?.title ?? 'Textbook'} description="View textbook chapters and concepts" />
+      <SEOHead title={textbookQuery.data?.title ?? _('Textbook')} description={_('View textbook chapters and concepts')} />
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-6xl mx-auto space-y-16 pb-32">
         <DataFetchWrapper data={textbookQuery.data} isLoading={textbookQuery.isLoading} error={textbookQuery.error} loadingType="detail">
           {(tb) => (
@@ -270,33 +272,33 @@ export default function TeacherTextbookDetailPage() {
                     </Button>
                     <div>
                       <h1 className="text-headline-sm">{tb.title}</h1>
-                      <p className="text-sm text-muted-foreground">{subjectQuery.data?.name ?? 'Unknown Subject'}</p>
+                      <p className="text-sm text-muted-foreground">{subjectQuery.data?.name ?? _('Unknown Subject')}</p>
                     </div>
                   </div>
                   <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                     <DialogTrigger asChild>
                       <Button variant="destructive" size="sm" className="gap-1.5">
                         <Icon name="delete" size={16} />
-                        Delete
+                        {_('Delete')}
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Delete Textbook</DialogTitle>
+                        <DialogTitle>{_('Delete Textbook')}</DialogTitle>
                         <DialogDescription>
-                          Are you sure you want to delete "{tb.title}"? This action cannot be undone and will remove all chapters, concepts, and uploaded files.
+                          {_('Are you sure you want to delete')} "{tb.title}"? {_('This action cannot be undone and will remove all chapters, concepts, and uploaded files.')}
                         </DialogDescription>
                       </DialogHeader>
                       <DialogFooter>
                         <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-                          Cancel
+                          {_('Cancel')}
                         </Button>
                         <Button
                           variant="destructive"
                           onClick={() => deleteMutation.mutate()}
                           disabled={deleteMutation.isPending}
                         >
-                          {deleteMutation.isPending ? 'Deleting...' : 'Delete Forever'}
+                          {deleteMutation.isPending ? _('Deleting...') : _('Delete Forever')}
                         </Button>
                       </DialogFooter>
                     </DialogContent>
@@ -314,11 +316,11 @@ export default function TeacherTextbookDetailPage() {
                         <TabsList className="w-full overflow-x-auto inline-flex">
                           <TabsTrigger value="chapters">
                             <Icon name="list" size={14} className="mr-1" />
-                            Chapters
+                            {_('Chapters')}
                           </TabsTrigger>
                           <TabsTrigger value="mindmap">
                             <Icon name="account_tree" size={14} className="mr-1" />
-                            Mind Map
+                            {_('Mind Map')}
                           </TabsTrigger>
                         </TabsList>
 

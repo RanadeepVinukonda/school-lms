@@ -19,8 +19,10 @@ import {
   urgencyOrder,
   type FilterTab,
 } from '@/app/pages/student/StudentTaskComponents';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function StudentTasksPage() {
+  const { _ } = useTranslation();
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const studentId = useAuthStore((s) => s.user?.id);
@@ -134,8 +136,8 @@ export default function StudentTasksPage() {
   return (
     <>
       <SEOHead
-        title={overdueCount > 0 ? `Tasks (${overdueCount} overdue)` : 'Tasks'}
-        description="View all upcoming tasks sorted by urgency"
+        title={overdueCount > 0 ? `${_('Tasks')} (${overdueCount} ${_('overdue')})` : _('Tasks')}
+        description={_('View all upcoming tasks sorted by urgency')}
       />
       <motion.div
         initial={{ opacity: 0 }}
@@ -147,14 +149,14 @@ export default function StudentTasksPage() {
           <div className="flex flex-col gap-4">
             <div>
               <h1 className="text-headline-sm font-bold flex items-center gap-3">
-                Tasks
+                {_('Tasks')}
                 {overdueCount > 0 && (
                   <Badge variant="destructive" className="text-xs">
-                    {overdueCount} overdue
+                    {overdueCount} {_('overdue')}
                   </Badge>
                 )}
               </h1>
-              <p className="text-body-md text-muted-foreground">Stay on top of your upcoming work</p>
+              <p className="text-body-md text-muted-foreground">{_('Stay on top of your upcoming work')}</p>
             </div>
             {subjectsData && subjectsData.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5 pt-1">
@@ -167,7 +169,7 @@ export default function StudentTasksPage() {
                   }`}
                 >
                   <Icon name="select_all" size={14} />
-                  All Subjects
+                  {_('All Subjects')}
                 </button>
                 {subjectsData.map((sub: any) => {
                   const isSelected = selectedSubjectId === sub.id;
@@ -195,11 +197,11 @@ export default function StudentTasksPage() {
         <DataFetchWrapper
           data={data}
           isLoading={isLoading}
-          error={isError ? error ?? new Error('Failed to load tasks') : null}
+          error={isError ? error ?? new Error(_('Failed to load tasks')) : null}
           loadingType="list"
           onRetry={() => refetch()}
-          errorTitle="Failed to load tasks"
-          emptyMessage="No tasks available right now"
+          errorTitle={_('Failed to load tasks')}
+          emptyMessage={_('No tasks available right now')}
           emptyIcon={<Icon name="task_alt" size={40} />}
         >
           {() => (

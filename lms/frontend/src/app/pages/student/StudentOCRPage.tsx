@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -11,6 +12,7 @@ import { scanImage, mapToConcept } from '@/services/ocrService';
 import type { OCRResult, GeneratedQuestion } from '@/types/ocr';
 
 function QuestionCard({ q, index }: { q: GeneratedQuestion; index: number }) {
+  const { _ } = useTranslation();
   const [showAnswer, setShowAnswer] = useState(false);
   return (
     <div className="p-4 rounded-lg border border-outline-variant">
@@ -31,11 +33,11 @@ function QuestionCard({ q, index }: { q: GeneratedQuestion; index: number }) {
           className="flex items-center gap-1.5 text-label-xs text-primary hover:text-primary/80 transition-colors"
         >
           <Icon name={showAnswer ? 'visibility_off' : 'visibility'} size={14} />
-          {showAnswer ? 'Hide Answer' : 'Show Answer'}
+          {showAnswer ? _('Hide Answer') : _('Show Answer')}
         </button>
         {showAnswer && (
           <div className="mt-2 p-3 rounded-lg bg-success/5 border border-success/20">
-            <p className="text-label-xs font-semibold text-success mb-1">Correct Answer:</p>
+            <p className="text-label-xs font-semibold text-success mb-1">{_('Correct Answer:')}</p>
             <p className="text-sm">{q.correctAnswer}</p>
             {q.explanation && (
               <p className="text-label-xs text-muted-foreground mt-1.5 pt-1.5 border-t border-success/10">{q.explanation}</p>
@@ -48,6 +50,7 @@ function QuestionCard({ q, index }: { q: GeneratedQuestion; index: number }) {
 }
 
 export default function StudentOCRPage() {
+  const { _ } = useTranslation();
   const [ocrResult, setOcrResult] = useState<OCRResult | null>(null);
   const [questions, setQuestions] = useState<GeneratedQuestion[]>([]);
   const [conceptName, setConceptName] = useState<string>('');
@@ -119,11 +122,11 @@ export default function StudentOCRPage() {
 
   return (
     <>
-      <SEOHead title="Scan Textbook Page" description="Scan textbook pages and take quick quizzes" />
+      <SEOHead title={_('Scan Textbook Page')} description={_('Scan textbook pages and take quick quizzes')} />
       <motion.div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
         <div>
-          <h1 className="text-title-lg font-bold">Scan a Page</h1>
-          <p className="text-on-surface-variant mt-1">Capture a textbook page and get a quick quiz instantly</p>
+          <h1 className="text-title-lg font-bold">{_('Scan a Page')}</h1>
+          <p className="text-on-surface-variant mt-1">{_('Capture a textbook page and get a quick quiz instantly')}</p>
         </div>
 
         <AnimatePresence mode="wait">
@@ -141,7 +144,7 @@ export default function StudentOCRPage() {
                     <Icon name="document_scanner" size={48} className="text-primary" />
                     <Progress className="w-64" />
                     <p className="text-sm text-on-surface-variant">
-                      {isProcessing ? 'Generating quiz questions...' : 'Scanning and extracting text...'}
+                      {isProcessing ? _('Generating quiz questions...') : _('Scanning and extracting text...')}
                     </p>
                   </div>
                 </CardContent>
@@ -155,19 +158,19 @@ export default function StudentOCRPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Icon name="auto_stories" size={20} />
-                    {conceptName || 'Detected Content'}
-                    <Badge variant="info">Auto-detected</Badge>
+                    {conceptName || _('Detected Content')}
+                    <Badge variant="info">{_('Auto-detected')}</Badge>
                   </CardTitle>
                   {ocrResult && (
                     <CardDescription>
-                      Confidence: {ocrResult.confidence.toFixed(0)}% | {ocrResult.text.length} characters extracted
+                      {_('Confidence')}: {ocrResult.confidence.toFixed(0)}% | {ocrResult.text.length} {_('characters extracted')}
                     </CardDescription>
                   )}
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap items-center gap-3">
                     <div className="flex items-center gap-2">
-                      <label className="text-label-xs text-muted-foreground">Questions:</label>
+                      <label className="text-label-xs text-muted-foreground">{_('Questions:')}</label>
                       <select
                         value={questionCount}
                         onChange={(e) => setQuestionCount(Number(e.target.value))}
@@ -181,11 +184,11 @@ export default function StudentOCRPage() {
                     </div>
                     <Button size="sm" onClick={generateQuiz} disabled={isProcessing}>
                       <Icon name="auto_awesome" size={16} className="mr-1" />
-                      {isProcessing ? 'Generating...' : 'Generate Quiz'}
+                      {isProcessing ? _('Generating...') : _('Generate Quiz')}
                     </Button>
                     <Button variant="outline" size="sm" onClick={reset}>
                       <Icon name="refresh" size={16} className="mr-1" />
-                      Scan Another Page
+                      {_('Scan Another Page')}
                     </Button>
                   </div>
                 </CardContent>
@@ -196,7 +199,7 @@ export default function StudentOCRPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Icon name="quiz" size={20} />
-                      Quick Quiz ({questions.length} questions)
+                      {_('Quick Quiz')} ({questions.length} {_('questions')})
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -211,7 +214,7 @@ export default function StudentOCRPage() {
                 <Card>
                   <CardContent className="py-8 flex flex-col items-center gap-3">
                     <Icon name="auto_stories" size={36} className="text-muted-foreground/50" />
-                    <p className="text-body-sm text-muted-foreground">Click "Generate Quiz" to create questions from the scanned text.</p>
+                    <p className="text-body-sm text-muted-foreground">{_('Click "Generate Quiz" to create questions from the scanned text.')}</p>
                   </CardContent>
                 </Card>
               )}
@@ -224,7 +227,7 @@ export default function StudentOCRPage() {
             <CardContent className="flex items-center gap-3 py-4">
               <Icon name="error" size={20} className="text-error shrink-0" />
               <p className="text-sm text-error flex-1">{error}</p>
-              <Button variant="outline" size="sm" onClick={reset}>Try Again</Button>
+              <Button variant="outline" size="sm" onClick={reset}>{_('Try Again')}</Button>
             </CardContent>
           </Card>
         )}
