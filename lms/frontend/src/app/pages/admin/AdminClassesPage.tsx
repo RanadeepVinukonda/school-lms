@@ -131,7 +131,7 @@ export default function AdminClassesPage() {
   const handleClassGradeChange = (val: string) => {
     setClassGrade(val);
     if (/^\d+$/.test(val.trim())) {
-      setClassCode(`G${val.trim()}`);
+      setClassCode(`G${val.trim()}${classSection.trim().toUpperCase()}`);
     } else {
       setClassCode('');
     }
@@ -145,7 +145,7 @@ export default function AdminClassesPage() {
     }
     const num = parseInt(g, 10);
     const className = `${ordinal(num)} class`;
-    const finalCode = classCode.trim().toUpperCase() || `G${num}`;
+    const finalCode = classCode.trim().toUpperCase() || `G${num}${classSection.trim().toUpperCase()}`;
 
     const duplicate = fetchedClasses.find((c) => c.code === finalCode);
     if (duplicate) {
@@ -1208,7 +1208,17 @@ export default function AdminClassesPage() {
             </div>
             <div className="space-y-2">
               <Label>Section (Optional)</Label>
-              <Input placeholder="e.g. A" value={classSection} onChange={(e) => setClassSection(e.target.value)} />
+              <Input 
+                placeholder="e.g. A" 
+                value={classSection} 
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setClassSection(val);
+                  if (/^\d+$/.test(classGrade.trim())) {
+                    setClassCode(`G${classGrade.trim()}${val.trim().toUpperCase()}`);
+                  }
+                }} 
+              />
             </div>
             <div className="space-y-2">
               <Label>Room Number (Optional)</Label>
