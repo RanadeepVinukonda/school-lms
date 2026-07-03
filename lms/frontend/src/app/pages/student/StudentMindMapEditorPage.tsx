@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from '@/hooks/useTranslation';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -13,6 +14,7 @@ import { ROUTES } from '@/lib/constants';
 import type { MindMapNode, MindMapEdge } from '@/types/mindmap';
 
 export default function StudentMindMapEditorPage() {
+  const { _ } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -73,7 +75,7 @@ export default function StudentMindMapEditorPage() {
 
   return (
     <>
-      <SEOHead title={title || 'Mind Map Editor'} description="Edit your mind map" />
+      <SEOHead title={title || _('Mind Map Editor')} description={_('Edit your mind map')} />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -99,19 +101,19 @@ export default function StudentMindMapEditorPage() {
                     <DialogTrigger asChild>
                       <Button variant="outline" size="sm" className="gap-1">
                         <Icon name="share" size={16} />
-                        Share
+                        {_('Share')}
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Share Mind Map</DialogTitle>
+                        <DialogTitle>{_('Share Mind Map')}</DialogTitle>
                       </DialogHeader>
                       <div className="space-y-4 pt-4">
                         <div>
-                          <label className="text-sm font-medium mb-1 block">Share with (user IDs or email)</label>
+                          <label className="text-sm font-medium mb-1 block">{_('Share with (user IDs or email)')}</label>
                           <input
                             className="w-full px-3 py-2 border rounded-lg text-sm"
-                            placeholder="Enter IDs or emails, comma separated"
+                            placeholder={_('Enter IDs or emails, comma separated')}
                             value={shareInput}
                             onChange={(e) => setShareInput(e.target.value)}
                           />
@@ -122,7 +124,7 @@ export default function StudentMindMapEditorPage() {
                           disabled={!shareInput.trim() || shareMutation.isPending}
                           loading={shareMutation.isPending}
                         >
-                          Share
+                          {_('Share')}
                         </Button>
                       </div>
                     </DialogContent>
@@ -135,7 +137,7 @@ export default function StudentMindMapEditorPage() {
                     loading={saveMutation.isPending}
                   >
                     <Icon name="save" size={16} />
-                    Save
+                    {_('Save')}
                   </Button>
                 </div>
               </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from '@/hooks/useTranslation';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icon } from '@/components/ui/Icon';
@@ -9,13 +10,14 @@ import { MyLibraryTab } from './TeacherVideoLibrary/MyLibraryTab';
 import { AttachToConceptTab } from './TeacherVideoLibrary/AttachToConceptTab';
 
 export default function TeacherVideoLibraryPage() {
+  const { _ } = useTranslation();
   const [activeTab, setActiveTab] = useState('search');
 
   return (
     <>
       <SEOHead
-        title="Video Library"
-        description="Search, save, and manage educational videos for your classroom"
+        title={_('Video Library')}
+        description={_('Search, save, and manage educational videos for your classroom')}
         canonical="/teacher/videos"
       />
       <motion.div
@@ -26,7 +28,7 @@ export default function TeacherVideoLibraryPage() {
       >
         <motion.div variants={cardStackReveal} custom={0} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-headline-sm">Video Library</h1>
+            <h1 className="text-headline-sm">{_('Video Library')}</h1>
           </div>
         </motion.div>
 
@@ -35,18 +37,18 @@ export default function TeacherVideoLibraryPage() {
             <TabsList className="w-full overflow-x-auto inline-flex">
               <TabsTrigger value="search" className="gap-2">
                 <Icon name="search" size={16} />
-                <span className="hidden sm:inline">Search YouTube</span>
-                <span className="sm:hidden">Search</span>
+                <span className="hidden sm:inline">{_('Search YouTube')}</span>
+                <span className="sm:hidden">{_('Search')}</span>
               </TabsTrigger>
               <TabsTrigger value="library" className="gap-2">
                 <Icon name="video_library" size={16} />
-                <span className="hidden sm:inline">My Library</span>
-                <span className="sm:hidden">Library</span>
+                <span className="hidden sm:inline">{_('My Library')}</span>
+                <span className="sm:hidden">{_('Library')}</span>
               </TabsTrigger>
               <TabsTrigger value="attach" className="gap-2">
                 <Icon name="attach_file" size={16} />
-                <span className="hidden sm:inline">Attach to Concept</span>
-                <span className="sm:hidden">Attach</span>
+                <span className="hidden sm:inline">{_('Attach to Concept')}</span>
+                <span className="sm:hidden">{_('Attach')}</span>
               </TabsTrigger>
             </TabsList>
 

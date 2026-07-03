@@ -1,7 +1,7 @@
 // Typed table definitions — SQL column sets and camelCase conversion helpers
 
 export const TYPED_TABLES: Record<string, Set<string>> = {
-  users: new Set(['id','email','display_name','role','phone_number','photo_url','is_active','class_ids','class_id','student_id','roll_no','academic_year','children_ids','password','streak_count','last_active_date','language','created_at','updated_at','data','tutorial_seen','instance_id','aud','encrypted_password','email_confirmed_at','invited_at','confirmation_token','confirmation_sent_at','recovery_token','recovery_sent_at','email_change_token_new','email_change','email_change_sent_at','last_sign_in_at','raw_app_meta_data','raw_user_meta_data','is_super_admin','phone','phone_confirmed_at','phone_change','phone_change_token','phone_change_sent_at','confirmed_at','email_change_token_current','email_change_confirm_status','banned_until','reauthentication_token','reauthentication_sent_at','is_sso_user','deleted_at','is_anonymous','school_id']),
+  users: new Set(['id','email','display_name','role','phone_number','photo_url','is_active','class_ids','class_id','student_id','roll_no','academic_year','children_ids','gender','password','streak_count','last_active_date','language','created_at','updated_at','data','tutorial_seen','instance_id','aud','encrypted_password','email_confirmed_at','invited_at','confirmation_token','confirmation_sent_at','recovery_token','recovery_sent_at','email_change_token_new','email_change','email_change_sent_at','last_sign_in_at','raw_app_meta_data','raw_user_meta_data','is_super_admin','phone','phone_confirmed_at','phone_change','phone_change_token','phone_change_sent_at','confirmed_at','email_change_token_current','email_change_confirm_status','banned_until','reauthentication_token','reauthentication_sent_at','is_sso_user','deleted_at','is_anonymous','school_id']),
   schools: new Set(['id','name','subdomain','logo_url','primary_color','plan','created_at','updated_at']),
   subscriptions: new Set(['id','school_id','plan','status','student_limit','teacher_limit','features','starts_at','expires_at','created_at']),
   revoked_tokens: new Set(['id','token_hash','revoked_at']),
@@ -18,7 +18,7 @@ export const TYPED_TABLES: Record<string, Set<string>> = {
   subjects: new Set(['id','name','code','description','type','creditHours','icon','color','classId','teacherId','isActive','createdAt','updatedAt','category','school_id']),
   enrollments: new Set(['id','studentId','courseId','status','role']),
   classes: new Set(['id','name','code','description','grade','section','academicYear','roomNumber','teacherIds','subjectIds','studentCount','teacherCount','maxStudents','startDate','endDate','status','isActive','createdAt','updatedAt','school_id']),
-  grades: new Set(['id','studentId','courseId','assignmentId','score','maxScore','letterGrade','comments','date','semester']),
+  grades: new Set(['id','studentId','courseId','assignmentId','score','maxScore','letterGrade','comments','date','semester','createdAt','created_at']),
   assignments: new Set(['id','title','description','subjectId','subjectName','chapterId','textbookId','lessonId','courseId','dueDate','points','maxAttempts','allowLateSubmission','latePenaltyPercent','passingGrade','status','submissionCount','isPublished','createdAt','updatedAt','school_id']),
   exams: new Set(['id','title','description','subjectId','subjectName','courseId','duration','totalPoints','passingScore','questions','status','startDate','endDate','isProctored','shuffleQuestions','showResults','createdAt','updatedAt','school_id']),
   notifications: new Set(['id','userId','title','message','type','read','readAt','createdAt','school_id']),
@@ -62,6 +62,8 @@ const CAMEL_OVERRIDES: Record<string, string> = {
   pdf_url: 'pdfUrl',
   cover_image: 'coverImage',
   storage_path: 'storagePath',
+  class_id: 'classId',
+  class_ids: 'classIds',
 };
 
 export function toJsCol(_tableName: string, sqlKey: string): string {

@@ -72,7 +72,7 @@ export default function ParentChildrenPage() {
                                 {child.email ?? 'No email'}
                               </p>
                               <div className="flex gap-3 mt-1.5 text-label-xs text-muted-foreground">
-                                {child.classId && <span>Class: {child.classId}</span>}
+                                {child.classInfo && <span>Class: {`${child.classInfo.grade ?? ''}${child.classInfo.section ?? ''}`.trim() || child.classInfo.name}</span>}
                                 {child.rollNo != null && <span>Roll: {child.rollNo}</span>}
                               </div>
                             </div>

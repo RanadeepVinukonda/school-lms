@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useTranslation } from '@/hooks/useTranslation';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +17,7 @@ import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
 
 export default function TeacherRubricPage() {
+  const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
   const [showGenerator, setShowGenerator] = useState(false);
@@ -39,7 +41,7 @@ export default function TeacherRubricPage() {
 
   return (
     <>
-      <SEOHead title="Rubric Manager" description="Create and manage AI-generated grading rubrics" canonical="/teacher/rubrics" />
+      <SEOHead title={_('Rubric Manager')} description={_('Create and manage AI-generated grading rubrics')} canonical="/teacher/rubrics" />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -48,11 +50,11 @@ export default function TeacherRubricPage() {
       >
         <motion.div variants={cardStackReveal} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-headline-sm">Rubric Manager</h1>
-            <p className="text-body-md text-muted-foreground">AI-generated grading rubrics for assignments</p>
+            <h1 className="text-headline-sm">{_('Rubric Manager')}</h1>
+            <p className="text-body-md text-muted-foreground">{_('AI-generated grading rubrics for assignments')}</p>
           </div>
           <Button onClick={() => setShowGenerator(true)}>
-            <Icon name="add" size={16} className="mr-1" />Create Rubric
+            <Icon name="add" size={16} className="mr-1" />{_('Create Rubric')}
           </Button>
         </motion.div>
 
@@ -64,7 +66,7 @@ export default function TeacherRubricPage() {
                   <Card className="border-border/60">
                     <CardContent className="p-8 text-center text-muted-foreground">
                       <Icon name="menu_book" size={48} className="mx-auto mb-3 opacity-40" />
-                      <p className="text-body-md">No rubrics yet. Create your first AI-generated rubric!</p>
+                      <p className="text-body-md">{_('No rubrics yet. Create your first AI-generated rubric!')}</p>
                     </CardContent>
                   </Card>
                 ) : (
@@ -104,8 +106,8 @@ export default function TeacherRubricPage() {
         <Dialog open={showGenerator} onOpenChange={(o) => { if (!o) setShowGenerator(false); }}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Create AI Rubric</DialogTitle>
-              <DialogDescription>Select an assignment and generate a grading rubric with AI.</DialogDescription>
+              <DialogTitle>{_('Create AI Rubric')}</DialogTitle>
+              <DialogDescription>{_('Select an assignment and generate a grading rubric with AI.')}</DialogDescription>
             </DialogHeader>
             <RubricGenerator
               assignments={assignments}

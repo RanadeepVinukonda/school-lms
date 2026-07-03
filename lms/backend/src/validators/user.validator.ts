@@ -24,6 +24,7 @@ export const createUserSchema = z.object({
   classId: z.string().optional(),
   rollNo: z.number().int().positive().optional(),
   academicYear: z.string().optional(),
+  gender: z.enum(['male', 'female', 'other']).optional(),
   childrenIds: z.array(z.string()).optional(),
 });
 
@@ -40,6 +41,8 @@ export const updateUserSchema = z.object({
   classId: z.string().optional(),
   rollNo: z.number().int().positive().optional(),
   academicYear: z.string().optional(),
+  gender: z.enum(['male', 'female', 'other']).optional(),
+  childrenIds: z.array(z.string()).optional(),
 });
 
 export const userQuerySchema = z.object({

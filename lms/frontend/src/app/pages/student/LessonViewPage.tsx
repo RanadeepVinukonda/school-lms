@@ -12,6 +12,7 @@ import { getQuiz, getSubject } from '@/services/dataService';
 import { getTextbook, getChaptersForTextbook } from '@/services/textbookService';
 import { getAssignment } from '@/services/dataService';
 import { ROUTES } from '@/lib/constants';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type Entry = { c: string[]; s: string; e: [string, string][]; q: [string, string][] };
 
@@ -40,6 +41,7 @@ function match<T>(title: string, extract: (e: Entry) => T): T {
 }
 
 export default function LessonViewPage() {
+  const { _ } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const [answersVisible, setAnswersVisible] = useState<Record<number, boolean>>({});
 
@@ -79,8 +81,8 @@ export default function LessonViewPage() {
   return (
     <>
       <SEOHead
-        title={data?.lesson?.title ?? 'Lesson'}
-        description={`${data?.subject?.name ?? ''}: ${data?.lesson?.title ?? ''} — ${data?.lesson?.contentType === 'video' ? 'Video lesson' : 'Article lesson'} from ${data?.textbook?.title ?? ''}`}
+        title={data?.lesson?.title ?? _('Lesson')}
+        description={`${data?.subject?.name ?? ''}: ${data?.lesson?.title ?? ''} — ${data?.lesson?.contentType === 'video' ? _('Video lesson') : _('Article lesson')} ${_('from')} ${data?.textbook?.title ?? ''}`}
       />
       <motion.div
         initial={{ opacity: 0 }}
@@ -91,17 +93,17 @@ export default function LessonViewPage() {
         <DataFetchWrapper
           data={data}
           isLoading={isLoading}
-          error={isError ? error ?? new Error('Lesson not found') : null}
+          error={isError ? error ?? new Error(_('Lesson not found')) : null}
           loadingType="detail"
-          emptyMessage="Lesson not found"
+          emptyMessage={_('Lesson not found')}
           emptyIcon={<Icon name="error" size={32} />}
           emptyAction={
             <Button asChild variant="outline">
-              <Link to={ROUTES.STUDENT_SUBJECTS}>Back to Subjects</Link>
+              <Link to={ROUTES.STUDENT_SUBJECTS}>{_('Back to Subjects')}</Link>
             </Button>
           }
           onRetry={() => refetch()}
-          errorTitle="Failed to load lesson"
+          errorTitle={_('Failed to load lesson')}
         >
           {(d) => (
             <>
@@ -111,21 +113,21 @@ export default function LessonViewPage() {
                   <Button variant="ghost" size="sm" asChild className="mb-3 -ml-2">
                     <Link to={d.textbook ? ROUTES.STUDENT_TEXTBOOK(d.textbook.id) : ROUTES.STUDENT_SUBJECTS} className="gap-1.5">
                       <Icon name="arrow_back" size={16} />
-                      {d.textbook?.title ?? 'Back'}
+                      {d.textbook?.title ?? _('Back')}
                     </Link>
                   </Button>
                   <div className="space-y-1">
                     <p className="text-body-md text-muted-foreground">
-                      {d.subject?.name} &middot; {d.chapter?.title ?? 'Chapter'} &middot; Lesson {d.lesson.order}
+                      {d.subject?.name} &middot; {d.chapter?.title ?? _('Chapter')} &middot; {_('Lesson')} {d.lesson.order}
                     </p>
                     <h1 className="text-headline-sm font-bold text-on-surface">{d.lesson.title}</h1>
                     <div className="flex items-center gap-4 text-body-md text-muted-foreground flex-wrap">
                       <span className="flex items-center gap-1">
-                        <Icon name="schedule" size={16} />{d.lesson.duration} min
+                        <Icon name="schedule" size={16} />{d.lesson.duration} {_('min')}
                       </span>
                       <span className="flex items-center gap-1">
                         <Icon name={d.lesson.contentType === 'video' ? 'smart_display' : 'article'} size={16} />
-                        {d.lesson.contentType === 'video' ? 'Video' : 'Article'}
+                        {d.lesson.contentType === 'video' ? _('Video') : _('Article')}
                       </span>
                     </div>
                   </div>
@@ -149,7 +151,7 @@ export default function LessonViewPage() {
                 ) : d.lesson.contentType === 'article' && d.lesson.content ? (
                   <section>
                     <h2 className="text-title-sm font-semibold text-on-surface flex items-center gap-2 mb-3">
-                      <Icon name="article" size={20} className="text-primary" />Lesson Content
+                      <Icon name="article" size={20} className="text-primary" />{_('Lesson Content')}
                     </h2>
                     <div className="prose prose-neutral dark:prose-invert max-w-none bg-surface-container-high/50 rounded-xl p-5 text-body-md leading-relaxed whitespace-pre-wrap">
                       {d.lesson.content}
@@ -162,7 +164,7 @@ export default function LessonViewPage() {
               <motion.div variants={cardStackReveal} custom={0}>
                 <section>
                   <h2 className="text-title-sm font-semibold text-on-surface flex items-center gap-2 mb-3">
-                    <Icon name="lightbulb" size={20} className="text-primary" />Key Concepts
+                    <Icon name="lightbulb" size={20} className="text-primary" />{_('Key Concepts')}
                   </h2>
                   <div className="bg-primary-container/30 rounded-xl p-4">
                     <ul className="space-y-2.5">
@@ -183,7 +185,7 @@ export default function LessonViewPage() {
               <motion.div variants={cardStackReveal} custom={0}>
                 <section>
                   <h2 className="text-title-sm font-semibold text-on-surface flex items-center gap-2 mb-3">
-                    <Icon name="notes" size={20} className="text-primary" />Summary Notes
+                    <Icon name="notes" size={20} className="text-primary" />{_('Summary Notes')}
                   </h2>
                   <div className="bg-surface-variant/40 rounded-xl p-4 text-body-md leading-relaxed text-on-surface-variant">
                     {summary}
@@ -196,7 +198,7 @@ export default function LessonViewPage() {
                 <motion.div variants={cardStackReveal} custom={0}>
                   <section>
                     <h2 className="text-title-sm font-semibold text-on-surface flex items-center gap-2 mb-3">
-                      <Icon name="psychology" size={20} className="text-primary" />Interactive Examples
+                      <Icon name="psychology" size={20} className="text-primary" />{_('Interactive Examples')}
                     </h2>
                     <div className="space-y-3">
                       {examples.map(([problem, solution], i) => (
@@ -206,12 +208,12 @@ export default function LessonViewPage() {
                               {i + 1}
                             </span>
                             <div className="space-y-2 min-w-0">
-                              <p className="font-medium text-body-md text-on-surface">Problem:</p>
+                              <p className="font-medium text-body-md text-on-surface">{_('Problem:')}</p>
                               <p className="text-body-md text-on-surface-variant">{problem}</p>
                               <details className="group">
                                 <summary className="cursor-pointer text-body-md font-medium text-primary hover:text-primary/80 transition-colors list-none flex items-center gap-1">
                                   <Icon name="expand_more" size={16} className="group-open:rotate-180 transition-transform" />
-                                  Show Solution
+                                  {_('Show Solution')}
                                 </summary>
                                 <div className="mt-2 p-3 rounded-lg bg-primary-container/25 text-body-md text-on-surface">
                                   {solution}
@@ -231,7 +233,7 @@ export default function LessonViewPage() {
                 <motion.div variants={cardStackReveal} custom={0}>
                   <section>
                     <h2 className="text-title-sm font-semibold text-on-surface flex items-center gap-2 mb-3">
-                      <Icon name="quiz" size={20} className="text-primary" />Practice Questions
+                      <Icon name="quiz" size={20} className="text-primary" />{_('Practice Questions')}
                     </h2>
                     <div className="space-y-3">
                       {questions.map(([question, answer], i) => (
@@ -272,7 +274,7 @@ export default function LessonViewPage() {
                 <motion.div variants={cardStackReveal} custom={0}>
                   <section>
                     <h2 className="text-title-sm font-semibold text-on-surface flex items-center gap-2 mb-3">
-                      <Icon name="assignment" size={20} className="text-success" />Mini Quiz
+                      <Icon name="assignment" size={20} className="text-success" />{_('Mini Quiz')}
                     </h2>
                     <div className="bg-surface-container-high/50 rounded-xl p-5 border border-success/20 space-y-3">
                       <div className="flex items-start justify-between gap-4">
@@ -287,7 +289,7 @@ export default function LessonViewPage() {
                       </div>
                       <Button asChild className="w-full gap-2" variant="success">
                         <Link to={ROUTES.QUIZ_ATTEMPT(d.quiz.id)}>
-                          <Icon name="play_arrow" size={18} />Take Quiz &rarr;
+                          <Icon name="play_arrow" size={18} />{_('Take Quiz')} &rarr;
                         </Link>
                       </Button>
                     </div>
@@ -300,7 +302,7 @@ export default function LessonViewPage() {
                 <motion.div variants={cardStackReveal} custom={0}>
                   <section>
                     <h2 className="text-title-sm font-semibold text-on-surface flex items-center gap-2 mb-3">
-                      <Icon name="description" size={20} className="text-warning" />Assignment
+                      <Icon name="description" size={20} className="text-warning" />{_('Assignment')}
                     </h2>
                     <div className="bg-surface-container-high/50 rounded-xl p-5 border border-warning/20 space-y-3">
                       <div>
@@ -308,13 +310,13 @@ export default function LessonViewPage() {
                         <p className="text-body-md text-muted-foreground mt-0.5">{d.assignment.description}</p>
                       </div>
                       <div className="flex items-center gap-4 text-body-md text-muted-foreground flex-wrap">
-                        <span className="flex items-center gap-1"><Icon name="event" size={14} />Due {d.assignment.dueDate ? new Date(d.assignment.dueDate).toLocaleDateString() : 'N/A'}</span>
-                        <span className="flex items-center gap-1"><Icon name="score" size={14} />{d.assignment.points} pts</span>
+                        <span className="flex items-center gap-1"><Icon name="event" size={14} />{_('Due')} {d.assignment.dueDate ? new Date(d.assignment.dueDate).toLocaleDateString() : _('N/A')}</span>
+                        <span className="flex items-center gap-1"><Icon name="score" size={14} />{d.assignment.points} {_('pts')}</span>
                       </div>
                       <Button asChild className="w-full gap-2" variant={d.assignment.status === 'published' ? 'default' : 'secondary'}>
                         <Link to={ROUTES.ASSIGNMENT_DETAIL(d.assignment.id)}>
                           <Icon name="send" size={16} />
-                          {d.assignment.status === 'published' ? 'Submit Assignment' : 'View Assignment'}
+                          {d.assignment.status === 'published' ? _('Submit Assignment') : _('View Assignment')}
                         </Link>
                       </Button>
                     </div>

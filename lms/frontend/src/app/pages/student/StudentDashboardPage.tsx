@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { motion, useInView } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -13,15 +14,6 @@ import { cn, getTimeGreeting } from '@/lib/utils';
 import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import { getGradesByStudent, getClass } from '@/services/dataService';
-
-const motivationalMessages = [
-  'Every expert was once a beginner. Keep going!',
-  'The secret of getting ahead is getting started.',
-  'Education is the most powerful weapon to change the world.',
-  'The beautiful thing about learning is that no one can take it away from you.',
-  'Success is the sum of small efforts repeated day in and day out.',
-  'Believe you can and you are halfway there.',
-];
 
 interface ResultEntry { id: string; itemName: string; score: number; maxScore: number; percentage: number; gradedAt: string; feedback?: string }
 
@@ -49,10 +41,19 @@ function SectionTitle({ label, title }: { label: string; title: string }) {
 }
 
 export default function StudentDashboardPage() {
+  const { _ } = useTranslation();
   const authUser = useAuthStore((state) => state.user);
-  const displayName = authUser?.displayName ?? 'Student';
+  const displayName = authUser?.displayName ?? _('Student');
   const studentId = authUser?.id;
-  const messageIndex = new Date().getDate() % motivationalMessages.length;
+  const messages = [
+    _('Every expert was once a beginner. Keep going!'),
+    _('The secret of getting ahead is getting started.'),
+    _('Education is the most powerful weapon to change the world.'),
+    _('The beautiful thing about learning is that no one can take it away from you.'),
+    _('Success is the sum of small efforts repeated day in and day out.'),
+    _('Believe you can and you are halfway there.'),
+  ];
+  const messageIndex = new Date().getDate() % messages.length;
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['student-dashboard', studentId],
@@ -72,7 +73,7 @@ export default function StudentDashboardPage() {
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .slice(0, 5)
         .map((g) => ({
-          id: g.id, itemName: g.itemName ?? 'Assessment', score: g.score,
+          id: g.id, itemName: g.itemName ?? _('Assessment'), score: g.score,
           maxScore: g.totalPoints, percentage: g.percentage, gradedAt: g.createdAt, feedback: g.feedback,
         }));
 
@@ -80,7 +81,7 @@ export default function StudentDashboardPage() {
         ? Math.round(grades.reduce((s, g) => s + g.percentage, 0) / grades.length) : 0;
 
       return {
-        displayName, greeting, motivationalMessage: motivationalMessages[messageIndex],
+        displayName, greeting, motivationalMessage: messages[messageIndex],
         todayDate: now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
         recentResults, subjectsCount: classDoc?.subjectIds?.length ?? 0,
         className: classDoc?.name ?? null, classGrade: classDoc?.grade ?? null,
@@ -91,7 +92,7 @@ export default function StudentDashboardPage() {
 
   return (
     <>
-      <SEOHead title="Dashboard" description="Your student dashboard" />
+      <SEOHead title={_('Dashboard')} description={_('Your student dashboard')} />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -117,7 +118,7 @@ export default function StudentDashboardPage() {
                   <div className="flex flex-wrap items-center gap-2 mt-2">
                     {dash.className && (
                       <Badge variant="info" className="text-xs gap-1">
-                        <Icon name="school" size={12} />{dash.className}{dash.classGrade ? ` (Grade ${dash.classGrade})` : ''}
+                        <Icon name="school" size={12} />{dash.className}{dash.classGrade ? ` (${_('Grade')} ${dash.classGrade})` : ''}
                       </Badge>
                     )}
                     <Badge variant="secondary" className="text-xs italic">{dash.motivationalMessage}</Badge>
@@ -126,7 +127,7 @@ export default function StudentDashboardPage() {
               </section>
 
               <section>
-                <SectionTitle label="Overview" title="Your performance at a glance" />
+                <SectionTitle label={_('Overview')} title={_('Your performance at a glance')} />
                 <motion.div
                   variants={staggerContainer}
                   initial="hidden"
@@ -135,10 +136,10 @@ export default function StudentDashboardPage() {
                   className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
                 >
                   {[
-                    { icon: 'school', label: 'Subjects', value: dash.subjectsCount, color: 'text-primary', bg: 'bg-primary-container' },
-                    { icon: 'grade', label: 'Avg Grade', value: `${dash.avgGrade}%`, color: 'text-success', bg: 'bg-success-container' },
-                    { icon: 'checklist', label: 'Completed', value: dash.totalAssessments, color: 'text-warning', bg: 'bg-warning-container' },
-                    { icon: 'group', label: 'Class', value: dash.className ?? '\u2014', color: 'text-tertiary', bg: 'bg-tertiary-container' },
+                    { icon: 'school', label: _('Subjects'), value: dash.subjectsCount, color: 'text-primary', bg: 'bg-primary-container' },
+                    { icon: 'grade', label: _('Avg Grade'), value: `${dash.avgGrade}%`, color: 'text-success', bg: 'bg-success-container' },
+                    { icon: 'checklist', label: _('Completed'), value: dash.totalAssessments, color: 'text-warning', bg: 'bg-warning-container' },
+                    { icon: 'group', label: _('Class'), value: dash.className ?? '\u2014', color: 'text-tertiary', bg: 'bg-tertiary-container' },
                   ].map((stat) => (
                     <motion.div key={stat.label} variants={cardStackReveal} custom={0}>
                       <Card className="h-full border-border/60">
@@ -156,7 +157,7 @@ export default function StudentDashboardPage() {
               </section>
 
               <section>
-                <SectionTitle label="Quick Links" title="Navigate your studies" />
+                <SectionTitle label={_('Quick Links')} title={_('Navigate your studies')} />
                 <motion.div
                   variants={staggerContainer}
                   initial="hidden"
@@ -165,8 +166,8 @@ export default function StudentDashboardPage() {
                   className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                 >
                   {[
-                    { icon: 'checklist', label: 'View Tasks', desc: 'Pending assignments & quizzes', bg: 'bg-primary-container', color: 'text-primary', to: ROUTES.STUDENT_TASKS },
-                    { icon: 'fact_check', label: 'View Exams', desc: 'Upcoming & past results', bg: 'bg-error-container', color: 'text-error', to: ROUTES.STUDENT_EXAMS },
+                    { icon: 'checklist', label: _('View Tasks'), desc: _('Pending assignments & quizzes'), bg: 'bg-primary-container', color: 'text-primary', to: ROUTES.STUDENT_TASKS },
+                    { icon: 'fact_check', label: _('View Exams'), desc: _('Upcoming & past results'), bg: 'bg-error-container', color: 'text-error', to: ROUTES.STUDENT_EXAMS },
                   ].map((link) => (
                     <motion.div key={link.label} variants={cardStackReveal} custom={0}>
                       <Button variant="outline" className="w-full h-auto py-5 justify-start gap-4 border-border/60" asChild>
@@ -186,22 +187,22 @@ export default function StudentDashboardPage() {
               </section>
 
               <section>
-                <SectionTitle label="Results" title="Recent assessment scores" />
+                <SectionTitle label={_('Results')} title={_('Recent assessment scores')} />
                 <motion.div variants={cardStackReveal} custom={0}>
                   <Card className="border-border/60">
                     <CardHeader className="pb-3 flex flex-row items-center justify-between">
                       <CardTitle className="text-title-sm flex items-center gap-2">
-                        <Icon name="grade" size={18} />Recent Results
+                        <Icon name="grade" size={18} />{_('Recent Results')}
                       </CardTitle>
                       {dash.recentResults.length > 0 && (
-                        <Badge variant="secondary" className="text-[10px]">Last 5</Badge>
+                        <Badge variant="secondary" className="text-[10px]">{_('Last 5')}</Badge>
                       )}
                     </CardHeader>
                     <CardContent>
                       {dash.recentResults.length === 0 ? (
                         <div className="flex flex-col items-center py-10 text-center">
                           <Icon name="rate_review" size={36} className="text-muted-foreground/30 mb-3" />
-                          <p className="text-body-md text-muted-foreground">No results yet. Complete assessments to see your grades here.</p>
+                          <p className="text-body-md text-muted-foreground">{_('No results yet. Complete assessments to see your grades here.')}</p>
                         </div>
                       ) : (
                         <div className="space-y-1">

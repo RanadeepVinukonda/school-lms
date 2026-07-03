@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '@/supabase/config';
@@ -33,6 +34,7 @@ interface TCSAssignment {
 }
 
 export default function ClassSelectionPage() {
+  const { _ } = useTranslation();
   const [classes, setClasses] = useState<Class[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -82,7 +84,7 @@ export default function ClassSelectionPage() {
         setClasses((items || []) as Class[]);
         setClasses(items);
       } catch {
-        setError('Failed to load classes');
+        setError(_('Failed to load classes'));
       } finally {
         setLoading(false);
       }
@@ -106,7 +108,7 @@ export default function ClassSelectionPage() {
         }
         setSubjectsMap(newMap);
       } catch {
-        setError('Failed to load subjects');
+        setError(_('Failed to load subjects'));
       } finally {
         setLoadingSubjects(false);
       }
@@ -184,15 +186,15 @@ export default function ClassSelectionPage() {
         targetId: user.id,
         targetType: 'user',
         targetName: user.displayName,
-        summary: `Teacher "${user.displayName}" assigned to classes: ${selectedNames}`,
+        summary: `${_('Teacher')} "${user.displayName}" ${_('assigned to classes:')} ${selectedNames}`,
         newValue: { classIds: classIdArray, subjectAssignments },
       });
 
       await supabase.from('notifications').insert({
         userId: user.id,
         type: 'welcome',
-        title: 'Welcome to Genesis LMS!',
-        body: `Hi ${user.displayName}! You're now assigned to ${selectedNames}. Start creating content for your students.`,
+        title: _('Welcome to Genesis LMS!'),
+        body: `${_('Hi')} ${user.displayName}! ${_("You're now assigned to")} ${selectedNames}. ${_('Start creating content for your students.')}`,
         data: { role: 'teacher', classIds: classIdArray },
         priority: 'high',
         read: false,
@@ -202,7 +204,7 @@ export default function ClassSelectionPage() {
 
       navigate(ROUTES.TEACHER_DASHBOARD, { replace: true });
     } catch {
-      setError('Failed to save selection. Try again.');
+      setError(_('Failed to save selection. Try again.'));
     } finally {
       setSaving(false);
     }
@@ -211,7 +213,7 @@ export default function ClassSelectionPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-muted-foreground">Loading classes…</p>
+        <p className="text-muted-foreground">{_('Loading classes\u2026')}</p>
       </div>
     );
   }
@@ -239,9 +241,9 @@ export default function ClassSelectionPage() {
       <div className="space-y-16">
         <motion.div variants={cardStackReveal} custom={0}>
           <div className="text-center space-y-2">
-            <img src="/genesis_icon.png" alt="Genesis" className="mx-auto h-16 w-auto" />
-            <h1 className="text-2xl font-bold">Welcome, {user?.displayName}</h1>
-            <p className="text-muted-foreground">Select the classes you teach and your subjects</p>
+            <img src="/genesis_icon.png" alt={_('Genesis')} className="mx-auto h-16 w-auto" />
+            <h1 className="text-2xl font-bold">{_('Welcome,')} {user?.displayName}</h1>
+            <p className="text-muted-foreground">{_('Select the classes you teach and your subjects')}</p>
           </div>
         </motion.div>
 
@@ -256,7 +258,7 @@ export default function ClassSelectionPage() {
         {/* Step 1: Class selection */}
         <motion.div variants={cardStackReveal} custom={0}>
           <div>
-            <h2 className="text-lg font-semibold mb-3">Choose your classes</h2>
+            <h2 className="text-lg font-semibold mb-3">{_('Choose your classes')}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {activeClasses.map((cls) => {
                 const checked = selectedIds.has(cls.id);
@@ -277,10 +279,10 @@ export default function ClassSelectionPage() {
                       <div className="min-w-0 flex-1">
                         <h3 className="text-lg font-semibold">{cls.name}</h3>
                         <p className="text-sm text-muted-foreground">
-                          Grade {cls.grade}{cls.code ? ` · ${cls.code}` : ''}
+                          {_('Grade')} {cls.grade}{cls.code ? ` · ${cls.code}` : ''}
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {cls.studentCount ?? 0} students
+                          {cls.studentCount ?? 0} {_('students')}
                         </p>
                       </div>
                     </div>
@@ -291,7 +293,7 @@ export default function ClassSelectionPage() {
 
             {activeClasses.length === 0 && (
               <p className="text-center text-muted-foreground">
-                No classes available yet. Ask an admin to create one.
+                {_('No classes available yet. Ask an admin to create one.')}
               </p>
             )}
           </div>
@@ -302,9 +304,9 @@ export default function ClassSelectionPage() {
           <motion.div variants={cardStackReveal} custom={0} className="space-y-6">
             <hr className="border-border" />
             <div>
-              <h2 className="text-lg font-semibold">Choose your subject per class</h2>
+              <h2 className="text-lg font-semibold">{_('Choose your subject per class')}</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Pick one subject you teach in each selected class
+                {_('Pick one subject you teach in each selected class')}
               </p>
             </div>
 
@@ -325,7 +327,7 @@ export default function ClassSelectionPage() {
                     </div>
                   ) : !subjects || subjects.length === 0 ? (
                     <p className="text-sm text-muted-foreground py-2">
-                      No subjects created for this class yet
+                      {_('No subjects created for this class yet')}
                     </p>
                   ) : (
                     <RadioGroup
@@ -357,7 +359,7 @@ export default function ClassSelectionPage() {
                                   <span className="font-medium text-sm">{subject.name}</span>
                                   {isTaken && (
                                     <Badge variant="secondary" className="text-[10px] whitespace-nowrap">
-                                      Already assigned
+                                      {_('Already assigned')}
                                     </Badge>
                                   )}
                                 </div>
@@ -388,10 +390,10 @@ export default function ClassSelectionPage() {
               loading={saving}
             >
               {selectedIds.size === 0
-                ? 'Select at least one class'
+                ? _('Select at least one class')
                 : missingSubjectSelection
-                  ? 'Choose a subject for each class'
-                  : `Continue with ${selectedIds.size} class${selectedIds.size !== 1 ? 'es' : ''} and ${totalSubjectsSelected} subject${totalSubjectsSelected !== 1 ? 's' : ''}`}
+                  ? _('Choose a subject for each class')
+                  : `${_('Continue with')} ${selectedIds.size} ${selectedIds.size !== 1 ? _('classes') : _('class')} ${_('and')} ${totalSubjectsSelected} ${totalSubjectsSelected !== 1 ? _('subjects') : _('subject')}`}
             </Button>
           </div>
         </motion.div>

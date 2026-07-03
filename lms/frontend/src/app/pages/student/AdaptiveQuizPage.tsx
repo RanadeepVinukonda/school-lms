@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { useTranslation } from '@/hooks/useTranslation';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -46,6 +47,7 @@ function selectQuestions(
 }
 
 export default function AdaptiveQuizPage() {
+  const { _ } = useTranslation();
   const { conceptId } = useParams<{ conceptId: string }>();
   const [searchParams] = useSearchParams();
   const textbookId = searchParams.get('textbookId') || '';
@@ -155,7 +157,7 @@ export default function AdaptiveQuizPage() {
 
   return (
     <>
-      <SEOHead title="Adaptive Quiz" description={data?.concept.title ? `Adaptive quiz for ${data.concept.title}` : 'Adaptive quiz'} />
+      <SEOHead title={_('Adaptive Quiz')} description={data?.concept.title ? `${_('Adaptive quiz for')} ${data.concept.title}` : _('Adaptive quiz')} />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -165,17 +167,17 @@ export default function AdaptiveQuizPage() {
         {phase !== 'intro' && (
           <Link to={`${ROUTES.STUDENT_CONCEPT(conceptId!)}?textbookId=${textbookId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
             <Icon name="arrow_back" size={16} />
-            Back to concept
+            {_('Back to concept')}
           </Link>
         )}
 
         <DataFetchWrapper
           data={data}
           isLoading={isLoading}
-          error={isError ? error ?? new Error('Failed to load') : null}
+          error={isError ? error ?? new Error(_('Failed to load')) : null}
           onRetry={() => refetch()}
           loadingType="detail"
-          emptyMessage="Not found"
+          emptyMessage={_('Not found')}
         >
           {(d) => (
             <>
@@ -183,29 +185,29 @@ export default function AdaptiveQuizPage() {
                 <motion.div variants={cardStackReveal} custom={0}>
                   <div className="text-center py-12 space-y-4">
                     <Icon name="assignment_turned_in" size={64} className="text-primary/60 mx-auto" />
-                    <h1 className="text-headline-sm font-bold">Adaptive Quiz</h1>
+                    <h1 className="text-headline-sm font-bold">{_('Adaptive Quiz')}</h1>
                     <p className="text-muted-foreground max-w-md mx-auto">
-                      This quiz adapts to your knowledge level. Answer correctly and the questions get harder.
-                      Wrong answers? We'll reinforce with easier questions first.
+                      {_('This quiz adapts to your knowledge level. Answer correctly and the questions get harder.')}
+                      {' '}{_('Wrong answers? We will reinforce with easier questions first.')}
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-sm mx-auto text-sm">
                       <div className="p-3 rounded-xl bg-success/10 border border-success/20">
                         <div className="text-display-xs font-semibold text-success">3</div>
-                        <div className="text-muted-foreground text-xs">Rounds</div>
+                        <div className="text-muted-foreground text-xs">{_('Rounds')}</div>
                       </div>
                       <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
                         <div className="text-display-xs font-semibold text-primary">~15</div>
-                        <div className="text-muted-foreground text-xs">Questions</div>
+                        <div className="text-muted-foreground text-xs">{_('Questions')}</div>
                       </div>
                       <div className="p-3 rounded-xl bg-tertiary/10 border border-tertiary/20">
                         <div className="text-display-xs font-semibold text-tertiary">{bank.length}</div>
-                        <div className="text-muted-foreground text-xs">In Bank</div>
+                        <div className="text-muted-foreground text-xs">{_('In Bank')}</div>
                       </div>
                     </div>
                     <div className="pt-4">
                       <Button size="lg" onClick={startQuiz} disabled={bank.length === 0}>
                         <Icon name="play_arrow" size={18} className="mr-2" />
-                        Start Quiz
+                        {_('Start Quiz')}
                       </Button>
                     </div>
                   </div>
@@ -221,7 +223,7 @@ export default function AdaptiveQuizPage() {
                         <Badge variant="outline" className="capitalize">{skillLevel}</Badge>
                       </div>
                       <span className="text-sm text-muted-foreground">
-                        Round {round}/{MAX_ROUNDS}
+                        {_('Round')} {round}/{MAX_ROUNDS}
                       </span>
                     </div>
 
@@ -309,7 +311,7 @@ export default function AdaptiveQuizPage() {
                               <div className={`mt-4 p-4 rounded-xl border ${results.get(currentQuestion.id) ? 'bg-success/5 border-success/20' : 'bg-destructive/5 border-destructive/20'}`}>
                                 <p className="text-body-md font-medium flex items-center gap-2">
                                   <Icon name={results.get(currentQuestion.id) ? "check_circle" : "cancel"} size={16} className={results.get(currentQuestion.id) ? "text-success" : "text-destructive"} />
-                                  {results.get(currentQuestion.id) ? 'Correct!' : 'Incorrect'}
+                                  {results.get(currentQuestion.id) ? _('Correct!') : _('Incorrect')}
                                 </p>
                                 <p className="text-body-md text-muted-foreground mt-1">{currentQuestion.explanation}</p>
                               </div>
@@ -323,12 +325,12 @@ export default function AdaptiveQuizPage() {
                       {!answeredCurrent ? (
                         <Button onClick={submitAnswer} disabled={!answers.has(currentQuestion?.id || '')}>
                           <Icon name="check" size={16} className="mr-2" />
-                          Submit Answer
+                          {_('Submit Answer')}
                         </Button>
                       ) : (
                         <Button onClick={nextQuestion}>
                           <Icon name={currentIndex < currentBatch.length - 1 || round < MAX_ROUNDS ? "arrow_forward" : "check_circle"} size={16} className="mr-2" />
-                          {currentIndex < currentBatch.length - 1 ? 'Next Question' : round < MAX_ROUNDS ? 'Next Round' : 'See Results'}
+                          {currentIndex < currentBatch.length - 1 ? _('Next Question') : round < MAX_ROUNDS ? _('Next Round') : _('See Results')}
                         </Button>
                       )}
                     </div>
@@ -360,37 +362,37 @@ export default function AdaptiveQuizPage() {
 
                     <div>
                       <h1 className="text-headline-sm font-bold">
-                        {finalScore >= 80 ? 'Mastered!' : finalScore >= 50 ? 'Getting There!' : 'Keep Practicing!'}
+                        {finalScore >= 80 ? _('Mastered!') : finalScore >= 50 ? _('Getting There!') : _('Keep Practicing!')}
                       </h1>
                       <p className="text-muted-foreground mt-1">
-                        You answered {Array.from(results.values()).filter(Boolean).length} of {results.size} questions correctly.
+                        {_('You answered')} {Array.from(results.values()).filter(Boolean).length} {_('of')} {results.size} {_('questions correctly.')}
                       </p>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-sm mx-auto text-sm">
                       <div className="p-3 rounded-xl bg-success/10 border border-success/20">
                         <div className="text-display-xs font-semibold text-success capitalize">{resultSkillLevel}</div>
-                        <div className="text-muted-foreground text-xs">Skill Level</div>
+                        <div className="text-muted-foreground text-xs">{_('Skill Level')}</div>
                       </div>
                       <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
                         <div className="text-display-xs font-semibold text-primary">{round}</div>
-                        <div className="text-muted-foreground text-xs">Rounds</div>
+                        <div className="text-muted-foreground text-xs">{_('Rounds')}</div>
                       </div>
                       <div className="p-3 rounded-xl bg-tertiary/10 border border-tertiary/20">
                         <div className="text-display-xs font-semibold text-tertiary">{answers.size}</div>
-                        <div className="text-muted-foreground text-xs">Answered</div>
+                        <div className="text-muted-foreground text-xs">{_('Answered')}</div>
                       </div>
                     </div>
 
                     <div className="flex gap-3 justify-center pt-4">
                       <Button variant="outline" onClick={startQuiz}>
                         <Icon name="replay" size={16} className="mr-2" />
-                        Retry
+                        {_('Retry')}
                       </Button>
                       <Button asChild>
                         <Link to={`${ROUTES.STUDENT_CONCEPT(conceptId!)}?textbookId=${textbookId}`}>
                           <Icon name="menu_book" size={16} className="mr-2" />
-                          Back to Study
+                          {_('Back to Study')}
                         </Link>
                       </Button>
                     </div>

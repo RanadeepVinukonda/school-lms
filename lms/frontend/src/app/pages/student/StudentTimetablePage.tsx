@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -16,6 +17,7 @@ const DAY_SHORT: Record<string, string> = {
 };
 
 export default function StudentTimetablePage() {
+  const { _ } = useTranslation();
   const [selectedClassId, setSelectedClassId] = useState('');
 
   const { data: classesData = [] } = useQuery({
@@ -84,21 +86,21 @@ export default function StudentTimetablePage() {
 
   return (
     <>
-      <SEOHead title="Timetable" description="View your class timetable by period and day" />
+      <SEOHead title={_('Timetable')} description={_('View your class timetable by period and day')} />
       <div className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-8">
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">Timetable</h1>
-          <p className="text-body-md text-muted-foreground mt-1">View class timetable by period, day, and subject</p>
+          <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">{_('Timetable')}</h1>
+          <p className="text-body-md text-muted-foreground mt-1">{_('View class timetable by period, day, and subject')}</p>
         </motion.div>
 
         <Card className="border-border/60">
           <CardHeader className="pb-3">
-            <CardTitle className="text-title-sm">Select Class</CardTitle>
+            <CardTitle className="text-title-sm">{_('Select Class')}</CardTitle>
           </CardHeader>
           <CardContent>
             <OptionsSelect
               options={classOptions}
-              placeholder="Choose a class..."
+              placeholder={_('Choose a class...')}
               value={selectedClassId}
               onValueChange={setSelectedClassId}
               className="w-full sm:w-64"
@@ -109,8 +111,8 @@ export default function StudentTimetablePage() {
         {!selectedClassId ? (
           <div className="flex flex-col items-center py-16 text-muted-foreground">
             <Icon name="calendar_month" size={64} className="text-muted-foreground/30 mb-3" />
-            <p className="text-title-sm font-semibold">Select a class to view timetable</p>
-            <p className="text-body-sm text-muted-foreground mt-1">Choose a class from the dropdown above</p>
+            <p className="text-title-sm font-semibold">{_('Select a class to view timetable')}</p>
+            <p className="text-body-sm text-muted-foreground mt-1">{_('Choose a class from the dropdown above')}</p>
           </div>
         ) : (
           <DataFetchWrapper
@@ -119,7 +121,7 @@ export default function StudentTimetablePage() {
             error={error ? new Error('Failed to load timetable') : null}
             onRetry={refetch}
             loadingType="table"
-            emptyMessage="No timetable entries for this class"
+            emptyMessage={_('No timetable entries for this class')}
           >
             {() => (
               <div className="border border-border/60 rounded-xl overflow-x-auto bg-surface">

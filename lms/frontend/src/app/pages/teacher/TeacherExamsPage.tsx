@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -154,6 +155,7 @@ function ExamCard({
 }
 
 export default function TeacherExamsPage() {
+  const { _ } = useTranslation();
   const { isLoading, error, refetch, data } = useQuery({
     queryKey: ['teacher-exams'],
     queryFn: async () => {
@@ -236,7 +238,7 @@ export default function TeacherExamsPage() {
 
   return (
     <>
-      <SEOHead title="Exams" description="Manage and correct exams" canonical="/teacher/exams" />
+      <SEOHead title={_('Exams')} description={_('Manage and correct exams')} canonical="/teacher/exams" />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -249,22 +251,22 @@ export default function TeacherExamsPage() {
           error={error}
           onRetry={() => refetch()}
           loadingType="list"
-          emptyMessage="No exams have been created yet"
+          emptyMessage={_('No exams have been created yet')}
           emptyAction={
             subjects.length > 0 ? undefined : (
-              <Link to="/teacher/subjects" className="gap-1 inline-flex items-center">
-                <Icon name="menu_book" size={16} />
-                Manage Subjects
-              </Link>
+                <Link to="/teacher/subjects" className="gap-1 inline-flex items-center">
+                  <Icon name="menu_book" size={16} />
+                  {_('Manage Subjects')}
+                </Link>
             )
           }
         >
           {() => (
             <>
               <motion.div variants={cardStackReveal} custom={0}>
-                <h1 className="text-headline-sm">Exams</h1>
+                <h1 className="text-headline-sm">{_('Exams')}</h1>
                 <p className="text-body-md text-muted-foreground">
-                  Correct submissions and manage exams
+                  {_('Correct submissions and manage exams')}
                 </p>
               </motion.div>
 
@@ -273,7 +275,7 @@ export default function TeacherExamsPage() {
                   <TabsList className="w-full overflow-x-auto inline-flex">
                     <TabsTrigger value="to-correct" className="gap-2">
                       <Icon name="rate_review" size={16} />
-                      To Correct
+                      {_('To Correct')}
                       {toCorrect.length > 0 && (
                         <Badge variant="warning" className="ml-1 text-label-xs px-1.5">
                           {toCorrect.length}
@@ -282,7 +284,7 @@ export default function TeacherExamsPage() {
                     </TabsTrigger>
                     <TabsTrigger value="all" className="gap-2">
                       <Icon name="fact_check" size={16} />
-                      All Exams
+                      {_('All Exams')}
                     </TabsTrigger>
                   </TabsList>
 
@@ -290,7 +292,7 @@ export default function TeacherExamsPage() {
                     {toCorrect.length === 0 ? (
                       <div className="flex flex-col items-center gap-3 py-10 text-center">
                         <Icon name="fact_check" size={40} className="text-muted-foreground/50" />
-                        <p className="text-body-md text-muted-foreground">No exams needing correction. Great job!</p>
+                        <p className="text-body-md text-muted-foreground">{_('No exams needing correction. Great job!')}</p>
                       </div>
                     ) : (
                       <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3">

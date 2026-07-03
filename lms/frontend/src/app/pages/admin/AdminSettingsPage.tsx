@@ -207,6 +207,15 @@ export default function AdminSettingsPage() {
   // Parents list
   const [parentSearch, setParentSearch] = useState('');
 
+  // Edit Parent state
+  const [editParentTarget, setEditParentTarget] = useState<any | null>(null);
+  const [editParentChildren, setEditParentChildren] = useState<string[]>([]);
+  const [newChildId, setNewChildId] = useState('');
+  const [showDeleteParentDialog, setShowDeleteParentDialog] = useState(false);
+  const [deleteParentTarget, setDeleteParentTarget] = useState<any | null>(null);
+  const [parentDeleteLoading, setParentDeleteLoading] = useState(false);
+  const [parentDependencyReport, setParentDependencyReport] = useState<DependencyReport | null>(null);
+
   const parentUsers = useMemo(() => {
     return users.filter((u) => u.role === 'parent');
   }, [users]);
@@ -262,6 +271,27 @@ export default function AdminSettingsPage() {
       queryClient.invalidateQueries({ queryKey: ['admin-users-list'] });
     },
     onError: (err: Error) => toast.error(err.message || 'Failed to toggle status'),
+  });
+
+  const editParentMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => userService.update(id, data),
+    onSuccess: () => {
+      toast.success('Parent updated');
+      setEditParentTarget(null);
+      queryClient.invalidateQueries({ queryKey: ['admin-users-stats'] });
+    },
+    onError: (err: any) => toast.error(err.message || 'Failed to update parent'),
+  });
+
+  const deleteParentMutation = useMutation({
+    mutationFn: (id: string) => userService.delete(id),
+    onSuccess: () => {
+      toast.success('Parent account deleted');
+      queryClient.invalidateQueries({ queryKey: ['admin-users-stats'] });
+      setShowDeleteParentDialog(false);
+      setDeleteParentTarget(null);
+    },
+    onError: (err: Error) => toast.error(err.message || 'Failed to delete parent'),
   });
 
   // -------------------------------------------------------------
@@ -580,7 +610,19 @@ export default function AdminSettingsPage() {
                               {u.isActive === false ? 'Inactive' : 'Active'}
                             </Badge>
                           </td>
-                          <td className="px-4 py-3 text-right">
+                          <td className="px-4 py-3 text-right flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => {
+                                setEditParentTarget(u);
+                                setEditParentChildren((u as any).childrenIds || []);
+                                setNewChildId('');
+                              }}
+                              title="Edit parent"
+                            >
+                              <Icon name="edit" size={16} />
+                            </Button>
                             <Button
                               variant="ghost"
                               size="icon-sm"
@@ -588,6 +630,14 @@ export default function AdminSettingsPage() {
                               title={u.isActive === false ? 'Enable user login' : 'Disable user login'}
                             >
                               <Icon name={u.isActive === false ? 'toggle_off' : 'toggle_on'} size={18} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => { setDeleteParentTarget(u); setShowDeleteParentDialog(true); }}
+                              title="Delete parent"
+                            >
+                              <Icon name="delete" size={16} className="text-error" />
                             </Button>
                           </td>
                         </tr>
@@ -802,6 +852,134 @@ export default function AdminSettingsPage() {
               {createParentMutation.isPending ? 'Registering...' : 'Register Parent'}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* EDIT PARENT DIALOG */}
+      <Dialog open={!!editParentTarget} onOpenChange={(open) => { if (!open) setEditParentTarget(null); }}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Parent: {editParentTarget?.displayName}</DialogTitle>
+            <DialogDescription>Manage linked children for this parent.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 rounded-lg bg-muted/30">
+              <p className="text-label-sm text-muted-foreground">Email</p>
+              <p className="text-title-sm font-medium">{editParentTarget?.email}</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Linked Children</Label>
+              <div className="max-h-[200px] overflow-y-auto space-y-1 border rounded-lg p-2">
+                {editParentChildren.length === 0 ? (
+                  <p className="text-label-sm text-muted-foreground text-center py-4">No children linked</p>
+                ) : (
+                  editParentChildren.map((childId) => {
+                    const student = users.find((u: any) => u.id === childId || u.student_id === childId || u.studentId === childId);
+                    return (
+                      <div key={childId} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/30">
+                        <div>
+                          <p className="text-sm font-medium">{student?.displayName || childId}</p>
+                          <p className="text-label-xs text-muted-foreground">{student?.studentId || student?.student_id || ''}</p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => setEditParentChildren((prev) => prev.filter((id) => id !== childId))}
+                        >
+                          <Icon name="close" size={14} className="text-error" />
+                        </Button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Add Child</Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Search student name or ID..."
+                  value={newChildId}
+                  onChange={(e) => setNewChildId(e.target.value)}
+                  className="flex-1"
+                />
+              </div>
+              {newChildId && (
+                <div className="max-h-[120px] overflow-y-auto border rounded-lg p-1">
+                  {users
+                    .filter((u: any) => u.role === 'student')
+                    .filter((u: any) =>
+                      (u.displayName || '').toLowerCase().includes(newChildId.toLowerCase()) ||
+                      (u.studentId || u.student_id || '').toLowerCase().includes(newChildId.toLowerCase())
+                    )
+                    .slice(0, 10)
+                    .map((student: any) => {
+                      const sid = student.studentId || student.student_id || student.id;
+                      const alreadyLinked = editParentChildren.includes(sid) || editParentChildren.includes(student.id);
+                      return (
+                        <div
+                          key={student.id}
+                          className={`flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-muted/30 ${alreadyLinked ? 'opacity-50' : ''}`}
+                          onClick={() => {
+                            if (!alreadyLinked) {
+                              setEditParentChildren((prev) => [...prev, sid]);
+                              setNewChildId('');
+                            }
+                          }}
+                        >
+                          <div>
+                            <p className="text-sm font-medium">{student.displayName}</p>
+                            <p className="text-label-xs text-muted-foreground">{sid}</p>
+                          </div>
+                          {alreadyLinked ? (
+                            <Badge variant="secondary" className="text-[10px]">Linked</Badge>
+                          ) : (
+                            <Icon name="add" size={16} className="text-primary" />
+                          )}
+                        </div>
+                      );
+                    })}
+                  {users.filter((u: any) => u.role === 'student').filter((u: any) =>
+                    (u.displayName || '').toLowerCase().includes(newChildId.toLowerCase()) ||
+                    (u.studentId || u.student_id || '').toLowerCase().includes(newChildId.toLowerCase())
+                  ).length === 0 && (
+                    <p className="text-label-sm text-muted-foreground text-center py-2">No students found</p>
+                  )}
+                </div>
+              )}
+            </div>
+            <Button
+              className="w-full"
+              onClick={() => editParentMutation.mutate({ id: editParentTarget.id, data: { childrenIds: editParentChildren } })}
+              disabled={editParentMutation.isPending}
+            >
+              {editParentMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* DELETE PARENT DIALOG */}
+      <Dialog open={showDeleteParentDialog} onOpenChange={(open) => { if (!open) { setShowDeleteParentDialog(false); setDeleteParentTarget(null); } }}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Delete Parent: {deleteParentTarget?.displayName}</DialogTitle>
+            <DialogDescription className="text-destructive">
+              This will permanently delete the parent account. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setShowDeleteParentDialog(false); setDeleteParentTarget(null); }}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteParentMutation.mutate(deleteParentTarget.id)}
+              disabled={deleteParentMutation.isPending}
+            >
+              {deleteParentMutation.isPending ? 'Deleting...' : 'Delete Parent'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

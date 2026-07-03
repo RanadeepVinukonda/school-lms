@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -25,6 +26,7 @@ interface ProfileData {
 }
 
 export default function TeacherProfilePage() {
+  const { _ } = useTranslation();
   const authUser = useAuthStore((s) => s.user);
 
   const { data: raw, isLoading, isError, error, refetch } = useQuery({
@@ -72,15 +74,15 @@ export default function TeacherProfilePage() {
   }, [raw, authUser]);
 
   const statCards = [
-    { icon: 'group', label: 'Students', value: data.stats.totalStudents, bg: 'bg-primary-container', color: 'text-on-primary-container' },
-    { icon: 'school', label: 'Classes', value: data.stats.totalClasses, bg: 'bg-secondary-container', color: 'text-on-secondary-container' },
-    { icon: 'menu_book', label: 'Subjects', value: data.stats.totalSubjects, bg: 'bg-success-container', color: 'text-on-success-container' },
+    { icon: 'group', label: _('Students'), value: data.stats.totalStudents, bg: 'bg-primary-container', color: 'text-on-primary-container' },
+    { icon: 'school', label: _('Classes'), value: data.stats.totalClasses, bg: 'bg-secondary-container', color: 'text-on-secondary-container' },
+    { icon: 'menu_book', label: _('Subjects'), value: data.stats.totalSubjects, bg: 'bg-success-container', color: 'text-on-success-container' },
   ];
 
   const avgPct = data.stats.avgPerformance;
   const avgStat = {
     icon: 'graded',
-    label: 'Avg Performance',
+    label: _('Avg Performance'),
     value: `${avgPct}%`,
     bg: avgPct >= 80 ? 'bg-success-container' : avgPct >= 60 ? 'bg-warning-container' : 'bg-error-container',
     color: avgPct >= 80 ? 'text-on-success-container' : avgPct >= 60 ? 'text-on-warning-container' : 'text-on-error-container',
@@ -88,7 +90,7 @@ export default function TeacherProfilePage() {
 
   return (
     <>
-      <SEOHead title="My Profile" description="Teacher profile and statistics" canonical="/teacher/profile" />
+      <SEOHead title={_('My Profile')} description={_('Teacher profile and statistics')} canonical="/teacher/profile" />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -107,11 +109,11 @@ export default function TeacherProfilePage() {
                         <AvatarFallback className="text-2xl">{getInitials(profileData.user.displayName ?? 'T')}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 text-center sm:text-left">
-                        <h1 className="text-headline-sm">{profileData.user.displayName ?? 'Teacher'}</h1>
+                        <h1 className="text-headline-sm">{profileData.user.displayName ?? _('Teacher')}</h1>
                         <p className="text-body-md text-muted-foreground">{profileData.user.email ?? ''}</p>
                         <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
                           <Badge variant="info" className="text-label-xs">
-                            <Icon name="school" size={11} className="mr-1" />Teacher
+                            <Icon name="school" size={11} className="mr-1" />{_('Teacher')}
                           </Badge>
                           {profileData.user.id && (
                             <Badge variant="secondary" className="text-label-xs">{profileData.user.id}</Badge>
@@ -119,7 +121,7 @@ export default function TeacherProfilePage() {
                         </div>
                       </div>
                       <Button variant="outline" size="sm" className="gap-1" asChild>
-                        <Link to={ROUTES.TEACHER_PROFILE_EDIT}><Icon name="edit" size={15} />Edit Profile</Link>
+                        <Link to={ROUTES.TEACHER_PROFILE_EDIT}><Icon name="edit" size={15} />{_('Edit Profile')}</Link>
                       </Button>
                     </div>
                   </CardContent>
@@ -148,9 +150,9 @@ export default function TeacherProfilePage() {
                 <motion.div variants={cardStackReveal} custom={0}>
                   <Card className="border-border/60">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-title-sm flex items-center gap-2">
-                        <Icon name="menu_book" size={18} className="text-muted-foreground" />Subjects Taught
-                      </CardTitle>
+                <CardTitle className="text-title-sm flex items-center gap-2">
+                  <Icon name="menu_book" size={18} className="text-muted-foreground" />{_('My Subjects')}
+                </CardTitle>
                     </CardHeader>
                     <CardContent>
                       {profileData.taughtSubjects.length === 0 ? (
@@ -181,15 +183,15 @@ export default function TeacherProfilePage() {
                 <motion.div variants={cardStackReveal} custom={0}>
                   <Card className="border-border/60">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-title-sm flex items-center gap-2">
-                        <Icon name="school" size={18} className="text-muted-foreground" />Classes Assigned
-                      </CardTitle>
+                <CardTitle className="text-title-sm flex items-center gap-2">
+                  <Icon name="group" size={18} className="text-muted-foreground" />{_('My Classes')}
+                </CardTitle>
                     </CardHeader>
                     <CardContent>
                       {profileData.assignedClasses.length === 0 ? (
                         <div className="flex flex-col items-center gap-2 py-6 text-center">
                           <Icon name="school_off" size={32} className="text-muted-foreground/40" />
-                          <p className="text-body-md text-muted-foreground">No classes assigned</p>
+                          <p className="text-body-md text-muted-foreground">{_('No classes assigned')}</p>
                         </div>
                       ) : (
                         <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-2">
@@ -200,7 +202,7 @@ export default function TeacherProfilePage() {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-title-sm font-medium">{cls.name}</p>
-                                <p className="text-label-xs text-muted-foreground">Grade {cls.grade} &middot; {cls.studentCount} students &middot; {cls.subjectIds?.length} subjects</p>
+                                <p className="text-label-xs text-muted-foreground">{_('Grade')} {cls.grade} &middot; {cls.studentCount} {_('students')} &middot; {cls.subjectIds?.length} {_('subjects')}</p>
                               </div>
                               <Badge variant="secondary" className="text-label-xs">{cls.code}</Badge>
                             </motion.div>
@@ -216,26 +218,26 @@ export default function TeacherProfilePage() {
                 <Card className="border-border/60">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-title-sm flex items-center gap-2">
-                      <Icon name="info" size={18} className="text-muted-foreground" />Account Information
+                      <Icon name="info" size={18} className="text-muted-foreground" />{_('Account Information')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-body-md">
                       <div>
-                        <p className="text-label-xs text-muted-foreground">Email</p>
+                        <p className="text-label-xs text-muted-foreground">{_('Email')}</p>
                         <p className="text-title-sm font-medium">{profileData.user.email ?? ''}</p>
                       </div>
                       <div>
-                        <p className="text-label-xs text-muted-foreground">Role</p>
+                        <p className="text-label-xs text-muted-foreground">{_('Role')}</p>
                         <p className="text-title-sm font-medium capitalize">{profileData.user.role ?? 'teacher'}</p>
                       </div>
                       <div>
-                        <p className="text-label-xs text-muted-foreground">User ID</p>
+                        <p className="text-label-xs text-muted-foreground">{_('User ID')}</p>
                         <p className="text-title-sm font-medium">{profileData.user.id ?? 'N/A'}</p>
                       </div>
                       <div>
-                        <p className="text-label-xs text-muted-foreground">Account Status</p>
-                        <Badge variant="success" className="text-label-xs mt-0.5">Active</Badge>
+                        <p className="text-label-xs text-muted-foreground">{_('Account Status')}</p>
+                        <Badge variant="success" className="text-label-xs mt-0.5">{_('Active')}</Badge>
                       </div>
                     </div>
                   </CardContent>

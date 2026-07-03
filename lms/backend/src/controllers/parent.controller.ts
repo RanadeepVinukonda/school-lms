@@ -22,9 +22,22 @@ export async function getChildren(req: Request, res: Response) {
   const childDocs = await Promise.all(
     childrenIds.map((id) => collections.users().doc(id).get()),
   );
-  const children = childDocs
-    .filter((d) => d.exists)
-    .map((d) => ({ id: d.id, ...d.data() }));
+  const children = await Promise.all(
+    childDocs
+      .filter((d) => d.exists)
+      .map(async (d) => {
+        const data = d.data();
+        let classInfo: { name?: string; grade?: number; section?: string } | null = null;
+        if (data?.classId) {
+          const classDoc = await collections.classes().doc(data.classId).get();
+          if (classDoc.exists) {
+            const c = classDoc.data() as any;
+            classInfo = { name: c.name, grade: c.grade, section: c.section };
+          }
+        }
+        return { id: d.id, ...data, classInfo };
+      }),
+  );
 
   sendSuccess(res, children);
 }

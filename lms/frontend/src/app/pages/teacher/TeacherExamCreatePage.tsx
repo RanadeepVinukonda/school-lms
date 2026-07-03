@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -20,14 +21,6 @@ import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
 import { getTextbooksBySubject, getChaptersForTextbook } from '@/services/textbookService';
 import type { Textbook, Chapter } from '@/types/textbook';
-
-const QUESTION_MODELS = [
-  { value: 'multiple_choice', label: 'Multiple Choice' },
-  { value: 'true_false', label: 'True / False' },
-  { value: 'short_answer', label: 'Short Answer' },
-  { value: 'fill_blank', label: 'Fill in the Blank' },
-  { value: 'matching', label: 'Matching' },
-] as const;
 
 interface TeacherAssignment {
   id: string;
@@ -66,12 +59,14 @@ function ExamCard({
   onToggleGrades,
   isReleasing,
   isTogglingGrades,
+  _t,
 }: {
   exam: ExamV2;
   onRelease: () => void;
   onToggleGrades: () => void;
   isReleasing: boolean;
   isTogglingGrades: boolean;
+  _t: (s: string) => string;
 }) {
   return (
     <motion.div variants={cardStackReveal} custom={0}>
@@ -102,7 +97,7 @@ function ExamCard({
                   variant={exam.isReleased ? 'success' : 'secondary'}
                   className="text-[10px] flex-shrink-0 capitalize"
                 >
-                  {exam.isReleased ? 'Released' : 'Draft'}
+                  {exam.isReleased ? _t('Released') : _t('Draft')}
                 </Badge>
               </div>
               <p className="text-label-xs text-muted-foreground line-clamp-1">
@@ -111,15 +106,15 @@ function ExamCard({
               <div className="flex items-center gap-3 mt-1.5 text-label-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Icon name="schedule" size={14} />
-                  {exam.timeLimitMinutes} min
+                  {exam.timeLimitMinutes} {_t('min')}
                 </span>
                 <span className="flex items-center gap-1">
                   <Icon name="percent" size={14} />
-                  Pass: {exam.passingScore}%
+                  {_t('Pass')}: {exam.passingScore}%
                 </span>
                 <span className="flex items-center gap-1">
                   <Icon name="people" size={14} />
-                  {exam.attemptCount ?? 0} attempt{(exam.attemptCount ?? 0) !== 1 ? 's' : ''}
+                  {exam.attemptCount ?? 0} {_t('attempt')}{(exam.attemptCount ?? 0) !== 1 ? _t('s') : ''}
                 </span>
                 <span className="text-muted-foreground">
                   {formatDate(exam.createdAt)}
@@ -135,12 +130,12 @@ function ExamCard({
                   className="gap-1"
                 >
                   <Icon name="publish" size={15} />
-                  Release
+                  {_t('Release')}
                 </Button>
               )}
               {exam.isReleased && (
                 <div className="flex items-center gap-2">
-                  <span className="text-label-xs text-muted-foreground">Grades</span>
+                  <span className="text-label-xs text-muted-foreground">{_t('Grades')}</span>
                   <Switch
                     checked={exam.gradesReleased}
                     onCheckedChange={onToggleGrades}
@@ -157,9 +152,17 @@ function ExamCard({
 }
 
 export default function TeacherExamCreatePage() {
+  const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const teacherId = user?.id ?? '';
   const queryClient = useQueryClient();
+  const QUESTION_MODELS = [
+    { value: 'multiple_choice', label: _('Multiple Choice') },
+    { value: 'true_false', label: _('True / False') },
+    { value: 'short_answer', label: _('Short Answer') },
+    { value: 'fill_blank', label: _('Fill in the Blank') },
+    { value: 'matching', label: _('Matching') },
+  ] as const;
 
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedTextbookId, setSelectedTextbookId] = useState('');
@@ -223,7 +226,7 @@ export default function TeacherExamCreatePage() {
       return res.data.data;
     },
     onSuccess: () => {
-      toast.success('Exam created successfully');
+      toast.success(_('Exam created successfully'));
       setTitle('');
       setDescription('');
       setTimeLimitMinutes('60');
@@ -236,7 +239,7 @@ export default function TeacherExamCreatePage() {
     onError: (err: unknown) => {
       const message = err && typeof err === 'object' && 'message' in err
         ? (err as { message: string }).message
-        : 'Failed to create exam';
+        : _('Failed to create exam');
       toast.error(message);
     },
   });
@@ -246,13 +249,13 @@ export default function TeacherExamCreatePage() {
       await api.post(`/exams-v2/${examId}/release`);
     },
     onSuccess: () => {
-      toast.success('Exam released to students');
+      toast.success(_('Exam released to students'));
       queryClient.invalidateQueries({ queryKey: ['exams-v2-class', selectedClassId] });
     },
     onError: (err: unknown) => {
       const message = err && typeof err === 'object' && 'message' in err
         ? (err as { message: string }).message
-        : 'Failed to release exam';
+        : _('Failed to release exam');
       toast.error(message);
     },
   });
@@ -262,13 +265,13 @@ export default function TeacherExamCreatePage() {
       await api.put(`/exams-v2/${examId}/grades`);
     },
     onSuccess: () => {
-      toast.success('Grades visibility updated');
+      toast.success(_('Grades visibility updated'));
       queryClient.invalidateQueries({ queryKey: ['exams-v2-class', selectedClassId] });
     },
     onError: (err: unknown) => {
       const message = err && typeof err === 'object' && 'message' in err
         ? (err as { message: string }).message
-        : 'Failed to update grades visibility';
+        : _('Failed to update grades visibility');
       toast.error(message);
     },
   });
@@ -302,7 +305,7 @@ export default function TeacherExamCreatePage() {
   if (assignmentsLoading) {
     return (
       <>
-        <SEOHead title="Create Exam" description="Create chapter-level exams for your class" />
+        <SEOHead title={_('Create Exam')} description={_('Create chapter-level exams for your class')} />
         <div className="p-6 max-w-4xl mx-auto pb-32 space-y-16">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-4 w-72 mt-2" />
@@ -316,20 +319,20 @@ export default function TeacherExamCreatePage() {
   if (assignmentsError) {
     return (
       <>
-        <SEOHead title="Create Exam" description="Create chapter-level exams for your class" />
+        <SEOHead title={_('Create Exam')} description={_('Create chapter-level exams for your class')} />
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-4xl mx-auto pb-32 space-y-16">
           <motion.div variants={cardStackReveal} custom={0}>
-            <h1 className="text-headline-sm">Create Exam</h1>
-            <p className="text-body-md text-muted-foreground">Something went wrong loading your assignments</p>
+            <h1 className="text-headline-sm">{_('Create Exam')}</h1>
+            <p className="text-body-md text-muted-foreground">{_('Something went wrong loading your assignments')}</p>
           </motion.div>
           <motion.div variants={cardStackReveal} custom={0}>
             <Card className="border-border/60">
               <CardContent className="p-5 text-center space-y-4">
                 <Icon name="error" size={48} className="text-destructive mx-auto" />
-                <p className="text-muted-foreground">Failed to load your class assignments. Please try again.</p>
+                <p className="text-muted-foreground">{_('Failed to load your class assignments. Please try again.')}</p>
                 <Button variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: ['teacher-assignments', user?.id] })}>
                   <Icon name="refresh" size={16} className="mr-1" />
-                  Retry
+                  {_('Retry')}
                 </Button>
               </CardContent>
             </Card>
@@ -345,15 +348,15 @@ export default function TeacherExamCreatePage() {
         <SEOHead title="Create Exam" description="Create chapter-level exams for your class" />
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-4xl mx-auto pb-32 space-y-16">
           <motion.div variants={cardStackReveal} custom={0}>
-            <h1 className="text-headline-sm">Create Exam</h1>
-            <p className="text-body-md text-muted-foreground">Create chapter-level exams for your students</p>
+            <h1 className="text-headline-sm">{_('Create Exam')}</h1>
+            <p className="text-body-md text-muted-foreground">{_('Create chapter-level exams for your students')}</p>
           </motion.div>
           <motion.div variants={cardStackReveal} custom={0}>
             <Card className="border-border/60">
               <CardContent className="p-5 text-center space-y-4">
                 <Icon name="school" size={48} className="text-muted-foreground mx-auto" />
                 <p className="text-muted-foreground">
-                  You haven't been assigned to any class yet. Contact your administrator to get started.
+                  {_('You haven\'t been assigned to any class yet. Contact your administrator to get started.')}
                 </p>
               </CardContent>
             </Card>
@@ -365,7 +368,7 @@ export default function TeacherExamCreatePage() {
 
   return (
     <>
-      <SEOHead title="Create Exam" description="Create chapter-level exams for your class" />
+      <SEOHead title={_('Create Exam')} description={_('Create chapter-level exams for your class')} />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -373,9 +376,9 @@ export default function TeacherExamCreatePage() {
         className="p-6 max-w-4xl mx-auto pb-32 space-y-16"
       >
         <motion.div variants={cardStackReveal} custom={0}>
-          <h1 className="text-headline-sm">Create Exam</h1>
+          <h1 className="text-headline-sm">{_('Create Exam')}</h1>
           <p className="text-body-md text-muted-foreground">
-            Create chapter-level exams from all concepts in a chapter
+            {_('Create chapter-level exams from all concepts in a chapter')}
           </p>
         </motion.div>
 
@@ -384,12 +387,12 @@ export default function TeacherExamCreatePage() {
             <CardHeader>
               <CardTitle className="text-title-sm flex items-center gap-2">
                 <Icon name="class" size={18} className="text-primary" />
-                Teacher Assignment
+                {_('Teacher Assignment')}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-5 space-y-4">
               <div>
-                <Label htmlFor="class-select">Class</Label>
+                <Label htmlFor="class-select">{_('Class')}</Label>
                 <select
                   id="class-select"
                   value={selectedClassId}
@@ -400,7 +403,7 @@ export default function TeacherExamCreatePage() {
                   }}
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm mt-1.5 focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >
-                  <option value="">Select a class...</option>
+                  <option value="">{_('Select a class...')}</option>
                   {assignmentList.map((a) => (
                     <option key={a.classId} value={a.classId}>
                       {a.className}
@@ -411,7 +414,7 @@ export default function TeacherExamCreatePage() {
 
               {selectedAssignment && (
                 <div>
-                  <Label>Subject</Label>
+                  <Label>{_('Subject')}</Label>
                   <div className="w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground mt-1.5">
                     {selectedAssignment.subjectName}
                   </div>
@@ -419,7 +422,7 @@ export default function TeacherExamCreatePage() {
               )}
 
               <div>
-                <Label htmlFor="textbook-select">Textbook</Label>
+                <Label htmlFor="textbook-select">{_('Textbook')}</Label>
                 <select
                   id="textbook-select"
                   value={selectedTextbookId}
@@ -431,7 +434,7 @@ export default function TeacherExamCreatePage() {
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm mt-1.5 focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="">
-                    {textbooksLoading ? 'Loading textbooks...' : 'Select a textbook...'}
+                    {textbooksLoading ? _('Loading textbooks...') : _('Select a textbook...')}
                   </option>
                   {textbooks.map((t: Textbook) => (
                     <option key={t.id} value={t.id}>
@@ -441,13 +444,13 @@ export default function TeacherExamCreatePage() {
                 </select>
                 {textbooks.length === 0 && selectedAssignment && !textbooksLoading && (
                   <p className="text-label-xs text-muted-foreground mt-1">
-                    No textbooks available for this subject
+                    {_('No textbooks available for this subject')}
                   </p>
                 )}
               </div>
 
               <div>
-                <Label htmlFor="chapter-select">Chapter</Label>
+                <Label htmlFor="chapter-select">{_('Chapter')}</Label>
                 <select
                   id="chapter-select"
                   value={selectedChapterId}
@@ -456,7 +459,7 @@ export default function TeacherExamCreatePage() {
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm mt-1.5 focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="">
-                    {chaptersLoading ? 'Loading chapters...' : 'Select a chapter...'}
+                    {chaptersLoading ? _('Loading chapters...') : _('Select a chapter...')}
                   </option>
                   {chapters.map((ch: Chapter) => (
                     <option key={ch.id} value={ch.id}>
@@ -466,7 +469,7 @@ export default function TeacherExamCreatePage() {
                 </select>
                 {chapters.length === 0 && selectedTextbookId && !chaptersLoading && (
                   <p className="text-label-xs text-muted-foreground mt-1">
-                    No chapters found in this textbook
+                    {_('No chapters found in this textbook')}
                   </p>
                 )}
               </div>
@@ -479,25 +482,25 @@ export default function TeacherExamCreatePage() {
             <CardHeader>
               <CardTitle className="text-title-sm flex items-center gap-2">
                 <Icon name="edit_note" size={18} className="text-primary" />
-                Exam Details
+                {_('Exam Details')}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-5 space-y-5">
               <div className="space-y-1.5">
-                <Label htmlFor="exam-title">Title</Label>
+                <Label htmlFor="exam-title">{_('Title')}</Label>
                 <Input
                   id="exam-title"
-                  placeholder="e.g. Chapter 1: Introduction to Algebra"
+                  placeholder={_('e.g. Chapter 1: Introduction to Algebra')}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="exam-description">Description</Label>
+                <Label htmlFor="exam-description">{_('Description')}</Label>
                 <Textarea
                   id="exam-description"
-                  placeholder="Brief description of the exam"
+                  placeholder={_('Brief description of the exam')}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                 />
@@ -505,7 +508,7 @@ export default function TeacherExamCreatePage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="time-limit">Time Limit (minutes)</Label>
+                  <Label htmlFor="time-limit">{_('Time Limit (minutes)')}</Label>
                   <Input
                     id="time-limit"
                     type="number"
@@ -516,7 +519,7 @@ export default function TeacherExamCreatePage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="questions-per-concept">Questions Per Concept</Label>
+                  <Label htmlFor="questions-per-concept">{_('Questions Per Concept')}</Label>
                   <Input
                     id="questions-per-concept"
                     type="number"
@@ -530,7 +533,7 @@ export default function TeacherExamCreatePage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="passing-score">Passing Score (%)</Label>
+                  <Label htmlFor="passing-score">{_('Passing Score (%)')}</Label>
                   <Input
                     id="passing-score"
                     type="number"
@@ -542,7 +545,7 @@ export default function TeacherExamCreatePage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="max-attempts">Max Attempts</Label>
+                  <Label htmlFor="max-attempts">{_('Max Attempts')}</Label>
                   <Input
                     id="max-attempts"
                     type="number"
@@ -555,7 +558,7 @@ export default function TeacherExamCreatePage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Question Models</Label>
+                <Label>{_('Question Models')}</Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1.5">
                   {QUESTION_MODELS.map((model) => (
                     <label
@@ -575,7 +578,7 @@ export default function TeacherExamCreatePage() {
                   ))}
                 </div>
                 {selectedModels.length === 0 && (
-                  <p className="text-label-xs text-error">Select at least one question model</p>
+                  <p className="text-label-xs text-error">{_('Select at least one question model')}</p>
                 )}
               </div>
 
@@ -587,7 +590,7 @@ export default function TeacherExamCreatePage() {
                 loading={createMutation.isPending}
               >
                 <Icon name="add" size={18} />
-                Create Exam
+                {_('Create Exam')}
               </Button>
             </CardContent>
           </Card>
@@ -599,7 +602,7 @@ export default function TeacherExamCreatePage() {
               <CardHeader>
                 <CardTitle className="text-title-sm flex items-center gap-2">
                   <Icon name="fact_check" size={18} className="text-primary" />
-                  Existing Exams
+                  {_('Existing Exams')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-5">
@@ -609,7 +612,7 @@ export default function TeacherExamCreatePage() {
                   error={examsError ? (examsErrorObj as Error) ?? new Error('Failed to load exams') : null}
                   onRetry={() => refetchExams()}
                   loadingType="list"
-                  emptyMessage="No exams created for this class yet"
+                  emptyMessage={_('No exams created for this class yet')}
                   emptyIcon={<Icon name="fact_check" size={40} className="text-muted-foreground/50" />}
                 >
                   {() => (
@@ -622,6 +625,7 @@ export default function TeacherExamCreatePage() {
                           onToggleGrades={() => toggleGradesMutation.mutate(exam.id)}
                           isReleasing={releaseMutation.isPending && releaseMutation.variables === exam.id}
                           isTogglingGrades={toggleGradesMutation.isPending && toggleGradesMutation.variables === exam.id}
+                          _t={_}
                         />
                       ))}
                     </div>

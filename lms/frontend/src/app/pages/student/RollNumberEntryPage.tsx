@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from '@/hooks/useTranslation';
 import { motion } from 'framer-motion';
 import { supabase } from '@/supabase/config';
 import { useAuthStore } from '@/store/authStore';
@@ -12,6 +13,7 @@ import { ROUTES } from '@/lib/constants';
 import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 
 export default function RollNumberEntryPage() {
+  const { _ } = useTranslation();
   const [rollNumber, setRollNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -24,7 +26,7 @@ export default function RollNumberEntryPage() {
 
     const cleaned = rollNumber.trim();
     if (!cleaned || !/^\d+$/.test(cleaned)) {
-      setError('Enter a valid roll number (e.g., 501)');
+      setError(_('Enter a valid roll number (e.g., 501)'));
       return;
     }
 
@@ -38,7 +40,7 @@ export default function RollNumberEntryPage() {
       const { data: classRows } = await supabase.from('classes').select('*').eq('grade', grade).eq('isActive', true);
 
       if (!classRows || classRows.length === 0) {
-        setError(`No class found for grade ${grade}. Contact your teacher.`);
+        setError(_('No class found for grade') + ` ${grade}. ` + _('Contact your teacher.'));
         setLoading(false);
         return;
       }
@@ -46,7 +48,7 @@ export default function RollNumberEntryPage() {
 
       const { data: duplicates } = await supabase.from('users').select('id').eq('class_id', classId).eq('student_id', cleaned);
       if (duplicates && duplicates.length > 0) {
-        setError(`Roll number ${cleaned} is already taken in this class.`);
+        setError(_('Roll number') + ` ${cleaned} ` + _('is already taken in this class.'));
         setLoading(false);
         return;
       }
@@ -97,7 +99,7 @@ export default function RollNumberEntryPage() {
 
       navigate(ROUTES.STUDENT_DASHBOARD, { replace: true });
     } catch (err) {
-      setError('Something went wrong. Try again.');
+      setError(_('Something went wrong. Try again.'));
     } finally {
       setLoading(false);
     }
@@ -113,15 +115,15 @@ export default function RollNumberEntryPage() {
       <motion.div variants={cardStackReveal} custom={0} className="w-full max-w-sm">
         <form onSubmit={handleSubmit} className="w-full space-y-6">
           <div className="text-center space-y-2">
-            <img src="/genesis_icon.png" alt="Genesis" className="mx-auto h-16 w-auto" />
-            <h1 className="text-headline-sm font-bold">Welcome, {user?.displayName}</h1>
-            <p className="text-body-md text-muted-foreground">Enter your roll number to get started</p>
+            <img src="/genesis_icon.png" alt={_('Genesis')} className="mx-auto h-16 w-auto" />
+            <h1 className="text-headline-sm font-bold">{_('Welcome')}, {user?.displayName}</h1>
+            <p className="text-body-md text-muted-foreground">{_('Enter your roll number to get started')}</p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="roll" className="text-body-md">Roll Number</Label>
+            <Label htmlFor="roll" className="text-body-md">{_('Roll Number')}</Label>
             <Input
               id="roll"
-              placeholder="e.g. 501"
+              placeholder={_('e.g. 501')}
               value={rollNumber}
               onChange={(e) => setRollNumber(e.target.value)}
               disabled={loading}
@@ -130,7 +132,7 @@ export default function RollNumberEntryPage() {
             {error && <p className="text-body-md text-destructive">{error}</p>}
           </div>
           <Button type="submit" className="w-full" size="lg" disabled={loading} loading={loading}>
-            Continue
+            {_('Continue')}
           </Button>
         </form>
       </motion.div>

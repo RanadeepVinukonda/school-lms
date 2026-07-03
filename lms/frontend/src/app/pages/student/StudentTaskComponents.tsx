@@ -9,6 +9,7 @@ import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { formatTime } from '@/lib/format';
 import type { AssignmentItem, ExamItem, QuizItem } from '@/services/dataService';
 import type { Subject } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export type TaskType = 'assignment' | 'quiz' | 'exam';
 export type UrgencyLevel = 'overdue' | 'today' | 'tomorrow' | 'thisWeek' | 'later';
@@ -178,10 +179,11 @@ export function buildTasks(
 }
 
 function UrgencyBadge({ urgency, date }: { urgency: UrgencyLevel; date: Date | null }) {
+  const { _ } = useTranslation();
   const style = urgencyStyles[urgency];
   return (
     <Badge variant={style.badgeVariant} className="text-[10px] flex-shrink-0">
-      {urgency === 'later' && date ? formatDate(date) : style.label}
+      {urgency === 'later' && date ? formatDate(date) : _(style.label)}
     </Badge>
   );
 }
@@ -195,6 +197,7 @@ export function FilterBar({
   onChange: (tab: FilterTab) => void;
   overdueCount: number;
 }) {
+  const { _ } = useTranslation();
   return (
     <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
       {FILTER_TABS.map((tab) => (
@@ -209,7 +212,7 @@ export function FilterBar({
           onClick={() => onChange(tab.key)}
         >
           <Icon name={tab.icon} size={16} />
-          {tab.label}
+          {_(tab.label)}
           {tab.key === 'overdue' && overdueCount > 0 && (
             <span className="ml-0.5 tabular-nums">({overdueCount})</span>
           )}
@@ -220,6 +223,7 @@ export function FilterBar({
 }
 
 function TaskCard({ item }: { item: TaskItem }) {
+  const { _ } = useTranslation();
   const style = urgencyStyles[item.urgency];
   const iconStyle = iconMap[item.type];
   const isUrgent = item.urgency !== 'later';
@@ -238,7 +242,7 @@ function TaskCard({ item }: { item: TaskItem }) {
               <div className="flex items-center justify-between gap-2">
                 <p className="font-semibold text-title-sm truncate">{item.title}</p>
                 {item.status === 'completed' ? (
-                  <Badge variant="success" className="text-[10px]">Completed</Badge>
+                  <Badge variant="success" className="text-[10px]">{_('Completed')}</Badge>
                 ) : (
                   <UrgencyBadge urgency={item.urgency} date={item.date} />
                 )}
@@ -251,7 +255,7 @@ function TaskCard({ item }: { item: TaskItem }) {
                     {item.points !== undefined && (
                       <span className="flex items-center gap-1">
                         <Icon name="star" size={14} />
-                        {item.points} pts
+                        {item.points} {_('pts')}
                       </span>
                     )}
                     {item.status && (
@@ -276,7 +280,7 @@ function TaskCard({ item }: { item: TaskItem }) {
                     {item.questionCount !== undefined && (
                       <span className="flex items-center gap-1">
                         <Icon name="quiz" size={14} />
-                        {item.questionCount} questions
+                        {item.questionCount} {_('questions')}
                       </span>
                     )}
                   </>
@@ -292,7 +296,7 @@ function TaskCard({ item }: { item: TaskItem }) {
                     {item.questionCount !== undefined && (
                       <span className="flex items-center gap-1">
                         <Icon name="quiz" size={14} />
-                        {item.questionCount} questions
+                        {item.questionCount} {_('questions')}
                       </span>
                     )}
                     {item.date && (
@@ -318,6 +322,7 @@ function TaskCard({ item }: { item: TaskItem }) {
 }
 
 export function TaskSection({ level, tasks }: { level: UrgencyLevel; tasks: TaskItem[] }) {
+  const { _ } = useTranslation();
   if (tasks.length === 0) return null;
 
   const section = urgencySectionLabels[level];
@@ -328,7 +333,7 @@ export function TaskSection({ level, tasks }: { level: UrgencyLevel; tasks: Task
       <section>
         <h2 className={cn('text-title-sm font-semibold mb-3 flex items-center gap-2', isNonUrgent && 'text-muted-foreground')}>
           <Icon name={section.icon} size={20} className={isNonUrgent ? 'text-muted-foreground' : 'text-primary'} />
-          {section.title}
+          {_(section.title)}
           <span className="text-body-md text-muted-foreground font-normal ml-1">({tasks.length})</span>
         </h2>
         <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3">
@@ -344,6 +349,7 @@ export function TaskSection({ level, tasks }: { level: UrgencyLevel; tasks: Task
 }
 
 export function EmptyFilterState({ filter }: { filter: FilterTab }) {
+  const { _ } = useTranslation();
   const messages: Record<FilterTab, { icon: string; message: string }> = {
     all: { icon: 'task_alt', message: 'No tasks available right now' },
     overdue: { icon: 'check_circle', message: "No overdue tasks — you're all caught up!" },
@@ -358,7 +364,7 @@ export function EmptyFilterState({ filter }: { filter: FilterTab }) {
     <Card className="border-border/60">
       <CardContent className="flex flex-col items-center gap-3 py-10">
         <Icon name={m.icon} size={40} className="text-muted-foreground/50" />
-        <p className="text-body-md text-muted-foreground">{m.message}</p>
+        <p className="text-body-md text-muted-foreground">{_(m.message)}</p>
       </CardContent>
     </Card>
   );

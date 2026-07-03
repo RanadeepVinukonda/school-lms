@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from '@/hooks/useTranslation';
 import { codingService } from '@/services/codingService';
 import { useAuthStore } from '@/store/authStore';
 import type { CodingProject } from '@/types/coding';
@@ -8,6 +9,7 @@ import { ROUTES } from '@/lib/constants';
 import { Icon } from '@/components/ui/Icon';
 
 export default function StudentCodingEditorPage() {
+  const { _ } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
@@ -90,7 +92,7 @@ export default function StudentCodingEditorPage() {
             className="flex items-center gap-1 text-label-sm text-on-surface-variant hover:text-on-surface transition-colors"
           >
             <Icon name="arrow_back" size={16} />
-            Back
+            {_('Back')}
           </button>
           <div className="h-5 w-px bg-outline-variant" />
           <input
@@ -100,9 +102,9 @@ export default function StudentCodingEditorPage() {
               setDirty(true);
             }}
             className="text-lg font-semibold text-on-surface bg-transparent border-b-2 border-transparent hover:border-outline-variant focus:border-primary focus:outline-none px-1 py-0.5 transition-colors"
-            placeholder="Project name"
+            placeholder={_('Project name')}
           />
-          {dirty && <span className="text-label-xs text-amber-600">Unsaved</span>}
+          {dirty && <span className="text-label-xs text-amber-600">{_('Unsaved')}</span>}
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -115,11 +117,11 @@ export default function StudentCodingEditorPage() {
             } disabled:opacity-50`}
           >
             <Icon name={saved ? 'check' : 'save'} size={16} />
-            {saving ? 'Saving...' : saved ? 'Saved!' : 'Save'}
+            {saving ? _('Saving...') : saved ? _('Saved!') : _('Save')}
           </button>
           <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-surface-variant text-on-surface-variant hover:bg-surface-variant/70 transition-colors">
             <Icon name="share" size={16} />
-            Share
+            {_('Share')}
           </button>
         </div>
       </div>
@@ -136,7 +138,7 @@ export default function StudentCodingEditorPage() {
       {project.ownerId !== user?.id && (
         <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-50 border border-amber-200 text-label-sm text-amber-700">
           <Icon name="info" size={16} />
-          View-only mode. You are a collaborator on this project.
+          {_('View-only mode. You are a collaborator on this project.')}
         </div>
       )}
     </div>

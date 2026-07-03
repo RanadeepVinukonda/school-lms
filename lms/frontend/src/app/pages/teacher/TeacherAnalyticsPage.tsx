@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -83,6 +84,7 @@ function AssessmentRow({ assessment }: { assessment: any }) {
 }
 
 export default function TeacherAnalyticsPage() {
+  const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [selectedClassId, setSelectedClassId] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
@@ -111,7 +113,7 @@ export default function TeacherAnalyticsPage() {
 
   return (
     <>
-      <SEOHead title="Analytics" description="Class performance analytics" canonical="/teacher/analytics" />
+      <SEOHead title={_('Analytics')} description={_('Class performance analytics')} canonical="/teacher/analytics" />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -121,8 +123,8 @@ export default function TeacherAnalyticsPage() {
         <motion.div variants={cardStackReveal} custom={0}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-headline-sm">Analytics</h1>
-              <p className="text-body-md text-muted-foreground">Class performance and student insights</p>
+              <h1 className="text-headline-sm">{_('Analytics')}</h1>
+              <p className="text-body-md text-muted-foreground">{_('Class performance and student insights')}</p>
             </div>
             {classes.length > 0 && (
               <select
@@ -130,7 +132,7 @@ export default function TeacherAnalyticsPage() {
                 onChange={(e) => setSelectedClassId(e.target.value)}
                 className="border rounded-lg px-3 py-2 text-sm bg-background"
               >
-                <option value="">Select a class...</option>
+                <option value="">{_('Select a class...')}</option>
                 {classes.map((c: any) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
@@ -144,7 +146,7 @@ export default function TeacherAnalyticsPage() {
             <Card className="border-border/60">
               <CardContent className="p-5 text-center text-muted-foreground">
                 <Icon name="analytics" size={48} className="mx-auto mb-3 opacity-40" />
-                <p>Select a class to view analytics</p>
+                <p>{_('Select a class to view analytics')}</p>
               </CardContent>
             </Card>
           </motion.div>
@@ -154,8 +156,8 @@ export default function TeacherAnalyticsPage() {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <motion.div variants={cardStackReveal} custom={0}>
               <TabsList className="w-full overflow-x-auto inline-flex">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="concepts">Concept Mastery</TabsTrigger>
+                <TabsTrigger value="overview">{_('Overview')}</TabsTrigger>
+                <TabsTrigger value="concepts">{_('Concept Mastery')}</TabsTrigger>
               </TabsList>
             </motion.div>
 
@@ -164,17 +166,17 @@ export default function TeacherAnalyticsPage() {
                 {(data) => <div className="space-y-16">
                   <motion.div variants={cardStackReveal} custom={0}>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                      <StatCard icon="school" label="Students" value={data.totalStudents ?? 0} color="bg-blue-600" />
-                      <StatCard icon="quiz" label="Assessments" value={data.totalAssessments ?? 0} color="bg-purple-600" />
-                      <StatCard icon="trending_up" label="Avg Score" value={`${data.avgScore ?? 0}%`} color="bg-emerald-600" />
-                      <StatCard icon="check_circle" label="Pass Rate" value={`${data.passRate ?? 0}%`} color="bg-amber-600" />
+                      <StatCard icon="school" label={_('Students')} value={data.totalStudents ?? 0} color="bg-blue-600" />
+                      <StatCard icon="quiz" label={_('Assessments')} value={data.totalAssessments ?? 0} color="bg-purple-600" />
+                      <StatCard icon="trending_up" label={_('Avg Score')} value={`${data.avgScore ?? 0}%`} color="bg-emerald-600" />
+                      <StatCard icon="check_circle" label={_('Pass Rate')} value={`${data.passRate ?? 0}%`} color="bg-amber-600" />
                     </div>
                   </motion.div>
 
                   {data.studentLevelDistribution && (
                     <motion.div variants={cardStackReveal} custom={0}>
                       <Card className="border-border/60">
-                        <CardHeader><CardTitle className="text-title-sm">Student Level Distribution</CardTitle></CardHeader>
+                        <CardHeader><CardTitle className="text-title-sm">{_('Student Level Distribution')}</CardTitle></CardHeader>
                         <CardContent className="p-5 space-y-3">
                           {(['beginner', 'intermediate', 'advanced'] as const).map((level) => (
                             <div key={level} className="flex items-center gap-3">
@@ -194,7 +196,7 @@ export default function TeacherAnalyticsPage() {
                   {data.assessments && data.assessments.length > 0 ? (
                     <motion.div variants={cardStackReveal} custom={0}>
                       <Card className="border-border/60">
-                        <CardHeader><CardTitle className="text-title-sm">Assessments ({data.assessments.length})</CardTitle></CardHeader>
+                        <CardHeader><CardTitle className="text-title-sm">{_('Assessments')} ({data.assessments.length})</CardTitle></CardHeader>
                         <CardContent className="p-5 space-y-2">
                           {data.assessments.map((a: any, i: number) => (
                             <AssessmentRow key={i} assessment={a} />
@@ -206,7 +208,7 @@ export default function TeacherAnalyticsPage() {
                     <motion.div variants={cardStackReveal} custom={0}>
                       <Card className="border-border/60">
                         <CardContent className="p-5 text-center text-muted-foreground">
-                          <p>No assessments found for this class</p>
+                          <p>{_('No assessments found for this class')}</p>
                         </CardContent>
                       </Card>
                     </motion.div>
@@ -221,7 +223,7 @@ export default function TeacherAnalyticsPage() {
                   const concepts: any[] = Array.isArray(data) ? data : [];
                   if (concepts.length === 0) return (
                     <motion.div variants={cardStackReveal} custom={0}>
-                      <Card className="border-border/60"><CardContent className="p-5 text-center text-muted-foreground"><p>No concept data available. Create assessments linked to concepts to see mastery here.</p></CardContent></Card>
+                      <Card className="border-border/60"><CardContent className="p-5 text-center text-muted-foreground"><p>{_('No concept data available. Create assessments linked to concepts to see mastery here.')}</p></CardContent></Card>
                     </motion.div>
                   );
                   return (
@@ -249,7 +251,7 @@ export default function TeacherAnalyticsPage() {
                               {c.status === 'low' && (
                                 <div className="flex items-center gap-1 mt-2 text-xs text-destructive">
                                   <Icon name="warning" size={14} />
-                                  <span>Below threshold ({c.threshold}%) &mdash; flagged for attention</span>
+                                  <span>{_('Below threshold')} ({c.threshold}%) &mdash; {_('flagged for attention')}</span>
                                 </div>
                               )}
                             </CardContent>

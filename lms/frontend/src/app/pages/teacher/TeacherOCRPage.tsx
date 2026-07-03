@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -22,7 +23,7 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string) =
   const questions = data?.questions || [];
   return (
     <div className="space-y-3 mt-2">
-      <p className="text-sm font-semibold text-primary">Generated Quiz ({questions.length} questions)</p>
+      <p className="text-sm font-semibold text-primary">{_('Generated Quiz')} ({questions.length} {_('questions')})</p>
       {questions.map((q: any, i: number) => (
         <div key={q.id || i} className="p-3 rounded-lg border border-border/60 text-sm">
           <p className="font-medium">{i + 1}. {q.question}</p>
@@ -36,7 +37,7 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string) =
             </div>
           ) : (
             <div className="mt-1 text-xs text-success font-semibold">
-              Answer: {q.correctAnswer}
+              {_('Answer:')} {q.correctAnswer}
             </div>
           )}
         </div>
@@ -44,13 +45,13 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string) =
 
       <div className="flex items-center gap-2 mt-3">
         <Select value={selectedClass} onValueChange={setSelectedClass}>
-          <SelectTrigger className="w-48"><SelectValue placeholder="Select class..." /></SelectTrigger>
+          <SelectTrigger className="w-48"><SelectValue placeholder={_('Select class...')} /></SelectTrigger>
           <SelectContent>
             {classes?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Button size="sm" onClick={() => { setPushing(true); onPush(data, selectedClass).finally(() => setPushing(false)); }} disabled={!selectedClass || pushing} loading={pushing}>
-          <Icon name="send" size={14} className="mr-1" /> {pushing ? 'Pushing...' : 'Push to Quizzes'}
+          <Icon name="send" size={14} className="mr-1" /> {pushing ? _('Pushing...') : _('Push to Quizzes')}
         </Button>
       </div>
     </div>
@@ -63,23 +64,23 @@ function AssignmentView({ data, onPush }: { data: any; onPush: (d: any, cls: str
   const { data: classes } = useQuery({ queryKey: ['admin-classes'], queryFn: getAllClasses });
   return (
     <div className="space-y-3 mt-2">
-      <p className="text-sm font-semibold text-primary">{data.title || 'Generated Assignment'}</p>
+      <p className="text-sm font-semibold text-primary">{data.title || _('Generated Assignment')}</p>
       {data.instructions && <p className="text-xs text-muted-foreground p-2 bg-muted/30 rounded">{data.instructions}</p>}
       <ol className="list-decimal list-inside space-y-1">
         {(data.questions || []).slice(0, 5).map((q: string, i: number) => (
           <li key={i} className="text-sm">{q}</li>
         ))}
       </ol>
-      <p className="text-xs font-medium">Total Points: {data.totalPoints || 0}</p>
+      <p className="text-xs font-medium">{_('Total Points:')} {data.totalPoints || 0}</p>
       <div className="flex items-center gap-2 mt-3">
         <Select value={selectedClass} onValueChange={setSelectedClass}>
-          <SelectTrigger className="w-48"><SelectValue placeholder="Select class..." /></SelectTrigger>
+          <SelectTrigger className="w-48"><SelectValue placeholder={_('Select class...')} /></SelectTrigger>
           <SelectContent>
             {classes?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Button size="sm" onClick={() => { setPushing(true); onPush(data, selectedClass).finally(() => setPushing(false)); }} disabled={!selectedClass || pushing} loading={pushing}>
-          <Icon name="send" size={14} className="mr-1" /> {pushing ? 'Pushing...' : 'Push to Assignments'}
+          <Icon name="send" size={14} className="mr-1" /> {pushing ? _('Pushing...') : _('Push to Assignments')}
         </Button>
       </div>
     </div>
@@ -89,9 +90,9 @@ function AssignmentView({ data, onPush }: { data: any; onPush: (d: any, cls: str
 function MindMapView({ data, onView }: { data: any; onView: (d: any) => void }) {
   return (
     <div className="space-y-3 mt-2">
-      <p className="text-sm font-semibold text-primary">Mind Map: {data?.centralTopic || data?.topic || 'Generated'}</p>
+      <p className="text-sm font-semibold text-primary">{_('Mind Map:')} {data?.centralTopic || data?.topic || _('Generated')}</p>
       <div className="p-3 bg-muted/20 rounded-lg">
-        <p className="text-xs font-medium mb-2">Nodes:</p>
+        <p className="text-xs font-medium mb-2">{_('Nodes:')}</p>
         <div className="space-y-1">
           {(data?.nodes || []).slice(0, 8).map((n: any, i: number) => (
             <div key={n.id || i} className="text-sm flex items-center gap-2">
@@ -102,13 +103,14 @@ function MindMapView({ data, onView }: { data: any; onView: (d: any) => void }) 
         </div>
       </div>
       <Button size="sm" onClick={() => onView(data)}>
-        <Icon name="account_tree" size={14} className="mr-1" /> View in Mind Maps
+        <Icon name="account_tree" size={14} className="mr-1" /> {_('View in Mind Maps')}
       </Button>
     </div>
   );
 }
 
 export default function TeacherOCRPage() {
+  const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const userId = user?.id || 'anonymous';
   
@@ -127,7 +129,7 @@ export default function TeacherOCRPage() {
 
   useEffect(() => {
     if (messages.length === 0) {
-      setTeacherOcrMessages(userId, [{ role: 'assistant', content: 'Hello! I\'m your AI teaching assistant. Upload textbook images and tell me what you\'d like to create — a quiz, assignment, mind map, or just ask a question!' }]);
+      setTeacherOcrMessages(userId, [{ role: 'assistant', content: _('Hello! I\'m your AI teaching assistant. Upload textbook images and tell me what you\'d like to create — a quiz, assignment, mind map, or just ask a question!') }]);
     }
   }, [messages.length, userId, setTeacherOcrMessages]);
   const [input, setInput] = useState('');
@@ -144,17 +146,17 @@ export default function TeacherOCRPage() {
     if (!text && pendingFiles.length === 0) return;
     setInput('');
 
-    const userMsg: ChatMsg = { role: 'user', content: text || 'Please process these images', images: pendingImages.length > 0 ? [...pendingImages] : undefined };
+    const userMsg: ChatMsg = { role: 'user', content: text || _('Please process these images'), images: pendingImages.length > 0 ? [...pendingImages] : undefined };
     const files = [...pendingFiles];
     setPendingImages([]);
     setPendingFiles([]);
 
     setMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
-    setLoadingPhase(files.length > 0 ? 'OCR scanning...' : 'Generating...');
+    setLoadingPhase(files.length > 0 ? _('OCR scanning...') : _('Generating...'));
 
-    const timer = setTimeout(() => setLoadingPhase((p) => p === 'OCR scanning...' ? 'OCR still working...' : 'AI generating...'), 5000);
-    const timer2 = setTimeout(() => setLoadingPhase('Almost done...'), 15000);
+    const timer = setTimeout(() => setLoadingPhase((p) => p === _('OCR scanning...') ? _('OCR still working...') : _('AI generating...')), 5000);
+    const timer2 = setTimeout(() => setLoadingPhase(_('Almost done...')), 15000);
 
     try {
       const result = await sendChatMessage(
@@ -162,10 +164,10 @@ export default function TeacherOCRPage() {
         files,
       );
       const data = result.data || result;
-      const reply = data.content || data.data?.message || data.data?.text || data.data?.response || data.data?.content || (typeof data === 'string' ? data : null) || 'Done!';
+      const reply = data.content || data.data?.message || data.data?.text || data.data?.response || data.data?.content || (typeof data === 'string' ? data : null) || _('Done!');
       setMessages((prev) => [...prev, { role: 'assistant', content: reply, data }]);
     } catch (err: any) {
-      setMessages((prev) => [...prev, { role: 'assistant', content: err?.message || 'Sorry, something went wrong. Please try again.' }]);
+      setMessages((prev) => [...prev, { role: 'assistant', content: err?.message || _('Sorry, something went wrong. Please try again.') }]);
     } finally {
       clearTimeout(timer);
       clearTimeout(timer2);
@@ -214,14 +216,14 @@ export default function TeacherOCRPage() {
     setMessages((prev) => [...prev, { role: 'assistant', content: `⏳ Pushing assignment to class...` }]);
     try {
       const result = await pushAssignment(data, classId);
-      setMessages((prev) => [...prev, { role: 'assistant', content: `✅ Assignment "${result.title || 'Untitled'}" pushed successfully!` }]);
+      setMessages((prev) => [...prev, { role: 'assistant', content: `✅ ${_('Assignment')} "${result.title || _('Untitled')}" ${_('pushed successfully!')}` }]);
     } catch (err: any) {
       setMessages((prev) => [...prev, { role: 'assistant', content: `❌ Failed to push assignment: ${err?.message || 'Unknown error'}` }]);
     }
   }, []);
 
   const handleViewMindMap = useCallback((data: any) => {
-    setMessages((prev) => [...prev, { role: 'assistant', content: `✅ Mind map ready! Navigate to the Mind Maps section to view it. (Mind map rendering coming soon)` }]);
+    setMessages((prev) => [...prev, { role: 'assistant', content: `✅ ${_('Mind map ready! Navigate to the Mind Maps section to view it. (Mind map rendering coming soon)')}` }]);
   }, []);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -235,7 +237,7 @@ export default function TeacherOCRPage() {
         <div className="space-y-2">
           <LatexRenderer content={msg.content} className="text-sm" />
           <Button variant="destructive" size="sm" onClick={() => handleDeleteQuiz(msg.data.pushedQuizId)}>
-            <Icon name="delete" size={14} className="mr-1" /> Delete Quiz
+            <Icon name="delete" size={14} className="mr-1" /> {_('Delete Quiz')}
           </Button>
         </div>
       );
@@ -248,11 +250,11 @@ export default function TeacherOCRPage() {
 
   return (
     <>
-      <SEOHead title="AI Teaching Assistant" description="Chat with AI to create quizzes, assignments, and mind maps from textbook images" />
+      <SEOHead title={_('AI Teaching Assistant')} description={_('Chat with AI to create quizzes, assignments, and mind maps from textbook images')} />
       <div className="max-w-5xl mx-auto px-6 py-6 h-[calc(100vh-80px)] flex flex-col">
         <div className="mb-6">
-          <h1 className="text-headline-md font-bold">AI Teaching Assistant</h1>
-          <p className="text-muted-foreground text-sm mt-1">Upload textbook images and tell me what to create — quiz, assignment, mind map, or ask a question</p>
+          <h1 className="text-headline-md font-bold">{_('AI Teaching Assistant')}</h1>
+          <p className="text-muted-foreground text-sm mt-1">{_('Upload textbook images and tell me what to create — quiz, assignment, mind map, or ask a question')}</p>
         </div>
 
         <Card className="flex-1 flex flex-col overflow-hidden shadow-md">
@@ -276,7 +278,7 @@ export default function TeacherOCRPage() {
                 <div className="bg-card rounded-2xl rounded-bl-md px-5 py-3.5 border border-border/60 shadow-sm">
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                    <span className="text-xs text-muted-foreground">{loadingPhase || 'Processing...'}</span>
+                    <span className="text-xs text-muted-foreground">{loadingPhase || _('Processing...')}</span>
                   </div>
                 </div>
               </motion.div>
@@ -304,7 +306,7 @@ export default function TeacherOCRPage() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Type your request or upload images first..."
+                placeholder={_('Type your request or upload images first...')}
                 disabled={isLoading}
                 className="flex-1"
               />

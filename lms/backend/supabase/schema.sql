@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS users (
   roll_no INTEGER,
   academic_year TEXT,
   children_ids TEXT[] NOT NULL DEFAULT '{}',
+  gender TEXT,
   password TEXT,
   streak_count INTEGER NOT NULL DEFAULT 0,
   last_active_date TEXT,

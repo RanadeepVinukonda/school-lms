@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from '@/hooks/useTranslation';
 import { codingService } from '@/services/codingService';
 import { useAuthStore } from '@/store/authStore';
 import type { CodingProject } from '@/types/coding';
@@ -13,6 +14,7 @@ const LANGUAGE_BADGES: Record<string, string> = {
 };
 
 export default function StudentCodingPage() {
+  const { _ } = useTranslation();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const [projects, setProjects] = useState<CodingProject[]>([]);
@@ -60,8 +62,8 @@ export default function StudentCodingPage() {
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-on-surface">Coding Workspace</h1>
-          <p className="text-on-surface-variant mt-1">Write, run, and collaborate on code projects</p>
+          <h1 className="text-2xl font-bold text-on-surface">{_('Coding Workspace')}</h1>
+          <p className="text-on-surface-variant mt-1">{_('Write, run, and collaborate on code projects')}</p>
         </div>
         <button
           onClick={handleCreate}
@@ -69,14 +71,14 @@ export default function StudentCodingPage() {
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 transition-colors"
         >
           <Icon name="add" size={18} />
-          {creating ? 'Creating...' : 'New Project'}
+          {creating ? _('Creating...') : _('New Project')}
         </button>
       </div>
 
       <div className="flex gap-2 border-b border-outline-variant">
         {[
-          { key: 'projects', label: 'My Projects', icon: 'code' },
-          { key: 'stream', label: 'STREAM Projects', icon: 'school' },
+          { key: 'projects', label: _('My Projects'), icon: 'code' },
+          { key: 'stream', label: _('STREAM Projects'), icon: 'school' },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -105,8 +107,8 @@ export default function StudentCodingPage() {
       ) : projects.length === 0 ? (
         <div className="text-center py-16">
           <Icon name="code" size={48} className="text-on-surface-variant/40 mx-auto" />
-          <p className="text-on-surface-variant mt-4">No coding projects yet</p>
-          <p className="text-label-sm text-on-surface-variant/60 mt-1">Create your first project to get started</p>
+          <p className="text-on-surface-variant mt-4">{_('No coding projects yet')}</p>
+          <p className="text-label-sm text-on-surface-variant/60 mt-1">{_('Create your first project to get started')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

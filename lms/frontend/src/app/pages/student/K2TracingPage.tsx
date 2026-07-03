@@ -1,23 +1,25 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/store/authStore';
 import { prePrimaryService } from '@/services/prePrimaryService';
-
-const tracingOptions = [
-  { label: 'A', type: 'letter' },
-  { label: 'B', type: 'letter' },
-  { label: 'C', type: 'letter' },
-  { label: '1', type: 'number' },
-  { label: '2', type: 'number' },
-  { label: '3', type: 'number' },
-  { label: 'Circle', type: 'shape' },
-  { label: 'Square', type: 'shape' },
-  { label: 'Triangle', type: 'shape' },
-];
 
 const COLORS = ['#000000', '#FF0000', '#0000FF', '#00AA00', '#FF8800', '#8800FF', '#FF00FF', '#00AAAA'];
 
 export default function K2TracingPage() {
+  const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
+
+  const tracingOptions = [
+    { label: 'A', type: 'letter' },
+    { label: 'B', type: 'letter' },
+    { label: 'C', type: 'letter' },
+    { label: '1', type: 'number' },
+    { label: '2', type: 'number' },
+    { label: '3', type: 'number' },
+    { label: _('Circle'), type: 'shape' },
+    { label: _('Square'), type: 'shape' },
+    { label: _('Triangle'), type: 'shape' },
+  ];
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [color, setColor] = useState('#000000');
@@ -144,7 +146,7 @@ export default function K2TracingPage() {
     <div className="space-y-4">
       <div className="bg-white rounded-3xl p-4 shadow-lg border-2 border-blue-200">
         <h2 className="text-2xl font-bold text-blue-700 mb-3 flex items-center gap-2">
-          <span>✏️</span> Tracing Fun
+          <span>✏️</span> {_('Tracing Fun')}
         </h2>
 
         <div className="flex gap-2 mb-4">
@@ -152,13 +154,13 @@ export default function K2TracingPage() {
             onClick={() => setMode('free')}
             className={`px-6 py-3 rounded-2xl text-lg font-bold transition-all ${mode === 'free' ? 'bg-blue-500 text-white shadow-lg scale-105' : 'bg-gray-100 text-gray-600'}`}
           >
-            🎨 Free Draw
+            🎨 {_('Free Draw')}
           </button>
           <button
             onClick={() => setMode('guide')}
             className={`px-6 py-3 rounded-2xl text-lg font-bold transition-all ${mode === 'guide' ? 'bg-blue-500 text-white shadow-lg scale-105' : 'bg-gray-100 text-gray-600'}`}
           >
-            📝 Trace
+            📝 {_('Trace')}
           </button>
         </div>
 
@@ -187,7 +189,7 @@ export default function K2TracingPage() {
               style={{ backgroundColor: c }}
             />
           ))}
-          <span className="text-sm text-gray-500 ml-2">Size:</span>
+          <span className="text-sm text-gray-500 ml-2">{_('Size:')}</span>
           <input
             type="range"
             min="2"
@@ -217,15 +219,15 @@ export default function K2TracingPage() {
 
         <div className="flex gap-3 mt-4">
           <button onClick={clearCanvas} className="flex-1 px-6 py-3 bg-red-100 text-red-600 rounded-2xl text-lg font-bold hover:bg-red-200 transition-colors">
-            🗑️ Clear
+            🗑️ {_('Clear')}
           </button>
           <button onClick={saveCanvas} className="flex-1 px-6 py-3 bg-green-100 text-green-600 rounded-2xl text-lg font-bold hover:bg-green-200 transition-colors">
-            💾 Save
+            💾 {_('Save')}
           </button>
         </div>
 
         {savedCount > 0 && (
-          <p className="text-center text-green-500 font-bold mt-2">Saved {savedCount} drawing{savedCount > 1 ? 's' : ''}! ⭐</p>
+          <p className="text-center text-green-500 font-bold mt-2">{_('Saved')} {savedCount} {_('drawing')}{savedCount > 1 ? 's' : ''}! ⭐</p>
         )}
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -51,22 +52,6 @@ interface AssessmentItem {
   timeLimitMinutes?: number;
 }
 
-const QUESTION_MODELS = [
-  { value: 'multiple_choice', label: 'Multiple Choice' },
-  { value: 'true_false', label: 'True/False' },
-  { value: 'short_answer', label: 'Short Answer' },
-  { value: 'fill_blank', label: 'Fill in the Blank' },
-  { value: 'matching', label: 'Matching' },
-];
-
-const ASSIGNMENT_QUESTION_TYPES = [
-  { value: 'multiple_choice', label: 'Multiple Choice' },
-  { value: 'true_false', label: 'True/False' },
-  { value: 'short_answer', label: 'Short Answer' },
-  { value: 'fill_blank', label: 'Fill in the Blank' },
-  { value: 'matching', label: 'Matching' },
-];
-
 let questionIdCounter = 0;
 function freshQuestionId(): string {
   questionIdCounter += 1;
@@ -85,7 +70,22 @@ function createEmptyQuestion(): AssignmentQuestion {
 }
 
 export default function TeacherAssessmentCreatePage() {
+  const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
+  const QUESTION_MODELS = [
+    { value: 'multiple_choice', label: _('Multiple Choice') },
+    { value: 'true_false', label: _('True/False') },
+    { value: 'short_answer', label: _('Short Answer') },
+    { value: 'fill_blank', label: _('Fill in the Blank') },
+    { value: 'matching', label: _('Matching') },
+  ];
+  const ASSIGNMENT_QUESTION_TYPES = [
+    { value: 'multiple_choice', label: _('Multiple Choice') },
+    { value: 'true_false', label: _('True/False') },
+    { value: 'short_answer', label: _('Short Answer') },
+    { value: 'fill_blank', label: _('Fill in the Blank') },
+    { value: 'matching', label: _('Matching') },
+  ];
   const queryClient = useQueryClient();
 
   const [assessmentType, setAssessmentType] = useState<'quiz' | 'assignment'>('quiz');
@@ -206,7 +206,7 @@ export default function TeacherAssessmentCreatePage() {
   const createQuizMutation = useMutation({
     mutationFn: (body: Record<string, unknown>) => api.post('/quizzes-v2', body).then((r) => r.data.data),
     onSuccess: () => {
-      toast.success('Quiz created successfully');
+      toast.success(_('Quiz created successfully'));
       queryClient.invalidateQueries({ queryKey: ['assessments-quizzes', selectedClassId] });
       setReviewQuestions([]);
       setQuizTitle('');
@@ -216,7 +216,7 @@ export default function TeacherAssessmentCreatePage() {
     onError: (err: unknown) => {
       const message = err && typeof err === 'object' && 'message' in err
         ? (err as { message: string }).message
-        : 'Failed to create quiz';
+        : _('Failed to create quiz');
       toast.error(message);
     },
   });
@@ -227,18 +227,18 @@ export default function TeacherAssessmentCreatePage() {
       if (data.questions?.length) {
         setReviewQuestions(data.questions);
         if (data.aiErrorMessage) {
-          toast.error(`AI Error: ${data.aiErrorMessage}`);
+          toast.error(_('AI Error') + `: ${data.aiErrorMessage}`);
         } else if (data.aiGeneratedCount === 0 && data.questions.length < (questionCount || 0)) {
-          toast.error('AI generated 0 questions. Check GEMINI_API_KEY or quota.');
+          toast.error(_('AI generated 0 questions. Check GEMINI_API_KEY or quota.'));
         } else {
-          toast.success(`Preview: ${data.questions.length} questions (${data.aiGeneratedCount ?? 0} AI)`);
+          toast.success(_('Preview') + `: ${data.questions.length} ${_('questions')} (${data.aiGeneratedCount ?? 0} AI)`);
         }
       }
     },
     onError: (err: unknown) => {
       const message = err && typeof err === 'object' && 'message' in err
         ? (err as { message: string }).message
-        : 'Failed to generate preview';
+        : _('Failed to generate preview');
       toast.error(message);
     },
   });
@@ -246,7 +246,7 @@ export default function TeacherAssessmentCreatePage() {
   const createAssignmentMutation = useMutation({
     mutationFn: (body: Record<string, unknown>) => api.post('/assignments-v2', body).then((r) => r.data.data),
     onSuccess: () => {
-      toast.success('Assignment created successfully');
+      toast.success(_('Assignment created successfully'));
       queryClient.invalidateQueries({ queryKey: ['assessments-assignments', selectedClassId] });
       setAssignmentTitle('');
       setAssignmentDescription('');
@@ -255,7 +255,7 @@ export default function TeacherAssessmentCreatePage() {
     onError: (err: unknown) => {
       const message = err && typeof err === 'object' && 'message' in err
         ? (err as { message: string }).message
-        : 'Failed to create assignment';
+        : _('Failed to create assignment');
       toast.error(message);
     },
   });
@@ -263,13 +263,13 @@ export default function TeacherAssessmentCreatePage() {
   const releaseQuizMutation = useMutation({
     mutationFn: (id: string) => api.post(`/quizzes-v2/${id}/release`).then((r) => r.data.data),
     onSuccess: () => {
-      toast.success('Quiz released to students');
+      toast.success(_('Quiz released to students'));
       queryClient.invalidateQueries({ queryKey: ['assessments-quizzes', selectedClassId] });
     },
     onError: (err: unknown) => {
       const message = err && typeof err === 'object' && 'message' in err
         ? (err as { message: string }).message
-        : 'Failed to release quiz';
+        : _('Failed to release quiz');
       toast.error(message);
     },
   });
@@ -277,13 +277,13 @@ export default function TeacherAssessmentCreatePage() {
   const releaseAssignmentMutation = useMutation({
     mutationFn: (id: string) => api.post(`/assignments-v2/${id}/release`).then((r) => r.data.data),
     onSuccess: () => {
-      toast.success('Assignment released to students');
+      toast.success(_('Assignment released to students'));
       queryClient.invalidateQueries({ queryKey: ['assessments-assignments', selectedClassId] });
     },
     onError: (err: unknown) => {
       const message = err && typeof err === 'object' && 'message' in err
         ? (err as { message: string }).message
-        : 'Failed to release assignment';
+        : _('Failed to release assignment');
       toast.error(message);
     },
   });
@@ -305,7 +305,7 @@ export default function TeacherAssessmentCreatePage() {
     onError: (err: unknown) => {
       const message = err && typeof err === 'object' && 'message' in err
         ? (err as { message: string }).message
-        : 'Failed to update grade visibility';
+        : _('Failed to update grade visibility');
       toast.error(message);
     },
   });
@@ -313,13 +313,13 @@ export default function TeacherAssessmentCreatePage() {
   const republishQuizMutation = useMutation({
     mutationFn: (id: string) => api.post(`/quizzes-v2/${id}/republish`).then((r) => r.data.data),
     onSuccess: () => {
-      toast.success('Quiz republished as interactive practice mode');
+      toast.success(_('Quiz republished as interactive practice mode'));
       queryClient.invalidateQueries({ queryKey: ['assessments-quizzes', selectedClassId] });
     },
     onError: (err: unknown) => {
       const message = err && typeof err === 'object' && 'message' in err
         ? (err as { message: string }).message
-        : 'Failed to republish quiz';
+        : _('Failed to republish quiz');
       toast.error(message);
     },
   });
@@ -333,7 +333,7 @@ export default function TeacherAssessmentCreatePage() {
     onError: (err: unknown) => {
       const message = err && typeof err === 'object' && 'message' in err
         ? (err as { message: string }).message
-        : 'Failed to update grade visibility';
+        : _('Failed to update grade visibility');
       toast.error(message);
     },
   });
@@ -360,19 +360,19 @@ export default function TeacherAssessmentCreatePage() {
 
   const handleCreateQuiz = useCallback(() => {
     if (!selectedAssignment || !selectedTextbookId || !selectedChapterId || !selectedConceptId) {
-      toast.error('Please select a class, textbook, chapter, and concept');
+      toast.error(_('Please select a class, textbook, chapter, and concept'));
       return;
     }
     if (!quizTitle.trim()) {
-      toast.error('Please enter a quiz title');
+      toast.error(_('Please enter a quiz title'));
       return;
     }
     if (selectedModels.length === 0) {
-      toast.error('Please select at least one question model');
+      toast.error(_('Please select at least one question model'));
       return;
     }
     if (questionCount < 1) {
-      toast.error('Question count must be at least 1');
+      toast.error(_('Question count must be at least 1'));
       return;
     }
 
@@ -405,16 +405,16 @@ export default function TeacherAssessmentCreatePage() {
 
   const handleCreateAssignment = useCallback(() => {
     if (!selectedAssignment || !selectedTextbookId || !selectedChapterId || !selectedConceptId) {
-      toast.error('Please select a class, textbook, chapter, and concept');
+      toast.error(_('Please select a class, textbook, chapter, and concept'));
       return;
     }
     if (!assignmentTitle.trim()) {
-      toast.error('Please enter an assignment title');
+      toast.error(_('Please enter an assignment title'));
       return;
     }
     const validQuestions = assignmentQuestions.filter((q) => q.text.trim());
     if (validQuestions.length === 0) {
-      toast.error('Please add at least one question with text');
+      toast.error(_('Please add at least one question with text'));
       return;
     }
 
@@ -513,7 +513,7 @@ export default function TeacherAssessmentCreatePage() {
   if (assignmentsLoading) {
     return (
       <>
-        <SEOHead title="Create Assessment" description="Create quizzes and assignments for your class" canonical="/teacher/assessments/create" />
+        <SEOHead title={_('Create Assessment')} description={_('Create quizzes and assignments for your class')} canonical="/teacher/assessments/create" />
         <div className="p-6 max-w-4xl mx-auto pb-32 space-y-16">
           <Skeleton className="h-8 w-56" />
           <Skeleton className="h-4 w-80" />
@@ -535,10 +535,10 @@ export default function TeacherAssessmentCreatePage() {
             <Card className="border-border/60">
               <CardContent className="p-5 text-center space-y-4">
                 <Icon name="error_outline" size={48} className="text-destructive mx-auto" />
-                <p className="text-muted-foreground">Failed to load your assignments. Please try again.</p>
-                <Button variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: ['teacher-assignments', user?.id] })}>
-                  Retry
-                </Button>
+                <p className="text-muted-foreground">{_('Failed to load your assignments. Please try again.')}</p>
+                  <Button variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: ['teacher-assignments', user?.id] })}>
+                    {_('Retry')}
+                  </Button>
               </CardContent>
             </Card>
           </motion.div>
@@ -553,18 +553,18 @@ export default function TeacherAssessmentCreatePage() {
         <SEOHead title="Create Assessment" description="Create quizzes and assignments for your class" canonical="/teacher/assessments/create" />
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-4xl mx-auto pb-32 space-y-16">
           <motion.div variants={cardStackReveal} custom={0}>
-            <h1 className="text-headline-sm">Create Assessment</h1>
-            <p className="text-body-md text-muted-foreground">Create quizzes and assignments for your class</p>
+            <h1 className="text-headline-sm">{_('Create Assessment')}</h1>
+            <p className="text-body-md text-muted-foreground">{_('Create quizzes and assignments for your class')}</p>
           </motion.div>
           <motion.div variants={cardStackReveal} custom={0}>
             <Card className="border-border/60">
               <CardContent className="p-5 text-center space-y-4">
                 <Icon name="school" size={48} className="text-muted-foreground mx-auto" />
                 <p className="text-muted-foreground">
-                  You haven&apos;t been assigned to any class/subject yet. Contact your administrator.
+                  {_('You haven\'t been assigned to any class/subject yet. Contact your administrator.')}
                 </p>
                 <Button variant="outline" onClick={() => window.history.back()}>
-                  Go Back
+                  {_('Go Back')}
                 </Button>
               </CardContent>
             </Card>
@@ -597,11 +597,11 @@ export default function TeacherAssessmentCreatePage() {
             <CardContent className="p-5 space-y-6">
               <div className="flex items-center gap-2">
                 <Icon name="school" size={16} className="text-primary" />
-                <span className="text-title-sm">Class &amp; Content Selection</span>
+                <span className="text-title-sm">{_('Class & Content Selection')}</span>
               </div>
 
               <div>
-                <Label className="mb-2 block">Class</Label>
+                  <Label className="mb-2 block">{_('Class')}</Label>
                 <select
                   value={selectedClassId}
                   onChange={(e) => {
@@ -615,7 +615,7 @@ export default function TeacherAssessmentCreatePage() {
                   }}
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >
-                  <option value="">Select a class...</option>
+                  <option value="">{_('Select a class...')}</option>
                   {[...new Map(assignmentList.map((a) => [a.classId, a]))].map(([_, a]) => (
                     <option key={a.classId} value={a.classId}>{a.className}</option>
                   ))}
@@ -624,7 +624,7 @@ export default function TeacherAssessmentCreatePage() {
 
               {classAssignments.length > 0 && (
                 <div>
-                  <Label className="mb-2 block">Subject</Label>
+                  <Label className="mb-2 block">{_('Subject')}</Label>
                   {classAssignments.length === 1 ? (
                     <div className="w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
                       {classAssignments[0].subjectName}
@@ -652,11 +652,11 @@ export default function TeacherAssessmentCreatePage() {
 
               {selectedAssignment && (
                 <div>
-                  <Label className="mb-2 block">Textbook</Label>
+                  <Label className="mb-2 block">{_('Textbook')}</Label>
                   {textbooksLoading ? (
                     <Skeleton className="h-10 w-full" />
                   ) : textbookList.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No textbooks available for this subject</p>
+                    <p className="text-sm text-muted-foreground">{_('No textbooks available for this subject')}</p>
                   ) : (
                     <select
                       value={selectedTextbookId}
@@ -667,7 +667,7 @@ export default function TeacherAssessmentCreatePage() {
                       }}
                       className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                     >
-                      <option value="">Select a textbook...</option>
+                      <option value="">{_('Select a textbook...')}</option>
                       {textbookList.map((tb) => (
                         <option key={tb.id} value={tb.id}>{tb.title}</option>
                       ))}
@@ -678,11 +678,11 @@ export default function TeacherAssessmentCreatePage() {
 
               {selectedTextbookId && (
                 <div>
-                  <Label className="mb-2 block">Chapter</Label>
+                  <Label className="mb-2 block">{_('Chapter')}</Label>
                   {chaptersLoading ? (
                     <Skeleton className="h-10 w-full" />
                   ) : chapterList.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No chapters found in this textbook</p>
+                    <p className="text-sm text-muted-foreground">{_('No chapters found in this textbook')}</p>
                   ) : (
                     <select
                       value={selectedChapterId}
@@ -692,9 +692,9 @@ export default function TeacherAssessmentCreatePage() {
                       }}
                       className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                     >
-                      <option value="">Select a chapter...</option>
+                      <option value="">{_('Select a chapter...')}</option>
                       {chapterList.map((ch) => (
-                        <option key={ch.id} value={ch.id}>Chapter {ch.order + 1}: {ch.title}</option>
+                        <option key={ch.id} value={ch.id}>{_('Chapter')} {ch.order + 1}: {ch.title}</option>
                       ))}
                     </select>
                   )}
@@ -703,25 +703,25 @@ export default function TeacherAssessmentCreatePage() {
 
               {selectedChapterId && (
                 <div>
-                  <Label className="mb-2 block">Concept</Label>
+                  <Label className="mb-2 block">{_('Concept')}</Label>
                   {conceptsLoading ? (
                     <Skeleton className="h-10 w-full" />
                   ) : conceptList.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No concepts found in this chapter</p>
+                    <p className="text-sm text-muted-foreground">{_('No concepts found in this chapter')}</p>
                   ) : (
                     <select
                       value={selectedConceptId}
                       onChange={(e) => setSelectedConceptId(e.target.value)}
                       className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                     >
-                      <option value="">Select a concept...</option>
+                      <option value="">{_('Select a concept...')}</option>
                       {conceptList.map((c) => (
                         <option key={c.id} value={c.id}>{c.title}</option>
                       ))}
                     </select>
                   )}
                   {selectedConceptId && allConceptQuestions.length === 0 && (
-                    <p className="mt-2 text-xs text-muted-foreground">No questions available for this concept.</p>
+                    <p className="mt-2 text-xs text-muted-foreground">{_('No questions available for this concept.')}</p>
                   )}
                 </div>
               )}
@@ -735,7 +735,7 @@ export default function TeacherAssessmentCreatePage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Icon name="assignment" size={16} className="text-primary" />
-                  <span className="text-title-sm">Assessment Type</span>
+                  <span className="text-title-sm">{_('Assessment Type')}</span>
                 </div>
                 <div className="inline-flex rounded-lg border border-border p-0.5 bg-muted/50">
                   <button
@@ -748,7 +748,7 @@ export default function TeacherAssessmentCreatePage() {
                     }`}
                   >
                     <Icon name="quiz" size={14} className="inline mr-1.5 align-text-bottom" />
-                    Quiz
+                    {_('Quiz')}
                   </button>
                   <button
                     type="button"
@@ -760,7 +760,7 @@ export default function TeacherAssessmentCreatePage() {
                     }`}
                   >
                     <Icon name="note_alt" size={14} className="inline mr-1.5 align-text-bottom" />
-                    Assignment
+                    {_('Assignment')}
                   </button>
                 </div>
               </div>
@@ -768,19 +768,19 @@ export default function TeacherAssessmentCreatePage() {
               {assessmentType === 'quiz' ? (
                 <div className="space-y-5">
                   <div>
-                    <Label htmlFor="quiz-title" className="mb-2 block">Quiz Title</Label>
+                    <Label htmlFor="quiz-title" className="mb-2 block">{_('Quiz Title')}</Label>
                     <Input
                       id="quiz-title"
                       value={quizTitle}
                       onChange={(e) => setQuizTitle(e.target.value)}
-                      placeholder="e.g. Algebra Basics Quiz"
+                      placeholder={_('e.g. Algebra Basics Quiz')}
                     />
                   </div>
 
                   <div>
-                    <Label className="mb-2 block">Question Models</Label>
+                    <Label className="mb-2 block">{_('Question Models')}</Label>
                     <p className="text-label-xs text-muted-foreground mb-3">
-                      Select which question types to pull from the concept&apos;s question bank
+                      {_('Select which question types to pull from the concept\'s question bank')}
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {QUESTION_MODELS.map((model) => (
@@ -804,7 +804,7 @@ export default function TeacherAssessmentCreatePage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="quiz-time-limit" className="mb-2 block">Time Limit (minutes)</Label>
+                      <Label htmlFor="quiz-time-limit" className="mb-2 block">{_('Time Limit (minutes)')}</Label>
                       <Input
                         id="quiz-time-limit"
                         type="number"
@@ -814,7 +814,7 @@ export default function TeacherAssessmentCreatePage() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="quiz-question-count" className="mb-2 block">Question Count</Label>
+                      <Label htmlFor="quiz-question-count" className="mb-2 block">{_('Question Count')}</Label>
                       <Input
                         id="quiz-question-count"
                         type="number"
@@ -824,7 +824,7 @@ export default function TeacherAssessmentCreatePage() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="quiz-passing-score" className="mb-2 block">Passing Score (%)</Label>
+                      <Label htmlFor="quiz-passing-score" className="mb-2 block">{_('Passing Score (%)')}</Label>
                       <Input
                         id="quiz-passing-score"
                         type="number"
@@ -838,7 +838,7 @@ export default function TeacherAssessmentCreatePage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="quiz-max-attempts" className="mb-2 block">Max Attempts</Label>
+                      <Label htmlFor="quiz-max-attempts" className="mb-2 block">{_('Max Attempts')}</Label>
                       <Input
                         id="quiz-max-attempts"
                         type="number"
@@ -851,8 +851,8 @@ export default function TeacherAssessmentCreatePage() {
                       <label className="flex items-center gap-3 cursor-pointer">
                         <Switch checked={quizShuffle} onCheckedChange={setQuizShuffle} />
                         <div>
-                          <span className="text-sm font-medium">Shuffle Questions</span>
-                          <p className="text-label-xs text-muted-foreground">Randomize question order for each student</p>
+                          <span className="text-sm font-medium">{_('Shuffle Questions')}</span>
+                          <p className="text-label-xs text-muted-foreground">{_('Randomize question order for each student')}</p>
                         </div>
                       </label>
                     </div>
@@ -863,9 +863,9 @@ export default function TeacherAssessmentCreatePage() {
                     <div className="mt-3 space-y-3">
                       <p className="text-sm font-medium text-primary flex items-center gap-1">
                         <Icon name="visibility" size={14} />
-                        All Questions — {reviewQuestions.length} total
+                        {_('All Questions')} — {reviewQuestions.length} {_('total')}
                       </p>
-                      <p className="text-xs text-muted-foreground">Edit any question below, then click Create Quiz to save</p>
+                      <p className="text-xs text-muted-foreground">{_('Edit any question below, then click Create Quiz to save')}</p>
                       <div className="space-y-3 max-h-96 overflow-y-auto border rounded-lg p-3 bg-muted/10">
                         {reviewQuestions.map((q: any, i: number) => (
                           <div key={q.id || i} className="border rounded-lg p-3 space-y-2 bg-background">
@@ -913,7 +913,7 @@ export default function TeacherAssessmentCreatePage() {
                               </div>
                             )}
                             <div className="flex items-center gap-2">
-                              <span className="text-xs text-muted-foreground">Answer:</span>
+                              <span className="text-xs text-muted-foreground">{_('Answer:')}</span>
                               <input
                                 className="flex-1 rounded border border-border bg-background px-2 py-1 text-sm font-medium text-green-700"
                                 value={q.correctAnswer}
@@ -951,9 +951,9 @@ export default function TeacherAssessmentCreatePage() {
                       disabled={generatePreviewMutation.isPending || !quizTitle.trim()}
                     >
                       {generatePreviewMutation.isPending ? (
-                        <>Generating...</>
+                        <>{_('Generating...')}</>
                       ) : (
-                        <>Generate AI Preview ({questionCount} questions)</>
+                        <>{_('Generate AI Preview')} ({questionCount} {_('questions')})</>
                       )}
                     </Button>
                   ) : null}
@@ -974,12 +974,12 @@ export default function TeacherAssessmentCreatePage() {
                     {createQuizMutation.isPending ? (
                       <>
                         <Icon name="hourglass_top" size={18} className="animate-spin" />
-                        Creating Quiz...
+                        {_('Creating Quiz...')}
                       </>
                     ) : (
                       <>
                         <Icon name="quiz" size={18} />
-                        Create Quiz
+                        {_('Create Quiz')}
                       </>
                     )}
                   </Button>
@@ -987,28 +987,28 @@ export default function TeacherAssessmentCreatePage() {
               ) : (
                 <div className="space-y-5">
                   <div>
-                    <Label htmlFor="assignment-title" className="mb-2 block">Assignment Title</Label>
+                    <Label htmlFor="assignment-title" className="mb-2 block">{_('Assignment Title')}</Label>
                     <Input
                       id="assignment-title"
                       value={assignmentTitle}
                       onChange={(e) => setAssignmentTitle(e.target.value)}
-                      placeholder="e.g. Algebra Practice Problems"
+                      placeholder={_('e.g. Algebra Practice Problems')}
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="assignment-description" className="mb-2 block">Description</Label>
+                    <Label htmlFor="assignment-description" className="mb-2 block">{_('Description')}</Label>
                     <Textarea
                       id="assignment-description"
                       value={assignmentDescription}
                       onChange={(e) => setAssignmentDescription(e.target.value)}
-                      placeholder="Provide instructions or context for this assignment"
+                      placeholder={_('Provide instructions or context for this assignment')}
                       rows={3}
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="assignment-time-limit" className="mb-2 block">Time Limit (minutes)</Label>
+                    <Label htmlFor="assignment-time-limit" className="mb-2 block">{_('Time Limit (minutes)')}</Label>
                     <Input
                       id="assignment-time-limit"
                       type="number"
@@ -1020,10 +1020,10 @@ export default function TeacherAssessmentCreatePage() {
 
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <Label className="text-title-sm">Questions</Label>
+                      <Label className="text-title-sm">{_('Questions')}</Label>
                       <Button variant="outline" size="sm" onClick={addAssignmentQuestion}>
                         <Icon name="add" size={14} className="mr-1" />
-                        Add Question
+                        {_('Add Question')}
                       </Button>
                     </div>
 
@@ -1033,7 +1033,7 @@ export default function TeacherAssessmentCreatePage() {
                           <CardContent className="p-5 space-y-3">
                             <div className="flex items-center justify-between">
                               <span className="text-label-xs font-semibold text-muted-foreground">
-                                Question {index + 1}
+                                {_('Question')} {index + 1}
                               </span>
                               {assignmentQuestions.length > 1 && (
                                 <Button
@@ -1047,17 +1047,17 @@ export default function TeacherAssessmentCreatePage() {
                             </div>
 
                             <div>
-                              <Label className="mb-1 block text-label-xs">Question Text</Label>
+                              <Label className="mb-1 block text-label-xs">{_('Question Text')}</Label>
                               <Input
                                 value={question.text}
                                 onChange={(e) => updateAssignmentQuestion(question.id, 'text', e.target.value)}
-                                placeholder="Enter your question"
+                                placeholder={_('Enter your question')}
                               />
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div>
-                                <Label className="mb-1 block text-label-xs">Type</Label>
+                                <Label className="mb-1 block text-label-xs">{_('Type')}</Label>
                                 <select
                                   value={question.type}
                                   onChange={(e) => updateAssignmentQuestion(question.id, 'type', e.target.value)}
@@ -1069,7 +1069,7 @@ export default function TeacherAssessmentCreatePage() {
                                 </select>
                               </div>
                               <div>
-                                <Label className="mb-1 block text-label-xs">Points</Label>
+                                <Label className="mb-1 block text-label-xs">{_('Points')}</Label>
                                 <Input
                                   type="number"
                                   min={1}
@@ -1082,7 +1082,7 @@ export default function TeacherAssessmentCreatePage() {
                             {question.type === 'multiple_choice' && (
                               <div>
                                 <div className="flex items-center justify-between mb-1">
-                                  <Label className="text-label-xs">Options</Label>
+                                  <Label className="text-label-xs">{_('Options')}</Label>
                                   <Button variant="ghost" size="icon-sm" onClick={() => addOption(question.id)}>
                                     <Icon name="add_circle" size={14} className="text-primary" />
                                   </Button>
@@ -1096,7 +1096,7 @@ export default function TeacherAssessmentCreatePage() {
                                       <Input
                                         value={opt}
                                         onChange={(e) => updateOption(question.id, oi, e.target.value)}
-                                        placeholder={`Option ${String.fromCharCode(65 + oi)}`}
+                                        placeholder={_('Option') + ` ${String.fromCharCode(65 + oi)}`}
                                         className="flex-1"
                                       />
                                       {question.options.length > 1 && (
@@ -1115,17 +1115,17 @@ export default function TeacherAssessmentCreatePage() {
                             )}
 
                             <div>
-                              <Label className="mb-1 block text-label-xs">Correct Answer</Label>
+                              <Label className="mb-1 block text-label-xs">{_('Correct Answer')}</Label>
                               {question.type === 'multiple_choice' ? (
                                 <select
                                   value={question.correctAnswer}
                                   onChange={(e) => updateAssignmentQuestion(question.id, 'correctAnswer', e.target.value)}
                                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                                 >
-                                  <option value="">Select correct option...</option>
+                                  <option value="">{_('Select correct option...')}</option>
                                   {question.options.map((opt, oi) => (
                                     <option key={oi} value={opt}>
-                                      {opt || `Option ${String.fromCharCode(65 + oi)}`}
+                                      {opt || _('Option') + ` ${String.fromCharCode(65 + oi)}`}
                                     </option>
                                   ))}
                                 </select>
@@ -1135,15 +1135,15 @@ export default function TeacherAssessmentCreatePage() {
                                   onChange={(e) => updateAssignmentQuestion(question.id, 'correctAnswer', e.target.value)}
                                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                                 >
-                                  <option value="">Select...</option>
-                                  <option value="true">True</option>
-                                  <option value="false">False</option>
+                                  <option value="">{_('Select...')}</option>
+                                  <option value="true">{_('True')}</option>
+                                  <option value="false">{_('False')}</option>
                                 </select>
                               ) : (
                                 <Input
                                   value={question.correctAnswer}
                                   onChange={(e) => updateAssignmentQuestion(question.id, 'correctAnswer', e.target.value)}
-                                  placeholder="Enter the correct answer"
+                                  placeholder={_('Enter the correct answer')}
                                 />
                               )}
                             </div>
@@ -1155,7 +1155,7 @@ export default function TeacherAssessmentCreatePage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="assignment-passing-score" className="mb-2 block">Passing Score (%)</Label>
+                      <Label htmlFor="assignment-passing-score" className="mb-2 block">{_('Passing Score (%)')}</Label>
                       <Input
                         id="assignment-passing-score"
                         type="number"
@@ -1166,7 +1166,7 @@ export default function TeacherAssessmentCreatePage() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="assignment-max-attempts" className="mb-2 block">Max Attempts</Label>
+                      <Label htmlFor="assignment-max-attempts" className="mb-2 block">{_('Max Attempts')}</Label>
                       <Input
                         id="assignment-max-attempts"
                         type="number"
@@ -1179,8 +1179,8 @@ export default function TeacherAssessmentCreatePage() {
                       <label className="flex items-center gap-3 cursor-pointer">
                         <Switch checked={assignmentShuffle} onCheckedChange={setAssignmentShuffle} />
                         <div>
-                          <span className="text-sm font-medium">Shuffle Questions</span>
-                          <p className="text-label-xs text-muted-foreground">Randomize question order for each student</p>
+                          <span className="text-sm font-medium">{_('Shuffle Questions')}</span>
+                          <p className="text-label-xs text-muted-foreground">{_('Randomize question order for each student')}</p>
                         </div>
                       </label>
                     </div>
@@ -1202,12 +1202,12 @@ export default function TeacherAssessmentCreatePage() {
                     {createAssignmentMutation.isPending ? (
                       <>
                         <Icon name="hourglass_top" size={18} className="animate-spin" />
-                        Creating Assignment...
+                        {_('Creating Assignment...')}
                       </>
                     ) : (
                       <>
                         <Icon name="note_alt" size={18} />
-                        Create Assignment
+                        {_('Create Assignment')}
                       </>
                     )}
                   </Button>
@@ -1223,10 +1223,10 @@ export default function TeacherAssessmentCreatePage() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-title-sm flex items-center gap-2">
                   <Icon name="list_alt" size={18} className="text-muted-foreground" />
-                  Existing Assessments
+                  {_('Existing Assessments')}
                 </CardTitle>
                 <CardDescription>
-                  Quizzes and assignments for the selected class
+                  {_('Quizzes and assignments for the selected class')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-5">
@@ -1239,7 +1239,7 @@ export default function TeacherAssessmentCreatePage() {
                   <div className="py-8 text-center">
                     <Icon name="inbox" size={40} className="text-muted-foreground/30 mx-auto mb-3" />
                     <p className="text-sm text-muted-foreground">
-                      No assessments created yet for this class.
+                      {_('No assessments created yet for this class.')}
                     </p>
                   </div>
                 ) : (
@@ -1262,7 +1262,7 @@ export default function TeacherAssessmentCreatePage() {
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="font-medium text-sm truncate">{assessment.title || 'Untitled'}</span>
+                                    <span className="font-medium text-sm truncate">{assessment.title || _('Untitled')}</span>
                                     <Badge
                                       variant={assessment.status === 'released' ? 'success' : 'outline'}
                                       className="text-[10px] capitalize"
@@ -1274,11 +1274,11 @@ export default function TeacherAssessmentCreatePage() {
                                     </Badge>
                                   </div>
                                   <div className="flex items-center gap-3 mt-1.5 text-label-xs text-muted-foreground flex-wrap">
-                                    <span>{assessment.attemptCount ?? 0} attempts</span>
-                                    {assessment.timeLimitMinutes && <span>{assessment.timeLimitMinutes}m</span>}
-                                    {assessment.totalPoints && <span>{assessment.totalPoints} pts</span>}
-                                    <span>Pass {assessment.passingScore ?? 50}%</span>
-                                    <span>Max {assessment.maxAttempts ?? 3}</span>
+                                    <span>{assessment.attemptCount ?? 0} {_('attempts')}</span>
+                                    {assessment.timeLimitMinutes && <span>{assessment.timeLimitMinutes}{_('m')}</span>}
+                                    {assessment.totalPoints && <span>{assessment.totalPoints} {_('pts')}</span>}
+                                    <span>{_('Pass')} {assessment.passingScore ?? 50}%</span>
+                                    <span>{_('Max')} {assessment.maxAttempts ?? 3}</span>
                                   </div>
                                 </div>
                               </div>
@@ -1291,7 +1291,7 @@ export default function TeacherAssessmentCreatePage() {
                                         onCheckedChange={(v) => updateQuizMutation.mutate({ quizId: assessment.id, data: { shuffleQuestions: v } })}
                                         className="scale-[0.6]"
                                       />
-                                      Shuffle
+                                      {_('Shuffle')}
                                     </label>
                                     <label className="flex items-center gap-1 cursor-pointer text-[10px]">
                                       <Switch
@@ -1299,7 +1299,7 @@ export default function TeacherAssessmentCreatePage() {
                                         onCheckedChange={(v) => updateQuizMutation.mutate({ quizId: assessment.id, data: { showResults: v } })}
                                         className="scale-[0.6]"
                                       />
-                                      Results
+                                      {_('Results')}
                                     </label>
                                     <Button
                                       variant="default"
@@ -1316,7 +1316,7 @@ export default function TeacherAssessmentCreatePage() {
                                         (assessment.type === 'assignment' && releaseAssignmentMutation.isPending)
                                       }
                                     >
-                                      Release
+                                      {_('Release')}
                                     </Button>
                                   </>
                                 )}
@@ -1324,7 +1324,7 @@ export default function TeacherAssessmentCreatePage() {
                                   assessment.isRepublished ? (
                                     <Badge variant="success" className="text-[10px] gap-1 py-1">
                                       <Icon name="check" size={10} />
-                                      Republished
+                                      {_('Republished')}
                                     </Badge>
                                   ) : (
                                     <Button
@@ -1334,7 +1334,7 @@ export default function TeacherAssessmentCreatePage() {
                                       disabled={republishQuizMutation.isPending}
                                       className="text-success border-success/30"
                                     >
-                                      Republish
+                                      {_('Republish')}
                                     </Button>
                                   )
                                 )}
@@ -1355,7 +1355,7 @@ export default function TeacherAssessmentCreatePage() {
                                       }
                                       className="scale-[0.6]"
                                     />
-                                    Grades
+                                    {_('Grades')}
                                   </label>
                                 )}
                               </div>

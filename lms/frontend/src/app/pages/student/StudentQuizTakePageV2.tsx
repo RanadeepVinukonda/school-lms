@@ -9,6 +9,7 @@ import {
   AlertTriangle, Trophy, Brain, Layers,
   BarChart3, Timer, Bookmark, HelpCircle
 } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -129,6 +130,7 @@ function playSynthesizedSound(type: 'correct' | 'incorrect') {
 }
 
 export default function StudentQuizTakePageV2() {
+  const { _ } = useTranslation();
   const params = useParams<{ assessmentId: string; id: string }>();
   const assessmentId = params.assessmentId || params.id;
   const [searchParams] = useSearchParams();
@@ -198,7 +200,7 @@ export default function StudentQuizTakePageV2() {
       setPhase('quiz');
     },
     onError: (err: { message?: string }) => {
-      toast.error(err.message || 'Failed to start assessment');
+      toast.error(err.message || _('Failed to start assessment'));
     },
   });
 
@@ -211,7 +213,7 @@ export default function StudentQuizTakePageV2() {
 
   autoSubmitRef.current = () => {
     if (phaseRef.current !== 'quiz') return;
-    toast.error('Time is up! Auto-submitting...');
+    toast.error(_('Time is up! Auto-submitting...'));
     handleSubmitAttempt();
   };
 
@@ -317,9 +319,9 @@ export default function StudentQuizTakePageV2() {
       const submitResult = res.data.data as V2SubmitResult;
       setResult(submitResult);
       setPhase('result');
-      toast.success('Assessment submitted successfully!');
+      toast.success(_('Assessment submitted successfully!'));
     } catch (err: any) {
-      toast.error(err.message || 'Failed to submit assessment');
+      toast.error(err.message || _('Failed to submit assessment'));
     } finally {
       setIsSubmitting(false);
     }
@@ -354,7 +356,7 @@ export default function StudentQuizTakePageV2() {
         ...prev,
         [q.id]: [...(prev[q.id] || []), optionValue]
       }));
-      toast.error('Incorrect. Try again!');
+      toast.error(_('Incorrect. Try again!'));
     }
   };
 
@@ -388,7 +390,7 @@ export default function StudentQuizTakePageV2() {
     } else {
       playSynthesizedSound('incorrect');
       setInteractiveError((prev) => ({ ...prev, [q.id]: true }));
-      toast.error('Incorrect. Please check and try again!');
+      toast.error(_('Incorrect. Please check and try again!'));
     }
   };
 
@@ -432,7 +434,7 @@ export default function StudentQuizTakePageV2() {
       setIsFullscreen(isFull);
       if (!isFull) {
         logProctoring('fullscreen_exit');
-        toast.warning('Warning: Exited fullscreen mode! This violation has been logged.', {
+        toast.warning(_('Warning: Exited fullscreen mode! This violation has been logged.'), {
           duration: 5000,
         });
       } else {
@@ -457,7 +459,7 @@ export default function StudentQuizTakePageV2() {
 
   const handleStart = useCallback(() => {
     if (selectedModels.length === 0) {
-      toast.error('Please select at least one question type');
+      toast.error(_('Please select at least one question type'));
       return;
     }
     if (assessmentType === 'exam') {
@@ -490,14 +492,14 @@ export default function StudentQuizTakePageV2() {
   }
 
   if (infoError || !assessmentInfo) {
-    const errorMessage = (infoErrorObj as { message?: string })?.message || `${assessmentType === 'exam' ? 'Exam' : 'Quiz'} not found`;
+    const errorMessage = (infoErrorObj as { message?: string })?.message || (assessmentType === 'exam' ? _('Exam not found') : _('Quiz not found'));
     return (
       <div className="p-6 max-w-lg mx-auto mt-12">
         <Card className="border-border/60">
           <CardContent className="flex flex-col items-center gap-4 py-8 text-center">
             <AlertCircle className="h-12 w-12 text-destructive" />
             <p className="font-semibold text-headline-sm">{errorMessage}</p>
-            <Button onClick={() => refetchInfo()}>Retry</Button>
+            <Button onClick={() => refetchInfo()}>{_('Retry')}</Button>
           </CardContent>
         </Card>
       </div>
@@ -510,13 +512,13 @@ export default function StudentQuizTakePageV2() {
     return (
       <div className="p-6 max-w-lg mx-auto mt-12">
         <Button variant="ghost" size="sm" onClick={handleBack} className="mb-4">
-          <ArrowLeft className="h-4 w-4 mr-1" />Back
+              <ArrowLeft className="h-4 w-4 mr-1" />{_('Back')}
         </Button>
         <Card className="border-border/60">
           <CardContent className="flex flex-col items-center gap-4 py-16 text-center">
             <AlertCircle className="h-12 w-12 text-on-surface-variant/40" />
-            <p className="font-semibold text-headline-sm">No question types configured</p>
-            <Button variant="outline" onClick={handleBack}>Go Back</Button>
+            <p className="font-semibold text-headline-sm">{_('No question types configured')}</p>
+            <Button variant="outline" onClick={handleBack}>{_('Go Back')}</Button>
           </CardContent>
         </Card>
       </div>
@@ -535,7 +537,7 @@ export default function StudentQuizTakePageV2() {
         >
           <motion.div variants={cardStackReveal} custom={0} className="max-w-2xl mx-auto space-y-6">
             <Button variant="ghost" size="sm" onClick={handleBack} className="mb-2">
-              <ArrowLeft className="h-4 w-4 mr-1" />Back
+          <ArrowLeft className="h-4 w-4 mr-1" />{_('Back')}
             </Button>
 
             <div className="text-center space-y-3">
@@ -546,7 +548,7 @@ export default function StudentQuizTakePageV2() {
                 {assessmentInfo.title}
                 {assessmentInfo.isRepublished && (
                   <Badge variant="success" className="text-[10px] tracking-wider font-bold">
-                    INTERACTIVE PRACTICE
+                    {_('INTERACTIVE PRACTICE')}
                   </Badge>
                 )}
               </h1>
@@ -558,15 +560,15 @@ export default function StudentQuizTakePageV2() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-sm mx-auto text-body-md">
               <div className="bg-muted rounded-xl p-3 text-center">
                 <p className="text-display-xs font-bold">{assessmentInfo.questionCount ?? '--'}</p>
-                <p className="text-label-xs text-muted-foreground">Questions</p>
+                <p className="text-label-xs text-muted-foreground">{_('Questions')}</p>
               </div>
               <div className="bg-muted rounded-xl p-3 text-center">
                 <p className="text-display-xs font-bold">{assessmentInfo.timeLimitMinutes}m</p>
-                <p className="text-label-xs text-muted-foreground">Time Limit</p>
+                <p className="text-label-xs text-muted-foreground">{_('Time Limit')}</p>
               </div>
               <div className="bg-muted rounded-xl p-3 text-center">
                 <p className="text-display-xs font-bold">{assessmentInfo.totalPoints || '--'}</p>
-                <p className="text-label-xs text-muted-foreground">Points</p>
+                <p className="text-label-xs text-muted-foreground">{_('Points')}</p>
               </div>
             </div>
 
@@ -574,10 +576,10 @@ export default function StudentQuizTakePageV2() {
               <div className="bg-success-container/10 border border-success/30 rounded-xl p-4 text-body-md space-y-2">
                 <div className="flex items-center gap-2 font-bold text-success">
                   <Brain className="h-[18px] w-[18px]" />
-                  <span>Interactive Practice Mode Active</span>
+                  <span>{_('Interactive Practice Mode Active')}</span>
                 </div>
                 <p className="text-on-surface-variant">
-                  This test has been republished as interactive homework. Selecting correct options triggers immediate visual ticks and chime audio, automatically advancing you to the next question. Wrong selections trigger audio buzzers and red crosses, prompting you to try again.
+                  {_('This test has been republished as interactive homework. Selecting correct options triggers immediate visual ticks and chime audio, automatically advancing you to the next question. Wrong selections trigger audio buzzers and red crosses, prompting you to try again.')}
                 </p>
               </div>
             )}
@@ -589,9 +591,9 @@ export default function StudentQuizTakePageV2() {
               disabled={startMutation.isPending || selectedModels.length === 0}
             >
               {startMutation.isPending ? (
-                <><Loader2 className="h-5 w-5 mr-2 animate-spin" />Starting...</>
+                <><Loader2 className="h-5 w-5 mr-2 animate-spin" />{_('Starting...')}</>
               ) : (
-                <><Play className="h-5 w-5 mr-2" />Start {assessmentInfo.isRepublished ? 'Interactive Session' : 'Exam'}</>
+                <><Play className="h-5 w-5 mr-2" />{_('Start')} {assessmentInfo.isRepublished ? _('Interactive Session') : _('Exam')}</>
               )}
             </Button>
           </motion.div>
@@ -607,8 +609,8 @@ export default function StudentQuizTakePageV2() {
         <Card className="w-full max-w-sm border-border/60">
           <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
             <AlertCircle className="h-10 w-10 text-destructive" />
-            <p className="font-semibold text-headline-sm">Attempt not found</p>
-            <Button variant="outline" onClick={handleBack}>Go Back</Button>
+            <p className="font-semibold text-headline-sm">{_('Attempt not found')}</p>
+            <Button variant="outline" onClick={handleBack}>{_('Go Back')}</Button>
           </CardContent>
         </Card>
       </div>
@@ -624,7 +626,7 @@ export default function StudentQuizTakePageV2() {
 
     return (
       <>
-        <SEOHead title={`${assessmentInfo?.title || 'Results'}`} description="Test results" />
+        <SEOHead title={`${assessmentInfo?.title || _('Results')}`} description={_('Test results')} />
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -648,7 +650,7 @@ export default function StudentQuizTakePageV2() {
                 </div>
                 <div>
                   <CardTitle className="text-headline-sm">
-                    {isPassed ? 'Passed!' : 'Keep Practicing'}
+                    {isPassed ? _('Passed!') : _('Keep Practicing')}
                   </CardTitle>
                   <CardDescription className="text-body-lg mt-1">
                     {assessmentInfo.title}
@@ -660,14 +662,14 @@ export default function StudentQuizTakePageV2() {
                     <p className="text-display-xs font-bold">
                       {result.score}/{result.totalPoints}
                     </p>
-                    <p className="text-label-xs text-muted-foreground uppercase tracking-wider mt-1">Final Score</p>
+                    <p className="text-label-xs text-muted-foreground uppercase tracking-wider mt-1">{_('Final Score')}</p>
                   </div>
                   <Separator orientation="vertical" className="h-12" />
                   <div className="text-center">
                     <p className={cn('text-display-xs font-bold', isPassed ? 'text-emerald-500' : 'text-destructive')}>
                       {Math.round(result.percentage)}%
                     </p>
-                    <p className="text-label-xs text-muted-foreground uppercase tracking-wider mt-1">Percentage</p>
+                    <p className="text-label-xs text-muted-foreground uppercase tracking-wider mt-1">{_('Percentage')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -678,7 +680,7 @@ export default function StudentQuizTakePageV2() {
                 <CardContent className="p-5 space-y-2">
                   <div className="flex items-center gap-2">
                     <Trophy className="h-5 w-5 text-amber-500" />
-                    <h3 className="font-semibold text-title-sm">AI Calculated Level</h3>
+                    <h3 className="font-semibold text-title-sm">{_('AI Calculated Level')}</h3>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="text-body-md capitalize font-bold">
@@ -686,7 +688,7 @@ export default function StudentQuizTakePageV2() {
                     </Badge>
                   </div>
                   <p className="text-label-xs text-on-surface-variant leading-relaxed">
-                    Based on accuracy, average question response times, and maximum complexity solved.
+                    {_('Based on accuracy, average question response times, and maximum complexity solved.')}
                   </p>
                 </CardContent>
               </Card>
@@ -694,11 +696,11 @@ export default function StudentQuizTakePageV2() {
                 <CardContent className="p-5 space-y-2">
                   <div className="flex items-center gap-2">
                     <Timer className="h-5 w-5 text-primary" />
-                    <h3 className="font-semibold text-title-sm">Time Spent</h3>
+                    <h3 className="font-semibold text-title-sm">{_('Time Spent')}</h3>
                   </div>
                   <p className="text-display-xs font-bold font-mono">{fmt(result.timeSpent)}</p>
                   <p className="text-label-xs text-muted-foreground">
-                    out of {assessmentInfo?.timeLimitMinutes ?? '--'} minutes
+                    {_('out of')} {assessmentInfo?.timeLimitMinutes ?? '--'} {_('minutes')}
                   </p>
                 </CardContent>
               </Card>
@@ -707,20 +709,20 @@ export default function StudentQuizTakePageV2() {
             {result.showResults !== false && result.answers?.length > 0 && (
               <Card className="border-border/60">
                 <CardHeader>
-                  <CardTitle className="text-title-sm">Answer Review</CardTitle>
-                  <CardDescription>Your answers and the correct answers</CardDescription>
+                  <CardTitle className="text-title-sm">{_('Answer Review')}</CardTitle>
+                  <CardDescription>{_('Your answers and the correct answers')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {result.answers.map((a, i) => (
                     <div key={a.questionId} className={cn('p-4 rounded-lg border', a.isCorrect ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-destructive/5 border-destructive/20')}>
                       <div className="flex items-start justify-between gap-2">
-                        <p className="font-medium text-sm flex-1">{i + 1}. {a.questionText || `Question ${i + 1}`}</p>
-                        <Badge variant={a.isCorrect ? 'success' : 'destructive'} className="shrink-0">{a.isCorrect ? 'Correct' : 'Incorrect'}</Badge>
+                        <p className="font-medium text-sm flex-1">{i + 1}. {a.questionText || _(`Question ${i + 1}`)}</p>
+                        <Badge variant={a.isCorrect ? 'success' : 'destructive'} className="shrink-0">{a.isCorrect ? _('Correct') : _('Incorrect')}</Badge>
                       </div>
                       <div className="mt-2 text-sm space-y-1">
-                        <p><span className="text-muted-foreground">Your answer:</span> {a.answer || '(no answer)'}</p>
+                        <p><span className="text-muted-foreground">{_('Your answer:')}</span> {a.answer || _('(no answer)')}</p>
                         {!a.isCorrect && a.correctAnswer && (
-                          <p><span className="text-emerald-600 font-medium">Correct answer:</span> {a.correctAnswer}</p>
+                          <p><span className="text-emerald-600 font-medium">{_('Correct answer:')}</span> {a.correctAnswer}</p>
                         )}
                       </div>
                       {a.explanation && (
@@ -734,7 +736,7 @@ export default function StudentQuizTakePageV2() {
 
             <Button className="w-full" size="lg" onClick={handleBack}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
+              {_('Back to Dashboard')}
             </Button>
           </motion.div>
         </motion.div>
@@ -758,9 +760,9 @@ export default function StudentQuizTakePageV2() {
         <Card className="w-full max-w-sm border-border/60">
           <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
             <AlertCircle className="h-10 w-10 text-destructive" />
-            <p className="font-semibold text-headline-sm">No questions available</p>
-            <p className="text-body-md text-muted-foreground">This quiz has no questions matching the selected formats.</p>
-            <Button variant="outline" onClick={handleBack}>Go Back</Button>
+            <p className="font-semibold text-headline-sm">{_('No questions available')}</p>
+            <p className="text-body-md text-muted-foreground">{_('This quiz has no questions matching the selected formats.')}</p>
+            <Button variant="outline" onClick={handleBack}>{_('Go Back')}</Button>
           </CardContent>
         </Card>
       </div>
@@ -781,7 +783,7 @@ export default function StudentQuizTakePageV2() {
 
   return (
     <>
-      <SEOHead title={`${assessmentInfo.title} - Testing`} description="Exam Take page" />
+      <SEOHead title={`${assessmentInfo.title} - ${_('Testing')}`} description={_('Exam Take page')} />
       <div className="fixed inset-0 bg-background z-50 flex flex-col md:flex-row overflow-hidden">
         
         {/* MAIN EXAM WORKSPACE */}
@@ -801,13 +803,13 @@ export default function StudentQuizTakePageV2() {
               </div>
               {assessmentInfo.isRepublished && (
                 <Badge variant="success" className="text-[10px] tracking-wider uppercase font-extrabold animate-pulse">
-                  Interactive Mode
+                  {_('Interactive Mode')}
                 </Badge>
               )}
             </div>
             <div className="flex items-center gap-3">
               <span className="text-body-md font-medium">
-                Question <span className="text-title-sm font-bold">{currentIndex + 1}</span> of {totalQuestions}
+                {_('Question')} <span className="text-title-sm font-bold">{currentIndex + 1}</span> {_('of')} {totalQuestions}
               </span>
               <Progress value={progress} className="w-24 h-2" />
             </div>
@@ -817,10 +819,10 @@ export default function StudentQuizTakePageV2() {
           <div className="flex-1 p-6 md:p-12 max-w-3xl mx-auto w-full flex flex-col justify-start space-y-6">
             <div className="flex items-center justify-between">
               <Badge variant="outline" className="text-label-xs px-2.5 py-0.5 capitalize">
-                {MODEL_LABELS[currentQuestion.type] || currentQuestion.type.toUpperCase()}
+                {_(MODEL_LABELS[currentQuestion.type] || currentQuestion.type.toUpperCase())}
               </Badge>
               <span className="text-body-md text-on-surface-variant font-medium">
-                {currentQuestion.points} pts
+                {currentQuestion.points} {_('pts')}
               </span>
             </div>
 
@@ -880,26 +882,26 @@ export default function StudentQuizTakePageV2() {
                     {interactiveCorrect[currentQuestion.id] ? (
                       <div className="p-4 rounded-xl border-2 border-success bg-success/10 text-success font-semibold text-center flex items-center justify-center gap-2">
                         <CheckCircle className="h-5 w-5" />
-                        Correct! Answered: {answers[currentQuestion.id]}
+                        {_('Correct!')} {_('Answered:')} {answers[currentQuestion.id]}
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        <Label className="text-body-md">Type your answer:</Label>
+                        <Label className="text-body-md">{_('Type your answer:')}</Label>
                         <div className="flex gap-2">
                           <Input
-                            placeholder={currentQuestion.type === 'numerical' ? 'Enter numeric value' : 'Type here...'}
+                            placeholder={currentQuestion.type === 'numerical' ? _('Enter numeric value') : _('Type here...')}
                             value={customTextInput}
                             onChange={(e) => setCustomTextInput(e.target.value)}
                             onKeyDown={(e) => { if (e.key === 'Enter') handleInteractiveTextVerify(); }}
                           />
                           <Button onClick={handleInteractiveTextVerify}>
-                            Verify
+                            {_('Verify')}
                           </Button>
                         </div>
                         {interactiveError[currentQuestion.id] && (
                           <p className="text-label-xs text-error font-medium flex items-center gap-1">
                             <AlertCircle className="h-3 w-3" />
-                            Incorrect answer. Please verify and try again!
+                            {_('Incorrect answer. Please verify and try again!')}
                           </p>
                         )}
                       </div>
@@ -926,7 +928,7 @@ export default function StudentQuizTakePageV2() {
                 className="gap-1.5"
               >
                 <ChevronLeft className="h-4 w-4" />
-                Previous
+                {_('Previous')}
               </Button>
 
               {!assessmentInfo.isRepublished && (
@@ -937,7 +939,7 @@ export default function StudentQuizTakePageV2() {
                   className="gap-1.5 hidden sm:flex"
                 >
                   <Bookmark className="h-4 w-4" />
-                  {currentStatus === 'review' ? 'Marked for Review' : 'Mark for Review'}
+                  {currentStatus === 'review' ? _('Marked for Review') : _('Mark for Review')}
                 </Button>
               )}
 
@@ -946,7 +948,7 @@ export default function StudentQuizTakePageV2() {
                   onClick={() => goToQuestion(currentIndex + 1)}
                   className="gap-1.5"
                 >
-                  Next
+                  {_('Next')}
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               ) : (
@@ -960,7 +962,7 @@ export default function StudentQuizTakePageV2() {
                   ) : (
                     <Send className="h-4 w-4" />
                   )}
-                  Finish & Submit
+                  {_('Finish & Submit')}
                 </Button>
               )}
             </div>
@@ -973,29 +975,29 @@ export default function StudentQuizTakePageV2() {
             <div className="p-4 border-b border-outline-variant">
               <h3 className="font-bold text-title-sm flex items-center gap-1.5 text-on-surface">
                 <Brain className="h-4 w-4 text-primary" />
-                Question Navigator
+                {_('Question Navigator')}
               </h3>
               <p className="text-label-xs text-on-surface-variant mt-0.5">
-                {answeredCount} of {totalQuestions} answered
+                {answeredCount} {_('of')} {totalQuestions} {_('answered')}
               </p>
             </div>
 
             <div className="p-3 bg-surface-variant/30 border-b border-outline-variant text-label-xs grid grid-cols-1 sm:grid-cols-2 gap-2 text-on-surface-variant">
               <div className="flex items-center gap-1.5">
                 <div className="h-2.5 w-2.5 rounded-full bg-muted opacity-60" />
-                <span>Unvisited</span>
+                <span>{_('Unvisited')}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="h-2.5 w-2.5 rounded-full bg-warning" />
-                <span>Visited</span>
+                <span>{_('Visited')}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="h-2.5 w-2.5 rounded-full bg-success" />
-                <span>Attempted</span>
+                <span>{_('Attempted')}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="h-2.5 w-2.5 rounded-full bg-info" />
-                <span>For Review</span>
+                <span>{_('For Review')}</span>
               </div>
             </div>
 
@@ -1032,11 +1034,11 @@ export default function StudentQuizTakePageV2() {
           >
             <Card className="border-border/60">
               <CardHeader>
-                <CardTitle className="text-title-sm">Finish Assessment</CardTitle>
+                <CardTitle className="text-title-sm">{_('Finish Assessment')}</CardTitle>
                 <CardDescription>
-                  You answered {answeredCount} of {totalQuestions} questions.
-                  {answeredCount < totalQuestions && ` ${totalQuestions - answeredCount} remain unanswered.`}
-                  Are you ready to submit and calculate your performance analytics?
+                  {_('You answered')} {answeredCount} {_('of')} {totalQuestions} {_('questions.')}
+                  {answeredCount < totalQuestions && ` ${totalQuestions - answeredCount} ${_('remain unanswered.')}`}{' '}
+                  {_('Are you ready to submit and calculate your performance analytics?')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-5 flex gap-3">
@@ -1045,7 +1047,7 @@ export default function StudentQuizTakePageV2() {
                   className="flex-1"
                   onClick={() => setShowConfirm(false)}
                 >
-                  Review
+                  {_('Review')}
                 </Button>
                 <Button
                   className="flex-1 bg-success hover:bg-success/90"
@@ -1057,7 +1059,7 @@ export default function StudentQuizTakePageV2() {
                   ) : (
                     <CheckCircle className="h-4 w-4 mr-1" />
                   )}
-                  Submit Test
+                  {_('Submit Test')}
                 </Button>
               </CardContent>
             </Card>
@@ -1073,17 +1075,17 @@ export default function StudentQuizTakePageV2() {
               <div className="h-12 w-12 rounded-xl bg-destructive/10 flex items-center justify-center mx-auto mb-2 text-destructive">
                 <AlertTriangle className="h-6 w-6" />
               </div>
-              <CardTitle className="text-headline-sm font-bold">Fullscreen Required</CardTitle>
+              <CardTitle className="text-headline-sm font-bold">{_('Fullscreen Required')}</CardTitle>
               <CardDescription className="text-body-md">
-                Leaving fullscreen mode violates exam integrity policies. This exit has been logged.
+                {_('Leaving fullscreen mode violates exam integrity policies. This exit has been logged.')}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-5 flex flex-col gap-4 pt-4 text-center">
               <p className="text-label-xs text-muted-foreground">
-                To continue with your exam, you must return to fullscreen mode immediately.
+                {_('To continue with your exam, you must return to fullscreen mode immediately.')}
               </p>
               <Button onClick={requestFullscreen} size="lg" className="w-full font-semibold">
-                Return to Fullscreen
+                {_('Return to Fullscreen')}
               </Button>
             </CardContent>
           </Card>

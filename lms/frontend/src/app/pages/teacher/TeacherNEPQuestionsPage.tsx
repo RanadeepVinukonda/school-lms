@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from '@/hooks/useTranslation';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,6 +13,7 @@ import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
 
 export default function TeacherNEPQuestionsPage() {
+  const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [activeTab, setActiveTab] = useState('generate');
 
@@ -57,7 +59,7 @@ export default function TeacherNEPQuestionsPage() {
 
   return (
     <>
-      <SEOHead title="NEP Question Generator" description="Generate NEP-aligned Olympiad, Competency, and Viva questions" canonical="/teacher/nep-questions" />
+      <SEOHead title={_('NEP Question Generator')} description={_('Generate NEP-aligned Olympiad, Competency, and Viva questions')} canonical="/teacher/nep-questions" />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -66,16 +68,16 @@ export default function TeacherNEPQuestionsPage() {
       >
         <motion.div variants={cardStackReveal} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-headline-sm">NEP Question Generator</h1>
-            <p className="text-body-md text-muted-foreground">Olympiad, Competency-Based & Viva questions with AI rubrics and feedback</p>
+            <h1 className="text-headline-sm">{_('NEP Question Generator')}</h1>
+            <p className="text-body-md text-muted-foreground">{_('Olympiad, Competency-Based & Viva questions with AI rubrics and feedback')}</p>
           </div>
         </motion.div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full overflow-x-auto inline-flex">
-            <TabsTrigger value="generate">Generate Questions</TabsTrigger>
-            <TabsTrigger value="rubric">Rubric Generator</TabsTrigger>
-            <TabsTrigger value="feedback">Feedback</TabsTrigger>
+            <TabsTrigger value="generate">{_('Generate Questions')}</TabsTrigger>
+            <TabsTrigger value="rubric">{_('Rubric Generator')}</TabsTrigger>
+            <TabsTrigger value="feedback">{_('Feedback')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="generate" className="mt-6">

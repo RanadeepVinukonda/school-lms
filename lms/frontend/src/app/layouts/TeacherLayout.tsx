@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/lib/constants';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { pageTransition } from '@/lib/motion';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface NavItem {
   label: string;
@@ -59,6 +60,12 @@ export default function TeacherLayout() {
   const { sidebarCollapsed, setSidebarCollapsed } = useUIStore();
   const [searchOpen, setSearchOpen] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
+  const { t } = useTranslation();
+  const getLabel = (label: string) => {
+    const key = `nav.${label.toLowerCase().replace(/ /g, '')}`;
+    const val = t(key as any);
+    return val === key ? label : val;
+  };
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -158,7 +165,7 @@ export default function TeacherLayout() {
                     }
                   >
                     <Icon name={item.icon} size={24} />
-                    {!sidebarCollapsed && <span>{item.label}</span>}
+                    {!sidebarCollapsed && <span>{getLabel(item.label)}</span>}
                   </NavLink>
                 ))}
               </div>
@@ -238,7 +245,7 @@ export default function TeacherLayout() {
                             }
                           >
                             <Icon name={item.icon} size={24} />
-                            <span>{item.label}</span>
+                            <span>{getLabel(item.label)}</span>
                           </NavLink>
                         </SheetClose>
                       ))}
