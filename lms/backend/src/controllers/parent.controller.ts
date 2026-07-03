@@ -27,12 +27,15 @@ export async function getChildren(req: Request, res: Response) {
       .filter((d) => d.exists)
       .map(async (d) => {
         const data = d.data();
-        let className: string | null = null;
+        let classInfo: { name?: string; grade?: number; section?: string } | null = null;
         if (data?.classId) {
           const classDoc = await collections.classes().doc(data.classId).get();
-          if (classDoc.exists) className = (classDoc.data() as any)?.name || null;
+          if (classDoc.exists) {
+            const c = classDoc.data() as any;
+            classInfo = { name: c.name, grade: c.grade, section: c.section };
+          }
         }
-        return { id: d.id, ...data, classId: className || data.classId };
+        return { id: d.id, ...data, classInfo };
       }),
   );
 

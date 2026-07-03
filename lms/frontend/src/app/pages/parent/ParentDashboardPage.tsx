@@ -150,7 +150,7 @@ export default function ParentDashboardPage() {
                                 <div className="min-w-0 flex-1">
                                   <p className="text-title-sm font-bold">{child.displayName ?? 'Child'}</p>
                                   <p className="text-label-sm text-muted-foreground mt-0.5">
-                                    {child.classId ? `Class: ${child.classId}` : 'No class assigned'}
+                                    {child.classInfo ? `${child.classInfo.grade ?? ''}${child.classInfo.section ?? ''}`.trim() || child.classInfo.name : 'No class assigned'}
                                   </p>
                                 </div>
                                 <Icon name="chevron_right" size={20} className="text-muted-foreground" />
