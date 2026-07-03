@@ -280,20 +280,68 @@ export default function AdminClassesPage() {
     if (!classDeleteTarget) return;
     setClassDeleteLoading(true);
     try {
-      await supabase.from('classes').delete().eq('id', classDeleteTarget.id);
+      const classId = classDeleteTarget.id;
+
+      // 1. Get all student IDs associated with this class (both via current class_id and enrollments)
+      const [studentsRes, enrollmentsRes] = await Promise.all([
+        supabase.from('users').select('id').eq('class_id', classId).eq('role', 'student'),
+        supabase.from('student_class_enrollments').select('student_id').eq('class_id', classId),
+      ]);
+
+      const studentIds = new Set<string>();
+      (studentsRes.data || []).forEach((s: any) => studentIds.add(s.id));
+      (enrollmentsRes.data || []).forEach((e: any) => studentIds.add(e.student_id));
+
+      const studentIdsArray = Array.from(studentIds);
+
+      // 2. Delete student users from 'users' table (cascades to fee_payments, enrollments, etc.)
+      if (studentIdsArray.length > 0) {
+        await supabase.from('users').delete().in('id', studentIdsArray);
+      }
+
+      // Also clean up any residual students set to this class_id
+      await supabase.from('users').delete().eq('class_id', classId).eq('role', 'student');
+
+      // 3. Find and delete textbooks for this class (and related lessons, quizzes, assignments)
+      const { data: textbooks } = await supabase.from('textbooks').select('id').eq('class_id', classId);
+      const textbookIds = (textbooks || []).map((t: any) => t.id);
+
+      if (textbookIds.length > 0) {
+        await Promise.all([
+          supabase.from('lessons').delete().in('textbookId', textbookIds),
+          supabase.from('quizzes').delete().in('textbookId', textbookIds),
+          supabase.from('assignments').delete().in('textbookId', textbookIds),
+        ]);
+      }
+      await supabase.from('textbooks').delete().eq('class_id', classId);
+
+      // 4. Delete class relations, timetable, subjects, and enrollments
+      await Promise.all([
+        supabase.from('student_class_enrollments').delete().eq('class_id', classId),
+        supabase.from('class_teachers').delete().eq('class_id', classId),
+        supabase.from('teacher_class_subject_assignments').delete().eq('class_id', classId),
+        supabase.from('timetable').delete().eq('class_id', classId),
+        supabase.from('subjects').delete().eq('classId', classId),
+      ]);
+
+      // 5. Finally delete the class record
+      await supabase.from('classes').delete().eq('id', classId);
+
       logAudit({
         action: 'class.delete',
-        targetId: classDeleteTarget.id,
+        targetId: classId,
         targetType: 'class',
         targetName: classDeleteTarget.name,
-        summary: `Permanently deleted class "${classDeleteTarget.name}"`,
+        summary: `Permanently deleted class "${classDeleteTarget.name}" along with its students and related data.`,
       });
-      toast.success(`Class ${classDeleteTarget.name} permanently deleted`);
+
+      toast.success(`Class ${classDeleteTarget.name} and all related records permanently deleted`);
       setShowClassDependencyDialog(false);
       setClassDeleteTarget(null);
       refetchClasses();
-    } catch {
-      toast.error('Failed to delete class');
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Failed to permanently delete class and its dependencies');
     } finally {
       setClassDeleteLoading(false);
     }
@@ -1251,10 +1299,10 @@ export default function AdminClassesPage() {
               Archive Class (Recommended)
               <span className="ml-auto text-label-xs text-muted-foreground">Preserves student records</span>
             </Button>
-            <Button variant="destructive" className="w-full justify-start" onClick={handleConfirmDeleteClass} disabled={classDeleteLoading || (classDependencyReport?.totalDependents ?? 0) > 0}>
+            <Button variant="destructive" className="w-full justify-start" onClick={handleConfirmDeleteClass} disabled={classDeleteLoading}>
               <Icon name="delete_forever" size={16} className="mr-2" />
               Permanently Delete
-              <span className="ml-auto text-label-xs text-muted-foreground">{(classDependencyReport?.totalDependents ?? 0) > 0 ? 'Has dependencies' : 'Irreversible'}</span>
+              <span className="ml-auto text-label-xs text-muted-foreground">Irreversible (Deletes students & related data)</span>
             </Button>
             <Button variant="ghost" className="w-full" onClick={() => { setShowClassDependencyDialog(false); setClassDeleteTarget(null); }}>Cancel</Button>
           </div>
