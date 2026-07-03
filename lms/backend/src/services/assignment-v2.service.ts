@@ -29,6 +29,8 @@ export async function createAssignment(data: {
   showResults?: boolean;
   dueDate?: string;
   schoolId?: string;
+  publishedTo?: 'class' | 'students';
+  targetStudentIds?: string[];
 }) {
   const assignmentId = uuidv4();
   const now = new Date().toISOString();
@@ -299,20 +301,24 @@ export async function getResults(assignmentId: string, studentId: string) {
   return items;
 }
 
-export async function listAssignmentsForClass(classId: string, query: { page?: string; limit?: string; schoolId?: string }) {
-  const { page, limit } = parsePagination(query);
-  const baseQuery = collections.assignmentV2()
-    .where('classId', '==', classId);
-  const snapshot = await baseQuery.get();
+export async function listAssignmentsForClass(classId: string, studentId?: string): Promise<any[]> {
+  const snapshot = await collections.assignmentV2()
+    .where('classId', '==', classId)
+    .get();
 
-  const all: any[] = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-  all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  let items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
 
-  const total = all.length;
-  const offset = (page - 1) * limit;
-  const items = all.slice(offset, offset + limit);
+  if (studentId) {
+    items = items.filter((a: any) => {
+      if (!a.publishedTo || a.publishedTo === 'class') return true;
+      if (a.publishedTo === 'students') {
+        return (a.targetStudentIds || []).includes(studentId);
+      }
+      return true;
+    });
+  }
 
-  return { items, total, page, limit };
+  return items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export async function listAssignmentsForTeacher(teacherId: string, query: { page?: string; limit?: string; schoolId?: string }) {

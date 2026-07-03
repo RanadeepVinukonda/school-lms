@@ -45,6 +45,8 @@ export async function createQuiz(data: {
   questions?: any[];
   preview?: boolean;
   schoolId?: string;
+  publishedTo?: 'class' | 'students';
+  targetStudentIds?: string[];
 }) {
   const assignment = await getTeacherAssignment(data.teacherId, data.classId);
   if (!assignment) {
@@ -257,6 +259,8 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
     showResults: data.showResults ?? false,
     attemptCount: 0,
     releasedAt: null,
+    publishedTo: data.publishedTo || 'class',
+    targetStudentIds: data.targetStudentIds || [],
     schoolId: data.schoolId || '',
     createdAt: now,
     updatedAt: now,
@@ -500,7 +504,7 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     points: number;
   }>;
 
-  if (quizData.ocrGenerated && Array.isArray(quizData.questions)) {
+  if (Array.isArray(quizData.questions) && quizData.questions.length > 0) {
     questionBank = quizData.questions.map((q: any) => ({
       id: q.id || uuidv4(),
       type: q.type || 'short_answer',
@@ -565,10 +569,8 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
       pointsEarned,
       timeSpent: answer.timeSpent || 0,
     };
-    if (quizData.showResults) {
-      graded.correctAnswer = question.correctAnswer;
-      graded.explanation = question.explanation;
-    }
+    graded.correctAnswer = question.correctAnswer;
+    graded.explanation = question.explanation;
     return graded;
   });
 
@@ -602,6 +604,7 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     totalPoints: attemptData.totalPoints,
     percentage,
     passed,
+    showResults: quizData.showResults ?? false,
     timeSpent,
     submittedAt: data.submittedAt,
     status: 'completed',
@@ -667,6 +670,12 @@ export async function getQuizResults(quizId: string, studentId: string) {
   const attempts = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
   const sorted = attempts.sort((a: any, b: any) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
 
+  // Build a lookup of questions from quiz data for backfilling old attempts
+  const quizQuestionsMap: Record<string, { correctAnswer: string; explanation: string; difficulty: string }> = {};
+  for (const q of (quizData.questions || [])) {
+    quizQuestionsMap[q.id] = { correctAnswer: q.correctAnswer || '', explanation: q.explanation || '', difficulty: q.difficulty || 'medium' };
+  }
+
   return sorted.map((data: any) => {
     if (resultsGated && data.status === 'completed') {
       return {
@@ -683,13 +692,30 @@ export async function getQuizResults(quizId: string, studentId: string) {
         status: data.status,
         selectedModels: data.selectedModels,
         level: data.level,
+        showResults: false,
         answers: data.answers?.map((a: { questionId: string; pointsEarned: number }) => ({
           questionId: a.questionId,
           pointsEarned: a.pointsEarned,
         })) ?? [],
       };
     }
-    return data;
+    // Backfill correctAnswer & regrade for attempts that don't have it (pre-fix data)
+    let regradedScore = 0;
+    const answers = (data.answers || []).map((a: any) => {
+      if (!a.correctAnswer && quizQuestionsMap[a.questionId]) {
+        const q = quizQuestionsMap[a.questionId];
+        const normalize = (v: unknown) => v?.toString().toLowerCase().trim() || '';
+        const isCorrect = normalize(a.answer) === normalize(q.correctAnswer);
+        const pointsEarned = isCorrect ? (POINTS_BY_DIFFICULTY[q.difficulty] || 1) : 0;
+        regradedScore += pointsEarned;
+        return { ...a, correctAnswer: q.correctAnswer, explanation: a.explanation || q.explanation, isCorrect, pointsEarned };
+      }
+      regradedScore += a.pointsEarned || 0;
+      return a;
+    });
+    const totalPoints = data.totalPoints || 1;
+    const percentage = Math.round((regradedScore / totalPoints) * 100);
+    return { ...data, showResults: quizData.showResults ?? false, answers, score: regradedScore, percentage };
   });
 }
 
@@ -704,12 +730,23 @@ export async function getQuizById(quizId: string) {
   return { ...doc.data() };
 }
 
-export async function listQuizzesForClass(classId: string, _schoolId?: string): Promise<any[]> {
+export async function listQuizzesForClass(classId: string, _schoolId?: string, studentId?: string): Promise<any[]> {
   const baseQuery = collections.quizV2()
     .where('classId', '==', classId);
   const snapshot = await baseQuery.get();
 
-  const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  let items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+
+  // If studentId is provided, filter by targeting
+  if (studentId) {
+    items = items.filter((q: any) => {
+      if (!q.publishedTo || q.publishedTo === 'class') return true;
+      if (q.publishedTo === 'students') {
+        return (q.targetStudentIds || []).includes(studentId);
+      }
+      return true;
+    });
+  }
   
   // Resolve subjectId fallback for older quiz documents
   const resolvedItems = await Promise.all(

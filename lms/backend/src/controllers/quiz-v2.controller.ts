@@ -58,7 +58,8 @@ export async function getQuizByConcept(req: Request, res: Response) {
 }
 
 export async function listForClass(req: Request, res: Response) {
-  const result = await quizV2Service.listQuizzesForClass(req.params.classId, req.user!.school_id);
+  const studentId = req.user!.role === 'student' ? req.user!.uid : undefined;
+  const result = await quizV2Service.listQuizzesForClass(req.params.classId, req.user!.school_id, studentId);
   sendSuccess(res, result);
 }
 

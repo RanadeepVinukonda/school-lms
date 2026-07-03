@@ -18,6 +18,7 @@ import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
 import { getTextbooksBySubject, getChaptersForTextbook, getConceptsForChapter } from '@/services/textbookService';
+import { getStudentsByClass } from '@/services/dataService';
 
 interface TeacherAssignment {
   id: string;
@@ -110,6 +111,15 @@ export default function TeacherAssessmentCreatePage() {
   const [assignmentPassingScore, setAssignmentPassingScore] = useState(50);
   const [assignmentMaxAttempts, setAssignmentMaxAttempts] = useState(3);
   const [assignmentShuffle, setAssignmentShuffle] = useState(true);
+
+  const [publishScope, setPublishScope] = useState<'class' | 'students'>('class');
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+
+  const { data: classStudents } = useQuery({
+    queryKey: ['teacher-class-students', selectedClassId],
+    queryFn: () => getStudentsByClass(selectedClassId),
+    enabled: !!selectedClassId && publishScope === 'students',
+  });
 
   const { data: assignments, isLoading: assignmentsLoading, error: assignmentsError } = useQuery({
     queryKey: ['teacher-assignments', user?.id],
@@ -390,6 +400,8 @@ export default function TeacherAssessmentCreatePage() {
       passingScore: quizPassingScore,
       maxAttempts: quizMaxAttempts,
       shuffleQuestions: quizShuffle,
+      publishedTo: publishScope,
+      targetStudentIds: publishScope === 'students' ? selectedStudentIds : [],
     };
 
     if (reviewQuestions.length > 0) {
@@ -400,7 +412,8 @@ export default function TeacherAssessmentCreatePage() {
   }, [
     selectedAssignment, selectedTextbookId, selectedChapterId, selectedConceptId,
     quizTitle, selectedModels, timeLimitMinutes, questionCount,
-    quizPassingScore, quizMaxAttempts, quizShuffle, selectedClassId, user?.id, createQuizMutation, reviewQuestions,
+    quizPassingScore, quizMaxAttempts, quizShuffle, selectedClassId, user?.id,
+    createQuizMutation, reviewQuestions, publishScope, selectedStudentIds,
   ]);
 
   const handleCreateAssignment = useCallback(() => {
@@ -439,12 +452,14 @@ export default function TeacherAssessmentCreatePage() {
       passingScore: assignmentPassingScore,
       maxAttempts: assignmentMaxAttempts,
       shuffleQuestions: assignmentShuffle,
+      publishedTo: publishScope,
+      targetStudentIds: publishScope === 'students' ? selectedStudentIds : [],
     });
   }, [
     selectedAssignment, selectedTextbookId, selectedChapterId, selectedConceptId,
     assignmentTitle, assignmentDescription, assignmentQuestions,
     assignmentTimeLimit, assignmentPassingScore, assignmentMaxAttempts, assignmentShuffle,
-    selectedClassId, user?.id, createAssignmentMutation,
+    selectedClassId, user?.id, createAssignmentMutation, publishScope, selectedStudentIds,
   ]);
 
   const handleModelToggle = useCallback((model: string) => {
@@ -722,6 +737,64 @@ export default function TeacherAssessmentCreatePage() {
                   )}
                   {selectedConceptId && allConceptQuestions.length === 0 && (
                     <p className="mt-2 text-xs text-muted-foreground">{_('No questions available for this concept.')}</p>
+                  )}
+                </div>
+              )}
+
+              {selectedClassId && (
+                <div>
+                  <Label className="mb-2 block">{_('Push to')}</Label>
+                  <div className="flex gap-3 mb-3">
+                    <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer flex-1 ${
+                      publishScope === 'class'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-muted-foreground/30'
+                    }`}>
+                      <input
+                        type="radio"
+                        name="scope"
+                        checked={publishScope === 'class'}
+                        onChange={() => { setPublishScope('class'); setSelectedStudentIds([]); }}
+                        className="text-primary"
+                      />
+                      <span className="text-sm">{_('Whole Class')}</span>
+                    </label>
+                    <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer flex-1 ${
+                      publishScope === 'students'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-muted-foreground/30'
+                    }`}>
+                      <input
+                        type="radio"
+                        name="scope"
+                        checked={publishScope === 'students'}
+                        onChange={() => setPublishScope('students')}
+                        className="text-primary"
+                      />
+                      <span className="text-sm">{_('Selected Students')}</span>
+                    </label>
+                  </div>
+                  {publishScope === 'students' && (
+                    <div className="border rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
+                      {classStudents?.length ? (
+                        classStudents.map((s: any) => (
+                          <label key={s.id || s.uid} className="flex items-center gap-2 cursor-pointer text-sm">
+                            <Checkbox
+                              checked={selectedStudentIds.includes(s.id || s.uid)}
+                              onCheckedChange={(checked) => {
+                                const sid = s.id || s.uid;
+                                setSelectedStudentIds((prev) =>
+                                  checked ? [...prev, sid] : prev.filter((id) => id !== sid),
+                                );
+                              }}
+                            />
+                            <span>{s.displayName || s.email}</span>
+                          </label>
+                        ))
+                      ) : (
+                        <p className="text-sm text-muted-foreground">{_('No students found in this class')}</p>
+                      )}
+                    </div>
                   )}
                 </div>
               )}

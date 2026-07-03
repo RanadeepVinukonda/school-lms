@@ -57,10 +57,8 @@ export async function getResults(req: Request, res: Response) {
 }
 
 export async function listForClass(req: Request, res: Response) {
-  const result = await assignmentV2Service.listAssignmentsForClass(req.params.classId, {
-    ...(req.query as QueryParams),
-    schoolId: req.user!.school_id,
-  });
+  const studentId = req.user!.role === 'student' ? req.user!.uid : undefined;
+  const result = await assignmentV2Service.listAssignmentsForClass(req.params.classId, studentId);
   sendSuccess(res, result);
 }
 
