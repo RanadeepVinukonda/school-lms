@@ -1007,7 +1007,11 @@ export default function AdminClassesPage() {
                     </thead>
                     <tbody className="divide-y divide-border/40">
                       {filteredTeachers.map((teacher) => {
-                        const teacherAssignments = tcAssignments.filter((a) => a.teacherId === teacher.id);
+                        const teacherAssignments = tcAssignments.filter((a) => 
+                          a.teacherId === teacher.id &&
+                          fetchedClasses.some((cls) => cls.id === a.classId) &&
+                          subjects.some((sub) => sub.id === a.subjectId)
+                        );
                         return (
                           <tr key={teacher.id} className="hover:bg-muted/20 transition-colors text-body-md">
                             <td className="px-4 py-3 font-semibold">{teacher.displayName}</td>
@@ -1018,11 +1022,11 @@ export default function AdminClassesPage() {
                               ) : (
                                 <div className="flex flex-wrap gap-1">
                                   {teacherAssignments.map((a) => {
-                                    const c = fetchedClasses.find((cls) => cls.id === a.classId);
-                                    const s = subjects.find((sub) => sub.id === a.subjectId);
+                                    const c = fetchedClasses.find((cls) => cls.id === a.classId)!;
+                                    const s = subjects.find((sub) => sub.id === a.subjectId)!;
                                     return (
                                       <Badge key={a.id} variant="secondary" className="text-[10px] py-0 px-1.5 font-medium">
-                                        {c ? c.code : 'Class'} - {s ? s.name : 'Subject'}
+                                        {c.code} - {s.name}
                                       </Badge>
                                     );
                                   })}
