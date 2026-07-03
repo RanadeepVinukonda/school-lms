@@ -1293,6 +1293,15 @@ export default function AdminClassesPage() {
             </div>
           )}
 
+          {classDependencyReport && classDependencyReport.totalDependents > 0 && (
+            <div className="bg-destructive/10 text-destructive border border-destructive/20 rounded-lg p-3 text-body-sm font-medium leading-normal flex items-start gap-2">
+              <Icon name="warning" size={16} className="shrink-0 mt-0.5" />
+              <span>
+                Warning: Permanent deletion will delete all assigned students and related academic history.
+              </span>
+            </div>
+          )}
+
           <div className="flex flex-col gap-2 pt-2">
             <Button variant="tonal" className="w-full justify-start" onClick={handleArchiveClass} disabled={classDeleteLoading}>
               <Icon name="archive" size={16} className="mr-2" />
@@ -1302,7 +1311,7 @@ export default function AdminClassesPage() {
             <Button variant="destructive" className="w-full justify-start" onClick={handleConfirmDeleteClass} disabled={classDeleteLoading}>
               <Icon name="delete_forever" size={16} className="mr-2" />
               Permanently Delete
-              <span className="ml-auto text-label-xs text-muted-foreground">Irreversible (Deletes students & related data)</span>
+              <span className="ml-auto text-label-xs text-muted-foreground">Irreversible</span>
             </Button>
             <Button variant="ghost" className="w-full" onClick={() => { setShowClassDependencyDialog(false); setClassDeleteTarget(null); }}>Cancel</Button>
           </div>
