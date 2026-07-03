@@ -1,0 +1,11 @@
+{
+  "name": "genesis-lms-mobile-root",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "shared",
+    "parent",
+    "student",
+    "teacher"
+  ]
+}

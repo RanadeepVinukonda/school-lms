@@ -24,3 +24,8 @@ tsc_out.txt
 
 # Scratch
 scratch/
+
+# Expo native directories
+.expo/
+android/
+ios/
