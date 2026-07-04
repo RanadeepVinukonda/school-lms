@@ -1,6 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { FieldValue } from '../database/adapter';
-import { collections } from '../database/adapter';
+import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ForbiddenError, AppError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { chatCompletion } from './ai.service';
@@ -10,6 +9,47 @@ import { computeLevel, computeComplexityHandled } from './ai-level.service';
 import type { Difficulty, StudentLevel } from './ai-level.service';
 import * as gamificationService from './gamification.service';
 import { computeMastery } from './adaptive/mastery.service';
+
+const QV2 = 'quizV2';
+const QAV2 = 'quizAttemptV2';
+
+async function nosqlGet(col: string, id: string) {
+  const { data: row } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  return { exists: !!row, data: (row?.data as Record<string, unknown>) ?? null };
+}
+
+async function nosqlSet(col: string, id: string, data: Record<string, unknown>) {
+  const { error } = await getSupabaseAdmin()!.from('nosql_docs').upsert({
+    collection: col, doc_id: id, data,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'collection,doc_id' });
+  if (error) throw error;
+}
+
+async function nosqlUpdate(col: string, id: string, updates: Record<string, unknown>) {
+  const { data: existing } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  const merged = { ...((existing?.data as Record<string, unknown>) || {}), ...updates };
+  const { error } = await getSupabaseAdmin()!.from('nosql_docs').upsert({
+    collection: col, doc_id: id, data: merged,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'collection,doc_id' });
+  if (error) throw error;
+}
+
+async function nosqlDelete(col: string, id: string) {
+  const { error } = await getSupabaseAdmin()!.from('nosql_docs').delete().eq('collection', col).eq('doc_id', id);
+  if (error) throw error;
+}
+
+async function nosqlQuery(col: string, filters: Record<string, unknown>) {
+  let q: any = getSupabaseAdmin()!.from('nosql_docs').select('doc_id, data').eq('collection', col);
+  for (const [k, v] of Object.entries(filters)) {
+    q = q.contains('data', { [k]: v });
+  }
+  const { data: rows, error } = await q;
+  if (error) throw error;
+  return (rows || []).map((r: { doc_id: string; data: unknown }) => ({ id: r.doc_id, ...(r.data as object) }));
+}
 
 const TYPE_MAP: Record<string, string[]> = {
   multiple_choice: ['mcq', 'multiple_choice'],
@@ -25,6 +65,36 @@ function resolveTypes(selectedModels: string[]): string[] {
 }
 
 const DIFFICULTY_RANK: Record<Difficulty, number> = { easy: 0, medium: 1, hard: 2 };
+
+async function getConcept(textbookId: string, chapterId: string, conceptId: string) {
+  const supabase = getSupabaseAdmin()!;
+  const { data: c } = await supabase.from('concepts').select('*').eq('id', conceptId).maybeSingle();
+  return c;
+}
+
+async function getConceptQuestions(conceptId: string) {
+  const { data: rows } = await getSupabaseAdmin()!.from('concept_questions').select('*').eq('concept_id', conceptId);
+  return rows || [];
+}
+
+async function upsertQuestions(questions: Array<Record<string, unknown>>, conceptId: string) {
+  const supabase = getSupabaseAdmin()!;
+  for (const q of questions) {
+    const { error } = await supabase.from('concept_questions').upsert({
+      id: q.id as string,
+      concept_id: conceptId,
+      type: q.type as string,
+      text: (q.text || q.question) as string,
+      options: q.options || null,
+      correct_answer: q.correctAnswer as string,
+      explanation: q.explanation || null,
+      difficulty: (q.difficulty as string) || 'medium',
+      points: (q.points as number) || 1,
+      data: q,
+    }, { onConflict: 'id' });
+    if (error) throw error;
+  }
+}
 
 export async function createQuiz(data: {
   title: string;
@@ -53,31 +123,21 @@ export async function createQuiz(data: {
     throw new ForbiddenError('You are not assigned to this class');
   }
 
-  const conceptRef = collections.textbooks()
-    .doc(data.textbookId)
-    .collection('chapters')
-    .doc(data.chapterId)
-    .collection('concepts')
-    .doc(data.conceptId);
-
-  const conceptDoc = await conceptRef.get();
-  if (!conceptDoc.exists) {
+  const conceptData = await getConcept(data.textbookId, data.chapterId, data.conceptId);
+  if (!conceptData) {
     throw new NotFoundError('Concept not found');
   }
-  const conceptData = conceptDoc.data()!;
   const conceptName = conceptData.title || conceptData.name || 'Untitled Concept';
 
   const selectedModels = data.selectedModels ?? [];
   const questionCount = data.questionCount ?? 0;
   const targetTypes = resolveTypes(selectedModels);
 
-  // determine final question set
   let matchingQuestions: any[];
   let aiGeneratedCount = 0;
   let aiErrorMessage = '';
 
   if (data.questions && data.questions.length > 0) {
-    // teacher edited in preview — use provided questions
     matchingQuestions = data.questions.map((q: any) => ({
       id: q.id || uuidv4(),
       type: q.type || 'mcq',
@@ -89,14 +149,11 @@ export async function createQuiz(data: {
       points: q.points || 2,
     }));
   } else {
-    // read existing from concept bank
-    const questionsSnap = await conceptRef.collection('questions').get();
-    const questionBank = questionsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Record<string, unknown> & { id: string }));
+    const questionBank = await getConceptQuestions(data.conceptId);
 
     matchingQuestions = targetTypes.length > 0
       ? questionBank.filter((q: any) => targetTypes.includes(q.type))
       : [...questionBank];
-    // generate missing via AI
     if (questionCount > 0 && matchingQuestions.length < questionCount) {
       const needed = questionCount - matchingQuestions.length;
       logger.info('Generating additional questions via AI', { conceptName, needed, existing: matchingQuestions.length });
@@ -178,7 +235,6 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
     }
   }
 
-  // preview mode — return questions without saving
   if (data.preview) {
     return {
       preview: true,
@@ -194,33 +250,17 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
     };
   }
 
-  // save generated questions to concept bank (only those without a firestore doc)
+  // save questions to concept bank
   if (!data.questions) {
-    const questionsSnap = await conceptRef.collection('questions').get();
-    const existingIds = new Set(questionsSnap.docs.map(d => d.id));
-    const batch = collections.textbooks().firestore.batch();
-    let batchCount = 0;
-    for (const q of matchingQuestions) {
-      if (!existingIds.has(q.id)) {
-        batch.set(conceptRef.collection('questions').doc(q.id), {
-          ...q, createdAt: new Date().toISOString(),
-        });
-        batchCount++;
-      }
-    }
-    if (batchCount > 0) {
-      await batch.commit();
-      logger.info('AI-generated questions saved to concept', { conceptId: data.conceptId, count: batchCount });
+    const existing = await getConceptQuestions(data.conceptId);
+    const existingIds = new Set(existing.map((q: any) => q.id));
+    const toSave = matchingQuestions.filter((q: any) => !existingIds.has(q.id));
+    if (toSave.length > 0) {
+      await upsertQuestions(toSave, data.conceptId);
+      logger.info('AI-generated questions saved to concept', { conceptId: data.conceptId, count: toSave.length });
     }
   } else {
-    // questions provided by teacher (edited) — overwrite all in concept bank
-    const batch = collections.textbooks().firestore.batch();
-    for (const q of matchingQuestions) {
-      batch.set(conceptRef.collection('questions').doc(q.id), {
-        ...q, updatedAt: new Date().toISOString(),
-      }, { merge: true });
-    }
-    await batch.commit();
+    await upsertQuestions(matchingQuestions, data.conceptId);
     logger.info('Teacher-edited questions saved to concept', { conceptId: data.conceptId, count: matchingQuestions.length });
   }
 
@@ -229,7 +269,7 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
   const quizId = uuidv4();
   const now = new Date().toISOString();
 
-  const quizData = {
+  const quizData: Record<string, unknown> = {
     id: quizId,
     title: data.title,
     description: data.description || '',
@@ -242,16 +282,11 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
     timeLimitMinutes: data.timeLimitMinutes,
     selectedModels,
     questionCount,
-    totalPoints,
+    totalPoints: matchingQuestions.reduce((sum: number, q: any) => sum + (q.points || 0), 0),
     questions: matchingQuestions.map((q: any) => ({
-      id: q.id,
-      type: q.type,
-      text: q.text,
-      options: q.options || undefined,
-      correctAnswer: q.correctAnswer || '',
-      explanation: q.explanation || '',
-      difficulty: q.difficulty || 'medium',
-      points: q.points || 1,
+      id: q.id, type: q.type, text: q.text, options: q.options || undefined,
+      correctAnswer: q.correctAnswer || '', explanation: q.explanation || '',
+      difficulty: q.difficulty || 'medium', points: q.points || 1,
     })),
     passingScore: data.passingScore ?? 50,
     maxAttempts: data.maxAttempts ?? 3,
@@ -266,7 +301,7 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
     updatedAt: now,
   };
 
-  await collections.quizV2().doc(quizId).set(quizData);
+  await nosqlSet(QV2, quizId, quizData);
 
   logger.info('Quiz V2 created', { quizId, classId: data.classId, title: data.title, totalQuestions: matchingQuestions.length });
 
@@ -274,138 +309,79 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
 }
 
 export async function updateQuiz(quizId: string, teacherId: string, data: Record<string, unknown>) {
-  const ref = collections.quizV2().doc(quizId);
-  const doc = await ref.get();
-
-  if (!doc.exists) {
-    throw new NotFoundError('Quiz not found');
-  }
-
-  const quizData = doc.data()!;
-  if (quizData.teacherId !== teacherId) {
-    throw new ForbiddenError('You do not own this quiz');
-  }
+  const { exists, data: quizData } = await nosqlGet(QV2, quizId);
+  if (!exists || !quizData) throw new NotFoundError('Quiz not found');
+  if (quizData.teacherId !== teacherId) throw new ForbiddenError('You do not own this quiz');
 
   const allowed = ['title', 'timeLimitMinutes', 'passingScore', 'maxAttempts', 'shuffleQuestions', 'showResults', 'description'];
   const updates: Record<string, unknown> = { updatedAt: new Date().toISOString() };
   for (const key of allowed) {
-    if (data[key] !== undefined) {
-      updates[key] = data[key];
-    }
+    if (data[key] !== undefined) updates[key] = data[key];
   }
 
-  await ref.update(updates);
-  const updated = await ref.get();
+  await nosqlUpdate(QV2, quizId, updates);
+  const updated = await nosqlGet(QV2, quizId);
   logger.info('Quiz V2 updated', { quizId, teacherId, updates: Object.keys(updates) });
-  return { ...updated.data() };
+  return { id: quizId, ...updated.data };
 }
 
 export async function releaseQuiz(quizId: string, teacherId: string) {
-  const ref = collections.quizV2().doc(quizId);
-  const doc = await ref.get();
-
-  if (!doc.exists) {
-    throw new NotFoundError('Quiz not found');
-  }
-
-  const quizData = doc.data()!;
-  if (quizData.teacherId !== teacherId) {
-    throw new ForbiddenError('You do not own this quiz');
-  }
+  const { exists, data: quizData } = await nosqlGet(QV2, quizId);
+  if (!exists || !quizData) throw new NotFoundError('Quiz not found');
+  if (quizData.teacherId !== teacherId) throw new ForbiddenError('You do not own this quiz');
 
   const now = new Date().toISOString();
-  await ref.update({ releasedAt: now, updatedAt: now });
-
-  const updated = await ref.get();
+  await nosqlUpdate(QV2, quizId, { releasedAt: now, updatedAt: now });
+  const updated = await nosqlGet(QV2, quizId);
   logger.info('Quiz V2 released', { quizId, teacherId });
-
-  return { ...updated.data() };
+  return { id: quizId, ...updated.data };
 }
 
 const POINTS_BY_DIFFICULTY: Record<string, number> = { easy: 1, medium: 2, hard: 3 };
 
 export async function startQuizAttempt(quizId: string, studentId: string, selectedModels: string[]) {
-  const quizRef = collections.quizV2().doc(quizId);
-  const quizDoc = await quizRef.get();
+  const supabase = getSupabaseAdmin()!;
+  const { exists: quizExists, data: quizData } = await nosqlGet(QV2, quizId);
+  if (!quizExists || !quizData) throw new NotFoundError('Quiz not found');
+  if (!quizData.releasedAt) throw new ForbiddenError('Quiz is not yet released');
 
-  if (!quizDoc.exists) {
-    throw new NotFoundError('Quiz not found');
-  }
+  const attempts = await nosqlQuery(QAV2, { quizId, studentId });
+  const completedAttempts = attempts.filter((d: any) => d.status === 'completed').length;
+  const maxAttempts = (quizData.maxAttempts as number) || 3;
+  if (completedAttempts >= maxAttempts) throw new ForbiddenError('Maximum attempts reached');
 
-  const quizData = quizDoc.data()!;
+  const { data: userRow } = await supabase.from('users').select('level').eq('id', studentId).maybeSingle();
+  const studentLevel: StudentLevel = ((userRow?.level as StudentLevel) || 'beginner');
 
-  if (!quizData.releasedAt) {
-    throw new ForbiddenError('Quiz is not yet released');
-  }
+  let questionBank: Array<Record<string, unknown>>;
 
-  const attemptsSnapshot = await collections.quizAttemptV2()
-    .where('quizId', '==', quizId)
-    .where('studentId', '==', studentId)
-    .get();
-
-  const completedAttempts = attemptsSnapshot.docs.filter((d) => d.data()?.status === 'completed').length;
-  const maxAttempts = quizData.maxAttempts || 3;
-  if (completedAttempts >= maxAttempts) {
-    throw new ForbiddenError('Maximum attempts reached');
-  }
-
-  const userDoc = await collections.users().doc(studentId).get();
-  const userData = userDoc.data() || {};
-  const studentLevel: StudentLevel = (userData.level as StudentLevel) || 'beginner';
-
-  let questionBank: Array<{
-    id: string;
-    type: string;
-    difficulty?: Difficulty;
-    text: string;
-    options?: string[];
-    correctAnswer: string;
-    explanation?: string;
-    points: number;
-  }>;
-
-  if (Array.isArray(quizData.questions) && quizData.questions.length > 0) {
-    questionBank = quizData.questions.map((q: any) => ({
-      id: q.id || uuidv4(),
-      type: q.type || 'short_answer',
+  const storedQuestions = quizData.questions as Array<Record<string, unknown>> | undefined;
+  if (Array.isArray(storedQuestions) && storedQuestions.length > 0) {
+    questionBank = storedQuestions.map((q: any) => ({
+      id: q.id || uuidv4(), type: q.type || 'short_answer',
       difficulty: (q.difficulty as Difficulty) || 'medium',
-      text: q.text || q.question || '',
-      options: q.options || undefined,
-      correctAnswer: q.correctAnswer || '',
-      explanation: q.explanation || '',
+      text: q.text || q.question || '', options: q.options || undefined,
+      correctAnswer: q.correctAnswer || '', explanation: q.explanation || '',
       points: q.points || 1,
     }));
   } else if (quizData.textbookId && quizData.chapterId && quizData.conceptId) {
-    const conceptRef = collections.textbooks()
-      .doc(quizData.textbookId)
-      .collection('chapters')
-      .doc(quizData.chapterId)
-      .collection('concepts')
-      .doc(quizData.conceptId);
-
-    const conceptDoc = await conceptRef.get();
-    if (!conceptDoc.exists) {
-      throw new NotFoundError('Concept not found');
-    }
-
-    const questionsSnap = await conceptRef.collection('questions').get();
-    questionBank = questionsSnap.docs.map(doc => doc.data() as {
-      id: string;
-      type: string;
-      difficulty?: Difficulty;
-      text: string;
-      options?: string[];
-      correctAnswer: string;
-      explanation?: string;
-      points: number;
-    });
+    const c = await getConcept(quizData.textbookId as string, quizData.chapterId as string, quizData.conceptId as string);
+    if (!c) throw new NotFoundError('Concept not found');
+    const rows = await getConceptQuestions(quizData.conceptId as string);
+    questionBank = rows.map((r: any) => ({
+      id: r.id, type: r.type || 'short_answer',
+      difficulty: (r.difficulty as Difficulty) || 'medium',
+      text: r.text || r.question || '', options: r.options || undefined,
+      correctAnswer: r.correct_answer || r.correctAnswer || '', explanation: r.explanation || '',
+      points: r.points || 1,
+    }));
   } else {
     questionBank = [];
   }
 
   const targetTypes = resolveTypes(selectedModels);
-  let available = targetTypes.length > 0
-    ? questionBank.filter((q) => targetTypes.includes(q.type))
+  let available: Array<Record<string, unknown>> = targetTypes.length > 0
+    ? questionBank.filter((q: any) => targetTypes.includes(q.type))
     : [...questionBank];
   if (available.length === 0) available = [...questionBank];
 
@@ -413,16 +389,11 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
     available = [...available].sort(() => Math.random() - 0.5);
   }
 
-  const selected = available.slice(0, Math.min(quizData.questionCount, available.length));
+  const selected = available.slice(0, Math.min((quizData.questionCount as number) || 0, available.length));
+  if (selected.length === 0) throw new AppError(400, 'No questions match the selected formats. Please contact your teacher.');
 
-  if (selected.length === 0) {
-    throw new AppError(400, 'No questions match the selected formats. Please contact your teacher.');
-  }
-
-  const questionsForStudent = selected.map((q) => {
-    if (quizData.isRepublished) {
-      return q;
-    }
+  const questionsForStudent = selected.map((q: any) => {
+    if (quizData.isRepublished) return q;
     const { correctAnswer, ...rest } = q;
     return rest;
   });
@@ -430,28 +401,20 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
   const attemptId = uuidv4();
   const now = new Date().toISOString();
 
-  const attempt = {
-    id: attemptId,
-    quizId,
-    studentId,
-    startedAt: now,
-    submittedAt: null,
-    answers: [],
-    score: null,
-    totalPoints: selected.reduce((sum: number, q) => sum + (POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1), 0),
-    percentage: null,
-    passed: null,
-    timeSpent: 0,
-    status: 'in_progress',
-    selectedModels,
-    level: studentLevel,
+  const attempt: Record<string, unknown> = {
+    id: attemptId, quizId, studentId, startedAt: now, submittedAt: null,
+    answers: [], score: null,
+    totalPoints: selected.reduce((sum: number, q: any) => sum + (POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1), 0),
+    percentage: null, passed: null, timeSpent: 0,
+    status: 'in_progress', selectedModels, level: studentLevel,
   };
 
-  await collections.quizAttemptV2().doc(attemptId).set(attempt);
-  await quizRef.update({ attemptCount: FieldValue.increment(1) });
+  await nosqlSet(QAV2, attemptId, attempt);
+
+  const curCount = (quizData.attemptCount as number) || 0;
+  await nosqlUpdate(QV2, quizId, { attemptCount: curCount + 1, updatedAt: now });
 
   logger.info('Quiz V2 attempt started', { quizId, studentId, attemptId });
-
   return { ...attempt, questions: questionsForStudent };
 }
 
@@ -464,153 +427,98 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
   startedAt: string;
   submittedAt: string;
 }) {
-  const attemptRef = collections.quizAttemptV2().doc(attemptId);
-  const attemptDoc = await attemptRef.get();
+  const supabase = getSupabaseAdmin()!;
+  const attemptData = (await nosqlGet(QAV2, attemptId)).data as Record<string, unknown> | null;
+  if (!attemptData) throw new NotFoundError('Attempt not found');
+  if (attemptData.studentId !== studentId) throw new ForbiddenError('Not your attempt');
+  if (attemptData.status !== 'in_progress') throw new ForbiddenError('Attempt already submitted');
 
-  if (!attemptDoc.exists) {
-    throw new NotFoundError('Attempt not found');
-  }
+  const quizData = (await nosqlGet(QV2, attemptData.quizId as string)).data as Record<string, unknown> | null;
+  if (!quizData) throw new NotFoundError('Quiz not found');
 
-  const attemptData = attemptDoc.data()!;
+  const startedAtMs = new Date(data.startedAt).getTime();
+  const submittedAtMs = new Date(data.submittedAt).getTime();
+  const elapsedMinutes = (submittedAtMs - startedAtMs) / 60000;
+  if (elapsedMinutes > (quizData.timeLimitMinutes as number)) throw new ForbiddenError('Time limit exceeded');
 
-  if (attemptData.studentId !== studentId) {
-    throw new ForbiddenError('Not your attempt');
-  }
-
-  if (attemptData.status !== 'in_progress') {
-    throw new ForbiddenError('Attempt already submitted');
-  }
-
-  const quizRef = collections.quizV2().doc(attemptData.quizId);
-  const quizDoc = await quizRef.get();
-  if (!quizDoc.exists) throw new NotFoundError('Quiz not found');
-  const quizData = quizDoc.data()!;
-
-  const startedAt = new Date(data.startedAt).getTime();
-  const submittedAtTime = new Date(data.submittedAt).getTime();
-  const elapsedMinutes = (submittedAtTime - startedAt) / 60000;
-  if (elapsedMinutes > quizData.timeLimitMinutes) {
-    throw new ForbiddenError('Time limit exceeded');
-  }
-
-  let questionBank: Array<{
-    id: string;
-    type: string;
-    difficulty?: Difficulty;
-    text: string;
-    options?: string[];
-    correctAnswer: string;
-    explanation?: string;
-    points: number;
-  }>;
-
-  if (Array.isArray(quizData.questions) && quizData.questions.length > 0) {
-    questionBank = quizData.questions.map((q: any) => ({
-      id: q.id || uuidv4(),
-      type: q.type || 'short_answer',
+  let questionBank: Array<Record<string, unknown>>;
+  const storedQuestions = quizData.questions as Array<Record<string, unknown>> | undefined;
+  if (Array.isArray(storedQuestions) && storedQuestions.length > 0) {
+    questionBank = storedQuestions.map((q: any) => ({
+      id: q.id || uuidv4(), type: q.type || 'short_answer',
       difficulty: (q.difficulty as Difficulty) || 'medium',
-      text: q.text || q.question || '',
-      options: q.options || undefined,
-      correctAnswer: q.correctAnswer || '',
-      explanation: q.explanation || '',
+      text: q.text || q.question || '', options: q.options || undefined,
+      correctAnswer: q.correctAnswer || '', explanation: q.explanation || '',
       points: q.points || 1,
     }));
   } else {
-    const conceptRef = collections.textbooks()
-      .doc(quizData.textbookId)
-      .collection('chapters')
-      .doc(quizData.chapterId)
-      .collection('concepts')
-      .doc(quizData.conceptId);
-
-    const conceptDoc = await conceptRef.get();
-    if (!conceptDoc.exists) throw new NotFoundError('Concept not found');
-    const questionsSnap = await conceptRef.collection('questions').get();
-    questionBank = questionsSnap.docs.map(doc => doc.data() as {
-      id: string;
-      type: string;
-      difficulty?: Difficulty;
-      text: string;
-      options?: string[];
-      correctAnswer: string;
-      explanation?: string;
-      points: number;
-    });
+    const rows = await getConceptQuestions(quizData.conceptId as string);
+    questionBank = rows.map((r: any) => ({
+      id: r.id, type: r.type || 'short_answer',
+      difficulty: (r.difficulty as Difficulty) || 'medium',
+      text: r.text || r.question || '', options: r.options || undefined,
+      correctAnswer: r.correct_answer || r.correctAnswer || '', explanation: r.explanation || '',
+      points: r.points || 1,
+    }));
   }
 
   let score = 0;
   const gradedAnswers = data.answers.map((answer) => {
-    const question = questionBank.find((q) => q.id === answer.questionId);
-
+    const question = questionBank.find((q: any) => q.id === answer.questionId) as Record<string, unknown> | undefined;
     if (!question) {
       return { questionId: answer.questionId, answer: answer.answer, isCorrect: false, pointsEarned: 0, timeSpent: answer.timeSpent || 0 };
     }
 
     let isCorrect = false;
     const normalize = (v: unknown) => v?.toString().toLowerCase().trim() || '';
-    if (question.type === 'multiple_choice' || question.type === 'mcq' || question.type === 'true_false' || question.type === 'passage') {
+    const qType = question.type as string;
+    if (['multiple_choice', 'mcq', 'true_false', 'passage'].includes(qType)) {
       isCorrect = normalize(answer.answer) === normalize(question.correctAnswer);
-    } else if (question.type === 'short_answer' || question.type === 'fill_blank') {
+    } else if (['short_answer', 'fill_blank'].includes(qType)) {
       isCorrect = normalize(answer.answer) === normalize(question.correctAnswer);
-    } else if (question.type === 'numerical' || question.type === 'matching') {
+    } else if (['numerical', 'matching'].includes(qType)) {
       isCorrect = normalize(answer.answer) === normalize(question.correctAnswer);
-    } else if (question.type === 'descriptive') {
+    } else if (qType === 'descriptive') {
       isCorrect = answer.answer.toString().trim().length > 5;
     }
 
-    const pointsEarned = isCorrect ? (POINTS_BY_DIFFICULTY[question.difficulty || 'medium'] || 1) : 0;
+    const pointsEarned = isCorrect ? (POINTS_BY_DIFFICULTY[(question.difficulty as string) || 'medium'] || 1) : 0;
     if (isCorrect) score += pointsEarned;
 
-    const graded: Record<string, unknown> = {
-      questionId: answer.questionId,
-      questionText: question.text,
-      answer: answer.answer,
-      isCorrect,
-      pointsEarned,
-      timeSpent: answer.timeSpent || 0,
+    return {
+      questionId: answer.questionId, questionText: question.text, answer: answer.answer,
+      isCorrect, pointsEarned, timeSpent: answer.timeSpent || 0,
+      correctAnswer: question.correctAnswer, explanation: question.explanation,
     };
-    graded.correctAnswer = question.correctAnswer;
-    graded.explanation = question.explanation;
-    return graded;
   });
 
   const timeSpent = data.answers.reduce((sum, a) => sum + (a.timeSpent || 0), 0);
-  const percentage = attemptData.totalPoints > 0 ? Math.round((score / attemptData.totalPoints) * 100) : 0;
-  const passingScore = quizData.passingScore || 50;
+  const totalPoints = (attemptData.totalPoints as number) || 0;
+  const percentage = totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0;
+  const passingScore = (quizData.passingScore as number) || 50;
   const passed = percentage >= passingScore;
 
-  const accuracy = attemptData.totalPoints > 0 ? score / attemptData.totalPoints : 0;
+  const accuracy = totalPoints > 0 ? score / totalPoints : 0;
   const avgReactionTime = gradedAnswers.length > 0
     ? gradedAnswers.reduce((sum: number, a: any) => sum + (a.timeSpent || 0), 0) / gradedAnswers.length
     : 0;
 
   const difficultyMap: Record<string, Difficulty> = {};
-  for (const q of questionBank) {
-    difficultyMap[q.id] = q.difficulty || 'easy';
-  }
-
+  for (const q of questionBank) { difficultyMap[q.id as string] = (q.difficulty as Difficulty) || 'easy'; }
   const complexityHandled = computeComplexityHandled(
     gradedAnswers.map((a: any) => ({ questionId: a.questionId, correct: a.isCorrect })),
     difficultyMap,
   );
-
   const newLevel = computeLevel(accuracy, avgReactionTime, complexityHandled);
 
-  await collections.users().doc(studentId).update({ level: newLevel });
+  await supabase.from('users').update({ level: newLevel }).eq('id', studentId);
 
-  const result = {
-    answers: gradedAnswers,
-    score,
-    totalPoints: attemptData.totalPoints,
-    percentage,
-    passed,
-    showResults: quizData.showResults ?? false,
-    timeSpent,
-    submittedAt: data.submittedAt,
-    status: 'completed',
+  const result: Record<string, unknown> = {
+    answers: gradedAnswers, score, totalPoints, percentage, passed,
+    showResults: (quizData.showResults as boolean) ?? false,
+    timeSpent, submittedAt: data.submittedAt, status: 'completed',
   };
-
-  await attemptRef.update(result);
+  await nosqlUpdate(QAV2, attemptId, result);
 
   logger.info('Quiz V2 attempt submitted', { attemptId, studentId, score, percentage, newLevel });
 
@@ -632,7 +540,7 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
   }
 
   if (quizData.conceptId) {
-    computeMastery(studentId, quizData.conceptId, accuracy).catch(err =>
+    computeMastery(studentId, quizData.conceptId as string, accuracy).catch(err =>
       logger.error('Mastery update failed', { studentId, conceptId: quizData.conceptId, error: err })
     );
   }
@@ -641,65 +549,41 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
 }
 
 export async function releaseQuizGrades(quizId: string, showResults: boolean) {
-  const ref = collections.quizV2().doc(quizId);
-  const doc = await ref.get();
-
-  if (!doc.exists) {
-    throw new NotFoundError('Quiz not found');
-  }
-
-  await ref.update({ showResults, updatedAt: new Date().toISOString() });
+  const { exists } = await nosqlGet(QV2, quizId);
+  if (!exists) throw new NotFoundError('Quiz not found');
+  await nosqlUpdate(QV2, quizId, { showResults, updatedAt: new Date().toISOString() });
   logger.info('Quiz V2 grades release toggled', { quizId, showResults });
-
-  const updated = await ref.get();
-  return { ...updated.data() };
+  const updated = await nosqlGet(QV2, quizId);
+  return { id: quizId, ...updated.data };
 }
 
 export async function getQuizResults(quizId: string, studentId: string) {
-  const quizDoc = await collections.quizV2().doc(quizId).get();
-  if (!quizDoc.exists) throw new NotFoundError('Quiz not found');
+  const nq = await nosqlGet(QV2, quizId);
+  const quizData = nq.data as Record<string, unknown> | null;
+  if (!quizData) throw new NotFoundError('Quiz not found');
+  const resultsGated = !(quizData.showResults as boolean);
 
-  const quizData = quizDoc.data()!;
-  const resultsGated = !quizData.showResults;
-
-  const snapshot = await collections.quizAttemptV2()
-    .where('quizId', '==', quizId)
-    .where('studentId', '==', studentId)
-    .get();
-
-  const attempts = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const attempts = await nosqlQuery(QAV2, { quizId, studentId });
   const sorted = attempts.sort((a: any, b: any) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
 
-  // Build a lookup of questions from quiz data for backfilling old attempts
   const quizQuestionsMap: Record<string, { correctAnswer: string; explanation: string; difficulty: string }> = {};
-  for (const q of (quizData.questions || [])) {
+  for (const q of ((quizData.questions as any[]) || [])) {
     quizQuestionsMap[q.id] = { correctAnswer: q.correctAnswer || '', explanation: q.explanation || '', difficulty: q.difficulty || 'medium' };
   }
 
   return sorted.map((data: any) => {
     if (resultsGated && data.status === 'completed') {
       return {
-        id: data.id,
-        quizId: data.quizId,
-        studentId: data.studentId,
-        score: data.score,
-        totalPoints: data.totalPoints,
-        percentage: data.percentage,
-        passed: data.passed,
-        timeSpent: data.timeSpent,
-        startedAt: data.startedAt,
-        submittedAt: data.submittedAt,
-        status: data.status,
-        selectedModels: data.selectedModels,
-        level: data.level,
-        showResults: false,
+        id: data.id, quizId: data.quizId, studentId: data.studentId,
+        score: data.score, totalPoints: data.totalPoints, percentage: data.percentage,
+        passed: data.passed, timeSpent: data.timeSpent, startedAt: data.startedAt,
+        submittedAt: data.submittedAt, status: data.status,
+        selectedModels: data.selectedModels, level: data.level, showResults: false,
         answers: data.answers?.map((a: { questionId: string; pointsEarned: number }) => ({
-          questionId: a.questionId,
-          pointsEarned: a.pointsEarned,
+          questionId: a.questionId, pointsEarned: a.pointsEarned,
         })) ?? [],
       };
     }
-    // Backfill correctAnswer & regrade for attempts that don't have it (pre-fix data)
     let regradedScore = 0;
     const answers = (data.answers || []).map((a: any) => {
       if (!a.correctAnswer && quizQuestionsMap[a.questionId]) {
@@ -713,64 +597,43 @@ export async function getQuizResults(quizId: string, studentId: string) {
       regradedScore += a.pointsEarned || 0;
       return a;
     });
-    const totalPoints = data.totalPoints || 1;
-    const percentage = Math.round((regradedScore / totalPoints) * 100);
-    return { ...data, showResults: quizData.showResults ?? false, answers, score: regradedScore, percentage };
+    const tp = data.totalPoints || 1;
+    const pct = Math.round((regradedScore / tp) * 100);
+    return { ...data, showResults: (quizData.showResults as boolean) ?? false, answers, score: regradedScore, percentage: pct };
   });
 }
 
 export async function getQuizById(quizId: string) {
-  const ref = collections.quizV2().doc(quizId);
-  const doc = await ref.get();
-
-  if (!doc.exists) {
-    throw new NotFoundError('Quiz not found');
-  }
-
-  return { ...doc.data() };
+  const { exists, data } = await nosqlGet(QV2, quizId);
+  if (!exists || !data) throw new NotFoundError('Quiz not found');
+  return { id: quizId, ...data };
 }
 
 export async function listQuizzesForClass(classId: string, _schoolId?: string, studentId?: string): Promise<any[]> {
-  const baseQuery = collections.quizV2()
-    .where('classId', '==', classId);
-  const snapshot = await baseQuery.get();
+  const supabase = getSupabaseAdmin()!;
+  let items = await nosqlQuery(QV2, { classId });
 
-  let items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-
-  // If studentId is provided, filter by targeting
   if (studentId) {
     items = items.filter((q: any) => {
       if (!q.publishedTo || q.publishedTo === 'class') return true;
-      if (q.publishedTo === 'students') {
-        return (q.targetStudentIds || []).includes(studentId);
-      }
+      if (q.publishedTo === 'students') return (q.targetStudentIds || []).includes(studentId);
       return true;
     });
   }
-  
-  // Resolve subjectId fallback for older quiz documents
+
   const resolvedItems = await Promise.all(
     items.map(async (item: any) => {
       if (!item.subjectId && item.textbookId) {
         try {
-          const tbDoc = await collections.textbooks().doc(item.textbookId).get();
-          if (tbDoc.exists) {
-            item.subjectId = tbDoc.data()?.subjectId || null;
-          }
-        } catch (err) {
-          logger.error('Failed to resolve fallback subjectId for quiz', { quizId: item.id, err });
-        }
+          const { data: tb } = await supabase.from('textbooks').select('subject_id').eq('id', item.textbookId).maybeSingle();
+          if (tb) item.subjectId = tb.subject_id;
+        } catch (err) { logger.error('Failed to resolve fallback subjectId for quiz', { quizId: item.id, err }); }
       }
-      // Resolve subject name
       if (item.subjectId) {
         try {
-          const subDoc = await collections.subjects().doc(item.subjectId).get();
-          if (subDoc.exists) {
-            item.subjectName = subDoc.data()?.name || null;
-          }
-        } catch (err) {
-          logger.error('Failed to resolve subject name', { quizId: item.id, subjectId: item.subjectId, err });
-        }
+          const { data: sub } = await supabase.from('subjects').select('name').eq('id', item.subjectId).maybeSingle();
+          if (sub) item.subjectName = sub.name;
+        } catch (err) { logger.error('Failed to resolve subject name', { quizId: item.id, subjectId: item.subjectId, err }); }
       }
       return item;
     })
@@ -780,73 +643,42 @@ export async function listQuizzesForClass(classId: string, _schoolId?: string, s
 }
 
 export async function listQuizzesForTeacher(teacherId: string, _schoolId?: string): Promise<any[]> {
-  const baseQuery = collections.quizV2()
-    .where('teacherId', '==', teacherId);
-  const snapshot = await baseQuery.get();
-
-  const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const items = await nosqlQuery(QV2, { teacherId });
   return items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
-/** Get a quiz for a specific concept (first matching). */
 export async function getQuizForConcept(conceptId: string) {
-  const quizzes = await collections.quizV2()
-    .where('conceptId', '==', conceptId)
-    .get();
-  return quizzes.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const items = await nosqlQuery(QV2, { conceptId });
+  return items.map((d: any) => ({ id: d.id, ...d }));
 }
 
 export async function republishQuiz(quizId: string, teacherId: string) {
-  const ref = collections.quizV2().doc(quizId);
-  const doc = await ref.get();
-
-  if (!doc.exists) {
-    throw new NotFoundError('Quiz not found');
-  }
-
-  const quizData = doc.data()!;
-  if (quizData.teacherId !== teacherId) {
-    throw new ForbiddenError('You do not own this quiz');
-  }
+  const { exists, data: quizData } = await nosqlGet(QV2, quizId);
+  if (!exists || !quizData) throw new NotFoundError('Quiz not found');
+  if (quizData.teacherId !== teacherId) throw new ForbiddenError('You do not own this quiz');
 
   const now = new Date().toISOString();
-  await ref.update({ isRepublished: true, updatedAt: now });
-
-  const updated = await ref.get();
+  await nosqlUpdate(QV2, quizId, { isRepublished: true, updatedAt: now });
+  const updated = await nosqlGet(QV2, quizId);
   logger.info('Quiz V2 republished (interactive mode enabled)', { quizId, teacherId });
-
-  return { ...updated.data() };
+  return { id: quizId, ...updated.data };
 }
 
 export async function deleteQuiz(quizId: string, teacherId: string) {
-  const ref = collections.quizV2().doc(quizId);
-  const doc = await ref.get();
+  const supabase = getSupabaseAdmin()!;
+  const { exists, data: quizData } = await nosqlGet(QV2, quizId);
+  if (!exists || !quizData) throw new NotFoundError('Quiz not found');
+  if (quizData.teacherId !== teacherId) throw new ForbiddenError('You do not own this quiz');
 
-  if (!doc.exists) {
-    throw new NotFoundError('Quiz not found');
+  const attempts = await nosqlQuery(QAV2, { quizId });
+  for (const a of attempts) {
+    await nosqlDelete(QAV2, (a as any).id);
   }
-
-  const quizData = doc.data()!;
-  if (quizData.teacherId !== teacherId) {
-    throw new ForbiddenError('You do not own this quiz');
-  }
-
-  // Delete all attempts for this quiz
-  const attemptsSnap = await collections.quizAttemptV2()
-    .where('quizId', '==', quizId)
-    .get();
-
-  const batch = collections.quizV2().firestore.batch();
-  attemptsSnap.docs.forEach((a) => batch.delete(a.ref));
-  batch.delete(ref);
-  await batch.commit();
-
-  logger.info('Quiz V2 deleted', { quizId, teacherId, attemptsDeleted: attemptsSnap.size });
+  await nosqlDelete(QV2, quizId);
+  logger.info('Quiz V2 deleted', { quizId, teacherId, attemptsDeleted: attempts.length });
 }
 
 export async function getQuizAttemptsForStudent(studentId: string) {
-  const snapshot = await collections.quizAttemptV2()
-    .where('studentId', '==', studentId)
-    .get();
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  const items = await nosqlQuery(QAV2, { studentId });
+  return items;
 }

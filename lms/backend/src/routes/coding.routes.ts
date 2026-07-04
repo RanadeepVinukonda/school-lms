@@ -38,7 +38,7 @@ router.post('/execute', authenticate, validate(executeCodeSchema), asyncHandler(
 router.get('/stream-projects', authenticate, asyncHandler(codingController.getAllStreamProjects));
 router.get('/stream-projects/:id', authenticate, asyncHandler(codingController.getStreamProjectById));
 router.post('/stream-projects', authenticate, requireRole('teacher', 'admin'), validate(createProjectSchema), asyncHandler(codingController.createStreamProject));
-router.put('/stream-projects/:id', authenticate, asyncHandler(codingController.updateStreamProject));
+router.put('/stream-projects/:id', authenticate, validate(updateProjectSchema), asyncHandler(codingController.updateStreamProject));
 router.delete('/stream-projects/:id', authenticate, requireRole('teacher', 'admin'), asyncHandler(codingController.deleteStreamProject));
 router.post('/stream-projects/:id/collaborate', authenticate, validate(addCollaboratorSchema), asyncHandler(codingController.addStreamCollaborator));
 router.delete('/stream-projects/:id/collaborate/:userId', authenticate, asyncHandler(codingController.removeStreamCollaborator));

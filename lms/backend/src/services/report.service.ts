@@ -1,21 +1,25 @@
 import PDFDocument from 'pdfkit';
-import { collections } from '../database/registry';
+import { getSupabaseClient } from './supabase';
 import { logger } from '../utils/logger';
 
 export async function getReportById(reportId: string) {
-  const doc = await collections.reports().doc(reportId).get();
-  if (!doc.exists) return null;
-  return { id: doc.id, ...doc.data() };
+  const supabase = getSupabaseClient()!;
+  const { data } = await supabase.from('nosql_docs').select('doc_id, data')
+    .eq('collection', 'reports').eq('doc_id', reportId).maybeSingle();
+  if (!data) return null;
+  return { id: data.doc_id, ...data.data as Record<string, unknown> };
 }
 
 export async function getLatestReport(type: string) {
-  const snap = await collections.reports()
-    .where('type', '==', type)
-    .orderBy('generatedAt', 'desc')
-    .limit(1)
-    .get();
-  if (snap.empty) return null;
-  return { id: snap.docs[0].id, ...snap.docs[0].data() };
+  const supabase = getSupabaseClient()!;
+  const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
+    .eq('collection', 'reports')
+    .contains('data', { type })
+    .order('created_at', { ascending: false })
+    .limit(1);
+  if (!rows || rows.length === 0) return null;
+  const row = rows[0];
+  return { id: row.doc_id, ...row.data as Record<string, unknown> };
 }
 
 export function generateReportPdf(report: Record<string, unknown>): PDFKit.PDFDocument {

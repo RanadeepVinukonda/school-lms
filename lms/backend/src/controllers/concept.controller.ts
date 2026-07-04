@@ -1,27 +1,28 @@
 import { Request, Response } from 'express';
-import { getCollection } from '../database/adapter';
+import { getSupabaseAdmin } from '../services/supabase';
 import { sendSuccess } from '../utils/response';
 import { logger } from '../utils/logger';
 
 /** Fetch whiteboard strokes for a concept, scoped to the requesting teacher. */
 export async function getWhiteboard(req: Request, res: Response) {
+  const supabase = getSupabaseAdmin()!;
   const { conceptId } = req.params;
   const teacherId = req.user!.uid;
+  const docId = `${teacherId}_${conceptId}`;
 
-  const snap = await getCollection('whiteboards')
-    .doc(`${teacherId}_${conceptId}`)
-    .get();
+  const { data } = await supabase.from('nosql_docs').select('data').eq('collection', 'whiteboards').eq('doc_id', docId).maybeSingle();
 
-  if (!snap.exists) {
+  if (!data) {
     sendSuccess(res, { strokes: [] });
     return;
   }
 
-  sendSuccess(res, { id: snap.id, ...snap.data() });
+  sendSuccess(res, { id: docId, ...(data.data as object) });
 }
 
 /** Save (overwrite) whiteboard strokes for a concept, scoped to the requesting teacher. */
 export async function saveWhiteboard(req: Request, res: Response) {
+  const supabase = getSupabaseAdmin()!;
   const { conceptId } = req.params;
   const teacherId = req.user!.uid;
   const { strokes } = req.body;
@@ -30,15 +31,13 @@ export async function saveWhiteboard(req: Request, res: Response) {
     sendSuccess(res, { message: 'No strokes provided, nothing saved' });
     return;
   }
+  const docId = `${teacherId}_${conceptId}`;
 
-  await getCollection('whiteboards')
-    .doc(`${teacherId}_${conceptId}`)
-    .set({
-      strokes,
-      teacherId,
-      conceptId,
-      updatedAt: new Date().toISOString(),
-    });
+  await supabase.from('nosql_docs').upsert({
+    collection: 'whiteboards',
+    doc_id: docId,
+    data: { strokes, teacherId, conceptId, updatedAt: new Date().toISOString() },
+  }, { onConflict: 'collection,doc_id' });
 
   logger.info('Whiteboard saved', { conceptId, teacherId, strokeCount: strokes.length });
   sendSuccess(res, { strokes, saved: true }, 'Whiteboard saved');

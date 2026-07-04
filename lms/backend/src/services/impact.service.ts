@@ -1,4 +1,4 @@
-import { collections } from '../database/adapter';
+import { getSupabaseClient } from './supabase';
 import { ConflictError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
@@ -19,42 +19,65 @@ export interface ImpactReport {
   recommendedAction: 'archive' | 'deactivate' | 'delete' | 'none';
 }
 
-async function countWhere(collectionName: string, field: string, value: string): Promise<number> {
+const supabase = () => getSupabaseClient()!;
+
+async function countTyped(table: string, field: string, value: string): Promise<number> {
   try {
-    const snapshot = await (collections as Record<string, () => FirebaseFirestore.CollectionReference>)[collectionName]()
-      .where(field, '==', value)
-      .limit(1000)
-      .count()
-      .get();
-    return snapshot.data().count;
-  } catch {
-    try {
-      const snapshot = await (collections as Record<string, () => FirebaseFirestore.CollectionReference>)[collectionName]()
-        .where(field, '==', value)
-        .get();
-      return snapshot.docs.length;
-    } catch {
-      return 0;
-    }
-  }
+    const { count } = await supabase().from(table).select('*', { count: 'exact', head: true }).eq(field, value);
+    return count || 0;
+  } catch { return 0; }
+}
+
+async function countNosql(collection: string, field: string, value: string): Promise<number> {
+  try {
+    const { count } = await supabase().from('nosql_docs')
+      .select('*', { count: 'exact', head: true })
+      .eq('collection', collection)
+      .contains('data', { [field]: value });
+    return count || 0;
+  } catch { return 0; }
+}
+
+async function countArrayTyped(table: string, field: string, value: string): Promise<number> {
+  try {
+    const { count } = await supabase().from(table).select('*', { count: 'exact', head: true }).contains(field, [value]);
+    return count || 0;
+  } catch { return 0; }
+}
+
+async function countWhere(collectionName: string, field: string, value: string): Promise<number> {
+  const TYPED: Record<string, string> = {
+    assignments: 'assignments', exams: 'exams', grades: 'grades',
+    submissions: 'submissions', quizzes: 'quizzes', timetable: 'timetable',
+    subjects: 'subjects', classes: 'classes', users: 'users',
+  };
+  if (TYPED[collectionName]) return countTyped(TYPED[collectionName], field, value);
+  return countNosql(collectionName, field, value);
 }
 
 async function countArrayWhere(collectionName: string, field: string, value: string): Promise<number> {
-  try {
-    const snapshot = await (collections as Record<string, () => FirebaseFirestore.CollectionReference>)[collectionName]()
-      .where(field, 'array-contains', value)
-      .limit(1000)
-      .count()
-      .get();
-    return snapshot.data().count;
-  } catch {
-    return 0;
+  const TYPED: Record<string, string> = { users: 'users', classes: 'classes' };
+  if (TYPED[collectionName]) return countArrayTyped(TYPED[collectionName], field, value);
+  return countNosql(collectionName, field, value);
+}
+
+async function docById(collectionName: string, docId: string) {
+  const TYPED: Record<string, string> = {
+    assignments: 'assignments', exams: 'exams', grades: 'grades',
+    quizzes: 'quizzes', subjects: 'subjects', classes: 'classes',
+    users: 'users', lessons: 'lessons', courses: 'courses',
+  };
+  if (TYPED[collectionName]) {
+    const { data } = await supabase().from(TYPED[collectionName]).select('*').eq('id', docId).maybeSingle();
+    return data || null;
   }
+  const { data } = await supabase().from('nosql_docs').select('data').eq('collection', collectionName).eq('doc_id', docId).maybeSingle();
+  return data?.data as Record<string, unknown> | null || null;
 }
 
 export async function getSubjectImpact(subjectId: string): Promise<ImpactReport> {
-  const subjectDoc = await collections.subjects().doc(subjectId).get();
-  const subjectName = subjectDoc.exists ? (subjectDoc.data()?.name as string) || subjectId : subjectId;
+  const subject = await docById('subjects', subjectId);
+  const subjectName = subject?.name || subjectId;
 
   const categories: DependencyCategory[] = [];
   let total = 0;
@@ -75,7 +98,7 @@ export async function getSubjectImpact(subjectId: string): Promise<ImpactReport>
   }
 
   return {
-    entityName: subjectName,
+    entityName: subjectName as string,
     entityType: 'subject',
     totalDependents: total,
     categories,
@@ -86,40 +109,26 @@ export async function getSubjectImpact(subjectId: string): Promise<ImpactReport>
 }
 
 export async function getClassImpact(classId: string): Promise<ImpactReport> {
-  const classDoc = await collections.classes().doc(classId).get();
-  const className = classDoc.exists ? (classDoc.data()?.name as string) || classId : classId;
+  const cls = await docById('classes', classId);
+  const className = cls?.name || classId;
 
   const categories: DependencyCategory[] = [];
   let total = 0;
 
-  let studentCount = 0;
-  let teacherCount = 0;
-  try {
-    const sSnap = await collections.users().where('classIds', 'array-contains', classId).where('role', '==', 'student').count().get();
-    studentCount = sSnap.data().count;
-  } catch {}
-  try {
-    const tSnap = await collections.users().where('classIds', 'array-contains', classId).where('role', '==', 'teacher').count().get();
-    teacherCount = tSnap.data().count;
-  } catch {}
-
-  if (studentCount > 0) {
-    categories.push({ label: 'Students', count: studentCount, collection: 'users', filterField: 'classIds' });
-    total += studentCount;
-  }
-  if (teacherCount > 0) {
-    categories.push({ label: 'Teachers', count: teacherCount, collection: 'users', filterField: 'classIds' });
-    total += teacherCount;
+  const sCount = await countArrayTyped('users', 'class_ids', classId);
+  if (sCount > 0) {
+    categories.push({ label: 'Students', count: sCount, collection: 'users', filterField: 'class_ids' });
+    total += sCount;
   }
 
-  const timetableCount = await countWhere('timetable', 'classId', classId);
+  const timetableCount = await countTyped('timetable', 'class_id', classId);
   if (timetableCount > 0) {
-    categories.push({ label: 'Timetable Entries', count: timetableCount, collection: 'timetable', filterField: 'classId' });
+    categories.push({ label: 'Timetable Entries', count: timetableCount, collection: 'timetable', filterField: 'class_id' });
     total += timetableCount;
   }
 
   return {
-    entityName: className,
+    entityName: className as string,
     entityType: 'class',
     totalDependents: total,
     categories,
@@ -130,8 +139,8 @@ export async function getClassImpact(classId: string): Promise<ImpactReport> {
 }
 
 export async function getCourseImpact(courseId: string): Promise<ImpactReport> {
-  const courseDoc = await collections.courses().doc(courseId).get();
-  const courseTitle = courseDoc.exists ? (courseDoc.data()?.title as string) || courseId : courseId;
+  const course = await docById('courses', courseId);
+  const courseTitle = course?.title || courseId;
 
   const categories: DependencyCategory[] = [];
   let total = 0;
@@ -153,7 +162,7 @@ export async function getCourseImpact(courseId: string): Promise<ImpactReport> {
   }
 
   return {
-    entityName: courseTitle,
+    entityName: courseTitle as string,
     entityType: 'course',
     totalDependents: total,
     categories,
@@ -164,18 +173,19 @@ export async function getCourseImpact(courseId: string): Promise<ImpactReport> {
 }
 
 export async function getLessonImpact(lessonId: string): Promise<ImpactReport> {
-  const lessonDoc = await collections.lessons().doc(lessonId).get();
-  const lessonTitle = lessonDoc.exists ? (lessonDoc.data()?.title as string) || lessonId : lessonId;
+  const { data: lessonRow } = await supabase().from('lessons').select('*').eq('id', lessonId).maybeSingle();
+  const lessonData = lessonRow?.data as Record<string, unknown> || {};
+  const lessonTitle = lessonData.title || lessonId;
+  const completedBy = (lessonData.completedBy as string[]) || [];
+  const completedCount = completedBy.length;
 
   const categories: DependencyCategory[] = [];
-  const lessonData = lessonDoc.data();
-  const completedCount = (lessonData?.completedBy as string[])?.length || 0;
   if (completedCount > 0) {
     categories.push({ label: 'Students Completed', count: completedCount, collection: 'lessons', filterField: 'completedBy' });
   }
 
   return {
-    entityName: lessonTitle,
+    entityName: lessonTitle as string,
     entityType: 'lesson',
     totalDependents: completedCount,
     categories,
@@ -186,10 +196,10 @@ export async function getLessonImpact(lessonId: string): Promise<ImpactReport> {
 }
 
 export async function getAssignmentImpact(assignmentId: string): Promise<ImpactReport> {
-  const assignmentDoc = await collections.assignments().doc(assignmentId).get();
-  const assignmentTitle = assignmentDoc.exists ? (assignmentDoc.data()?.title as string) || assignmentId : assignmentId;
+  const { data: assignDoc } = await supabase().from('assignments').select('*').eq('id', assignmentId).maybeSingle();
+  const assignmentTitle = assignDoc?.title || assignmentId;
 
-  const submissionCount = await countWhere('submissions', 'assignmentId', assignmentId);
+  const submissionCount = await countTyped('submissions', 'assignmentId', assignmentId);
   const categories: DependencyCategory[] = [];
   if (submissionCount > 0) {
     categories.push({ label: 'Student Submissions', count: submissionCount, collection: 'submissions', filterField: 'assignmentId' });
@@ -207,10 +217,10 @@ export async function getAssignmentImpact(assignmentId: string): Promise<ImpactR
 }
 
 export async function getExamImpact(examId: string): Promise<ImpactReport> {
-  const examDoc = await collections.exams().doc(examId).get();
-  const examTitle = examDoc.exists ? (examDoc.data()?.title as string) || examId : examId;
+  const { data: examDoc } = await supabase().from('exams').select('*').eq('id', examId).maybeSingle();
+  const examTitle = examDoc?.title || examId;
 
-  const attemptCount = await countWhere('examAttempts', 'examId', examId);
+  const attemptCount = await countNosql('examAttempts', 'examId', examId);
   const categories: DependencyCategory[] = [];
   if (attemptCount > 0) {
     categories.push({ label: 'Student Attempts', count: attemptCount, collection: 'examAttempts', filterField: 'examId' });
@@ -228,10 +238,10 @@ export async function getExamImpact(examId: string): Promise<ImpactReport> {
 }
 
 export async function getQuizImpact(quizId: string): Promise<ImpactReport> {
-  const quizDoc = await collections.quizzes().doc(quizId).get();
-  const quizTitle = quizDoc.exists ? (quizDoc.data()?.title as string) || quizId : quizId;
+  const { data: quizDoc } = await supabase().from('quizzes').select('*').eq('id', quizId).maybeSingle();
+  const quizTitle = quizDoc?.title || quizId;
 
-  const attemptCount = await countWhere('quizAttempts', 'quizId', quizId);
+  const attemptCount = await countNosql('quizAttempts', 'quizId', quizId);
   const categories: DependencyCategory[] = [];
   if (attemptCount > 0) {
     categories.push({ label: 'Quiz Attempts', count: attemptCount, collection: 'quizAttempts', filterField: 'quizId' });
@@ -249,33 +259,33 @@ export async function getQuizImpact(quizId: string): Promise<ImpactReport> {
 }
 
 export async function getUserImpact(userId: string): Promise<ImpactReport> {
-  const userDoc = await collections.users().doc(userId).get();
-  const userName = userDoc.exists ? (userDoc.data()?.displayName as string) || userId : userId;
-  const userData = userDoc.data();
+  const { data: userDoc } = await supabase().from('users').select('*').eq('id', userId).maybeSingle();
+  const userName = userDoc?.display_name || userId;
+  const userData = userDoc?.data as Record<string, unknown> || {};
 
   const categories: DependencyCategory[] = [];
   let total = 0;
 
-  if (userData?.role === 'teacher') {
-    const classCount = await countArrayWhere('classes', 'teacherIds', userId);
+  if (userDoc?.role === 'teacher') {
+    const classCount = await countArrayTyped('classes', 'teacher_ids', userId);
     if (classCount > 0) {
-      categories.push({ label: 'Assigned Classes', count: classCount, collection: 'classes', filterField: 'teacherIds' });
+      categories.push({ label: 'Assigned Classes', count: classCount, collection: 'classes', filterField: 'teacher_ids' });
       total += classCount;
     }
-    const courseCount = await countWhere('courses', 'teacherId', userId);
+    const courseCount = await countNosql('courses', 'teacherId', userId);
     if (courseCount > 0) {
       categories.push({ label: 'Courses Taught', count: courseCount, collection: 'courses', filterField: 'teacherId' });
       total += courseCount;
     }
   }
 
-  if (userData?.role === 'student') {
-    const gradeCount = await countWhere('grades', 'studentId', userId);
+  if (userDoc?.role === 'student') {
+    const gradeCount = await countTyped('grades', 'studentId', userId);
     if (gradeCount > 0) {
       categories.push({ label: 'Grade Records', count: gradeCount, collection: 'grades', filterField: 'studentId' });
       total += gradeCount;
     }
-    const submissionCount = await countWhere('submissions', 'studentId', userId);
+    const submissionCount = await countTyped('submissions', 'studentId', userId);
     if (submissionCount > 0) {
       categories.push({ label: 'Submissions', count: submissionCount, collection: 'submissions', filterField: 'studentId' });
       total += submissionCount;
@@ -283,7 +293,7 @@ export async function getUserImpact(userId: string): Promise<ImpactReport> {
   }
 
   return {
-    entityName: userName,
+    entityName: userName || userId,
     entityType: 'user',
     totalDependents: total,
     categories,

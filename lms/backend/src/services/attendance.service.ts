@@ -1,14 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../database/adapter';
-import { NotFoundError } from '../utils/errors';
+import { getSupabaseClient } from './supabase';
 import { logger } from '../utils/logger';
-import { getAdminFirestore } from '../database/admin';
 import { createBulkNotifications } from './notification.service';
-import type { AttendanceCollection } from '../database/interfaces/collections';
-
-let _attendanceCollection: AttendanceCollection | null = null;
-export function setAttendanceCollection(col: AttendanceCollection): void { _attendanceCollection = col; }
-function attendanceCol() { return _attendanceCollection ?? (collections.attendance() as unknown as AttendanceCollection); }
 
 export async function markAttendance(data: {
   studentIds: string[];
@@ -18,10 +11,24 @@ export async function markAttendance(data: {
   markedBy: string;
   note?: string;
 }) {
-  const batch = getAdminFirestore().batch();
   const records: any[] = [];
+  const supabase = getSupabaseClient()!;
+
+  // ponytail: duplicate guard — check if any student already has attendance for this date
+  const { data: existingRows, error: existingError } = await supabase
+    .from('attendance')
+    .select('student_id')
+    .eq('class_id', data.classId)
+    .eq('date', data.date);
+
+  if (existingError) throw existingError;
+  const existingStudentIds = new Set((existingRows || []).map((r: any) => r.student_id).filter(Boolean));
 
   for (const studentId of data.studentIds) {
+    if (existingStudentIds.has(studentId)) {
+      logger.warn('Skipping duplicate attendance', { studentId, date: data.date });
+      continue;
+    }
     const id = uuidv4();
     const now = new Date().toISOString();
     const record = {
@@ -36,40 +43,64 @@ export async function markAttendance(data: {
       createdAt: now,
       updatedAt: now,
     };
-    batch.create(collections.attendance().doc(id), record);
+    const dbRecord = {
+      id,
+      student_id: record.studentId,
+      class_id: record.classId,
+      date: record.date,
+      status: record.status,
+      marked_by: record.markedBy,
+      note: record.note,
+      marked_at: record.markedAt,
+      created_at: record.createdAt,
+      updated_at: record.updatedAt,
+    };
+    const { error: insertError } = await supabase.from('attendance').insert(dbRecord);
+    if (insertError) throw insertError;
+
     records.push(record);
   }
 
-  await batch.commit();
-  logger.info('Attendance marked', { classId: data.classId, date: data.date, count: data.studentIds.length });
+  logger.info('Attendance marked', { classId: data.classId, date: data.date, count: records.length });
 
   // Send attendance notification to parents
   try {
-    // Fetch student names
-    const studentDocs = await Promise.all(
-      data.studentIds.map((sid: string) =>
-        collections.users().doc(sid).get().catch((err) => {
-          logger.warn('Failed to fetch student for attendance notification', { studentId: sid, error: err instanceof Error ? err.message : String(err) });
-          return null;
-        }),
-      ),
-    );
+    // Fetch student names in a single query
     const studentNameMap: Record<string, string> = {};
-    for (const snap of studentDocs) {
-      if (snap && snap.exists) studentNameMap[snap.id] = snap.data()?.displayName || snap.id;
+    if (data.studentIds.length > 0) {
+      const { data: students, error: studentError } = await supabase
+        .from('users')
+        .select('id, display_name')
+        .in('id', data.studentIds);
+
+      if (studentError) throw studentError;
+      for (const student of students || []) {
+        studentNameMap[student.id] = student.display_name || student.id;
+      }
     }
 
-    // Find parents linked to any of these students
-    const allParents = await collections.users().where('role', '==', 'parent').get();
+    // Find parents linked to any of these students in a filtered query
+    let matchedParents: any[] = [];
+    if (data.studentIds.length > 0) {
+      const { data: parents, error: parentError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('role', 'parent')
+        .overlaps('children_ids', data.studentIds);
+
+      if (parentError) throw parentError;
+      matchedParents = parents || [];
+    }
     const notifications: Array<{ userId: string; type: string; title: string; body: string; data: Record<string, unknown> }> = [];
 
-    for (const doc of allParents.docs) {
-      const kids = (doc.data().childrenIds || []) as string[];
+    for (const parent of matchedParents) {
+      const parentData = { ...(parent.data as Record<string, unknown> || {}), id: parent.id, childrenIds: parent.children_ids || [] };
+      const kids = (parentData.childrenIds || []) as string[];
       const matched = data.studentIds.filter((sid: string) => kids.includes(sid));
       if (matched.length === 0) continue;
       const names = matched.map((sid: string) => studentNameMap[sid] || sid).join(', ');
       notifications.push({
-        userId: doc.id,
+        userId: parent.id,
         type: 'attendance',
         title: 'Attendance Marked',
         body: `${data.status.charAt(0).toUpperCase() + data.status.slice(1)} for ${names} on ${data.date}`,
@@ -89,26 +120,61 @@ export async function markAttendance(data: {
 }
 
 export async function getClassAttendance(classId: string, date?: string) {
-  let query = collections.attendance().where('classId', '==', classId);
+  const supabase = getSupabaseClient()!;
+  let query = supabase
+    .from('attendance')
+    .select('*')
+    .eq('class_id', classId);
+
   if (date) {
-    query = query.where('date', '==', date);
+    query = query.eq('date', date);
   }
-  const snapshot = await query.get();
-  return snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id } as Record<string, unknown> & { id: string }));
+
+  const { data: rows, error } = await query;
+  if (error) throw error;
+
+  return (rows || []).map((row) => ({
+    id: row.id,
+    studentId: row.student_id,
+    classId: row.class_id,
+    date: row.date,
+    status: row.status,
+    markedBy: row.marked_by,
+    note: row.note,
+    markedAt: row.marked_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }));
 }
 
 export async function getStudentAttendance(studentId: string) {
-  const snapshot = await collections.attendance()
-    .where('studentId', '==', studentId)
-    .get();
-  const records: any[] = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const supabase = getSupabaseClient()!;
+  const { data: rows, error } = await supabase
+    .from('attendance')
+    .select('*')
+    .eq('student_id', studentId);
+
+  if (error) throw error;
+
+  const records = (rows || []).map((row) => ({
+    id: row.id,
+    studentId: row.student_id,
+    classId: row.class_id,
+    date: row.date,
+    status: row.status,
+    markedBy: row.marked_by,
+    note: row.note,
+    markedAt: row.marked_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }));
+
   records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   return records;
 }
 
 export async function getAttendanceReport(classId: string) {
-  const snapshot = await collections.attendance().where('classId', '==', classId).get();
-  const records: any[] = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const records = await getClassAttendance(classId);
 
   const summary: Record<string, { present: number; absent: number; late: number; holiday: number; total: number }> = {};
 
@@ -127,19 +193,20 @@ export async function getAttendanceReport(classId: string) {
 export async function exportAttendanceCSV(classId: string): Promise<string> {
   const records = await getClassAttendance(classId);
 
-  // Resolve student names
+  // Resolve student names in a single query
   const studentIds: string[] = [...new Set(records.map((r: any) => r.studentId))];
-  const studentSnaps = await Promise.all(
-    studentIds.map((sid: string) =>
-      collections.users().doc(sid).get().catch((err) => {
-        logger.warn('Failed to fetch student name for attendance CSV', { studentId: sid, error: err instanceof Error ? err.message : String(err) });
-        return null;
-      }),
-    ),
-  );
   const nameMap: Record<string, string> = {};
-  for (const snap of studentSnaps) {
-    if (snap?.exists) nameMap[snap.id] = snap.data()?.displayName || snap.id;
+  if (studentIds.length > 0) {
+    const supabase = getSupabaseClient()!;
+    const { data: students, error } = await supabase
+      .from('users')
+      .select('id, display_name')
+      .in('id', studentIds);
+
+    if (error) throw error;
+    for (const student of students || []) {
+      nameMap[student.id] = student.display_name || student.id;
+    }
   }
 
   const header = 'StudentId,StudentName,Date,Status,MarkedBy,Note,MarkedAt';

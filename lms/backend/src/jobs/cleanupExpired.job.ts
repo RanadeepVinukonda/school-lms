@@ -1,61 +1,81 @@
-import { collections } from '../database/adapter';
+import { getSupabaseAdmin } from '../services/supabase';
 import { logger } from '../utils/logger';
+import { TransactionManager } from '../database/transaction-manager';
 
 export async function cleanupExpiredData() {
   logger.info('Cleaning up expired data...');
 
   const now = new Date().toISOString();
+  const supabase = getSupabaseAdmin()!;
 
   try {
-    const expiredTokensSnapshot = await collections.tokens()
-      .where('expiresAt', '<', now)
-      .where('used', '==', false)
-      .get();
+    const { data: expiredTokens } = await supabase
+      .from('nosql_docs')
+      .select('doc_id')
+      .eq('collection', 'tokens')
+      .filter('data->>expiresAt', 'lt', now)
+      .contains('data', { used: false });
 
-    if (!expiredTokensSnapshot.empty) {
-      const batch = collections.tokens().firestore.batch();
-      expiredTokensSnapshot.docs.forEach((doc) => batch.delete(doc.ref));
-      await batch.commit();
-      logger.info(`Cleaned up ${expiredTokensSnapshot.docs.length} expired tokens`);
-    }
-
-    const oldNotificationsSnapshot = await collections.notifications()
-      .where('createdAt', '<', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString())
-      .get();
-
-    if (!oldNotificationsSnapshot.empty) {
-      const batch = collections.notifications().firestore.batch();
-      oldNotificationsSnapshot.docs.forEach((doc) => batch.delete(doc.ref));
-      await batch.commit();
-      logger.info(`Cleaned up ${oldNotificationsSnapshot.docs.length} old notifications`);
-    }
-
-    const inProgressAttemptsSnapshot = await collections.quizAttempts()
-      .where('status', '==', 'in_progress')
-      .where('startedAt', '<', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-      .get();
-
-    if (!inProgressAttemptsSnapshot.empty) {
-      const batch = collections.quizAttempts().firestore.batch();
-      inProgressAttemptsSnapshot.docs.forEach((doc) => {
-        batch.update(doc.ref, { status: 'abandoned' });
+    if (expiredTokens && expiredTokens.length > 0) {
+      const tm = new TransactionManager();
+      await tm.runTransaction(async (tx) => {
+        for (const doc of expiredTokens) {
+          tx.delete('tokens', doc.doc_id);
+        }
       });
-      await batch.commit();
-      logger.info(`Marked ${inProgressAttemptsSnapshot.docs.length} abandoned quiz attempts`);
+      logger.info(`Cleaned up ${expiredTokens.length} expired tokens`);
     }
 
-    const inProgressExamAttemptsSnapshot = await collections.examAttempts()
-      .where('status', '==', 'in_progress')
-      .where('startedAt', '<', new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString())
-      .get();
+    const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: oldNotifications } = await supabase
+      .from('notifications')
+      .select('id')
+      .lt('created_at', cutoff);
 
-    if (!inProgressExamAttemptsSnapshot.empty) {
-      const batch = collections.examAttempts().firestore.batch();
-      inProgressExamAttemptsSnapshot.docs.forEach((doc) => {
-        batch.update(doc.ref, { status: 'abandoned' });
+    if (oldNotifications && oldNotifications.length > 0) {
+      const tm = new TransactionManager();
+      await tm.runTransaction(async (tx) => {
+        for (const doc of oldNotifications) {
+          tx.delete('notifications', doc.id);
+        }
       });
-      await batch.commit();
-      logger.info(`Marked ${inProgressExamAttemptsSnapshot.docs.length} abandoned exam attempts`);
+      logger.info(`Cleaned up ${oldNotifications.length} old notifications`);
+    }
+
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data: inProgressAttempts } = await supabase
+      .from('nosql_docs')
+      .select('doc_id')
+      .eq('collection', 'quizAttempts')
+      .contains('data', { status: 'in_progress' })
+      .filter('data->>startedAt', 'lt', oneDayAgo);
+
+    if (inProgressAttempts && inProgressAttempts.length > 0) {
+      const tm = new TransactionManager();
+      await tm.runTransaction(async (tx) => {
+        for (const doc of inProgressAttempts) {
+          tx.update('quizAttempts', doc.doc_id, { status: 'abandoned' });
+        }
+      });
+      logger.info(`Marked ${inProgressAttempts.length} abandoned quiz attempts`);
+    }
+
+    const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+    const { data: inProgressExamAttempts } = await supabase
+      .from('nosql_docs')
+      .select('doc_id')
+      .eq('collection', 'examAttempts')
+      .contains('data', { status: 'in_progress' })
+      .filter('data->>startedAt', 'lt', twoDaysAgo);
+
+    if (inProgressExamAttempts && inProgressExamAttempts.length > 0) {
+      const tm = new TransactionManager();
+      await tm.runTransaction(async (tx) => {
+        for (const doc of inProgressExamAttempts) {
+          tx.update('examAttempts', doc.doc_id, { status: 'abandoned' });
+        }
+      });
+      logger.info(`Marked ${inProgressExamAttempts.length} abandoned exam attempts`);
     }
   } catch (error) {
     logger.error('Failed to cleanup expired data', error);

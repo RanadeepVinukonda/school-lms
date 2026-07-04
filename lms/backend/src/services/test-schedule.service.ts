@@ -1,8 +1,46 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Timestamp } from '../database/adapter';
-import { collections } from '../database/adapter';
+import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
+
+const TSCH = 'testSchedule';
+const TMPL = 'testTemplates';
+
+async function nGet(col: string, id: string) {
+  const { data: row } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  return { exists: !!row, data: (row?.data as Record<string, unknown>) ?? null };
+}
+
+async function nSet(col: string, id: string, data: Record<string, unknown>) {
+  const { error } = await getSupabaseAdmin()!.from('nosql_docs').upsert({
+    collection: col, doc_id: id, data,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'collection,doc_id' });
+  if (error) throw error;
+}
+
+async function nUpdate(col: string, id: string, updates: Record<string, unknown>) {
+  const { data: existing } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  const merged = { ...((existing?.data as Record<string, unknown>) || {}), ...updates };
+  const { error } = await getSupabaseAdmin()!.from('nosql_docs').upsert({
+    collection: col, doc_id: id, data: merged,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'collection,doc_id' });
+  if (error) throw error;
+}
+
+async function nDelete(col: string, id: string) {
+  const { error } = await getSupabaseAdmin()!.from('nosql_docs').delete().eq('collection', col).eq('doc_id', id);
+  if (error) throw error;
+}
+
+async function nQuery(col: string, filters: Record<string, unknown>) {
+  let q: any = getSupabaseAdmin()!.from('nosql_docs').select('doc_id, data').eq('collection', col);
+  for (const [k, v] of Object.entries(filters)) { q = q.contains('data', { [k]: v }); }
+  const { data: rows, error } = await q;
+  if (error) throw error;
+  return (rows || []).map((r: { doc_id: string; data: unknown }) => ({ id: r.doc_id, ...(r.data as object) }));
+}
 
 export async function createSchedule(data: {
   templateId: string;
@@ -19,11 +57,10 @@ export async function createSchedule(data: {
   const id = uuidv4();
   const now = new Date().toISOString();
 
-  const templateSnap = await collections.testTemplates().doc(data.templateId).get();
-  if (!templateSnap.exists) throw new NotFoundError('Template not found');
-  const template = templateSnap.data()!;
+  const { data: template } = await nGet(TMPL, data.templateId);
+  if (!template) throw new NotFoundError('Template not found');
 
-  const scheduleData = {
+  const scheduleData: Record<string, unknown> = {
     id,
     templateId: data.templateId,
     title: data.title,
@@ -34,10 +71,10 @@ export async function createSchedule(data: {
     startDate: data.startDate,
     endDate: data.endDate,
     durationMinutes: data.durationMinutes,
-    status: data.requiresApproval ? 'pending_approval' : 'scheduled' as string,
-    approvedBy: null as string | null,
-    approvedAt: null as string | null,
-    config: template.config,
+    status: data.requiresApproval ? 'pending_approval' : 'scheduled',
+    approvedBy: null,
+    approvedAt: null,
+    config: (template as any).config,
     requiresApproval: data.requiresApproval ?? false,
     totalStudents: 0,
     attemptedCount: 0,
@@ -45,73 +82,58 @@ export async function createSchedule(data: {
     updatedAt: now,
   };
 
-  await collections.testSchedule().doc(id).set(scheduleData);
+  await nSet(TSCH, id, scheduleData);
   logger.info('Test scheduled', { id, title: data.title });
   return scheduleData;
 }
 
 export async function approveSchedule(id: string, approverId: string) {
-  const ref = collections.testSchedule().doc(id);
-  const doc = await ref.get();
-  if (!doc.exists) throw new NotFoundError('Schedule not found');
-
-  const data = doc.data()!;
+  const { exists, data } = await nGet(TSCH, id);
+  if (!exists || !data) throw new NotFoundError('Schedule not found');
   if (data.status !== 'pending_approval') throw new Error('Schedule is not pending approval');
 
   const now = new Date().toISOString();
-  await ref.update({
-    status: 'approved',
-    approvedBy: approverId,
-    approvedAt: now,
-    updatedAt: now,
-  });
-
+  await nUpdate(TSCH, id, { status: 'approved', approvedBy: approverId, approvedAt: now, updatedAt: now });
   logger.info('Test schedule approved', { id, approverId });
-  const updated = await ref.get();
-  return { ...updated.data() };
+  const updated = await nGet(TSCH, id);
+  return { id, ...updated.data };
 }
 
 export async function updateScheduleStatus(id: string, userId: string, status: string) {
-  const ref = collections.testSchedule().doc(id);
-  const doc = await ref.get();
-  if (!doc.exists) throw new NotFoundError('Schedule not found');
-  const data = doc.data()!;
+  const { exists, data } = await nGet(TSCH, id);
+  if (!exists || !data) throw new NotFoundError('Schedule not found');
   if (data.createdBy !== userId) throw new ForbiddenError('Not your schedule');
 
-  await ref.update({ status, updatedAt: new Date().toISOString() });
+  await nUpdate(TSCH, id, { status, updatedAt: new Date().toISOString() });
   logger.info('Test schedule status updated', { id, status });
-  const updated = await ref.get();
-  return { ...updated.data() };
+  const updated = await nGet(TSCH, id);
+  return { id, ...updated.data };
 }
 
 export async function deleteSchedule(id: string, userId: string) {
-  const ref = collections.testSchedule().doc(id);
-  const doc = await ref.get();
-  if (!doc.exists) throw new NotFoundError('Schedule not found');
-  if (doc.data()!.createdBy !== userId) throw new ForbiddenError('Not your schedule');
-  await ref.delete();
+  const { exists, data } = await nGet(TSCH, id);
+  if (!exists || !data) throw new NotFoundError('Schedule not found');
+  if (data.createdBy !== userId) throw new ForbiddenError('Not your schedule');
+  await nDelete(TSCH, id);
   logger.info('Test schedule deleted', { id });
 }
 
 export async function getSchedule(id: string) {
-  const ref = collections.testSchedule().doc(id);
-  const doc = await ref.get();
-  if (!doc.exists) throw new NotFoundError('Schedule not found');
-  return { ...doc.data() };
+  const { exists, data } = await nGet(TSCH, id);
+  if (!exists || !data) throw new NotFoundError('Schedule not found');
+  return { id, ...data };
 }
 
 export async function listSchedules(params: {
   classId?: string; subjectId?: string; createdBy?: string; status?: string;
 }) {
-  let query: any = collections.testSchedule();
+  let filters: Record<string, unknown> = {};
+  if (params.classId) filters.classId = params.classId;
+  if (params.subjectId) filters.subjectId = params.subjectId;
+  if (params.createdBy) filters.createdBy = params.createdBy;
+  if (params.status) filters.status = params.status;
 
-  if (params.classId) query = query.where('classId', '==', params.classId);
-  if (params.subjectId) query = query.where('subjectId', '==', params.subjectId);
-  if (params.createdBy) query = query.where('createdBy', '==', params.createdBy);
-  if (params.status) query = query.where('status', '==', params.status);
-
-  const snapshot = await query.get();
-  const results = snapshot.docs.map((d: any) => ({ ...d.data(), id: d.id }));
+  const results = await nQuery(TSCH, filters);
   results.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   return results;
 }

@@ -45,93 +45,60 @@ export const useAuthStore = create<AuthStore>()(
         initialized = true;
         set({ isLoading: true });
 
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          try {
-            set({ token: session.access_token });
-            const { data: profile } = await supabase
-              .from('users')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
+        try {
+          const res = await api.get('/auth/session');
+          const sessionData = res.data?.data;
 
-            if (profile) {
-              const p = profile as Record<string, unknown>;
-              let classIds = p.class_ids as string[] | undefined;
-              let classId = (p.class_id as string) || classIds?.[0];
+          if (sessionData?.user) {
+            const p = sessionData.user as Record<string, unknown>;
 
-              // Always fetch teacher assignments — even parents may have teacher access
-              let hasTeacherAssignments = false;
+            let effectiveRole = (p.role as string) || 'student';
+
+            if (effectiveRole === 'teacher' || effectiveRole === 'parent') {
               try {
                 const tcsRes = await api.get('/teacher-class-subject/my');
                 const assignments = tcsRes.data?.data || tcsRes.data || [];
-                if (assignments.length > 0) {
-                  hasTeacherAssignments = true;
-                  classIds = [...new Set(assignments.map((a: any) => a.classId))] as string[];
-                  classId = classId || classIds[0];
+                if (assignments.length > 0 && effectiveRole === 'parent') {
+                  effectiveRole = 'parent,teacher';
                 }
               } catch { /* assignments not available yet */ }
-
-              // Compute effective roles — parents with teacher assignments can also access teacher portal
-              let effectiveRole = (p.role as string) || 'student';
-              if (effectiveRole === 'parent' && hasTeacherAssignments) {
-                effectiveRole = 'parent,teacher';
-              }
-
-              if (classId && !localStorage.getItem('lms-selected-class')) {
-                localStorage.setItem('lms-selected-class', classId);
-              }
-
-              set({
-                user: {
-                  id: p.id as string,
-                  email: (p.email as string) || session.user.email || '',
-                  displayName: (p.display_name as string) || session.user.email?.split('@')[0] || 'User',
-                  role: effectiveRole,
-                  isActive: (p.is_active as boolean) ?? true,
-                  avatar: p.photo_url as string | undefined,
-                  firstName: p.first_name as string | undefined,
-                  lastName: p.last_name as string | undefined,
-                  phone: p.phone as string | undefined,
-                  dateOfBirth: p.date_of_birth as string | undefined,
-                  bio: p.bio as string | undefined,
-                  address: p.address as string | undefined,
-                  classIds,
-                  studentId: p.student_id as string | undefined,
-                  teacherId: p.teacher_id as string | undefined,
-                  classId,
-                  language: p.language as string | undefined,
-                  tutorialSeen: p.tutorial_seen as boolean | undefined,
-                  createdAt: (p.created_at as string) || new Date().toISOString(),
-                  updatedAt: (p.updated_at as string) || new Date().toISOString(),
-                },
-                isAuthenticated: true,
-                isLoading: false,
-              });
-            } else {
-              set({ user: null, isAuthenticated: false, isLoading: false });
             }
-          } catch {
-            await supabase.auth.signOut();
-            set({ user: null, token: null, isAuthenticated: false, isLoading: false });
+
+            set({
+              user: {
+                id: p.id as string,
+                email: (p.email as string) || '',
+                displayName: (p.displayName as string) || (p.email as string)?.split('@')[0] || 'User',
+                role: effectiveRole,
+                isActive: (p.isActive as boolean) ?? true,
+                avatar: (p.photoURL as string) || undefined,
+                firstName: p.firstName as string | undefined,
+                lastName: p.lastName as string | undefined,
+                phone: (p.phoneNumber as string) || undefined,
+                dateOfBirth: p.dateOfBirth as string | undefined,
+                bio: p.bio as string | undefined,
+                address: p.address as string | undefined,
+                studentId: p.studentId as string | undefined,
+                teacherId: p.teacherId as string | undefined,
+                tutorialSeen: p.tutorialSeen as boolean | undefined,
+                language: p.language as string | undefined,
+                createdAt: (p.created_at as string) || new Date().toISOString(),
+                updatedAt: (p.updated_at as string) || new Date().toISOString(),
+              },
+              isAuthenticated: true,
+              isLoading: false,
+            });
+          } else {
+            set({ user: null, isAuthenticated: false, isLoading: false });
           }
-        } else {
+        } catch {
           set({ user: null, isAuthenticated: false, isLoading: false });
         }
-
-        supabase.auth.onAuthStateChange((_event, session) => {
-          if (session) {
-            set({ token: session.access_token });
-          } else {
-            set({ user: null, token: null, isAuthenticated: false });
-          }
-        });
       },
     }),
     {
       name: 'lms-auth-v2',
       partialize: (state) => ({
-        token: state.token,
         user: state.user,
       }),
     },

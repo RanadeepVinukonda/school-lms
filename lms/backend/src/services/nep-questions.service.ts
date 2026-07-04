@@ -1,8 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
 import { chatCompletion } from './ai.service';
-import { collections } from '../database/adapter';
+import { getSupabaseClient } from './supabase';
 import { logger } from '../utils/logger';
 import { NotFoundError } from '../utils/errors';
+import { TransactionManager } from '../database/transaction-manager';
 
 interface GenerateQuestionsParams {
   conceptId: string;
@@ -139,7 +140,6 @@ Return valid JSON: { "questions": [ ... ] }`;
 }
 
 export async function saveQuestions(conceptId: string, questions: QuestionData[], userId: string) {
-  const batch = collections.nepQuestions().firestore.batch();
   const now = new Date().toISOString();
   const saved: any[] = [];
 
@@ -153,22 +153,28 @@ export async function saveQuestions(conceptId: string, questions: QuestionData[]
       createdAt: now,
       updatedAt: now,
     };
-    batch.set(collections.nepQuestions().doc(id), data);
     saved.push(data);
   }
 
-  await batch.commit();
+  const tm = new TransactionManager();
+  await tm.runTransaction(async (tx) => {
+    for (const s of saved) {
+      tx.set('nepQuestions', s.id, s);
+    }
+  });
+
   logger.info('NEP questions saved', { conceptId, count: questions.length });
   return saved;
 }
 
 export async function getNEPQuestions(conceptId: string) {
-  const snapshot = await collections.nepQuestions()
-    .where('conceptId', '==', conceptId)
-    .orderBy('createdAt', 'desc')
-    .get();
+  const supabase = getSupabaseClient()!;
+  const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
+    .eq('collection', 'nepQuestions')
+    .contains('data', { conceptId })
+    .order('data->>createdAt', { ascending: false });
 
-  return snapshot.docs.map((d) => ({ ...d.data(), id: d.id }));
+  return (rows || []).map((r) => ({ ...r.data as Record<string, unknown>, id: r.doc_id }));
 }
 
 export async function generateRubric(params: {
@@ -227,6 +233,7 @@ export async function saveRubric(data: {
   totalMarks: number;
   userId: string;
 }) {
+  const supabase = getSupabaseClient()!;
   const id = uuidv4();
   const now = new Date().toISOString();
   const rubricData = {
@@ -240,24 +247,27 @@ export async function saveRubric(data: {
     updatedAt: now,
   };
 
-  await collections.gradingRubrics().doc(id).set(rubricData);
+  await supabase.from('nosql_docs').insert({
+    collection: 'gradingRubrics', doc_id: id, data: rubricData, updated_at: now,
+  });
   logger.info('Rubric saved', { id, assignmentId: data.assignmentId });
   return rubricData;
 }
 
 export async function getRubrics(assignmentId?: string) {
-  let query: any = collections.gradingRubrics();
-  if (assignmentId) {
-    query = query.where('assignmentId', '==', assignmentId);
-  }
-  const snapshot = await query.orderBy('createdAt', 'desc').get();
-  return snapshot.docs.map((d: any) => ({ ...d.data(), id: d.id }));
+  const supabase = getSupabaseClient()!;
+  let query = supabase.from('nosql_docs').select('doc_id, data').eq('collection', 'gradingRubrics');
+  if (assignmentId) query = query.contains('data', { assignmentId });
+  const { data: rows } = await query.order('data->>createdAt', { ascending: false });
+  return (rows || []).map((r: any) => ({ ...r.data, id: r.doc_id }));
 }
 
 export async function getRubricById(id: string) {
-  const doc = await collections.gradingRubrics().doc(id).get();
-  if (!doc.exists) throw new NotFoundError('Rubric not found');
-  return { ...doc.data(), id: doc.id };
+  const supabase = getSupabaseClient()!;
+  const { data } = await supabase.from('nosql_docs').select('doc_id, data')
+    .eq('collection', 'gradingRubrics').eq('doc_id', id).maybeSingle();
+  if (!data) throw new NotFoundError('Rubric not found');
+  return { ...(data.data as Record<string, unknown>), id: data.doc_id };
 }
 
 export async function generateFeedback(params: {

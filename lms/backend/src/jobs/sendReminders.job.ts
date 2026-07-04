@@ -1,24 +1,31 @@
-import { collections, getCollection } from '../database/adapter';
+import { randomUUID } from 'crypto';
+import { getSupabaseAdmin } from '../services/supabase';
 import { logger } from '../utils/logger';
 
 const SENT_REMINDERS_COLLECTION = 'sentReminders';
 
 async function hasReminderBeenSent(type: string, refId: string, userId: string): Promise<boolean> {
-  const docRef = getCollection(SENT_REMINDERS_COLLECTION)
-    .doc(`${type}_${refId}_${userId}`);
-  const snap = await docRef.get();
-  return snap.exists;
+  const supabase = getSupabaseAdmin()!;
+  const docId = `${type}_${refId}_${userId}`;
+  const { data } = await supabase
+    .from('nosql_docs')
+    .select('doc_id')
+    .eq('collection', SENT_REMINDERS_COLLECTION)
+    .eq('doc_id', docId)
+    .maybeSingle();
+  return !!data;
 }
 
 async function markReminderSent(type: string, refId: string, userId: string): Promise<void> {
-  const docRef = getCollection(SENT_REMINDERS_COLLECTION)
-    .doc(`${type}_${refId}_${userId}`);
-  await docRef.set({
-    type,
-    refId,
-    userId,
-    sentAt: new Date().toISOString(),
-  });
+  const supabase = getSupabaseAdmin()!;
+  const docId = `${type}_${refId}_${userId}`;
+  const { error } = await supabase.from('nosql_docs').upsert({
+    collection: SENT_REMINDERS_COLLECTION,
+    doc_id: docId,
+    data: { type, refId, userId, sentAt: new Date().toISOString() },
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'collection,doc_id' });
+  if (error) throw error;
 }
 
 export async function checkUpcomingDeadlines() {
@@ -29,87 +36,92 @@ export async function checkUpcomingDeadlines() {
   const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
   try {
-    const assignmentsSnapshot = await collections.assignments()
-      .where('dueDate', '>=', now.toISOString())
-      .where('dueDate', '<=', in24Hours)
-      .get();
+    const supabase = getSupabaseAdmin()!;
 
-    if (!assignmentsSnapshot.empty) {
-      for (const doc of assignmentsSnapshot.docs) {
-        const assignment = doc.data();
-        const enrollmentsSnapshot = await collections.enrollment()
-          .where('courseId', '==', assignment.courseId)
-          .where('status', '==', 'active')
-          .get();
+    const { data: assignments } = await supabase
+      .from('assignments')
+      .select('id, title, course_id, due_date')
+      .gte('dueDate', now.toISOString())
+      .lte('dueDate', in24Hours);
 
-        for (const enrollment of enrollmentsSnapshot.docs) {
-          const enrollmentData = enrollment.data();
+    if (assignments && assignments.length > 0) {
+      for (const assignment of assignments) {
+        const { data: enrollments } = await supabase
+          .from('nosql_docs')
+          .select('doc_id, data')
+          .eq('collection', 'enrollment')
+          .contains('data', { courseId: assignment.course_id, status: 'active' });
+
+        if (!enrollments) continue;
+
+        for (const enrollment of enrollments) {
+          const ed = enrollment.data as Record<string, unknown>;
+          const studentId = ed.studentId as string;
           const reminderType = 'assignment_reminder';
-          if (await hasReminderBeenSent(reminderType, doc.id, enrollmentData.studentId)) {
+          if (await hasReminderBeenSent(reminderType, assignment.id, studentId)) {
             continue;
           }
-          await collections.notifications().add({
-            userId: enrollmentData.studentId,
+          const { error } = await supabase.from('notifications').insert({
+            id: randomUUID(),
+            user_id: studentId,
             type: reminderType,
             title: 'Assignment Due Soon',
             body: `"${assignment.title}" is due within 24 hours`,
-            data: {
-              assignmentId: doc.id,
-              courseId: assignment.courseId,
-              dueDate: assignment.dueDate,
-            },
+            data: { assignmentId: assignment.id, courseId: assignment.course_id, dueDate: assignment.due_date },
             priority: 'high',
             read: false,
-            readAt: null,
-            createdAt: new Date().toISOString(),
+            read_at: null,
+            created_at: new Date().toISOString(),
           });
-          await markReminderSent(reminderType, doc.id, enrollmentData.studentId);
+          if (error) throw error;
+          await markReminderSent(reminderType, assignment.id, studentId);
         }
       }
-      logger.info(`Sent ${assignmentsSnapshot.docs.length} assignment reminders`);
+      logger.info(`Sent ${assignments.length} assignment reminders`);
     }
 
-    const examsSnapshot = await collections.exams()
-      .where('startDate', '>=', now.toISOString())
-      .where('startDate', '<=', in7Days)
-      .get();
+    const { data: exams } = await supabase
+      .from('exams')
+      .select('id, title, course_id, start_date, scheduled_classes')
+      .gte('startDate', now.toISOString())
+      .lte('startDate', in7Days);
 
-    if (!examsSnapshot.empty) {
-      for (const doc of examsSnapshot.docs) {
-        const exam = doc.data();
-        const classIds = exam.scheduledClasses || [];
+    if (exams && exams.length > 0) {
+      for (const exam of exams) {
+        const classIds: string[] = exam.scheduled_classes || (exam as any).scheduledClasses || [];
 
         for (const classId of classIds) {
-          const studentsSnapshot = await collections.users()
-            .where('classIds', 'array-contains', classId)
-            .where('role', '==', 'student')
-            .get();
+          const { data: students } = await supabase
+            .from('users')
+            .select('id')
+            .eq('role', 'student')
+            .contains('class_ids', [classId]);
 
-          for (const student of studentsSnapshot.docs) {
+          if (!students) continue;
+
+          for (const student of students) {
             const reminderType = 'exam_reminder';
-            if (await hasReminderBeenSent(reminderType, doc.id, student.id)) {
+            if (await hasReminderBeenSent(reminderType, exam.id, student.id)) {
               continue;
             }
-            await collections.notifications().add({
-              userId: student.id,
+            const { error } = await supabase.from('notifications').insert({
+              id: randomUUID(),
+              user_id: student.id,
               type: reminderType,
               title: 'Upcoming Exam',
               body: `"${exam.title}" is scheduled soon`,
-              data: {
-                examId: doc.id,
-                courseId: exam.courseId,
-                startDate: exam.startDate,
-              },
+              data: { examId: exam.id, courseId: exam.course_id, startDate: exam.start_date },
               priority: 'high',
               read: false,
-              readAt: null,
-              createdAt: new Date().toISOString(),
+              read_at: null,
+              created_at: new Date().toISOString(),
             });
-            await markReminderSent(reminderType, doc.id, student.id);
+            if (error) throw error;
+            await markReminderSent(reminderType, exam.id, student.id);
           }
         }
       }
-      logger.info(`Sent ${examsSnapshot.docs.length} exam reminders`);
+      logger.info(`Sent ${exams.length} exam reminders`);
     }
   } catch (error) {
     logger.error('Failed to send reminders', error);

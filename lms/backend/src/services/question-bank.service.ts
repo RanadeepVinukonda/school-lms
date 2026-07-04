@@ -1,7 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../database/adapter';
+import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
+import { TransactionManager } from '../database/transaction-manager';
 
 interface CreateQuestionData {
   text: string;
@@ -20,11 +21,13 @@ interface CreateQuestionData {
   year?: string;
 }
 
+const QB = 'questionBank';
+
 export async function createQuestion(data: CreateQuestionData & { createdBy: string }) {
   const id = uuidv4();
   const now = new Date().toISOString();
 
-  const questionData = {
+  const questionData: Record<string, unknown> = {
     id,
     ...data,
     tags: data.tags || [],
@@ -37,13 +40,18 @@ export async function createQuestion(data: CreateQuestionData & { createdBy: str
     updatedAt: now,
   };
 
-  await collections.questionBank().doc(id).set(questionData);
+  const supabase = getSupabaseAdmin()!;
+  const { error } = await supabase.from('nosql_docs').upsert({
+    collection: QB, doc_id: id, data: questionData,
+    updated_at: now,
+  }, { onConflict: 'collection,doc_id' });
+  if (error) throw error;
+
   logger.info('Question created', { id, type: data.type, difficulty: data.difficulty });
   return questionData;
 }
 
 export async function bulkCreateQuestions(questions: CreateQuestionData[], createdBy: string) {
-  const batch = collections.questionBank().firestore.batch();
   const now = new Date().toISOString();
   const results: any[] = [];
 
@@ -61,45 +69,68 @@ export async function bulkCreateQuestions(questions: CreateQuestionData[], creat
       createdAt: now,
       updatedAt: now,
     };
-    batch.set(collections.questionBank().doc(id), data);
     results.push(data);
   }
 
-  await batch.commit();
-  logger.info('Bulk questions created', { count: questions.length, createdBy });
+  const tm = new TransactionManager();
+  await tm.runTransaction(async (tx) => {
+    for (const r of results) {
+      tx.set('questionBank', r.id, r);
+    }
+  });
+
+  logger.info(`Bulk created ${results.length} questions`);
   return results;
 }
 
+async function nosqlGet(col: string, id: string) {
+  const supabase = getSupabaseAdmin()!;
+  const { data: row } = await supabase.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  return { exists: !!row, data: (row?.data as Record<string, unknown>) ?? null };
+}
+
+async function nosqlUpdate(col: string, id: string, updates: Record<string, unknown>) {
+  const supabase = getSupabaseAdmin()!;
+  const { data: existing } = await supabase.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  const merged = { ...((existing?.data as Record<string, unknown>) || {}), ...updates };
+  const { error } = await supabase.from('nosql_docs').upsert({
+    collection: col, doc_id: id, data: merged,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'collection,doc_id' });
+  if (error) throw error;
+}
+
+async function nosqlDelete(col: string, id: string) {
+  const supabase = getSupabaseAdmin()!;
+  const { error } = await supabase.from('nosql_docs').delete().eq('collection', col).eq('doc_id', id);
+  if (error) throw error;
+}
+
 export async function updateQuestion(id: string, userId: string, data: Partial<CreateQuestionData>) {
-  const ref = collections.questionBank().doc(id);
-  const doc = await ref.get();
-  if (!doc.exists) throw new NotFoundError('Question not found');
+  const { exists, data: docData } = await nosqlGet(QB, id);
+  if (!exists || !docData) throw new NotFoundError('Question not found');
+  if (docData.createdBy !== userId) throw new ForbiddenError('You can only edit your own questions');
 
-  const existing = doc.data()!;
-  if (existing.createdBy !== userId) throw new ForbiddenError('You can only edit your own questions');
-
-  const updates: any = { ...data, updatedAt: new Date().toISOString() };
+  const updates: Record<string, unknown> = { ...data, updatedAt: new Date().toISOString() };
   Object.keys(updates).forEach((k) => { if (updates[k] === undefined) delete updates[k]; });
 
-  await ref.update(updates);
-  const updated = await ref.get();
-  return { ...updated.data() };
+  await nosqlUpdate(QB, id, updates);
+  const updated = await nosqlGet(QB, id);
+  return { id, ...updated.data };
 }
 
 export async function deleteQuestion(id: string, userId: string) {
-  const ref = collections.questionBank().doc(id);
-  const doc = await ref.get();
-  if (!doc.exists) throw new NotFoundError('Question not found');
-  if (doc.data()!.createdBy !== userId) throw new ForbiddenError('You can only delete your own questions');
-  await ref.delete();
+  const { exists, data: docData } = await nosqlGet(QB, id);
+  if (!exists || !docData) throw new NotFoundError('Question not found');
+  if (docData.createdBy !== userId) throw new ForbiddenError('You can only delete your own questions');
+  await nosqlDelete(QB, id);
   logger.info('Question deleted', { id });
 }
 
 export async function getQuestion(id: string) {
-  const ref = collections.questionBank().doc(id);
-  const doc = await ref.get();
-  if (!doc.exists) throw new NotFoundError('Question not found');
-  return { ...doc.data() };
+  const { exists, data } = await nosqlGet(QB, id);
+  if (!exists || !data) throw new NotFoundError('Question not found');
+  return { id, ...data };
 }
 
 export async function listQuestions(params: {
@@ -115,27 +146,30 @@ export async function listQuestions(params: {
   page?: number;
   limit?: number;
 }) {
-  let query: any = collections.questionBank();
+  const supabase = getSupabaseAdmin()!;
+  let q: any = supabase.from('nosql_docs').select('*').eq('collection', QB);
 
-  if (params.classId) query = query.where('classId', '==', params.classId);
-  if (params.subjectId) query = query.where('subjectId', '==', params.subjectId);
-  if (params.type) query = query.where('type', '==', params.type);
-  if (params.difficulty) query = query.where('difficulty', '==', params.difficulty);
+  if (params.classId) q = q.contains('data', { classId: params.classId });
+  if (params.subjectId) q = q.contains('data', { subjectId: params.subjectId });
+  if (params.type) q = q.contains('data', { type: params.type });
+  if (params.difficulty) q = q.contains('data', { difficulty: params.difficulty });
   if (params.isPreviousYear !== undefined) {
     const isPyq = params.isPreviousYear === true || params.isPreviousYear === 'true';
-    query = query.where('isPreviousYear', '==', isPyq);
+    q = q.contains('data', { isPreviousYear: isPyq });
   }
-  if (params.year) query = query.where('year', '==', params.year);
-  if (params.createdBy) query = query.where('createdBy', '==', params.createdBy);
-  if (params.tags?.length) query = query.where('tags', 'array-contains-any', params.tags);
+  if (params.year) q = q.contains('data', { year: params.year });
+  if (params.createdBy) q = q.contains('data', { createdBy: params.createdBy });
+  if (params.tags?.length) q = q.overlaps('data', { tags: params.tags });
 
-  const snapshot = await query.get();
-  let results = snapshot.docs.map((d: any) => ({ ...d.data(), id: d.id }));
+  const { data: rows, error } = await q;
+  if (error) throw error;
+
+  let results = (rows || []).map((r: any) => ({ id: r.doc_id, ...r.data }));
   results.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   if (params.search) {
-    const q = params.search.toLowerCase();
-    results = results.filter((r: any) => r.title?.toLowerCase().includes(q) || r.questionText?.toLowerCase().includes(q) || r.instruction?.toLowerCase().includes(q));
+    const sq = params.search.toLowerCase();
+    results = results.filter((r: any) => r.title?.toLowerCase().includes(sq) || r.questionText?.toLowerCase().includes(sq) || r.instruction?.toLowerCase().includes(sq));
   }
 
   const page = params.page || 1;
@@ -150,22 +184,18 @@ export async function importFromConcept(textbookId: string, chapterId: string, c
   const existingResult = await listQuestions({ createdBy: userId });
   const existingTexts = new Set(existingResult.items.map((q: any) => q.text));
 
-  const conceptRef = collections.textbooks()
-    .doc(textbookId).collection('chapters')
-    .doc(chapterId).collection('concepts')
-    .doc(conceptId);
+  const supabase = getSupabaseAdmin()!;
+  const { data: conceptRow } = await supabase.from('concepts').select('*').eq('id', conceptId).maybeSingle();
+  if (!conceptRow) return { imported: 0 };
 
-  const conceptSnap = await conceptRef.get();
-  if (!conceptSnap.exists) return { imported: 0 };
-
-  const questionsSnapshot = await conceptRef.collection('questions').get();
-  const bank = questionsSnapshot.docs.map(qDoc => qDoc.data() as any);
+  const { data: questionRows } = await supabase.from('concept_questions').select('*').eq('concept_id', conceptId);
+  const bank = (questionRows || []).map((r: any) => ({ id: r.id, ...r.data, ...r }));
   let imported = 0;
 
   for (const q of bank) {
-    if (existingTexts.has(q.text)) continue;
+    if (existingTexts.has(q.text || q.question)) continue;
     await createQuestion({
-      text: q.text,
+      text: q.text || q.question,
       type: mapType(q.type),
       difficulty: q.difficulty || 'medium',
       options: q.options,

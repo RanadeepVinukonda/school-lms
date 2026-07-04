@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../database/adapter';
+import { getSupabaseClient } from './supabase';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
@@ -23,51 +23,81 @@ export async function createSubject(data: {
   if (!data.classId) {
     throw new Error('classId is required when creating a subject');
   }
+  
+  const supabase = getSupabaseClient()!;
   const subjectId = uuidv4();
   const now = new Date().toISOString();
 
   const subjectData = {
-    ...data,
     id: subjectId,
-    createdAt: now,
-    updatedAt: now,
+    name: data.name,
+    code: data.code,
+    class_id: data.classId,
+    description: data.description || '',
+    category: data.category,
+    credit_hours: data.credits,
+    department: data.department,
+    icon: data.thumbnail,
+    is_elective: data.isElective,
+    grade_levels: data.gradeLevels,
+    tags: data.tags || [],
+    syllabus: data.syllabus,
+    status: data.status || 'active',
+    created_at: now,
+    updated_at: now,
   };
 
-  await collections.subjects().doc(subjectId).set(subjectData);
+  const { error } = await supabase.from('subjects').insert(subjectData);
+  if (error) throw error;
 
   logger.info('Subject created', { subjectId, name: data.name, code: data.code, classId: data.classId });
 
-  return { ...subjectData };
+  return { ...subjectData, classId: data.classId };
 }
 
 /** Update subject fields. Throws NotFoundError if missing. */
 export async function updateSubject(subjectId: string, data: Record<string, unknown>) {
-  const ref = collections.subjects().doc(subjectId);
-  const doc = await ref.get();
+  const supabase = getSupabaseClient()!;
+  const { data: existing } = await supabase
+    .from('subjects')
+    .select('id')
+    .eq('id', subjectId)
+    .maybeSingle();
 
-  if (!doc.exists) {
+  if (!existing) {
     throw new NotFoundError('Subject not found');
   }
 
-  const updateData = { ...data, updatedAt: new Date().toISOString() };
-  await ref.update(updateData);
+  const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  for (const [k, v] of Object.entries(data)) {
+    updateData[k] = v;
+  }
 
-  const updated = await ref.get();
+  const { error } = await supabase.from('subjects').update(updateData).eq('id', subjectId);
+  if (error) throw error;
+
+  const { data: updated } = await supabase.from('subjects').select('*').eq('id', subjectId).single();
   logger.info('Subject updated', { subjectId });
 
-  return { ...updated.data() };
+  return updated;
 }
 
 /** Delete a subject by id. Throws NotFoundError if missing. */
 export async function deleteSubject(subjectId: string) {
-  const ref = collections.subjects().doc(subjectId);
-  const doc = await ref.get();
+  const supabase = getSupabaseClient()!;
+  const { data: existing } = await supabase
+    .from('subjects')
+    .select('id')
+    .eq('id', subjectId)
+    .maybeSingle();
 
-  if (!doc.exists) {
+  if (!existing) {
     throw new NotFoundError('Subject not found');
   }
 
-  await ref.delete();
+  const { error } = await supabase.from('subjects').delete().eq('id', subjectId);
+  if (error) throw error;
+
   logger.info('Subject deleted', { subjectId });
 }
 
@@ -82,51 +112,65 @@ export async function listSubjects(query: {
   search?: string;
 }) {
   const { page, limit } = parsePagination(query);
-  let baseQuery: any = collections.subjects();
+  const supabase = getSupabaseClient()!;
+  
+  let baseQuery = supabase.from('subjects').select('*');
 
-  if (query.status) baseQuery = baseQuery.where('status', '==', query.status);
-  if (query.category) baseQuery = baseQuery.where('category', '==', query.category);
-  if (query.department) baseQuery = baseQuery.where('department', '==', query.department);
-  if (query.classId) baseQuery = baseQuery.where('classId', '==', query.classId);
+  if (query.status) baseQuery = baseQuery.eq('status', query.status);
+  if (query.category) baseQuery = baseQuery.eq('category', query.category);
+  if (query.department) baseQuery = baseQuery.eq('department', query.department);
+  if (query.classId) baseQuery = baseQuery.eq('class_id', query.classId);
 
-  const snapshot = await baseQuery.get();
+  const { data: items, error } = await baseQuery;
+  if (error) throw error;
 
-  let items = snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id }));
-  items = items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  let result = items || [];
+  result = result.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   if (query.search) {
     const search = query.search.toLowerCase();
-    items = items.filter(
-      (item: { id?: string; name?: string; code?: string }) =>
+    result = result.filter(
+      (item: { name?: string; code?: string }) =>
         item.name?.toLowerCase().includes(search) ||
         item.code?.toLowerCase().includes(search)
     );
   }
 
-  const total = items.length;
+  const total = result.length;
   const offset = (page - 1) * limit;
-  const paged = items.slice(offset, offset + limit);
+  const paged = result.slice(offset, offset + limit);
 
   return { items: paged, total, page, limit };
 }
 
 /** List subjects by class. */
 export async function listSubjectsByClass(classId: string) {
-  const snap = await collections.subjects()
-    .where('classId', '==', classId)
-    .get();
-  const items = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-  return items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const supabase = getSupabaseClient()!;
+  
+  const { data: items } = await supabase
+    .from('subjects')
+    .select('*')
+    .eq('class_id', classId);
+  
+  const sorted = (items || []).sort((a: any, b: any) => 
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+  
+  return sorted;
 }
 
 /** Fetch a single subject by id. Throws NotFoundError if missing. */
 export async function getSubjectById(subjectId: string) {
-  const ref = collections.subjects().doc(subjectId);
-  const doc = await ref.get();
+  const supabase = getSupabaseClient()!;
+  const { data, error } = await supabase
+    .from('subjects')
+    .select('*')
+    .eq('id', subjectId)
+    .maybeSingle();
 
-  if (!doc.exists) {
+  if (error || !data) {
     throw new NotFoundError('Subject not found');
   }
 
-  return { ...doc.data() };
+  return data;
 }

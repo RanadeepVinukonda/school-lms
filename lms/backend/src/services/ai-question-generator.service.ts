@@ -1,5 +1,4 @@
 import { randomUUID } from 'crypto';
-import { collections } from '../database/adapter';
 import { getSupabaseAdmin } from './supabase';
 import { chatCompletion } from './ai.service';
 import { env } from '../config/env';

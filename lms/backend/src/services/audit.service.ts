@@ -1,4 +1,4 @@
-import { getCollection } from '../database/adapter';
+import { getSupabaseAdmin } from './supabase';
 import { logger } from '../utils/logger';
 import { NotFoundError } from '../utils/errors';
 import { parsePagination } from '../utils/pagination';
@@ -39,7 +39,9 @@ export async function logAudit(entry: Omit<AuditEntry, 'timestamp'>): Promise<vo
   };
 
   try {
-    await getCollection('auditLogs').add(auditDoc);
+    const supabase = getSupabaseAdmin()!;
+    const { error } = await supabase.from('auditlogs').insert(auditDoc);
+    if (error) throw error;
     logger.info('Audit log created', { action: entry.action, targetId: entry.targetId });
   } catch (err) {
     logger.warn('Failed to write audit log', { error: err, action: entry.action });
@@ -72,30 +74,33 @@ export function adminAuditEntry(
 export async function listAuditLogs(query: { page?: string; limit?: string; action?: string }) {
   const { page, limit } = parsePagination(query);
   const offset = (page - 1) * limit;
+  const supabase = getSupabaseAdmin()!;
 
-  // Build base collection query
-  let col = getCollection('auditLogs');
+  let countQ: any = supabase.from('auditlogs').select('*', { count: 'exact', head: true });
+  let listQ: any = supabase.from('auditlogs').select('*').order('timestamp', { ascending: false });
 
-  // Apply action filter first, then order
-  let baseQuery = query.action
-    ? col.where('action', '==', query.action).orderBy('timestamp', 'desc')
-    : col.orderBy('timestamp', 'desc');
+  if (query.action) {
+    countQ = countQ.eq('action', query.action);
+    listQ = listQ.eq('action', query.action);
+  }
 
-  const countSnapshot = await baseQuery.count().get();
-  const total = countSnapshot.data().count;
+  const { count, error: countError } = await countQ;
+  if (countError) throw countError;
+  const total = count || 0;
 
-  const snapshot = await baseQuery.offset(offset).limit(limit).get();
+  const { data: rows, error } = await listQ.range(offset, offset + limit - 1);
+  if (error) throw error;
 
-  const items = snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id }));
+  const items = (rows || []).map((r: any) => ({ ...r }));
   return { items, total, page, limit };
 }
 
 /** Fetch a single audit log by document ID. */
 export async function getAuditLogById(logId: string) {
-  const ref = getCollection('auditLogs').doc(logId);
-  const doc = await ref.get();
-  if (!doc.exists) throw new NotFoundError('Audit log not found');
-  return { id: doc.id, ...doc.data() };
+  const supabase = getSupabaseAdmin()!;
+  const { data: row, error } = await supabase.from('auditlogs').select('*').eq('id', logId).maybeSingle();
+  if (error || !row) throw new NotFoundError('Audit log not found');
+  return { id: row.id, ...row };
 }
 
 /** Recover a soft-deleted entity from its audit log oldValue snapshot. */
@@ -107,10 +112,12 @@ export async function recoverEntity(logId: string) {
     throw new Error('Audit log contains no oldValue snapshot to recover from');
   }
 
-  const targetRef = getCollection(entry.targetType + 's').doc(entry.targetId);
-  const existing = await targetRef.get();
+  const supabase = getSupabaseAdmin()!;
+  const collection = entry.targetType + 's';
+  const { data: existing } = await supabase.from('nosql_docs').select('doc_id')
+    .eq('collection', collection).eq('doc_id', entry.targetId).maybeSingle();
 
-  if (existing.exists) {
+  if (existing) {
     throw new Error(`Target ${entry.targetType} "${entry.targetName}" still exists — no recovery needed`);
   }
 
@@ -121,7 +128,11 @@ export async function recoverEntity(logId: string) {
     recoveredFromLog: logId,
   };
 
-  await targetRef.set(restoreData);
+  const { error } = await supabase.from('nosql_docs').upsert({
+    collection, doc_id: entry.targetId, data: restoreData,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'collection,doc_id' });
+  if (error) throw error;
 
   logger.info('Entity recovered from audit log', {
     logId,

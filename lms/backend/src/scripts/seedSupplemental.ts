@@ -19,7 +19,7 @@ async function deleteCollection(name: string) {
   console.log(`  Deleted ${snap.size} docs from ${name}`);
 }
 
-async function deleteSubcollections(docRef: FirebaseFirestore.DocumentReference) {
+async function deleteSubcollections(docRef: any) {
   const cols = await docRef.listCollections();
   for (const col of cols) {
     const snap = await col.get();

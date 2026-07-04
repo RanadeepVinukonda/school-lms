@@ -9,7 +9,7 @@ import { validate } from '../middlewares/validate.middleware';
 import { asyncHandler } from '../middlewares/asyncHandler';
 
 const router = Router();
-const upload = multer({ dest: os.tmpdir(), limits: { fileSize: 100 * 1024 * 1024 } });
+const upload = multer({ dest: os.tmpdir(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 const reprocessSchema = z.object({
   pages: z.array(z.number().positive()).optional(),

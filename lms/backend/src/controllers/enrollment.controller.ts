@@ -1,48 +1,48 @@
 import type { Request, Response } from 'express';
-import { collections, getCollection } from '../database/adapter';
+import { getSupabaseAdmin } from '../services/supabase';
 
 /**
  * Get current student's enrollments and a consolidated list of concept release statuses 
  * for all textbooks they have access to.
  */
 export async function getMyEnrollments(req: Request, res: Response) {
+  const supabase = getSupabaseAdmin()!;
   if (!req.user) {
-    res.status(401).json({ success: false, error: 'Unauthorized' });
+    res.status(401).json({ success: false, error: { message: 'Unauthorized' } });
     return;
   }
 
   const studentId = req.user.uid;
   
   // Fetch student user doc to get classId
-  const userDoc = await collections.users().doc(studentId).get();
-  const studentClassId = userDoc.exists ? (userDoc.data()?.classId as string | undefined) : undefined;
+  const { data: userRow } = await supabase.from('users').select('class_id').eq('id', studentId).maybeSingle();
+  const studentClassId = userRow?.class_id as string | undefined;
 
   // Fetch student enrollments
-  const enrollmentsSnap = await collections.enrollment()
-    .where('studentId', '==', studentId)
-    .where('status', '==', 'active')
-    .get();
-  const enrollments = enrollmentsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  const { data: enrollmentRows } = await supabase.from('enrollments')
+    .select('*')
+    .eq('student_id', studentId)
+    .eq('status', 'active');
+  const enrollments = (enrollmentRows || []).map((row: any) => ({ id: row.id, ...row }));
 
   // Fetch textbooks for the student's class
   const textbooks: any[] = [];
   if (studentClassId) {
-    const textbooksSnap = await collections.textbooks()
-      .where('classId', '==', studentClassId)
-      .get();
-    textbooks.push(...textbooksSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+    const { data: textbookRows } = await supabase.from('textbooks')
+      .select('*')
+      .eq('class_id', studentClassId);
+    textbooks.push(...(textbookRows || []).map((row: any) => ({ id: row.id, ...row })));
   }
 
   // Fetch concept release statuses for all textbooks
   const conceptReleases: any[] = [];
   if (studentClassId && textbooks.length > 0) {
-    for (const tb of textbooks) {
-      const releasesSnap = await getCollection('conceptReleases')
-        .where('textbookId', '==', tb.id)
-        .where('classId', '==', studentClassId)
-        .get();
-      conceptReleases.push(...releasesSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-    }
+    const tbIds = textbooks.map((t) => t.id);
+    const { data: releaseRows } = await supabase.from('nosql_docs')
+      .select('doc_id, data')
+      .eq('collection', 'conceptReleases')
+      .in('data->>textbookId', tbIds);
+    conceptReleases.push(...(releaseRows || []).map((row: any) => ({ id: row.doc_id, ...(row.data as object) })));
   }
 
   res.json({

@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import { corsOptions } from './config/cors';
+import { nonce } from './middlewares/nonce.middleware';
 import { securityHeaders } from './middlewares/securityHeaders.middleware';
 import { errorHandler } from './middlewares/error.middleware';
 import { apiRateLimit } from './middlewares/rateLimit.middleware';
@@ -9,6 +10,7 @@ import { sanitizeInput } from './middlewares/sanitize.middleware';
 import { auditMiddleware } from './middlewares/audit.middleware';
 import { requestId } from './middlewares/requestId.middleware';
 import { metricsMiddleware } from './middlewares/metrics.middleware';
+import { csrfProtection, csrfTokenHandler } from './middlewares/csrf.middleware';
 import routes from './routes/index';
 import { logger } from './utils/logger';
 
@@ -16,9 +18,10 @@ const app = express();
 app.set('trust proxy', 1);
 
 app.use(requestId);
+app.use(nonce);
 app.use(securityHeaders);
 app.use(cors(corsOptions));
-app.use(express.json({ limit: '100mb' }));
+app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 app.use(metricsMiddleware);
 
@@ -36,6 +39,8 @@ app.use((req, _res, next) => {
   next();
 });
 app.use(sanitizeInput);
+app.use(csrfProtection);
+app.get('/csrf-token', csrfTokenHandler);
 app.use('/', apiRateLimit, auditMiddleware, routes);
 
 app.use(errorHandler);

@@ -5,8 +5,8 @@ import { sendSuccess, sendCreated } from '../utils/response';
 import type { ReqWithUser, QueryParams } from '../types/common';
 
 export async function createAssignment(req: Request, res: Response) {
-  const result = await assignmentV2Service.createAssignment({ ...req.body, schoolId: req.user!.school_id });
-  logAudit(adminAuditEntry(req as ReqWithUser, 'assignmentV2.create' as AuditAction, result.id, 'assignmentV2', result.title, {
+  const result = await assignmentV2Service.createAssignment({ ...req.body, schoolId: req.user!.school_id }) as Record<string, unknown>;
+  logAudit(adminAuditEntry(req as ReqWithUser, 'assignmentV2.create' as AuditAction, result.id as string, 'assignmentV2', result.title as string, {
     newValue: result,
     summary: `Created assignment V2 "${result.title}"`,
   }));
@@ -21,10 +21,10 @@ export async function getAssignmentById(req: Request, res: Response) {
 export async function releaseAssignment(req: Request, res: Response) {
   const old = await assignmentV2Service.getAssignmentById(req.params.assignmentId);
   const result = await assignmentV2Service.releaseAssignment(req.params.assignmentId);
-  logAudit(adminAuditEntry(req as ReqWithUser, 'assignmentV2.release' as AuditAction, req.params.assignmentId, 'assignmentV2', old.title, {
-    oldValue: { releasedAt: old.releasedAt },
-    newValue: { releasedAt: result.releasedAt },
-    summary: `Released assignment V2 "${old.title}"`,
+  logAudit(adminAuditEntry(req as ReqWithUser, 'assignmentV2.release' as AuditAction, req.params.assignmentId, 'assignmentV2', (old as any).title, {
+    oldValue: { releasedAt: (old as any).releasedAt },
+    newValue: { releasedAt: (result as any).releasedAt },
+    summary: `Released assignment V2 "${(old as any).title}"`,
   }));
   sendSuccess(res, result, 'Assignment released');
 }
@@ -43,10 +43,10 @@ export async function releaseGrades(req: Request, res: Response) {
   const { showResults } = req.body;
   const old = await assignmentV2Service.getAssignmentById(req.params.assignmentId);
   const result = await assignmentV2Service.releaseAssignmentGrades(req.params.assignmentId, showResults);
-  logAudit(adminAuditEntry(req as ReqWithUser, 'assignmentV2.update' as AuditAction, req.params.assignmentId, 'assignmentV2', old.title, {
-    oldValue: { showResults: old.showResults },
+  logAudit(adminAuditEntry(req as ReqWithUser, 'assignmentV2.update' as AuditAction, req.params.assignmentId, 'assignmentV2', (old as any).title, {
+    oldValue: { showResults: (old as any).showResults },
     newValue: { showResults },
-    summary: `${showResults ? 'Released' : 'Withheld'} grades for assignment V2 "${old.title}"`,
+    summary: `${showResults ? 'Released' : 'Withheld'} grades for assignment V2 "${(old as any).title}"`,
   }));
   sendSuccess(res, result, `Grades ${showResults ? 'released' : 'withheld'}`);
 }

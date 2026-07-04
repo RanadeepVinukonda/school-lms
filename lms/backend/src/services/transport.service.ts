@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from './supabase';
+import { logger } from '../utils/logger';
 
 // ROUTES
 export async function createRoute(schoolId: string, data: { name: string; vehicle_number?: string; driver_name?: string; driver_phone?: string }) {
@@ -57,10 +58,15 @@ export async function deleteStop(id: string) {
 // ASSIGNMENTS
 export async function assignStudent(schoolId: string, data: { student_id: string; route_id: string; stop_id?: string }) {
   const supabase = getSupabaseAdmin(); if (!supabase) return null;
-  const { data: existing } = await supabase.from('transport_assignments').select('id').eq('student_id', data.student_id).single();
+  const { data: existing } = await supabase.from('transport_assignments').select('id, route_id').eq('student_id', data.student_id).maybeSingle();
+  const oldRouteId = existing?.route_id;
   
   if (existing) {
     const { data: result } = await supabase.from('transport_assignments').update(data).eq('student_id', data.student_id).select().single();
+    // ponytail: log old route change — upgrade to push notification when notification service supports transport events
+    if (oldRouteId && oldRouteId !== data.route_id) {
+      logger.info('Student re-routed', { studentId: data.student_id, fromRoute: oldRouteId, toRoute: data.route_id });
+    }
     return result;
   } else {
     const { data: result } = await supabase.from('transport_assignments').insert({ school_id: schoolId, ...data }).select().single();

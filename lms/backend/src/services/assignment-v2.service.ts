@@ -1,10 +1,63 @@
 import { v4 as uuidv4 } from 'uuid';
-import { FieldValue } from '../database/adapter';
-import { collections } from '../database/adapter';
+import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 import { computeLevel, computeComplexityHandled, type Difficulty, type StudentLevel } from './ai-level.service';
+
+const ASSIGNMENT_V2 = 'assignmentV2';
+const ASSIGNMENT_SUB_V2 = 'assignmentSubmissionV2';
+
+async function nosqlGet(col: string, id: string): Promise<{ exists: boolean; data: Record<string, unknown> | null }> {
+  const supabase = getSupabaseAdmin()!;
+  const { data: row } = await supabase.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  return { exists: !!row, data: (row?.data as Record<string, unknown>) ?? null };
+}
+
+async function nosqlSet(col: string, id: string, data: Record<string, unknown>): Promise<void> {
+  const supabase = getSupabaseAdmin()!;
+  const { error } = await supabase.from('nosql_docs').upsert({
+    collection: col, doc_id: id, data,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'collection,doc_id' });
+  if (error) throw error;
+}
+
+async function nosqlUpdate(col: string, id: string, updates: Record<string, unknown>): Promise<void> {
+  const supabase = getSupabaseAdmin()!;
+  const { data: existing } = await supabase.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  const merged = { ...((existing?.data as Record<string, unknown>) || {}), ...updates };
+  const { error } = await supabase.from('nosql_docs').upsert({
+    collection: col, doc_id: id, data: merged,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'collection,doc_id' });
+  if (error) throw error;
+}
+
+async function nosqlDelete(col: string, id: string): Promise<void> {
+  const supabase = getSupabaseAdmin()!;
+  const { error } = await supabase.from('nosql_docs').delete().eq('collection', col).eq('doc_id', id);
+  if (error) throw error;
+}
+
+async function nosqlQuery(col: string, filters: Array<{ field: string; value: unknown }>, options?: { orderBy?: string; orderDir?: 'asc' | 'desc'; limit?: number; offset?: number }): Promise<Array<{ id: string; [key: string]: unknown }>> {
+  const supabase = getSupabaseAdmin()!;
+  let q: any = supabase.from('nosql_docs').select('*').eq('collection', col);
+  for (const f of filters) {
+    q = q.contains('data', { [f.field]: f.value });
+  }
+  if (options?.orderBy) {
+    q = q.order(options.orderBy === 'createdAt' ? 'created_at' : `data->>${options.orderBy}`, { ascending: options.orderDir !== 'desc' });
+  }
+  if (options?.limit !== undefined && options?.offset !== undefined) {
+    q = q.range(options.offset, options.offset + options.limit - 1);
+  } else if (options?.limit !== undefined) {
+    q = q.limit(options.limit);
+  }
+  const { data: rows, error } = await q;
+  if (error) throw error;
+  return (rows || []).map((r: any) => ({ id: r.doc_id, ...r.data }));
+}
 
 export async function createAssignment(data: {
   title: string;
@@ -38,7 +91,7 @@ export async function createAssignment(data: {
   const totalPoints = data.questions.reduce((sum, q) => sum + q.points, 0);
   const questionsWithIds = data.questions.map((q, i) => ({ ...q, id: `q_${assignmentId}_${i}` }));
 
-  const assignmentData = {
+  const assignmentData: Record<string, unknown> = {
     ...data,
     id: assignmentId,
     questions: questionsWithIds,
@@ -52,7 +105,7 @@ export async function createAssignment(data: {
     updatedAt: now,
   };
 
-  await collections.assignmentV2().doc(assignmentId).set(assignmentData);
+  await nosqlSet(ASSIGNMENT_V2, assignmentId, assignmentData);
 
   logger.info('Assignment V2 created', { assignmentId, classId: data.classId, title: data.title });
 
@@ -60,60 +113,49 @@ export async function createAssignment(data: {
 }
 
 export async function getAssignmentById(assignmentId: string) {
-  const ref = collections.assignmentV2().doc(assignmentId);
-  const doc = await ref.get();
-
-  if (!doc.exists) {
+  const { exists, data } = await nosqlGet(ASSIGNMENT_V2, assignmentId);
+  if (!exists || !data) {
     throw new NotFoundError('Assignment not found');
   }
 
-  return { ...doc.data() };
+  return { id: assignmentId, ...data };
 }
 
 export async function releaseAssignment(assignmentId: string) {
-  const ref = collections.assignmentV2().doc(assignmentId);
-  const doc = await ref.get();
-
-  if (!doc.exists) {
-    throw new NotFoundError('Assignment not found');
-  }
+  const { exists, data } = await nosqlGet(ASSIGNMENT_V2, assignmentId);
+  if (!exists || !data) throw new NotFoundError('Assignment not found');
 
   const now = new Date().toISOString();
-  await ref.update({ releasedAt: now, updatedAt: now });
+  await nosqlUpdate(ASSIGNMENT_V2, assignmentId, { releasedAt: now, updatedAt: now });
 
-  const updated = await ref.get();
+  const updated = await nosqlGet(ASSIGNMENT_V2, assignmentId);
   logger.info('Assignment V2 released', { assignmentId });
 
-  return { ...updated.data() };
+  return { id: assignmentId, ...updated.data };
 }
 
 export async function startAssignment(assignmentId: string, studentId: string) {
-  const assignmentRef = collections.assignmentV2().doc(assignmentId);
-  const assignment = await assignmentRef.get();
-
-  if (!assignment.exists) {
-    throw new NotFoundError('Assignment not found');
-  }
-
-  const assignmentData = assignment.data()!;
+  const assignment = await nosqlGet(ASSIGNMENT_V2, assignmentId);
+  if (!assignment.exists || !assignment.data) throw new NotFoundError('Assignment not found');
+  const assignmentData = assignment.data;
 
   if (!assignmentData.releasedAt) {
     throw new ForbiddenError('Assignment has not been released yet');
   }
 
-  const attemptsSnapshot = await collections.assignmentSubmissionV2()
-    .where('assignmentId', '==', assignmentId)
-    .where('studentId', '==', studentId)
-    .get();
+  const attempts = await nosqlQuery(ASSIGNMENT_SUB_V2, [
+    { field: 'assignmentId', value: assignmentId },
+    { field: 'studentId', value: studentId },
+  ]);
 
-  if (assignmentData.maxAttempts && attemptsSnapshot.size >= assignmentData.maxAttempts) {
+  if (assignmentData.maxAttempts && attempts.length >= (assignmentData.maxAttempts as number)) {
     throw new ForbiddenError('Maximum attempts reached');
   }
 
   const attemptId = uuidv4();
   const now = new Date().toISOString();
 
-  const attempt = {
+  const attempt: Record<string, unknown> = {
     id: attemptId,
     assignmentId,
     studentId,
@@ -129,13 +171,14 @@ export async function startAssignment(assignmentId: string, studentId: string) {
     level: null,
   };
 
-  await collections.assignmentSubmissionV2().doc(attemptId).set(attempt);
-  await assignmentRef.update({ attemptCount: FieldValue.increment(1) });
+  await nosqlSet(ASSIGNMENT_SUB_V2, attemptId, attempt);
+  const currentCount = ((assignmentData.attemptCount as number) || 0) + 1;
+  await nosqlUpdate(ASSIGNMENT_V2, assignmentId, { attemptCount: currentCount, updatedAt: now });
 
   logger.info('Assignment V2 attempt started', { assignmentId, studentId, attemptId });
 
-  const questionsWithoutAnswers = assignmentData.questions.map(
-    (q: { correctAnswer?: string; explanation?: string; [key: string]: unknown }) => {
+  const questionsWithoutAnswers = (assignmentData.questions as Array<{ correctAnswer?: string; explanation?: string; [key: string]: unknown }>).map(
+    (q) => {
       const { correctAnswer, explanation, ...rest } = q;
       return rest;
     }
@@ -153,182 +196,103 @@ export async function submitAssignment(attemptId: string, studentId: string, dat
   startedAt: string;
   submittedAt: string;
 }) {
-  const attemptRef = collections.assignmentSubmissionV2().doc(attemptId);
-  const attempt = await attemptRef.get();
+  const attempt = await nosqlGet(ASSIGNMENT_SUB_V2, attemptId);
+  if (!attempt.exists || !attempt.data) throw new NotFoundError('Attempt not found');
+  const attemptData = attempt.data;
 
-  if (!attempt.exists) {
-    throw new NotFoundError('Attempt not found');
-  }
+  if (attemptData.studentId !== studentId) throw new ForbiddenError('Not your attempt');
+  if (attemptData.status !== 'in_progress') throw new ForbiddenError('Attempt already submitted');
 
-  const attemptData = attempt.data()!;
-  if (attemptData.studentId !== studentId) {
-    throw new ForbiddenError('Not your attempt');
-  }
+  const assignment = await nosqlGet(ASSIGNMENT_V2, attemptData.assignmentId as string);
+  if (!assignment.exists || !assignment.data) throw new NotFoundError('Assignment not found');
+  const assignmentData = assignment.data;
 
-  if (attemptData.status !== 'in_progress') {
-    throw new ForbiddenError('Attempt already submitted');
-  }
-
-  const assignmentRef = collections.assignmentV2().doc(attemptData.assignmentId);
-  const assignment = await assignmentRef.get();
-  const assignmentData = assignment.data()!;
-
+  const questions = (assignmentData.questions || []) as Array<{ id: string; type: string; correctAnswer?: string; points: number; difficulty?: string }>;
   let score = 0;
   const gradedAnswers = data.answers.map((answer) => {
-    const question = assignmentData.questions.find(
-      (q: { id: string }) => q.id === answer.questionId
-    );
-
-    if (!question) {
-      return { questionId: answer.questionId, answer: answer.answer, isCorrect: false, pointsEarned: 0, timeSpent: answer.timeSpent || 0 };
-    }
+    const question = questions.find((q) => q.id === answer.questionId);
+    if (!question) return { questionId: answer.questionId, answer: answer.answer, isCorrect: false, pointsEarned: 0, timeSpent: answer.timeSpent || 0 };
 
     let isCorrect = false;
     if (question.type === 'multiple_choice' || question.type === 'true_false') {
       isCorrect = answer.answer === question.correctAnswer;
     } else if (question.type === 'short_answer') {
-      isCorrect = answer.answer.toString().toLowerCase().trim() ===
-        question.correctAnswer?.toString().toLowerCase().trim();
+      isCorrect = answer.answer.toString().toLowerCase().trim() === question.correctAnswer?.toString().toLowerCase().trim();
     }
 
     const pointsEarned = isCorrect ? question.points : 0;
     if (isCorrect) score += pointsEarned;
-
-    return {
-      questionId: question.id,
-      answer: answer.answer,
-      isCorrect,
-      pointsEarned,
-      timeSpent: answer.timeSpent || 0,
-    };
+    return { questionId: question.id, answer: answer.answer, isCorrect, pointsEarned, timeSpent: answer.timeSpent || 0 };
   });
 
   const timeSpent = data.answers.reduce((sum, a) => sum + (a.timeSpent || 0), 0);
-  const percentage = Math.round((score / assignmentData.totalPoints) * 100);
-  const passingScore = assignmentData.passingScore || 50;
+  const percentage = Math.round((score / (assignmentData.totalPoints as number)) * 100);
+  const passingScore = (assignmentData.passingScore as number) || 50;
   const passed = percentage >= passingScore;
-
-  const accuracy = assignmentData.totalPoints > 0 ? score / assignmentData.totalPoints : 0;
+  const accuracy = (assignmentData.totalPoints as number) > 0 ? score / (assignmentData.totalPoints as number) : 0;
   const avgReactionTimeSec = data.answers.length > 0 ? timeSpent / data.answers.length : 0;
 
   const difficultyMap: Record<string, Difficulty> = {};
-  for (const q of assignmentData.questions) {
-    difficultyMap[q.id] = q.difficulty || 'medium';
-  }
-
-  const correctMap = gradedAnswers.map((a) => ({
-    questionId: a.questionId,
-    correct: a.isCorrect,
-  }));
+  for (const q of questions) difficultyMap[q.id] = (q.difficulty as Difficulty) || 'medium';
+  const correctMap = gradedAnswers.map((a) => ({ questionId: a.questionId, correct: a.isCorrect }));
   const complexityHandled = computeComplexityHandled(correctMap, difficultyMap);
   const level = computeLevel(accuracy, avgReactionTimeSec, complexityHandled);
 
-  const result = {
-    answers: gradedAnswers,
-    score,
-    totalPoints: assignmentData.totalPoints,
-    percentage,
-    passed,
-    timeSpent,
-    submittedAt: data.submittedAt,
-    status: 'completed',
-    level,
-  };
-
-  await attemptRef.update(result);
+  const result: Record<string, unknown> = { answers: gradedAnswers, score, totalPoints: assignmentData.totalPoints, percentage, passed, timeSpent, submittedAt: data.submittedAt, status: 'completed', level };
+  await nosqlUpdate(ASSIGNMENT_SUB_V2, attemptId, result);
 
   logger.info('Assignment V2 attempt submitted', { attemptId, studentId, score, percentage, level });
-
   return { id: attemptId, ...attemptData, ...result };
 }
 
 export async function releaseAssignmentGrades(assignmentId: string, showResults: boolean) {
-  const ref = collections.assignmentV2().doc(assignmentId);
-  const doc = await ref.get();
+  const { exists, data } = await nosqlGet(ASSIGNMENT_V2, assignmentId);
+  if (!exists || !data) throw new NotFoundError('Assignment not found');
 
-  if (!doc.exists) {
-    throw new NotFoundError('Assignment not found');
-  }
-
-  await ref.update({ showResults, updatedAt: new Date().toISOString() });
+  await nosqlUpdate(ASSIGNMENT_V2, assignmentId, { showResults, updatedAt: new Date().toISOString() });
   logger.info('Assignment V2 grades release toggled', { assignmentId, showResults });
 
-  const updated = await ref.get();
-  return { ...updated.data() };
+  const updated = await nosqlGet(ASSIGNMENT_V2, assignmentId);
+  return { id: assignmentId, ...updated.data };
 }
 
 export async function getResults(assignmentId: string, studentId: string) {
-  const assignmentRef = collections.assignmentV2().doc(assignmentId);
-  const assignment = await assignmentRef.get();
-  if (!assignment.exists) throw new NotFoundError('Assignment not found');
+  const assignment = await nosqlGet(ASSIGNMENT_V2, assignmentId);
+  if (!assignment.exists || !assignment.data) throw new NotFoundError('Assignment not found');
+  const resultsGated = !assignment.data.showResults;
 
-  const assignmentData = assignment.data()!;
-  const resultsGated = !assignmentData.showResults;
+  const items = await nosqlQuery(ASSIGNMENT_SUB_V2, [
+    { field: 'assignmentId', value: assignmentId },
+    { field: 'studentId', value: studentId },
+  ]);
 
-  const snapshot = await collections.assignmentSubmissionV2()
-    .where('assignmentId', '==', assignmentId)
-    .where('studentId', '==', studentId)
-
-    .get();
-
-  const items = snapshot.docs.map((doc) => {
-    const data = doc.data();
-
-    if (resultsGated && data.status === 'completed') {
-      return {
-        id: doc.id,
-        assignmentId: data.assignmentId,
-        studentId: data.studentId,
-        score: data.score,
-        totalPoints: data.totalPoints,
-        percentage: data.percentage,
-        passed: data.passed,
-        timeSpent: data.timeSpent,
-        startedAt: data.startedAt,
-        submittedAt: data.submittedAt,
-        status: data.status,
-        level: data.level,
-        answers: data.answers?.map((a: { questionId: string; pointsEarned: number }) => ({
-          questionId: a.questionId,
-          pointsEarned: a.pointsEarned,
-        })) ?? [],
-      };
+  return items.map((item: any) => {
+    if (resultsGated && item.status === 'completed') {
+      return { id: item.id, assignmentId: item.assignmentId, studentId: item.studentId, score: item.score, totalPoints: item.totalPoints, percentage: item.percentage, passed: item.passed, timeSpent: item.timeSpent, startedAt: item.startedAt, submittedAt: item.submittedAt, status: item.status, level: item.level, answers: (item.answers || []).map((a: { questionId: string; pointsEarned: number }) => ({ questionId: a.questionId, pointsEarned: a.pointsEarned })) };
     }
-
-    return { ...data, id: doc.id };
+    return item;
   });
-
-  return items;
 }
 
 export async function listAssignmentsForClass(classId: string, studentId?: string): Promise<any[]> {
-  const snapshot = await collections.assignmentV2()
-    .where('classId', '==', classId)
-    .get();
+  const items = await nosqlQuery(ASSIGNMENT_V2, [{ field: 'classId', value: classId }]);
 
-  let items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-
+  let filtered = items;
   if (studentId) {
-    items = items.filter((a: any) => {
+    filtered = items.filter((a: any) => {
       if (!a.publishedTo || a.publishedTo === 'class') return true;
-      if (a.publishedTo === 'students') {
-        return (a.targetStudentIds || []).includes(studentId);
-      }
+      if (a.publishedTo === 'students') return (a.targetStudentIds || []).includes(studentId);
       return true;
     });
   }
 
-  return items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return filtered.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export async function listAssignmentsForTeacher(teacherId: string, query: { page?: string; limit?: string; schoolId?: string }) {
   const { page, limit } = parsePagination(query);
-  const baseQuery = collections.assignmentV2()
-    .where('teacherId', '==', teacherId);
-  const snapshot = await baseQuery.get();
-
-  const all: any[] = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-  all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const all = await nosqlQuery(ASSIGNMENT_V2, [{ field: 'teacherId', value: teacherId }]);
+  all.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const total = all.length;
   const offset = (page - 1) * limit;

@@ -1,10 +1,12 @@
 import { randomUUID } from 'crypto';
-import { collections } from '../database/adapter';
 import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { getTeacherAssignment } from './teacher-class-subject.service';
 import { createBulkNotifications } from './notification.service';
+
+const QUIZV2 = 'quizV2';
+const MINDMAP = 'mindmaps';
 
 export type PublishableContentType = 'test' | 'resource' | 'mindmap' | 'video' | 'note' | 'material';
 export type PublishScope = 'class' | 'students' | 'subject';
@@ -55,37 +57,28 @@ export async function publishContent(request: PublishRequest): Promise<Published
 
   switch (request.contentType) {
     case 'test': {
-      const testDoc = await collections.quizV2().doc(request.contentId).get();
-      if (testDoc.exists) {
-        const testData = testDoc.data()!;
-        title = testData.title || 'Untitled Test';
-        description = testData.description || '';
+      const { data: testRow } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', QUIZV2).eq('doc_id', request.contentId).maybeSingle();
+      if (testRow?.data) {
+        const testData = testRow.data as Record<string, unknown>;
+        title = (testData.title as string) || 'Untitled Test';
+        description = (testData.description as string) || '';
       }
       break;
     }
     case 'resource': {
-      const resourceDoc = await collections.textbooks()
-        .doc(request.textbookId || '')
-        .collection('chapters')
-        .doc(request.chapterId || '')
-        .collection('concepts')
-        .doc(request.conceptId || '')
-        .collection('resources')
-        .doc(request.contentId)
-        .get();
-      if (resourceDoc.exists) {
-        const data = resourceDoc.data()!;
-        title = data.title || 'Resource';
-        description = data.description || '';
+      const { data: resRow } = await getSupabaseAdmin()!.from('concept_resources').select('title, description').eq('id', request.contentId).maybeSingle();
+      if (resRow) {
+        title = resRow.title || 'Resource';
+        description = resRow.description || '';
       }
       break;
     }
     case 'mindmap': {
-      const mindmapDoc = await collections.mindmaps().doc(request.contentId).get();
-      if (mindmapDoc.exists) {
-        const data = mindmapDoc.data()!;
-        title = data.title || 'Mind Map';
-        description = data.description || '';
+      const { data: mmRow } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', MINDMAP).eq('doc_id', request.contentId).maybeSingle();
+      if (mmRow?.data) {
+        const mmData = mmRow.data as Record<string, unknown>;
+        title = (mmData.title as string) || 'Mind Map';
+        description = (mmData.description as string) || '';
       }
       break;
     }
@@ -137,7 +130,11 @@ export async function publishContent(request: PublishRequest): Promise<Published
     status: request.scheduledAt ? 'scheduled' : 'published',
   };
 
-  await collections.quizV2().doc(id).set(published);
+  const supabase = getSupabaseAdmin()!;
+  await supabase.from('nosql_docs').upsert({
+    collection: QUIZV2, doc_id: id, data: published as unknown as Record<string, unknown>,
+    updated_at: now,
+  }, { onConflict: 'collection,doc_id' });
 
   logger.info('Content published', {
     publishId: id,
@@ -158,10 +155,8 @@ export async function publishContent(request: PublishRequest): Promise<Published
         }))
       );
     } else {
-      const studentsSnap = await collections.users()
-        .where('classIds', 'array-contains', request.classId)
-        .get();
-      const studentIds = studentsSnap.docs.map((d) => d.id);
+      const { data: studentRows } = await supabase.from('users').select('id').contains('class_ids', [request.classId]);
+      const studentIds = (studentRows || []).map((r) => r.id);
 
       if (studentIds.length > 0) {
         await createBulkNotifications(
@@ -182,53 +177,56 @@ export async function publishContent(request: PublishRequest): Promise<Published
   return published;
 }
 
+function rowToPublished(r: { doc_id: string; data: unknown }): PublishedContent {
+  return { id: r.doc_id, ...(r.data as object) } as PublishedContent;
+}
+
 export async function getPublishedContent(classId: string, contentType?: PublishableContentType): Promise<PublishedContent[]> {
-  let query = collections.quizV2()
-    .where('classId', '==', classId);
+  const supabase = getSupabaseAdmin()!;
+  let q: any = supabase.from('nosql_docs').select('doc_id, data').eq('collection', QUIZV2).contains('data', { classId });
 
   if (contentType) {
-    query = query.where('contentType', '==', contentType);
+    q = q.contains('data', { contentType });
   }
 
-  const snapshot = await query.get();
-  const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as PublishedContent));
+  const { data: rows, error } = await q;
+  if (error) throw error;
 
-  return items.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+  const items = (rows || []).map(rowToPublished);
+  return items.sort((a: PublishedContent, b: PublishedContent) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 }
 
 export async function getPublishedContentForStudent(studentId: string, classIds: string[]): Promise<PublishedContent[]> {
   if (classIds.length === 0) return [];
-
+  const supabase = getSupabaseAdmin()!;
   const allContent: PublishedContent[] = [];
 
   for (const classId of classIds) {
-    const snapshot = await collections.quizV2()
-      .where('classId', '==', classId)
-      .get();
+    const { data: rows, error } = await supabase.from('nosql_docs').select('doc_id, data').eq('collection', QUIZV2).contains('data', { classId });
+    if (error) throw error;
 
-    const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as PublishedContent));
-
+    const items = (rows || []).map(rowToPublished);
     const visible = items.filter((item) => {
       if (item.scope === 'class') return true;
       if (item.scope === 'students' && item.targetStudentIds.includes(studentId)) return true;
       return false;
     });
-
     allContent.push(...visible);
   }
 
-  return allContent.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+  return allContent.sort((a: PublishedContent, b: PublishedContent) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 }
 
 export async function unpublishContent(publishId: string, teacherId: string): Promise<void> {
-  const ref = collections.quizV2().doc(publishId);
-  const doc = await ref.get();
+  const supabase = getSupabaseAdmin()!;
+  const { data: row } = await supabase.from('nosql_docs').select('data').eq('collection', QUIZV2).eq('doc_id', publishId).maybeSingle();
+  if (!row?.data) throw new NotFoundError('Published content not found');
 
-  if (!doc.exists) throw new NotFoundError('Published content not found');
-  const existing = doc.data() as PublishedContent;
+  const existing = row.data as PublishedContent;
   if (existing.teacherId !== teacherId) throw new ForbiddenError('Not your content');
 
-  await ref.delete();
+  const { error } = await supabase.from('nosql_docs').delete().eq('collection', QUIZV2).eq('doc_id', publishId);
+  if (error) throw error;
   logger.info('Content unpublished', { publishId });
 }
 
@@ -241,12 +239,12 @@ export async function getContentStats(teacherId: string): Promise<{
   byType: Record<string, number>;
   recentPublishes: PublishedContent[];
 }> {
-  const snapshot = await collections.quizV2()
-    .where('teacherId', '==', teacherId)
-    .get();
+  const supabase = getSupabaseAdmin()!;
+  const { data: rows, error } = await supabase.from('nosql_docs').select('doc_id, data').eq('collection', QUIZV2).contains('data', { teacherId });
+  if (error) throw error;
 
-  const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as PublishedContent));
-  const sorted = items.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+  const items = (rows || []).map(rowToPublished);
+  const sorted = [...items].sort((a: PublishedContent, b: PublishedContent) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 
   const byType: Record<string, number> = {};
   for (const item of items) {

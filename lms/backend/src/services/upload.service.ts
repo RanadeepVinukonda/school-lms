@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { uploadBufferToCloudinary, deleteCloudinaryFile } from './cloudinary.service';
-import { collections } from '../database/adapter';
+import { getSupabaseClient } from './supabase';
 import { ValidationError, NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
@@ -43,7 +43,11 @@ export async function uploadFileService(
     createdAt: new Date().toISOString(),
   };
 
-  await collections.uploads().doc(fileRecord.id).set(fileRecord);
+  const supabase = getSupabaseClient()!;
+  await supabase.from('nosql_docs').insert({
+    collection: 'uploads', doc_id: fileRecord.id, data: fileRecord,
+    updated_at: new Date().toISOString(),
+  });
 
   logger.info('File uploaded to Cloudinary', { fileId: fileRecord.id, folder, userId });
 
@@ -51,24 +55,29 @@ export async function uploadFileService(
 }
 
 export async function getFileUrlService(fileId: string) {
-  const doc = await collections.uploads().doc(fileId).get();
-  if (!doc.exists) {
+  const supabase = getSupabaseClient()!;
+  const { data } = await supabase.from('nosql_docs').select('data')
+    .eq('collection', 'uploads').eq('doc_id', fileId).maybeSingle();
+  if (!data) {
     throw new NotFoundError('File not found');
   }
-  return doc.data();
+  return data.data as Record<string, unknown>;
 }
 
 export async function deleteFileService(fileId: string) {
-  const doc = await collections.uploads().doc(fileId).get();
-  if (!doc.exists) {
+  const supabase = getSupabaseClient()!;
+  const { data } = await supabase.from('nosql_docs').select('data')
+    .eq('collection', 'uploads').eq('doc_id', fileId).maybeSingle();
+  if (!data) {
     throw new NotFoundError('File not found');
   }
 
-  const data = doc.data()!;
-  if (data.path) {
-    await deleteCloudinaryFile(data.path);
+  const fileData = data.data as Record<string, unknown>;
+  if (fileData.path) {
+    await deleteCloudinaryFile(fileData.path as string);
   }
-  await collections.uploads().doc(fileId).delete();
+  await supabase.from('nosql_docs').delete()
+    .eq('collection', 'uploads').eq('doc_id', fileId);
 
   logger.info('File deleted from Cloudinary', { fileId });
 }

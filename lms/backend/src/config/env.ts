@@ -36,6 +36,14 @@ const envSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().default('noreply@school-lms.com'),
+
+  AUTH_RATE_LIMIT_MAX: z.coerce.number().default(5),
+  AUTH_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000),
+  API_RATE_LIMIT_MAX: z.coerce.number().default(100),
+  API_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
+
+  COOKIE_DOMAIN: z.string().optional(),
+  COOKIE_SECURE: z.coerce.boolean().default(true),
 });
 
 const parsed = envSchema.safeParse(process.env);

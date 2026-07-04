@@ -5,8 +5,7 @@ import { logger } from '../utils/logger';
 import { env } from '../config/env';
 import { addUploadJob, removeUploadJob } from '../jobs/queue';
 
-// ponytail: teacherClassSubject is a deferred peripheral. Keep Firestore for just this one collection.
-import { collections } from '../database/adapter';
+
 
 async function populateMockContent(textbookId: string, textbookTitle: string): Promise<void> {
   const supabase = getSupabaseAdmin();
@@ -96,17 +95,19 @@ export async function createTextbook(data: {
   let assignment: Record<string, unknown> | null = null;
 
   if (data.teacherRole !== 'admin') {
-    const assignmentSnap = await collections.teacherClassSubject()
-      .where('teacherId', '==', data.teacherId)
-      .where('classId', '==', data.classId)
-      .where('subjectId', '==', data.subjectId)
-      .limit(1)
-      .get();
+    const { data: teacherAssignments } = await supabase
+      .from('nosql_docs')
+      .select('data, doc_id')
+      .eq('collection', 'teacherClassSubject')
+      .filter('data->>teacherId', 'eq', data.teacherId)
+      .filter('data->>classId', 'eq', data.classId)
+      .filter('data->>subjectId', 'eq', data.subjectId)
+      .limit(1);
 
-    if (assignmentSnap.empty) {
+    if (!teacherAssignments?.length) {
       throw new ForbiddenError('You are not assigned to teach this subject in this class');
     }
-    assignment = { id: assignmentSnap.docs[0].id, ...assignmentSnap.docs[0].data() } as Record<string, unknown>;
+    assignment = { id: teacherAssignments[0].doc_id, ...teacherAssignments[0].data as Record<string, unknown> };
   }
 
   const textbookId = uuidv4();
@@ -180,7 +181,19 @@ export async function createTextbook(data: {
   }
 
   if (assignment?.id) {
-    await collections.teacherClassSubject().doc(assignment.id as string).update({ textbookId, updatedAt: now });
+    const { data: existing } = await supabase
+      .from('nosql_docs')
+      .select('data')
+      .eq('collection', 'teacherClassSubject')
+      .eq('doc_id', assignment.id)
+      .maybeSingle();
+    const merged = { ...(existing?.data as Record<string, unknown> ?? {}), textbookId, updatedAt: now };
+    await supabase.from('nosql_docs').upsert({
+      collection: 'teacherClassSubject',
+      doc_id: assignment.id,
+      data: merged,
+      updated_at: now,
+    }, { onConflict: 'collection,doc_id' });
   }
 
   logger.info('Textbook created', { textbookId, title: data.title, status });

@@ -1,5 +1,3 @@
-import { Query } from '../database/adapter';
-
 export interface PaginationParams {
   page: number;
   limit: number;
@@ -15,33 +13,4 @@ export function parsePagination(query: {
   const offset = (page - 1) * limit;
 
   return { page, limit, offset };
-}
-
-export async function paginateQuery<T>(
-  baseQuery: Query,
-  page: number,
-  limit: number
-): Promise<{ items: T[]; total: number }> {
-  const countSnapshot = await baseQuery.count().get();
-  const total = countSnapshot.data().count;
-
-  const offset = (page - 1) * limit;
-  const snapshot = await baseQuery.offset(offset).limit(limit).get();
-
-  const items = snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as T[];
-
-  return { items, total };
-}
-
-export async function getDocumentById<T>(
-  collectionPath: string,
-  id: string
-): Promise<{ id: string; data: T } | null> {
-  const { getCollection } = await import('../database/adapter');
-  const doc = await getCollection(collectionPath).doc(id).get();
-  if (!doc.exists) return null;
-  return { id: doc.id, data: doc.data() as T };
 }

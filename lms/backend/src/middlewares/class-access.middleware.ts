@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ForbiddenError, UnauthorizedError } from '../utils/errors';
-import { collections } from '../database/adapter';
+import { getSupabaseAdmin } from '../services/supabase';
 
 export function requireClassAccess(...roles: string[]) {
   return (req: Request, _res: Response, next: NextFunction): void => {
@@ -90,14 +90,15 @@ export async function requireTeacherSubjectAccess(req: Request, _res: Response, 
   }
 
   try {
-    const snap = await collections.teacherClassSubject()
-      .where('teacherId', '==', req.user.uid)
-      .where('classId', '==', classId)
-      .where('subjectId', '==', subjectId)
-      .limit(1)
-      .get();
+    const supabase = getSupabaseAdmin()!;
+    const { data: matches } = await supabase
+      .from('nosql_docs')
+      .select('doc_id')
+      .eq('collection', 'teacherClassSubject')
+      .contains('data', { teacherId: req.user.uid, classId, subjectId })
+      .limit(1);
 
-    if (!snap.empty) {
+    if (matches && matches.length > 0) {
       next();
       return;
     }

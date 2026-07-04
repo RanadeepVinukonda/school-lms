@@ -5,7 +5,7 @@ import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 import { getAdminAuth, getAdminFirestore } from '../database/admin';
-import { collections } from '../database/adapter';
+import { getSupabaseAdmin } from '../services/supabase';
 import { createClass } from '../services/class.service';
 import { createSubject } from '../services/subject.service';
 import { assignTeacher } from '../services/teacher-class-subject.service';
@@ -249,7 +249,8 @@ async function main() {
       });
     }
   }
-  await collections.classes().doc(class1.id).update({ studentCount: 2 });
+  const supabase = getSupabaseAdmin()!;
+  await supabase.from('classes').update({ student_count: 2 }).eq('id', class1.id);
   console.log('  Enrolled Class 1 students.');
 
   console.log('\nEnrolling Students in Class 2 subjects...');
@@ -265,7 +266,7 @@ async function main() {
       });
     }
   }
-  await collections.classes().doc(class2.id).update({ studentCount: 2 });
+  await supabase.from('classes').update({ student_count: 2 }).eq('id', class2.id);
   console.log('  Enrolled Class 2 students.');
 
   console.log('\n=== SEED COMPLETE AND READY FOR PRODUCTION ===');

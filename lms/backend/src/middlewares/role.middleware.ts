@@ -17,6 +17,18 @@ export function requireRole(...roles: string[]) {
   };
 }
 
+export function requireSchoolAccess(req: Request, _res: Response, next: NextFunction): void {
+  if (!req.user) {
+    next(new UnauthorizedError('Authentication required'));
+    return;
+  }
+  if (!req.user.school_id) {
+    next(new ForbiddenError('No school association'));
+    return;
+  }
+  next();
+}
+
 export function requireOwnershipOrRole(
   getOwnerId: (req: Request) => string,
   ...roles: string[]

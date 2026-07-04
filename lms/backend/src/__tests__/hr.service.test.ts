@@ -9,6 +9,7 @@ jest.mock('../services/supabase', () => ({
       limit: () => chain,
       order: () => chain,
       single: () => Promise.resolve({ data: { id: 'mock-id', name: 'Test Staff', base_salary: 50000 }, error: null }),
+      maybeSingle: () => Promise.resolve({ data: null, error: null }),
       update: () => chain,
       delete: () => chain,
       gte: () => chain,

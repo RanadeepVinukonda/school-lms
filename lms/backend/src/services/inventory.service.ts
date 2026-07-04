@@ -90,6 +90,7 @@ export async function logUsage(schoolId: string, actionBy: string, data: { item_
   const { data: item } = await supabase.from('inventory_items').select('quantity').eq('id', data.item_id).single();
   const currentQty = item?.quantity || 0;
   const newQty = currentQty + data.quantity_changed;
+  if (newQty < 0) return null; // ponytail: reject negative quantity
   
   // 2. Update item quantity
   await supabase.from('inventory_items').update({ quantity: newQty }).eq('id', data.item_id);

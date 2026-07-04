@@ -33,6 +33,8 @@ export interface User {
   role: UserRole;
   isActive: boolean;
   avatar?: string;
+  phone?: string;
+  gender?: string;
   studentId?: string;
   classId?: string;
   rollNo?: number;

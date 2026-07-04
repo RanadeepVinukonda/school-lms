@@ -1,10 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
-import { FieldValue } from '../database/adapter';
-import { collections } from '../database/adapter';
+import { getSupabaseClient } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
-import { getEnrollments } from './course.service';
 import { createBulkNotifications, createNotification } from './notification.service';
 
 /** List all exams with optional courseId filter, paginated by createdAt desc. */
@@ -12,19 +10,22 @@ export async function listAllExams(query: { page?: string; limit?: string; cours
   const { page, limit } = parsePagination(query);
   const offset = (page - 1) * limit;
 
-  let baseQuery: any = collections.exams();
-  if (query.schoolId) {
-    baseQuery = baseQuery.where('schoolId', '==', query.schoolId);
-  }
-  baseQuery = baseQuery.orderBy('createdAt', 'desc');
-  if (query.courseId) baseQuery = baseQuery.where('courseId', '==', query.courseId);
+  const supabase = getSupabaseClient()!;
+  let q = supabase.from('exams').select('*', { count: 'exact' });
+  
+  if (query.schoolId) q = q.eq('school_id', query.schoolId);
+  if (query.courseId) q = q.eq('course_id', query.courseId);
+  q = q.order('created_at', { ascending: false });
 
-  const countSnap = await baseQuery.count().get();
-  const total = countSnap.data().count;
-  const snapshot = await baseQuery.offset(offset).limit(limit).get();
-  const items = snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id }));
+  const { data: items, count, error } = await q.range(offset, offset + limit - 1);
+  if (error) throw error;
 
-  return { items, total, page, limit };
+  return {
+    items: items || [],
+    total: count || 0,
+    page,
+    limit,
+  };
 }
 
 /** Create a new exam, assign IDs to each question, and notify enrolled students. */
@@ -51,6 +52,7 @@ export async function createExam(data: {
   proctored?: boolean;
   schoolId?: string;
 }) {
+  const supabase = getSupabaseClient()!;
   const examId = uuidv4();
   const now = new Date().toISOString();
 
@@ -58,28 +60,45 @@ export async function createExam(data: {
   const questionsWithIds = data.questions.map((q, i) => ({ ...q, id: `q_${examId}_${i}` }));
 
   const examData = {
-    ...data,
-    questions: questionsWithIds,
     id: examId,
-    totalPoints,
-    attemptCount: 0,
-    scheduledClasses: [],
-    createdAt: now,
-    updatedAt: now,
+    title: data.title,
+    description: data.description || '',
+    course_id: data.courseId,
+    questions: questionsWithIds,
+    total_points: totalPoints,
+    attempt_count: 0,
+    scheduled_classes: [],
+    created_at: now,
+    updated_at: now,
+    school_id: data.schoolId || null,
+    time_limit: data.timeLimit,
+    passing_score: data.passingScore,
+    max_attempts: data.maxAttempts,
+    shuffle_questions: data.shuffleQuestions,
+    show_results: data.showResults,
+    is_published: data.isPublished,
+    proctored: data.proctored,
   };
 
-  await collections.exams().doc(examId).set(examData);
+  const { error } = await supabase.from('exams').insert(examData);
+  if (error) throw error;
 
   // Notify enrolled students
   try {
-    const enrollments = await getEnrollments(data.courseId);
-    const notifications = enrollments.map((e: { id?: string; studentId: string }) => ({
-      userId: e.studentId,
+    const { data: enrollments } = await supabase
+      .from('enrollments')
+      .select('student_id')
+      .eq('course_id', data.courseId)
+      .eq('status', 'active');
+    
+    const notifications = (enrollments || []).map((e: { student_id: string }) => ({
+      userId: e.student_id,
       type: 'exam',
       title: 'New Exam Created',
       body: `${data.title} has been created (${data.timeLimit} min, ${totalPoints} pts)`,
       data: { examId, courseId: data.courseId, link: `/exams/${examId}` },
     }));
+    
     if (notifications.length > 0) await createBulkNotifications(notifications);
   } catch (err) {
     logger.warn('Failed to send exam notifications', { error: err });
@@ -87,50 +106,69 @@ export async function createExam(data: {
 
   logger.info('Exam created', { examId, courseId: data.courseId, title: data.title });
 
-  return { ...examData };
+  return { ...examData, courseId: data.courseId };
 }
 
 /** Update exam fields. Throws NotFoundError if missing. */
 export async function updateExam(examId: string, data: Record<string, unknown>) {
-  const ref = collections.exams().doc(examId);
-  const doc = await ref.get();
+  const supabase = getSupabaseClient()!;
+  const { data: existing } = await supabase
+    .from('exams')
+    .select('id')
+    .eq('id', examId)
+    .maybeSingle();
 
-  if (!doc.exists) {
+  if (!existing) {
     throw new NotFoundError('Exam not found');
   }
 
-  const updateData = { ...data, updatedAt: new Date().toISOString() };
-  await ref.update(updateData);
+  const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  for (const [k, v] of Object.entries(data)) {
+    updateData[k] = v;
+  }
 
-  const updated = await ref.get();
+  const { error } = await supabase.from('exams').update(updateData).eq('id', examId);
+  if (error) throw error;
+
+  const { data: updated } = await supabase.from('exams').select('*').eq('id', examId).single();
   logger.info('Exam updated', { examId });
 
-  return { ...updated.data() };
+  return updated;
 }
 
 /** Delete an exam by id. Throws NotFoundError if missing. */
 export async function deleteExam(examId: string) {
-  const ref = collections.exams().doc(examId);
-  const doc = await ref.get();
+  const supabase = getSupabaseClient()!;
+  const { data: existing } = await supabase
+    .from('exams')
+    .select('id')
+    .eq('id', examId)
+    .maybeSingle();
 
-  if (!doc.exists) {
+  if (!existing) {
     throw new NotFoundError('Exam not found');
   }
 
-  await ref.delete();
+  const { error } = await supabase.from('exams').delete().eq('id', examId);
+  if (error) throw error;
+
   logger.info('Exam deleted', { examId });
 }
 
 /** Fetch a single exam by id. Throws NotFoundError if missing. */
 export async function getExamById(examId: string) {
-  const ref = collections.exams().doc(examId);
-  const doc = await ref.get();
+  const supabase = getSupabaseClient()!;
+  const { data, error } = await supabase
+    .from('exams')
+    .select('*')
+    .eq('id', examId)
+    .maybeSingle();
 
-  if (!doc.exists) {
+  if (error || !data) {
     throw new NotFoundError('Exam not found');
   }
 
-  return { ...doc.data() };
+  return data;
 }
 
 /** Schedule an exam for specific classes and notify affected students. */
@@ -140,39 +178,48 @@ export async function scheduleExam(examId: string, data: {
   classIds: string[];
   proctorIds?: string[];
 }) {
-  const ref = collections.exams().doc(examId);
-  const doc = await ref.get();
+  const supabase = getSupabaseClient()!;
+  const { data: existing } = await supabase
+    .from('exams')
+    .select('id, title')
+    .eq('id', examId)
+    .maybeSingle();
 
-  if (!doc.exists) {
+  if (!existing) {
     throw new NotFoundError('Exam not found');
   }
 
   const updateData = {
-    scheduledClasses: data.classIds,
-    startDate: data.startDate,
-    endDate: data.endDate,
-    proctorIds: data.proctorIds || [],
+    scheduled_classes: data.classIds,
+    start_date: data.startDate,
+    end_date: data.endDate,
+    proctor_ids: data.proctorIds || [],
     status: 'scheduled',
-    updatedAt: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   };
 
-  await ref.update(updateData);
+  const { error } = await supabase.from('exams').update(updateData).eq('id', examId);
+  if (error) throw error;
 
   // Notify students in scheduled classes
   try {
-    const examData = doc.data()!;
     for (const classId of data.classIds) {
-      const classDoc = await collections.classes().doc(classId).get();
-      if (classDoc.exists) {
-        const classData = classDoc.data()!;
-        const studentIds = (classData.studentIds as string[]) || [];
+      const { data: classData } = await supabase
+        .from('classes')
+        .select('id, teacher_ids, student_ids')
+        .eq('id', classId)
+        .maybeSingle();
+      
+      if (classData) {
+        const studentIds = (classData.student_ids as string[]) || [];
         const notifications = studentIds.map((studentId: string) => ({
           userId: studentId,
           type: 'exam',
           title: 'Exam Scheduled',
-          body: `${examData.title} is scheduled from ${new Date(data.startDate).toLocaleDateString()} to ${new Date(data.endDate).toLocaleDateString()}`,
+          body: `${existing.title} is scheduled from ${new Date(data.startDate).toLocaleDateString()} to ${new Date(data.endDate).toLocaleDateString()}`,
           data: { examId, link: `/exams/${examId}` },
         }));
+        
         if (notifications.length > 0) await createBulkNotifications(notifications);
       }
     }
@@ -182,27 +229,30 @@ export async function scheduleExam(examId: string, data: {
 
   logger.info('Exam scheduled', { examId, classIds: data.classIds });
 
-  const updated = await ref.get();
-  return { ...updated.data() };
+  const { data: updated } = await supabase.from('exams').select('*').eq('id', examId).single();
+  return updated;
 }
 
 /** Start an exam attempt for a student. Enforces maxAttempts, increments attemptCount. */
 export async function startExamAttempt(examId: string, studentId: string) {
-  const examRef = collections.exams().doc(examId);
-  const exam = await examRef.get();
+  const supabase = getSupabaseClient()!;
+  const { data: exam } = await supabase
+    .from('exams')
+    .select('*')
+    .eq('id', examId)
+    .maybeSingle();
 
-  if (!exam.exists) {
+  if (!exam) {
     throw new NotFoundError('Exam not found');
   }
 
-  const examData = exam.data()!;
+  const { count: existingCount } = await supabase
+    .from('exam_attempts')
+    .select('id', { count: 'exact', head: true })
+    .eq('exam_id', examId)
+    .eq('student_id', studentId);
 
-  const attemptsSnapshot = await collections.examAttempts()
-    .where('examId', '==', examId)
-    .where('studentId', '==', studentId)
-    .get();
-
-  if (examData.maxAttempts && attemptsSnapshot.size >= examData.maxAttempts) {
+  if (exam.max_attempts && (existingCount || 0) >= exam.max_attempts) {
     throw new ForbiddenError('Maximum attempts reached');
   }
 
@@ -211,25 +261,27 @@ export async function startExamAttempt(examId: string, studentId: string) {
 
   const attempt = {
     id: attemptId,
-    examId,
-    studentId,
-    startedAt: now,
-    submittedAt: null,
+    exam_id: examId,
+    student_id: studentId,
+    started_at: now,
+    submitted_at: null,
     answers: [],
     score: null,
-    totalPoints: examData.totalPoints,
+    total_points: exam.total_points,
     percentage: null,
     passed: null,
-    timeSpent: 0,
+    time_spent: 0,
     status: 'in_progress',
   };
 
-  await collections.examAttempts().doc(attemptId).set(attempt);
-  await examRef.update({ attemptCount: FieldValue.increment(1) });
+  await supabase.from('exam_attempts').insert(attempt);
+  
+  const { data: currentExam } = await supabase.from('exams').select('attempt_count').eq('id', examId).single();
+  await supabase.from('exams').update({ attempt_count: (currentExam?.attempt_count || 0) + 1 }).eq('id', examId);
 
   logger.info('Exam attempt started', { examId, studentId, attemptId });
 
-  return { ...attempt, questions: examData.questions };
+  return { ...attempt, questions: exam.questions };
 }
 
 /** Submit an exam attempt, auto-grade multiple-choice / true-false / short-answer questions. */
@@ -242,77 +294,85 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
   startedAt: string;
   submittedAt: string;
 }) {
-  const attemptRef = collections.examAttempts().doc(attemptId);
-  const attempt = await attemptRef.get();
+  const supabase = getSupabaseClient()!;
+  const { data: attempt } = await supabase
+    .from('exam_attempts')
+    .select('*')
+    .eq('id', attemptId)
+    .maybeSingle();
 
-  if (!attempt.exists) {
+  if (!attempt) {
     throw new NotFoundError('Attempt not found');
   }
 
-  const attemptData = attempt.data()!;
-  if (attemptData.studentId !== studentId) {
+  if (attempt.student_id !== studentId) {
     throw new ForbiddenError('Not your attempt');
   }
 
-  if (attemptData.status !== 'in_progress') {
+  if (attempt.status !== 'in_progress') {
     throw new ForbiddenError('Attempt already submitted');
   }
 
-  const examRef = collections.exams().doc(attemptData.examId);
-  const exam = await examRef.get();
-  const examData = exam.data()!;
+  const { data: exam } = await supabase
+    .from('exams')
+    .select('*')
+    .eq('id', attempt.exam_id)
+    .single();
 
   let score = 0;
   const gradedAnswers = data.answers.map((answer) => {
-    const question = examData.questions.find(
-      (q: { id: string; questionText: string; type: string; points: number; correctAnswer?: string }) => q.id === answer.questionId
+    const question = exam.questions.find(
+      (q: { id: string; question_text?: string; type: string; points: number; correct_answer?: string }) => 
+        q.id === answer.questionId || q.question_text === answer.questionId
     );
 
     if (!question) {
-      return { questionId: answer.questionId, isCorrect: false, pointsEarned: 0 };
+      return { questionId: answer.questionId, answer: answer.answer, isCorrect: false, pointsEarned: 0 };
     }
 
     let isCorrect = false;
     if (question.type === 'multiple_choice' || question.type === 'true_false') {
-      isCorrect = answer.answer === question.correctAnswer;
+      isCorrect = answer.answer === question.correct_answer;
     } else if (question.type === 'short_answer') {
       isCorrect = answer.answer.toString().toLowerCase().trim() ===
-        question.correctAnswer?.toString().toLowerCase().trim();
+        question.correct_answer?.toString().toLowerCase().trim();
     }
 
     const pointsEarned = isCorrect ? question.points : 0;
     if (isCorrect) score += pointsEarned;
 
     return {
-      questionId: question.questionText,
+      question_id: question.id,
+      question_text: question.question_text || question.id,
       answer: answer.answer,
-      isCorrect,
-      pointsEarned,
-      timeSpent: answer.timeSpent || 0,
+      is_correct: isCorrect,
+      points_earned: pointsEarned,
+      time_spent: answer.timeSpent || 0,
     };
   });
 
   const timeSpent = data.answers.reduce((sum, a) => sum + (a.timeSpent || 0), 0);
-  const percentage = Math.round((score / examData.totalPoints) * 100);
-  const passingScore = examData.passingScore || 50;
+  const percentage = exam.total_points > 0 ? Math.round((score / exam.total_points) * 100) : 0;
+  const passingScore = exam.passing_score || 50;
   const passed = percentage >= passingScore;
 
   const result = {
     answers: gradedAnswers,
     score,
-    totalPoints: examData.totalPoints,
+    total_points: exam.total_points,
     percentage,
     passed,
-    timeSpent,
-    submittedAt: data.submittedAt,
+    time_spent: timeSpent,
+    submitted_at: data.submittedAt,
     status: 'completed',
   };
 
-  await attemptRef.update(result);
+  const { error } = await supabase.from('exam_attempts').update(result).eq('id', attemptId);
+  if (error) throw error;
 
   logger.info('Exam attempt submitted', { attemptId, studentId, score, percentage });
 
-  return { id: attemptId, ...attemptData, ...result };
+  return { id: attemptId, ...attempt, ...result };
 }
 
 /** Grade an exam attempt manually and notify the student. */
@@ -320,32 +380,35 @@ export async function gradeExamAttempt(attemptId: string, graderId: string, data
   score: number;
   feedback?: string;
 }) {
-  const attemptRef = collections.examAttempts().doc(attemptId);
-  const attempt = await attemptRef.get();
+  const supabase = getSupabaseClient()!;
+  const { data: attempt } = await supabase
+    .from('exam_attempts')
+    .select('*')
+    .eq('id', attemptId)
+    .maybeSingle();
 
-  if (!attempt.exists) {
+  if (!attempt) {
     throw new NotFoundError('Attempt not found');
   }
 
   const updateData = {
     score: data.score,
     feedback: data.feedback || '',
-    gradedBy: graderId,
-    gradedAt: new Date().toISOString(),
+    graded_by: graderId,
+    graded_at: new Date().toISOString(),
     status: 'graded',
   };
 
-  await attemptRef.update(updateData);
+  await supabase.from('exam_attempts').update(updateData).eq('id', attemptId);
 
   // Notify student of exam grade
   try {
-    const attemptData = attempt.data()!;
     await createNotification({
-      userId: attemptData.studentId as string,
+      userId: attempt.student_id as string,
       type: 'grade',
       title: 'Exam Graded',
       body: `Your exam has been graded: ${data.score} points${data.feedback ? ' - ' + data.feedback : ''}`,
-      data: { attemptId, examId: attemptData.examId as string, link: `/exams/${attemptData.examId}` },
+      data: { attemptId, examId: attempt.exam_id as string, link: `/exams/${attempt.exam_id}` },
     });
   } catch (err) {
     logger.warn('Failed to send exam grade notification', { error: err });
@@ -353,63 +416,78 @@ export async function gradeExamAttempt(attemptId: string, graderId: string, data
 
   logger.info('Exam attempt graded', { attemptId, graderId });
 
-  const updated = await attemptRef.get();
-  return { ...updated.data() };
+  const { data: updated } = await supabase
+    .from('exam_attempts')
+    .select('*')
+    .eq('id', attemptId)
+    .single();
+  
+  return updated;
 }
 
 /** Toggle whether exam grades are visible to students. */
 export async function releaseExamGrades(examId: string, gradesReleased: boolean) {
-  const ref = collections.exams().doc(examId);
-  const doc = await ref.get();
+  const supabase = getSupabaseClient()!;
+  const { data: existing } = await supabase
+    .from('exams')
+    .select('id')
+    .eq('id', examId)
+    .maybeSingle();
 
-  if (!doc.exists) {
+  if (!existing) {
     throw new NotFoundError('Exam not found');
   }
 
-  await ref.update({ gradesReleased, updatedAt: new Date().toISOString() });
+  await supabase.from('exams').update({ grades_released: gradesReleased, updated_at: new Date().toISOString() }).eq('id', examId);
   logger.info('Exam grades release toggled', { examId, gradesReleased });
 
-  const updated = await ref.get();
-  return { ...updated.data() };
+  const { data: updated } = await supabase.from('exams').select('*').eq('id', examId).single();
+  return updated;
 }
 
 /** Get all exam results for a specific student, ordered by startedAt desc. */
 export async function getExamResults(examId: string, studentId: string) {
-  const examRef = collections.exams().doc(examId);
-  const exam = await examRef.get();
-  if (!exam.exists) throw new NotFoundError('Exam not found');
+  const supabase = getSupabaseClient()!;
+  const { data: exam } = await supabase
+    .from('exams')
+    .select('grades_released')
+    .eq('id', examId)
+    .maybeSingle();
+  
+  if (!exam) throw new NotFoundError('Exam not found');
 
-  const examData = exam.data()!;
-  const resultsGated = !examData.gradesReleased;
+  const resultsGated = !exam.grades_released;
 
-  const snapshot = await collections.examAttempts()
-    .where('examId', '==', examId)
-    .where('studentId', '==', studentId)
-    .get();
+  const { data: attempts } = await supabase
+    .from('exam_attempts')
+    .select('*')
+    .eq('exam_id', examId)
+    .eq('student_id', studentId);
 
-  const attempts = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-  const sorted = attempts.sort((a: any, b: any) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+  const sorted = (attempts || []).sort((a: any, b: any) => 
+    new Date(b.started_at).getTime() - new Date(a.started_at).getTime()
+  );
 
-  return sorted.map((data: any) => {
-    if (resultsGated && data.status === 'completed') {
+  return sorted.map((a: any) => {
+    if (resultsGated && a.status === 'completed') {
       return {
-        id: data.id,
-        examId: data.examId,
-        studentId: data.studentId,
-        score: data.score,
-        totalPoints: data.totalPoints,
-        percentage: data.percentage,
-        passed: data.passed,
-        timeSpent: data.timeSpent,
-        startedAt: data.startedAt,
-        submittedAt: data.submittedAt,
-        status: data.status,
-        answers: data.answers?.map((a: { questionId: string; pointsEarned: number }) => ({
-          questionId: a.questionId,
-          pointsEarned: a.pointsEarned,
+        id: a.id,
+        examId: a.exam_id,
+        studentId: a.student_id,
+        score: a.score,
+        totalPoints: a.total_points,
+        percentage: a.percentage,
+        passed: a.passed,
+        timeSpent: a.time_spent,
+        startedAt: a.started_at,
+        submittedAt: a.submitted_at,
+        status: a.status,
+        answers: a.answers?.map((ans: { question_id: string; points_earned: number }) => ({
+          questionId: ans.question_id,
+          pointsEarned: ans.points_earned,
         })) ?? [],
       };
     }
-    return data;
+    return a;
   });
 }

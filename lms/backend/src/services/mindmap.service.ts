@@ -1,6 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { FieldValue, Timestamp } from '../database/adapter';
-import { collections } from '../database/adapter';
+import { getSupabaseClient } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 
 export interface MindMapNode {
@@ -33,15 +32,26 @@ export interface MindMap {
   updatedAt: string;
 }
 
+async function getDoc(mindmapId: string) {
+  const supabase = getSupabaseClient()!;
+  const { data } = await supabase.from('nosql_docs').select('doc_id, data').eq('collection', 'mindmaps').eq('doc_id', mindmapId).maybeSingle();
+  return data || null;
+}
+
+async function setDoc(mindmapId: string, docData: Record<string, unknown>) {
+  const supabase = getSupabaseClient()!;
+  const now = new Date().toISOString();
+  await supabase.from('nosql_docs').upsert({ collection: 'mindmaps', doc_id: mindmapId, data: docData, updated_at: now }, { onConflict: 'collection,doc_id' });
+}
+
 async function ensureOwnership(mindmapId: string, userId: string): Promise<MindMap> {
-  const ref = collections.mindmaps().doc(mindmapId);
-  const snap = await ref.get();
-  if (!snap.exists) throw new NotFoundError('Mind map not found');
-  const data = snap.data() as MindMap;
+  const existing = await getDoc(mindmapId);
+  if (!existing) throw new NotFoundError('Mind map not found');
+  const data = existing.data as MindMap;
   if (data.ownerId !== userId && !data.sharedWith.includes(userId)) {
     throw new ForbiddenError('You do not have access to this mind map');
   }
-  return { ...data, id: snap.id };
+  return { ...data, id: existing.doc_id };
 }
 
 export async function createMindMap(
@@ -60,8 +70,9 @@ export async function createMindMap(
     createdAt: now,
     updatedAt: now,
   };
-  const ref = await collections.mindmaps().add(mindMap);
-  return { id: ref.id, ...mindMap };
+  const id = uuidv4();
+  await setDoc(id, mindMap as unknown as Record<string, unknown>);
+  return { id, ...mindMap };
 }
 
 export async function getMindMapById(mindmapId: string, userId: string): Promise<MindMap> {
@@ -78,7 +89,8 @@ export async function updateMindMap(
     throw new ForbiddenError('Only the owner can edit this mind map');
   }
   const updateData: Record<string, unknown> = { ...updates, updatedAt: new Date().toISOString() };
-  await collections.mindmaps().doc(mindmapId).update(updateData);
+  const merged = { ...existing, ...updateData };
+  await setDoc(mindmapId, merged as unknown as Record<string, unknown>);
   return { ...existing, ...updates, updatedAt: updateData.updatedAt as string };
 }
 
@@ -87,25 +99,28 @@ export async function deleteMindMap(mindmapId: string, userId: string): Promise<
   if (existing.ownerId !== userId) {
     throw new ForbiddenError('Only the owner can delete this mind map');
   }
-  await collections.mindmaps().doc(mindmapId).delete();
+  const supabase = getSupabaseClient()!;
+  await supabase.from('nosql_docs').delete().eq('collection', 'mindmaps').eq('doc_id', mindmapId);
 }
 
 export async function getUserMindMaps(userId: string): Promise<MindMap[]> {
-  const snapshot = await collections.mindmaps()
-    .where('ownerId', '==', userId)
-    .get();
-  return snapshot.docs
-    .map((d) => ({ id: d.id, ...d.data() } as MindMap))
+  const supabase = getSupabaseClient()!;
+  const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
+    .eq('collection', 'mindmaps')
+    .contains('data', { ownerId: userId });
+  return (rows || [])
+    .map((r) => ({ id: r.doc_id, ...r.data as Record<string, unknown> } as unknown as MindMap))
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
 export async function getSharedMindMaps(userId: string): Promise<MindMap[]> {
-  const snapshot = await collections.mindmaps()
-    .where('sharedWith', 'array-contains', userId)
-    .get();
-  return snapshot.docs
-    .filter((d) => d.data().ownerId !== userId)
-    .map((d) => ({ id: d.id, ...d.data() } as MindMap))
+  const supabase = getSupabaseClient()!;
+  const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
+    .eq('collection', 'mindmaps')
+    .contains('data', { sharedWith: [userId] });
+  return (rows || [])
+    .filter((r) => (r.data as Record<string, unknown>).ownerId !== userId)
+    .map((r) => ({ id: r.doc_id, ...r.data as Record<string, unknown> } as unknown as MindMap))
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
@@ -120,11 +135,9 @@ export async function shareMindMap(
   }
   const currentShared = existing.sharedWith || [];
   const merged = [...new Set([...currentShared, ...shareWithIds])];
-  await collections.mindmaps().doc(mindmapId).update({
-    sharedWith: merged,
-    updatedAt: new Date().toISOString(),
-  });
-  return { ...existing, sharedWith: merged, updatedAt: new Date().toISOString() };
+  const updated = { ...existing, sharedWith: merged, updatedAt: new Date().toISOString() };
+  await setDoc(mindmapId, updated as unknown as Record<string, unknown>);
+  return updated;
 }
 
 export async function pinResource(
@@ -142,9 +155,7 @@ export async function pinResource(
     resourceId,
     resourceType,
   };
-  await collections.mindmaps().doc(mindmapId).update({
-    nodes: existing.nodes,
-    updatedAt: new Date().toISOString(),
-  });
-  return { ...existing, updatedAt: new Date().toISOString() };
+  existing.updatedAt = new Date().toISOString();
+  await setDoc(mindmapId, existing as unknown as Record<string, unknown>);
+  return { ...existing, updatedAt: existing.updatedAt };
 }

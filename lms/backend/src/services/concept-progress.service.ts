@@ -1,4 +1,4 @@
-import { collections } from '../database/adapter';
+import { getSupabaseAdmin } from './supabase';
 import { logger } from '../utils/logger';
 
 export interface ConceptProgress {
@@ -20,22 +20,23 @@ export async function toggleConceptCompletion(data: {
   classId: string;
   teacherId: string;
 }): Promise<ConceptProgress> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) throw new Error('Supabase not configured');
   const { conceptId, textbookId, chapterId, classId, teacherId } = data;
 
-  // Check if progress record exists
-  const existing = await collections.conceptReleases()
-    .where('concept_id', '==', conceptId)
-    .where('class_id', '==', classId)
-    .where('teacher_id', '==', teacherId)
-    .get();
+  const { data: existing } = await supabase
+    .from('concept_releases')
+    .select('*')
+    .eq('concept_id', conceptId)
+    .eq('class_id', classId)
+    .eq('teacher_id', teacherId);
 
   const now = new Date().toISOString();
 
-  if (existing.docs.length > 0) {
-    const doc = existing.docs[0];
-    const current = doc.data();
-    const newCompleted = !current.completed;
-    await doc.ref.update({ completed: newCompleted, updated_at: now });
+  if (existing && existing.length > 0) {
+    const doc = existing[0];
+    const newCompleted = !doc.completed;
+    await supabase.from('concept_releases').update({ completed: newCompleted, updated_at: now }).eq('id', doc.id);
     logger.info('Concept completion toggled', { conceptId, classId, teacherId, completed: newCompleted });
     return {
       id: doc.id,
@@ -49,9 +50,8 @@ export async function toggleConceptCompletion(data: {
     };
   }
 
-  // Create new progress record
   const id = `${conceptId}_${classId}_${teacherId}`;
-  const progressData = {
+  await supabase.from('concept_releases').upsert({
     id,
     concept_id: conceptId,
     textbook_id: textbookId,
@@ -60,8 +60,7 @@ export async function toggleConceptCompletion(data: {
     teacher_id: teacherId,
     completed: true,
     updated_at: now,
-  };
-  await collections.conceptReleases().doc(id).set(progressData);
+  });
   logger.info('Concept completion created', { conceptId, classId, teacherId, completed: true });
   return {
     id,
@@ -81,14 +80,17 @@ export async function getConceptCompletionStatus(
   classId: string,
   teacherId: string,
 ): Promise<boolean> {
-  const existing = await collections.conceptReleases()
-    .where('concept_id', '==', conceptId)
-    .where('class_id', '==', classId)
-    .where('teacher_id', '==', teacherId)
-    .get();
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return false;
+  const { data: existing } = await supabase
+    .from('concept_releases')
+    .select('completed')
+    .eq('concept_id', conceptId)
+    .eq('class_id', classId)
+    .eq('teacher_id', teacherId);
 
-  if (existing.docs.length === 0) return false;
-  return existing.docs[0].data().completed === true;
+  if (!existing || existing.length === 0) return false;
+  return existing[0].completed === true;
 }
 
 /** Get all concept completion statuses for a class and teacher. */
@@ -96,15 +98,17 @@ export async function getClassCompletionStatus(
   classId: string,
   teacherId: string,
 ): Promise<Record<string, boolean>> {
-  const snapshot = await collections.conceptReleases()
-    .where('class_id', '==', classId)
-    .where('teacher_id', '==', teacherId)
-    .get();
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return {};
+  const { data: docs } = await supabase
+    .from('concept_releases')
+    .select('concept_id, completed')
+    .eq('class_id', classId)
+    .eq('teacher_id', teacherId);
 
   const result: Record<string, boolean> = {};
-  for (const doc of snapshot.docs) {
-    const data = doc.data();
-    result[data.concept_id] = data.completed === true;
+  for (const doc of docs || []) {
+    result[doc.concept_id] = doc.completed === true;
   }
   return result;
 }
@@ -115,22 +119,30 @@ export async function getSubjectProgress(
   classId: string,
   teacherId: string,
 ): Promise<{ completed: number; total: number }> {
-  // Get all concepts for this subject
-  const textbooks = await collections.textbooks()
-    .where('subject_id', '==', subjectId)
-    .where('class_id', '==', classId)
-    .get();
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { completed: 0, total: 0 };
+
+  const { data: textbooks } = await supabase
+    .from('textbooks')
+    .select('id')
+    .eq('subject_id', subjectId)
+    .eq('class_id', classId);
 
   let totalConcepts = 0;
-  for (const textbook of textbooks.docs) {
-    const chapters = await collections.textbooks().doc(textbook.id).collection('chapters').get();
-    for (const chapter of chapters.docs) {
-      const concepts = await collections.textbooks().doc(textbook.id).collection('chapters').doc(chapter.id).collection('concepts').get();
-      totalConcepts += concepts.docs.length;
+  for (const textbook of textbooks || []) {
+    const { data: chapters } = await supabase
+      .from('chapters')
+      .select('id')
+      .eq('textbook_id', textbook.id);
+    for (const chapter of chapters || []) {
+      const { count } = await supabase
+        .from('concepts')
+        .select('id', { count: 'exact', head: true })
+        .eq('chapter_id', chapter.id);
+      totalConcepts += count || 0;
     }
   }
 
-  // Get completed count
   const completionStatus = await getClassCompletionStatus(classId, teacherId);
   const completed = Object.values(completionStatus).filter(Boolean).length;
 
@@ -141,18 +153,19 @@ export async function getSubjectProgress(
 export async function getStudentProgress(
   classId: string,
 ): Promise<Record<string, { completed: boolean; teacherId: string }[]>> {
-  const snapshot = await collections.conceptReleases()
-    .where('class_id', '==', classId)
-    .get();
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return {};
+  const { data: docs } = await supabase
+    .from('concept_releases')
+    .select('concept_id, completed, teacher_id')
+    .eq('class_id', classId);
 
   const result: Record<string, { completed: boolean; teacherId: string }[]> = {};
-  for (const doc of snapshot.docs) {
-    const data = doc.data();
-    const conceptId = data.concept_id;
-    if (!result[conceptId]) result[conceptId] = [];
-    result[conceptId].push({
-      completed: data.completed === true,
-      teacherId: data.teacher_id,
+  for (const doc of docs || []) {
+    if (!result[doc.concept_id]) result[doc.concept_id] = [];
+    result[doc.concept_id].push({
+      completed: doc.completed === true,
+      teacherId: doc.teacher_id,
     });
   }
   return result;

@@ -1,5 +1,6 @@
 import PDFDocument from 'pdfkit';
 import { getSupabaseAdmin } from './supabase';
+import { logger } from '../utils/logger';
 
 export async function configureSalary(schoolId: string, data: { staff_id: string; base_salary: number; allowances?: number; deductions?: number }) {
   const supabase = getSupabaseAdmin(); if (!supabase) return null;
@@ -23,6 +24,14 @@ export async function getSalaryConfig(staffId: string) {
 
 export async function runPayroll(schoolId: string, staffId: string, month: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return null;
+
+  // ponytail: duplicate-month check
+  const { data: existing } = await supabase.from('payroll_runs')
+    .select('id').eq('staff_id', staffId).eq('month', month).maybeSingle();
+  if (existing) {
+    logger.warn('Payroll already run for this month', { staffId, month });
+    return null;
+  }
   
   // 1. Fetch salary config
   const { data: config } = await supabase.from('salary_config').select('*').eq('staff_id', staffId).single();

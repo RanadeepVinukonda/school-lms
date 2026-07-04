@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as contentPublishingService from '../services/content-publishing.service';
+import { getSupabaseAdmin } from '../services/supabase';
 import { sendSuccess, sendCreated } from '../utils/response';
 
 export async function publishContent(req: Request, res: Response) {
@@ -31,8 +32,11 @@ export async function scheduleContent(req: Request, res: Response) {
 }
 
 export async function getStudentContent(req: Request, res: Response) {
-  const userDoc = await (await import('../database/adapter')).collections.users().doc(req.user!.uid).get();
-  const classIds = userDoc.data()?.classIds || [];
+  const supabase = getSupabaseAdmin();
+  const { data: userDoc } = supabase
+    ? await supabase.from('users').select('classIds').eq('id', req.user!.uid).single()
+    : { data: null };
+  const classIds = (userDoc as any)?.classIds || [];
   const result = await contentPublishingService.getPublishedContentForStudent(req.user!.uid, classIds);
   sendSuccess(res, result);
 }

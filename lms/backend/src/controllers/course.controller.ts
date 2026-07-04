@@ -15,7 +15,7 @@ export async function createCourse(req: Request, res: Response) {
 }
 
 export async function updateCourse(req: Request, res: Response) {
-  const old = await courseService.getCourseById(req.params.courseId);
+  const old: any = await courseService.getCourseById(req.params.courseId);
   const result = await courseService.updateCourse(req.params.courseId, req.body);
   logAudit(adminAuditEntry(req as ReqWithUser, 'course.update', req.params.courseId, 'course', old.title, {
     oldValue: old,
@@ -26,7 +26,7 @@ export async function updateCourse(req: Request, res: Response) {
 }
 
 export async function deleteCourse(req: Request, res: Response) {
-  const course = await courseService.getCourseById(req.params.courseId);
+  const course: any = await courseService.getCourseById(req.params.courseId);
   await requireNoDependenciesOrThrow('course', req.params.courseId, getCourseImpact);
   await courseService.deleteCourse(req.params.courseId);
   logAudit(adminAuditEntry(req as ReqWithUser, 'course.delete', req.params.courseId, 'course', course.title));

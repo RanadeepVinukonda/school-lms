@@ -9,7 +9,7 @@ import { sendSuccess, sendCreated } from '../utils/response';
 
 export async function createAssignment(req: Request, res: Response) {
   const result = await assignmentService.createAssignment({ ...req.body, schoolId: req.user!.school_id });
-  logAudit(adminAuditEntry(req as ReqWithUser, 'assignment.create', result.id, 'assignment', result.title, {
+  logAudit(adminAuditEntry(req as ReqWithUser, 'assignment.create', result.id as string, 'assignment', result.title as string, {
     newValue: result,
     summary: `Created assignment "${result.title}"`,
   }));
@@ -19,7 +19,7 @@ export async function createAssignment(req: Request, res: Response) {
 export async function updateAssignment(req: Request, res: Response) {
   const old = await assignmentService.getAssignmentById(req.params.assignmentId);
   const result = await assignmentService.updateAssignment(req.params.assignmentId, req.body);
-  logAudit(adminAuditEntry(req as ReqWithUser, 'assignment.update', req.params.assignmentId, 'assignment', old.title, {
+  logAudit(adminAuditEntry(req as ReqWithUser, 'assignment.update', req.params.assignmentId, 'assignment', old.title as string, {
     oldValue: old,
     newValue: result,
     summary: `Updated assignment "${old.title}"`,
@@ -31,7 +31,7 @@ export async function deleteAssignment(req: Request, res: Response) {
   const assignment = await assignmentService.getAssignmentById(req.params.assignmentId);
   await requireNoDependenciesOrThrow('assignment', req.params.assignmentId, getAssignmentImpact);
   await assignmentService.deleteAssignment(req.params.assignmentId);
-  logAudit(adminAuditEntry(req as ReqWithUser, 'assignment.delete', req.params.assignmentId, 'assignment', assignment.title));
+  logAudit(adminAuditEntry(req as ReqWithUser, 'assignment.delete', req.params.assignmentId, 'assignment', assignment.title as string));
   sendSuccess(res, null, 'Assignment deleted');
 }
 

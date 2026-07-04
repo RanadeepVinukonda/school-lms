@@ -1,41 +1,12 @@
 import { Pool, PoolClient } from 'pg';
-import { Transaction } from './interfaces/transaction';
+import { getSupabaseAdmin } from '../services/supabase';
 import { logger } from '../utils/logger';
 
-// ── PseudoTx — sequential writes, no ACID guarantee ──
-// Used when no pg pool is configured or in tests.
-export class PseudoTx implements Transaction {
-  private _w: Array<{ t: 's' | 'u' | 'd'; colName: string; id: string; d?: Record<string, unknown> }> = [];
-
-  async get(collection: string, docId: string): Promise<unknown> {
-    const { DocRef } = await import('./adapter');
-    const snap = await new DocRef(collection, docId).get();
-    return snap.data();
-  }
-
-  async set(collection: string, docId: string, data: Record<string, unknown>): Promise<void> {
-    this._w.push({ t: 's', colName: collection, id: docId, d: data });
-  }
-
-  async update(collection: string, docId: string, data: Record<string, unknown>): Promise<void> {
-    this._w.push({ t: 'u', colName: collection, id: docId, d: data });
-  }
-
-  async delete(collection: string, docId: string): Promise<void> {
-    this._w.push({ t: 'd', colName: collection, id: docId });
-  }
-
-  async commit(): Promise<void> {
-    const { DocRef } = await import('./adapter');
-    for (const w of this._w) {
-      const ref = new DocRef(w.colName, w.id);
-      switch (w.t) {
-        case 's': await ref.set(w.d!); break;
-        case 'u': await ref.update(w.d!); break;
-        case 'd': await ref.delete(); break;
-      }
-    }
-  }
+interface Transaction {
+  get(collection: string, docId: string): Promise<unknown>;
+  set(collection: string, docId: string, data: Record<string, unknown>): Promise<void>;
+  update(collection: string, docId: string, data: Record<string, unknown>): Promise<void>;
+  delete(collection: string, docId: string): Promise<void>;
 }
 
 // ── PgTransaction — real ACID transaction via pg pool client ──
@@ -46,30 +17,33 @@ class PgTransaction implements Transaction {
   constructor(private client: PoolClient) {}
 
   async get(collection: string, docId: string): Promise<unknown> {
-    // Read directly via Supabase client (reads don't need transactional isolation here)
-    const { DocRef } = await import('./adapter');
-    const snap = await new DocRef(collection, docId).get();
-    return snap.data();
+    const supabase = getSupabaseAdmin();
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data } = await supabase.from(collection).select('*').eq('id', docId).maybeSingle();
+    return data || null;
   }
 
   async set(collection: string, docId: string, data: Record<string, unknown>): Promise<void> {
     this._ops.push(async () => {
-      const { DocRef } = await import('./adapter');
-      await new DocRef(collection, docId).set(data);
+      const supabase = getSupabaseAdmin();
+      if (!supabase) throw new Error('Supabase not configured');
+      await supabase.from(collection).upsert({ id: docId, ...data }).eq('id', docId);
     });
   }
 
   async update(collection: string, docId: string, data: Record<string, unknown>): Promise<void> {
     this._ops.push(async () => {
-      const { DocRef } = await import('./adapter');
-      await new DocRef(collection, docId).update(data);
+      const supabase = getSupabaseAdmin();
+      if (!supabase) throw new Error('Supabase not configured');
+      await supabase.from(collection).update(data).eq('id', docId);
     });
   }
 
   async delete(collection: string, docId: string): Promise<void> {
     this._ops.push(async () => {
-      const { DocRef } = await import('./adapter');
-      await new DocRef(collection, docId).delete();
+      const supabase = getSupabaseAdmin();
+      if (!supabase) throw new Error('Supabase not configured');
+      await supabase.from(collection).delete().eq('id', docId);
     });
   }
 
@@ -102,19 +76,15 @@ function getPool(): Pool | null {
 export class TransactionManager {
   /**
    * Runs a set of database operations within a PostgreSQL transaction.
-   * Uses real BEGIN/COMMIT/ROLLBACK when DATABASE_URL is configured.
-   * Falls back to sequential writes (PseudoTx) when no pg pool is available.
+   * Uses real BEGIN/COMMIT/ROLLBACK. Throws if DATABASE_URL is not set.
    */
   async runTransaction<T>(updateFunction: (transaction: Transaction) => Promise<T>): Promise<T> {
     const pool = getPool();
 
     if (!pool) {
-      // Fallback: sequential writes without ACID guarantee
-      logger.warn('TransactionManager: DATABASE_URL not set, using sequential writes (no ACID)');
-      const t = new PseudoTx();
-      const r = await updateFunction(t);
-      await t.commit();
-      return r;
+      throw new Error(
+        'TransactionManager: DATABASE_URL not configured. Set DATABASE_URL in your environment to use real PostgreSQL transactions.'
+      );
     }
 
     const client = await pool.connect();

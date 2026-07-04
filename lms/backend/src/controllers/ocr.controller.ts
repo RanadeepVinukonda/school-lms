@@ -3,7 +3,7 @@ import * as ocrService from '../services/ocr.service';
 import { sendSuccess, sendError } from '../utils/response';
 import { sendCreated } from '../utils/response';
 import { logger } from '../utils/logger';
-import { getCollection } from '../database/adapter';
+import { getSupabaseAdmin } from '../services/supabase';
 import { AppError, ValidationError } from '../utils/errors';
 
 export async function scanImage(req: Request, res: Response) {
@@ -49,6 +49,7 @@ export async function scanMultipleImages(req: Request, res: Response) {
 }
 
 export async function mapToConcept(req: Request, res: Response) {
+  const supabase = getSupabaseAdmin()!;
   const { text, textbookId, count, type } = req.body;
 
   if (!text || typeof text !== 'string') {
@@ -69,20 +70,14 @@ export async function mapToConcept(req: Request, res: Response) {
     return;
   }
 
-  const chaptersSnap = await getCollection('textbooks').doc(textbookId).collection('chapters').get();
-  const concepts: Array<{ id: string; title: string; summary: string }> = [];
-
-  for (const chapterDoc of chaptersSnap.docs) {
-    const conceptsSnap = await chapterDoc.ref.collection('concepts').get();
-    conceptsSnap.docs.forEach((doc) => {
-      const data = doc.data();
-      concepts.push({
-        id: doc.id,
-        title: data.title || 'Untitled',
-        summary: data.summary || '',
-      });
-    });
-  }
+  const { data: chapters } = await supabase.from('chapters').select('id').eq('textbook_id', textbookId);
+  const chapterIds = (chapters || []).map((c: any) => c.id);
+  const { data: conceptRows } = chapterIds.length > 0
+    ? await supabase.from('concepts').select('id, title, summary').in('chapter_id', chapterIds)
+    : { data: [] };
+  const concepts: Array<{ id: string; title: string; summary: string }> = (conceptRows || []).map((c: any) => ({
+    id: c.id, title: c.title || 'Untitled', summary: c.summary || '',
+  }));
 
   const mapping = await ocrService.mapTextToConcept(text, concepts);
 
@@ -191,7 +186,8 @@ export async function pushQuiz(req: Request, res: Response) {
     updatedAt: now,
   };
 
-  await getCollection('quizV2').doc(id).set(doc);
+  const supabase = getSupabaseAdmin()!;
+  await supabase.from('nosql_docs').upsert({ collection: 'quizV2', doc_id: id, data: doc }, { onConflict: 'collection,doc_id' });
   logger.info('OCR quiz pushed to quizV2', { quizId: id, classId, questionCount: questions.length });
   sendCreated(res, doc);
 }
@@ -232,35 +228,34 @@ export async function pushAssignment(req: Request, res: Response) {
     updatedAt: now,
   };
 
-  await getCollection('assignmentV2').doc(id).set(doc);
+  const supabase = getSupabaseAdmin()!;
+  await supabase.from('nosql_docs').upsert({ collection: 'assignmentV2', doc_id: id, data: doc }, { onConflict: 'collection,doc_id' });
   logger.info('OCR assignment pushed to assignmentV2', { assignmentId: id, classId });
   sendCreated(res, doc);
 }
 
 export async function getConceptsForTextbook(req: Request, res: Response) {
+  const supabase = getSupabaseAdmin()!;
   const { textbookId } = req.params;
 
   if (!textbookId) {
     throw new ValidationError('textbookId parameter is required');
   }
 
-  const chaptersSnap = await getCollection('textbooks').doc(textbookId).collection('chapters').get();
-  const allConcepts: Array<{ id: string; chapterId: string; chapterTitle: string; title: string; summary: string }> = [];
+  const { data: chapters } = await supabase.from('chapters').select('id, title').eq('textbook_id', textbookId);
+  const chapterIds = (chapters || []).map((c: any) => c.id);
+  const { data: conceptRows } = chapterIds.length > 0
+    ? await supabase.from('concepts').select('id, chapter_id, title, summary').in('chapter_id', chapterIds)
+    : { data: [] };
 
-  for (const chapterDoc of chaptersSnap.docs) {
-    const chapterData = chapterDoc.data();
-    const conceptsSnap = await chapterDoc.ref.collection('concepts').get();
-    conceptsSnap.docs.forEach((doc) => {
-      const data = doc.data();
-      allConcepts.push({
-        id: doc.id,
-        chapterId: chapterDoc.id,
-        chapterTitle: chapterData.title || 'Untitled Chapter',
-        title: data.title || 'Untitled',
-        summary: data.summary || '',
-      });
-    });
-  }
+  const chapterMap = Object.fromEntries((chapters || []).map((c: any) => [c.id, c.title]));
+  const allConcepts = (conceptRows || []).map((c: any) => ({
+    id: c.id,
+    chapterId: c.chapter_id,
+    chapterTitle: chapterMap[c.chapter_id] || 'Untitled Chapter',
+    title: c.title || 'Untitled',
+    summary: c.summary || '',
+  }));
 
   sendSuccess(res, allConcepts);
 }

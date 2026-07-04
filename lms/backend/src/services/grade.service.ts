@@ -1,32 +1,27 @@
 import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../database/adapter';
+import { getSupabaseClient } from './supabase';
+import { buildDocData } from '../database/schema';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 import { createNotification, createBulkNotifications } from './notification.service';
-import type { GradeCollection } from '../database/interfaces/collections';
 
-let _gradeCollection: GradeCollection | null = null;
-export function setGradeCollection(col: GradeCollection): void { _gradeCollection = col; }
-function gradeCol() { return _gradeCollection ?? (collections.grades() as unknown as GradeCollection); }
+async function gradeRow(gradeId: string) {
+  const supabase = getSupabaseClient()!;
+  const { data } = await supabase.from('grades').select('*').eq('id', gradeId).maybeSingle();
+  if (!data) return null;
+  return { id: data.id, ...buildDocData(data as Record<string, unknown>, 'grades') } as any;
+}
 
 /** Get all grades for a student, optionally filtered by academic year/schoolId. */
 export async function getStudentGrades(studentId: string, academicYear?: string, schoolId?: string) {
-  let query = collections.grades()
-    .where('studentId', '==', studentId);
+  const supabase = getSupabaseClient()!;
+  let query = supabase.from('grades').select('*').eq('studentId', studentId);
+  if (schoolId) query = query.contains('data', { schoolId });
+  if (academicYear) query = query.contains('data', { academicYear });
 
-  if (schoolId) {
-    query = query.where('schoolId', '==', schoolId);
-  }
-
-  query = query.orderBy('createdAt', 'desc');
-
-  if (academicYear) {
-    query = query.where('academicYear', '==', academicYear);
-  }
-
-  const snapshot = await query.get();
-  return snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const { data: rows } = await query.order('createdAt', { ascending: false });
+  return (rows || []).map((row) => ({ id: row.id, ...buildDocData(row as Record<string, unknown>, 'grades') }));
 }
 
 /** Query the gradebook with filters (classId, courseId, subjectId, term, academicYear, schoolId), paginated. */
@@ -40,28 +35,31 @@ export async function getGradebook(query: {
   limit?: string;
   schoolId?: string;
 }) {
+  const supabase = getSupabaseClient()!;
   const { page, limit } = parsePagination(query);
   const offset = (page - 1) * limit;
 
-  let baseQuery: any = collections.grades();
+  let dbQuery = supabase.from('grades').select('*', { count: 'exact', head: true });
+  if (query.schoolId) dbQuery = dbQuery.contains('data', { schoolId: query.schoolId });
+  if (query.classId) dbQuery = dbQuery.contains('data', { classId: query.classId });
+  if (query.courseId) dbQuery = dbQuery.eq('courseId', query.courseId);
+  if (query.subjectId) dbQuery = dbQuery.contains('data', { subjectId: query.subjectId });
+  if (query.term) dbQuery = dbQuery.contains('data', { term: query.term });
+  if (query.academicYear) dbQuery = dbQuery.contains('data', { academicYear: query.academicYear });
 
-  if (query.schoolId) {
-    baseQuery = baseQuery.where('schoolId', '==', query.schoolId);
-  }
+  const { count } = await dbQuery.order('createdAt', { ascending: false });
+  const total = count || 0;
 
-  baseQuery = baseQuery.orderBy('createdAt', 'desc');
+  let dataQuery = supabase.from('grades').select('*');
+  if (query.schoolId) dataQuery = dataQuery.contains('data', { schoolId: query.schoolId });
+  if (query.classId) dataQuery = dataQuery.contains('data', { classId: query.classId });
+  if (query.courseId) dataQuery = dataQuery.eq('courseId', query.courseId);
+  if (query.subjectId) dataQuery = dataQuery.contains('data', { subjectId: query.subjectId });
+  if (query.term) dataQuery = dataQuery.contains('data', { term: query.term });
+  if (query.academicYear) dataQuery = dataQuery.contains('data', { academicYear: query.academicYear });
 
-  if (query.classId) baseQuery = baseQuery.where('classId', '==', query.classId);
-  if (query.courseId) baseQuery = baseQuery.where('courseId', '==', query.courseId);
-  if (query.subjectId) baseQuery = baseQuery.where('subjectId', '==', query.subjectId);
-  if (query.term) baseQuery = baseQuery.where('term', '==', query.term);
-  if (query.academicYear) baseQuery = baseQuery.where('academicYear', '==', query.academicYear);
-
-  const countSnap = await baseQuery.count().get();
-  const total = countSnap.data().count;
-
-  const snapshot = await baseQuery.offset(offset).limit(limit).get();
-  const items = snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id }));
+  const { data: rows } = await dataQuery.order('createdAt', { ascending: false }).range(offset, offset + limit - 1);
+  const items = (rows || []).map((row: any) => ({ id: row.id, ...buildDocData(row, 'grades') }));
 
   return { items, total, page, limit };
 }
@@ -74,43 +72,44 @@ export async function updateGrade(gradeId: string, data: {
   remarks?: string;
   gradedBy: string;
 }) {
-  const ref = collections.grades().doc(gradeId);
-  const doc = await ref.get();
-
-  if (!doc.exists) {
-    throw new NotFoundError('Grade not found');
-  }
+  const existing = await gradeRow(gradeId);
+  if (!existing) throw new NotFoundError('Grade not found');
 
   const percentage = Math.round((data.score / data.totalPoints) * 100);
   const letterGrade = data.letterGrade || calculateLetterGrade(percentage);
 
-  const updateData = {
-    ...data,
+  const merged = {
+    ...existing,
+    score: data.score,
+    totalPoints: data.totalPoints,
     letterGrade,
     percentage,
+    remarks: data.remarks || '',
+    gradedBy: data.gradedBy,
     updatedAt: new Date().toISOString(),
   };
 
-  await ref.update(updateData);
+  const supabase = getSupabaseClient()!;
+  await supabase.from('grades').update({
+    score: data.score,
+    letterGrade,
+    data: merged,
+  }).eq('id', gradeId);
 
-  // Notify student of grade
   try {
-    const gradeData = doc.data()!;
     await createNotification({
-      userId: gradeData.studentId as string,
+      userId: existing.studentId as string,
       type: 'grade',
       title: 'Grade Updated',
       body: `Your grade has been updated: ${data.score}/${data.totalPoints} (${percentage}%)`,
-      data: { gradeId, courseId: gradeData.courseId as string, link: `/student/subjects/${gradeData.courseId}` },
+      data: { gradeId, courseId: existing.courseId as string, link: `/student/subjects/${existing.courseId}` },
     });
   } catch (err) {
     logger.warn('Failed to send grade notification', { error: err });
   }
 
-  const updated = await ref.get();
   logger.info('Grade updated', { gradeId, gradedBy: data.gradedBy });
-
-  return { ...updated.data() };
+  return merged;
 }
 
 /** Bulk update or insert grades for multiple students in a course. Notifies all affected students. */
@@ -120,27 +119,29 @@ export async function bulkUpdate(grades: Array<{
   totalPoints: number;
   feedback?: string;
 }>, courseId: string, gradedBy: string, schoolId?: string) {
+  const supabase = getSupabaseClient()!;
   const results = [];
 
   for (const grade of grades) {
     const gradeId = `${courseId}_${grade.studentId}`;
-    const ref = collections.grades().doc(gradeId);
-    const existing = await ref.get();
+    const existing = await gradeRow(gradeId);
 
     const percentage = Math.round((grade.score / grade.totalPoints) * 100);
     const now = new Date().toISOString();
 
-    if (existing.exists) {
-      await ref.update({
+    if (existing) {
+      const merged = {
+        ...existing,
         score: grade.score,
         totalPoints: grade.totalPoints,
         percentage,
         feedback: grade.feedback || '',
         gradedBy,
         updatedAt: now,
-      });
+      };
+      await supabase.from('grades').update({ score: grade.score, data: merged }).eq('id', gradeId);
     } else {
-      await ref.set({
+      const docData = {
         studentId: grade.studentId,
         courseId,
         score: grade.score,
@@ -151,13 +152,19 @@ export async function bulkUpdate(grades: Array<{
         schoolId: schoolId || '',
         createdAt: now,
         updatedAt: now,
+      };
+      await supabase.from('grades').insert({
+        id: gradeId,
+        studentId: grade.studentId,
+        courseId,
+        score: grade.score,
+        data: docData,
       });
     }
 
     results.push({ id: gradeId, studentId: grade.studentId, score: grade.score, percentage });
   }
 
-  // Notify all graded students
   try {
     const notifications = results.map((r) => ({
       userId: r.studentId,
@@ -172,27 +179,21 @@ export async function bulkUpdate(grades: Array<{
   }
 
   logger.info('Bulk grades updated', { courseId, count: grades.length, gradedBy });
-
   return results;
 }
 
 /** Generate a student's report card for a given academic year and term with overall GPA. */
 export async function generateReport(studentId: string, academicYear: string, term: string, schoolId?: string) {
-  let query = collections.grades()
-    .where('studentId', '==', studentId)
-    .where('academicYear', '==', academicYear)
-    .where('term', '==', term);
+  const supabase = getSupabaseClient()!;
+  let query = supabase.from('grades').select('*').eq('studentId', studentId)
+    .contains('data', { academicYear, term });
+  if (schoolId) query = query.contains('data', { schoolId });
 
-  if (schoolId) {
-    query = query.where('schoolId', '==', schoolId);
-  }
+  const { data: rows } = await query;
+  const gradesList = (rows || []).map((row) => buildDocData(row as Record<string, unknown>, 'grades'));
 
-  const gradesSnapshot = await query.get();
-
-  const grades = gradesSnapshot.docs.map((d) => d.data());
-
-  const totalScore = grades.reduce((sum: number, g: { score?: number; totalPoints?: number }) => sum + (g.score || 0), 0);
-  const totalPoints = grades.reduce((sum: number, g: { score?: number; totalPoints?: number }) => sum + (g.totalPoints || 1), 0);
+  const totalScore = gradesList.reduce((sum: number, g: Record<string, unknown>) => sum + ((g.score as number) || 0), 0);
+  const totalPoints = gradesList.reduce((sum: number, g: Record<string, unknown>) => sum + ((g.totalPoints as number) || 1), 0);
   const overallPercentage = totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0;
   const gpa = calculateGPA(overallPercentage);
 
@@ -200,9 +201,9 @@ export async function generateReport(studentId: string, academicYear: string, te
     studentId,
     academicYear,
     term,
-    grades,
+    grades: gradesList,
     summary: {
-      totalCourses: grades.length,
+      totalCourses: gradesList.length,
       totalScore,
       totalPoints,
       overallPercentage,

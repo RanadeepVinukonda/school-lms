@@ -1,6 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { FieldValue } from '../database/adapter';
-import { collections } from '../database/adapter';
+import { getSupabaseClient } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
@@ -10,19 +9,22 @@ export async function listAllQuizzes(query: { page?: string; limit?: string; cou
   const { page, limit } = parsePagination(query);
   const offset = (page - 1) * limit;
 
-  let baseQuery: any = collections.quizzes();
-  if (query.schoolId) {
-    baseQuery = baseQuery.where('schoolId', '==', query.schoolId);
-  }
-  baseQuery = baseQuery.orderBy('createdAt', 'desc');
-  if (query.courseId) baseQuery = baseQuery.where('courseId', '==', query.courseId);
+  const supabase = getSupabaseClient()!;
+  let q = supabase.from('quizzes').select('*', { count: 'exact' });
+  
+  if (query.schoolId) q = q.eq('school_id', query.schoolId);
+  if (query.courseId) q = q.eq('course_id', query.courseId);
+  q = q.order('created_at', { ascending: false });
 
-  const countSnap = await baseQuery.count().get();
-  const total = countSnap.data().count;
-  const snapshot = await baseQuery.offset(offset).limit(limit).get();
-  const items = snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id }));
+  const { data: items, count, error } = await q.range(offset, offset + limit - 1);
+  if (error) throw error;
 
-  return { items, total, page, limit };
+  return {
+    items: items || [],
+    total: count || 0,
+    page,
+    limit,
+  };
 }
 
 /** Create a new quiz with calculated totalPoints. */
@@ -49,87 +51,120 @@ export async function createQuiz(data: {
   instructions?: string;
   schoolId?: string;
 }) {
+  const supabase = getSupabaseClient()!;
   const quizId = uuidv4();
   const now = new Date().toISOString();
 
   const totalPoints = data.questions.reduce((sum, q) => sum + q.points, 0);
 
   const quizData = {
-    ...data,
     id: quizId,
-    totalPoints,
-    attemptCount: 0,
-    createdAt: now,
-    updatedAt: now,
+    title: data.title,
+    description: data.description || '',
+    course_id: data.courseId,
+    questions: data.questions,
+    total_points: totalPoints,
+    attempt_count: 0,
+    created_at: now,
+    updated_at: now,
+    school_id: data.schoolId || null,
+    time_limit: data.timeLimit,
+    passing_score: data.passingScore,
+    max_attempts: data.maxAttempts,
+    shuffle_questions: data.shuffleQuestions,
+    show_results: data.showResults,
+    is_published: data.isPublished,
+    due_date: data.dueDate,
   };
 
-  await collections.quizzes().doc(quizId).set(quizData);
+  const { error } = await supabase.from('quizzes').insert(quizData);
+  if (error) throw error;
 
   logger.info('Quiz created', { quizId, courseId: data.courseId, title: data.title });
 
-  return { ...quizData };
+  return { ...quizData, courseId: data.courseId };
 }
 
 /** Update quiz fields. Throws NotFoundError if missing. */
 export async function updateQuiz(quizId: string, data: Record<string, unknown>) {
-  const ref = collections.quizzes().doc(quizId);
-  const doc = await ref.get();
+  const supabase = getSupabaseClient()!;
+  const { data: existing } = await supabase
+    .from('quizzes')
+    .select('id')
+    .eq('id', quizId)
+    .maybeSingle();
 
-  if (!doc.exists) {
+  if (!existing) {
     throw new NotFoundError('Quiz not found');
   }
 
-  const updateData = { ...data, updatedAt: new Date().toISOString() };
-  await ref.update(updateData);
+  const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  for (const [k, v] of Object.entries(data)) {
+    updateData[k] = v;
+  }
 
-  const updated = await ref.get();
+  const { error } = await supabase.from('quizzes').update(updateData).eq('id', quizId);
+  if (error) throw error;
+
+  const { data: updated } = await supabase.from('quizzes').select('*').eq('id', quizId).single();
   logger.info('Quiz updated', { quizId });
 
-  return { ...updated.data() };
+  return updated;
 }
 
 /** Delete a quiz by id. Throws NotFoundError if missing. */
 export async function deleteQuiz(quizId: string) {
-  const ref = collections.quizzes().doc(quizId);
-  const doc = await ref.get();
+  const supabase = getSupabaseClient()!;
+  const { data: existing } = await supabase
+    .from('quizzes')
+    .select('id')
+    .eq('id', quizId)
+    .maybeSingle();
 
-  if (!doc.exists) {
+  if (!existing) {
     throw new NotFoundError('Quiz not found');
   }
 
-  await ref.delete();
+  await supabase.from('quizzes').delete().eq('id', quizId);
   logger.info('Quiz deleted', { quizId });
 }
 
 /** Fetch a single quiz by id. Throws NotFoundError if missing. */
 export async function getQuizById(quizId: string) {
-  const ref = collections.quizzes().doc(quizId);
-  const doc = await ref.get();
+  const supabase = getSupabaseClient()!;
+  const { data, error } = await supabase
+    .from('quizzes')
+    .select('*')
+    .eq('id', quizId)
+    .maybeSingle();
 
-  if (!doc.exists) {
+  if (error || !data) {
     throw new NotFoundError('Quiz not found');
   }
 
-  return { ...doc.data() };
+  return data;
 }
 
 /** Start a quiz attempt for a student. Enforces maxAttempts. */
 export async function startAttempt(quizId: string, studentId: string) {
-  const quizRef = collections.quizzes().doc(quizId);
-  const quiz = await quizRef.get();
+  const supabase = getSupabaseClient()!;
+  const { data: quiz } = await supabase
+    .from('quizzes')
+    .select('*')
+    .eq('id', quizId)
+    .maybeSingle();
 
-  if (!quiz.exists) {
+  if (!quiz) {
     throw new NotFoundError('Quiz not found');
   }
 
-  const quizData = quiz.data()!;
+  const { count: existingCount } = await supabase
+    .from('quiz_attempts')
+    .select('id', { count: 'exact', head: true })
+    .eq('quiz_id', quizId)
+    .eq('student_id', studentId);
 
-  const attemptsSnapshot = await collections.quizAttempts()
-    .where('quizId', '==', quizId)
-    .where('studentId', '==', studentId)
-    .get();
-
-  if (quizData.maxAttempts && attemptsSnapshot.size >= quizData.maxAttempts) {
+  if (quiz.max_attempts && (existingCount || 0) >= quiz.max_attempts) {
     throw new ForbiddenError('Maximum attempts reached');
   }
 
@@ -138,25 +173,27 @@ export async function startAttempt(quizId: string, studentId: string) {
 
   const attempt = {
     id: attemptId,
-    quizId,
-    studentId,
-    startedAt: now,
-    submittedAt: null,
+    quiz_id: quizId,
+    student_id: studentId,
+    started_at: now,
+    submitted_at: null,
     answers: [],
     score: null,
-    totalPoints: quizData.totalPoints,
+    total_points: quiz.total_points,
     percentage: null,
     passed: null,
-    timeSpent: 0,
+    time_spent: 0,
     status: 'in_progress',
   };
 
-  await collections.quizAttempts().doc(attemptId).set(attempt);
-  await quizRef.update({ attemptCount: FieldValue.increment(1) });
+  await supabase.from('quiz_attempts').insert(attempt);
+  
+  const { data: currentQuiz } = await supabase.from('quizzes').select('attempt_count').eq('id', quizId).single();
+  await supabase.from('quizzes').update({ attempt_count: (currentQuiz?.attempt_count || 0) + 1 }).eq('id', quizId);
 
   logger.info('Quiz attempt started', { quizId, studentId, attemptId });
 
-  return { ...attempt, questions: quizData.questions };
+  return { ...attempt, questions: quiz.questions };
 }
 
 /** Submit a quiz attempt, auto-grade MC / true-false / short-answer questions. */
@@ -169,30 +206,36 @@ export async function submitAttempt(attemptId: string, studentId: string, data: 
   startedAt: string;
   submittedAt: string;
 }) {
-  const attemptRef = collections.quizAttempts().doc(attemptId);
-  const attempt = await attemptRef.get();
+  const supabase = getSupabaseClient()!;
+  const { data: attempt } = await supabase
+    .from('quiz_attempts')
+    .select('*')
+    .eq('id', attemptId)
+    .maybeSingle();
 
-  if (!attempt.exists) {
+  if (!attempt) {
     throw new NotFoundError('Attempt not found');
   }
 
-  const attemptData = attempt.data()!;
-  if (attemptData.studentId !== studentId) {
+  if (attempt.student_id !== studentId) {
     throw new ForbiddenError('Not your attempt');
   }
 
-  if (attemptData.status !== 'in_progress') {
+  if (attempt.status !== 'in_progress') {
     throw new ForbiddenError('Attempt already submitted');
   }
 
-  const quizRef = collections.quizzes().doc(attemptData.quizId);
-  const quiz = await quizRef.get();
-  const quizData = quiz.data()!;
+  const { data: quiz } = await supabase
+    .from('quizzes')
+    .select('*')
+    .eq('id', attempt.quiz_id)
+    .single();
 
   let score = 0;
   const gradedAnswers = data.answers.map((answer) => {
-    const question = quizData.questions.find(
-      (q: { questionText: string; type: string; points: number; correctAnswer?: string }) => q.questionText === answer.questionId
+    const question = quiz.questions.find(
+      (q: { questionText?: string; id?: string; type: string; points: number; correctAnswer?: string }) => 
+        q.id === answer.questionId || q.questionText === answer.questionId
     );
 
     if (!question) {
@@ -211,87 +254,104 @@ export async function submitAttempt(attemptId: string, studentId: string, data: 
     if (isCorrect) score += pointsEarned;
 
     return {
-      questionId: question.questionText,
+      question_id: question.questionText || question.id || answer.questionId,
       answer: answer.answer,
-      isCorrect,
-      pointsEarned,
-      timeSpent: answer.timeSpent || 0,
+      is_correct: isCorrect,
+      points_earned: pointsEarned,
+      time_spent: answer.timeSpent || 0,
     };
   });
 
   const timeSpent = data.answers.reduce((sum, a) => sum + (a.timeSpent || 0), 0);
-  const percentage = Math.round((score / quizData.totalPoints) * 100);
-  const passingScore = quizData.passingScore || 50;
+  const percentage = Math.round((score / quiz.total_points) * 100);
+  const passingScore = quiz.passing_score || 50;
   const passed = percentage >= passingScore;
 
   const result = {
     answers: gradedAnswers,
     score,
-    totalPoints: quizData.totalPoints,
+    total_points: quiz.total_points,
     percentage,
     passed,
-    timeSpent,
-    submittedAt: data.submittedAt,
+    time_spent: timeSpent,
+    submitted_at: data.submittedAt,
     status: 'completed',
   };
 
-  await attemptRef.update(result);
+  const { error } = await supabase.from('quiz_attempts').update(result).eq('id', attemptId);
+  if (error) throw error;
 
   logger.info('Quiz attempt submitted', { attemptId, studentId, score, percentage });
 
-  return { id: attemptId, ...attemptData, ...result };
+  const { data: updated } = await supabase
+    .from('quiz_attempts')
+    .select('*')
+    .eq('id', attemptId)
+    .single();
+  
+  return updated;
 }
 
 /** Toggle whether quiz results (correct answers) are visible to students. */
 export async function releaseQuizGrades(quizId: string, showResults: boolean) {
-  const ref = collections.quizzes().doc(quizId);
-  const doc = await ref.get();
+  const supabase = getSupabaseClient()!;
+  const { data: existing } = await supabase
+    .from('quizzes')
+    .select('id')
+    .eq('id', quizId)
+    .maybeSingle();
 
-  if (!doc.exists) {
+  if (!existing) {
     throw new NotFoundError('Quiz not found');
   }
 
-  await ref.update({ showResults, updatedAt: new Date().toISOString() });
+  await supabase.from('quizzes').update({ show_results: showResults, updated_at: new Date().toISOString() }).eq('id', quizId);
   logger.info('Quiz grades release toggled', { quizId, showResults });
 
-  const updated = await ref.get();
-  return { ...updated.data() };
+  const { data: updated } = await supabase.from('quizzes').select('*').eq('id', quizId).single();
+  return updated;
 }
 
 /** Get all quiz results for a student, ordered by startedAt desc. */
 export async function getQuizResults(quizId: string, studentId: string) {
-  const quizRef = collections.quizzes().doc(quizId);
-  const quiz = await quizRef.get();
-  if (!quiz.exists) throw new NotFoundError('Quiz not found');
+  const supabase = getSupabaseClient()!;
+  const { data: quiz } = await supabase
+    .from('quizzes')
+    .select('show_results')
+    .eq('id', quizId)
+    .maybeSingle();
+  
+  if (!quiz) throw new NotFoundError('Quiz not found');
 
-  const quizData = quiz.data()!;
-  const resultsGated = !quizData.showResults;
+  const resultsGated = !quiz.show_results;
 
-  const snapshot = await collections.quizAttempts()
-    .where('quizId', '==', quizId)
-    .where('studentId', '==', studentId)
-    .get();
+  const { data: attempts } = await supabase
+    .from('quiz_attempts')
+    .select('*')
+    .eq('quiz_id', quizId)
+    .eq('student_id', studentId);
 
-  const attempts = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-  const sorted = attempts.sort((a: any, b: any) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+  const sorted = (attempts || []).sort((a: any, b: any) => 
+    new Date(b.started_at).getTime() - new Date(a.started_at).getTime()
+  );
 
   return sorted.map((data: any) => {
     if (resultsGated && data.status === 'completed') {
       return {
         id: data.id,
-        quizId: data.quizId,
-        studentId: data.studentId,
+        quizId: data.quiz_id,
+        studentId: data.student_id,
         score: data.score,
-        totalPoints: data.totalPoints,
+        totalPoints: data.total_points,
         percentage: data.percentage,
         passed: data.passed,
-        timeSpent: data.timeSpent,
-        startedAt: data.startedAt,
-        submittedAt: data.submittedAt,
+        timeSpent: data.time_spent,
+        startedAt: data.started_at,
+        submittedAt: data.submitted_at,
         status: data.status,
-        answers: data.answers?.map((a: { questionId: string; pointsEarned: number }) => ({
-          questionId: a.questionId,
-          pointsEarned: a.pointsEarned,
+        answers: data.answers?.map((a: { question_id: string; points_earned: number }) => ({
+          questionId: a.question_id,
+          pointsEarned: a.points_earned,
         })) ?? [],
       };
     }

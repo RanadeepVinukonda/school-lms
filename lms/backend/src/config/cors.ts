@@ -1,5 +1,6 @@
 import { CorsOptions } from 'cors';
 import { env } from './env';
+import { logger } from '../utils/logger';
 
 const allowedOrigins = [
   env.FRONTEND_URL,
@@ -8,12 +9,23 @@ const allowedOrigins = [
   'http://localhost:8080',
 ];
 
+const isAllowed = (origin: string): boolean => {
+  if (allowedOrigins.includes(origin)) return true;
+  try {
+    const hostname = new URL(origin).hostname;
+    return hostname === 'vercel.app' || hostname.endsWith('.vercel.app');
+  } catch {
+    return false;
+  }
+};
+
 export const corsOptions: CorsOptions = {
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin) || env.NODE_ENV === 'development' || process.env.VERCEL_ENV) {
+    if (!origin || isAllowed(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      logger.warn(`CORS blocked origin: ${origin}`);
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
     }
   },
   credentials: true,

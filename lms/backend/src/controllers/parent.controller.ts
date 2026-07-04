@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { collections } from '../database/adapter';
-import * as analyticsV2Service from '../services/analytics-v2.service';
+import { getSupabaseAdmin } from '../services/supabase';
+import * as analyticsService from '../services/analytics.service';
 import * as gradeService from '../services/grade.service';
 import { chatCompletion } from '../services/ai.service';
 import { sendSuccess } from '../utils/response';
@@ -9,60 +9,58 @@ import { logger } from '../utils/logger';
 import { env } from '../config/env';
 
 export async function getChildren(req: Request, res: Response) {
+  const supabase = getSupabaseAdmin()!;
   const parentId = req.user!.uid;
-  const parentDoc = await collections.users().doc(parentId).get();
-  if (!parentDoc.exists) throw new NotFoundError('Parent not found');
 
-  const childrenIds: string[] = parentDoc.data()?.childrenIds ?? [];
+  const { data: parentDoc } = await supabase.from('users').select('children_ids').eq('id', parentId).maybeSingle();
+  if (!parentDoc) throw new NotFoundError('Parent not found');
+
+  const childrenIds: string[] = (parentDoc.children_ids as string[]) ?? [];
   if (childrenIds.length === 0) {
     sendSuccess(res, []);
     return;
   }
 
-  const childDocs = await Promise.all(
-    childrenIds.map((id) => collections.users().doc(id).get()),
-  );
+  const { data: childRows } = await supabase.from('users').select('*').in('id', childrenIds);
   const children = await Promise.all(
-    childDocs
-      .filter((d) => d.exists)
-      .map(async (d) => {
-        const data = d.data();
-        let classInfo: { name?: string; grade?: number; section?: string } | null = null;
-        if (data?.classId) {
-          const classDoc = await collections.classes().doc(data.classId).get();
-          if (classDoc.exists) {
-            const c = classDoc.data() as any;
-            classInfo = { name: c.name, grade: c.grade, section: c.section };
-          }
-        }
-        return { id: d.id, ...data, classInfo };
-      }),
+    (childRows || []).map(async (row) => {
+      let classInfo: { name?: string; grade?: number; section?: string } | null = null;
+      if (row.class_id) {
+        const { data: cls } = await supabase.from('classes').select('name, grade, section').eq('id', row.class_id).maybeSingle();
+        if (cls) classInfo = cls;
+      }
+      const { password, ...rest } = row;
+      return { id: row.id, ...rest, classInfo };
+    }),
   );
 
   sendSuccess(res, children);
 }
 
 export async function getChildDashboard(req: Request, res: Response) {
+  const supabase = getSupabaseAdmin()!;
   const { studentId } = req.params;
   const parentId = req.user!.uid;
 
-  const parentDoc = await collections.users().doc(parentId).get();
-  const childrenIds: string[] = parentDoc.data()?.childrenIds ?? [];
+  const { data: parentDoc } = await supabase.from('users').select('children_ids').eq('id', parentId).maybeSingle();
+  const childrenIds: string[] = (parentDoc?.children_ids as string[]) ?? [];
   if (!childrenIds.includes(studentId)) {
-    res.status(403).json({ success: false, message: 'This student is not your child' });
+    res.status(403).json({ success: false, error: { message: 'This student is not your child' } });
     return;
   }
 
-  const studentDoc = await collections.users().doc(studentId).get();
-  if (!studentDoc.exists) throw new NotFoundError('Student not found');
-  const student = { id: studentDoc.id, ...studentDoc.data() };
+  const { data: studentRow } = await supabase.from('users').select('*').eq('id', studentId).maybeSingle();
+  if (!studentRow) throw new NotFoundError('Student not found');
+  const { password: _sp, ...student } = studentRow;
 
   const grades = await gradeService.getStudentGrades(studentId);
-  const performance = await analyticsV2Service.getStudentPerformance(studentId);
+  const performance = await analyticsService.getStudentPerformance(studentId);
 
-  const classDoc = studentDoc.data()?.classId
-    ? await collections.classes().doc(studentDoc.data()!.classId as string).get()
-    : null;
+  let className: string | null = null;
+  if (studentRow.class_id) {
+    const { data: cls } = await supabase.from('classes').select('name').eq('id', studentRow.class_id).maybeSingle();
+    if (cls) className = cls.name;
+  }
 
   const scoredGrades = (grades as any[]).filter((g: any) => g.percentage != null);
   const avgScore = scoredGrades.length > 0
@@ -71,7 +69,7 @@ export async function getChildDashboard(req: Request, res: Response) {
 
   sendSuccess(res, {
     student,
-    className: classDoc?.exists ? (classDoc.data() as any)?.name : null,
+    className,
     overallAvgScore: (performance as any)?.overallAvgScore ?? avgScore,
     totalAttempts: (performance as any)?.totalAttempts ?? 0,
     recentActivity: (performance as any)?.recentActivity ?? [],
@@ -80,17 +78,18 @@ export async function getChildDashboard(req: Request, res: Response) {
 }
 
 export async function getChildProgress(req: Request, res: Response) {
+  const supabase = getSupabaseAdmin()!;
   const { studentId } = req.params;
   const parentId = req.user!.uid;
 
-  const parentDoc = await collections.users().doc(parentId).get();
-  const childrenIds: string[] = parentDoc.data()?.childrenIds ?? [];
+  const { data: parentDoc } = await supabase.from('users').select('children_ids').eq('id', parentId).maybeSingle();
+  const childrenIds: string[] = (parentDoc?.children_ids as string[]) ?? [];
   if (!childrenIds.includes(studentId)) {
-    res.status(403).json({ success: false, message: 'This student is not your child' });
+    res.status(403).json({ success: false, error: { message: 'This student is not your child' } });
     return;
   }
 
-  const performance = await analyticsV2Service.getStudentPerformance(studentId);
+  const performance = await analyticsService.getStudentPerformance(studentId);
   const allGrades = await gradeService.getStudentGrades(studentId);
 
   sendSuccess(res, {
@@ -100,21 +99,22 @@ export async function getChildProgress(req: Request, res: Response) {
 }
 
 export async function getChildReport(req: Request, res: Response) {
+  const supabase = getSupabaseAdmin()!;
   const { studentId } = req.params;
   const parentId = req.user!.uid;
 
-  const parentDoc = await collections.users().doc(parentId).get();
-  const childrenIds: string[] = parentDoc.data()?.childrenIds ?? [];
+  const { data: parentDoc } = await supabase.from('users').select('children_ids').eq('id', parentId).maybeSingle();
+  const childrenIds: string[] = (parentDoc?.children_ids as string[]) ?? [];
   if (!childrenIds.includes(studentId)) {
-    res.status(403).json({ success: false, message: 'This student is not your child' });
+    res.status(403).json({ success: false, error: { message: 'This student is not your child' } });
     return;
   }
 
-  const studentDoc = await collections.users().doc(studentId).get();
-  if (!studentDoc.exists) throw new NotFoundError('Student not found');
-  const studentName = (studentDoc.data() as any)?.displayName || 'Student';
+  const { data: studentRow } = await supabase.from('users').select('display_name').eq('id', studentId).maybeSingle();
+  if (!studentRow) throw new NotFoundError('Student not found');
+  const studentName = studentRow.display_name || 'Student';
 
-  const performance = (await analyticsV2Service.getStudentPerformance(studentId)) as any;
+  const performance = (await analyticsService.getStudentPerformance(studentId)) as any;
   const recentGrades = await gradeService.getStudentGrades(studentId);
 
   const prompt = `You are an educational AI assistant generating a weekly progress report for a parent.
@@ -204,11 +204,12 @@ Generate a JSON report with this exact structure:
 }
 
 export async function getRecommendations(req: Request, res: Response) {
+  const supabase = getSupabaseAdmin()!;
   const parentId = req.user!.uid;
 
-  const parentDoc = await collections.users().doc(parentId).get();
-  if (!parentDoc.exists) throw new NotFoundError('Parent not found');
-  const childrenIds: string[] = parentDoc.data()?.childrenIds ?? [];
+  const { data: parentDoc } = await supabase.from('users').select('children_ids').eq('id', parentId).maybeSingle();
+  if (!parentDoc) throw new NotFoundError('Parent not found');
+  const childrenIds: string[] = (parentDoc.children_ids as string[]) ?? [];
 
   if (childrenIds.length === 0) {
     sendSuccess(res, { recommendations: [] });
@@ -218,11 +219,11 @@ export async function getRecommendations(req: Request, res: Response) {
   const allRecommendations: any[] = [];
 
   for (const childId of childrenIds) {
-    const studentDoc = await collections.users().doc(childId).get();
-    if (!studentDoc.exists) continue;
-    const studentName = (studentDoc.data() as any)?.displayName || 'Student';
+    const { data: studentRow } = await supabase.from('users').select('display_name').eq('id', childId).maybeSingle();
+    if (!studentRow) continue;
+    const studentName = studentRow.display_name || 'Student';
 
-    const performance = (await analyticsV2Service.getStudentPerformance(childId)) as any;
+    const performance = (await analyticsService.getStudentPerformance(childId)) as any;
     const scores = [
       ...((performance?.quizzes ?? []) as any[]).map((q: any) => q.percentage),
       ...((performance?.assignments ?? []) as any[]).map((a: any) => a.percentage),

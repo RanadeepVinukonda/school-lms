@@ -1,13 +1,14 @@
 import dotenv from 'dotenv';
 import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
-import { collections } from '../database/adapter';
+import { getSupabaseAdmin } from '../services/supabase';
 
 async function test() {
-  const classes = await collections.classes().limit(10).get();
-  console.log('Classes count:', classes.size);
-  if (classes.size > 0) {
-    console.log('First class:', classes.docs[0].data());
+  const supabase = getSupabaseAdmin()!;
+  const { data: classes } = await supabase.from('classes').select('*').limit(10);
+  console.log('Classes count:', classes?.length || 0);
+  if (classes && classes.length > 0) {
+    console.log('First class:', classes[0]);
   }
 }
 

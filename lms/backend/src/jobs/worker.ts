@@ -9,9 +9,6 @@ import { logger } from '../utils/logger';
 import { getBoss } from './queue';
 import { computeMasteryInline } from '../services/adaptive/mastery.service';
 
-// ponytail: subject lookup is a deferred peripheral. Keep Firestore for read-only name resolution.
-import { getAdminFirestore } from '../database/admin';
-
 async function addTextbookLog(textbookId: string, message: string) {
   try {
     const supabase = getSupabaseAdmin();
@@ -21,7 +18,9 @@ async function addTextbookLog(textbookId: string, message: string) {
     const { data: tb } = await supabase.from('textbooks').select('logs').eq('id', textbookId).single();
     const logs = (tb?.logs as string[]) || [];
     logs.push(logEntry);
-    await supabase.from('textbooks').update({ logs, updated_at: new Date().toISOString() }).eq('id', textbookId);
+    // ponytail: trim to last 50 entries
+    const trimmed = logs.slice(-50);
+    await supabase.from('textbooks').update({ logs: trimmed, updated_at: new Date().toISOString() }).eq('id', textbookId);
   } catch (err) {
     logger.error('Failed to write textbook log', { textbookId, err });
   }
@@ -83,7 +82,7 @@ export async function runUploadPipeline(textbookId: string, storagePath: string)
   }
   await addTextbookLog(textbookId, "PDF downloaded. Extracting text content page by page...");
 
-  const { PDFParse } = require('pdf-parse');
+  const { PDFParse } = await import('pdf-parse');
   const parser = new PDFParse({ data: pdfBuffer });
   const pageTexts: string[] = [];
   try {
@@ -171,9 +170,13 @@ async function runConceptPipeline(jobData: { textbookId: string; chapterId: stri
   const contextText = matchingPages.length > 0 ? matchingPages.map((p) => p.text).join('\n') : 'Review curriculum topics.';
   const { data: tb } = await supabase.from('textbooks').select('subject_id').eq('id', textbookId).single();
   const subjectId = tb?.subject_id || '';
-  const db = getAdminFirestore();
-  const subjectDoc = subjectId ? await db.collection('subjects').doc(subjectId).get().catch(() => null) : null;
-  const subjectName = subjectDoc?.data()?.name || 'Education';
+  let subjectName = 'Education';
+  if (subjectId) {
+    try {
+      const { data: subj } = await supabase.from('subjects').select('name').eq('id', subjectId).maybeSingle();
+      subjectName = (subj as any)?.name || 'Education';
+    } catch { /* fallback to default */ }
+  }
 
   const [notesResult, questionsResult, videosResult, resourcesResult, embeddingResult] = await Promise.allSettled([
     (async () => {
@@ -252,9 +255,10 @@ Concept: ${conceptTitle} Chapter: ${chapterTitle} Context: ${contextText.slice(0
     try { await supabase.from('concept_notes').update({ embedding: embeddingResult.value }).eq('id', conceptId); } catch { /* noop */ }
   } else { errors.push(`embedding: ${reasonOf(embeddingResult)}`); }
 
-  const { data: tbData } = await supabase.from('textbooks').select('total_concepts').eq('id', textbookId).single();
+  // ponytail: atomic increment via RPC (PostgreSQL UPDATE ... RETURNING is single-statement atomic)
   const { data: rpcData, error: rpcError } = await supabase.rpc('increment_completed_concepts', { t_id: textbookId });
   const newCompleted = (rpcData as number) || 0;
+  const { data: tbData } = await supabase.from('textbooks').select('total_concepts').eq('id', textbookId).single();
   const totalConcepts = (tbData?.total_concepts as number) || 0;
 
   if (errors.length > 0) {

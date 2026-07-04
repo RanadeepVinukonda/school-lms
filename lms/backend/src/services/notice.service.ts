@@ -16,12 +16,15 @@ export async function createNotice(schoolId: string, userId: string, data: { tit
 
 export async function getNotices(schoolId: string, classId?: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return [];
+  const now = new Date().toISOString();
   let query = supabase.from('notice_board').select('*').eq('school_id', schoolId);
   if (classId) {
     query = query.or(`target_class_id.is.null,target_class_id.eq.${classId}`);
   }
-  const { data: notices } = await query.order('created_at', { ascending: false });
-  if (!notices || notices.length === 0) return [];
+  const { data: rawNotices } = await query.order('created_at', { ascending: false });
+  if (!rawNotices || rawNotices.length === 0) return [];
+  // ponytail: client-side filter for expired — add DB-level filter when expires_at is indexed
+  const notices = rawNotices.filter(n => !n.expires_at || n.expires_at >= now);
 
   const userIds = [...new Set(notices.map(n => n.created_by).filter(Boolean))];
   if (userIds.length > 0) {

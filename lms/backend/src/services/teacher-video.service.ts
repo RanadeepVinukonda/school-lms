@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../database/adapter';
+import { getSupabaseClient } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { searchVideos } from './youtube.service';
@@ -18,6 +18,7 @@ export async function addVideo(data: {
   conceptId?: string;
   tags?: string[];
 }) {
+  const supabase = getSupabaseClient()!;
   const videoId = uuidv4();
   const now = new Date().toISOString();
 
@@ -39,7 +40,9 @@ export async function addVideo(data: {
     updatedAt: now,
   };
 
-  await collections.teacherVideos().doc(videoId).set(videoData);
+  await supabase.from('nosql_docs').insert({
+    collection: 'teacherVideos', doc_id: videoId, data: videoData, updated_at: now,
+  });
 
   logger.info('Teacher video added', { videoId, teacherId: data.teacherId });
 
@@ -52,41 +55,34 @@ export async function listVideos(teacherId: string, query?: {
   conceptId?: string;
   tag?: string;
 }) {
-  let baseQuery = collections.teacherVideos()
-    .where('teacherId', '==', teacherId);
+  const supabase = getSupabaseClient()!;
+  let dbQuery = supabase.from('nosql_docs').select('doc_id, data')
+    .eq('collection', 'teacherVideos')
+    .contains('data', { teacherId });
 
-  if (query?.textbookId) {
-    baseQuery = baseQuery.where('textbookId', '==', query.textbookId);
-  }
-  if (query?.chapterId) {
-    baseQuery = baseQuery.where('chapterId', '==', query.chapterId);
-  }
-  if (query?.conceptId) {
-    baseQuery = baseQuery.where('conceptId', '==', query.conceptId);
-  }
-  if (query?.tag) {
-    baseQuery = baseQuery.where('tags', 'array-contains', query.tag);
-  }
+  if (query?.textbookId) dbQuery = dbQuery.contains('data', { textbookId: query.textbookId });
+  if (query?.chapterId) dbQuery = dbQuery.contains('data', { chapterId: query.chapterId });
+  if (query?.conceptId) dbQuery = dbQuery.contains('data', { conceptId: query.conceptId });
+  if (query?.tag) dbQuery = dbQuery.contains('data', { tags: [query.tag] });
 
-  const snapshot = await baseQuery.get();
-  const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const { data: rows } = await dbQuery;
+  const items = (rows || []).map((row) => ({ ...row.data as Record<string, unknown>, id: row.doc_id }));
   return items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export async function removeVideo(videoId: string, teacherId: string) {
-  const ref = collections.teacherVideos().doc(videoId);
-  const doc = await ref.get();
+  const supabase = getSupabaseClient()!;
+  const { data } = await supabase.from('nosql_docs').select('data')
+    .eq('collection', 'teacherVideos').eq('doc_id', videoId).maybeSingle();
 
-  if (!doc.exists) {
-    throw new NotFoundError('Video not found');
-  }
+  if (!data) throw new NotFoundError('Video not found');
 
-  const data = doc.data()!;
-  if (data.teacherId !== teacherId) {
+  const videoData = data.data as Record<string, unknown>;
+  if (videoData.teacherId !== teacherId) {
     throw new ForbiddenError('You do not own this video');
   }
 
-  await ref.delete();
+  await supabase.from('nosql_docs').delete().eq('collection', 'teacherVideos').eq('doc_id', videoId);
   logger.info('Teacher video removed', { videoId, teacherId });
 }
 
@@ -95,30 +91,32 @@ export async function attachVideoToConcept(videoId: string, teacherId: string, d
   chapterId: string;
   conceptId: string;
 }) {
-  const ref = collections.teacherVideos().doc(videoId);
-  const doc = await ref.get();
+  const supabase = getSupabaseClient()!;
+  const { data: existing } = await supabase.from('nosql_docs').select('data')
+    .eq('collection', 'teacherVideos').eq('doc_id', videoId).maybeSingle();
 
-  if (!doc.exists) {
-    throw new NotFoundError('Video not found');
-  }
+  if (!existing) throw new NotFoundError('Video not found');
 
-  const videoData = doc.data()!;
+  const videoData = existing.data as Record<string, unknown>;
   if (videoData.teacherId !== teacherId) {
     throw new ForbiddenError('You do not own this video');
   }
 
   const now = new Date().toISOString();
-  await ref.update({
+  const updated = {
+    ...videoData,
     textbookId: data.textbookId,
     chapterId: data.chapterId,
     conceptId: data.conceptId,
     updatedAt: now,
-  });
+  };
+
+  await supabase.from('nosql_docs').update({ data: updated, updated_at: now })
+    .eq('collection', 'teacherVideos').eq('doc_id', videoId);
 
   logger.info('Teacher video attached to concept', { videoId, conceptId: data.conceptId });
 
-  const updated = await ref.get();
-  return { ...updated.data() };
+  return updated;
 }
 
 export async function searchAndSave(teacherId: string, query: string, maxResults?: number) {

@@ -1,4 +1,4 @@
-import { collections } from '../database/adapter';
+import { getSupabaseClient } from './supabase';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
@@ -40,31 +40,45 @@ const DEFAULT_SETTINGS = {
 
 /** Get all settings. Initializes with defaults if the 'general' document doesn't exist. */
 export async function getSettings() {
-  const settingsDoc = await collections.settings().doc('general').get();
+  const supabase = getSupabaseClient()!;
+  const { data } = await supabase.from('nosql_docs').select('data')
+    .eq('collection', 'settings').eq('doc_id', 'general').maybeSingle();
 
-  if (!settingsDoc.exists) {
-    await collections.settings().doc('general').set(DEFAULT_SETTINGS);
+  if (!data) {
+    await supabase.from('nosql_docs').insert({
+      collection: 'settings', doc_id: 'general', data: DEFAULT_SETTINGS,
+      updated_at: new Date().toISOString(),
+    });
     return DEFAULT_SETTINGS;
   }
 
-  return { ...DEFAULT_SETTINGS, ...settingsDoc.data() };
+  return { ...DEFAULT_SETTINGS, ...data.data as Record<string, unknown> };
 }
 
 /** Update settings by merging the given data with existing values. Creates the document if needed. */
 export async function updateSettings(data: Record<string, unknown>) {
-  const ref = collections.settings().doc('general');
-  const existing = await ref.get();
+  const supabase = getSupabaseClient()!;
+  const { data: existing } = await supabase.from('nosql_docs').select('data')
+    .eq('collection', 'settings').eq('doc_id', 'general').maybeSingle();
 
-  if (!existing.exists) {
-    await ref.set({ ...DEFAULT_SETTINGS, ...data, updatedAt: new Date().toISOString() });
+  const now = new Date().toISOString();
+  if (!existing) {
+    await supabase.from('nosql_docs').insert({
+      collection: 'settings', doc_id: 'general',
+      data: { ...DEFAULT_SETTINGS, ...data, updatedAt: now },
+      updated_at: now,
+    });
   } else {
-    await ref.update({ ...data, updatedAt: new Date().toISOString() });
+    const merged = { ...existing.data as Record<string, unknown>, ...data, updatedAt: now };
+    await supabase.from('nosql_docs').update({ data: merged, updated_at: now })
+      .eq('collection', 'settings').eq('doc_id', 'general');
   }
 
-  const updated = await ref.get();
+  const { data: updated } = await supabase.from('nosql_docs').select('data')
+    .eq('collection', 'settings').eq('doc_id', 'general').maybeSingle();
   logger.info('Settings updated');
 
-  return updated.data();
+  return updated?.data as Record<string, unknown> | undefined;
 }
 
 /** Get system-level settings (academicYear, semester, grading, attendance, security, features). */

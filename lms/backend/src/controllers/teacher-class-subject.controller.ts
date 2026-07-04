@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import * as tcsService from '../services/teacher-class-subject.service';
-import { collections } from '../database/adapter';
+import { getSupabaseAdmin } from '../services/supabase';
 import { sendSuccess, sendCreated } from '../utils/response';
 
 export async function assignTeacher(req: Request, res: Response) {
@@ -20,11 +20,10 @@ export async function setupTeacher(req: Request, res: Response) {
     });
     results.push(result);
   }
-  await collections.users().doc(uid).update({
-    classIds,
-    tutorialSeen: false,
-    updatedAt: new Date().toISOString(),
-  });
+  await getSupabaseAdmin()!.from('users').update({
+    class_ids: classIds,
+    updated_at: new Date().toISOString(),
+  }).eq('id', uid);
   sendCreated(res, {
     assignments: results,
     classIds,

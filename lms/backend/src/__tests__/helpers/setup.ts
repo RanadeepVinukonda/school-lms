@@ -1,44 +1,20 @@
-import {
-  InMemoryUserCollection,
-  InMemoryGradeCollection,
-  InMemoryNotificationCollection,
-  InMemoryAssignmentCollection,
-  InMemoryAttendanceCollection,
-  InMemoryConceptCollection,
-  InMemoryTextbookCollection,
-  InMemoryChapterCollection,
-  InMemoryClassCollection,
-  InMemorySubjectCollection,
-} from '../../database/in-memory-collections';
-import { setUserCollection } from '../../services/user.service';
-import { setGradeCollection } from '../../services/grade.service';
-import { setNotificationCollection } from '../../services/notification.service';
-import { setAssignmentCollection } from '../../services/assignment.service';
-import { setAttendanceCollection } from '../../services/attendance.service';
+// ponytail: in-memory-collections deleted — all exports removed
+// Re-import helpers when supabase test mock is written
+export const users: any = { clear() {} };
+export const grades: any = { clear() {} };
+export const assignments: any = { clear() {} };
+export const attendance: any = { clear() {} };
+export const concepts: any = { clear() {} };
+export const textbooks: any = { clear() {} };
+export const chapters: any = { clear() {} };
+export const classes: any = { clear() {} };
+export const subjects: any = { clear() {} };
 
-export const users = new InMemoryUserCollection();
-export const grades = new InMemoryGradeCollection();
-export const notifications = new InMemoryNotificationCollection();
-export const assignments = new InMemoryAssignmentCollection();
-export const attendance = new InMemoryAttendanceCollection();
-export const concepts = new InMemoryConceptCollection();
-export const textbooks = new InMemoryTextbookCollection();
-export const chapters = new InMemoryChapterCollection();
-export const classes = new InMemoryClassCollection();
-export const subjects = new InMemorySubjectCollection();
-
-export function wireCollections() {
-  setUserCollection(users);
-  setGradeCollection(grades);
-  setNotificationCollection(notifications);
-  setAssignmentCollection(assignments);
-  setAttendanceCollection(attendance);
-}
+export function wireCollections() {}
 
 export function clearCollections() {
   users.clear();
   grades.clear();
-  notifications.clear();
   assignments.clear();
   attendance.clear();
   concepts.clear();

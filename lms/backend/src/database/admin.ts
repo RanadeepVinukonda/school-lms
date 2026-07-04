@@ -10,7 +10,7 @@ import {
   getUserById as gubi,
   listUsers as lu,
 } from './auth';
-import { getDb as gdb } from './adapter';
+import { getSupabaseAdmin } from '../services/supabase';
 
 export {
   vt as verifyToken, cu as createUser, uu as updateUser, du as deleteUser,
@@ -19,10 +19,8 @@ export {
 };
 export type { AuthUser } from './auth';
 
-export { getDb, getCollection, collections, FieldValue } from './adapter';
-
 // Legacy aliases for files that import getAdminFirestore / getAdminAuth directly
-export function getAdminFirestore(): any { return gdb(); }
+export function getAdminFirestore(): any { return getSupabaseAdmin(); }
 export function getAdminAuth() {
   return {
     verifyIdToken: (token: string) => vt(token).then(u => ({ uid: u.uid, email: u.email, role: u.role })),

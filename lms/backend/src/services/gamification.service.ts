@@ -1,6 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { FieldValue, Timestamp } from '../database/adapter';
-import { collections } from '../database/adapter';
+import { getSupabaseClient } from './supabase';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { TransactionManager } from '../database/transaction-manager';
@@ -76,6 +75,23 @@ const MONTHLY_CHALLENGE_TEMPLATES = [
   { title: 'Subject Star', description: 'Master 8 concepts across any subject', xpReward: 600, coinReward: 300, type: 'concept_mastery', target: 8 },
 ];
 
+const coll = (name: string) => {
+  const s = getSupabaseClient()!;
+  return { s, name };
+};
+
+async function nosqlGet(collection: string, docId: string) {
+  const supabase = getSupabaseClient()!;
+  const { data } = await supabase.from('nosql_docs').select('doc_id, data').eq('collection', collection).eq('doc_id', docId).maybeSingle();
+  return data || null;
+}
+
+async function nosqlSet(collection: string, docId: string, docData: Record<string, unknown>) {
+  const supabase = getSupabaseClient()!;
+  const now = new Date().toISOString();
+  await supabase.from('nosql_docs').upsert({ collection, doc_id: docId, data: docData, updated_at: now }, { onConflict: 'collection,doc_id' });
+}
+
 export function calculateLevel(xp: number): number {
   let level = 1;
   for (const threshold of XP_THRESHOLDS) {
@@ -94,9 +110,8 @@ export function getXpForCurrentLevel(level: number): number {
 }
 
 async function ensureProfile(userId: string) {
-  const ref = collections.gamificationProfiles().doc(userId);
-  const snap = await ref.get();
-  if (!snap.exists) {
+  const existing = await nosqlGet('gamificationProfiles', userId);
+  if (!existing) {
     const profile = {
       userId,
       xp: 0,
@@ -114,38 +129,40 @@ async function ensureProfile(userId: string) {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    await ref.set(profile);
+    await nosqlSet('gamificationProfiles', userId, profile);
     return profile;
   }
-  const data = snap.data() as Record<string, unknown>;
+  const data = existing.data as Record<string, unknown>;
   if (data.codingProjectsCompleted === undefined) {
-    await ref.update({ codingProjectsCompleted: 0 });
+    await nosqlSet('gamificationProfiles', userId, { ...data, codingProjectsCompleted: 0 });
     data.codingProjectsCompleted = 0;
   }
   if (data.codingChallengesCompleted === undefined) {
-    await ref.update({ codingChallengesCompleted: 0 });
+    await nosqlSet('gamificationProfiles', userId, { ...data, codingChallengesCompleted: 0 });
     data.codingChallengesCompleted = 0;
   }
   return data;
 }
 
 export async function getProfile(userId: string) {
-  const profile = await updateStreak(userId);
-  return profile;
+  return updateStreak(userId);
 }
 
 export async function awardXp(userId: string, amount: number, source: string) {
   const profile = await ensureProfile(userId);
   const newXp = (profile.xp as number) + amount;
   const newLevel = calculateLevel(newXp);
-  await collections.gamificationProfiles().doc(userId).update({
-    xp: FieldValue.increment(amount),
-    level: newLevel,
-    updatedAt: new Date().toISOString(),
+  const supabase = getSupabaseClient()!;
+
+  const updated = { ...profile, xp: newXp, level: newLevel, updatedAt: new Date().toISOString() };
+  await nosqlSet('gamificationProfiles', userId, updated);
+
+  await supabase.from('nosql_docs').insert({
+    collection: 'gamificationTransactions', doc_id: uuidv4(),
+    data: { userId, amount, type: 'xp', source, createdAt: new Date().toISOString() },
+    updated_at: new Date().toISOString(),
   });
-  await collections.gamificationTransactions().add({
-    userId, amount, type: 'xp', source, createdAt: new Date().toISOString(),
-  });
+
   logger.info('XP awarded', { userId, amount, source, newXp, newLevel });
   const profile2 = await ensureProfile(userId);
   const newBadges = await checkAndAwardBadges(userId, profile2);
@@ -155,23 +172,23 @@ export async function awardXp(userId: string, amount: number, source: string) {
 export async function awardCoins(userId: string, amount: number, source: string) {
   const profile = await ensureProfile(userId);
   const newCoins = (profile.coins as number) + amount;
-  await collections.gamificationProfiles().doc(userId).update({
-    coins: FieldValue.increment(amount),
-    updatedAt: new Date().toISOString(),
+  const supabase = getSupabaseClient()!;
+
+  const updated = { ...profile, coins: newCoins, updatedAt: new Date().toISOString() };
+  await nosqlSet('gamificationProfiles', userId, updated);
+
+  await supabase.from('nosql_docs').insert({
+    collection: 'gamificationTransactions', doc_id: uuidv4(),
+    data: { userId, amount, type: 'coin', source, createdAt: new Date().toISOString() },
+    updated_at: new Date().toISOString(),
   });
-  await collections.gamificationTransactions().add({
-    userId, amount, type: 'coin', source, createdAt: new Date().toISOString(),
-  });
+
   logger.info('Coins awarded', { userId, amount, source });
   const profile2 = await ensureProfile(userId);
   const newBadges = await checkAndAwardBadges(userId, profile2);
   return { coins: newCoins, newBadges };
 }
 
-/**
- * Award XP and coins atomically in a single transaction.
- * Used when both rewards must succeed together (e.g., lesson complete, daily challenge).
- */
 export async function awardXpAndCoins(
   userId: string,
   xpAmount: number,
@@ -184,21 +201,14 @@ export async function awardXpAndCoins(
   const newLevel = calculateLevel(newXp);
   const now = new Date().toISOString();
 
-  const txManager = new TransactionManager();
-  await txManager.runTransaction(async (tx) => {
-    await tx.update('gamificationProfiles', userId, {
-      xp: FieldValue.increment(xpAmount) as unknown as number,
-      coins: FieldValue.increment(coinAmount) as unknown as number,
-      level: newLevel,
-      updatedAt: now,
-    });
-  });
+  const updated = { ...profile, xp: newXp, coins: newCoins, level: newLevel, updatedAt: now };
+  await nosqlSet('gamificationProfiles', userId, updated);
 
-  // Log transactions outside the atomic block (best-effort)
+  const supabase = getSupabaseClient()!;
   try {
     await Promise.all([
-      collections.gamificationTransactions().add({ userId, amount: xpAmount, type: 'xp', source, createdAt: now }),
-      collections.gamificationTransactions().add({ userId, amount: coinAmount, type: 'coin', source, createdAt: now }),
+      supabase.from('nosql_docs').insert({ collection: 'gamificationTransactions', doc_id: uuidv4(), data: { userId, amount: xpAmount, type: 'xp', source, createdAt: now }, updated_at: now }),
+      supabase.from('nosql_docs').insert({ collection: 'gamificationTransactions', doc_id: uuidv4(), data: { userId, amount: coinAmount, type: 'coin', source, createdAt: now }, updated_at: now }),
     ]);
   } catch (err) {
     logger.warn('Failed to log gamification transactions', { userId, source, error: err });
@@ -244,49 +254,48 @@ async function checkAndAwardBadges(userId: string, profile: Record<string, unkno
     }
   }
   if (newlyEarned.length > 0) {
-    await collections.gamificationProfiles().doc(userId).update({
-      badges: FieldValue.arrayUnion(...newlyEarned),
-      updatedAt: new Date().toISOString(),
-    });
+    const merged = { ...profile, badges: [...earnedBadgeIds], updatedAt: new Date().toISOString() };
+    await nosqlSet('gamificationProfiles', userId, merged);
     logger.info('Badges awarded', { userId, badges: newlyEarned });
   }
   return newlyEarned;
 }
 
 export async function getLeaderboard(limit = 50) {
-  const snapshot = await collections.gamificationProfiles()
-    .orderBy('xp', 'desc')
-    .limit(limit)
-    .get();
+  const supabase = getSupabaseClient()!;
+  const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
+    .eq('collection', 'gamificationProfiles')
+    .order('data->>xp', { ascending: false })
+    .limit(limit);
+
   const results: Array<{ userId: string; displayName: string; xp: number; level: number; rank: number; avatar?: string }> = [];
   let rank = 1;
-  for (const doc of snapshot.docs) {
-    const data = doc.data();
-    const userSnap = await collections.users().doc(doc.id).get();
-    const userData = userSnap.data();
-    if (!userData) continue;
+  for (const row of rows || []) {
+    const data = row.data as Record<string, unknown>;
+    const { data: user } = await supabase.from('users').select('display_name, email, data').eq('id', row.doc_id).maybeSingle();
+    if (!user) continue;
+    const userData = user.data as Record<string, unknown> || {};
     results.push({
-      userId: doc.id,
-      displayName: userData.displayName || userData.email || 'Unknown',
-      xp: data.xp || 0,
-      level: data.level || 1,
+      userId: row.doc_id,
+      displayName: user.display_name || user.email || 'Unknown',
+      xp: (data.xp as number) || 0,
+      level: (data.level as number) || 1,
       rank,
-      avatar: userData.avatar || undefined,
+      avatar: userData.avatar as string || undefined,
     });
     rank++;
   }
   if (results.length === 0) {
-    const allUsers = await collections.users().get();
-    for (const doc of allUsers.docs) {
-      const u = doc.data();
-      if (u.role === 'student') {
+    const { data: allUsers } = await supabase.from('users').select('id, display_name, email, data, role');
+    for (const user of allUsers || []) {
+      if (user.role === 'student') {
         results.push({
-          userId: doc.id,
-          displayName: u.displayName || u.email || 'Unknown',
+          userId: user.id,
+          displayName: user.display_name || user.email || 'Unknown',
           xp: 0,
           level: 1,
           rank,
-          avatar: u.avatar || undefined,
+          avatar: (user.data as Record<string, unknown>)?.avatar as string || undefined,
         });
         rank++;
         if (results.length >= limit) break;
@@ -297,36 +306,33 @@ export async function getLeaderboard(limit = 50) {
 }
 
 export async function getClassLeaderboard(classId: string, limit = 50) {
-  const classSnap = await collections.classes().doc(classId).get();
-  if (!classSnap.exists) throw new NotFoundError('Class not found');
+  const supabase = getSupabaseClient()!;
+  const { data: classData } = await supabase.from('classes').select('*').eq('id', classId).maybeSingle();
+  if (!classData) throw new NotFoundError('Class not found');
 
-  // Find all students whose classIds array contains this classId
-  const usersSnap = await collections.users()
-    .where('classIds', 'array-contains', classId)
-    .get();
-  let studentIds = usersSnap.docs.map((d) => d.id);
+  const { data: usersSnap } = await supabase.from('users')
+    .select('id, display_name, email, data')
+    .contains('class_ids', [classId]);
+  let studentIds = (usersSnap || []).map((d) => d.id);
 
   if (studentIds.length === 0) {
-    // Fallback: try classData.studentIds if populated
-    const classData = classSnap.data()!;
-    const legacyIds = (classData.studentIds as string[]) || [];
+    const legacyIds = (classData.student_ids as string[]) || [];
     if (legacyIds.length === 0) return [];
     studentIds = legacyIds;
   }
 
   const profiles: Array<{ userId: string; xp: number; level: number; displayName: string; avatar?: string }> = [];
   for (const sid of studentIds) {
-    const profileSnap = await collections.gamificationProfiles().doc(sid).get();
-    const userSnap = await collections.users().doc(sid).get();
-    const userData = userSnap.data();
-    if (!userData) continue;
-    const p = profileSnap.exists ? profileSnap.data()! : { xp: 0, level: 1 };
+    const profile = await nosqlGet('gamificationProfiles', sid);
+    const { data: user } = await supabase.from('users').select('display_name, email, data').eq('id', sid).maybeSingle();
+    if (!user) continue;
+    const p = profile?.data as Record<string, unknown> || { xp: 0, level: 1 };
     profiles.push({
       userId: sid,
-      xp: p.xp || 0,
-      level: p.level || 1,
-      displayName: userData.displayName || userData.email || 'Unknown',
-      avatar: userData.avatar || undefined,
+      xp: (p.xp as number) || 0,
+      level: (p.level as number) || 1,
+      displayName: user.display_name || user.email || 'Unknown',
+      avatar: (user.data as Record<string, unknown>)?.avatar as string || undefined,
     });
   }
   profiles.sort((a, b) => b.xp - a.xp);
@@ -347,13 +353,14 @@ function getMonthKey(date = new Date()): string {
 }
 
 export async function getDailyChallenges(userId: string) {
+  const supabase = getSupabaseClient()!;
   const today = new Date().toISOString().split('T')[0];
-  const snapshot = await collections.gamificationDailyChallenges()
-    .where('userId', '==', userId)
-    .where('date', '==', today)
-    .get();
-  if (!snapshot.empty) {
-    return snapshot.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+  const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
+    .eq('collection', 'gamificationDailyChallenges')
+    .contains('data', { userId, date: today });
+
+  if (rows && rows.length > 0) {
+    return rows.map((r: any) => ({ id: r.doc_id, ...r.data }));
   }
   const count = Math.min(DAILY_CHALLENGE_TEMPLATES.length, 3);
   const shuffled = [...DAILY_CHALLENGE_TEMPLATES].sort(() => Math.random() - 0.5).slice(0, count);
@@ -366,27 +373,37 @@ export async function getDailyChallenges(userId: string) {
     completed: false,
     createdAt: new Date().toISOString(),
   }));
-  const batch = collections.gamificationDailyChallenges().firestore.batch();
-  for (const c of challenges) {
-    batch.set(collections.gamificationDailyChallenges().doc(c.id), c);
-  }
-  await batch.commit();
+  const tm = new TransactionManager();
+  await tm.runTransaction(async (tx) => {
+    for (const c of challenges) {
+      tx.set('gamificationDailyChallenges', c.id, c);
+    }
+  });
   return challenges;
 }
 
 export async function completeDailyChallenge(userId: string, challengeId: string) {
-  const ref = collections.gamificationDailyChallenges().doc(challengeId);
-  const snap = await ref.get();
-  if (!snap.exists) throw new NotFoundError('Daily challenge not found');
-  const challenge = snap.data()!;
+  const supabase = getSupabaseClient()!;
+  const { data } = await supabase.from('nosql_docs').select('data')
+    .eq('collection', 'gamificationDailyChallenges').eq('doc_id', challengeId).maybeSingle();
+
+  if (!data) throw new NotFoundError('Daily challenge not found');
+  const challenge = data.data as Record<string, unknown>;
   if (challenge.userId !== userId) throw new NotFoundError('Challenge not found');
   if (challenge.completed) return { alreadyCompleted: true };
-  await ref.update({ completed: true, progress: challenge.target, updatedAt: new Date().toISOString() });
-  const xpResult = await awardXp(userId, challenge.xpReward || 30, 'daily_challenge');
-  const coinResult = await awardCoins(userId, challenge.coinReward || 15, 'daily_challenge');
-  await collections.gamificationProfiles().doc(userId).update({
-    challengesCompleted: FieldValue.increment(1),
-  });
+
+  const merged = { ...challenge, completed: true, progress: challenge.target, updatedAt: new Date().toISOString() };
+  await supabase.from('nosql_docs').update({ data: merged })
+    .eq('collection', 'gamificationDailyChallenges').eq('doc_id', challengeId);
+
+  const xpResult = await awardXp(userId, (challenge.xpReward as number) || 30, 'daily_challenge');
+  const coinResult = await awardCoins(userId, (challenge.coinReward as number) || 15, 'daily_challenge');
+
+  const profile = await ensureProfile(userId);
+  profile.challengesCompleted = ((profile.challengesCompleted as number) || 0) + 1;
+  profile.updatedAt = new Date().toISOString();
+  await nosqlSet('gamificationProfiles', userId, profile);
+
   logger.info('Daily challenge completed', { userId, challengeId });
   return { xp: xpResult.xp, coins: coinResult.coins, alreadyCompleted: false };
 }
@@ -395,15 +412,15 @@ async function getOrCreatePeriodChallenges(
   userId: string,
   periodKey: string,
   templates: typeof WEEKLY_CHALLENGE_TEMPLATES,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  collection: any,
+  collectionName: string,
 ) {
-  const snapshot = await collection
-    .where('userId', '==', userId)
-    .where('periodKey', '==', periodKey)
-    .get();
-  if (!snapshot.empty) {
-    return snapshot.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+  const supabase = getSupabaseClient()!;
+  const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
+    .eq('collection', collectionName)
+    .contains('data', { userId, periodKey });
+
+  if (rows && rows.length > 0) {
+    return rows.map((r: any) => ({ id: r.doc_id, ...r.data }));
   }
   const shuffled = [...templates].sort(() => Math.random() - 0.5);
   const challenges = shuffled.map((t) => ({
@@ -415,61 +432,60 @@ async function getOrCreatePeriodChallenges(
     completed: false,
     createdAt: new Date().toISOString(),
   }));
-  const batch = collection.firestore.batch();
-  for (const c of challenges) {
-    batch.set(collection.doc(c.id), c);
-  }
-  await batch.commit();
+  const tm = new TransactionManager();
+  await tm.runTransaction(async (tx) => {
+    for (const c of challenges) {
+      tx.set(collectionName, c.id, c);
+    }
+  });
   return challenges;
 }
 
 export async function getWeeklyChallenges(userId: string) {
-  return getOrCreatePeriodChallenges(
-    userId,
-    getWeekKey(),
-    WEEKLY_CHALLENGE_TEMPLATES,
-    collections.gamificationWeeklyChallenges(),
-  );
+  return getOrCreatePeriodChallenges(userId, getWeekKey(), WEEKLY_CHALLENGE_TEMPLATES, 'gamificationWeeklyChallenges');
 }
 
 export async function getMonthlyChallenges(userId: string) {
-  return getOrCreatePeriodChallenges(
-    userId,
-    getMonthKey(),
-    MONTHLY_CHALLENGE_TEMPLATES,
-    collections.gamificationMonthlyChallenges(),
-  );
+  return getOrCreatePeriodChallenges(userId, getMonthKey(), MONTHLY_CHALLENGE_TEMPLATES, 'gamificationMonthlyChallenges');
 }
 
 async function completePeriodChallenge(
   userId: string,
   challengeId: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  collection: any,
+  collectionName: string,
   source: string,
 ) {
-  const ref = collection.doc(challengeId);
-  const snap = await ref.get();
-  if (!snap.exists) throw new NotFoundError('Challenge not found');
-  const challenge = snap.data()!;
+  const supabase = getSupabaseClient()!;
+  const { data } = await supabase.from('nosql_docs').select('data')
+    .eq('collection', collectionName).eq('doc_id', challengeId).maybeSingle();
+
+  if (!data) throw new NotFoundError('Challenge not found');
+  const challenge = data.data as Record<string, unknown>;
   if (challenge.userId !== userId) throw new NotFoundError('Challenge not found');
   if (challenge.completed) return { alreadyCompleted: true };
-  await ref.update({ completed: true, progress: challenge.target, updatedAt: new Date().toISOString() });
-  const xpResult = await awardXp(userId, challenge.xpReward || 100, source);
-  const coinResult = await awardCoins(userId, challenge.coinReward || 50, source);
-  await collections.gamificationProfiles().doc(userId).update({
-    challengesCompleted: FieldValue.increment(1),
-  });
+
+  const merged = { ...challenge, completed: true, progress: challenge.target, updatedAt: new Date().toISOString() };
+  await supabase.from('nosql_docs').update({ data: merged })
+    .eq('collection', collectionName).eq('doc_id', challengeId);
+
+  const xpResult = await awardXp(userId, (challenge.xpReward as number) || 100, source);
+  const coinResult = await awardCoins(userId, (challenge.coinReward as number) || 50, source);
+
+  const profile = await ensureProfile(userId);
+  profile.challengesCompleted = ((profile.challengesCompleted as number) || 0) + 1;
+  profile.updatedAt = new Date().toISOString();
+  await nosqlSet('gamificationProfiles', userId, profile);
+
   logger.info('Period challenge completed', { userId, challengeId, source });
   return { xp: xpResult.xp, coins: coinResult.coins, alreadyCompleted: false };
 }
 
 export async function completeWeeklyChallenge(userId: string, challengeId: string) {
-  return completePeriodChallenge(userId, challengeId, collections.gamificationWeeklyChallenges(), 'weekly_challenge');
+  return completePeriodChallenge(userId, challengeId, 'gamificationWeeklyChallenges', 'weekly_challenge');
 }
 
 export async function completeMonthlyChallenge(userId: string, challengeId: string) {
-  return completePeriodChallenge(userId, challengeId, collections.gamificationMonthlyChallenges(), 'monthly_challenge');
+  return completePeriodChallenge(userId, challengeId, 'gamificationMonthlyChallenges', 'monthly_challenge');
 }
 
 export async function updateStreak(userId: string) {
@@ -483,11 +499,8 @@ export async function updateStreak(userId: string) {
     const diff = Math.floor((Date.now() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
     if (diff === 1) newStreak = (profile.streak as number) + 1;
   }
-  await collections.gamificationProfiles().doc(userId).update({
-    streak: newStreak,
-    lastActiveDate: today,
-    updatedAt: new Date().toISOString(),
-  });
+  const merged = { ...profile, streak: newStreak, lastActiveDate: today, updatedAt: new Date().toISOString() };
+  await nosqlSet('gamificationProfiles', userId, merged);
   if (newStreak > 1 && newStreak % 3 === 0) {
     await awardXp(userId, XP_REWARDS.streakBonus * Math.floor(newStreak / 3), 'streak_bonus');
     await awardCoins(userId, COIN_REWARDS.streakBonus * Math.floor(newStreak / 3), 'streak_bonus');
@@ -498,40 +511,38 @@ export async function updateStreak(userId: string) {
 }
 
 export async function incrementLessonsCompleted(userId: string) {
-  await collections.gamificationProfiles().doc(userId).update({
-    lessonsCompleted: FieldValue.increment(1),
-  });
   const profile = await ensureProfile(userId);
-  await checkAndAwardBadges(userId, profile);
+  profile.lessonsCompleted = ((profile.lessonsCompleted as number) || 0) + 1;
+  profile.updatedAt = new Date().toISOString();
+  await nosqlSet('gamificationProfiles', userId, profile);
+  const p = await ensureProfile(userId);
+  await checkAndAwardBadges(userId, p);
 }
 
 export async function recordAssessmentResult(userId: string, accuracy: number) {
-  const updates: Record<string, unknown> = {};
-  if (accuracy >= 100) {
-    updates.perfectScores = FieldValue.increment(1);
-  }
-  if (accuracy >= 90) {
-    updates.highAccuracyCount = FieldValue.increment(1);
-  }
-  if (Object.keys(updates).length > 0) {
-    await collections.gamificationProfiles().doc(userId).update(updates);
-  }
   const profile = await ensureProfile(userId);
-  await checkAndAwardBadges(userId, profile);
+  if (accuracy >= 100) profile.perfectScores = ((profile.perfectScores as number) || 0) + 1;
+  if (accuracy >= 90) profile.highAccuracyCount = ((profile.highAccuracyCount as number) || 0) + 1;
+  profile.updatedAt = new Date().toISOString();
+  await nosqlSet('gamificationProfiles', userId, profile);
+  const p = await ensureProfile(userId);
+  await checkAndAwardBadges(userId, p);
 }
 
 export async function recordCodingProjectCompleted(userId: string) {
-  await collections.gamificationProfiles().doc(userId).update({
-    codingProjectsCompleted: FieldValue.increment(1),
-  });
   const profile = await ensureProfile(userId);
-  await checkAndAwardBadges(userId, profile);
+  profile.codingProjectsCompleted = ((profile.codingProjectsCompleted as number) || 0) + 1;
+  profile.updatedAt = new Date().toISOString();
+  await nosqlSet('gamificationProfiles', userId, profile);
+  const p = await ensureProfile(userId);
+  await checkAndAwardBadges(userId, p);
 }
 
 export async function recordCodingChallengeCompleted(userId: string) {
-  await collections.gamificationProfiles().doc(userId).update({
-    codingChallengesCompleted: FieldValue.increment(1),
-  });
   const profile = await ensureProfile(userId);
-  await checkAndAwardBadges(userId, profile);
+  profile.codingChallengesCompleted = ((profile.codingChallengesCompleted as number) || 0) + 1;
+  profile.updatedAt = new Date().toISOString();
+  await nosqlSet('gamificationProfiles', userId, profile);
+  const p = await ensureProfile(userId);
+  await checkAndAwardBadges(userId, p);
 }

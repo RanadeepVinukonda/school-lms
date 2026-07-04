@@ -1,6 +1,22 @@
 import { Request, Response } from 'express';
 import * as authService from '../services/auth.service';
 import { sendSuccess, sendCreated } from '../utils/response';
+import { env } from '../config/env';
+import { getSupabaseAdmin } from '../services/supabase';
+
+function parseCookies(cookieHeader?: string): Record<string, string> {
+  const cookies: Record<string, string> = {};
+  if (!cookieHeader) return cookies;
+  for (const part of cookieHeader.split(';')) {
+    const idx = part.indexOf('=');
+    if (idx > 0) {
+      const key = part.substring(0, idx).trim();
+      const val = part.substring(idx + 1).trim();
+      if (key) cookies[key] = val;
+    }
+  }
+  return cookies;
+}
 
 export async function register(req: Request, res: Response) {
   const result = await authService.register(req.body);
@@ -10,6 +26,17 @@ export async function register(req: Request, res: Response) {
 export async function login(req: Request, res: Response) {
   const { email, password } = req.body;
   const result = await authService.login(email, password);
+
+  const maxAge = 7 * 24 * 60 * 60 * 1000;
+  res.cookie('token', result.token, {
+    httpOnly: true,
+    secure: env.COOKIE_SECURE,
+    sameSite: 'strict',
+    path: '/',
+    maxAge,
+    ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
+  });
+
   sendSuccess(res, result, 'Login successful');
 }
 
@@ -148,6 +175,52 @@ export async function verifyToken(req: Request, res: Response) {
   sendSuccess(res, { valid: true });
 }
 
-export async function logout(_req: Request, res: Response) {
+export async function logout(req: Request, res: Response) {
+  res.clearCookie('token', { path: '/', ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}) });
   sendSuccess(res, null, 'Logged out successfully');
+}
+
+export async function refresh(req: Request, res: Response) {
+  const { refresh_token } = req.body;
+  const result = await authService.refreshToken(refresh_token);
+
+  const maxAge = 7 * 24 * 60 * 60 * 1000;
+  res.cookie('token', result.token, {
+    httpOnly: true,
+    secure: env.COOKIE_SECURE,
+    sameSite: 'strict',
+    path: '/',
+    maxAge,
+    ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
+  });
+
+  sendSuccess(res, result, 'Token refreshed');
+}
+
+export async function getSession(req: Request, res: Response) {
+  const cookies = parseCookies(req.headers.cookie);
+  const token = cookies.token;
+  if (!token) {
+    sendSuccess(res, null, 'No session');
+    return;
+  }
+
+  try {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      sendSuccess(res, null, 'No session');
+      return;
+    }
+
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user?.id) {
+      sendSuccess(res, null, 'No session');
+      return;
+    }
+
+    const profile = await authService.verifyUserToken(user.id);
+    sendSuccess(res, { user: profile, uid: user.id });
+  } catch {
+    sendSuccess(res, null, 'No session');
+  }
 }

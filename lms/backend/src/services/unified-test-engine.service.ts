@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { FieldValue, collections } from '../database/adapter';
+import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ForbiddenError, ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { getTeacherAssignment } from './teacher-class-subject.service';
@@ -9,6 +9,10 @@ import * as gamificationService from './gamification.service';
 import { computeLevel, computeComplexityHandled } from './ai-level.service';
 import { createBulkNotifications, createNotification } from './notification.service';
 import type { Difficulty, StudentLevel } from './ai-level.service';
+
+const QV2 = 'quizV2';
+const QAV2 = 'quizAttemptV2';
+const TMPL = 'testTemplates';
 
 export type TestType = 'quiz' | 'assignment' | 'exam';
 export type QuestionType = 'multiple_choice' | 'true_false' | 'short_answer' | 'fill_blank' | 'matching' | 'descriptive' | 'numerical' | 'passage' | 'assertion_reason' | 'case_study' | 'application_based' | 'hots';
@@ -80,6 +84,44 @@ const TYPE_MAP: Record<string, string[]> = {
   hots: ['hots'],
 };
 
+async function nosqlGet(col: string, id: string) {
+  const { data: row } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  return { exists: !!row, data: (row?.data as Record<string, unknown>) ?? null };
+}
+
+async function nosqlSet(col: string, id: string, data: Record<string, unknown>) {
+  const { error } = await getSupabaseAdmin()!.from('nosql_docs').upsert({
+    collection: col, doc_id: id, data,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'collection,doc_id' });
+  if (error) throw error;
+}
+
+async function nosqlUpdate(col: string, id: string, updates: Record<string, unknown>) {
+  const { data: existing } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  const merged = { ...((existing?.data as Record<string, unknown>) || {}), ...updates };
+  const { error } = await getSupabaseAdmin()!.from('nosql_docs').upsert({
+    collection: col, doc_id: id, data: merged,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'collection,doc_id' });
+  if (error) throw error;
+}
+
+async function nosqlDelete(col: string, id: string) {
+  const { error } = await getSupabaseAdmin()!.from('nosql_docs').delete().eq('collection', col).eq('doc_id', id);
+  if (error) throw error;
+}
+
+async function nosqlQuery(col: string, filters: Record<string, unknown>) {
+  let q: any = getSupabaseAdmin()!.from('nosql_docs').select('doc_id, data').eq('collection', col);
+  for (const [k, v] of Object.entries(filters)) {
+    q = q.contains('data', { [k]: v });
+  }
+  const { data: rows, error } = await q;
+  if (error) throw error;
+  return (rows || []).map((r: { doc_id: string; data: unknown }) => ({ id: r.doc_id, ...(r.data as object) }));
+}
+
 const POINTS_BY_DIFFICULTY: Record<string, number> = { easy: 1, medium: 2, hard: 3 };
 
 function shuffleArray<T>(arr: T[]): T[] {
@@ -125,18 +167,10 @@ export async function createTest(data: {
     throw new ForbiddenError('You are not assigned to this class');
   }
 
-  const conceptRef = collections.textbooks()
-    .doc(data.textbookId)
-    .collection('chapters')
-    .doc(data.chapterId)
-    .collection('concepts')
-    .doc(data.conceptId);
-
-  const conceptDoc = await conceptRef.get();
-  if (!conceptDoc.exists) {
+  const { data: conceptData } = await getSupabaseAdmin()!.from('concepts').select('title, name').eq('id', data.conceptId).maybeSingle();
+  if (!conceptData) {
     throw new NotFoundError('Concept not found');
   }
-  const conceptData = conceptDoc.data()!;
   const conceptName = conceptData.title || conceptData.name || 'Untitled Concept';
 
   const selectedModels = data.selectedModels ?? [];
@@ -300,7 +334,7 @@ export async function createTest(data: {
     updatedAt: now,
   };
 
-  await collections.quizV2().doc(testId).set(testData);
+  await nosqlSet(QV2, testId, testData as unknown as Record<string, unknown>);
 
   logger.info('Unified test created', {
     testId,
@@ -311,8 +345,8 @@ export async function createTest(data: {
   });
 
   try {
-    const classDoc = await collections.classes().doc(data.classId).get();
-    const classData = classDoc.data();
+    const supabase2 = getSupabaseAdmin()!;
+    const { data: classData } = await supabase2.from('classes').select('name').eq('id', data.classId).maybeSingle();
 
     if (data.publishedTo === 'students' && (data.targetStudentIds ?? []).length > 0) {
       await createBulkNotifications(
@@ -325,10 +359,8 @@ export async function createTest(data: {
         }))
       );
     } else if (data.publishedTo === 'class') {
-      const studentsSnap = await collections.users()
-        .where('classIds', 'array-contains', data.classId)
-        .get();
-      const studentIds = studentsSnap.docs.map((d) => d.id);
+      const { data: studentRows } = await supabase2.from('users').select('id').contains('class_ids', [data.classId]);
+      const studentIds = (studentRows || []).map((r) => r.id);
 
       if (studentIds.length > 0) {
         await createBulkNotifications(
@@ -365,197 +397,133 @@ export async function createTestTemplate(data: {
   const id = randomUUID();
   const now = new Date().toISOString();
 
-  const template: TestTemplate = {
-    id,
-    name: data.name,
-    description: data.description,
-    teacherId: data.teacherId,
-    testType: data.testType,
-    selectedModels: data.selectedModels,
-    timeLimitMinutes: data.timeLimitMinutes,
-    questionCount: data.questionCount,
-    passingScore: data.passingScore,
-    maxAttempts: data.maxAttempts,
-    shuffleQuestions: data.shuffleQuestions,
-    showResults: data.showResults,
-    createdAt: now,
-    updatedAt: now,
+  const template: Record<string, unknown> = {
+    id, name: data.name, description: data.description,
+    teacherId: data.teacherId, testType: data.testType,
+    selectedModels: data.selectedModels, timeLimitMinutes: data.timeLimitMinutes,
+    questionCount: data.questionCount, passingScore: data.passingScore,
+    maxAttempts: data.maxAttempts, shuffleQuestions: data.shuffleQuestions,
+    showResults: data.showResults, createdAt: now, updatedAt: now,
   };
 
-  await collections.testTemplates().doc(id).set(template);
+  await nosqlSet(TMPL, id, template);
   logger.info('Test template created', { templateId: id, name: data.name });
-  return template;
+  return template as unknown as TestTemplate;
 }
 
 export async function updateTestTemplate(templateId: string, teacherId: string, data: Partial<TestTemplate>): Promise<TestTemplate> {
-  const ref = collections.testTemplates().doc(templateId);
-  const doc = await ref.get();
-
-  if (!doc.exists) throw new NotFoundError('Template not found');
-  const existing = doc.data() as TestTemplate;
+  const { exists, data: existing } = await nosqlGet(TMPL, templateId);
+  if (!exists || !existing) throw new NotFoundError('Template not found');
   if (existing.teacherId !== teacherId) throw new ForbiddenError('Not your template');
 
   const updates = { ...data, updatedAt: new Date().toISOString() };
-  await ref.update(updates);
-
-  const updated = await ref.get();
-  return { id: updated.id, ...updated.data() } as TestTemplate;
+  await nosqlUpdate(TMPL, templateId, updates as unknown as Record<string, unknown>);
+  const updated = await nosqlGet(TMPL, templateId);
+  return { id: templateId, ...updated.data } as unknown as TestTemplate;
 }
 
 export async function deleteTestTemplate(templateId: string, teacherId: string): Promise<void> {
-  const ref = collections.testTemplates().doc(templateId);
-  const doc = await ref.get();
-
-  if (!doc.exists) throw new NotFoundError('Template not found');
-  const existing = doc.data() as TestTemplate;
+  const { exists, data: existing } = await nosqlGet(TMPL, templateId);
+  if (!exists || !existing) throw new NotFoundError('Template not found');
   if (existing.teacherId !== teacherId) throw new ForbiddenError('Not your template');
-
-  await ref.delete();
+  await nosqlDelete(TMPL, templateId);
   logger.info('Test template deleted', { templateId });
 }
 
 export async function getTeacherTemplates(teacherId: string): Promise<TestTemplate[]> {
-  const snapshot = await collections.testTemplates()
-    .where('teacherId', '==', teacherId)
-    .get();
-
-  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as TestTemplate))
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const items = await nosqlQuery(TMPL, { teacherId });
+  return items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) as unknown as TestTemplate[];
 }
 
 export async function getTestsForClass(classId: string, role?: string): Promise<UnifiedTest[]> {
-  const snapshot = await collections.quizV2()
-    .where('classId', '==', classId)
-    .get();
-
-  const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as UnifiedTest));
+  const items = await nosqlQuery(QV2, { classId });
   const isPrivileged = role === 'teacher' || role === 'admin' || role === 'super_admin';
 
-  const filtered = isPrivileged ? items : items.filter((t) => !!t.releasedAt);
-  return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const filtered = isPrivileged ? items : items.filter((t: any) => !!t.releasedAt);
+  return filtered.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) as unknown as UnifiedTest[];
 }
 
 export async function getTestsForTeacher(teacherId: string): Promise<UnifiedTest[]> {
-  const snapshot = await collections.quizV2()
-    .where('teacherId', '==', teacherId)
-    .get();
-
-  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as UnifiedTest))
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const items = await nosqlQuery(QV2, { teacherId });
+  return items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) as unknown as UnifiedTest[];
 }
 
 export async function getTestById(testId: string): Promise<UnifiedTest> {
-  const ref = collections.quizV2().doc(testId);
-  const doc = await ref.get();
-
-  if (!doc.exists) throw new NotFoundError('Test not found');
-  return { id: doc.id, ...doc.data() } as UnifiedTest;
+  const { exists, data } = await nosqlGet(QV2, testId);
+  if (!exists || !data) throw new NotFoundError('Test not found');
+  return { id: testId, ...data } as unknown as UnifiedTest;
 }
 
 export async function updateTest(testId: string, teacherId: string, data: Partial<UnifiedTest>): Promise<UnifiedTest> {
-  const ref = collections.quizV2().doc(testId);
-  const doc = await ref.get();
-
-  if (!doc.exists) throw new NotFoundError('Test not found');
-  const existing = doc.data() as UnifiedTest;
+  const { exists, data: existing } = await nosqlGet(QV2, testId);
+  if (!exists || !existing) throw new NotFoundError('Test not found');
   if (existing.teacherId !== teacherId) throw new ForbiddenError('Not your test');
 
   const allowed = ['title', 'timeLimitMinutes', 'passingScore', 'maxAttempts', 'shuffleQuestions', 'showResults', 'description', 'startDate', 'endDate'];
   const updates: Record<string, unknown> = { updatedAt: new Date().toISOString() };
   for (const key of allowed) {
-    if (data[key as keyof typeof data] !== undefined) {
-      updates[key] = data[key as keyof typeof data];
-    }
+    if (data[key as keyof typeof data] !== undefined) updates[key] = data[key as keyof typeof data];
   }
 
-  await ref.update(updates);
-  const updated = await ref.get();
+  await nosqlUpdate(QV2, testId, updates);
+  const updated = await nosqlGet(QV2, testId);
   logger.info('Test updated', { testId, teacherId });
-  return { id: updated.id, ...updated.data() } as UnifiedTest;
+  return { id: testId, ...updated.data } as unknown as UnifiedTest;
 }
 
 export async function deleteTest(testId: string, teacherId: string): Promise<void> {
-  const ref = collections.quizV2().doc(testId);
-  const doc = await ref.get();
-
-  if (!doc.exists) throw new NotFoundError('Test not found');
-  const existing = doc.data() as UnifiedTest;
+  const { exists, data: existing } = await nosqlGet(QV2, testId);
+  if (!exists || !existing) throw new NotFoundError('Test not found');
   if (existing.teacherId !== teacherId) throw new ForbiddenError('Not your test');
 
-  const attemptsSnap = await collections.quizAttemptV2()
-    .where('quizId', '==', testId)
-    .get();
+  const attempts = await nosqlQuery(QAV2, { quizId: testId });
+  for (const a of attempts) {
+    await nosqlDelete(QAV2, (a as any).id);
+  }
+  await nosqlDelete(QV2, testId);
 
-  const batch = collections.quizV2().firestore.batch();
-  attemptsSnap.docs.forEach((a) => batch.delete(a.ref));
-  batch.delete(ref);
-  await batch.commit();
-
-  logger.info('Test deleted', { testId, teacherId, attemptsDeleted: attemptsSnap.size });
+  logger.info('Test deleted', { testId, teacherId, attemptsDeleted: attempts.length });
 }
 
 export async function republishTest(testId: string, teacherId: string): Promise<UnifiedTest> {
-  const ref = collections.quizV2().doc(testId);
-  const doc = await ref.get();
-
-  if (!doc.exists) throw new NotFoundError('Test not found');
-  const existing = doc.data() as UnifiedTest;
+  const { exists, data: existing } = await nosqlGet(QV2, testId);
+  if (!exists || !existing) throw new NotFoundError('Test not found');
   if (existing.teacherId !== teacherId) throw new ForbiddenError('Not your test');
 
   const now = new Date().toISOString();
-  await ref.update({ isRepublished: true, releasedAt: now, updatedAt: now });
-
-  const updated = await ref.get();
+  await nosqlUpdate(QV2, testId, { isRepublished: true, releasedAt: now, updatedAt: now });
+  const updated = await nosqlGet(QV2, testId);
   logger.info('Test republished', { testId, teacherId });
-  return { id: updated.id, ...updated.data() } as UnifiedTest;
+  return { id: testId, ...updated.data } as unknown as UnifiedTest;
 }
 
 export async function startTestAttempt(testId: string, studentId: string): Promise<any> {
-  const testRef = collections.quizV2().doc(testId);
-  const testDoc = await testRef.get();
-
-  if (!testDoc.exists) throw new NotFoundError('Test not found');
-  const testData = testDoc.data() as UnifiedTest;
-
+  const supabase = getSupabaseAdmin()!;
+  const { exists: testExists, data: testData } = await nosqlGet(QV2, testId);
+  if (!testExists || !testData) throw new NotFoundError('Test not found');
   if (!testData.releasedAt) throw new ForbiddenError('Test is not yet released');
+  if (testData.startDate && new Date() < new Date(testData.startDate as string)) throw new ForbiddenError('Test has not started yet');
+  if (testData.endDate && new Date() > new Date(testData.endDate as string)) throw new ForbiddenError('Test has already ended');
 
-  if (testData.startDate && new Date() < new Date(testData.startDate)) {
-    throw new ForbiddenError('Test has not started yet');
-  }
-  if (testData.endDate && new Date() > new Date(testData.endDate)) {
-    throw new ForbiddenError('Test has already ended');
-  }
-
-  if (testData.publishedTo === 'students' && testData.targetStudentIds.length > 0) {
-    if (!testData.targetStudentIds.includes(studentId)) {
-      throw new ForbiddenError('This test is not assigned to you');
-    }
+  const tData = testData as any;
+  if (tData.publishedTo === 'students' && tData.targetStudentIds?.length > 0) {
+    if (!tData.targetStudentIds.includes(studentId)) throw new ForbiddenError('This test is not assigned to you');
   }
 
-  const attemptsSnapshot = await collections.quizAttemptV2()
-    .where('quizId', '==', testId)
-    .where('studentId', '==', studentId)
-    .get();
+  const attempts = await nosqlQuery(QAV2, { quizId: testId, studentId });
+  if (attempts.length >= tData.maxAttempts) throw new ForbiddenError('Maximum attempts reached');
 
-  if (attemptsSnapshot.size >= testData.maxAttempts) {
-    throw new ForbiddenError('Maximum attempts reached');
-  }
+  const { data: userRow } = await supabase.from('users').select('level').eq('id', studentId).maybeSingle();
+  const studentLevel: StudentLevel = ((userRow?.level as StudentLevel) || 'beginner');
 
-  const userDoc = await collections.users().doc(studentId).get();
-  const userData = userDoc.data() || {};
-  const studentLevel: StudentLevel = (userData.level as StudentLevel) || 'beginner';
-
-  const questionBank = testData.questions || [];
+  const questionBank = tData.questions || [];
   let available = [...questionBank];
+  if (tData.shuffleQuestions !== false) available = [...available].sort(() => Math.random() - 0.5);
 
-  if (testData.shuffleQuestions !== false) {
-    available = [...available].sort(() => Math.random() - 0.5);
-  }
-
-  const selected = available.slice(0, Math.min(testData.questionCount || available.length, available.length));
+  const selected = available.slice(0, Math.min(tData.questionCount || available.length, available.length));
 
   const questionsForStudent = selected.map((q: any) => {
-    if (testData.isRepublished) return q;
+    if (tData.isRepublished) return q;
     const { correctAnswer, ...rest } = q;
     return rest;
   });
@@ -563,29 +531,20 @@ export async function startTestAttempt(testId: string, studentId: string): Promi
   const attemptId = randomUUID();
   const now = new Date().toISOString();
 
-  const attempt = {
-    id: attemptId,
-    quizId: testId,
-    studentId,
-    startedAt: now,
-    submittedAt: null,
-    answers: [],
-    score: null,
+  const attempt: Record<string, unknown> = {
+    id: attemptId, quizId: testId, studentId, startedAt: now, submittedAt: null,
+    answers: [], score: null,
     totalPoints: selected.reduce((sum: number, q: any) => sum + (POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1), 0),
-    percentage: null,
-    passed: null,
-    timeSpent: 0,
-    status: 'in_progress',
-    selectedModels: testData.selectedModels,
-    level: studentLevel,
-    testType: testData.testType,
+    percentage: null, passed: null, timeSpent: 0, status: 'in_progress',
+    selectedModels: tData.selectedModels, level: studentLevel, testType: tData.testType,
   };
 
-  await collections.quizAttemptV2().doc(attemptId).set(attempt);
-  await testRef.update({ attemptCount: FieldValue.increment(1) });
+  await nosqlSet(QAV2, attemptId, attempt);
 
-  logger.info('Test attempt started', { testId, studentId, attemptId, testType: testData.testType });
+  const curCount = (tData.attemptCount as number) || 0;
+  await nosqlUpdate(QV2, testId, { attemptCount: curCount + 1, updatedAt: now });
 
+  logger.info('Test attempt started', { testId, studentId, attemptId, testType: tData.testType });
   return { ...attempt, questions: questionsForStudent };
 }
 
@@ -594,33 +553,26 @@ export async function submitTestAttempt(attemptId: string, studentId: string, da
   startedAt: string;
   submittedAt: string;
 }): Promise<any> {
-  const attemptRef = collections.quizAttemptV2().doc(attemptId);
-  const attemptDoc = await attemptRef.get();
-
-  if (!attemptDoc.exists) throw new NotFoundError('Attempt not found');
-  const attemptData = attemptDoc.data()!;
-
+  const supabase = getSupabaseAdmin()!;
+  const attemptData = (await nosqlGet(QAV2, attemptId)).data as Record<string, unknown> | null;
+  if (!attemptData) throw new NotFoundError('Attempt not found');
   if (attemptData.studentId !== studentId) throw new ForbiddenError('Not your attempt');
   if (attemptData.status !== 'in_progress') throw new ForbiddenError('Attempt already submitted');
 
-  const testRef = collections.quizV2().doc(attemptData.quizId);
-  const testDoc = await testRef.get();
-  if (!testDoc.exists) throw new NotFoundError('Test not found');
-  const testData = testDoc.data() as UnifiedTest;
+  const testData = (await nosqlGet(QV2, attemptData.quizId as string)).data as Record<string, unknown> | null;
+  if (!testData) throw new NotFoundError('Test not found');
 
-  const startedAt = new Date(data.startedAt).getTime();
-  const submittedAtTime = new Date(data.submittedAt).getTime();
-  const elapsedMinutes = (submittedAtTime - startedAt) / 60000;
-  if (elapsedMinutes > testData.timeLimitMinutes) {
-    throw new ForbiddenError('Time limit exceeded');
-  }
+  const startedAtMs = new Date(data.startedAt).getTime();
+  const submittedAtMs = new Date(data.submittedAt).getTime();
+  const elapsedMinutes = (submittedAtMs - startedAtMs) / 60000;
+  if (elapsedMinutes > (testData.timeLimitMinutes as number)) throw new ForbiddenError('Time limit exceeded');
 
-  const questionBank = testData.questions || [];
+  const questionBank = (testData.questions as any[]) || [];
+  const showResults = !!(testData.showResults);
 
   let score = 0;
   const gradedAnswers = data.answers.map((answer) => {
     const question = questionBank.find((q: any) => q.id === answer.questionId);
-
     if (!question) {
       return { questionId: answer.questionId, answer: answer.answer, isCorrect: false, pointsEarned: 0, timeSpent: answer.timeSpent || 0 };
     }
@@ -667,55 +619,39 @@ export async function submitTestAttempt(attemptId: string, studentId: string, da
     if (isCorrect) score += pointsEarned;
 
     const graded: Record<string, unknown> = {
-      questionId: answer.questionId,
-      questionText: question.text,
-      answer: answer.answer,
-      isCorrect,
-      pointsEarned,
-      timeSpent: answer.timeSpent || 0,
+      questionId: answer.questionId, questionText: question.text, answer: answer.answer,
+      isCorrect, pointsEarned, timeSpent: answer.timeSpent || 0,
     };
-    if (testData.showResults) {
-      graded.correctAnswer = question.correctAnswer;
-      graded.explanation = question.explanation;
-    }
+    if (showResults) { graded.correctAnswer = question.correctAnswer; graded.explanation = question.explanation; }
     return graded;
   });
 
   const timeSpent = data.answers.reduce((sum, a) => sum + (a.timeSpent || 0), 0);
-  const percentage = attemptData.totalPoints > 0 ? Math.round((score / attemptData.totalPoints) * 100) : 0;
-  const passed = percentage >= (testData.passingScore || 50);
+  const totalPoints = (attemptData.totalPoints as number) || 0;
+  const percentage = totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0;
+  const passed = percentage >= ((testData.passingScore as number) || 50);
 
-  const accuracy = attemptData.totalPoints > 0 ? score / attemptData.totalPoints : 0;
+  const accuracy = totalPoints > 0 ? score / totalPoints : 0;
   const avgReactionTime = gradedAnswers.length > 0
     ? gradedAnswers.reduce((sum: number, a: any) => sum + (a.timeSpent || 0), 0) / gradedAnswers.length
     : 0;
 
   const difficultyMap: Record<string, Difficulty> = {};
-  for (const q of questionBank) {
-    difficultyMap[q.id] = q.difficulty || 'easy';
-  }
+  for (const q of questionBank) { difficultyMap[q.id] = q.difficulty || 'easy'; }
 
   const complexityHandled = computeComplexityHandled(
     gradedAnswers.map((a: any) => ({ questionId: a.questionId, correct: a.isCorrect })),
     difficultyMap,
   );
-
   const newLevel = computeLevel(accuracy, avgReactionTime, complexityHandled);
 
-  await collections.users().doc(studentId).update({ level: newLevel });
+  await supabase.from('users').update({ level: newLevel }).eq('id', studentId);
 
-  const result = {
-    answers: gradedAnswers,
-    score,
-    totalPoints: attemptData.totalPoints,
-    percentage,
-    passed,
-    timeSpent,
-    submittedAt: data.submittedAt,
-    status: 'completed',
+  const result: Record<string, unknown> = {
+    answers: gradedAnswers, score, totalPoints, percentage, passed,
+    timeSpent, submittedAt: data.submittedAt, status: 'completed',
   };
-
-  await attemptRef.update(result);
+  await nosqlUpdate(QAV2, attemptId, result);
 
   logger.info('Test attempt submitted', { attemptId, studentId, score, percentage, newLevel });
 
@@ -737,10 +673,10 @@ export async function submitTestAttempt(attemptId: string, studentId: string, da
   }
 
   try {
-    const studentSnap = await collections.users().doc(studentId).get();
-    const studentName = studentSnap.exists ? (studentSnap.data()?.displayName || studentSnap.data()?.email || 'Unknown') : 'Unknown';
+    const { data: sRow } = await supabase.from('users').select('display_name, email').eq('id', studentId).maybeSingle();
+    const studentName = sRow?.display_name || sRow?.email || 'Unknown';
     await createNotification({
-      userId: testData.teacherId,
+      userId: testData.teacherId as string,
       type: 'test_submitted',
       title: `Test submitted: ${testData.title}`,
       body: `${studentName} submitted the ${testData.testType} "${testData.title}" with score ${percentage}%.`,
@@ -754,59 +690,31 @@ export async function submitTestAttempt(attemptId: string, studentId: string, da
 }
 
 export async function getTestResults(testId: string, studentId: string, isPrivileged = false): Promise<any[]> {
-  const testDoc = await collections.quizV2().doc(testId).get();
-  if (!testDoc.exists) throw new NotFoundError('Test not found');
+  const nq = await nosqlGet(QV2, testId);
+  const testData = nq.data as Record<string, unknown> | null;
+  if (!testData) throw new NotFoundError('Test not found');
 
-  const testData = testDoc.data() as UnifiedTest;
-  const resultsGated = !testData.showResults;
-
-  let query = collections.quizAttemptV2()
-    .where('quizId', '==', testId);
-  if (!isPrivileged) {
-    query = query.where('studentId', '==', studentId);
-  }
-
-  const snapshot = await query.get();
-  const attempts = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const resultsGated = !(testData.showResults as boolean);
+  const attempts = await (isPrivileged ? nosqlQuery(QAV2, { quizId: testId }) : nosqlQuery(QAV2, { quizId: testId, studentId }));
   const sorted = attempts.sort((a: any, b: any) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
 
-  // Fetch student names for privileged users
   const studentNames = new Map<string, string>();
   if (isPrivileged) {
     const studentIds = [...new Set(sorted.map((a: any) => a.studentId))] as string[];
-    for (const sid of studentIds) {
-      try {
-        const userSnap = await collections.users().doc(sid).get();
-        if (userSnap.exists) {
-          const userData = userSnap.data()!;
-          studentNames.set(sid, userData.displayName || userData.email || 'Unknown');
-        }
-      } catch { studentNames.set(sid, 'Unknown'); }
-    }
+    const { data: rows } = await getSupabaseAdmin()!.from('users').select('id, display_name, email').in('id', studentIds);
+    if (rows) { for (const r of rows) studentNames.set(r.id, r.display_name || r.email || 'Unknown'); }
   }
 
   return sorted.map((data: any) => {
     const enriched = { ...data, studentName: studentNames.get(data.studentId) || null };
     if (!isPrivileged && resultsGated && data.status === 'completed') {
       return {
-        id: data.id,
-        quizId: data.quizId,
-        studentId: data.studentId,
-        studentName: null,
-        testType: data.testType,
-        score: data.score,
-        totalPoints: data.totalPoints,
-        percentage: data.percentage,
-        passed: data.passed,
-        timeSpent: data.timeSpent,
-        startedAt: data.startedAt,
-        submittedAt: data.submittedAt,
-        status: data.status,
+        id: data.id, quizId: data.quizId, studentId: data.studentId, studentName: null,
+        testType: data.testType, score: data.score, totalPoints: data.totalPoints,
+        percentage: data.percentage, passed: data.passed, timeSpent: data.timeSpent,
+        startedAt: data.startedAt, submittedAt: data.submittedAt, status: data.status,
         level: data.level,
-        answers: data.answers?.map((a: { questionId: string; pointsEarned: number }) => ({
-          questionId: a.questionId,
-          pointsEarned: a.pointsEarned,
-        })) ?? [],
+        answers: (data.answers || []).map((a: { questionId: string; pointsEarned: number }) => ({ questionId: a.questionId, pointsEarned: a.pointsEarned })),
       };
     }
     return enriched;
@@ -814,85 +722,57 @@ export async function getTestResults(testId: string, studentId: string, isPrivil
 }
 
 export async function getTestAttemptsForStudent(studentId: string): Promise<any[]> {
-  const snapshot = await collections.quizAttemptV2()
-    .where('studentId', '==', studentId)
-    .get();
-
-  const attempts = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const attempts = await nosqlQuery(QAV2, { studentId });
   const testIds = [...new Set(attempts.map((a: any) => a.quizId))] as string[];
 
-  const testTitles = new Map<string, string>();
-  const subjectNames = new Map<string, string>();
-  const subjectIds = new Map<string, string>();
+  const testMeta = new Map<string, { title: string; subjectName: string; subjectId: string }>();
   for (const tid of testIds) {
-    try {
-      const testSnap = await collections.quizV2().doc(tid).get();
-      if (testSnap.exists) {
-        const testData = testSnap.data()!;
-        testTitles.set(tid, testData.title || 'Untitled');
-        subjectNames.set(tid, testData.subjectName || testData.subjectId || 'Unknown');
-        subjectIds.set(tid, testData.subjectId || '');
-      }
-    } catch { /* ignore */ }
+    const nq2 = await nosqlGet(QV2, tid);
+    const data = nq2.data as Record<string, unknown> | null;
+    if (data) {
+      const d = data as any;
+      testMeta.set(tid, { title: d.title || 'Untitled', subjectName: d.subjectName || d.subjectId || 'Unknown', subjectId: d.subjectId || '' });
+    }
   }
 
-  return attempts.map((a: any) => ({
-    ...a,
-    testTitle: testTitles.get(a.quizId) || 'Untitled',
-    subjectName: subjectNames.get(a.quizId) || 'Unknown',
-    subjectId: subjectIds.get(a.quizId) || '',
-  })).sort((a: any, b: any) => new Date(b.submittedAt || b.startedAt).getTime() - new Date(a.submittedAt || a.startedAt).getTime());
+  return attempts.map((a: any) => {
+    const meta = testMeta.get(a.quizId) || { title: 'Untitled', subjectName: 'Unknown', subjectId: '' };
+    return { ...a, testTitle: meta.title, subjectName: meta.subjectName, subjectId: meta.subjectId };
+  }).sort((a: any, b: any) => new Date(b.submittedAt || b.startedAt).getTime() - new Date(a.submittedAt || a.startedAt).getTime());
 }
 
 export async function getClassAttempts(classId: string): Promise<any[]> {
-  const testsSnap = await collections.quizV2().where('classId', '==', classId).get();
-  const testIds = testsSnap.docs.map((d) => d.id);
-  const testTitles = new Map(testsSnap.docs.map((d) => [d.id, d.data().title || 'Untitled']));
+  const items = await nosqlQuery(QV2, { classId });
+  const testTitles = new Map(items.map((t: any) => [t.id, t.title || 'Untitled']));
+  const testIds = items.map((t: any) => t.id);
 
   if (testIds.length === 0) return [];
 
   const allAttempts: any[] = [];
   for (const testId of testIds) {
-    const snap = await collections.quizAttemptV2().where('quizId', '==', testId).get();
-    for (const doc of snap.docs) {
-      const data = doc.data();
-      allAttempts.push({
-        id: doc.id,
-        ...data,
-        testTitle: testTitles.get(testId) || 'Untitled',
-      });
+    const attempts = await nosqlQuery(QAV2, { quizId: testId });
+    for (const a of attempts) {
+      allAttempts.push({ ...a, testTitle: testTitles.get(testId) || 'Untitled' });
     }
   }
 
-  const studentIds = [...new Set(allAttempts.map((a) => a.studentId))] as string[];
+  const studentIds = [...new Set(allAttempts.map((a: any) => a.studentId))] as string[];
+  const { data: rows } = await getSupabaseAdmin()!.from('users').select('id, display_name, email').in('id', studentIds);
   const studentNames = new Map<string, string>();
-  for (const sid of studentIds) {
-    try {
-      const userSnap = await collections.users().doc(sid).get();
-      if (userSnap.exists) {
-        const userData = userSnap.data()!;
-        studentNames.set(sid, userData.displayName || userData.email || 'Unknown');
-      }
-    } catch { studentNames.set(sid, 'Unknown'); }
-  }
+  if (rows) { for (const r of rows) studentNames.set(r.id, r.display_name || r.email || 'Unknown'); }
 
-  return allAttempts.map((a) => ({
-    ...a,
-    studentName: studentNames.get(a.studentId) || null,
-  })).sort((a, b) => new Date(b.submittedAt || b.startedAt).getTime() - new Date(a.submittedAt || a.startedAt).getTime());
+  return allAttempts.map((a: any) => ({
+    ...a, studentName: studentNames.get(a.studentId) || null,
+  })).sort((a: any, b: any) => new Date(b.submittedAt || b.startedAt).getTime() - new Date(a.submittedAt || a.startedAt).getTime());
 }
 
 export async function releaseResults(testId: string, showResults: boolean, teacherId?: string): Promise<UnifiedTest> {
-  const ref = collections.quizV2().doc(testId);
-  const doc = await ref.get();
-
-  if (!doc.exists) throw new NotFoundError('Test not found');
-  const existing = doc.data() as UnifiedTest;
+  const { exists, data: existing } = await nosqlGet(QV2, testId);
+  if (!exists || !existing) throw new NotFoundError('Test not found');
   if (teacherId && existing.teacherId !== teacherId) throw new ForbiddenError('Not your test');
 
-  await ref.update({ showResults, updatedAt: new Date().toISOString() });
+  await nosqlUpdate(QV2, testId, { showResults, updatedAt: new Date().toISOString() });
   logger.info('Test results release toggled', { testId, showResults });
-
-  const updated = await ref.get();
-  return { id: updated.id, ...updated.data() } as UnifiedTest;
+  const updated = await nosqlGet(QV2, testId);
+  return { id: testId, ...updated.data } as unknown as UnifiedTest;
 }

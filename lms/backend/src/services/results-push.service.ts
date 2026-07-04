@@ -1,51 +1,58 @@
-import { collections } from '../database/adapter';
+import { getSupabaseClient } from './supabase';
 import { ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
+const COLLECTION_MAP: Record<string, string> = {
+  quiz: 'quizV2', assignment: 'assignmentV2', exam: 'examV2',
+};
+
+async function updateShowResults(collection: string, docId: string, data: Record<string, unknown>, now: string) {
+  const supabase = getSupabaseClient()!;
+  const merged = { ...data, showResults: true, updatedAt: now };
+  await supabase.from('nosql_docs').update({ data: merged, updated_at: now })
+    .eq('collection', collection).eq('doc_id', docId);
+}
+
 export async function releaseAssessmentsForClass(classId: string, teacherId: string, options?: { type?: 'quiz' | 'assignment' | 'exam' }) {
+  const supabase = getSupabaseClient()!;
   const now = new Date().toISOString();
   let updatedCount = 0;
 
   const types: Array<'quiz' | 'assignment' | 'exam'> = options?.type ? [options.type] : ['quiz', 'assignment', 'exam'];
 
   for (const type of types) {
-    const collection = type === 'quiz' ? collections.quizV2() : type === 'assignment' ? collections.assignmentV2() : collections.examV2();
-    const snapshot = await collection
-      .where('classId', '==', classId)
-      .where('teacherId', '==', teacherId)
-      .get();
+    const coll = COLLECTION_MAP[type];
+    const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
+      .eq('collection', coll)
+      .contains('data', { classId, teacherId });
 
-    for (const doc of snapshot.docs) {
-      const data = doc.data();
-      if (data.showResults === true) continue;
-
-      await doc.ref.update({ showResults: true, updatedAt: now });
+    for (const row of rows || []) {
+      const itemData = row.data as Record<string, unknown>;
+      if (itemData.showResults === true) continue;
+      await updateShowResults(coll, row.doc_id, itemData, now);
       updatedCount++;
     }
   }
 
   logger.info('Batch results released', { classId, teacherId, updatedCount });
-
   return { updatedCount };
 }
 
 export async function releaseSingleAssessment(assessmentId: string, type: 'quiz' | 'assignment' | 'exam', teacherId: string) {
-  const collection = type === 'quiz' ? collections.quizV2() : type === 'assignment' ? collections.assignmentV2() : collections.examV2();
-  const ref = collection.doc(assessmentId);
-  const doc = await ref.get();
+  const supabase = getSupabaseClient()!;
+  const coll = COLLECTION_MAP[type];
+  const { data } = await supabase.from('nosql_docs').select('data')
+    .eq('collection', coll).eq('doc_id', assessmentId).maybeSingle();
 
-  if (!doc.exists) {
-    throw new Error(`${type} not found`);
-  }
+  if (!data) throw new Error(`${type} not found`);
 
-  const data = doc.data()!;
-  if (data.teacherId !== teacherId) {
+  const itemData = data.data as Record<string, unknown>;
+  if (itemData.teacherId !== teacherId) {
     throw new ForbiddenError('You do not own this assessment');
   }
 
-  await ref.update({ showResults: true, updatedAt: new Date().toISOString() });
+  await updateShowResults(coll, assessmentId, itemData, new Date().toISOString());
 
   logger.info('Single assessment results released', { assessmentId, type, teacherId });
-
   return { id: assessmentId, type, showResults: true };
 }

@@ -1,65 +1,82 @@
 import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../database/adapter';
+import { getSupabaseAdmin } from './supabase';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
 export async function getDashboardData(studentId: string) {
-  const userDoc = await collections.users().doc(studentId).get();
-  if (!userDoc.exists) throw new NotFoundError('Student not found');
+  const supabase = getSupabaseAdmin();
+  if (!supabase) throw new Error('Supabase not configured');
 
-  const userData = userDoc.data()!;
+  const { data: userRow, error } = await supabase
+    .from('users')
+    .select('id, display_name, class_id, data')
+    .eq('id', studentId)
+    .maybeSingle();
+  if (error || !userRow) throw new NotFoundError('Student not found');
+
   const profile = {
     id: studentId,
-    displayName: userData.displayName || 'Student',
-    classId: userData.classId || '',
-    level: userData.level || 'nursery',
+    displayName: userRow.display_name || 'Student',
+    classId: userRow.class_id || '',
+    level: (userRow.data as Record<string, unknown> | null)?.level || 'nursery',
   };
 
-  const progressSnapshot = await collections.prePrimaryProgress()
-    .where('studentId', '==', studentId)
-    .get();
+  const { data: progressDocs } = await supabase
+    .from('nosql_docs')
+    .select('data, doc_id')
+    .eq('collection', 'prePrimaryProgress')
+    .filter('data->>studentId', 'eq', studentId);
 
   const progress: Record<string, number> = {};
-  progressSnapshot.docs.forEach((doc) => {
-    const data = doc.data();
-    progress[data.subject || 'general'] = data.completed || 0;
+  (progressDocs || []).forEach((doc) => {
+    const d = doc.data as Record<string, unknown>;
+    progress[(d.subject as string) || 'general'] = (d.completed as number) || 0;
   });
 
-  const totalStars = progressSnapshot.docs.reduce((sum, doc) => sum + (doc.data().stars || 0), 0);
+  const totalStars = (progressDocs || []).reduce((sum, doc) => sum + ((doc.data as Record<string, unknown>).stars as number || 0), 0);
 
   return { profile, progress, totalStars };
 }
 
 export async function getLessons() {
-  const snapshot = await collections.prePrimaryLessons()
-    .orderBy('order', 'asc')
-    .get();
+  const supabase = getSupabaseAdmin()!;
+  const { data: docs } = await supabase
+    .from('nosql_docs')
+    .select('data, doc_id')
+    .eq('collection', 'prePrimaryLessons')
+    .order('data->>order', { ascending: true });
 
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
+  return (docs || []).map((doc) => ({
+    id: doc.doc_id,
+    ...doc.data as Record<string, unknown>,
   }));
 }
 
 export async function getFlashcards(subjectId: string) {
-  const snapshot = await collections.flashcards()
-    .where('subjectId', '==', subjectId)
-    .get();
+  const supabase = getSupabaseAdmin()!;
+  const { data: docs } = await supabase
+    .from('nosql_docs')
+    .select('data, doc_id')
+    .eq('collection', 'flashcards')
+    .filter('data->>subjectId', 'eq', subjectId);
 
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
+  return (docs || []).map((doc) => ({
+    id: doc.doc_id,
+    ...doc.data as Record<string, unknown>,
   }));
 }
 
 export async function getStories() {
-  const snapshot = await collections.stories()
-    .orderBy('order', 'asc')
-    .get();
+  const supabase = getSupabaseAdmin()!;
+  const { data: docs } = await supabase
+    .from('nosql_docs')
+    .select('data, doc_id')
+    .eq('collection', 'stories')
+    .order('data->>order', { ascending: true });
 
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
+  return (docs || []).map((doc) => ({
+    id: doc.doc_id,
+    ...doc.data as Record<string, unknown>,
   }));
 }
 
@@ -69,17 +86,19 @@ export async function saveTracing(data: {
   type: string;
   label?: string;
 }) {
+  const supabase = getSupabaseAdmin()!;
   const id = uuidv4();
   const now = new Date().toISOString();
 
-  const tracingData = {
-    ...data,
-    id,
-    createdAt: now,
-    updatedAt: now,
-  };
+  const tracingData = { ...data, id, createdAt: now, updatedAt: now };
 
-  await collections.tracingActivities().doc(id).set(tracingData);
+  await supabase.from('nosql_docs').upsert({
+    collection: 'tracingActivities',
+    doc_id: id,
+    data: tracingData,
+    created_at: now,
+    updated_at: now,
+  }, { onConflict: 'collection,doc_id' });
   logger.info('Tracing saved', { id, studentId: data.studentId });
   return { ...tracingData };
 }
@@ -89,24 +108,47 @@ export async function updateProgress(studentId: string, data: {
   completed: number;
   stars?: number;
 }) {
+  const supabase = getSupabaseAdmin()!;
   const id = `${studentId}_${data.subject}`;
-  const ref = collections.prePrimaryProgress().doc(id);
-  const existing = await ref.get();
-
   const now = new Date().toISOString();
-  const updateData = {
+
+  const { data: existing } = await supabase
+    .from('nosql_docs')
+    .select('data')
+    .eq('collection', 'prePrimaryProgress')
+    .eq('doc_id', id)
+    .maybeSingle();
+
+  const newData = {
     ...data,
     studentId,
     updatedAt: now,
   };
 
-  if (existing.exists) {
-    await ref.update(updateData);
+  if (existing) {
+    const merged = { ...existing.data as Record<string, unknown>, ...newData };
+    await supabase.from('nosql_docs').upsert({
+      collection: 'prePrimaryProgress',
+      doc_id: id,
+      data: merged,
+      updated_at: now,
+    }, { onConflict: 'collection,doc_id' });
   } else {
-    await ref.set({ ...updateData, id, createdAt: now });
+    await supabase.from('nosql_docs').upsert({
+      collection: 'prePrimaryProgress',
+      doc_id: id,
+      data: { ...newData, id, createdAt: now },
+      created_at: now,
+      updated_at: now,
+    }, { onConflict: 'collection,doc_id' });
   }
 
-  const updated = await ref.get();
+  const { data: updated } = await supabase
+    .from('nosql_docs')
+    .select('data')
+    .eq('collection', 'prePrimaryProgress')
+    .eq('doc_id', id)
+    .maybeSingle();
   logger.info('Progress updated', { studentId, subject: data.subject });
-  return { ...updated.data() };
+  return { ...(updated?.data as Record<string, unknown>) };
 }

@@ -1,8 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../database/adapter';
+import { getSupabaseClient } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
+import { TransactionManager } from '../database/transaction-manager';
 
 /** Create a new conversation with initial participants. */
 export async function createConversation(data: {
@@ -11,6 +12,7 @@ export async function createConversation(data: {
   type: string;
   metadata?: { classId?: string; courseId?: string };
 }) {
+  const supabase = getSupabaseClient()!;
   const conversationId = uuidv4();
   const now = new Date().toISOString();
 
@@ -27,7 +29,10 @@ export async function createConversation(data: {
     updatedAt: now,
   };
 
-  await collections.conversations().doc(conversationId).set(conversation);
+  await supabase.from('nosql_docs').insert({
+    collection: 'conversations', doc_id: conversationId, data: conversation,
+    updated_at: now,
+  });
 
   logger.info('Conversation created', { conversationId, type: data.type });
 
@@ -43,15 +48,17 @@ export async function sendMessage(data: {
   attachments?: Array<{ name: string; url: string; type: string; size: number }>;
   parentMessageId?: string;
 }) {
-  const conversationRef = collections.conversations().doc(data.conversationId);
-  const conversation = await conversationRef.get();
+  const supabase = getSupabaseClient()!;
+  const { data: conv } = await supabase.from('nosql_docs').select('data')
+    .eq('collection', 'conversations').eq('doc_id', data.conversationId).maybeSingle();
 
-  if (!conversation.exists) {
+  if (!conv) {
     throw new NotFoundError('Conversation not found');
   }
 
-  const conversationData = conversation.data()!;
-  if (!conversationData.participants.includes(data.senderId)) {
+  const conversationData = conv.data as Record<string, unknown>;
+  const participants = conversationData.participants as string[];
+  if (!participants.includes(data.senderId)) {
     throw new ForbiddenError('Not a participant of this conversation');
   }
 
@@ -70,25 +77,27 @@ export async function sendMessage(data: {
     createdAt: now,
   };
 
-  await collections.messages().doc(messageId).set(message);
+  await supabase.from('nosql_docs').insert({
+    collection: 'messages', doc_id: messageId, data: message,
+    updated_at: now,
+  });
 
   const unreadCount: Record<string, number> = {};
-  conversationData.participants.forEach((p: string) => {
+  participants.forEach((p: string) => {
     if (p !== data.senderId) {
-      unreadCount[p] = (conversationData.unreadCount?.[p] || 0) + 1;
+      unreadCount[p] = ((conversationData.unreadCount as Record<string, number>)?.[p] || 0) + 1;
     }
   });
 
-  await conversationRef.update({
-    lastMessage: {
-      content: data.content.substring(0, 100),
-      senderId: data.senderId,
-      createdAt: now,
-    },
+  const updatedConv = {
+    ...conversationData,
+    lastMessage: { content: data.content.substring(0, 100), senderId: data.senderId, createdAt: now },
     lastMessageAt: now,
     unreadCount,
     updatedAt: now,
-  });
+  };
+  await supabase.from('nosql_docs').update({ data: updatedConv, updated_at: now })
+    .eq('collection', 'conversations').eq('doc_id', data.conversationId);
 
   logger.info('Message sent', { messageId, conversationId: data.conversationId, senderId: data.senderId });
 
@@ -97,27 +106,32 @@ export async function sendMessage(data: {
 
 /** Get all conversations for a user, ordered by lastMessageAt desc. Includes unread count for the given user. */
 export async function getConversations(userId: string, query: { page?: string; limit?: string }) {
+  const supabase = getSupabaseClient()!;
   const { page, limit } = parsePagination(query);
   const offset = (page - 1) * limit;
 
-  const baseQuery = collections.conversations()
-    .where('participants', 'array-contains', userId)
-    .orderBy('lastMessageAt', 'desc');
+  const { count } = await supabase.from('nosql_docs')
+    .select('*', { count: 'exact', head: true })
+    .eq('collection', 'conversations')
+    .contains('data', { participants: [userId] });
 
-  const countSnap = await baseQuery.count().get();
-  const total = countSnap.data().count;
-  const snapshot = await baseQuery.offset(offset).limit(limit).get();
+  const { data: rows } = await supabase.from('nosql_docs')
+    .select('doc_id, data')
+    .eq('collection', 'conversations')
+    .contains('data', { participants: [userId] })
+    .order('data->>lastMessageAt', { ascending: false })
+    .range(offset, offset + limit - 1);
 
-  const items = snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-    unreadCount: (doc.data().unreadCount || {})[userId] || 0,
+  const total = count || 0;
+  const items = (rows || []).map((row) => ({
+    id: row.doc_id,
+    ...row.data as Record<string, unknown>,
+    unreadCount: ((row.data as Record<string, unknown>).unreadCount as Record<string, number> || {})[userId] || 0,
   }));
 
   return { items, total, page, limit };
 }
 
-/** Get paginated messages in a conversation. Verifies the user is a participant. */
 /** Get paginated messages in a conversation. Verifies the user is a participant. */
 export async function getMessages(conversationId: string, userId: string, query: {
   page?: string;
@@ -125,62 +139,74 @@ export async function getMessages(conversationId: string, userId: string, query:
   before?: string;
   after?: string;
 }) {
-  const conversationRef = collections.conversations().doc(conversationId);
-  const conversation = await conversationRef.get();
+  const supabase = getSupabaseClient()!;
+  const { data: conv } = await supabase.from('nosql_docs').select('data')
+    .eq('collection', 'conversations').eq('doc_id', conversationId).maybeSingle();
 
-  if (!conversation.exists) {
+  if (!conv) {
     throw new NotFoundError('Conversation not found');
   }
 
-  const conversationData = conversation.data()!;
-  if (!conversationData.participants.includes(userId)) {
+  const conversationData = conv.data as Record<string, unknown>;
+  if (!(conversationData.participants as string[]).includes(userId)) {
     throw new ForbiddenError('Not a participant of this conversation');
   }
 
   const { page, limit } = parsePagination(query);
   const offset = (page - 1) * limit;
 
-  const baseQuery = collections.messages()
-    .where('conversationId', '==', conversationId)
-    .orderBy('createdAt', 'desc');
+  const { count } = await supabase.from('nosql_docs')
+    .select('*', { count: 'exact', head: true })
+    .eq('collection', 'messages')
+    .contains('data', { conversationId });
 
-  const countSnap = await baseQuery.count().get();
-  const total = countSnap.data().count;
-  const snapshot = await baseQuery.offset(offset).limit(limit).get();
-  const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const { data: rows } = await supabase.from('nosql_docs')
+    .select('doc_id, data')
+    .eq('collection', 'messages')
+    .contains('data', { conversationId })
+    .order('data->>createdAt', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  const total = count || 0;
+  const items = (rows || []).map((row) => ({ ...row.data as Record<string, unknown>, id: row.doc_id }));
 
   return { items, total, page, limit };
 }
 
 /** Mark all messages in a conversation as read for the given user. Updates unreadCount and reads messages. */
 export async function markConversationRead(conversationId: string, userId: string) {
-  const ref = collections.conversations().doc(conversationId);
-  const doc = await ref.get();
+  const supabase = getSupabaseClient()!;
+  const { data: conv } = await supabase.from('nosql_docs').select('data')
+    .eq('collection', 'conversations').eq('doc_id', conversationId).maybeSingle();
 
-  if (!doc.exists) {
+  if (!conv) {
     throw new NotFoundError('Conversation not found');
   }
 
-  const data = doc.data()!;
-  const unreadCount = { ...(data.unreadCount || {}) };
+  const conversationData = conv.data as Record<string, unknown>;
+  const unreadCount = { ...(conversationData.unreadCount as Record<string, number> || {}) };
   unreadCount[userId] = 0;
 
-  await ref.update({ unreadCount });
+  const updatedConv = { ...conversationData, unreadCount };
+  await supabase.from('nosql_docs').update({ data: updatedConv })
+    .eq('collection', 'conversations').eq('doc_id', conversationId);
 
-  const messagesSnapshot = await collections.messages()
-    .where('conversationId', '==', conversationId)
-    .where('readBy', 'not-in', [[userId]])
-    .get();
+  const { data: msgRows } = await supabase.from('nosql_docs').select('doc_id, data')
+    .eq('collection', 'messages')
+    .contains('data', { conversationId })
+    .not('data', 'cs', `{"readBy": ["${userId}"]}`);
 
-  const batch = collections.messages().firestore.batch();
-  messagesSnapshot.docs.forEach((msgDoc) => {
-    const readBy = msgDoc.data().readBy || [];
-    if (!readBy.includes(userId)) {
-      batch.update(msgDoc.ref, { readBy: [...readBy, userId] });
+  const tm = new TransactionManager();
+  const now = new Date().toISOString();
+  await tm.runTransaction(async (tx) => {
+    for (const msgRow of msgRows || []) {
+      const msgData = msgRow.data as Record<string, unknown>;
+      const readBy = (msgData.readBy as string[]) || [];
+      if (!readBy.includes(userId)) {
+        tx.update('messages', msgRow.doc_id, { readBy: [...readBy, userId] });
+      }
     }
   });
-
-  await batch.commit();
 
   logger.info('Conversation marked as read', { conversationId, userId });
 }

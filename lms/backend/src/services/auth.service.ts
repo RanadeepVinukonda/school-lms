@@ -1,6 +1,34 @@
 import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../database/adapter';
+import { getSupabaseAdmin, getSupabaseClient } from './supabase';
 import { createUser as firebaseCreateUser, getUserByEmail, getUserById, setCustomClaims, updateUser as firebaseUpdateUser } from '../database/auth';
+
+function mapUserRow(row: Record<string, unknown>): Record<string, unknown> {
+  const data = (row.data as Record<string, unknown>) || {};
+  return {
+    ...data,
+    id: row.id,
+    email: row.email,
+    displayName: row.display_name ?? data.displayName,
+    role: row.role,
+    phoneNumber: row.phone_number ?? data.phoneNumber,
+    photoURL: row.photo_url ?? data.photoURL,
+    isActive: row.is_active ?? data.isActive,
+    classIds: row.class_ids ?? data.classIds,
+    classId: row.class_id ?? data.classId,
+    studentId: row.student_id ?? data.studentId,
+    rollNo: row.roll_no ?? data.rollNo,
+    academicYear: row.academic_year ?? data.academicYear,
+    childrenIds: row.children_ids ?? data.childrenIds,
+    gender: row.gender ?? data.gender,
+    streakCount: row.streak_count ?? data.streakCount,
+    lastActiveDate: row.last_active_date ?? data.lastActiveDate,
+    language: row.language ?? data.language,
+    tutorialSeen: row.tutorial_seen ?? data.tutorialSeen,
+    schoolId: row.school_id ?? data.schoolId,
+    createdAt: row.created_at ?? data.createdAt,
+    updatedAt: row.updated_at ?? data.updatedAt,
+  };
+}
 import { ConflictError, NotFoundError, UnauthorizedError, ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { env } from '../config/env';
@@ -46,7 +74,21 @@ export async function register(data: {
     updatedAt: new Date().toISOString(),
   };
 
-  await collections.users().doc(firebaseUser.uid).set(userData);
+  const dbData = {
+    id: userData.uid,
+    email: userData.email,
+    display_name: userData.displayName,
+    role: userData.role,
+    phone_number: userData.phoneNumber,
+    photo_url: userData.photoURL,
+    is_active: userData.isActive,
+    created_at: userData.createdAt,
+    updated_at: userData.updatedAt,
+  };
+
+  const supabase = getSupabaseAdmin()!;
+  const { error } = await supabase.from('users').insert(dbData);
+  if (error) throw error;
 
   logger.info('User registered', { uid: firebaseUser.uid, email: data.email, role: data.role });
 
@@ -73,12 +115,18 @@ export async function login(email: string, password: string) {
   }
 
   const uid = data.user?.id;
-  const userDoc = await collections.users().doc(uid).get();
-  if (!userDoc.exists) {
+  const supabase = getSupabaseAdmin()!;
+  const { data: userRow, error: userError } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', uid)
+    .maybeSingle();
+
+  if (userError || !userRow) {
     throw new UnauthorizedError('User not found');
   }
 
-  const userData = userDoc.data()!;
+  const userData = mapUserRow(userRow as Record<string, unknown>);
   if (!userData.isActive) {
     throw new UnauthorizedError('Account is disabled');
   }
@@ -99,12 +147,18 @@ export async function verifyUserToken(uid: string) {
     throw new UnauthorizedError('User not found');
   }
 
-  const userDoc = await collections.users().doc(uid).get();
-  if (!userDoc.exists) {
+  const supabase = getSupabaseClient()!;
+  const { data: userRow, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', uid)
+    .maybeSingle();
+
+  if (error || !userRow) {
     throw new NotFoundError('User profile not found');
   }
 
-  return userDoc.data()!;
+  return mapUserRow(userRow as Record<string, unknown>);
 }
 
 /** Send password reset email via Supabase Admin REST API. */
@@ -185,11 +239,17 @@ export async function resetPassword(uid: string, newPassword: string) {
 
 /** Change a user's password using Supabase Auth. Verifies current password via REST API, updates via Admin API. */
 export async function changePassword(uid: string, currentPassword: string, newPassword: string) {
-  const userDoc = await collections.users().doc(uid).get();
-  if (!userDoc.exists) {
+  const supabase = getSupabaseClient()!;
+  const { data: userRow, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', uid)
+    .maybeSingle();
+
+  if (error || !userRow) {
     throw new NotFoundError('User not found');
   }
-  const userData = userDoc.data()!;
+  const userData = mapUserRow(userRow as Record<string, unknown>);
   const response = await fetch(
     `${env.SUPABASE_URL}/auth/v1/token?grant_type=password`,
     {
@@ -211,14 +271,46 @@ export async function changePassword(uid: string, currentPassword: string, newPa
   logger.info('Password changed', { uid });
 }
 
+/** Refresh an auth token using a refresh token via Supabase REST API. */
+export async function refreshToken(refreshToken: string) {
+  const response = await fetch(
+    `${env.SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: env.SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    }
+  );
+
+  const data = (await response.json()) as { access_token?: string; refresh_token?: string; user?: { id: string }; error?: string };
+  if (!response.ok || !data.access_token) {
+    throw new UnauthorizedError('Invalid or expired refresh token');
+  }
+
+  return {
+    token: data.access_token,
+    refresh_token: data.refresh_token,
+    uid: data.user?.id || '',
+  };
+}
+
 /** Fetch user profile by uid. */
 export async function getUserProfile(uid: string) {
-  const userDoc = await collections.users().doc(uid).get();
-  if (!userDoc.exists) {
+  const supabase = getSupabaseClient()!;
+  const { data: userRow, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', uid)
+    .maybeSingle();
+
+  if (error || !userRow) {
     throw new NotFoundError('User not found');
   }
 
-  return userDoc.data()!;
+  return mapUserRow(userRow as Record<string, unknown>);
 }
 
 /** Update a user's own profile fields (displayName, phoneNumber, photoURL). */
@@ -227,24 +319,43 @@ export async function updateUserProfile(uid: string, data: {
   phoneNumber?: string;
   photoURL?: string;
 }) {
-  const userDoc = await collections.users().doc(uid).get();
-  if (!userDoc.exists) {
+  const supabase = getSupabaseClient()!;
+  const { data: userRow, error: findError } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', uid)
+    .maybeSingle();
+
+  if (findError || !userRow) {
     throw new NotFoundError('User not found');
   }
 
   const updateData: Record<string, unknown> = {
-    updatedAt: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   };
 
-  if (data.displayName) updateData.displayName = data.displayName;
-  if (data.phoneNumber !== undefined) updateData.phoneNumber = data.phoneNumber;
-  if (data.photoURL !== undefined) updateData.photoURL = data.photoURL;
+  if (data.displayName) updateData.display_name = data.displayName;
+  if (data.phoneNumber !== undefined) updateData.phone_number = data.phoneNumber;
+  if (data.photoURL !== undefined) updateData.photo_url = data.photoURL;
 
-  await collections.users().doc(uid).update(updateData);
+  const { error: updateError } = await supabase
+    .from('users')
+    .update(updateData)
+    .eq('id', uid);
 
-  const updated = await collections.users().doc(uid).get();
+  if (updateError) throw updateError;
+
+  const { data: updatedUser, error: fetchError } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', uid)
+    .single();
+
+  if (fetchError || !updatedUser) {
+    throw new NotFoundError('User not found');
+  }
 
   logger.info('User profile updated', { uid });
 
-  return updated.data()!;
+  return mapUserRow(updatedUser as Record<string, unknown>);
 }

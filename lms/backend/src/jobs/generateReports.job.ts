@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../database/registry';
+import { getSupabaseAdmin } from '../services/supabase';
 import { logger } from '../utils/logger';
 
 export type ReportType = 'weekly' | 'monthly';
@@ -19,7 +19,15 @@ export async function generateWeeklyReport() {
     ...reportData,
   };
 
-  await collections.reports().doc(report.id).set(report);
+  const supabase = getSupabaseAdmin()!;
+  const { error } = await supabase.from('nosql_docs').upsert({
+    collection: 'reports',
+    doc_id: report.id,
+    data: report,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'collection,doc_id' });
+  if (error) throw error;
+
   logger.info('Weekly report generated', { reportId: report.id });
   return report;
 }
@@ -39,38 +47,53 @@ export async function generateMonthlyReport() {
     ...reportData,
   };
 
-  await collections.reports().doc(report.id).set(report);
+  const supabase = getSupabaseAdmin()!;
+  const { error } = await supabase.from('nosql_docs').upsert({
+    collection: 'reports',
+    doc_id: report.id,
+    data: report,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'collection,doc_id' });
+  if (error) throw error;
+
   logger.info('Monthly report generated', { reportId: report.id });
   return report;
 }
 
 async function gatherReportData(startDate: string, endDate: string) {
-  const usersSnap = await collections.users().get();
-  const allUsers = usersSnap.docs.map(d => ({ id: d.id, ...d.data() as Record<string, unknown> })) as Array<Record<string, unknown> & { role?: string }>;
-  const students = allUsers.filter(u => u.role === 'student');
-  const teachers = allUsers.filter(u => u.role === 'teacher');
+  const supabase = getSupabaseAdmin()!;
 
-  const gradesSnap = await collections.grades().get();
-  const grades = gradesSnap.docs.map(d => d.data() as { score?: number; totalPoints?: number });
-  const totalScore = grades.reduce((s, g) => s + (g.score || 0), 0);
-  const totalPoints = grades.reduce((s, g) => s + (g.totalPoints || 1), 0);
+  const { data: allUsers } = await supabase.from('users').select('id, role');
+  const students = (allUsers || []).filter(u => u.role === 'student');
+  const teachers = (allUsers || []).filter(u => u.role === 'teacher');
+
+  const { data: grades } = await supabase.from('grades').select('score, max_score');
+  const totalScore = (grades || []).reduce((s, g) => s + (g.score || 0), 0);
+  const totalPoints = (grades || []).reduce((s, g) => s + (g.max_score || 1), 0);
   const avgGrade = totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0;
 
-  const coursesSnap = await collections.courses().count().get();
-  const totalCourses = coursesSnap.data().count;
+  const { count: totalCourses } = await supabase
+    .from('nosql_docs')
+    .select('*', { count: 'exact', head: true })
+    .eq('collection', 'courses');
 
-  const assignmentsSnap = await collections.assignmentV2().get();
-  const totalAssignments = assignmentsSnap.docs.length;
+  const { data: assignments } = await supabase
+    .from('nosql_docs')
+    .select('doc_id')
+    .eq('collection', 'assignmentV2');
+  const totalAssignments = (assignments || []).length;
 
-  const submissionsSnap = await collections.assignmentSubmissionV2()
-    .where('submittedAt', '>=', startDate)
-    .get();
-  const submissionsInPeriod = submissionsSnap.docs.length;
+  const { data: submissions } = await supabase
+    .from('nosql_docs')
+    .select('doc_id')
+    .eq('collection', 'assignmentSubmissionV2')
+    .gte('data->>submittedAt', startDate);
+  const submissionsInPeriod = (submissions || []).length;
 
   return {
     totalStudents: students.length,
     totalTeachers: teachers.length,
-    totalCourses,
+    totalCourses: totalCourses || 0,
     totalAssignments,
     submissionsInPeriod,
     averageGrade: avgGrade,

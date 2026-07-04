@@ -64,6 +64,7 @@ export async function deleteUser(req: Request, res: Response) {
 export async function toggleActive(req: Request, res: Response) {
   const user = await userService.getUserByIdService(req.params.userId);
   const result = await userService.toggleActive(req.params.userId);
+  if (!result) { sendSuccess(res, null, 'User status toggled'); return; }
   const action = result.isActive ? 'user.activate' : 'user.deactivate';
   logAudit(adminAuditEntry(req as ReqWithUser, action as AuditAction, req.params.userId, 'user', user.displayName, {
     oldValue: { isActive: user.isActive },

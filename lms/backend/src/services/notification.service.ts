@@ -1,14 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../database/adapter';
+import { getSupabaseClient } from './supabase';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 import { sendPush, sendPushBulk } from './push.service';
-import type { NotificationCollection } from '../database/interfaces/collections';
-
-let _notificationCollection: NotificationCollection | null = null;
-export function setNotificationCollection(col: NotificationCollection): void { _notificationCollection = col; }
-function notifCol() { return _notificationCollection ?? (collections.notifications() as unknown as NotificationCollection); }
 
 /** Create a single notification for a user. */
 export async function createNotification(data: {
@@ -22,24 +17,34 @@ export async function createNotification(data: {
   const notificationId = uuidv4();
   const now = new Date().toISOString();
 
+  // ponytail: check inApp preference before writing
+  const prefs = await getNotificationPreferences(data.userId);
+  if (!prefs.in_app_enabled) {
+    logger.info('Skipping in-app notification (user preference)', { userId: data.userId });
+    return null;
+  }
+
   const notification = {
     id: notificationId,
-    userId: data.userId,
+    user_id: data.userId,
     type: data.type,
     title: data.title,
     body: data.body,
     data: data.data || {},
     priority: data.priority || 'normal',
     read: false,
-    readAt: null,
-    createdAt: now,
+    read_at: null,
+    created_at: now,
+    school_id: null,
   };
 
-  await collections.notifications().doc(notificationId).set(notification);
+  const supabase = getSupabaseClient()!;
+  const { error } = await supabase.from('notifications').insert(notification);
+  if (error) throw error;
 
   sendPush(data.userId, data.type, data.title, data.body, data.data);
 
-  return { ...notification };
+  return { ...notification, userId: data.userId, readAt: null, createdAt: now };
 }
 
 /** Get notifications for a user, with optional unreadOnly filter, paginated by createdAt desc. */
@@ -48,116 +53,160 @@ export async function getNotificationsByUser(userId: string, query: {
   limit?: string;
   unreadOnly?: string;
 }) {
+  const supabase = getSupabaseClient()!;
   const { page, limit } = parsePagination(query);
   const offset = (page - 1) * limit;
 
-  // Push sort and pagination to the database
-  let baseQuery = collections.notifications()
-    .where('userId', '==', userId)
-    .orderBy('createdAt', 'desc');
+  let baseQuery = supabase
+    .from('notifications')
+    .select('*', { count: 'exact' })
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
 
   if (query.unreadOnly === 'true') {
-    baseQuery = baseQuery.where('read', '==', false);
+    baseQuery = baseQuery.eq('read', false);
   }
 
-  const countSnap = await baseQuery.count().get();
-  const total = countSnap.data().count;
+  const { data: items, count, error } = await baseQuery.range(offset, offset + limit - 1);
+  if (error) throw error;
 
-  const snapshot = await baseQuery.offset(offset).limit(limit).get();
-  const items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-
-  return { items, total, page, limit };
+  return {
+    items: (items || []).map((n: any) => ({
+      ...n,
+      userId: n.user_id,
+      readAt: n.read_at,
+      createdAt: n.created_at,
+    })),
+    total: count || 0,
+    page,
+    limit,
+  };
 }
 
 /** Mark a single notification as read. Verifies ownership. */
 export async function markNotificationRead(notificationId: string, userId: string) {
-  const ref = collections.notifications().doc(notificationId);
-  const doc = await ref.get();
+  const supabase = getSupabaseClient()!;
+  
+  const { data: row, error: findError } = await supabase
+    .from('notifications')
+    .select('id, user_id')
+    .eq('id', notificationId)
+    .maybeSingle();
 
-  if (!doc.exists) {
+  if (findError || !row) {
     throw new NotFoundError('Notification not found');
   }
 
-  const data = doc.data()!;
-  if (data.userId !== userId) {
+  if (row.user_id !== userId) {
     throw new NotFoundError('Notification not found');
   }
 
-  await ref.update({
-    read: true,
-    readAt: new Date().toISOString(),
-  });
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read: true, read_at: new Date().toISOString() })
+    .eq('id', notificationId);
+
+  if (error) throw error;
 
   logger.info('Notification marked as read', { notificationId });
 }
 
-/** Mark all unread notifications as read for a user, using a batch write. */
+/** Mark all unread notifications as read for a user, using batch writes. */
 export async function markAllNotificationsRead(userId: string) {
-  const snapshot = await collections.notifications()
-    .where('userId', '==', userId)
-    .where('read', '==', false)
-    .get();
+  const supabase = getSupabaseClient()!;
+  const { data: rows, error: findError } = await supabase
+    .from('notifications')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('read', false);
 
-  const batch = collections.notifications().firestore.batch();
-  snapshot.docs.forEach((doc) => {
-    batch.update(doc.ref, {
-      read: true,
-      readAt: new Date().toISOString(),
-    });
-  });
+  if (findError) throw findError;
 
-  await batch.commit();
+  if (rows && rows.length > 0) {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true, read_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .eq('read', false);
+    
+    if (error) throw error;
+  }
 
-  logger.info('All notifications marked as read', { userId, count: snapshot.docs.length });
+  logger.info('All notifications marked as read', { userId, count: rows?.length || 0 });
 }
 
 /** Get the count of unread notifications for a user. */
 export async function getUnreadCount(userId: string) {
-  const snapshot = await collections.notifications()
-    .where('userId', '==', userId)
-    .where('read', '==', false)
-    .count()
-    .get();
+  const supabase = getSupabaseClient()!;
+  
+  const { count, error } = await supabase
+    .from('notifications')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('read', false);
 
-  return { count: snapshot.data().count };
+  if (error) throw error;
+
+  return { count: count || 0 };
 }
 
 /** Delete a notification by id. Verifies ownership. */
 export async function deleteNotification(notificationId: string, userId: string) {
-  const ref = collections.notifications().doc(notificationId);
-  const doc = await ref.get();
+  const supabase = getSupabaseClient()!;
+  
+  const { data: row, error: findError } = await supabase
+    .from('notifications')
+    .select('id, user_id')
+    .eq('id', notificationId)
+    .maybeSingle();
 
-  if (!doc.exists) {
+  if (findError || !row) {
     throw new NotFoundError('Notification not found');
   }
 
-  const data = doc.data()!;
-  if (data.userId !== userId) {
+  if (row.user_id !== userId) {
     throw new NotFoundError('Notification not found');
   }
 
-  await ref.delete();
+  const { error } = await supabase
+    .from('notifications')
+    .delete()
+    .eq('id', notificationId);
+
+  if (error) throw error;
+  
   logger.info('Notification deleted', { notificationId });
 }
 
 /** Fetch notification preferences for a user, returning defaults if not set. */
 export async function getNotificationPreferences(userId: string) {
-  const ref = collections.users().doc(userId);
-  const doc = await ref.get();
+  const supabase = getSupabaseClient()!;
+  const { data: row, error } = await supabase
+    .from('users')
+    .select('notification_preferences')
+    .eq('id', userId)
+    .maybeSingle();
 
-  if (!doc.exists) {
+  if (error) throw error;
+
+  if (!row) {
     throw new NotFoundError('User not found');
   }
 
-  const userData = doc.data()!;
   const defaultPreferences = {
     email: true,
     push: true,
     sms: false,
-    inApp: true,
+    in_app_enabled: true,
   };
 
-  return userData.notificationPreferences || defaultPreferences;
+  const prefs = row.notification_preferences || defaultPreferences;
+  return {
+    email: prefs.email ?? true,
+    push: prefs.push ?? true,
+    sms: prefs.sms ?? false,
+    in_app_enabled: prefs.inApp ?? prefs.in_app_enabled ?? true,
+  };
 }
 
 /** Update notification preferences for a user. */
@@ -165,19 +214,34 @@ export async function updateNotificationPreferences(userId: string, preferences:
   email: boolean;
   push: boolean;
   sms: boolean;
-  inApp: boolean;
+  in_app_enabled: boolean;
 }) {
-  const ref = collections.users().doc(userId);
-  const doc = await ref.get();
+  const supabase = getSupabaseClient()!;
+  
+  const { data: row, error: findError } = await supabase
+    .from('users')
+    .select('id')
+    .eq('id', userId)
+    .maybeSingle();
 
-  if (!doc.exists) {
+  if (findError || !row) {
     throw new NotFoundError('User not found');
   }
 
-  await ref.update({
-    notificationPreferences: preferences,
-    updatedAt: new Date().toISOString(),
-  });
+  const { error } = await supabase
+    .from('users')
+    .update({
+      notification_preferences: {
+        email: preferences.email,
+        push: preferences.push,
+        sms: preferences.sms,
+        in_app_enabled: preferences.in_app_enabled,
+      },
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', userId);
+
+  if (error) throw error;
 
   logger.info('Notification preferences updated', { userId });
 
@@ -194,32 +258,40 @@ export async function createBulkNotifications(
     data?: Record<string, unknown>;
   }>
 ) {
-  const batch = collections.notifications().firestore.batch();
-  const results = [];
+  const results: string[] = [];
+  const supabase = getSupabaseClient()!;
 
   for (const notif of notifications) {
-    const id = uuidv4();
-    const now = new Date().toISOString();
-
-    const notification = {
-      id,
-      userId: notif.userId,
-      type: notif.type,
-      title: notif.title,
-      body: notif.body,
-      data: notif.data || {},
-      priority: 'normal',
-      read: false,
-      readAt: null,
-      createdAt: now,
-    };
-
-    batch.set(collections.notifications().doc(id), notification);
-    results.push(id);
+    // ponytail: check inApp preference per recipient
+    try {
+      const prefs = await getNotificationPreferences(notif.userId);
+      if (prefs.in_app_enabled) {
+        const id = uuidv4();
+        const now = new Date().toISOString();
+        const notification = {
+          id,
+          user_id: notif.userId,
+          type: notif.type,
+          title: notif.title,
+          body: notif.body,
+          data: notif.data || {},
+          priority: 'normal',
+          read: false,
+          read_at: null,
+          created_at: now,
+        };
+        
+        const { error } = await supabase.from('notifications').insert(notification);
+        if (!error) {
+          results.push(id);
+        }
+      }
+    } catch {
+      // ponytail: skip if prefs fetch fails
+    }
   }
 
-  await batch.commit();
-  logger.info('Bulk notifications created', { count: notifications.length });
+  logger.info('Bulk notifications created', { count: results.length });
 
   sendPushBulk(notifications);
 
