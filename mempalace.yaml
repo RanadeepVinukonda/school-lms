@@ -1,0 +1,45 @@
+wing: school_lms
+rooms:
+- name: documentation
+  description: Files from docs/
+  keywords:
+  - documentation
+  - docs
+- name: graphify_out
+  description: Files from graphify-out/
+  keywords:
+  - graphify_out
+  - graphify-out
+- name: lms
+  description: Files from lms/
+  keywords:
+  - lms
+  - lms
+- name: openspec
+  description: Files from openspec/
+  keywords:
+  - openspec
+  - openspec
+- name: scratch
+  description: Files from scratch/
+  keywords:
+  - scratch
+  - scratch
+- name: backend
+  description: Files from api/
+  keywords:
+  - backend
+  - api
+- name: frontend
+  description: Files from frontend/
+  keywords:
+  - frontend
+  - frontend
+- name: planning
+  description: Files from specs/
+  keywords:
+  - planning
+  - specs
+- name: general
+  description: Files that don't fit other rooms
+  keywords: []

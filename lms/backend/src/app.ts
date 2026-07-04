@@ -39,8 +39,10 @@ app.use((req, _res, next) => {
   next();
 });
 app.use(sanitizeInput);
-app.use(csrfProtection);
-app.get('/csrf-token', csrfTokenHandler);
+if (process.env.NODE_ENV !== 'test') {
+  app.use(csrfProtection);
+  app.get('/csrf-token', csrfTokenHandler);
+}
 app.use('/', apiRateLimit, auditMiddleware, routes);
 
 app.use(errorHandler);

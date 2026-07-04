@@ -33,6 +33,9 @@ export function BadgeCard({ badge, earned, earnedAt, index = 0 }: BadgeCardProps
         <p className="text-label-sm font-semibold">{badge.name}</p>
         <p className="text-label-xs text-muted-foreground">{badge.description}</p>
       </div>
+      {earned && earnedAt && (
+        <p className="text-label-xs text-muted-foreground mt-1">Earned {new Date(earnedAt).toLocaleDateString()}</p>
+      )}
       {!earned && (
         <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/10">
           <Icon name="lock" size={20} className="text-on-surface-variant" />

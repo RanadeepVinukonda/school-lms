@@ -1,11 +1,19 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import { permissions } from '@genesis-lms/shared';
 
 export default function OCRScreen() {
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(() => { setRefreshing(true); setTimeout(() => setRefreshing(false), 1000); }, []);
   const [scanning, setScanning] = useState(false);
   const [questions, setQuestions] = useState<string[]>([]);
 
-  const startOcrCapture = () => {
+  const startOcrCapture = async () => {
+    const granted = await permissions.requestCamera();
+    if (!granted) {
+      Alert.alert('Camera Required', 'Camera access is needed to scan question papers.');
+      return;
+    }
     setScanning(true);
     setTimeout(() => {
       setQuestions(prev => [
@@ -18,7 +26,7 @@ export default function OCRScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6200ee" />}>
       <Text style={styles.sectionTitle}>Question Paper OCR Scanner</Text>
       <Text style={styles.sectionDesc}>Capture photos of physical question papers to instantly digitize them and auto-populate quizzes.</Text>
 
@@ -30,7 +38,7 @@ export default function OCRScreen() {
         <TouchableOpacity
           style={[styles.scanBtn, scanning && styles.disabledBtn]}
           disabled={scanning}
-          onClick={startOcrCapture}
+          onPress={startOcrCapture}
         >
           <Text style={styles.btnText}>
             {scanning ? 'Extracting text (OCR)...' : '📷 Capture & Scan Document'}
@@ -65,6 +73,6 @@ const styles = StyleSheet.create({
   btnText: { color: '#ffffff', fontWeight: 'bold', fontSize: 14 },
   capturedArea: { marginTop: 12 },
   capturedTitle: { fontSize: 15, fontWeight: 'bold', color: '#333', marginBottom: 12 },
-  questionCard: { backgroundColor: '#ffffff', borderRadius: 12, padding: 14, marginBottom: 8, borderBorderWidth: 1, borderColor: '#eee' },
+  questionCard: { backgroundColor: '#ffffff', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#eee' },
   questionText: { fontSize: 13, color: '#212121', lineHeight: 18 }
 });

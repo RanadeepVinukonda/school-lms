@@ -186,9 +186,9 @@ export default function AdminErpDashboardPage() {
 
               <section>
                 <h2 className="text-title-sm font-semibold text-foreground mb-4">Quick Links</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
                   {QUICK_LINKS.map((link) => (
-                    <Button key={link.href} variant="outline" className="h-auto p-4 justify-start" asChild>
+                    <Button key={link.href} variant="outline" className="h-auto p-3 justify-start" asChild>
                       <Link to={link.href}>
                         <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${link.bg} mr-3`}>
                           <Icon name={link.icon} size={20} className={link.color} />

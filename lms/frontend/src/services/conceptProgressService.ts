@@ -5,6 +5,7 @@ interface ConceptCompletionParams {
   textbookId: string;
   chapterId: string;
   classId: string;
+  teacherId: string;
 }
 
 /** Toggle completion status for a concept (teacher/class context). */

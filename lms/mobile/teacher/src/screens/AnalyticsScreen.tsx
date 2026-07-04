@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
-const MOCK_CLASSES = [
+const FALLBACK_CLASSES = [
   { id: 'c1', name: 'Grade 10A' },
   { id: 'c2', name: 'Grade 10B' },
   { id: 'c3', name: 'Grade 9A' },
 ];
 
-const MOCK_OVERVIEW = {
+const FALLBACK_OVERVIEW = {
   totalStudents: 32,
   totalAssessments: 8,
   avgScore: 74,
@@ -21,27 +22,65 @@ const MOCK_OVERVIEW = {
 };
 
 export default function AnalyticsScreen() {
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [classes, setClasses] = useState<any>(null);
   const [selectedClassId, setSelectedClassId] = useState('');
   const [activeTab, setActiveTab] = useState<'overview' | 'concepts'>('overview');
+  const [overview, setOverview] = useState<any>(null);
+  const [overviewLoading, setOverviewLoading] = useState(false);
 
-  const data = selectedClassId ? MOCK_OVERVIEW : null;
+  const fetchClasses = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await api.get('/teacher/classes');
+      setClasses(res.data);
+    } catch { setClasses(FALLBACK_CLASSES); }
+    finally { setLoading(false); setRefreshing(false); }
+  }, []);
+
+  useEffect(() => { fetchClasses(); }, [fetchClasses]);
+  const onRefresh = useCallback(() => { setRefreshing(true); fetchClasses(); }, [fetchClasses]);
+
+  const fetchOverview = useCallback(async (classId: string) => {
+    setOverviewLoading(true);
+    try {
+      const res = await api.get(`/teacher/analytics/${classId}`);
+      setOverview(res.data);
+    } catch { setOverview(FALLBACK_OVERVIEW); }
+    finally { setOverviewLoading(false); }
+  }, []);
+
+  const handleClassSelect = (id: string) => {
+    setSelectedClassId(id);
+    setActiveTab('overview');
+    fetchOverview(id);
+  };
+
+  const clsList = Array.isArray(classes) ? classes : (classes?.classes || []);
+  const data = selectedClassId && overview ? overview : null;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6200ee" />}>
+      {loading && !refreshing ? <LoadingState /> : (
+        <>
       <Text style={styles.title}>Analytics</Text>
       <Text style={styles.subtitle}>Class performance and student insights</Text>
 
       <View style={styles.pickerRow}>
-        {MOCK_CLASSES.map((c) => (
+        {clsList.length === 0 && <EmptyState message="No classes available." />}
+        {clsList.map((c: any) => (
           <TouchableOpacity
             key={c.id}
             style={[styles.pill, selectedClassId === c.id && styles.activePill]}
-            onClick={() => setSelectedClassId(c.id)}
+            onPress={() => handleClassSelect(c.id)}
           >
             <Text style={[styles.pillText, selectedClassId === c.id && styles.activePillText]}>{c.name}</Text>
           </TouchableOpacity>
         ))}
       </View>
+      {!error || clsList.length > 0 ? null : <ErrorState message={error} onRetry={fetchClasses} />}
 
       {!selectedClassId && (
         <View style={styles.emptyState}>
@@ -50,14 +89,15 @@ export default function AnalyticsScreen() {
         </View>
       )}
 
-      {selectedClassId && data && (
+      {selectedClassId && overviewLoading && <LoadingState message="Loading analytics..." />}
+      {selectedClassId && !overviewLoading && data && (
         <>
           <View style={styles.tabRow}>
             {(['overview', 'concepts'] as const).map((tab) => (
               <TouchableOpacity
                 key={tab}
                 style={[styles.tab, activeTab === tab && styles.activeTab]}
-                onClick={() => setActiveTab(tab)}
+                onPress={() => setActiveTab(tab)}
               >
                 <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
                   {tab === 'overview' ? 'Overview' : 'Concept Mastery'}
@@ -118,6 +158,8 @@ export default function AnalyticsScreen() {
           )}
         </>
       )}
+      </>
+    )}
     </ScrollView>
   );
 }

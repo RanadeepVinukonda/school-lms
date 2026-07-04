@@ -1,34 +1,27 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { toggleConceptCompletion, getConceptCompletionStatus } from '../services/concept-progress.service';
+import { createMockSupabase } from './helpers/mock-factory';
 
-// ponytail: adapter deleted — tests commented out
-/*
-jest.mock('../database/adapter', () => ({
-  collections: {
-    conceptReleases: jest.fn(),
-  },
+const { supabase: mockSupabase, query: mockQuery } = createMockSupabase();
+
+jest.mock('../services/supabase', () => ({
+  getSupabaseAdmin: jest.fn(() => mockSupabase),
+  getSupabaseClient: jest.fn(() => mockSupabase),
 }));
-
-import { collections } from '../database/adapter';
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockQuery.select.mockReturnThis();
+  mockQuery.update.mockReturnThis();
+  (mockQuery as any).upsert = jest.fn<any>().mockReturnThis();
+  delete (mockQuery as any).data;
+  delete (mockQuery as any).error;
+  delete (mockQuery as any).count;
 });
 
 describe('toggleConceptCompletion', () => {
   it('creates a new progress record when none exists', async () => {
-    const mockSet = jest.fn<any>().mockResolvedValue(undefined);
-    const mockDoc = {
-      set: mockSet,
-    } as any;
-    const mockGet = jest.fn<any>().mockResolvedValue({ empty: true, docs: [] });
-    const mockCollection = {
-      where: jest.fn<any>().mockReturnThis(),
-      get: mockGet,
-      doc: jest.fn<any>(() => mockDoc),
-    } as any;
-    (collections.conceptReleases as jest.Mock).mockReturnValue(mockCollection);
-
+    // data undefined → empty results → upsert path
     const result = await toggleConceptCompletion({
       conceptId: 'c1',
       textbookId: 'tb1',
@@ -37,27 +30,14 @@ describe('toggleConceptCompletion', () => {
       teacherId: 't1',
     });
 
-    expect(mockGet).toHaveBeenCalled();
-    expect(mockSet).toHaveBeenCalled();
+    expect(mockQuery.select).toHaveBeenCalled();
+    expect(mockQuery.upsert).toHaveBeenCalled();
     expect(result.completed).toBe(true);
     expect(result.conceptId).toBe('c1');
   });
 
   it('toggles existing progress record', async () => {
-    const existingData = {
-      completed: false,
-    };
-    const mockUpdate = jest.fn<any>().mockResolvedValue(undefined);
-    const mockDoc = {
-      data: () => existingData,
-      ref: { update: mockUpdate },
-    } as any;
-    const mockGet = jest.fn<any>().mockResolvedValue({ docs: [mockDoc] });
-    const mockCollection = {
-      where: jest.fn<any>().mockReturnThis(),
-      get: mockGet,
-    } as any;
-    (collections.conceptReleases as jest.Mock).mockReturnValue(mockCollection);
+    (mockQuery as any).data = [{ id: 'doc1', completed: false }];
 
     const result = await toggleConceptCompletion({
       conceptId: 'c2',
@@ -67,36 +47,24 @@ describe('toggleConceptCompletion', () => {
       teacherId: 't2',
     });
 
-    expect(mockGet).toHaveBeenCalled();
-    expect(mockUpdate).toHaveBeenCalledWith({ completed: true, updated_at: expect.any(String) });
+    expect(mockQuery.select).toHaveBeenCalled();
+    expect(mockQuery.update).toHaveBeenCalled();
     expect(result.completed).toBe(true);
   });
 });
 
 describe('getConceptCompletionStatus', () => {
   it('returns false when no record exists', async () => {
-    const mockGet = jest.fn<any>().mockResolvedValue({ empty: true, docs: [] });
-    const mockCollection = {
-      where: jest.fn<any>().mockReturnThis(),
-      get: mockGet,
-    } as any;
-    (collections.conceptReleases as jest.Mock).mockReturnValue(mockCollection);
-
+    // data undefined → empty → false
     const status = await getConceptCompletionStatus('c3', 'cl3', 't3');
     expect(status).toBe(false);
-    expect(mockGet).toHaveBeenCalled();
+    expect(mockQuery.select).toHaveBeenCalled();
   });
 
   it('returns true when record indicates completed', async () => {
-    const mockGet = jest.fn<any>().mockResolvedValue({ docs: [{ data: () => ({ completed: true }) }] });
-    const mockCollection = {
-      where: jest.fn<any>().mockReturnThis(),
-      get: mockGet,
-    } as any;
-    (collections.conceptReleases as jest.Mock).mockReturnValue(mockCollection);
+    (mockQuery as any).data = [{ completed: true }];
 
     const status = await getConceptCompletionStatus('c4', 'cl4', 't4');
     expect(status).toBe(true);
   });
 });
-*/

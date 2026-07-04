@@ -15,7 +15,7 @@ import { transportService, TransportStop } from '@/services/transportService';
 import { getAllUsers } from '@/services/dataService';
 
 export default function AdminTransportPage() {
-  const { id: routeId = '' } = useParams<{ id: string }>();
+  const { id: routeId = '' } = (useParams() as { id?: string }) || {};
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('stops');
 

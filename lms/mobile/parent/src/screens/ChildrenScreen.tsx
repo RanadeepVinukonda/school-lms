@@ -1,22 +1,46 @@
-import React from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
-const MOCK_CHILDREN = [
+const FALLBACK_CHILDREN = [
   { id: 'ch1', name: 'Arjun S.', class: 'Grade 10A', school: 'Genesis Academy', mastery: 78, attendance: 94, avgGrade: 'B+' },
   { id: 'ch2', name: 'Priya S.', class: 'Grade 8B', school: 'Genesis Academy', mastery: 92, attendance: 98, avgGrade: 'A' },
 ];
 
 export default function ChildrenScreen({ navigation }: any) {
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [children, setChildren] = useState<any>(null);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await api.get('/parent/children');
+      setChildren(res.data);
+    } catch { setChildren(FALLBACK_CHILDREN); }
+    finally { setLoading(false); setRefreshing(false); }
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+  const onRefresh = useCallback(() => { setRefreshing(true); fetchData(); }, [fetchData]);
+
+  if (loading && !refreshing) return <LoadingState />;
+  if (!children) return <ErrorState message="Failed to load children" onRetry={fetchData} />;
+
+  const list = Array.isArray(children) ? children : (children?.children || []);
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6200ee" />}>
       <Text style={styles.title}>My Children</Text>
       <Text style={styles.subtitle}>Select a child to view detailed progress.</Text>
 
-      {MOCK_CHILDREN.map((child) => (
+      {list.length === 0 && <EmptyState message="No children linked to your account." />}
+      {list.map((child: any) => (
         <TouchableOpacity
           key={child.id}
           style={styles.childCard}
-          onClick={() => navigation.navigate('ChildDetail', { childId: child.id, childName: child.name })}
+          onPress={() => navigation.navigate('ChildDetail', { childId: child.id, childName: child.name })}
         >
           <View style={styles.childRow}>
             <View style={styles.avatar}>

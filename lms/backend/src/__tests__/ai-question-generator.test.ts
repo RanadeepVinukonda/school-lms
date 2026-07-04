@@ -1,44 +1,10 @@
-jest.mock('../database/adapter', () => {
-  const mockDoc = { exists: true, id: 'mock-id', data: jest.fn(), ref: {} };
-  const mockSnapshot = { empty: false, size: 1, docs: [mockDoc], forEach: (cb: Function) => cb(mockDoc) };
-  const mockQuery = {
-    where: jest.fn().mockReturnThis(),
-    orderBy: jest.fn().mockReturnThis(),
-    limit: jest.fn().mockReturnThis(),
-    get: jest.fn().mockResolvedValue(mockSnapshot),
-  };
-  const mockCollection = {
-    doc: jest.fn().mockReturnThis(),
-    get: jest.fn().mockResolvedValue(mockDoc),
-    set: jest.fn().mockResolvedValue(undefined),
-    update: jest.fn().mockResolvedValue(undefined),
-    delete: jest.fn().mockResolvedValue(undefined),
-    add: jest.fn().mockResolvedValue(mockDoc),
-    where: jest.fn().mockReturnValue(mockQuery),
-    orderBy: jest.fn().mockReturnValue(mockQuery),
-    limit: jest.fn().mockReturnValue(mockQuery),
-    firestore: {
-      batch: jest.fn().mockReturnValue({ update: jest.fn(), delete: jest.fn(), create: jest.fn(), commit: jest.fn().mockResolvedValue(undefined) }),
-    },
-  };
-  return {
-    collections: {
-      concept_questions: jest.fn().mockReturnValue(mockCollection),
-      textbooks: jest.fn().mockReturnValue(mockCollection),
-    },
-    FieldValue: { increment: jest.fn((n) => n) },
-  };
-});
+import { createMockSupabase, resetMockQuery } from './helpers/mock-factory';
+
+const { supabase: mockSupabase, query: mockQuery } = createMockSupabase();
 
 jest.mock('../services/supabase', () => ({
-  getSupabaseAdmin: jest.fn().mockReturnValue({
-    from: jest.fn().mockReturnThis(),
-    select: jest.fn().mockReturnThis(),
-    insert: jest.fn().mockReturnThis(),
-    upsert: jest.fn().mockReturnValue(Promise.resolve({ error: null })),
-    eq: jest.fn().mockReturnThis(),
-    maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
-  }),
+  getSupabaseAdmin: jest.fn(() => mockSupabase),
+  getSupabaseClient: jest.fn(() => mockSupabase),
 }));
 
 jest.mock('../services/ai.service', () => ({
@@ -65,6 +31,7 @@ describe('AI Question Generator', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    resetMockQuery(mockQuery);
     (aiService.chatCompletion as jest.Mock).mockResolvedValue(JSON.stringify({
       questions: [
         { question: 'What is 2+2?', type: 'mcq', difficulty: 'easy', options: ['3', '4', '5'], answer: '4', explanation: 'Basic math', points: 1 },
@@ -131,6 +98,4 @@ describe('AI Question Generator', () => {
       expect(result).toEqual([]);
     });
   });
-
-  // generateQuestionsFromExistingBank tested via generateQuestionsForConcept coverage
 });

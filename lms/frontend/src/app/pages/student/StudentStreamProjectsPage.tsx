@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
 import { codingService } from '@/services/codingService';
 import type { StreamProject } from '@/types/coding';
 import StreamProjectCard from '@/components/coding/StreamProjectCard';
 import { Icon } from '@/components/ui/Icon';
+import { Button } from '@/components/ui/button';
 
 const ALL_SUBJECTS = ['science', 'technology', 'engineering', 'arts', 'mathematics', 'coding', 'robotics'];
 
 export default function StudentStreamProjectsPage() {
   const { _ } = useTranslation();
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<StreamProject[]>([]);
   const [filter, setFilter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
@@ -31,9 +34,14 @@ export default function StudentStreamProjectsPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-on-surface">{_('STREAM Projects')}</h1>
-        <p className="text-on-surface-variant mt-1">{_('Cross-subject collaborative projects integrating Science, Technology, Robotics, Engineering, Arts, and Mathematics')}</p>
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon-sm" onClick={() => navigate(-1)}>
+          <Icon name="arrow_back" size={20} />
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold text-on-surface">{_('STREAM Projects')}</h1>
+          <p className="text-on-surface-variant mt-1">{_('Cross-subject collaborative projects integrating Science, Technology, Robotics, Engineering, Arts, and Mathematics')}</p>
+        </div>
       </div>
 
       <div className="flex gap-2 flex-wrap">

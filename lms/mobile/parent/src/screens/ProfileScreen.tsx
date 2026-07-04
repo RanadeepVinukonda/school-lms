@@ -1,17 +1,39 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
+
+const FALLBACK_PROFILE = { initials: 'P', name: 'Parent User', school: 'Genesis Academy' };
 
 export default function ProfileScreen() {
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [lang, setLang] = useState('en');
 
+  const fetchProfile = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await api.get('/parent/profile');
+      setProfile(res.data);
+    } catch { setProfile(FALLBACK_PROFILE); }
+    finally { setLoading(false); setRefreshing(false); }
+  }, []);
+
+  useEffect(() => { fetchProfile(); }, [fetchProfile]);
+  const onRefresh = useCallback(() => { setRefreshing(true); fetchProfile(); }, [fetchProfile]);
+
+  if (loading && !refreshing) return <LoadingState />;
+  if (!profile) return <ErrorState message="Failed to load profile" onRetry={fetchProfile} />;
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6200ee" />}>
       <View style={styles.profileHeader}>
         <View style={styles.avatarCircle}>
-          <Text style={styles.avatarText}>P</Text>
+          <Text style={styles.avatarText}>{profile.initials}</Text>
         </View>
-        <Text style={styles.parentName}>Parent User</Text>
-        <Text style={styles.schoolName}>Genesis Academy</Text>
+        <Text style={styles.parentName}>{profile.name || 'Parent User'}</Text>
+        <Text style={styles.schoolName}>{profile.school || 'Genesis Academy'}</Text>
       </View>
 
       <Text style={styles.sectionTitle}>Language Preferences</Text>
@@ -25,7 +47,7 @@ export default function ProfileScreen() {
             <TouchableOpacity
               key={l.code}
               style={[styles.langBtn, lang === l.code && styles.activeLangBtn]}
-              onClick={() => setLang(l.code)}
+              onPress={() => setLang(l.code)}
             >
               <Text style={[styles.langText, lang === l.code && styles.activeLangText]}>{l.label}</Text>
             </TouchableOpacity>

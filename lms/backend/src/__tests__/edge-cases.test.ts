@@ -1,84 +1,30 @@
-function createMockCollection() {
-  const mockSubDoc = {
-    exists: true,
-    id: 'sub-doc',
-    data: jest.fn().mockReturnValue({ title: 'Test Concept', name: 'Test Concept' }),
-    ref: {},
-  };
+import { createMockSupabase, resetMockQuery } from './helpers/mock-factory';
 
-  const mockConceptCollection = {
-    doc: jest.fn().mockReturnThis(),
-    get: jest.fn().mockResolvedValue(mockSubDoc),
-    set: jest.fn().mockResolvedValue(undefined),
-    collection: jest.fn().mockReturnThis(),
-    update: jest.fn().mockResolvedValue(undefined),
-  };
+const { supabase: mockSupabase, query: mockQuery } = createMockSupabase();
 
-  const mockDoc = { exists: true, id: 'mock-id', data: jest.fn().mockReturnValue({}), ref: {} };
-  const mockSnapshot = { empty: false, size: 1, docs: [mockDoc], forEach: (cb: Function) => cb(mockDoc) };
-  const mockQuery = {
-    where: jest.fn().mockReturnThis(),
-    orderBy: jest.fn().mockReturnThis(),
-    limit: jest.fn().mockReturnThis(),
-    get: jest.fn().mockResolvedValue(mockSnapshot),
-  };
-
-  return {
-    doc: jest.fn().mockReturnValue({
-      ...mockDoc,
-      collection: jest.fn().mockReturnValue(mockConceptCollection),
-      get: jest.fn().mockResolvedValue(mockDoc),
-      set: jest.fn().mockResolvedValue(undefined),
-      update: jest.fn().mockResolvedValue(undefined),
-      delete: jest.fn().mockResolvedValue(undefined),
-    }),
-    get: jest.fn().mockResolvedValue(mockSnapshot),
-    set: jest.fn().mockResolvedValue(undefined),
-    update: jest.fn().mockResolvedValue(undefined),
-    delete: jest.fn().mockResolvedValue(undefined),
-    add: jest.fn().mockResolvedValue(mockDoc),
-    where: jest.fn().mockReturnValue(mockQuery),
-    orderBy: jest.fn().mockReturnValue(mockQuery),
-    limit: jest.fn().mockReturnValue(mockQuery),
-    firestore: { batch: jest.fn().mockReturnValue({ update: jest.fn(), delete: jest.fn(), create: jest.fn(), commit: jest.fn().mockResolvedValue(undefined) }) },
-  };
-}
-
-jest.mock('../database/adapter', () => {
-  const mc = createMockCollection();
-  return {
-    collections: {
-      quizV2: jest.fn().mockReturnValue(mc),
-      quizAttemptV2: jest.fn().mockReturnValue(mc),
-      testTemplates: jest.fn().mockReturnValue(mc),
-      textbooks: jest.fn().mockReturnValue(mc),
-      users: jest.fn().mockReturnValue(mc),
-      classes: jest.fn().mockReturnValue(mc),
-      teacherClassSubject: jest.fn().mockReturnValue(mc),
-      notifications: jest.fn().mockReturnValue(mc),
-    },
-    FieldValue: { increment: jest.fn((n) => n) },
-  };
-});
+jest.mock('../services/supabase', () => ({
+  getSupabaseAdmin: jest.fn(() => mockSupabase),
+  getSupabaseClient: jest.fn(() => mockSupabase),
+}));
 
 jest.mock('../services/teacher-class-subject.service', () => ({
-  getTeacherAssignment: jest.fn().mockResolvedValue({ id: 'assignment-1', teacherId: 'teacher-1', classId: 'class-1' }),
+  getTeacherAssignment: jest.fn().mockResolvedValue(({ id: 'assignment-1', teacherId: 'teacher-1', classId: 'class-1' }) as any),
 }));
 
 jest.mock('../services/concept-questions.service', () => ({
-  fetchConceptQuestions: jest.fn().mockResolvedValue([]),
-  upsertConceptQuestions: jest.fn().mockResolvedValue(undefined),
+  fetchConceptQuestions: jest.fn().mockResolvedValue(([]) as any),
+  upsertConceptQuestions: jest.fn().mockResolvedValue((undefined) as any),
 }));
 
 jest.mock('../services/ai-question-generator.service', () => ({
-  generateQuestionsForConcept: jest.fn().mockResolvedValue([]),
+  generateQuestionsForConcept: jest.fn().mockResolvedValue(([]) as any),
 }));
 
 jest.mock('../services/gamification.service', () => ({
-  recordAssessmentResult: jest.fn().mockResolvedValue(undefined),
-  awardXp: jest.fn().mockResolvedValue(undefined),
-  awardCoins: jest.fn().mockResolvedValue(undefined),
-  updateStreak: jest.fn().mockResolvedValue(undefined),
+  recordAssessmentResult: jest.fn().mockResolvedValue((undefined) as any),
+  awardXp: jest.fn().mockResolvedValue((undefined) as any),
+  awardCoins: jest.fn().mockResolvedValue((undefined) as any),
+  updateStreak: jest.fn().mockResolvedValue((undefined) as any),
   XP_REWARDS: { assessmentComplete: 10, highAccuracy: 5, perfectScore: 20 },
   COIN_REWARDS: { assessmentComplete: 5, highAccuracy: 3, perfectScore: 10 },
 }));
@@ -109,6 +55,15 @@ describe('Edge Cases', () => {
     questionCount: 0,
   };
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+    resetMockQuery(mockQuery);
+    // Default: empty resolution for nosql queries
+    (mockQuery as any)._mockData = [];
+    // Mock concept data for createTest flow
+    mockQuery.maybeSingle.mockResolvedValue(({ data: { title: 'Test Concept', name: 'Test Concept' }, error: null }) as any);
+  });
+
   describe('Empty Question Bank Handling', () => {
     it('should handle empty question bank without errors', async () => {
       const result = await unifiedTestEngine.createTest(mockBaseData);
@@ -126,13 +81,13 @@ describe('Edge Cases', () => {
     const { generateQuestionsForConcept } = require('../services/ai-question-generator.service');
 
     beforeEach(() => {
-      generateQuestionsForConcept.mockResolvedValue([
+      generateQuestionsForConcept.mockResolvedValue(([
         { id: 'ai-fallback-1', type: 'mcq', question: 'Fallback question?', options: ['A', 'B'], answer: 'A', difficulty: 'easy', points: 1, explanation: 'Fallback' },
-      ]);
+      ]) as any);
     });
 
     afterAll(() => {
-      generateQuestionsForConcept.mockResolvedValue([]);
+      generateQuestionsForConcept.mockResolvedValue(([]) as any);
     });
 
     it('should fall back to AI generation when question bank is empty and count > 0', async () => {
@@ -149,26 +104,17 @@ describe('Edge Cases', () => {
 
   describe('Invalid Test Attempts', () => {
     it('should reject attempt on non-existent test', async () => {
-      const { collections } = require('../database/adapter');
-      collections.quizV2().doc().get = jest.fn().mockResolvedValue({ exists: false, data: () => null });
-
+      // Default maybeSingle returns null → nosqlGet returns { exists: false }
       await expect(unifiedTestEngine.startTestAttempt('bad-test', mockStudentId)).rejects.toThrow(
         'Test not found'
       );
     });
 
     it('should reject attempt on unreleased test', async () => {
-      const { collections } = require('../database/adapter');
-      collections.quizV2().doc().get = jest.fn().mockResolvedValue({
-        exists: true,
-        data: () => ({
-          id: 'test-1',
-          releasedAt: null,
-          maxAttempts: 3,
-          questions: [],
-        }),
-        id: 'test-1',
-      });
+      mockQuery.maybeSingle.mockResolvedValue(({
+        data: { doc_id: 'test-1', data: { id: 'test-1', releasedAt: null, maxAttempts: 3, questions: [] } },
+        error: null,
+      }) as any);
 
       await expect(unifiedTestEngine.startTestAttempt('test-1', mockStudentId)).rejects.toThrow(
         'Test is not yet released'
@@ -176,17 +122,11 @@ describe('Edge Cases', () => {
     });
 
     it('should reject duplicate submission on already completed attempt', async () => {
-      const { collections } = require('../database/adapter');
-      collections.quizAttemptV2().doc().get = jest.fn().mockResolvedValue({
-        exists: true,
-        data: () => ({
-          id: 'attempt-1',
-          quizId: 'test-1',
-          studentId: mockStudentId,
-          status: 'completed',
-        }),
-        id: 'attempt-1',
-      });
+      // First: get attempt data
+      mockQuery.maybeSingle.mockResolvedValue(({
+        data: { doc_id: 'attempt-1', data: { id: 'attempt-1', quizId: 'test-1', studentId: mockStudentId, status: 'completed' } },
+        error: null,
+      }) as any);
 
       await expect(unifiedTestEngine.submitTestAttempt('attempt-1', mockStudentId, {
         answers: [],
@@ -196,17 +136,10 @@ describe('Edge Cases', () => {
     });
 
     it('should reject attempt from wrong student', async () => {
-      const { collections } = require('../database/adapter');
-      collections.quizAttemptV2().doc().get = jest.fn().mockResolvedValue({
-        exists: true,
-        data: () => ({
-          id: 'attempt-1',
-          quizId: 'test-1',
-          studentId: 'other-student',
-          status: 'in_progress',
-        }),
-        id: 'attempt-1',
-      });
+      mockQuery.maybeSingle.mockResolvedValue(({
+        data: { doc_id: 'attempt-1', data: { id: 'attempt-1', quizId: 'test-1', studentId: 'other-student', status: 'in_progress' } },
+        error: null,
+      }) as any);
 
       await expect(unifiedTestEngine.submitTestAttempt('attempt-1', mockStudentId, {
         answers: [],
@@ -216,24 +149,18 @@ describe('Edge Cases', () => {
     });
 
     it('should reject attempt exceeding max attempts', async () => {
-      const { collections } = require('../database/adapter');
-      collections.quizV2().doc().get = jest.fn().mockResolvedValue({
-        exists: true,
-        data: () => ({
-          id: 'test-1',
-          releasedAt: new Date().toISOString(),
-          maxAttempts: 2,
-          questions: [],
-          publishedTo: 'class',
-          targetStudentIds: [],
-        }),
-        id: 'test-1',
-      });
+      // Mock test data with releasedAt
+      mockQuery.maybeSingle
+        .mockResolvedValueOnce({
+          data: { doc_id: 'test-1', data: { id: 'test-1', releasedAt: new Date().toISOString(), maxAttempts: 2, questions: [], publishedTo: 'class', targetStudentIds: [] } },
+          error: null,
+        });
 
-      collections.quizAttemptV2().where = jest.fn().mockReturnValue({
-        where: jest.fn().mockReturnThis(),
-        get: jest.fn().mockResolvedValue({ size: 2, docs: [{ id: 'a1' }, { id: 'a2' }] }),
-      });
+      // Mock attempts query - return 2 existing attempts
+      (mockQuery as any)._mockData = [
+        { doc_id: 'a1', data: { quizId: 'test-1', studentId: mockStudentId } },
+        { doc_id: 'a2', data: { quizId: 'test-1', studentId: mockStudentId } },
+      ];
 
       await expect(unifiedTestEngine.startTestAttempt('test-1', mockStudentId)).rejects.toThrow(
         'Maximum attempts reached'
@@ -254,18 +181,10 @@ describe('Edge Cases', () => {
 
   describe('Cross-Class Data Leakage Prevention', () => {
     it('should not allow access to another classs test', async () => {
-      const { collections } = require('../database/adapter');
-
-      collections.quizV2().where = jest.fn().mockReturnValue({
-        where: jest.fn().mockReturnThis(),
-        get: jest.fn().mockResolvedValue({
-          docs: [{ data: () => ({ classId: 'class-2' }), id: 'test-2' }],
-          empty: false, size: 1,
-          forEach: (cb: Function) => cb({ data: () => ({ classId: 'class-2' }), id: 'test-2' }),
-        }),
-        orderBy: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-      });
+      // Mock nosqlQuery to return tests for class-2
+      (mockQuery as any)._mockData = [
+        { doc_id: 'test-2', data: { classId: 'class-2', title: 'Other class test' } },
+      ];
 
       const result = await unifiedTestEngine.getTestsForClass('class-2');
       expect(result.length).toBeGreaterThanOrEqual(0);

@@ -1,41 +1,52 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
+
+const FALLBACK_CHAPTERS = [
+  { id: 1, title: 'Chapter 1: Linear Equations', lessons: ['Introduction to Linear Equations', 'Solving Equations with Two Variables', 'Graphing Linear Functions'] },
+  { id: 2, title: 'Chapter 2: Quadratic Equations', lessons: ['Introduction to Quadratics', 'Factoring Quadratic Form', 'The Quadratic Formula'] },
+  { id: 3, title: 'Chapter 3: Complex Numbers', lessons: ['Imaginary Unit i', 'Complex Arithmetic Operations', 'Polar Form representation'] },
+];
 
 export default function SubjectDetailScreen({ route, navigation }: any) {
-  const { subjectTitle } = route.params || { subjectTitle: 'Mathematics' };
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [chapters, setChapters] = useState<any>(null);
+  const { subjectTitle, subjectId } = route.params || { subjectTitle: 'Mathematics' };
   const [activeChapter, setActiveChapter] = useState<number | null>(null);
 
-  const chapters = [
-    {
-      id: 1,
-      title: 'Chapter 1: Linear Equations',
-      lessons: ['Introduction to Linear Equations', 'Solving Equations with Two Variables', 'Graphing Linear Functions']
-    },
-    {
-      id: 2,
-      title: 'Chapter 2: Quadratic Equations',
-      lessons: ['Introduction to Quadratics', 'Factoring Quadratic Form', 'The Quadratic Formula']
-    },
-    {
-      id: 3,
-      title: 'Chapter 3: Complex Numbers',
-      lessons: ['Imaginary Unit i', 'Complex Arithmetic Operations', 'Polar Form representation']
-    }
-  ];
+  const fetchChapters = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const endpoint = subjectId ? `/subjects/${subjectId}/chapters` : '/subjects/chapters';
+      const res = await api.get(endpoint);
+      setChapters(res.data);
+    } catch { setChapters(FALLBACK_CHAPTERS); }
+    finally { setLoading(false); setRefreshing(false); }
+  }, [subjectId]);
+
+  useEffect(() => { fetchChapters(); }, [fetchChapters]);
+  const onRefresh = useCallback(() => { setRefreshing(true); fetchChapters(); }, [fetchChapters]);
+
+  if (loading && !refreshing) return <LoadingState />;
+  if (!chapters) return <ErrorState message="Failed to load chapters" onRetry={fetchChapters} />;
+  const list = Array.isArray(chapters) ? chapters : (chapters?.chapters || []);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6200ee" />}>
       <View style={styles.header}>
         <Text style={styles.title}>{subjectTitle}</Text>
         <Text style={styles.subtitle}>Tap a chapter to inspect lessons and test your knowledge.</Text>
       </View>
 
       {/* Chapters list */}
-      {chapters.map((ch) => (
+      {list.length === 0 && <EmptyState message="No chapters available for this subject." />}
+      {list.map((ch: any) => (
         <View key={ch.id} style={styles.chapterWrapper}>
           <TouchableOpacity
             style={styles.chapterHeader}
-            onClick={() => setActiveChapter(activeChapter === ch.id ? null : ch.id)}
+            onPress={() => setActiveChapter(activeChapter === ch.id ? null : ch.id)}
           >
             <Text style={styles.chapterTitle}>{ch.title}</Text>
             <Text style={styles.toggleIcon}>{activeChapter === ch.id ? '▼' : '▶'}</Text>
@@ -53,7 +64,7 @@ export default function SubjectDetailScreen({ route, navigation }: any) {
               {/* Quiz Launch */}
               <TouchableOpacity
                 style={styles.quizBtn}
-                onClick={() => navigation.navigate('Quiz', { chapterId: ch.id, chapterTitle: ch.title })}
+                onPress={() => navigation.navigate('Quiz', { chapterId: ch.id, chapterTitle: ch.title })}
               >
                 <Text style={styles.quizBtnText}>⚡ Take Adaptive Quiz</Text>
               </TouchableOpacity>
@@ -71,7 +82,7 @@ const styles = StyleSheet.create({
   header: { marginBottom: 20 },
   title: { fontSize: 22, fontWeight: 'bold', color: '#212121' },
   subtitle: { fontSize: 13, color: '#666', marginTop: 4 },
-  chapterWrapper: { backgroundColor: '#ffffff', borderRadius: 12, marginBottom: 10, overflow: 'hidden', borderBorderWidth: 1, borderColor: '#eee' },
+  chapterWrapper: { backgroundColor: '#ffffff', borderRadius: 12, marginBottom: 10, overflow: 'hidden', borderWidth: 1, borderColor: '#eee' },
   chapterHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#fff' },
   chapterTitle: { fontSize: 15, fontWeight: 'bold', color: '#212121' },
   toggleIcon: { fontSize: 12, color: '#999' },

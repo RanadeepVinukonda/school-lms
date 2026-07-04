@@ -1,51 +1,27 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { NotFoundError } from '../utils/errors';
+import { createMockSupabase } from './helpers/mock-factory';
 
-const notifData: any = {};
-const userPrefData: any = {};
-function makeDoc(ref: any) {
-  return {
-    exists: true, id: 'n1',
-    data: () => ref.current,
-    get: () => Promise.resolve({ exists: true, data: () => ref.current, id: 'n1' }),
-    set: (d: any) => { ref.current = { ...ref.current, ...d }; return Promise.resolve(); },
-    update: (d: any) => { ref.current = { ...ref.current, ...d }; return Promise.resolve(); },
-    delete: () => Promise.resolve(),
-  };
-}
-const theDoc = makeDoc(notifData);
-const userPrefDoc = makeDoc(userPrefData);
-function chainable(docs: any[] = [theDoc]) {
-  const c: any = {
-    where: () => c, orderBy: () => c, limit: () => c, offset: () => c,
-    count: () => ({ get: () => Promise.resolve({ data: () => ({ count: 5 }) }) }),
-    get: () => Promise.resolve({ empty: false, docs, size: docs.length, forEach: (cb: any) => docs.forEach(cb) }),
-  };
-  return c;
-}
-const notifCollection: any = {
-  doc: () => theDoc,
-  get: () => Promise.resolve({ empty: false, docs: [theDoc], size: 1, forEach: (cb: Function) => cb(theDoc) }),
-  where: () => chainable(),
-  orderBy: () => chainable(),
-  firestore: { batch: () => ({ update: () => {}, set: () => {}, commit: () => Promise.resolve() }) },
-};
-const userCollection: any = {
-  doc: () => userPrefDoc,
-  get: () => Promise.resolve({ exists: true, data: () => userPrefData.current, id: 'u1' }),
-};
+const { supabase: mockSupabase, query: mockQuery } = createMockSupabase();
 
-// ponytail: adapter deleted — tests commented out
-/*
-jest.mock('../database/adapter', () => ({ collections: { notifications: jest.fn(), users: jest.fn() } }));
+jest.mock('../services/supabase', () => ({
+  getSupabaseAdmin: jest.fn(() => mockSupabase),
+  getSupabaseClient: jest.fn(() => mockSupabase),
+}));
+
 import { createNotification, getNotificationsByUser, markNotificationRead, markAllNotificationsRead, getUnreadCount, deleteNotification, getNotificationPreferences, updateNotificationPreferences, createBulkNotifications } from '../services/notification.service';
-import { collections } from '../database/adapter';
 
 beforeEach(() => {
-  (collections.notifications as jest.Mock).mockReturnValue(notifCollection);
-  (collections.users as jest.Mock).mockReturnValue(userCollection);
-  notifData.current = {};
-  userPrefData.current = { notificationPreferences: { email: true, push: true, sms: false, inApp: true } };
+  jest.clearAllMocks();
+  mockQuery.select.mockReturnThis();
+  mockQuery.update.mockReturnThis();
+  mockQuery.delete.mockReturnThis();
+  (mockQuery as any).upsert = jest.fn<any>().mockReturnThis();
+  delete (mockQuery as any).data;
+  delete (mockQuery as any).error;
+  delete (mockQuery as any).count;
+  // Default: user preferences exist with inApp enabled
+  mockQuery.maybeSingle.mockResolvedValue(({ data: { notification_preferences: { email: true, push: true, sms: false, inApp: true, in_app_enabled: true }, id: 'u1' }, error: null }) as any);
 });
 
 describe('notification.service', () => {
@@ -56,24 +32,27 @@ describe('notification.service', () => {
     expect(result.read).toBe(false);
   });
   it('returns paginated notifications', async () => {
+    (mockQuery as any).data = [{ id: 'n1', user_id: 'u1', title: 'Test', body: 'Hello', read: false, created_at: new Date().toISOString() }];
+    (mockQuery as any).count = 5;
     const result = await getNotificationsByUser('u1', { page: '1', limit: '10' });
     expect(result.items).toBeDefined();
     expect(result.total).toBe(5);
   });
   it('marks notification as read', async () => {
-    notifData.current = { userId: 'u1' };
+    mockQuery.maybeSingle.mockResolvedValue(({ data: { id: 'n1', user_id: 'u1' }, error: null }) as any);
     await expect(markNotificationRead('n1', 'u1')).resolves.not.toThrow();
   });
   it('throws NotFoundError when not owner', async () => {
-    notifData.current = { userId: 'other' };
+    mockQuery.maybeSingle.mockResolvedValue(({ data: { id: 'n1', user_id: 'other' }, error: null }) as any);
     await expect(markNotificationRead('n1', 'u1')).rejects.toThrow(NotFoundError);
   });
   it('returns unread count', async () => {
+    (mockQuery as any).count = 5;
     const result = await getUnreadCount('u1');
     expect(result.count).toBe(5);
   });
   it('deletes owned notification', async () => {
-    notifData.current = { userId: 'u1' };
+    mockQuery.maybeSingle.mockResolvedValue(({ data: { id: 'n1', user_id: 'u1' }, error: null }) as any);
     await expect(deleteNotification('n1', 'u1')).resolves.not.toThrow();
   });
   it('returns user preferences', async () => {
@@ -81,6 +60,9 @@ describe('notification.service', () => {
     expect(prefs.email).toBe(true);
   });
   it('updates preferences', async () => {
+    mockQuery.maybeSingle
+      .mockReset()
+      .mockResolvedValue(({ data: { id: 'u1' }, error: null }) as any);
     const result = await updateNotificationPreferences('u1', { email: false, push: true, sms: true, in_app_enabled: false });
     expect(result.email).toBe(false);
   });
@@ -89,7 +71,7 @@ describe('notification.service', () => {
     expect(result).toHaveLength(1);
   });
   it('marks all notifications read', async () => {
+    (mockQuery as any).data = [{ id: 'n1' }, { id: 'n2' }];
     await expect(markAllNotificationsRead('u1')).resolves.not.toThrow();
   });
 });
-*/

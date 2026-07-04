@@ -183,7 +183,7 @@ export default function AdminTimetablePage() {
             >
               <option value="">Select a class to manage timetable</option>
               {classesData.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id}>{c.grade && c.section ? `Class ${c.grade}-${c.section}` : c.name}</option>
               ))}
             </select>
           </CardContent>

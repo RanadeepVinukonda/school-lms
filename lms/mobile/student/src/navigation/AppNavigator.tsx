@@ -1,9 +1,8 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Text, View } from 'react-native';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
-// Screen Imports
 import DashboardScreen from '../screens/DashboardScreen';
 import SubjectsScreen from '../screens/SubjectsScreen';
 import SubjectDetailScreen from '../screens/SubjectDetailScreen';
@@ -47,7 +46,7 @@ export default function AppNavigator() {
         component={DashboardScreen}
         options={{
           tabBarLabel: 'Dashboard',
-          tabBarIcon: () => <Text style={{ fontSize: 20 }}>📊</Text>
+          tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="view-dashboard" color={color} size={size} />
         }}
       />
       <Tab.Screen
@@ -56,7 +55,7 @@ export default function AppNavigator() {
         options={{
           headerShown: false,
           tabBarLabel: 'Learning',
-          tabBarIcon: () => <Text style={{ fontSize: 20 }}>📚</Text>
+          tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="book-open-variant" color={color} size={size} />
         }}
       />
       <Tab.Screen
@@ -64,7 +63,7 @@ export default function AppNavigator() {
         component={AITutorScreen}
         options={{
           tabBarLabel: 'AI Tutor',
-          tabBarIcon: () => <Text style={{ fontSize: 20 }}>🤖</Text>
+          tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="robot" color={color} size={size} />
         }}
       />
       <Tab.Screen
@@ -72,7 +71,7 @@ export default function AppNavigator() {
         component={GamificationScreen}
         options={{
           tabBarLabel: 'Milestones',
-          tabBarIcon: () => <Text style={{ fontSize: 20 }}>🏆</Text>
+          tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="trophy" color={color} size={size} />
         }}
       />
       <Tab.Screen
@@ -80,7 +79,7 @@ export default function AppNavigator() {
         component={ProfileScreen}
         options={{
           tabBarLabel: 'Profile',
-          tabBarIcon: () => <Text style={{ fontSize: 20 }}>👤</Text>
+          tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="account" color={color} size={size} />
         }}
       />
     </Tab.Navigator>

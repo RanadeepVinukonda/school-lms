@@ -85,9 +85,9 @@ export async function saveChapters(textbookId: string, chapters: Chapter[]): Pro
   for (const chapter of chapters) {
     const { concepts, ...chapterData } = chapter;
     await supabase.from(CHAPTERS_COLLECTION).upsert({
-      id: chapter.id,
       textbook_id: textbookId,
       ...chapterData,
+      id: chapter.id,
       order: chapterData.order ?? 0,
       createdAt: new Date().toISOString(),
     });
@@ -95,10 +95,10 @@ export async function saveChapters(textbookId: string, chapters: Chapter[]): Pro
     for (const concept of concepts) {
       const { questionBank, ...conceptData } = concept;
       await supabase.from(CONCEPTS_COLLECTION).upsert({
-        id: concept.id,
         textbook_id: textbookId,
         chapter_id: chapter.id,
         ...conceptData,
+        id: concept.id,
         order: conceptData.order ?? 0,
         createdAt: new Date().toISOString(),
       });
@@ -110,10 +110,10 @@ export async function saveChapters(textbookId: string, chapters: Chapter[]): Pro
             concept_id: concept.id,
             textbook_id: textbookId,
             chapter_id: chapter.id,
-            question: q.question,
+            question: q.text,
             type: q.type,
             difficulty: q.difficulty,
-            answer: q.answer,
+            answer: q.correctAnswer,
             explanation: q.explanation || '',
             created_at: new Date().toISOString(),
           });

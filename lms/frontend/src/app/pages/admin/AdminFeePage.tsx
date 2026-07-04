@@ -119,7 +119,7 @@ export default function AdminFeePage() {
                   <Input type="date" placeholder="Due Date" value={newSchedule.dueDate} onChange={(e) => setNewSchedule({ ...newSchedule, dueDate: e.target.value })} />
                   <select className="h-10 px-3 rounded-lg border border-border/60 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary" value={newSchedule.classId} onChange={(e) => setNewSchedule({ ...newSchedule, classId: e.target.value })}>
                     <option value="">Select Class</option>
-                    {classesData.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    {classesData.map((c) => <option key={c.id} value={c.id}>{c.grade && c.section ? `Class ${c.grade}-${c.section}` : c.name}</option>)}
                   </select>
                   <Input placeholder="Academic Year (e.g. 2025-2026)" value={newSchedule.academicYear} onChange={(e) => setNewSchedule({ ...newSchedule, academicYear: e.target.value })} />
                   <Input placeholder="Description (optional)" value={newSchedule.description} onChange={(e) => setNewSchedule({ ...newSchedule, description: e.target.value })} />

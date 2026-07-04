@@ -1,17 +1,39 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
+import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
+
+const FALLBACK_STUDENTS = [
+  { id: '1', name: 'Aarav Sharma', present: true },
+  { id: '2', name: 'Ananya Iyer', present: true },
+  { id: '3', name: 'Kabir Mehta', present: false },
+  { id: '4', name: 'Meera Deshmukh', present: true },
+];
 
 export default function ClassAttendanceScreen({ route, navigation }: any) {
-  const { className } = route.params || { className: 'Grade 10A' };
-
-  // Student roster status
-  const [students, setStudents] = useState([
-    { id: '1', name: 'Aarav Sharma', present: true },
-    { id: '2', name: 'Ananya Iyer', present: true },
-    { id: '3', name: 'Kabir Mehta', present: false },
-    { id: '4', name: 'Meera Deshmukh', present: true }
-  ]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { classId, className } = route.params || { className: 'Grade 10A' };
+  const [students, setStudents] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const fetchRoster = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const endpoint = classId ? `/attendance/${classId}/roster` : '/attendance/roster';
+      const res = await api.get(endpoint);
+      setStudents(Array.isArray(res.data) ? res.data : (res.data?.students || res.data));
+    } catch { setStudents(FALLBACK_STUDENTS); }
+    finally { setLoading(false); setRefreshing(false); }
+  }, [classId]);
+
+  useEffect(() => { fetchRoster(); }, [fetchRoster]);
+  const onRefresh = useCallback(() => { setRefreshing(true); fetchRoster(); }, [fetchRoster]);
+
+  if (loading && !refreshing) return <LoadingState />;
+  if (!students) return <ErrorState message="Failed to load roster" onRetry={fetchRoster} />;
+
+  const roster = students;
 
   const toggleStatus = (id: string) => {
     setStudents(prev => prev.map(s => s.id === id ? { ...s, present: !s.present } : s));
@@ -25,24 +47,25 @@ export default function ClassAttendanceScreen({ route, navigation }: any) {
     setSubmitting(true);
     setTimeout(() => {
       setSubmitting(false);
-      alert('Attendance saved successfully!');
+      Alert.alert('Attendance saved successfully!');
       navigation.goBack();
     }, 1500);
   };
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6200ee" />}>
         <View style={styles.header}>
           <Text style={styles.title}>{className} Attendance Roster</Text>
           <Text style={styles.dateLabel}>Date: {new Date().toLocaleDateString()}</Text>
         </View>
 
-        <TouchableOpacity style={styles.allBtn} onClick={markAllPresent}>
+        <TouchableOpacity style={styles.allBtn} onPress={markAllPresent}>
           <Text style={styles.allBtnText}>✓ Mark All Present</Text>
         </TouchableOpacity>
 
-        {students.map((student) => (
+        {roster.length === 0 && <EmptyState message="No students in roster." />}
+        {roster.map((student: any) => (
           <View key={student.id} style={styles.studentRow}>
             <Text style={styles.studentName}>{student.name}</Text>
             <TouchableOpacity
@@ -50,7 +73,7 @@ export default function ClassAttendanceScreen({ route, navigation }: any) {
                 styles.statusBadge,
                 student.present ? styles.presentBadge : styles.absentBadge
               ]}
-              onClick={() => toggleStatus(student.id)}
+              onPress={() => toggleStatus(student.id)}
             >
               <Text style={student.present ? styles.presentText : styles.absentText}>
                 {student.present ? 'Present' : 'Absent'}
@@ -62,7 +85,7 @@ export default function ClassAttendanceScreen({ route, navigation }: any) {
         <TouchableOpacity
           style={[styles.submitBtn, submitting && styles.disabledBtn]}
           disabled={submitting}
-          onClick={submitAttendance}
+          onPress={submitAttendance}
         >
           <Text style={styles.submitBtnText}>
             {submitting ? 'Saving attendance...' : 'Save Attendance'}

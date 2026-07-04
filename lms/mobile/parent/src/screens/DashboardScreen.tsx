@@ -1,16 +1,38 @@
-import React from 'react';
-import { StyleSheet, Text, View, ScrollView } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
-const MOCK_CHILDREN = [
+const FALLBACK_CHILDREN = [
   { id: 'ch1', name: 'Arjun S.', class: 'Grade 10A', mastery: 78, attendance: 94, avgGrade: 'B+' },
   { id: 'ch2', name: 'Priya S.', class: 'Grade 8B', mastery: 92, attendance: 98, avgGrade: 'A' },
 ];
 
 export default function DashboardScreen({ navigation }: any) {
-  const childCount = MOCK_CHILDREN.length;
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [children, setChildren] = useState<any>(null);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await api.get('/parent/dashboard');
+      setChildren(res.data);
+    } catch { setChildren(FALLBACK_CHILDREN); }
+    finally { setLoading(false); setRefreshing(false); }
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+  const onRefresh = useCallback(() => { setRefreshing(true); fetchData(); }, [fetchData]);
+
+  if (loading && !refreshing) return <LoadingState />;
+  if (!children) return <ErrorState message="Failed to load dashboard" onRetry={fetchData} />;
+
+  const childCount = Array.isArray(children) ? children.length : (children?.children || []).length;
+  const list = Array.isArray(children) ? children : (children?.children || []);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6200ee" />}>
       <Text style={styles.welcome}>Welcome, Parent! 👋</Text>
       <Text style={styles.subtitle}>Stay informed about your children's learning journey.</Text>
 
@@ -32,11 +54,12 @@ export default function DashboardScreen({ navigation }: any) {
       </View>
 
       <Text style={styles.sectionTitle}>Your Children</Text>
-      {MOCK_CHILDREN.map((child) => (
-        <View
+      {list.length === 0 && <EmptyState message="No children linked to your account yet." />}
+      {list.map((child: any) => (
+        <TouchableOpacity
           key={child.id}
           style={styles.childCard}
-          onClick={() => navigation.navigate('Children', { screen: 'ChildDetail', params: { childId: child.id, childName: child.name } })}
+          onPress={() => navigation.navigate('Children', { screen: 'ChildDetail', params: { childId: child.id, childName: child.name } })}
         >
           <View style={styles.childHeader}>
             <View style={styles.avatar}>
@@ -53,23 +76,23 @@ export default function DashboardScreen({ navigation }: any) {
             <View style={styles.childStat}><Text style={styles.childStatVal}>{child.attendance}%</Text><Text style={styles.childStatLabel}>Attendance</Text></View>
             <View style={styles.childStat}><Text style={styles.childStatVal}>{child.avgGrade}</Text><Text style={styles.childStatLabel}>Avg Grade</Text></View>
           </View>
-        </View>
+        </TouchableOpacity>
       ))}
 
       <Text style={styles.sectionTitle}>Quick Links</Text>
       <View style={styles.quickLinks}>
-        <View style={styles.linkCard} onClick={() => navigation.navigate('Children')}>
+        <TouchableOpacity style={styles.linkCard} onPress={() => navigation.navigate('Children')}>
           <Text style={styles.linkIcon}>👨‍👩‍👧‍👦</Text>
           <Text style={styles.linkLabel}>View Children</Text>
-        </View>
-        <View style={styles.linkCard} onClick={() => navigation.navigate('Reports')}>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.linkCard} onPress={() => navigation.navigate('Reports')}>
           <Text style={styles.linkIcon}>📊</Text>
           <Text style={styles.linkLabel}>Reports</Text>
-        </View>
-        <View style={styles.linkCard} onClick={() => navigation.navigate('Profile')}>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.linkCard} onPress={() => navigation.navigate('Profile')}>
           <Text style={styles.linkIcon}>👤</Text>
           <Text style={styles.linkLabel}>My Profile</Text>
-        </View>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );

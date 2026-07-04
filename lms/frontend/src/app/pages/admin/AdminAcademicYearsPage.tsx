@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { OptionsSelect } from '@/components/ui/select';
 import { cardStackReveal } from '@/lib/motion';
 import api from '@/services/api';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
@@ -17,13 +18,13 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 export default function AdminAcademicYearsPage() {
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
-  const [editing, setEditing] = useState<any>(null);
+  const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [isCurrent, setIsCurrent] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState<any | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<Record<string, unknown> | null>(null);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['academic-years'],
@@ -33,19 +34,20 @@ export default function AdminAcademicYearsPage() {
   const createMutation = useMutation({
     mutationFn: () => api.post('/academic-years', { name, code, startDate, endDate, isCurrent }),
     onSuccess: () => { toast.success('Academic year created'); closeDialog(); queryClient.invalidateQueries({ queryKey: ['academic-years'] }); },
-    onError: (err: any) => toast.error(err.message || 'Failed to create'),
+    onError: (err: Error) => toast.error(err.message || 'Failed to create'),
   });
 
   const updateMutation = useMutation({
-    mutationFn: () => api.put(`/academic-years/${editing.id}`, { name, code, startDate, endDate, isCurrent }),
+    // ponytail: editing.id is set via openEdit which sets a Record<string, unknown>
+    mutationFn: () => api.put(`/academic-years/${(editing as Record<string, unknown>).id}`, { name, code, startDate, endDate, isCurrent }),
     onSuccess: () => { toast.success('Academic year updated'); closeDialog(); queryClient.invalidateQueries({ queryKey: ['academic-years'] }); },
-    onError: (err: any) => toast.error(err.message || 'Failed to update'),
+    onError: (err: Error) => toast.error(err.message || 'Failed to update'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/academic-years/${id}`),
     onSuccess: () => { toast.success('Academic year deleted'); queryClient.invalidateQueries({ queryKey: ['academic-years'] }); },
-    onError: (err: any) => toast.error(err.message || 'Failed to delete'),
+    onError: (err: Error) => toast.error(err.message || 'Failed to delete'),
   });
 
   const handleSave = () => {
@@ -66,13 +68,14 @@ export default function AdminAcademicYearsPage() {
 
   function closeDialog() { setShowCreate(false); setEditing(null); setName(''); setCode(''); setStartDate(''); setEndDate(''); setIsCurrent(false); }
 
-  function openEdit(item: any) {
-    setEditing(item); setName(item.name); setCode(item.code);
-    setStartDate(item.startDate?.split('T')[0] || ''); setEndDate(item.endDate?.split('T')[0] || '');
-    setIsCurrent(item.isCurrent || false); setShowCreate(true);
+  function openEdit(item: Record<string, unknown>) {
+    setEditing(item); setName(item.name as string || ''); setCode(item.code as string || '');
+    setStartDate((item.startDate as string)?.split('T')[0] || ''); setEndDate((item.endDate as string)?.split('T')[0] || '');
+    setIsCurrent(item.isCurrent as boolean || false); setShowCreate(true);
   }
 
-  const items: any[] = data?.items ?? data ?? [];
+  // ponytail: shared list type from query data
+  const items = (data?.items ?? data ?? []) as Record<string, unknown>[];
 
   return (
     <>
@@ -98,7 +101,7 @@ export default function AdminAcademicYearsPage() {
                 {items.length === 0 ? (
                   <Card className="border-border/60"><CardContent className="p-8 text-center text-muted-foreground"><Icon name="calendar_month" size={48} className="mx-auto mb-3 opacity-40" /><p>No academic years</p></CardContent></Card>
                 ) : (
-                  items.map((y: any) => (
+                  items.map((y: Record<string, unknown>) => (
                     <Card key={y.id} className="border-border/60">
                       <CardContent className="p-5">
                         <div className="flex items-start justify-between gap-4">
@@ -110,8 +113,8 @@ export default function AdminAcademicYearsPage() {
                             </div>
                             <p className="text-label-sm text-muted-foreground">Code: {y.code}</p>
                             <div className="flex items-center gap-3 mt-1 text-label-xs text-muted-foreground">
-                              <span>Start: {y.startDate ? new Date(y.startDate).toLocaleDateString() : '-'}</span>
-                              <span>End: {y.endDate ? new Date(y.endDate).toLocaleDateString() : '-'}</span>
+                              <span>Start: {y.startDate ? new Date(y.startDate as string).toLocaleDateString() : '-'}</span>
+                              <span>End: {y.endDate ? new Date(y.endDate as string).toLocaleDateString() : '-'}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
@@ -134,7 +137,17 @@ export default function AdminAcademicYearsPage() {
                 <DialogDescription>Set up a new academic year period.</DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. 2025-2026" />
+                <OptionsSelect
+                  options={[
+                    { value: '2024-2025', label: '2024-2025' },
+                    { value: '2025-2026', label: '2025-2026' },
+                    { value: '2026-2027', label: '2026-2027' },
+                    { value: '2027-2028', label: '2027-2028' },
+                  ]}
+                  placeholder="e.g. 2025-2026"
+                  value={name}
+                  onValueChange={(v) => { setName(v); setCode(v ? v.split('-').map(s => s.slice(-2)).join('-') : ''); }}
+                />
                 <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. 2025-26" />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div><label className="text-sm font-medium">Start Date</label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>

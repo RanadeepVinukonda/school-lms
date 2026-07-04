@@ -8,8 +8,8 @@ import { Icon } from '@/components/ui/Icon';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { schoolAnalyticsService } from '@/services/schoolAnalyticsService';
 
-function BarChart({ data, labelKey, valueKey, color = 'bg-primary', maxValue }: { data: any[]; labelKey: string; valueKey: string; color?: string; maxValue?: number }) {
-  const max = maxValue || Math.max(...data.map((d) => d[valueKey]), 1);
+function BarChart({ data, labelKey, valueKey, color = 'bg-primary', maxValue }: { data: Record<string, number | string>[]; labelKey: string; valueKey: string; color?: string; maxValue?: number }) {
+  const max = maxValue || Math.max(...data.map((d) => Number(d[valueKey])), 1);
   return (
     <div className="space-y-2">
       {data.map((item, i) => (
@@ -18,10 +18,10 @@ function BarChart({ data, labelKey, valueKey, color = 'bg-primary', maxValue }: 
           <div className="flex-1 h-6 rounded-full bg-muted/40 overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: `${(item[valueKey] / max) * 100}%` }}
+              animate={{ width: `${(Number(item[valueKey]) / max) * 100}%` }}
               transition={{ duration: 0.6, delay: i * 0.05 }}
               className={`h-full rounded-full ${color} flex items-center justify-end pr-2 text-[10px] text-white font-bold`}
-              style={{ minWidth: item[valueKey] > 0 ? '2rem' : '0' }}
+              style={{ minWidth: Number(item[valueKey]) > 0 ? '2rem' : '0' }}
             >
               {item[valueKey]}%
             </motion.div>
@@ -135,7 +135,7 @@ export default function AdminSchoolAnalyticsPage() {
                             </div>
                             <div className="text-center p-4 rounded-xl bg-muted/30">
                               <p className="text-label-sm text-muted-foreground">Average Performance</p>
-                              <p className="text-display-xs font-bold mt-1 text-primary">{overviewData.averagePerformance}%</p>
+                               <p className="text-display-xs font-bold mt-1 text-primary">{overviewData.averagePerformance ?? 0}%</p>
                             </div>
                             <div className="text-center p-4 rounded-xl bg-muted/30">
                               <p className="text-label-sm text-muted-foreground">At-Risk Students</p>
@@ -172,7 +172,7 @@ export default function AdminSchoolAnalyticsPage() {
                                 {gradeData.map((g) => (
                                   <tr key={g.grade} className="hover:bg-muted/20">
                                     <td className="py-2 font-semibold">{g.grade}</td>
-                                    <td className="py-2 font-mono">{g.averageScore}%</td>
+                                    <td className="py-2 font-mono">{g.averageScore ?? 0}%</td>
                                     <td className="py-2 text-muted-foreground">{g.studentCount}</td>
                                   </tr>
                                 ))}
@@ -210,9 +210,9 @@ export default function AdminSchoolAnalyticsPage() {
                                 {teacherData.map((t) => (
                                   <tr key={t.teacherId} className="hover:bg-muted/20">
                                     <td className="py-2 font-semibold">{t.teacherName}</td>
-                                    <td className="py-2 font-mono">{t.averageScore}%</td>
-                                    <td className="py-2 text-muted-foreground">{t.classCount}</td>
-                                    <td className="py-2 text-muted-foreground">{t.studentCount}</td>
+                                    <td className="py-2 font-mono">{t.averageScore ?? 0}%</td>
+                                    <td className="py-2 text-muted-foreground">{t.classCount ?? 0}</td>
+                                    <td className="py-2 text-muted-foreground">{t.studentCount ?? 0}</td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -258,8 +258,8 @@ export default function AdminSchoolAnalyticsPage() {
                                     </td>
                                     <td className="px-4 py-3 font-semibold">{c.className}</td>
                                     <td className="px-4 py-3 text-muted-foreground">{c.grade || '-'}</td>
-                                    <td className="px-4 py-3 text-right font-mono font-bold">{c.averageScore}%</td>
-                                    <td className="px-4 py-3 text-right text-muted-foreground">{c.studentCount}</td>
+                                    <td className="px-4 py-3 text-right font-mono font-bold">{c.averageScore ?? 0}%</td>
+                                    <td className="px-4 py-3 text-right text-muted-foreground">{c.studentCount ?? 0}</td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -286,7 +286,7 @@ export default function AdminSchoolAnalyticsPage() {
                                 const height = (t.averageScore / maxVal) * 100;
                                 return (
                                   <div key={t.month} className="flex-1 flex flex-col items-center gap-1 min-w-[32px]">
-                                    <span className="text-[9px] sm:text-[10px] font-mono text-muted-foreground">{t.averageScore}%</span>
+                                    <span className="text-[9px] sm:text-[10px] font-mono text-muted-foreground">{t.averageScore ?? 0}%</span>
                                     <motion.div
                                       initial={{ height: 0 }}
                                       animate={{ height: `${height}%` }}
@@ -294,7 +294,7 @@ export default function AdminSchoolAnalyticsPage() {
                                       className="w-full rounded-t-md bg-primary"
                                     />
                                     <span className="text-[9px] sm:text-[10px] text-muted-foreground sm:rotate-45 sm:origin-left whitespace-nowrap">
-                                      {t.month.slice(5)}
+                                      {(t.month ?? '').slice(5)}
                                     </span>
                                   </div>
                                 );
@@ -313,8 +313,8 @@ export default function AdminSchoolAnalyticsPage() {
                                   {trendData.map((t) => (
                                     <tr key={t.month} className="hover:bg-muted/20">
                                       <td className="py-2 font-semibold">{t.month}</td>
-                                      <td className="py-2 font-mono">{t.averageScore}%</td>
-                                      <td className="py-2 text-muted-foreground">{t.count}</td>
+                                      <td className="py-2 font-mono">{t.averageScore ?? 0}%</td>
+                                      <td className="py-2 text-muted-foreground">{t.count ?? 0}</td>
                                     </tr>
                                   ))}
                                 </tbody>

@@ -5,6 +5,7 @@ module.exports = {
   roots: ['<rootDir>/src'],
   testMatch: ['**/__tests__/**/*.ts', '**/*.test.ts'],
   testPathIgnorePatterns: ['/node_modules/', '<rootDir>/src/__tests__/helpers'],
+  setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
   moduleFileExtensions: ['ts', 'js', 'json'],
   moduleNameMapper: { '^(\\.{1,2}/.*)\\.js$': '$1' },
   transform: { '^.+\\.tsx?$': ['ts-jest', { diagnostics: false }] },

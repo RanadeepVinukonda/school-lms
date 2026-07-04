@@ -1,31 +1,49 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
-export default function PrePrimaryScreen() {
-  const [activeTab, setActiveTab] = useState<'phonics' | 'tracing' | 'stories'>('phonics');
-
-  // Sound board data
-  const alphabet = [
+const FALLBACK_CONTENT = {
+  phonics: [
     { char: 'A', sound: 'Apple' },
     { char: 'B', sound: 'Ball' },
     { char: 'C', sound: 'Cat' },
-    { char: 'D', sound: 'Dog' }
-  ];
-
-  // Tracing exercises
-  const tracingItems = [
+    { char: 'D', sound: 'Dog' },
+  ],
+  tracing: [
     { name: 'Trace Line', desc: '-----------------' },
-    { name: 'Trace Circle', desc: 'o o o o o o' }
-  ];
-
-  // Stories
-  const stories = [
+    { name: 'Trace Circle', desc: 'o o o o o o' },
+  ],
+  stories: [
     { title: 'The Clever Crow', readTime: '2 min read' },
-    { title: 'The Lion and The Mouse', readTime: '3 min read' }
-  ];
+    { title: 'The Lion and The Mouse', readTime: '3 min read' },
+  ],
+};
+
+export default function PrePrimaryScreen() {
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [content, setContent] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<'phonics' | 'tracing' | 'stories'>('phonics');
+
+  const fetchContent = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await api.get('/student/preprimary/content');
+      setContent(res.data);
+    } catch { setContent(FALLBACK_CONTENT); }
+    finally { setLoading(false); setRefreshing(false); }
+  }, []);
+
+  useEffect(() => { fetchContent(); }, [fetchContent]);
+  const onRefresh = useCallback(() => { setRefreshing(true); fetchContent(); }, [fetchContent]);
+
+  if (loading && !refreshing) return <LoadingState />;
+  if (!content) return <ErrorState message="Failed to load content" onRetry={fetchContent} />;
+  const c = content;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6200ee" />}>
       {/* Sub tabs */}
       <View style={styles.tabsRow}>
         {[
@@ -36,7 +54,7 @@ export default function PrePrimaryScreen() {
           <TouchableOpacity
             key={t.id}
             style={[styles.tabBtn, activeTab === t.id && styles.activeTabBtn]}
-            onClick={() => setActiveTab(t.id as any)}
+            onPress={() => setActiveTab(t.id as any)}
           >
             <Text style={[styles.tabText, activeTab === t.id && styles.activeTabText]}>
               {t.label}
@@ -51,8 +69,9 @@ export default function PrePrimaryScreen() {
           <Text style={styles.sectionTitle}>Interactive Phonics Soundboard</Text>
           <Text style={styles.sectionDesc}>Tap a letter to play the phonic word sound.</Text>
           
-          <View style={styles.grid}>
-            {alphabet.map((item) => (
+            <View style={styles.grid}>
+            {(c.phonics || []).length === 0 && <EmptyState message="No phonics content available." />}
+            {(c.phonics || []).map((item: any) => (
               <TouchableOpacity key={item.char} style={styles.gridCard}>
                 <Text style={styles.gridChar}>{item.char}</Text>
                 <Text style={styles.gridWord}>{item.sound}</Text>
@@ -67,7 +86,8 @@ export default function PrePrimaryScreen() {
           <Text style={styles.sectionTitle}>Writing & Tracing Sandbox</Text>
           <Text style={styles.sectionDesc}>Follow the paths to practice handwriting.</Text>
 
-          {tracingItems.map((item, idx) => (
+          {(c.tracing || []).length === 0 && <EmptyState message="No tracing exercises available." />}
+          {(c.tracing || []).map((item: any, idx: number) => (
             <View key={idx} style={styles.traceCard}>
               <Text style={styles.traceName}>{item.name}</Text>
               <Text style={styles.tracePattern}>{item.desc}</Text>
@@ -84,7 +104,8 @@ export default function PrePrimaryScreen() {
           <Text style={styles.sectionTitle}>Read-Along Stories</Text>
           <Text style={styles.sectionDesc}>Read short stories with interactive voice synthesis.</Text>
 
-          {stories.map((story, idx) => (
+          {(c.stories || []).length === 0 && <EmptyState message="No stories available." />}
+          {(c.stories || []).map((story: any, idx: number) => (
             <View key={idx} style={styles.storyCard}>
               <View style={styles.storyDetails}>
                 <Text style={styles.storyTitle}>{story.title}</Text>
@@ -105,7 +126,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f9fa' },
   content: { padding: 16 },
   tabsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
-  tabBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', backgroundColor: '#fff', borderRadius: 8, marginHorizontal: 4, borderBorderWidth: 1, borderColor: '#eee' },
+  tabBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', backgroundColor: '#fff', borderRadius: 8, marginHorizontal: 4, borderWidth: 1, borderColor: '#eee' },
   activeTabBtn: { backgroundColor: '#6200ee' },
   tabText: { fontSize: 13, color: '#666', fontWeight: 'bold' },
   activeTabText: { color: '#ffffff' },

@@ -362,12 +362,18 @@ export default function AdminStudentsPage() {
               </div>
             <div className="space-y-2">
               <Label>Academic Year</Label>
-              <Input
-                placeholder="e.g. 2026"
-                className="border-border/60 placeholder:text-muted-foreground"
+              <select
+                className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-body-md"
                 value={createForm.academicYear}
                 onChange={(e) => setCreateForm((f) => ({ ...f, academicYear: e.target.value }))}
-              />
+              >
+                <option value="">Select Academic Year</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+                <option value="2027">2027</option>
+                <option value="2028">2028</option>
+              </select>
             </div>
           </div>
           <DialogFooter>
@@ -493,12 +499,18 @@ export default function AdminStudentsPage() {
               </div>
             <div className="space-y-2">
               <Label>Academic Year</Label>
-              <Input
-                placeholder="e.g. 2026"
-                className="border-border/60 placeholder:text-muted-foreground"
+              <select
+                className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-body-md"
                 value={editForm.academicYear}
                 onChange={(e) => setEditForm((f) => ({ ...f, academicYear: e.target.value }))}
-              />
+              >
+                <option value="">Select Academic Year</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+                <option value="2027">2027</option>
+                <option value="2028">2028</option>
+              </select>
             </div>
           </div>
           <DialogFooter>

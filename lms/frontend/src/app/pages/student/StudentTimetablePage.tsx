@@ -7,8 +7,9 @@ import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { OptionsSelect } from '@/components/ui/select';
 import { Icon } from '@/components/ui/Icon';
+import { useAuthStore } from '@/store/authStore';
 import { timetableService } from '@/services/timetableService';
-import { getAllClasses, getAllSubjects, getAllTeachers } from '@/services/dataService';
+import { getAllClasses, getAllSubjects, getAllTeachers, type ClassEntry } from '@/services/dataService';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const DAY_SHORT: Record<string, string> = {
@@ -18,7 +19,8 @@ const DAY_SHORT: Record<string, string> = {
 
 export default function StudentTimetablePage() {
   const { _ } = useTranslation();
-  const [selectedClassId, setSelectedClassId] = useState('');
+  const user = useAuthStore((s) => s.user);
+  const [selectedClassId, setSelectedClassId] = useState(user?.classId || '');
 
   const { data: classesData = [] } = useQuery({
     queryKey: ['student-classes'],
@@ -43,10 +45,10 @@ export default function StudentTimetablePage() {
     enabled: !!selectedClassId,
   });
 
-  const timetableEntries = ((timetableRes as any)?.data || []) as any[];
+  const timetableEntries = (((timetableRes as Record<string, unknown>)?.data) || []) as Record<string, unknown>[];
 
   const classOptions = useMemo(
-    () => classesData.map((c: any) => ({ value: c.id, label: c.name })),
+    () => classesData.map((c: ClassEntry) => ({ value: c.id, label: c.grade && c.section ? `Class ${c.grade}-${c.section}` : c.name })),
     [classesData],
   );
 

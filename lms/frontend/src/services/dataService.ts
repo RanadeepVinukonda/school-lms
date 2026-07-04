@@ -161,6 +161,18 @@ export async function getAllClasses(): Promise<ClassEntry[]> {
   return (data || []) as unknown as ClassEntry[];
 }
 
+/** Fetch all exams from Supabase. */
+export async function getAllExams(): Promise<Record<string, unknown>[]> {
+  const { data } = await supabase.from('exams').select('*');
+  return (data || []) as Record<string, unknown>[];
+}
+
+/** Fetch all assignments from Supabase. */
+export async function getAllAssignments(): Promise<Record<string, unknown>[]> {
+  const { data } = await supabase.from('assignments').select('*');
+  return (data || []) as Record<string, unknown>[];
+}
+
 /** Fetch all enrollment records from Supabase. */
 export async function getAllEnrollments(): Promise<Enrollment[]> {
   const { data } = await supabase.from(ENROLLMENT_COLLECTION).select('*');
@@ -386,11 +398,13 @@ export interface UserDoc {
   teacherId?: string;
   rollNo?: number;
   academicYear?: string;
+  photoURL?: string;
   avatar?: string;
   phone?: string;
   bio?: string;
   address?: string;
   dateOfBirth?: string;
+  childrenIds?: string[];
   isActive?: boolean;
   notificationPreferences?: {
     email?: Record<string, boolean>;

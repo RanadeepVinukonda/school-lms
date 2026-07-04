@@ -1,25 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
+import { createMockSupabase, resetMockQuery } from './helpers/mock-factory';
+
+const { supabase: mockSupabase, query: mockQuery } = createMockSupabase();
+
+jest.mock('../services/supabase', () => ({
+  getSupabaseAdmin: jest.fn(() => mockSupabase),
+  getSupabaseClient: jest.fn(() => mockSupabase),
+}));
+
 import { requireClassAccess, requireTeacherSubjectAccess } from '../middlewares/class-access.middleware';
-
-jest.mock('../database/adapter', () => {
-  const mockSnapshot = {
-    empty: false,
-    size: 1,
-    docs: [{ id: 'assignment-1', data: () => ({ teacherId: 'teacher-1', classId: 'class-1', subjectId: 'subject-1' }) }],
-    forEach: (cb: Function) => cb({ id: 'assignment-1', data: () => ({ teacherId: 'teacher-1', classId: 'class-1', subjectId: 'subject-1' }) }),
-  };
-
-  return {
-    collections: {
-      teacherClassSubject: jest.fn().mockReturnValue({
-        where: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        get: jest.fn().mockResolvedValue(mockSnapshot),
-      }),
-    },
-    FieldValue: { increment: jest.fn((n) => n) },
-  };
-});
 
 function mockReq(overrides: Record<string, unknown> = {}): Request {
   return {
@@ -42,6 +31,8 @@ describe('Class Access Middleware', () => {
   let nextFn: NextFunction;
 
   beforeEach(() => {
+    jest.clearAllMocks();
+    resetMockQuery(mockQuery);
     nextFn = jest.fn();
   });
 
@@ -83,9 +74,6 @@ describe('Class Access Middleware', () => {
     });
   });
 
-  // ponytail: requireTeacherSubjectAccess tests commented out — now uses supabase directly.
-  // Rewrite with supabase mock when tests are properly re-enabled.
-  /*
   describe('requireTeacherSubjectAccess', () => {
     it('should allow admin access without checking assignment', async () => {
       const req = mockReq({ user: { uid: 'admin-1', role: 'admin', name: 'Admin', email: 'a@a.com' } });
@@ -94,17 +82,19 @@ describe('Class Access Middleware', () => {
     });
 
     it('should allow teacher access to assigned subject', async () => {
+      // Mock supabase to return a match
+      (mockQuery as any)._mockData = [{ doc_id: 'assignment-1' }];
+      (mockQuery as any)._mockCount = 1;
+
       const req = mockReq({ params: { classId: 'class-1', subjectId: 'subject-1' } });
       await requireTeacherSubjectAccess(req, mockRes(), nextFn);
       expect(nextFn).toHaveBeenCalled();
     });
 
     it('should deny teacher access to unassigned subject', async () => {
-      const { collections } = require('../database/adapter');
-      collections.teacherClassSubject().get = jest.fn().mockResolvedValue({
-        empty: true, size: 0, docs: [],
-        forEach: jest.fn(),
-      });
+      // Mock supabase to return empty
+      (mockQuery as any)._mockData = [];
+      (mockQuery as any)._mockCount = 0;
 
       const req = mockReq({ params: { classId: 'class-1', subjectId: 'subject-2' } });
       await requireTeacherSubjectAccess(req, mockRes(), nextFn);
@@ -117,5 +107,4 @@ describe('Class Access Middleware', () => {
       expect(nextFn).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 403 }));
     });
   });
-  */
 });

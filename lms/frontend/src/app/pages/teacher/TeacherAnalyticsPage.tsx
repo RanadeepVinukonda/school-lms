@@ -52,7 +52,7 @@ function AssessmentRow({ assessment }: { assessment: any }) {
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right">
-            <p className="text-sm font-semibold">{assessment.avgScore}%</p>
+            <p className="text-sm font-semibold">{assessment.avgScore ?? 0}%</p>
             <p className="text-label-xs text-muted-foreground">Avg</p>
           </div>
           <Badge variant={assessment.released ? 'default' : 'outline'}>
@@ -66,7 +66,7 @@ function AssessmentRow({ assessment }: { assessment: any }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <p className="text-label-xs text-muted-foreground">Pass Rate</p>
-              <p className="font-semibold">{assessment.passRate}%</p>
+              <p className="font-semibold">{assessment.passRate ?? 0}%</p>
             </div>
             <div>
               <p className="text-label-xs text-muted-foreground">Attempts</p>
@@ -238,15 +238,15 @@ export default function TeacherAnalyticsPage() {
                                   <p className="text-label-xs text-muted-foreground">{c.subjectName} &middot; {c.className}</p>
                                 </div>
                                 <div className="text-right shrink-0">
-                                  <p className={`text-lg font-bold ${c.averageScore >= 80 ? 'text-success' : c.averageScore >= 50 ? 'text-warning' : 'text-destructive'}`}>
-                                    {c.averageScore}%
+                                  <p className={`text-lg font-bold ${(c.averageScore ?? 0) >= 80 ? 'text-success' : (c.averageScore ?? 0) >= 50 ? 'text-warning' : 'text-destructive'}`}>
+                                    {c.averageScore ?? 0}%
                                   </p>
                                   <p className="text-label-xs text-muted-foreground">{c.attemptCount} attempts</p>
                                 </div>
                               </div>
                               <Progress
-                                value={c.averageScore}
-                                className={`h-1.5 mt-2 ${c.averageScore >= 80 ? 'bg-emerald-500' : c.averageScore >= 50 ? 'bg-amber-500' : 'bg-destructive'}`}
+                                value={c.averageScore ?? 0}
+                                className={`h-1.5 mt-2 ${(c.averageScore ?? 0) >= 80 ? 'bg-emerald-500' : (c.averageScore ?? 0) >= 50 ? 'bg-amber-500' : 'bg-destructive'}`}
                               />
                               {c.status === 'low' && (
                                 <div className="flex items-center gap-1 mt-2 text-xs text-destructive">

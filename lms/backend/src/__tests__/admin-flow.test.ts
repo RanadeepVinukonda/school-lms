@@ -1,51 +1,25 @@
-function createMockCollection() {
-  const mockDoc = { exists: true, id: 'mock-id', data: jest.fn().mockReturnValue({}), ref: {} };
-  const mockSnapshot = { empty: false, size: 1, docs: [mockDoc], forEach: (cb: Function) => cb(mockDoc) };
-  const countSnap = { data: () => ({ count: 1 }) };
-  const mockQuery = {
-    where: jest.fn().mockReturnThis(),
-    orderBy: jest.fn().mockReturnThis(),
-    limit: jest.fn().mockReturnThis(),
-    offset: jest.fn().mockReturnThis(),
-    count: jest.fn().mockReturnValue({ get: jest.fn().mockResolvedValue(countSnap) }),
-    get: jest.fn().mockResolvedValue(mockSnapshot),
-  };
-  return {
-    doc: jest.fn().mockReturnValue({ ...mockDoc, get: jest.fn().mockResolvedValue(mockDoc), set: jest.fn().mockResolvedValue(undefined), update: jest.fn().mockResolvedValue(undefined), delete: jest.fn().mockResolvedValue(undefined) }),
-    get: jest.fn().mockResolvedValue(mockSnapshot),
-    set: jest.fn().mockResolvedValue(undefined),
-    update: jest.fn().mockResolvedValue(undefined),
-    delete: jest.fn().mockResolvedValue(undefined),
-    add: jest.fn().mockResolvedValue(mockDoc),
-    where: jest.fn().mockReturnValue(mockQuery),
-    orderBy: jest.fn().mockReturnValue(mockQuery),
-    limit: jest.fn().mockReturnValue(mockQuery),
-    firestore: { batch: jest.fn().mockReturnValue({ update: jest.fn(), delete: jest.fn(), create: jest.fn(), commit: jest.fn().mockResolvedValue(undefined) }) },
-  };
-}
+import { createMockSupabase, resetMockQuery } from './helpers/mock-factory';
 
-let mockCollection: any;
+const { supabase: mockSupabase, query: mockQuery } = createMockSupabase();
 
-function resetMockCollection() {
-  mockCollection = createMockCollection();
-}
-
-resetMockCollection();
-
-jest.mock('../database/adapter', () => ({
-  collections: {
-    academicYears: jest.fn(() => mockCollection),
-    classes: jest.fn(() => mockCollection),
-    subjects: jest.fn(() => mockCollection),
-    teacherClassSubject: jest.fn(() => mockCollection),
-    users: jest.fn(() => mockCollection),
-    auditLogs: jest.fn(() => mockCollection),
-    textbooks: jest.fn(() => mockCollection),
-  },
-  FieldValue: { increment: jest.fn((n) => n) },
+jest.mock('../services/supabase', () => ({
+  getSupabaseAdmin: jest.fn(() => mockSupabase),
+  getSupabaseClient: jest.fn(() => mockSupabase),
 }));
 
-
+jest.mock('../database/transaction-manager', () => ({
+  TransactionManager: jest.fn().mockImplementation(() => ({
+    runTransaction: jest.fn(async (fn: Function) => {
+      const mockTx = {
+        get: jest.fn(() => Promise.resolve(null)),
+        set: jest.fn(() => Promise.resolve()),
+        update: jest.fn(() => Promise.resolve()),
+        delete: jest.fn(() => Promise.resolve()),
+      };
+      return fn(mockTx);
+    }),
+  })),
+}));
 
 import * as academicYearService from '../services/academic-year.service';
 import * as classService from '../services/class.service';
@@ -54,8 +28,10 @@ import * as tcsService from '../services/teacher-class-subject.service';
 
 describe('Admin Flows', () => {
   beforeEach(() => {
-    // Reset mock state to prevent leakage between tests
-    resetMockCollection();
+    jest.clearAllMocks();
+    resetMockQuery(mockQuery);
+    // Default: empty resolution for nosql queries
+    (mockQuery as any)._mockData = [];
   });
 
   const mockYearData = {
@@ -67,18 +43,6 @@ describe('Admin Flows', () => {
   };
 
   describe('Academic Year Management', () => {
-    beforeEach(() => {
-      const { collections } = require('../database/adapter');
-      // Override where() get to return empty:true so duplicate-code check passes
-      const emptyQuery = {
-        where: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        get: jest.fn().mockResolvedValue({ empty: true, size: 0, docs: [], forEach: jest.fn() }),
-      };
-      collections.academicYears().where = jest.fn().mockReturnValue(emptyQuery);
-    });
-
     it('should create an academic year', async () => {
       const result = await academicYearService.createAcademicYear(mockYearData);
       expect(result).toBeDefined();
@@ -97,22 +61,14 @@ describe('Admin Flows', () => {
     });
 
     it('should list academic years', async () => {
+      (mockQuery as any).data = [];
       const result = await academicYearService.listAcademicYears({});
       expect(result).toBeDefined();
       expect(result.items).toBeDefined();
     });
 
     it('should get current academic year', async () => {
-      const { collections } = require('../database/adapter');
-      collections.academicYears().where = jest.fn().mockReturnValue({
-        where: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        get: jest.fn().mockResolvedValue({
-          empty: false,
-          docs: [{ data: () => ({ name: '2025-2026', isCurrent: true }), id: 'year-1' }],
-        }),
-      });
-
+      (mockQuery as any).data = [{ doc_id: 'year-1', data: { name: '2025-2026', isCurrent: true } }];
       const result = await academicYearService.getCurrentAcademicYear();
       expect(result).not.toBeNull();
     });
@@ -130,6 +86,7 @@ describe('Admin Flows', () => {
     });
 
     it('should list classes with filters', async () => {
+      (mockQuery as any).data = [];
       const result = await classService.listClasses({ status: 'active' });
       expect(result).toBeDefined();
     });
@@ -146,6 +103,7 @@ describe('Admin Flows', () => {
     });
 
     it('should list subjects by class', async () => {
+      (mockQuery as any).data = [];
       const result = await subjectService.listSubjectsByClass('class-1');
       expect(Array.isArray(result)).toBe(true);
     });
@@ -153,15 +111,9 @@ describe('Admin Flows', () => {
 
   describe('Teacher-Class-Subject Mapping', () => {
     it('should assign teacher to class and subject', async () => {
-      const { collections } = require('../database/adapter');
-      // Make where() return empty:true so assignTeacher uses add() path
-      const emptyQuery = {
-        where: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        get: jest.fn().mockResolvedValue({ empty: true, size: 0, docs: [], forEach: jest.fn() }),
-      };
-      collections.teacherClassSubject().where = jest.fn().mockReturnValue(emptyQuery);
+      // Mock empty query for duplicate check
+      (mockQuery as any).data = [];
+      mockQuery.maybeSingle.mockResolvedValue(({ data: null, error: null }) as any);
 
       const result = await tcsService.assignTeacher({
         teacherId: 'teacher-1',
@@ -173,21 +125,16 @@ describe('Admin Flows', () => {
     });
 
     it('should remove assignment', async () => {
-      const { collections } = require('../database/adapter');
-      collections.teacherClassSubject().doc().get = jest.fn().mockResolvedValue({
-        exists: true,
-        data: () => ({ teacherId: 'teacher-1' }),
-        id: 'assignment-1',
-      });
+      mockQuery.maybeSingle.mockResolvedValue(({
+        data: { doc_id: 'assignment-1', data: { teacherId: 'teacher-1' } },
+        error: null,
+      }) as any);
 
       await expect(tcsService.removeAssignment('assignment-1')).resolves.not.toThrow();
     });
 
     it('should throw on removing non-existent assignment', async () => {
-      const { collections } = require('../database/adapter');
-      collections.teacherClassSubject().doc().get = jest.fn().mockResolvedValue({
-        exists: false,
-      });
+      mockQuery.maybeSingle.mockResolvedValue(({ data: null, error: null }) as any);
 
       await expect(tcsService.removeAssignment('bad-id')).rejects.toThrow('Assignment not found');
     });

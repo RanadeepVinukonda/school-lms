@@ -1,5 +1,9 @@
 // ponytail: in-memory-collections deleted — tests commented out
-/*
+// LSP contract tests for old in-memory collections. Skipped until re-enabled with Supabase.
+
+describe.skip('LSP Contracts', () => {
+  // All tests are inside this describe.skip block to avoid Jest's 'no tests' error
+  /*
 import { describe, it, expect, beforeEach } from '@jest/globals';
 interface MemCollection { get: Function; set: Function; update: Function; delete: Function; list: Function; clear: Function }
 const makeNull = (): MemCollection => ({ get: async () => null, set: async () => {}, update: async () => {}, delete: async () => {}, list: async () => [], clear: () => {} });
@@ -77,3 +81,4 @@ runContractTests('InMemoryNotificationCollection', () => new InMemoryNotificatio
 runContractTests('InMemoryAssignmentCollection', () => new InMemoryAssignmentCollection());
 runContractTests('InMemoryAttendanceCollection', () => new InMemoryAttendanceCollection());
 */
+});

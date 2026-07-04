@@ -125,7 +125,7 @@ export default function AdminAttendancePage() {
             >
               <option value="">Select a class...</option>
               {classesData.map((c) => (
-                <option key={c.id} value={c.id}>{c.name} {c.grade ? `(${c.grade})` : ''}</option>
+                <option key={c.id} value={c.id}>{c.grade && c.section ? `Class ${c.grade}-${c.section}` : c.name}</option>
               ))}
             </select>
           </div>

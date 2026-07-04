@@ -1,10 +1,34 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { StyleSheet, Text, View, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
+import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
+
+const FALLBACK_CHALLENGE = { title: 'Python Coding Playground', description: 'Write and run Python scripts directly on your device.', starterCode: 'def greet(name):\n    return f"Hello, {name}!"\n\nprint(greet("Genesis Coder"))' };
 
 export default function CodingScreen() {
-  const [code, setCode] = useState(`def greet(name):\n    return f"Hello, {name}!"\n\nprint(greet("Genesis Coder"))`);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [challenge, setChallenge] = useState<any>(null);
+  const [code, setCode] = useState('');
   const [output, setOutput] = useState('');
   const [running, setRunning] = useState(false);
+
+  const fetchChallenge = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await api.get('/student/coding/challenges');
+      const d = Array.isArray(res.data) ? res.data[0] : (res.data || FALLBACK_CHALLENGE);
+      setChallenge(d);
+      setCode(d.starterCode || FALLBACK_CHALLENGE.starterCode);
+    } catch { setChallenge(FALLBACK_CHALLENGE); setCode(FALLBACK_CHALLENGE.starterCode); }
+    finally { setLoading(false); setRefreshing(false); }
+  }, []);
+
+  useEffect(() => { fetchChallenge(); }, [fetchChallenge]);
+  const onRefresh = useCallback(() => { setRefreshing(true); fetchChallenge(); }, [fetchChallenge]);
+
+  if (loading && !refreshing) return <LoadingState />;
+  if (!challenge) return <ErrorState message="Failed to load challenge" onRetry={fetchChallenge} />;
 
   const runCode = () => {
     setRunning(true);
@@ -15,9 +39,10 @@ export default function CodingScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Python Coding Playground</Text>
-      <Text style={styles.subtitle}>Write and run Python scripts directly on your device.</Text>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6200ee" />}>
+      <Text style={styles.title}>{challenge.title}</Text>
+      <Text style={styles.subtitle}>{challenge.description}</Text>
 
       <View style={styles.card}>
         <TextInput
@@ -32,7 +57,7 @@ export default function CodingScreen() {
         <TouchableOpacity
           style={[styles.runBtn, running && styles.disabledBtn]}
           disabled={running}
-          onClick={runCode}
+          onPress={runCode}
         >
           <Text style={styles.btnText}>
             {running ? 'Executing script...' : '⚡ Run Code'}
@@ -46,7 +71,8 @@ export default function CodingScreen() {
           {output || 'Console idle. Click Run Code to execute script.'}
         </Text>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -61,6 +87,6 @@ const styles = StyleSheet.create({
   disabledBtn: { backgroundColor: '#444' },
   btnText: { color: '#ffffff', fontWeight: 'bold', fontSize: 14 },
   sectionTitle: { fontSize: 15, fontWeight: 'bold', color: '#212121', marginBottom: 12 },
-  consoleCard: { backgroundColor: '#ffffff', borderRadius: 12, padding: 16, borderBorderWidth: 1, borderColor: '#eee' },
+  consoleCard: { backgroundColor: '#ffffff', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#eee' },
   consoleText: { fontFamily: 'monospace', fontSize: 13, color: '#333' }
 });

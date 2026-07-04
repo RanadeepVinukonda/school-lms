@@ -1,65 +1,46 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { assignTeacher } from '../services/teacher-class-subject.service';
+import { createMockSupabase } from './helpers/mock-factory';
 
-// ponytail: adapter deleted — tests commented out
-/*
-jest.mock('../database/adapter', () => ({
-  collections: {
-    teacherClassSubject: jest.fn(),
-  },
+const { supabase: mockSupabase, query: mockQuery } = createMockSupabase();
+
+jest.mock('../services/supabase', () => ({
+  getSupabaseAdmin: jest.fn(() => mockSupabase),
+  getSupabaseClient: jest.fn(() => mockSupabase),
 }));
-
-import { collections } from '../database/adapter';
 
 beforeEach(() => {
   jest.clearAllMocks();
+  // Chainable: all non-terminal methods must return mockQuery
+  mockQuery.select.mockReturnThis();
+  mockQuery.update.mockReturnThis();
+  (mockQuery as any).upsert = jest.fn<any>().mockReturnThis();
+  // Reset query result data
+  delete (mockQuery as any).data;
+  delete (mockQuery as any).error;
+  delete (mockQuery as any).count;
 });
 
 describe('assignTeacher', () => {
   it('creates a new assignment when none exists', async () => {
-      // @ts-ignore
-      const mockAdd = jest.fn().mockResolvedValue({ id: 'newId' });
-    const mockCollection = {
-      where: jest.fn().mockReturnThis(),
-        // @ts-ignore
-        get: jest.fn().mockResolvedValue({ empty: true, docs: [] }),
-      add: mockAdd,
-    } as any;
-    (collections.teacherClassSubject as jest.Mock).mockReturnValue(mockCollection);
-
+    // Default: mockQuery.data undefined → empty results → insert path
     const result = await assignTeacher({
       teacherId: 't1',
       classId: 'c1',
       subjectId: 's1',
     });
 
-    expect(mockAdd).toHaveBeenCalled();
-    expect(result.id).toBe('newId');
+    expect(mockSupabase.from).toHaveBeenCalledWith('nosql_docs');
+    expect(mockQuery.insert).toHaveBeenCalled();
     expect(result.teacherId).toBe('t1');
+    expect(result.id).toBeDefined();
   });
 
   it('reassigns to a new teacher instead of throwing ConflictError', async () => {
-    const existingDoc = {
-      id: 'assignId',
-      data: () => ({ teacherId: 'old', classId: 'c1', subjectId: 's1' }),
-    } as any;
-      // @ts-ignore
-      const mockUpdate = jest.fn().mockResolvedValue(undefined);
-      // @ts-ignore
-      const mockGet = jest.fn().mockResolvedValue({
-      id: 'assignId',
-      data: () => ({ teacherId: 'new', classId: 'c1', subjectId: 's1' }),
-    });
-    const mockCollection = {
-      where: jest.fn().mockReturnThis(),
-        // @ts-ignore
-        get: jest.fn().mockResolvedValue({ empty: false, docs: [existingDoc] }),
-      doc: jest.fn(() => ({
-        update: mockUpdate,
-        get: mockGet,
-      })),
-    } as any;
-    (collections.teacherClassSubject as jest.Mock).mockReturnValue(mockCollection);
+    (mockQuery as any).data = [{
+      doc_id: 'assignId',
+      data: { teacherId: 'old', classId: 'c1', subjectId: 's1' },
+    }];
 
     const result = await assignTeacher({
       teacherId: 'new',
@@ -67,9 +48,8 @@ describe('assignTeacher', () => {
       subjectId: 's1',
     });
 
-    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ teacherId: 'new' }));
+    expect(mockQuery.update).toHaveBeenCalled();
     expect(result.teacherId).toBe('new');
     expect(result.id).toBe('assignId');
   });
 });
-*/

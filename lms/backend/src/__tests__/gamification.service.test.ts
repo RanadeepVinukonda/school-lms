@@ -1,26 +1,11 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-const profileData: any = {};
+import { createMockSupabase } from './helpers/mock-factory';
 
-class MockDocRef {
-  constructor(private _col: string, private _id: string) {}
-  get() { return Promise.resolve({ exists: true, data: () => ({}) }); }
-  set(d: any) { return Promise.resolve(); }
-  update(d: any) { return Promise.resolve(); }
-  delete() { return Promise.resolve(); }
-}
-// ponytail: adapter deleted — tests commented out
-/*
-jest.mock('../database/adapter', () => ({
-  FieldValue: { increment: (n: number) => n, arrayUnion: (...args: any[]) => args },
-  Timestamp: { now: () => ({ seconds: 123, nanoseconds: 0 }), fromDate: (d: Date) => ({ seconds: Math.floor(d.getTime() / 1000), nanoseconds: 0 }) },
-  DocRef: MockDocRef,
-  collections: {
-    gamificationProfiles: jest.fn(),
-    gamificationTransactions: jest.fn(),
-    gamificationDailyChallenges: jest.fn(),
-    users: jest.fn(),
-    classes: jest.fn(),
-  },
+const { supabase: mockSupabase, query: mockQuery } = createMockSupabase();
+
+jest.mock('../services/supabase', () => ({
+  getSupabaseAdmin: jest.fn(() => mockSupabase),
+  getSupabaseClient: jest.fn(() => mockSupabase),
 }));
 jest.mock('../services/notification.service', () => ({ createNotification: jest.fn(() => Promise.resolve({ id: 'n1' })) }));
 
@@ -30,48 +15,22 @@ import {
   getDailyChallenges, completeDailyChallenge, updateStreak, incrementLessonsCompleted,
   recordAssessmentResult, awardXpAndCoins,
 } from '../services/gamification.service';
-import { collections } from '../database/adapter';
 
-function makeProfileDoc(ref: any) {
-  return {
-    exists: true, id: 'u1',
-    data: () => ref.current,
-    get: () => Promise.resolve({ exists: true, data: () => ref.current, id: 'u1' }),
-    set: (d: any) => { ref.current = { ...ref.current, ...d }; return Promise.resolve(); },
-    update: (d: any) => { ref.current = { ...ref.current, ...d }; return Promise.resolve(); },
-    delete: () => Promise.resolve(),
-  };
+function defaultProfile() {
+  return { xp: 0, level: 1, coins: 0, streak: 0, badges: [], lessonsCompleted: 0, perfectScores: 0, highAccuracyCount: 0, challengesCompleted: 0, codingProjectsCompleted: 0, codingChallengesCompleted: 0, lastActiveDate: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
 }
-const profileDoc = makeProfileDoc(profileData);
-
-const profCollection: any = {
-  doc: () => profileDoc,
-  orderBy: () => ({ limit: () => ({ get: () => Promise.resolve({ empty: true, docs: [], forEach: () => {} }) }) }),
-  limit: () => ({ get: () => Promise.resolve({ empty: true, docs: [], forEach: () => {} }) }),
-  get: () => Promise.resolve({ empty: true, docs: [], forEach: () => {} }),
-};
-const txCollection: any = { add: (d: any) => Promise.resolve({ id: 'tx1' }) };
-const challengeCollection: any = {
-  doc: () => ({ exists: false, data: () => ({}), get: () => Promise.resolve({ exists: false }), set: () => {}, update: () => {} }),
-  where: () => ({ get: () => Promise.resolve({ empty: true, docs: [], forEach: () => {} }) }),
-  firestore: { batch: () => ({ set: () => {}, update: () => {}, commit: () => Promise.resolve() }) },
-};
-const userCollection: any = {
-  doc: () => ({ get: () => Promise.resolve({ exists: false }) }),
-  get: () => Promise.resolve({ empty: true, docs: [], forEach: () => {} }),
-  where: () => ({ get: () => Promise.resolve({ empty: true, docs: [], forEach: () => {} }) }),
-};
-const classCollection: any = {
-  doc: () => ({ exists: true, data: () => ({ name: 'Class A' }), id: 'c1', get: () => Promise.resolve({ exists: true, data: () => ({ name: 'Class A' }), id: 'c1' }) }),
-};
 
 beforeEach(() => {
-  (collections.gamificationProfiles as jest.Mock).mockReturnValue(profCollection);
-  (collections.gamificationTransactions as jest.Mock).mockReturnValue(txCollection);
-  (collections.gamificationDailyChallenges as jest.Mock).mockReturnValue(challengeCollection);
-  (collections.users as jest.Mock).mockReturnValue(userCollection);
-  (collections.classes as jest.Mock).mockReturnValue(classCollection);
-  profileData.current = {};
+  jest.clearAllMocks();
+  mockQuery.select.mockReturnThis();
+  mockQuery.update.mockReturnThis();
+  mockQuery.delete.mockReturnThis();
+  (mockQuery as any).upsert = jest.fn<any>().mockReturnThis();
+  mockQuery.single.mockResolvedValue(({ data: null, error: null }) as any);
+  mockQuery.maybeSingle.mockResolvedValue(({ data: null, error: null }) as any);
+  delete (mockQuery as any).data;
+  delete (mockQuery as any).error;
+  delete (mockQuery as any).count;
 });
 
 describe('gamification.service', () => {
@@ -119,21 +78,21 @@ describe('gamification.service', () => {
   });
   describe('awardXp', () => {
     it('awards XP and returns result', async () => {
-      profileData.current = { xp: 100, level: 2, coins: 50, streak: 0, badges: [], lessonsCompleted: 0, perfectScores: 0, highAccuracyCount: 0, challengesCompleted: 0 };
+      mockQuery.maybeSingle.mockResolvedValue(({ data: { doc_id: 'u1', data: { xp: 100, level: 2, coins: 50, streak: 0, badges: [], lessonsCompleted: 0, perfectScores: 0, highAccuracyCount: 0, challengesCompleted: 0 } }, error: null }) as any);
       const result = await awardXp('u1', 50, 'test');
       expect(result.xp).toBe(150);
     });
   });
   describe('awardCoins', () => {
     it('awards coins and returns result', async () => {
-      profileData.current = { xp: 100, level: 2, coins: 50, streak: 0, badges: [], lessonsCompleted: 0, perfectScores: 0, highAccuracyCount: 0, challengesCompleted: 0 };
+      mockQuery.maybeSingle.mockResolvedValue(({ data: { doc_id: 'u1', data: { xp: 100, level: 2, coins: 50, streak: 0, badges: [], lessonsCompleted: 0, perfectScores: 0, highAccuracyCount: 0, challengesCompleted: 0 } }, error: null }) as any);
       const result = await awardCoins('u1', 25, 'test');
       expect(result.coins).toBe(75);
     });
   });
   describe('awardXpAndCoins', () => {
     it('awards both atomically', async () => {
-      profileData.current = { xp: 100, level: 2, coins: 50, streak: 0, badges: [], lessonsCompleted: 0, perfectScores: 0, highAccuracyCount: 0, challengesCompleted: 0 };
+      mockQuery.maybeSingle.mockResolvedValue(({ data: { doc_id: 'u1', data: { xp: 100, level: 2, coins: 50, streak: 0, badges: [], lessonsCompleted: 0, perfectScores: 0, highAccuracyCount: 0, challengesCompleted: 0 } }, error: null }) as any);
       const result = await awardXpAndCoins('u1', 25, 10, 'lesson');
       expect(result.xp).toBe(125);
       expect(result.coins).toBe(60);
@@ -148,36 +107,36 @@ describe('gamification.service', () => {
   });
   describe('getUserBadges', () => {
     it('returns badges with earned status', async () => {
-      profileData.current = { badges: ['first_lesson'], xp: 0, level: 1, coins: 0, streak: 0, lessonsCompleted: 0, perfectScores: 0, highAccuracyCount: 0, challengesCompleted: 0 };
+      mockQuery.maybeSingle.mockResolvedValue(({ data: { doc_id: 'u1', data: { badges: ['first_lesson'], xp: 0, level: 1, coins: 0, streak: 0, lessonsCompleted: 0, perfectScores: 0, highAccuracyCount: 0, challengesCompleted: 0 } }, error: null }) as any);
       const result = await getUserBadges('u1');
       expect(result.find((b: any) => b.id === 'first_lesson')!.earned).toBe(true);
     });
   });
   describe('updateStreak', () => {
     it('resets streak for inactive user', async () => {
-      profileData.current = { xp: 0, level: 1, coins: 0, streak: 10, badges: [], lessonsCompleted: 0, perfectScores: 0, highAccuracyCount: 0, challengesCompleted: 0, lastActiveDate: new Date(Date.now() - 86400000 * 3).toISOString() };
+      const threeDaysAgo = new Date(Date.now() - 86400000 * 3).toISOString();
+      mockQuery.maybeSingle.mockResolvedValue(({ data: { doc_id: 'u1', data: { xp: 0, level: 1, coins: 0, streak: 10, badges: [], lessonsCompleted: 0, perfectScores: 0, highAccuracyCount: 0, challengesCompleted: 0, lastActiveDate: threeDaysAgo } }, error: null }) as any);
       await expect(updateStreak('u1')).resolves.not.toThrow();
     });
   });
   describe('incrementLessonsCompleted', () => {
     it('increments counter', async () => {
-      profileData.current = { xp: 0, level: 1, coins: 0, streak: 0, badges: [], lessonsCompleted: 0, perfectScores: 0, highAccuracyCount: 0, challengesCompleted: 0 };
+      mockQuery.maybeSingle.mockResolvedValue(({ data: { doc_id: 'u1', data: { xp: 0, level: 1, coins: 0, streak: 0, badges: [], lessonsCompleted: 0, perfectScores: 0, highAccuracyCount: 0, challengesCompleted: 0 } }, error: null }) as any);
       await expect(incrementLessonsCompleted('u1')).resolves.not.toThrow();
     });
   });
   describe('recordAssessmentResult', () => {
     it('records perfect score', async () => {
-      profileData.current = { xp: 0, level: 1, coins: 0, streak: 0, badges: [], lessonsCompleted: 0, perfectScores: 0, highAccuracyCount: 0, challengesCompleted: 0 };
+      mockQuery.maybeSingle.mockResolvedValue(({ data: { doc_id: 'u1', data: { xp: 0, level: 1, coins: 0, streak: 0, badges: [], lessonsCompleted: 0, perfectScores: 0, highAccuracyCount: 0, challengesCompleted: 0 } }, error: null }) as any);
       await expect(recordAssessmentResult('u1', 100)).resolves.not.toThrow();
     });
     it('records high accuracy', async () => {
-      profileData.current = { xp: 0, level: 1, coins: 0, streak: 0, badges: [], lessonsCompleted: 0, perfectScores: 0, highAccuracyCount: 0, challengesCompleted: 0 };
+      mockQuery.maybeSingle.mockResolvedValue(({ data: { doc_id: 'u1', data: { xp: 0, level: 1, coins: 0, streak: 0, badges: [], lessonsCompleted: 0, perfectScores: 0, highAccuracyCount: 0, challengesCompleted: 0 } }, error: null }) as any);
       await expect(recordAssessmentResult('u1', 95)).resolves.not.toThrow();
     });
     it('skips recording for low accuracy', async () => {
-      profileData.current = { xp: 0, level: 1, coins: 0, streak: 0, badges: [], lessonsCompleted: 0, perfectScores: 0, highAccuracyCount: 0, challengesCompleted: 0 };
+      mockQuery.maybeSingle.mockResolvedValue(({ data: { doc_id: 'u1', data: { xp: 0, level: 1, coins: 0, streak: 0, badges: [], lessonsCompleted: 0, perfectScores: 0, highAccuracyCount: 0, challengesCompleted: 0 } }, error: null }) as any);
       await expect(recordAssessmentResult('u1', 50)).resolves.not.toThrow();
     });
   });
 });
-*/

@@ -5,7 +5,7 @@ import { EmptyState } from './EmptyState';
 interface DataFetchWrapperProps<T> {
   data: T | undefined;
   isLoading: boolean;
-  error: Error | null;
+  error?: Error | null;
   loadingType?: 'card' | 'list' | 'table' | 'detail' | 'chart' | 'profile';
   emptyMessage?: string;
   emptyIcon?: React.ReactNode;

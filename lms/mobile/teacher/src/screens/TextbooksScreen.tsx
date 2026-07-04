@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
-const MOCK_CLASSES = [
+const FALLBACK_CLASSES: any[] = [
   { id: 'c1', name: 'Grade 10A', subjects: [
     { id: 's1', name: 'Mathematics', color: '#6366f1', textbooks: [
       { id: 'tb1', title: 'Algebra Textbook Vol 1', chapterCount: 12, status: 'ready' },
@@ -17,25 +18,45 @@ const MOCK_CLASSES = [
 ];
 
 export default function TextbooksScreen() {
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [classes, setClasses] = useState<any>(null);
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
 
-  const cls = MOCK_CLASSES.find((c) => c.id === selectedClassId);
-  const sub = cls?.subjects.find((s) => s.id === selectedSubjectId);
+  const fetchData = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await api.get('/teacher/textbooks');
+      setClasses(res.data);
+    } catch { setClasses(FALLBACK_CLASSES); }
+    finally { setLoading(false); setRefreshing(false); }
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+  const onRefresh = useCallback(() => { setRefreshing(true); fetchData(); }, [fetchData]);
+
+  const clsList = Array.isArray(classes) ? classes : (classes?.classes || []);
+  const cls = clsList.find((c: any) => c.id === selectedClassId);
+  const sub = cls?.subjects.find((s: any) => s.id === selectedSubjectId);
 
   const reset = () => { setSelectedClassId(null); setSelectedSubjectId(null); };
 
+  if (loading && !refreshing) return <LoadingState />;
+  if (!classes) return <ErrorState message="Failed to load textbooks" onRetry={fetchData} />;
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6200ee" />}>
       {/* Breadcrumb */}
       <View style={styles.breadcrumb}>
-        <TouchableOpacity onClick={reset}>
+        <TouchableOpacity onPress={reset}>
           <Text style={[styles.breadcrumbItem, !selectedClassId && styles.breadcrumbActive]}>Classes</Text>
         </TouchableOpacity>
         {cls && (
           <>
             <Text style={styles.breadcrumbSep}>›</Text>
-            <TouchableOpacity onClick={() => setSelectedSubjectId(null)}>
+            <TouchableOpacity onPress={() => setSelectedSubjectId(null)}>
               <Text style={[styles.breadcrumbItem, !selectedSubjectId && styles.breadcrumbActive]}>{cls.name}</Text>
             </TouchableOpacity>
           </>
@@ -56,8 +77,9 @@ export default function TextbooksScreen() {
       </Text>
 
       {/* Classes View */}
-      {!selectedClassId && MOCK_CLASSES.map((c) => (
-        <TouchableOpacity key={c.id} style={styles.classCard} onClick={() => setSelectedClassId(c.id)}>
+      {!selectedClassId && clsList.length === 0 && <EmptyState message="No classes found." />}
+      {!selectedClassId && clsList.map((c: any) => (
+        <TouchableOpacity key={c.id} style={styles.classCard} onPress={() => setSelectedClassId(c.id)}>
           <View style={styles.classHeader}>
             <Text style={styles.className}>{c.name}</Text>
             <Text style={styles.classMeta}>{c.subjects.length} subjects</Text>
@@ -69,9 +91,9 @@ export default function TextbooksScreen() {
       {/* Subjects View */}
       {selectedClassId && !selectedSubjectId && cls && (
         <>
-          <TouchableOpacity style={styles.backBtn} onClick={reset}><Text style={styles.backText}>← Back to Classes</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.backBtn} onPress={reset}><Text style={styles.backText}>← Back to Classes</Text></TouchableOpacity>
           {cls.subjects.map((s) => (
-            <TouchableOpacity key={s.id} style={styles.subjectCard} onClick={() => setSelectedSubjectId(s.id)}>
+            <TouchableOpacity key={s.id} style={styles.subjectCard} onPress={() => setSelectedSubjectId(s.id)}>
               <View style={styles.subjectInfo}>
                 <View style={[styles.subjectDot, { backgroundColor: s.color }]} />
                 <View>
@@ -88,7 +110,7 @@ export default function TextbooksScreen() {
       {/* Textbooks View */}
       {selectedClassId && selectedSubjectId && sub && (
         <>
-          <TouchableOpacity style={styles.backBtn} onClick={() => setSelectedSubjectId(null)}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => setSelectedSubjectId(null)}>
             <Text style={styles.backText}>← Back to Subjects</Text>
           </TouchableOpacity>
           {sub.textbooks.length === 0 ? (

@@ -66,8 +66,8 @@ describe('authenticate', () => {
   });
 
   it('sets req.user on valid token', async () => {
-    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: 'u1', email: 'test@test.com' } }, error: null });
-    mockQuery.single.mockResolvedValue({ data: { role: 'teacher', display_name: 'Test', class_ids: ['c1'] }, error: null });
+    mockSupabase.auth.getUser.mockResolvedValue(({ data: { user: { id: 'u1', email: 'test@test.com' } }, error: null }) as any);
+    mockQuery.single.mockResolvedValue(({ data: { role: 'teacher', display_name: 'Test', class_ids: ['c1'] }, error: null }) as any);
     const req = mockReq('Bearer valid-token');
     authenticate(req, mockRes(), next);
     await new Promise(process.nextTick);

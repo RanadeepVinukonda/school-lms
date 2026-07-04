@@ -1,15 +1,49 @@
-import React from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { StyleSheet, Text, View, ScrollView, RefreshControl } from 'react-native';
+import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
 export default function DashboardScreen() {
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [dashboardData, setDashboardData] = useState<any>(null);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.get('/student/dashboard');
+      setDashboardData(res.data);
+    } catch {
+      setError('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchData();
+  }, [fetchData]);
+
+  if (loading && !refreshing) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={fetchData} />;
+  if (!dashboardData) return <EmptyState message="No dashboard data available yet." />;
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6200ee" />}
+    >
       <View style={styles.header}>
-        <Text style={styles.welcome}>Hello, Learner! 👋</Text>
+        <Text style={styles.welcome}>Hello, Learner!</Text>
         <Text style={styles.subtitle}>Track your learning milestones for today.</Text>
       </View>
 
-      {/* Mastery Progress */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>My Overall Mastery</Text>
         <View style={styles.progressRow}>
@@ -21,7 +55,6 @@ export default function DashboardScreen() {
         </View>
       </View>
 
-      {/* Upcoming Activities */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Upcoming Tasks</Text>
       </View>
@@ -41,14 +74,13 @@ export default function DashboardScreen() {
         </View>
       ))}
 
-      {/* Recent Activity */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Recent Achievements</Text>
       </View>
       <View style={styles.card}>
-        <Text style={styles.activityItem}>🏆 Earned "Phonics Master" Badge in Phonics Sandbox</Text>
-        <Text style={styles.activityItem}>💻 Passed Python Basic Coding Challenge (10/10 Score)</Text>
-        <Text style={styles.activityItem}>🧬 Completed Water Cycle Virtual Lab Simulation</Text>
+        <Text style={styles.activityItem}>Earned "Phonics Master" Badge in Phonics Sandbox</Text>
+        <Text style={styles.activityItem}>Passed Python Basic Coding Challenge (10/10 Score)</Text>
+        <Text style={styles.activityItem}>Completed Water Cycle Virtual Lab Simulation</Text>
       </View>
     </ScrollView>
   );

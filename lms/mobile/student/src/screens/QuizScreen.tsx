@@ -1,55 +1,66 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
+
+const FALLBACK_QUESTIONS = [
+  { q: 'Solve for x: 3x + 5 = 20', options: ['x = 3', 'x = 5', 'x = 4', 'x = 6'], correct: 1 },
+  { q: 'Find the slope of the line parallel to y = -2x + 7', options: ['2', '-2', '1/2', '-1/2'], correct: 1 },
+  { q: 'What is the y-intercept of the line 4x - 2y = 8?', options: ['4', '-4', '2', '-2'], correct: 1 },
+];
 
 export default function QuizScreen({ route, navigation }: any) {
-  const { chapterTitle } = route.params || { chapterTitle: 'Linear Equations' };
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [questions, setQuestions] = useState<any>(null);
+  const { chapterTitle, chapterId } = route.params || { chapterTitle: 'Linear Equations' };
   const [step, setStep] = useState(0);
   const [score, setScore] = useState(0);
   const [selectedAns, setSelectedAns] = useState<number | null>(null);
 
-  const questions = [
-    {
-      q: 'Solve for x: 3x + 5 = 20',
-      options: ['x = 3', 'x = 5', 'x = 4', 'x = 6'],
-      correct: 1
-    },
-    {
-      q: 'Find the slope of the line parallel to y = -2x + 7',
-      options: ['2', '-2', '1/2', '-1/2'],
-      correct: 1
-    },
-    {
-      q: 'What is the y-intercept of the line 4x - 2y = 8?',
-      options: ['4', '-4', '2', '-2'],
-      correct: 1
-    }
-  ];
+  const fetchQuestions = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const endpoint = chapterId ? `/quiz/${chapterId}` : '/quiz';
+      const res = await api.get(endpoint);
+      setQuestions(res.data);
+    } catch { setQuestions(FALLBACK_QUESTIONS); }
+    finally { setLoading(false); setRefreshing(false); }
+  }, [chapterId]);
+
+  useEffect(() => { fetchQuestions(); }, [fetchQuestions]);
+  const onRefresh = useCallback(() => { setRefreshing(true); fetchQuestions(); }, [fetchQuestions]);
+
+  if (loading && !refreshing) return <LoadingState />;
+  if (!questions) return <ErrorState message="Failed to load questions" onRetry={fetchQuestions} />;
+  const qList = Array.isArray(questions) ? questions : (questions?.questions || []);
 
   const handleNext = () => {
-    if (selectedAns === questions[step].correct) {
-      setScore(score + 1);
-    }
+    if (selectedAns === qList[step].correct) { setScore(score + 1); }
     setSelectedAns(null);
     setStep(step + 1);
   };
 
-  const isQuizFinished = step >= questions.length;
+  const isQuizFinished = step >= qList.length;
 
   return (
     <View style={styles.container}>
-      {!isQuizFinished ? (
-        <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.progress}>Question {step + 1} of {questions.length}</Text>
-          <Text style={styles.questionText}>{questions[step].q}</Text>
+      {qList.length === 0 && (
+        <EmptyState message="No questions available for this quiz." />
+      )}
+      {!isQuizFinished && qList.length > 0 ? (
+        <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6200ee" />}>
+          <Text style={styles.progress}>Question {step + 1} of {qList.length}</Text>
+          <Text style={styles.questionText}>{qList[step].q}</Text>
 
-          {questions[step].options.map((opt, idx) => (
+          {qList[step].options.map((opt: string, idx: number) => (
             <TouchableOpacity
               key={idx}
               style={[
                 styles.optionCard,
                 selectedAns === idx && styles.selectedOption
               ]}
-              onClick={() => setSelectedAns(idx)}
+              onPress={() => setSelectedAns(idx)}
             >
               <Text style={[styles.optionText, selectedAns === idx && styles.selectedOptionText]}>
                 {opt}
@@ -60,9 +71,9 @@ export default function QuizScreen({ route, navigation }: any) {
           <TouchableOpacity
             style={[styles.nextBtn, selectedAns === null && styles.disabledBtn]}
             disabled={selectedAns === null}
-            onClick={handleNext}
+            onPress={handleNext}
           >
-            <Text style={styles.nextBtnText}>Next Question &rsaquo;</Text>
+            <Text style={styles.nextBtnText}>Next Question ›</Text>
           </TouchableOpacity>
         </ScrollView>
       ) : (
@@ -70,7 +81,7 @@ export default function QuizScreen({ route, navigation }: any) {
           <Text style={styles.trophy}>🏆</Text>
           <Text style={styles.resultTitle}>Quiz Completed!</Text>
           <Text style={styles.resultScore}>
-            Your Score: {score} / {questions.length} ({Math.round((score / questions.length) * 100)}%)
+            Your Score: {score} / {qList.length} ({Math.round((score / qList.length) * 100)}%)
           </Text>
           <Text style={styles.badgeInfo}>
             Level Updated: Intermediate Level 🌟
@@ -78,7 +89,7 @@ export default function QuizScreen({ route, navigation }: any) {
 
           <TouchableOpacity
             style={styles.doneBtn}
-            onClick={() => navigation.goBack()}
+            onPress={() => navigation.goBack()}
           >
             <Text style={styles.doneBtnText}>Return to Chapters</Text>
           </TouchableOpacity>
@@ -93,7 +104,7 @@ const styles = StyleSheet.create({
   content: { padding: 16 },
   progress: { fontSize: 13, color: '#666', fontWeight: 'bold', marginBottom: 12 },
   questionText: { fontSize: 18, fontWeight: 'bold', color: '#212121', marginBottom: 24, lineHeight: 26 },
-  optionCard: { backgroundColor: '#ffffff', borderRadius: 12, padding: 16, marginBottom: 12, borderBorderWidth: 1, borderColor: '#e0e0e0' },
+  optionCard: { backgroundColor: '#ffffff', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#e0e0e0' },
   selectedOption: { borderColor: '#6200ee', backgroundColor: '#f1f0fe' },
   optionText: { fontSize: 15, color: '#444' },
   selectedOptionText: { color: '#6200ee', fontWeight: 'bold' },

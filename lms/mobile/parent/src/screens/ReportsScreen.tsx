@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
-const MOCK_CHILDREN = [
+const FALLBACK_CHILDREN = [
   { id: 'ch1', name: 'Arjun S.' },
   { id: 'ch2', name: 'Priya S.' },
 ];
 
-const MOCK_REPORT = {
+const FALLBACK_REPORT = {
   studentName: 'Arjun S.',
   summary: 'Arjun has shown consistent improvement in Mathematics this week. His Physics scores need attention.',
   strengths: ['Strong problem-solving skills', 'Excellent in Algebra', 'Good class participation'],
@@ -20,20 +21,44 @@ const MOCK_REPORT = {
 };
 
 export default function ReportsScreen() {
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [children, setChildren] = useState<any>(null);
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [report, setReport] = useState<any>(null);
 
-  const report = selectedChildId ? MOCK_REPORT : null;
-  const childName = selectedChildId ? MOCK_CHILDREN.find((c) => c.id === selectedChildId)?.name : null;
+  const fetchChildren = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await api.get('/parent/children');
+      setChildren(res.data);
+    } catch { setChildren(FALLBACK_CHILDREN); }
+    finally { setLoading(false); setRefreshing(false); }
+  }, []);
 
-  const handleGenerate = () => {
+  useEffect(() => { fetchChildren(); }, [fetchChildren]);
+  const onRefresh = useCallback(() => { setRefreshing(true); fetchChildren(); }, [fetchChildren]);
+
+  const list = Array.isArray(children) ? children : (children?.children || []);
+  const childName = list.find((c: any) => c.id === selectedChildId)?.name || null;
+
+  const handleGenerate = async (childId: string) => {
+    setSelectedChildId(childId);
     setGenerating(true);
-    // Mock: Simulate report generation
-    setTimeout(() => setGenerating(false), 1500);
+    try {
+      const res = await api.get(`/parent/reports/${childId}`);
+      setReport(res.data);
+    } catch { setReport(FALLBACK_REPORT); }
+    finally { setGenerating(false); }
   };
 
+  if (loading && !refreshing) return <LoadingState />;
+  if (!children) return <ErrorState message="Failed to load children" onRetry={fetchChildren} />;
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6200ee" />}>
       <Text style={styles.title}>Reports & Recommendations</Text>
       <Text style={styles.subtitle}>AI-powered insights into your child's learning.</Text>
 
@@ -42,11 +67,11 @@ export default function ReportsScreen() {
         <Text style={styles.cardDesc}>Select a child to generate an AI-powered weekly progress report.</Text>
 
         <View style={styles.childPills}>
-          {MOCK_CHILDREN.map((child) => (
+          {list.map((child: any) => (
             <TouchableOpacity
               key={child.id}
               style={[styles.pill, selectedChildId === child.id && styles.activePill]}
-              onClick={() => { setSelectedChildId(child.id); handleGenerate(); }}
+              onPress={() => handleGenerate(child.id)}
             >
               <Text style={[styles.pillText, selectedChildId === child.id && styles.activePillText]}>
                 {child.name}

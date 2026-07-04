@@ -1,38 +1,41 @@
-// Mock in-memory caching as fallback if AsyncStorage is not initialized on the device
-const memoryCache = new Map<string, string>();
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const PREFIX = '@genesis_lms_cache:';
 
 export const offlineCache = {
   async getItem(key: string): Promise<string | null> {
     try {
-      // Try using memoryCache first for speed, fallback to mock storage
-      return memoryCache.get(key) || null;
-    } catch (error: any) {
-      console.error('Failed to get item from offlineCache:', key, error.message);
+      return await AsyncStorage.getItem(`${PREFIX}${key}`);
+    } catch {
       return null;
     }
   },
 
   async setItem(key: string, value: string): Promise<void> {
     try {
-      memoryCache.set(key, value);
-    } catch (error: any) {
-      console.error('Failed to set item in offlineCache:', key, error.message);
+      await AsyncStorage.setItem(`${PREFIX}${key}`, value);
+    } catch {
+      // Storage full or unavailable
     }
   },
 
   async removeItem(key: string): Promise<void> {
     try {
-      memoryCache.delete(key);
-    } catch (error: any) {
-      console.error('Failed to remove item from offlineCache:', key, error.message);
+      await AsyncStorage.removeItem(`${PREFIX}${key}`);
+    } catch {
+      // ignore
     }
   },
 
   async clear(): Promise<void> {
     try {
-      memoryCache.clear();
-    } catch (error: any) {
-      console.error('Failed to clear offlineCache:', error.message);
+      const keys = await AsyncStorage.getAllKeys();
+      const cacheKeys = keys.filter((k) => k.startsWith(PREFIX));
+      if (cacheKeys.length > 0) {
+        await AsyncStorage.multiRemove(cacheKeys);
+      }
+    } catch {
+      // ignore
     }
-  }
+  },
 };

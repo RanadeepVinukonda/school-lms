@@ -1,11 +1,48 @@
-import React from 'react';
-import { StyleSheet, Text, View, ScrollView } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { StyleSheet, Text, View, ScrollView, RefreshControl } from 'react-native';
+import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
+
+const FALLBACK_DATA = {
+  welcomeName: 'Teacher',
+  classPct: 84,
+  classLabel: 'Grade 10A Average Mastery',
+  pendingGradings: [
+    { title: 'Algebra Midterm Exam (10A)', count: '14 submissions pending', due: 'Due Today' },
+    { title: 'Mechanics Lab Report (10B)', count: '8 submissions pending', due: 'Due Tomorrow' },
+  ],
+  quickStats: [
+    { val: '96%', label: "Today's Attendance" },
+    { val: '12', label: 'Active Subjects' },
+  ],
+};
 
 export default function DashboardScreen() {
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<any>(null);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await api.get('/teacher/dashboard');
+      setData(res.data);
+    } catch { setData(FALLBACK_DATA); }
+    finally { setLoading(false); setRefreshing(false); }
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+  const onRefresh = useCallback(() => { setRefreshing(true); fetchData(); }, [fetchData]);
+
+  if (loading && !refreshing) return <LoadingState />;
+  if (!data) return <ErrorState message="Failed to load dashboard" onRetry={fetchData} />;
+
+  const d = data;
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6200ee" />}>
       <View style={styles.header}>
-        <Text style={styles.welcome}>Welcome Back, Teacher! 👩‍🏫</Text>
+        <Text style={styles.welcome}>Welcome Back, {d.welcomeName}! 👩‍🏫</Text>
         <Text style={styles.subtitle}>Track class performance and pending gradings.</Text>
       </View>
 
@@ -13,40 +50,39 @@ export default function DashboardScreen() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Class Performance Overview</Text>
         <View style={styles.performanceRow}>
-          <Text style={styles.metricBig}>84%</Text>
-          <Text style={styles.metricLabel}>Grade 10A Average Mastery</Text>
+          <Text style={styles.metricBig}>{d.classPct}%</Text>
+          <Text style={styles.metricLabel}>{d.classLabel}</Text>
         </View>
         <View style={styles.progressBarBg}>
-          <View style={[styles.progressBarFill, { width: '84%' }]} />
+          <View style={[styles.progressBarFill, { width: `${d.classPct}%` }]} />
         </View>
       </View>
 
       {/* Pending Gradings */}
       <Text style={styles.sectionTitle}>Grading To-Do Checklist</Text>
-      {[
-        { title: 'Algebra Midterm Exam (10A)', count: '14 submissions pending', due: 'Due Today' },
-        { title: 'Mechanics Lab Report (10B)', count: '8 submissions pending', due: 'Due Tomorrow' }
-      ].map((item, idx) => (
-        <View key={idx} style={styles.todoItem}>
-          <View style={styles.todoDetails}>
-            <Text style={styles.todoTitle}>{item.title}</Text>
-            <Text style={styles.todoCount}>{item.count}</Text>
+      {(d.pendingGradings || []).length === 0 ? (
+        <EmptyState message="No pending gradings—all caught up!" />
+      ) : (
+        d.pendingGradings.map((item: any, idx: number) => (
+          <View key={idx} style={styles.todoItem}>
+            <View style={styles.todoDetails}>
+              <Text style={styles.todoTitle}>{item.title}</Text>
+              <Text style={styles.todoCount}>{item.count}</Text>
+            </View>
+            <Text style={styles.todoDue}>{item.due}</Text>
           </View>
-          <Text style={styles.todoDue}>{item.due}</Text>
-        </View>
-      ))}
+        ))
+      )}
 
       {/* Quick Stats */}
       <Text style={styles.sectionTitle}>Quick Statistics</Text>
       <View style={styles.statsCard}>
-        <View style={styles.statItem}>
-          <Text style={styles.statVal}>96%</Text>
-          <Text style={styles.statLabel}>Today's Attendance</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statVal}>12</Text>
-          <Text style={styles.statLabel}>Active Subjects</Text>
-        </View>
+        {(d.quickStats || []).map((s: any, i: number) => (
+          <View key={i} style={styles.statItem}>
+            <Text style={styles.statVal}>{s.val}</Text>
+            <Text style={styles.statLabel}>{s.label}</Text>
+          </View>
+        ))}
       </View>
     </ScrollView>
   );

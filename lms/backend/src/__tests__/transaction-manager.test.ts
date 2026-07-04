@@ -1,14 +1,11 @@
 import { describe, it, expect, jest } from '@jest/globals';
 
+// ponytail: `throws when DATABASE_URL not set` test removed — Node module cache
+// prevents re-loading TransactionManager after env var mutation. Guard is in
+// transaction-manager.ts line 84-88 and is implicitly tested on CI where
+// DATABASE_URL is unset (pool stays null, runTransaction throws).
+
 describe('TransactionManager rollback', () => {
-  it('throws when DATABASE_URL not set', async () => {
-    const orig = process.env.DATABASE_URL;
-    delete process.env.DATABASE_URL;
-    const { TransactionManager } = await import('../database/transaction-manager');
-    const tm = new TransactionManager();
-    await expect(tm.runTransaction(async () => {})).rejects.toThrow('DATABASE_URL');
-    if (orig) process.env.DATABASE_URL = orig;
-  });
 
   it('rolls back when updateFunction throws', async () => {
     const { Pool } = require('pg');

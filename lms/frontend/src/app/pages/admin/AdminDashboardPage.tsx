@@ -13,9 +13,8 @@ import { Input } from '@/components/ui/input';
 import { Icon } from '@/components/ui/Icon';
 import { OptionsSelect } from '@/components/ui/select';
 import { staggerContainer, cardStackReveal } from '@/lib/motion';
-import { getAllUsers, getAllClasses, getAllGrades } from '@/services/dataService';
+import { getAllUsers, getAllClasses, getAllGrades, getAllExams, getAllAssignments } from '@/services/dataService';
 import { analyticsService } from '@/services/analyticsService';
-import { supabase } from '@/supabase/config';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface ExamDoc { id: string; title: string; startDate?: string; endDate?: string; createdAt?: string; }
@@ -80,14 +79,13 @@ export default function AdminDashboardPage() {
   const { data: overviewData, isLoading: isOverviewLoading, isError: isOverviewError, refetch: refetchOverview } = useQuery({
     queryKey: ['admin-dashboard'],
     queryFn: async () => {
-      const [users, classes, grades, examsData, assignmentsData] = await Promise.all([
+      const [users, classes, grades, examsRaw, assignmentsRaw] = await Promise.all([
         getAllUsers(), getAllClasses(), getAllGrades(),
-        supabase.from('exams').select('*'),
-        supabase.from('assignments').select('*'),
+        getAllExams(), getAllAssignments(),
       ]);
 
-      const exams: ExamDoc[] = (examsData.data || []) as ExamDoc[];
-      const assignments: AssignmentDoc[] = (assignmentsData.data || []) as AssignmentDoc[];
+      const exams: ExamDoc[] = ((examsRaw || []) as unknown) as ExamDoc[];
+      const assignments: AssignmentDoc[] = ((assignmentsRaw || []) as unknown) as AssignmentDoc[];
 
       const studentCount = users.filter((u) => u.role === 'student').length;
       const teacherCount = users.filter((u) => u.role === 'teacher').length;

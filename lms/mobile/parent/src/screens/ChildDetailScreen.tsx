@@ -1,9 +1,11 @@
-import React from 'react';
-import { StyleSheet, Text, View, ScrollView } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { StyleSheet, Text, View, ScrollView, RefreshControl } from 'react-native';
+import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
-const MOCK_DETAIL = {
+const FALLBACK_DETAIL = {
   name: 'Arjun S.',
   class: 'Grade 10A',
+  initials: 'A',
   mastery: 78,
   attendance: 94,
   avgGrade: 'B+',
@@ -28,11 +30,30 @@ const MOCK_DETAIL = {
 };
 
 export default function ChildDetailScreen({ route }: any) {
-  const { childName } = route?.params ?? {};
-  const data = MOCK_DETAIL;
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<any>(null);
+  const { childId, childName } = route?.params ?? {};
+
+  const fetchData = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = childId ? await api.get(`/parent/children/${childId}`) : await api.get('/parent/children');
+      setData(res.data);
+    } catch { setData({ ...FALLBACK_DETAIL, name: childName || FALLBACK_DETAIL.name }); }
+    finally { setLoading(false); setRefreshing(false); }
+  }, [childId]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+  const onRefresh = useCallback(() => { setRefreshing(true); fetchData(); }, [fetchData]);
+
+  if (loading && !refreshing) return <LoadingState />;
+  if (!data) return <ErrorState message="Failed to load child details" onRetry={fetchData} />;
+  const d = data;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6200ee" />}>
       <View style={styles.header}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{data.name.charAt(0)}</Text>
