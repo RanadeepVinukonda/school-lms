@@ -122,6 +122,90 @@ CREATE TABLE IF NOT EXISTS concept_questions (
 );
 
 -- Concept resources
+-- =========================================================================
+-- Classes
+-- =========================================================================
+CREATE TABLE IF NOT EXISTS classes (
+  id UUID PRIMARY KEY,
+  name TEXT NOT NULL,
+  section TEXT,
+  room TEXT,
+  capacity INTEGER DEFAULT 0,
+  status TEXT DEFAULT 'active',
+  school_id UUID,
+  student_count INTEGER DEFAULT 0 NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- =========================================================================
+-- Attendance
+-- =========================================================================
+CREATE TABLE IF NOT EXISTS attendance (
+  id UUID PRIMARY KEY,
+  student_id UUID NOT NULL REFERENCES users(id),
+  class_id UUID NOT NULL REFERENCES classes(id),
+  date DATE NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('present', 'absent', 'late', 'holiday')),
+  marked_by UUID REFERENCES users(id),
+  note TEXT DEFAULT '',
+  marked_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_attendance_student_id ON attendance(student_id);
+CREATE INDEX IF NOT EXISTS idx_attendance_class_id ON attendance(class_id);
+CREATE INDEX IF NOT EXISTS idx_attendance_date ON attendance(date);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_attendance_student_class_date ON attendance(student_id, class_id, date);
+
+-- =========================================================================
+-- Fee structures
+-- =========================================================================
+CREATE TABLE IF NOT EXISTS fee_structures (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID,
+  name TEXT NOT NULL,
+  amount NUMERIC NOT NULL,
+  due_date TIMESTAMPTZ,
+  class_id UUID REFERENCES classes(id),
+  academic_year TEXT,
+  description TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_fee_structures_class_id ON fee_structures(class_id);
+CREATE INDEX IF NOT EXISTS idx_fee_structures_academic_year ON fee_structures(academic_year);
+
+-- =========================================================================
+-- Fee payments
+-- =========================================================================
+CREATE TABLE IF NOT EXISTS fee_payments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  student_id UUID NOT NULL,
+  fee_structure_id UUID NOT NULL REFERENCES fee_structures(id),
+  amount NUMERIC NOT NULL,
+  school_id UUID,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Add student_count to classes if missing (table may already exist without it)
+ALTER TABLE classes ADD COLUMN IF NOT EXISTS student_count INTEGER DEFAULT 0 NOT NULL;
+-- Add academic_year, class_id, description to fee_structures if missing
+ALTER TABLE fee_structures ADD COLUMN IF NOT EXISTS class_id UUID REFERENCES classes(id);
+ALTER TABLE fee_structures ADD COLUMN IF NOT EXISTS academic_year TEXT;
+ALTER TABLE fee_structures ADD COLUMN IF NOT EXISTS description TEXT;
+
+-- =========================================================================
+-- RPC: increment_student_count (used by user.service.ts)
+-- =========================================================================
+CREATE OR REPLACE FUNCTION increment_student_count(class_id UUID, delta INTEGER)
+RETURNS void AS $$
+BEGIN
+  UPDATE classes SET student_count = student_count + delta, updated_at = NOW()
+  WHERE id = class_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 CREATE TABLE IF NOT EXISTS concept_resources (
   id UUID PRIMARY KEY,
   concept_id UUID NOT NULL REFERENCES concepts(id) ON DELETE CASCADE,

@@ -1,4 +1,4 @@
-import { getSupabaseClient } from './supabase';
+import { getSupabaseAdmin } from './supabase';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
@@ -40,7 +40,7 @@ const DEFAULT_SETTINGS = {
 
 /** Get all settings. Initializes with defaults if the 'general' document doesn't exist. */
 export async function getSettings() {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data, error } = await supabase.from('nosql_docs').select('data')
     .eq('collection', 'settings').eq('doc_id', 'general').maybeSingle();
   if (error) throw new Error('Failed to fetch settings: ' + error.message);
@@ -59,7 +59,7 @@ export async function getSettings() {
 
 /** Update settings by merging the given data with existing values. Creates the document if needed. */
 export async function updateSettings(data: Record<string, unknown>) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: existing, error: fetchErr } = await supabase.from('nosql_docs').select('data')
     .eq('collection', 'settings').eq('doc_id', 'general').maybeSingle();
   if (fetchErr) throw new Error('Failed to fetch existing settings: ' + fetchErr.message);
