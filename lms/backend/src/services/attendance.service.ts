@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { getSupabaseClient } from './supabase';
+import { getSupabaseAdmin } from './supabase';
 import { logger } from '../utils/logger';
 import { createBulkNotifications } from './notification.service';
 
@@ -12,7 +12,7 @@ export async function markAttendance(data: {
   note?: string;
 }) {
   const records: any[] = [];
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
 
   // ponytail: duplicate guard — check if any student already has attendance for this date
   const { data: existingRows, error: existingError } = await supabase
@@ -120,7 +120,7 @@ export async function markAttendance(data: {
 }
 
 export async function getClassAttendance(classId: string, date?: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   let query = supabase
     .from('attendance')
     .select('*')
@@ -148,7 +148,7 @@ export async function getClassAttendance(classId: string, date?: string) {
 }
 
 export async function getStudentAttendance(studentId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: rows, error } = await supabase
     .from('attendance')
     .select('*')
@@ -197,7 +197,7 @@ export async function exportAttendanceCSV(classId: string): Promise<string> {
   const studentIds: string[] = [...new Set(records.map((r: any) => r.studentId))];
   const nameMap: Record<string, string> = {};
   if (studentIds.length > 0) {
-    const supabase = getSupabaseClient()!;
+    const supabase = getSupabaseAdmin()!;
     const { data: students, error } = await supabase
       .from('users')
       .select('id, display_name')

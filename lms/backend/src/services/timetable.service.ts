@@ -1,4 +1,4 @@
-import { getSupabaseClient } from './supabase';
+import { getSupabaseAdmin } from './supabase';
 import { logger } from '../utils/logger';
 import { Pool } from 'pg';
 
@@ -12,7 +12,7 @@ export async function createTimetableEntry(data: {
   classId: string; day: string; period: number; subjectId?: string; teacherId?: string; room?: string;
   startTime?: string; endTime?: string; schoolId: string;
 }) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   // ponytail: teacher double-booking guard
   if (data.teacherId) {
     const { data: existing } = await supabase.from('timetable')
@@ -39,19 +39,19 @@ export async function createTimetableEntry(data: {
 }
 
 export async function getTimetableByClass(classId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data } = await supabase.from('timetable').select('*').eq('class_id', classId).order('day').order('period');
   return data || [];
 }
 
 export async function getTimetableBySchool(schoolId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data } = await supabase.from('timetable').select('*').eq('school_id', schoolId).order('day').order('period');
   return data || [];
 }
 
 export async function updateTimetableEntry(id: string, data: Record<string, unknown>) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const snake: Record<string, unknown> = {};
   if (data.day) snake.day = data.day;
   if (data.period !== undefined) snake.period = data.period;
@@ -71,7 +71,7 @@ export async function updateTimetableEntry(id: string, data: Record<string, unkn
 }
 
 export async function deleteTimetableEntry(id: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { error } = await supabase.from('timetable').delete().eq('id', id);
   if (error) {
     logger.error('Failed to delete timetable entry', { error: error.message, id });
@@ -82,7 +82,7 @@ export async function saveTimetableDay(data: {
   classId: string; day: string; schoolId: string;
   periods: Array<{ period: number; subjectId?: string; teacherId?: string; room?: string; startTime?: string; endTime?: string }>;
 }) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const toNull = (v: string | undefined | null) => (v && v.trim() ? v : null);
   if (!data.schoolId) {
     const { data: schools } = await supabase.from('schools').select('id').limit(1);
@@ -140,7 +140,7 @@ export async function saveTimetableDay(data: {
 }
 
 export async function getTimetableByClassAndDay(classId: string, day: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data } = await supabase.from('timetable').select('*').eq('class_id', classId).eq('day', day).order('period');
   return data || [];
 }

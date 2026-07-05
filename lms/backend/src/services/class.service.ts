@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { getSupabaseClient } from './supabase';
+import { getSupabaseAdmin } from './supabase';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
@@ -21,7 +21,7 @@ export async function createClass(data: {
   status?: string;
   schoolId?: string;
 }) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const classId = uuidv4();
   const now = new Date().toISOString();
 
@@ -56,7 +56,7 @@ export async function createClass(data: {
 
 /** Update class fields. Throws NotFoundError if missing. */
 export async function updateClass(classId: string, data: Record<string, unknown>) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: existing } = await supabase
     .from('classes')
     .select('id')
@@ -83,7 +83,7 @@ export async function updateClass(classId: string, data: Record<string, unknown>
 
 /** Delete a class by id. Throws NotFoundError if missing. */
 export async function deleteClass(classId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: existing } = await supabase
     .from('classes')
     .select('id')
@@ -111,7 +111,7 @@ export async function listClasses(query: {
   schoolId?: string;
 }) {
   const { page, limit } = parsePagination(query);
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   
   let baseQuery = supabase.from('classes').select('*');
 
@@ -149,7 +149,7 @@ export async function listClasses(query: {
 
 /** Fetch a single class by id. Throws NotFoundError if missing. */
 export async function getClassById(classId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data, error } = await supabase
     .from('classes')
     .select('*')
@@ -165,7 +165,7 @@ export async function getClassById(classId: string) {
 
 /** Add students to a class by updating their classIds array. */
 export async function addStudents(classId: string, studentIds: string[]) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: classDoc } = await supabase
     .from('classes')
     .select('id')
@@ -212,7 +212,7 @@ export async function addStudents(classId: string, studentIds: string[]) {
 
 /** Remove students from a class by filtering their classIds array. */
 export async function removeStudents(classId: string, studentIds: string[]) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: classDoc } = await supabase
     .from('classes')
     .select('id')
@@ -241,7 +241,7 @@ export async function removeStudents(classId: string, studentIds: string[]) {
 
 /** Get the class roster — all users whose classIds array contains the given classId. Excludes password field. */
 export async function getRoster(classId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   
   const { data: snapshot } = await supabase
     .from('users')

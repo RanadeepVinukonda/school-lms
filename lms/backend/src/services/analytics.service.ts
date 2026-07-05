@@ -1,4 +1,4 @@
-import { getSupabaseClient } from './supabase';
+import { getSupabaseAdmin } from './supabase';
 import { logger } from '../utils/logger';
 import { getSettings } from './settings.service';
 
@@ -8,7 +8,7 @@ function safePct(value: number): number {
 
 /** Get a student's dashboard summary: total enrolled courses, unread notifications, overall grade, and stats. */
 export async function getStudentDashboard(studentId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   
   const { data: enrollments } = await supabase
     .from('enrollments')
@@ -64,7 +64,7 @@ export async function getStudentDashboard(studentId: string) {
 
 /** Get a teacher's dashboard summary: total courses, total students, pending grading, unread notifications. */
 export async function getTeacherDashboard(teacherId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
 
   const { data: courses } = await supabase
     .from('courses')
@@ -107,7 +107,7 @@ export async function getTeacherDashboard(teacherId: string) {
 
 /** Get an admin dashboard summary: user counts, course/class stats. */
 export async function getAdminDashboard() {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
 
   const { count: studentsCount } = await supabase
     .from('users')
@@ -159,7 +159,7 @@ export async function getAdminDashboard() {
 
 /** Get analytics for a single course: enrollment, lessons, assignments, submissions, grades, completion rates. */
 export async function getCourseAnalytics(courseId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   
   const { data: courseDoc } = await supabase
     .from('courses')
@@ -234,7 +234,7 @@ export async function getCourseAnalytics(courseId: string) {
 // ── Merged from analytics-v2.service.ts ──
 
 async function getAssessmentData(type: 'quiz' | 'assignment' | 'exam') {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const collectionName = type === 'quiz' ? 'quizV2' : type === 'assignment' ? 'assignmentV2' : 'examV2';
   const { data: docs } = await supabase
     .from('nosql_docs')
@@ -246,7 +246,7 @@ async function getAssessmentData(type: 'quiz' | 'assignment' | 'exam') {
 }
 
 export async function getClassPerformance(classId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
 
   const { data: students } = await supabase
     .from('users')
@@ -323,7 +323,7 @@ export async function getClassPerformance(classId: string) {
 }
 
 export async function getStudentPerformance(studentId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
 
   const { data: userDoc } = await supabase
     .from('users')
@@ -398,7 +398,7 @@ export async function getStudentPerformance(studentId: string) {
 }
 
 export async function getAssessmentAnalytics(assessmentId: string, type: 'quiz' | 'assignment' | 'exam') {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
 
   const parentCollectionName = type === 'quiz' ? 'quizV2' : type === 'assignment' ? 'assignmentV2' : 'examV2';
   const { data: parentDoc } = await supabase
@@ -476,7 +476,7 @@ export async function getConceptsForClass(classId: string) {
 }
 
 export async function getConceptOversight() {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
 
   const { data: tcsDocs } = await supabase
     .from('nosql_docs')
@@ -601,7 +601,7 @@ export async function getConceptOversight() {
 }
 
 export async function getConductedTests() {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
 
   const [quizRes, examRes, assignmentRes, classesRes, subjectsRes, teachersRes] = await Promise.all([
     supabase.from('nosql_docs').select('data, doc_id').eq('collection', 'quizV2'),

@@ -1,17 +1,17 @@
 import { v4 as uuidv4 } from 'uuid';
-import { getSupabaseClient } from './supabase';
+import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 
 async function nosqlDoc(collection: string, docId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data } = await supabase.from('nosql_docs').select('doc_id, data').eq('collection', collection).eq('doc_id', docId).maybeSingle();
   return data || null;
 }
 
 async function setNosqlDoc(collection: string, docId: string, docData: Record<string, unknown>) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const now = new Date().toISOString();
   await supabase.from('nosql_docs').upsert({ collection, doc_id: docId, data: docData, updated_at: now }, { onConflict: 'collection,doc_id' });
 }
@@ -66,7 +66,7 @@ export async function updateCourse(courseId: string, data: Record<string, unknow
 
 /** Delete a course by id. Throws NotFoundError if missing. */
 export async function deleteCourse(courseId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const existing = await nosqlDoc('courses', courseId);
   if (!existing) throw new NotFoundError('Course not found');
 
@@ -94,7 +94,7 @@ export async function listCourses(query: {
   schoolId?: string;
 }) {
   const { page, limit } = parsePagination(query);
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
 
   let dbQuery = supabase.from('nosql_docs').select('doc_id, data').eq('collection', 'courses');
   if (query.schoolId) dbQuery = dbQuery.contains('data', { schoolId: query.schoolId });
@@ -156,7 +156,7 @@ export async function enrollStudent(courseId: string, studentId: string) {
 
 /** Unenroll a student from a course and decrement enrollmentCount. */
 export async function unenrollStudent(courseId: string, studentId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const enrollmentId = `${courseId}_${studentId}`;
   const enrollment = await nosqlDoc('enrollment', enrollmentId);
   if (!enrollment) throw new NotFoundError('Enrollment not found');
@@ -176,7 +176,7 @@ export async function unenrollStudent(courseId: string, studentId: string) {
 
 /** Get all active enrollments for a given course. */
 export async function getEnrollments(courseId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', 'enrollment')
     .contains('data', { courseId, status: 'active' });

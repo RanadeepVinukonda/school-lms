@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { getSupabaseClient } from './supabase';
+import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { searchVideos } from './youtube.service';
@@ -18,7 +18,7 @@ export async function addVideo(data: {
   conceptId?: string;
   tags?: string[];
 }) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const videoId = uuidv4();
   const now = new Date().toISOString();
 
@@ -55,7 +55,7 @@ export async function listVideos(teacherId: string, query?: {
   conceptId?: string;
   tag?: string;
 }) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   let dbQuery = supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', 'teacherVideos')
     .contains('data', { teacherId });
@@ -71,7 +71,7 @@ export async function listVideos(teacherId: string, query?: {
 }
 
 export async function removeVideo(videoId: string, teacherId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data } = await supabase.from('nosql_docs').select('data')
     .eq('collection', 'teacherVideos').eq('doc_id', videoId).maybeSingle();
 
@@ -91,7 +91,7 @@ export async function attachVideoToConcept(videoId: string, teacherId: string, d
   chapterId: string;
   conceptId: string;
 }) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: existing } = await supabase.from('nosql_docs').select('data')
     .eq('collection', 'teacherVideos').eq('doc_id', videoId).maybeSingle();
 

@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { getSupabaseClient } from './supabase';
+import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
@@ -10,7 +10,7 @@ export async function listAllExams(query: { page?: string; limit?: string; cours
   const { page, limit } = parsePagination(query);
   const offset = (page - 1) * limit;
 
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   let q = supabase.from('exams').select('*', { count: 'exact' });
   
   if (query.schoolId) q = q.eq('school_id', query.schoolId);
@@ -52,7 +52,7 @@ export async function createExam(data: {
   proctored?: boolean;
   schoolId?: string;
 }) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const examId = uuidv4();
   const now = new Date().toISOString();
 
@@ -111,7 +111,7 @@ export async function createExam(data: {
 
 /** Update exam fields. Throws NotFoundError if missing. */
 export async function updateExam(examId: string, data: Record<string, unknown>) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: existing } = await supabase
     .from('exams')
     .select('id')
@@ -138,7 +138,7 @@ export async function updateExam(examId: string, data: Record<string, unknown>) 
 
 /** Delete an exam by id. Throws NotFoundError if missing. */
 export async function deleteExam(examId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: existing } = await supabase
     .from('exams')
     .select('id')
@@ -157,7 +157,7 @@ export async function deleteExam(examId: string) {
 
 /** Fetch a single exam by id. Throws NotFoundError if missing. */
 export async function getExamById(examId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data, error } = await supabase
     .from('exams')
     .select('*')
@@ -178,7 +178,7 @@ export async function scheduleExam(examId: string, data: {
   classIds: string[];
   proctorIds?: string[];
 }) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: existing } = await supabase
     .from('exams')
     .select('id, title')
@@ -235,7 +235,7 @@ export async function scheduleExam(examId: string, data: {
 
 /** Start an exam attempt for a student. Enforces maxAttempts, increments attemptCount. */
 export async function startExamAttempt(examId: string, studentId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: exam } = await supabase
     .from('exams')
     .select('*')
@@ -294,7 +294,7 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
   startedAt: string;
   submittedAt: string;
 }) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: attempt } = await supabase
     .from('exam_attempts')
     .select('*')
@@ -380,7 +380,7 @@ export async function gradeExamAttempt(attemptId: string, graderId: string, data
   score: number;
   feedback?: string;
 }) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: attempt } = await supabase
     .from('exam_attempts')
     .select('*')
@@ -427,7 +427,7 @@ export async function gradeExamAttempt(attemptId: string, graderId: string, data
 
 /** Toggle whether exam grades are visible to students. */
 export async function releaseExamGrades(examId: string, gradesReleased: boolean) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: existing } = await supabase
     .from('exams')
     .select('id')
@@ -447,7 +447,7 @@ export async function releaseExamGrades(examId: string, gradesReleased: boolean)
 
 /** Get all exam results for a specific student, ordered by startedAt desc. */
 export async function getExamResults(examId: string, studentId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: exam } = await supabase
     .from('exams')
     .select('grades_released')

@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { getSupabaseClient } from './supabase';
+import { getSupabaseAdmin } from './supabase';
 import { buildDocData } from '../database/schema';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
@@ -7,7 +7,7 @@ import { parsePagination } from '../utils/pagination';
 import { createNotification, createBulkNotifications } from './notification.service';
 
 async function gradeRow(gradeId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data } = await supabase.from('grades').select('*').eq('id', gradeId).maybeSingle();
   if (!data) return null;
   return { id: data.id, ...buildDocData(data as Record<string, unknown>, 'grades') } as any;
@@ -15,7 +15,7 @@ async function gradeRow(gradeId: string) {
 
 /** Get all grades for a student, optionally filtered by academic year/schoolId. */
 export async function getStudentGrades(studentId: string, academicYear?: string, schoolId?: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   let query = supabase.from('grades').select('*').eq('studentId', studentId);
   if (schoolId) query = query.contains('data', { schoolId });
   if (academicYear) query = query.contains('data', { academicYear });
@@ -35,7 +35,7 @@ export async function getGradebook(query: {
   limit?: string;
   schoolId?: string;
 }) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { page, limit } = parsePagination(query);
   const offset = (page - 1) * limit;
 
@@ -89,7 +89,7 @@ export async function updateGrade(gradeId: string, data: {
     updatedAt: new Date().toISOString(),
   };
 
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   await supabase.from('grades').update({
     score: data.score,
     letterGrade,
@@ -119,7 +119,7 @@ export async function bulkUpdate(grades: Array<{
   totalPoints: number;
   feedback?: string;
 }>, courseId: string, gradedBy: string, schoolId?: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const results = [];
 
   for (const grade of grades) {
@@ -184,7 +184,7 @@ export async function bulkUpdate(grades: Array<{
 
 /** Generate a student's report card for a given academic year and term with overall GPA. */
 export async function generateReport(studentId: string, academicYear: string, term: string, schoolId?: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   let query = supabase.from('grades').select('*').eq('studentId', studentId)
     .contains('data', { academicYear, term });
   if (schoolId) query = query.contains('data', { schoolId });

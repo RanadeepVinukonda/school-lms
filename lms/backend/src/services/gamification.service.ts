@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { getSupabaseClient } from './supabase';
+import { getSupabaseAdmin } from './supabase';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { TransactionManager } from '../database/transaction-manager';
@@ -76,18 +76,18 @@ const MONTHLY_CHALLENGE_TEMPLATES = [
 ];
 
 const coll = (name: string) => {
-  const s = getSupabaseClient()!;
+  const s = getSupabaseAdmin()!;
   return { s, name };
 };
 
 async function nosqlGet(collection: string, docId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data } = await supabase.from('nosql_docs').select('doc_id, data').eq('collection', collection).eq('doc_id', docId).maybeSingle();
   return data || null;
 }
 
 async function nosqlSet(collection: string, docId: string, docData: Record<string, unknown>) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const now = new Date().toISOString();
   await supabase.from('nosql_docs').upsert({ collection, doc_id: docId, data: docData, updated_at: now }, { onConflict: 'collection,doc_id' });
 }
@@ -152,7 +152,7 @@ export async function awardXp(userId: string, amount: number, source: string) {
   const profile = await ensureProfile(userId);
   const newXp = (profile.xp as number) + amount;
   const newLevel = calculateLevel(newXp);
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
 
   const updated = { ...profile, xp: newXp, level: newLevel, updatedAt: new Date().toISOString() };
   await nosqlSet('gamificationProfiles', userId, updated);
@@ -172,7 +172,7 @@ export async function awardXp(userId: string, amount: number, source: string) {
 export async function awardCoins(userId: string, amount: number, source: string) {
   const profile = await ensureProfile(userId);
   const newCoins = (profile.coins as number) + amount;
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
 
   const updated = { ...profile, coins: newCoins, updatedAt: new Date().toISOString() };
   await nosqlSet('gamificationProfiles', userId, updated);
@@ -204,7 +204,7 @@ export async function awardXpAndCoins(
   const updated = { ...profile, xp: newXp, coins: newCoins, level: newLevel, updatedAt: now };
   await nosqlSet('gamificationProfiles', userId, updated);
 
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   try {
     await Promise.all([
       supabase.from('nosql_docs').insert({ collection: 'gamificationTransactions', doc_id: uuidv4(), data: { userId, amount: xpAmount, type: 'xp', source, createdAt: now }, updated_at: now }),
@@ -262,7 +262,7 @@ async function checkAndAwardBadges(userId: string, profile: Record<string, unkno
 }
 
 export async function getLeaderboard(limit = 50) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', 'gamificationProfiles')
     .order('data->>xp', { ascending: false })
@@ -306,7 +306,7 @@ export async function getLeaderboard(limit = 50) {
 }
 
 export async function getClassLeaderboard(classId: string, limit = 50) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: classData } = await supabase.from('classes').select('*').eq('id', classId).maybeSingle();
   if (!classData) throw new NotFoundError('Class not found');
 
@@ -353,7 +353,7 @@ function getMonthKey(date = new Date()): string {
 }
 
 export async function getDailyChallenges(userId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const today = new Date().toISOString().split('T')[0];
   const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', 'gamificationDailyChallenges')
@@ -383,7 +383,7 @@ export async function getDailyChallenges(userId: string) {
 }
 
 export async function completeDailyChallenge(userId: string, challengeId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data } = await supabase.from('nosql_docs').select('data')
     .eq('collection', 'gamificationDailyChallenges').eq('doc_id', challengeId).maybeSingle();
 
@@ -414,7 +414,7 @@ async function getOrCreatePeriodChallenges(
   templates: typeof WEEKLY_CHALLENGE_TEMPLATES,
   collectionName: string,
 ) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', collectionName)
     .contains('data', { userId, periodKey });
@@ -455,7 +455,7 @@ async function completePeriodChallenge(
   collectionName: string,
   source: string,
 ) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data } = await supabase.from('nosql_docs').select('data')
     .eq('collection', collectionName).eq('doc_id', challengeId).maybeSingle();
 

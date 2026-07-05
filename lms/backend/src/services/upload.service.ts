@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { uploadBufferToCloudinary, deleteCloudinaryFile } from './cloudinary.service';
-import { getSupabaseClient } from './supabase';
+import { getSupabaseAdmin } from './supabase';
 import { ValidationError, NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
@@ -43,7 +43,7 @@ export async function uploadFileService(
     createdAt: new Date().toISOString(),
   };
 
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   await supabase.from('nosql_docs').insert({
     collection: 'uploads', doc_id: fileRecord.id, data: fileRecord,
     updated_at: new Date().toISOString(),
@@ -55,7 +55,7 @@ export async function uploadFileService(
 }
 
 export async function getFileUrlService(fileId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data } = await supabase.from('nosql_docs').select('data')
     .eq('collection', 'uploads').eq('doc_id', fileId).maybeSingle();
   if (!data) {
@@ -65,7 +65,7 @@ export async function getFileUrlService(fileId: string) {
 }
 
 export async function deleteFileService(fileId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data } = await supabase.from('nosql_docs').select('data')
     .eq('collection', 'uploads').eq('doc_id', fileId).maybeSingle();
   if (!data) {

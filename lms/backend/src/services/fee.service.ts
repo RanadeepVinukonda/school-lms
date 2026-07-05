@@ -1,4 +1,4 @@
-import { getSupabaseClient } from './supabase';
+import { getSupabaseAdmin } from './supabase';
 import { Pool } from 'pg';
 
 function getPool(): Pool | null {
@@ -11,7 +11,7 @@ export async function createFeeSchedule(data: {
   name: string; amount: number; dueDate?: string; classId: string; academicYear?: string; description?: string;
   schoolId: string;
 }) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: result } = await supabase.from('fee_structures').insert({
     school_id: data.schoolId, name: data.name, amount: data.amount, due_date: data.dueDate, class_id: data.classId,
   }).select().single();
@@ -19,7 +19,7 @@ export async function createFeeSchedule(data: {
 }
 
 export async function listFeeSchedules(schoolId?: string, _academicYear?: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   let q = supabase.from('fee_structures').select('*');
   if (schoolId) q = q.eq('school_id', schoolId);
   const { data } = await q;
@@ -27,7 +27,7 @@ export async function listFeeSchedules(schoolId?: string, _academicYear?: string
 }
 
 export async function getFeeSchedule(id: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data } = await supabase.from('fee_structures').select('*').eq('id', id).maybeSingle();
   return data;
 }
@@ -35,7 +35,7 @@ export async function getFeeSchedule(id: string) {
 export async function recordPayment(data: {
   studentId: string; feeScheduleId: string; amountPaid: number; paymentMethod?: string; schoolId?: string;
 }) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   // ponytail: overpayment prevention
   const { data: schedule } = await supabase.from('fee_structures').select('amount').eq('id', data.feeScheduleId).single();
   if (!schedule) return null;
@@ -54,13 +54,13 @@ export async function recordPayment(data: {
 }
 
 export async function getStudentPayments(studentId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data } = await supabase.from('fee_payments').select('*').eq('student_id', studentId);
   return data || [];
 }
 
 export async function getOutstandingReport(schoolId?: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const pool = getPool();
   // ponytail: wrap three queries in a transaction for consistency
   if (pool) {

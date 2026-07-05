@@ -1,4 +1,4 @@
-import { getSupabaseClient } from './supabase';
+import { getSupabaseAdmin } from './supabase';
 import { ConflictError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
@@ -19,7 +19,7 @@ export interface ImpactReport {
   recommendedAction: 'archive' | 'deactivate' | 'delete' | 'none';
 }
 
-const supabase = () => getSupabaseClient()!;
+const supabase = () => getSupabaseAdmin()!;
 
 async function countTyped(table: string, field: string, value: string): Promise<number> {
   try {

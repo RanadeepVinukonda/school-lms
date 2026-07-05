@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { getSupabaseClient } from './supabase';
+import { getSupabaseAdmin } from './supabase';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
@@ -38,7 +38,7 @@ export async function createNotification(data: {
     school_id: null,
   };
 
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { error } = await supabase.from('notifications').insert(notification);
   if (error) throw error;
 
@@ -53,7 +53,7 @@ export async function getNotificationsByUser(userId: string, query: {
   limit?: string;
   unreadOnly?: string;
 }) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { page, limit } = parsePagination(query);
   const offset = (page - 1) * limit;
 
@@ -85,7 +85,7 @@ export async function getNotificationsByUser(userId: string, query: {
 
 /** Mark a single notification as read. Verifies ownership. */
 export async function markNotificationRead(notificationId: string, userId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   
   const { data: row, error: findError } = await supabase
     .from('notifications')
@@ -113,7 +113,7 @@ export async function markNotificationRead(notificationId: string, userId: strin
 
 /** Mark all unread notifications as read for a user, using batch writes. */
 export async function markAllNotificationsRead(userId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: rows, error: findError } = await supabase
     .from('notifications')
     .select('id')
@@ -137,7 +137,7 @@ export async function markAllNotificationsRead(userId: string) {
 
 /** Get the count of unread notifications for a user. */
 export async function getUnreadCount(userId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   
   const { count, error } = await supabase
     .from('notifications')
@@ -152,7 +152,7 @@ export async function getUnreadCount(userId: string) {
 
 /** Delete a notification by id. Verifies ownership. */
 export async function deleteNotification(notificationId: string, userId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   
   const { data: row, error: findError } = await supabase
     .from('notifications')
@@ -180,7 +180,7 @@ export async function deleteNotification(notificationId: string, userId: string)
 
 /** Fetch notification preferences for a user, returning defaults if not set. */
 export async function getNotificationPreferences(userId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: row, error } = await supabase
     .from('users')
     .select('notification_preferences')
@@ -216,7 +216,7 @@ export async function updateNotificationPreferences(userId: string, preferences:
   sms: boolean;
   in_app_enabled: boolean;
 }) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   
   const { data: row, error: findError } = await supabase
     .from('users')
@@ -259,7 +259,7 @@ export async function createBulkNotifications(
   }>
 ) {
   const results: string[] = [];
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
 
   for (const notif of notifications) {
     // ponytail: check inApp preference per recipient
