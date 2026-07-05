@@ -20,6 +20,18 @@ interface AuthStore {
 
 let initialized = false;
 
+/** Read persisted token from localStorage directly (bypasses zustand persist rehydration timing). */
+function readPersistedToken(): string | null {
+  try {
+    const raw = localStorage.getItem('lms-auth-v2');
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.state?.token || null;
+  } catch {
+    return null;
+  }
+}
+
 /** Map a backend user profile object to the normalized store shape. */
 function mapProfileToUser(
   p: Record<string, unknown>,
@@ -122,8 +134,8 @@ export const useAuthStore = create<AuthStore>()(
             }
           }
 
-          // 2. Try persisted token from Zustand store (survives Supabase session expiry)
-          const persistedToken = get().token;
+          // 2. Try persisted token from localStorage (survives Supabase session expiry)
+          const persistedToken = get().token || readPersistedToken();
           if (persistedToken) {
             try {
               const res = await api.get('/auth/me', {
