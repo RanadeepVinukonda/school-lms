@@ -70,7 +70,7 @@ async function _authenticate(req: Request, _res: Response, next: NextFunction): 
       next(error);
     } else {
       logger.warn('Token verification error', { error: error instanceof Error ? error.message : String(error) });
-      next(new UnauthorizedError('Invalid or expired token'));
+      next(error instanceof UnauthorizedError ? error : new UnauthorizedError('Invalid or expired token'));
     }
   }
 }

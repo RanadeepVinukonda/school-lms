@@ -9,12 +9,12 @@ export function requireRole(...roles: string[]) {
     }
 
     const userRoles = req.user.role.split(',').map((r) => r.trim());
-    if (!roles.some((r) => userRoles.includes(r))) {
-      next(new ForbiddenError('Insufficient permissions'));
+    if (userRoles.includes('super_admin') || roles.some((r) => userRoles.includes(r))) {
+      next();
       return;
     }
 
-    next();
+    next(new ForbiddenError('Insufficient permissions'));
   };
 }
 
@@ -41,7 +41,7 @@ export function requireOwnershipOrRole(
     }
 
     const userRoles = req.user.role.split(',').map((r) => r.trim());
-    if (roles.some((r) => userRoles.includes(r))) {
+    if (userRoles.includes('super_admin') || roles.some((r) => userRoles.includes(r))) {
       next();
       return;
     }

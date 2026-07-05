@@ -15,7 +15,7 @@ const isAllowed = (origin: string): boolean => {
   if (allowedOrigins.includes(origin)) return true;
   try {
     const hostname = new URL(origin).hostname;
-    return hostname === 'vercel.app' || hostname.endsWith('.vercel.app');
+    return hostname.endsWith('.vercel.app');
   } catch {
     return false;
   }

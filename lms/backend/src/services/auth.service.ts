@@ -166,8 +166,8 @@ export async function forgotPassword(email: string) {
   const redirectTo = `${env.FRONTEND_URL}/reset-password`;
   const headers = {
     'Content-Type': 'application/json',
-    apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-    Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+    apikey: env.SUPABASE_ANON_KEY,
+    Authorization: `Bearer ${env.SUPABASE_ANON_KEY}`,
   };
 
   const res = await fetch(`${env.SUPABASE_URL}/auth/v1/recover`, {

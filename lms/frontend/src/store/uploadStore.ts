@@ -57,10 +57,19 @@ function makeId() {
   return `upload_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/** Prevents parallel processing of the same task. */
+const runningTasks = new Set<string>();
+
 async function runProcessing(taskId: string) {
+  if (runningTasks.has(taskId)) return;
+  runningTasks.add(taskId);
+
   const store = useUploadStore.getState();
   const task = store.tasks.find((t) => t.id === taskId);
-  if (!task) return;
+  if (!task) {
+    runningTasks.delete(taskId);
+    return;
+  }
 
   const update = (partial: Partial<UploadTask>) => {
     useUploadStore.setState((s) => ({
@@ -242,11 +251,12 @@ async function runProcessing(taskId: string) {
     update({ progress: 100, stage: 'complete' });
     addLog('Textbook processing complete!');
   } catch (err) {
-    update({
-      stage: 'error',
+    update({ stage: 'error',
       error: err instanceof Error ? err.message : 'Unknown error',
     });
     addLog(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+  } finally {
+    runningTasks.delete(taskId);
   }
 }
 

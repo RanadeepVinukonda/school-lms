@@ -50,6 +50,11 @@ async function getCsrfToken(): Promise<string | null> {
 // ---------- Auth token interceptor ----------
 // Attach Bearer token on every request — try Supabase session first, then store token fallback
 api.interceptors.request.use(async (config) => {
+  // Skip auth/CSRF for the refresh endpoint itself to avoid expired-token loops
+  if (config.url === '/auth/refresh') {
+    return config;
+  }
+
   // Attach auth token
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -129,12 +134,15 @@ api.interceptors.response.use(
             access_token: newToken,
             refresh_token: newRefreshToken || refreshToken,
           });
+          processQueue(null);
+        } else {
+          // No new token returned — treat as refresh failure
+          throw new Error('Refresh endpoint did not return a new token');
         }
-        processQueue(null);
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError);
-        useAuthStore.getState().logout();
+        await useAuthStore.getState().logout();
         return Promise.reject(error);
       } finally {
         isRefreshing = false;

@@ -98,12 +98,17 @@ export const offlineService = {
     localStorage.removeItem(OFFLINE_QUEUE_KEY);
   },
 
+  _syncInProgress: false,
+
   async syncQueue(): Promise<void> {
+    if (this._syncInProgress) return;
     const queue = this.getQueue();
     if (queue.length === 0) return;
 
+    this._syncInProgress = true;
     const { default: api } = await import('./api');
 
+    try {
     for (const action of queue) {
       try {
         switch (action.type) {
@@ -121,6 +126,9 @@ export const offlineService = {
       } catch {
         break;
       }
+    }
+    } finally {
+      this._syncInProgress = false;
     }
   },
 };

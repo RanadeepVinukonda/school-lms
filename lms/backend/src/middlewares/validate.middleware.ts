@@ -14,7 +14,7 @@ export function validate(schema: ZodSchema, target: ValidationTarget = 'body') {
       if (error instanceof ZodError) {
         const details = error.errors.map((e) => ({
           field: e.path.join('.'),
-          message: e.message,
+          message: e.code === 'invalid_string' && e.message === 'Invalid' ? 'Invalid format' : e.message,
         }));
         next(new ValidationError('Validation failed', details));
       } else {

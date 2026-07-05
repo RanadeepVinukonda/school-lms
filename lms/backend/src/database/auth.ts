@@ -116,8 +116,10 @@ export async function setCustomClaims(
 }
 
 export async function revokeTokens(uid: string): Promise<void> {
-  // ponytail: Supabase doesn't support token revocation; changing password invalidates sessions
-  // Silently succeed — token expiry handles rotation
+  const supabase = getSupabaseAdmin();
+  if (!supabase) throw new Error('Supabase not configured');
+  const { error } = await supabase.auth.admin.signOut(uid);
+  if (error) throw new Error('Failed to revoke tokens: ' + error.message);
 }
 
 export async function getUserByEmail(email: string): Promise<AuthUser | null> {

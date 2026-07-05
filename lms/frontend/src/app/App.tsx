@@ -31,11 +31,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   }, [language]);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
-      </div>
-    );
+    return <SplashScreen isLoading onFinish={() => {}} />;
   }
 
   return <>{children}</>;

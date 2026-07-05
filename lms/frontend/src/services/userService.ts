@@ -58,7 +58,7 @@ export const userService = {
 
   /** Change the current user's password. */
   async updatePassword(data: { currentPassword: string; newPassword: string }) {
-    const response = await api.put<ApiResponse<void>>('/users/password', data);
+    const response = await api.post<ApiResponse<void>>('/auth/change-password', data);
     return response.data;
   },
 };

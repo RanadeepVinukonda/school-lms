@@ -88,7 +88,7 @@ export const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
       isLoading: true,
       setUser: (user) =>
-        set({ user, isAuthenticated: !!user, isLoading: false }),
+        set({ user, isAuthenticated: !!user }),
       setToken: (token) => set({ token }),
       setLoading: (isLoading) => set({ isLoading }),
       hasRole: (roles) => {
@@ -125,10 +125,12 @@ export const useAuthStore = create<AuthStore>()(
           }
         } catch (e) {
           console.warn('[authStore] Step 1 (Supabase session) failed:', e instanceof Error ? e.message : String(e));
+          set({ isLoading: false });
         }
 
         // Step 2: Persisted store token + /auth/me
         try {
+          set({ isLoading: true });
           const persistedToken = get().token || readPersistedToken();
           if (persistedToken) {
             const res = await api.get('/auth/me', {
@@ -149,11 +151,12 @@ export const useAuthStore = create<AuthStore>()(
           }
         } catch (e) {
           console.warn('[authStore] Step 2 (persisted token) failed:', e instanceof Error ? e.message : String(e));
-          set({ token: null });
+          set({ token: null, isLoading: false });
         }
 
         // Step 3: Cookie-based /auth/session
         try {
+          set({ isLoading: true });
           const res = await api.get('/auth/session');
           const sessionData = res.data?.data;
           if (sessionData?.user) {
@@ -168,6 +171,7 @@ export const useAuthStore = create<AuthStore>()(
           }
         } catch (e) {
           console.warn('[authStore] Step 3 (cookie session) failed:', e instanceof Error ? e.message : String(e));
+          set({ isLoading: false });
         }
 
         // All steps failed

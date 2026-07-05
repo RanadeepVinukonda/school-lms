@@ -93,32 +93,36 @@ const NOTIFICATIONS_COLLECTION = 'notifications';
 
 /** Fetch all subjects from Supabase. */
 export async function getAllSubjects(): Promise<Subject[]> {
-  const { data } = await supabase.from(SUBJECTS_COLLECTION).select('*');
+  const { data, error } = await supabase.from(SUBJECTS_COLLECTION).select('*');
+  if (error) throw error;
   return (data || []) as Subject[];
 }
 
 /** Fetch all teachers from Supabase. */
 export async function getAllTeachers(): Promise<any[]> {
-  const { data } = await supabase.from('users').select('id, display_name, email').eq('role', 'teacher');
+  const { data, error } = await supabase.from('users').select('id, display_name, email').eq('role', 'teacher');
+  if (error) throw error;
   return (data || []) as any[];
 }
 
 /** Fetch a single subject by id. */
 export async function getSubject(id: string): Promise<Subject | null> {
-  const { data } = await supabase.from(SUBJECTS_COLLECTION).select('*').eq('id', id).maybeSingle();
+  const { data, error } = await supabase.from(SUBJECTS_COLLECTION).select('*').eq('id', id).maybeSingle();
+  if (error) throw error;
   return data as Subject | null;
 }
 
 /** Fetch all students belonging to a class. */
 export async function getStudentsByClass(classId: string): Promise<UserDoc[]> {
-  const { data } = await supabase.from('users').select('*').eq('class_id', classId);
+  const { data, error } = await supabase.from('users').select('*').eq('class_id', classId);
+  if (error) throw error;
   return (data || []) as UserDoc[];
 }
 
 /** Create an enrollment linking a student to a course (subject). */
 export async function createEnrollment(studentId: string, courseId: string): Promise<void> {
   const eid = `${courseId}_${studentId}`;
-  await supabase.from(ENROLLMENT_COLLECTION).upsert({
+  const { error } = await supabase.from(ENROLLMENT_COLLECTION).upsert({
     id: eid,
     studentId,
     courseId,
@@ -126,6 +130,7 @@ export async function createEnrollment(studentId: string, courseId: string): Pro
     progress: 0,
     enrolledAt: new Date().toISOString(),
   });
+  if (error) throw error;
   logAudit({
     action: 'enrollment.create',
     targetId: eid,
@@ -138,79 +143,92 @@ export async function createEnrollment(studentId: string, courseId: string): Pro
 
 /** Get all enrollments for a given student. */
 export async function getEnrollmentsByStudent(studentId: string): Promise<Enrollment[]> {
-  const { data } = await supabase.from(ENROLLMENT_COLLECTION).select('*').eq('studentId', studentId);
+  const { data, error } = await supabase.from(ENROLLMENT_COLLECTION).select('*').eq('studentId', studentId);
+  if (error) throw error;
   return (data || []) as unknown as Enrollment[];
 }
 
 /** Get classes by an array of class ids. */
 export async function getClassesByIds(ids: string[]): Promise<ClassEntry[]> {
   if (ids.length === 0) return [];
-  const { data } = await supabase.from(CLASSES_COLLECTION).select('*').in('id', ids);
+  const { data, error } = await supabase.from(CLASSES_COLLECTION).select('*').in('id', ids);
+  if (error) throw error;
   return (data || []) as unknown as ClassEntry[];
 }
 
 /** Fetch a single class by id. */
 export async function getClass(id: string): Promise<ClassEntry | null> {
-  const { data } = await supabase.from(CLASSES_COLLECTION).select('*').eq('id', id).maybeSingle();
+  const { data, error } = await supabase.from(CLASSES_COLLECTION).select('*').eq('id', id).maybeSingle();
+  if (error) throw error;
   return data as unknown as ClassEntry | null;
 }
 
 /** Fetch all classes from Supabase. */
 export async function getAllClasses(): Promise<ClassEntry[]> {
-  const { data } = await supabase.from(CLASSES_COLLECTION).select('*');
+  const { data, error } = await supabase.from(CLASSES_COLLECTION).select('*');
+  if (error) throw error;
   return (data || []) as unknown as ClassEntry[];
 }
 
 /** Fetch all exams from Supabase. */
 export async function getAllExams(): Promise<Record<string, unknown>[]> {
-  const { data } = await supabase.from('exams').select('*');
+  const { data, error } = await supabase.from('exams').select('*');
+  if (error) throw error;
   return (data || []) as Record<string, unknown>[];
 }
 
 /** Fetch all assignments from Supabase. */
 export async function getAllAssignments(): Promise<Record<string, unknown>[]> {
-  const { data } = await supabase.from('assignments').select('*');
+  const { data, error } = await supabase.from('assignments').select('*');
+  if (error) throw error;
   return (data || []) as Record<string, unknown>[];
 }
 
 /** Fetch all enrollment records from Supabase. */
 export async function getAllEnrollments(): Promise<Enrollment[]> {
-  const { data } = await supabase.from(ENROLLMENT_COLLECTION).select('*');
+  const { data, error } = await supabase.from(ENROLLMENT_COLLECTION).select('*');
+  if (error) throw error;
   return (data || []) as unknown as Enrollment[];
 }
 
 /** Fetch all grade records from Supabase. */
 export async function getAllGrades(): Promise<GradeEntry[]> {
-  const { data } = await supabase.from(GRADES_COLLECTION).select('*');
+  const { data, error } = await supabase.from(GRADES_COLLECTION).select('*');
+  if (error) throw error;
   return (data || []) as unknown as GradeEntry[];
 }
 
 /** Fetch grades for a specific student. */
 export async function getGradesByStudent(studentId: string): Promise<GradeEntry[]> {
-  const { data } = await supabase.from(GRADES_COLLECTION).select('*').eq('studentId', studentId);
+  const { data, error } = await supabase.from(GRADES_COLLECTION).select('*').eq('studentId', studentId);
+  if (error) throw error;
   return (data || []) as unknown as GradeEntry[];
 }
 
 /** Fetch notifications for a specific user. */
 export async function getNotificationsByUser(userId: string): Promise<NotificationItem[]> {
-  const { data } = await supabase.from(NOTIFICATIONS_COLLECTION).select('*').eq('userId', userId);
+  const { data, error } = await supabase.from(NOTIFICATIONS_COLLECTION).select('*').eq('userId', userId);
+  if (error) throw error;
   return (data || []) as NotificationItem[];
 }
 
 /** Get count of unread notifications for a user. */
 export async function getUnreadNotificationsCount(userId: string): Promise<number> {
-  const { count } = await supabase.from(NOTIFICATIONS_COLLECTION).select('*', { count: 'exact', head: true }).eq('userId', userId).eq('read', false);
+  const { count, error } = await supabase.from(NOTIFICATIONS_COLLECTION).select('*', { count: 'exact', head: true }).eq('userId', userId).eq('read', false);
+  if (error) throw error;
   return count || 0;
 }
 
 /** Mark a single notification as read. */
 export async function markNotificationRead(notificationId: string): Promise<void> {
-  await supabase.from(NOTIFICATIONS_COLLECTION).update({ read: true, readAt: new Date().toISOString() }).eq('id', notificationId);
+  const { error } = await supabase.from(NOTIFICATIONS_COLLECTION).update({ read: true, readAt: new Date().toISOString() }).eq('id', notificationId);
+  if (error) throw error;
 }
 
 /** Mark all unread notifications as read for a user. */
 export async function markAllNotificationsRead(userId: string): Promise<void> {
-  await supabase.from(NOTIFICATIONS_COLLECTION).update({ read: true, readAt: new Date().toISOString() }).eq('userId', userId).eq('read', false);
+  const { error } = await supabase.from(NOTIFICATIONS_COLLECTION).update({ read: true, readAt: new Date().toISOString() }).eq('userId', userId).eq('read', false);
+  if (error) throw error;
 }
 
 // ── Assignments ──
@@ -239,13 +257,15 @@ export interface AssignmentItem {
 
 /** Fetch assignments for a specific subject. */
 export async function getAssignmentsBySubject(subjectId: string): Promise<AssignmentItem[]> {
-  const { data } = await supabase.from('assignments').select('*').eq('subjectId', subjectId);
+  const { data, error } = await supabase.from('assignments').select('*').eq('subjectId', subjectId);
+  if (error) throw error;
   return (data || []) as AssignmentItem[];
 }
 
 /** Fetch a single assignment by id. */
 export async function getAssignment(id: string): Promise<AssignmentItem | null> {
-  const { data } = await supabase.from('assignments').select('*').eq('id', id).maybeSingle();
+  const { data, error } = await supabase.from('assignments').select('*').eq('id', id).maybeSingle();
+  if (error) throw error;
   return data as AssignmentItem | null;
 }
 
@@ -267,7 +287,8 @@ export interface SubmissionItem {
 
 /** Fetch submissions for a specific assignment. */
 export async function getSubmissionsByAssignment(assignmentId: string): Promise<SubmissionItem[]> {
-  const { data } = await supabase.from('submissions').select('*').eq('assignmentId', assignmentId);
+  const { data, error } = await supabase.from('submissions').select('*').eq('assignmentId', assignmentId);
+  if (error) throw error;
   return (data || []) as SubmissionItem[];
 }
 
@@ -295,13 +316,15 @@ export interface ExamItem {
 
 /** Fetch exams for a specific subject. */
 export async function getExamsBySubject(subjectId: string): Promise<ExamItem[]> {
-  const { data } = await supabase.from('exams').select('*').eq('subjectId', subjectId);
+  const { data, error } = await supabase.from('exams').select('*').eq('subjectId', subjectId);
+  if (error) throw error;
   return (data || []) as ExamItem[];
 }
 
 /** Fetch a single exam by id. */
 export async function getExam(id: string): Promise<ExamItem | null> {
-  const { data } = await supabase.from('exams').select('*').eq('id', id).maybeSingle();
+  const { data, error } = await supabase.from('exams').select('*').eq('id', id).maybeSingle();
+  if (error) throw error;
   return data as ExamItem | null;
 }
 
@@ -320,13 +343,15 @@ export interface CorrectionItem {
 
 /** Fetch corrections for a specific student. */
 export async function getCorrectionsByStudent(studentId: string): Promise<CorrectionItem[]> {
-  const { data } = await supabase.from('corrections').select('*').eq('studentId', studentId);
+  const { data, error } = await supabase.from('corrections').select('*').eq('studentId', studentId);
+  if (error) throw error;
   return (data || []) as CorrectionItem[];
 }
 
 /** Fetch corrections for a specific exam. */
 export async function getCorrectionsByExam(examId: string): Promise<CorrectionItem[]> {
-  const { data } = await supabase.from('corrections').select('*').eq('examId', examId);
+  const { data, error } = await supabase.from('corrections').select('*').eq('examId', examId);
+  if (error) throw error;
   return (data || []) as CorrectionItem[];
 }
 
@@ -348,17 +373,20 @@ export interface QuizItem {
 
 /** Fetch a single quiz by id. Checks quizzes and quizV2 collections. */
 export async function getQuiz(id: string): Promise<QuizItem | null> {
-  const { data: quizData } = await supabase.from('quizzes').select('*').eq('id', id).maybeSingle();
+  const { data: quizData, error: quizErr } = await supabase.from('quizzes').select('*').eq('id', id).maybeSingle();
+  if (quizErr) throw quizErr;
   if (quizData) return quizData as unknown as QuizItem;
-  const { data: v2Data } = await supabase.from('quizV2').select('*').eq('id', id).maybeSingle();
+  const { data: v2Data, error: v2Err } = await supabase.from('quizV2').select('*').eq('id', id).maybeSingle();
+  if (v2Err) throw v2Err;
   if (!v2Data) return null;
   const result: QuizItem = v2Data as unknown as QuizItem;
   if (v2Data.textbookId && v2Data.chapterId && v2Data.conceptId) {
     try {
-      const { data: questions } = await supabase
+      const { data: questions, error: qErr } = await supabase
         .from('concept_questions')
         .select('*')
         .eq('concept_id', v2Data.conceptId);
+      if (qErr) throw qErr;
       result.questions = (questions || []) as any[];
     } catch { /* questions not available */ }
   }
@@ -382,7 +410,8 @@ export interface TimetableEntry {
 
 /** Fetch timetable entries for a specific class. */
 export async function getTimetableByClass(classId: string): Promise<TimetableEntry[]> {
-  const { data } = await supabase.from('timetable').select('*').eq('classId', classId);
+  const { data, error } = await supabase.from('timetable').select('*').eq('classId', classId);
+  if (error) throw error;
   return (data || []) as TimetableEntry[];
 }
 
@@ -420,19 +449,22 @@ export interface UserDoc {
 
 /** Fetch all users with a specific role. */
 export async function getUserByRole(role: string): Promise<UserDoc[]> {
-  const { data } = await supabase.from('users').select('*').eq('role', role);
+  const { data, error } = await supabase.from('users').select('*').eq('role', role);
+  if (error) throw error;
   return (data || []).map(mapUserRowToDoc);
 }
 
 /** Fetch a single user by id. */
 export async function getUser(id: string): Promise<UserDoc | null> {
-  const { data } = await supabase.from('users').select('*').eq('id', id).maybeSingle();
+  const { data, error } = await supabase.from('users').select('*').eq('id', id).maybeSingle();
+  if (error) throw error;
   return data ? mapUserRowToDoc(data) : null;
 }
 
 /** Fetch all users from Supabase. */
 export async function getAllUsers(): Promise<UserDoc[]> {
-  const { data } = await supabase.from('users').select('*');
+  const { data, error } = await supabase.from('users').select('*');
+  if (error) throw error;
   return (data || []).map(mapUserRowToDoc);
 }
 
@@ -477,7 +509,8 @@ export async function updateUser(id: string, data: Partial<UserDoc>): Promise<vo
     Object.entries(data).filter(([_, v]) => v !== undefined)
   );
   const rowData = mapUserDocToRow(cleanData);
-  await supabase.from('users').update({ ...rowData, updated_at: new Date().toISOString() }).eq('id', id);
+  const { error } = await supabase.from('users').update({ ...rowData, updated_at: new Date().toISOString() }).eq('id', id);
+  if (error) throw error;
   logAudit({
     action: 'profile.update',
     targetId: id,
@@ -505,12 +538,14 @@ export interface LessonItem {
 
 /** Fetch lessons belonging to a specific chapter. */
 export async function getLessonsByChapter(chapterId: string): Promise<LessonItem[]> {
-  const { data } = await supabase.from('lessons').select('*').eq('chapterId', chapterId);
+  const { data, error } = await supabase.from('lessons').select('*').eq('chapterId', chapterId);
+  if (error) throw error;
   return (data || []) as LessonItem[];
 }
 
 /** Fetch a single lesson by id. */
 export async function getLesson(id: string): Promise<LessonItem | null> {
-  const { data } = await supabase.from('lessons').select('*').eq('id', id).maybeSingle();
+  const { data, error } = await supabase.from('lessons').select('*').eq('id', id).maybeSingle();
+  if (error) throw error;
   return data as LessonItem | null;
 }

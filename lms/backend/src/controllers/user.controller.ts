@@ -18,6 +18,35 @@ type ListUsersQuery = {
   sortOrder?: string;
 };
 
+function mapUserRow(row: any): any {
+  if (!row) return null;
+  const data = (row.data as Record<string, unknown>) || {};
+  return {
+    ...data,
+    id: row.id,
+    uid: row.id,
+    email: row.email,
+    displayName: row.display_name ?? data.displayName ?? row.displayName,
+    role: row.role,
+    phoneNumber: row.phone_number ?? data.phoneNumber ?? row.phoneNumber,
+    photoURL: row.photo_url ?? data.photoURL ?? row.photoURL,
+    isActive: row.is_active !== undefined ? row.is_active : (data.isActive !== undefined ? data.isActive : row.isActive),
+    classIds: row.class_ids ?? data.classIds ?? row.classIds,
+    classId: row.class_id ?? data.classId ?? row.classId,
+    studentId: row.student_id ?? data.studentId ?? row.studentId,
+    rollNo: row.roll_no ?? data.rollNo ?? row.rollNo,
+    academicYear: row.academic_year ?? data.academicYear ?? row.academicYear,
+    childrenIds: row.children_ids ?? data.childrenIds ?? row.childrenIds,
+    gender: row.gender ?? data.gender ?? row.gender,
+    streakCount: row.streak_count ?? data.streakCount ?? row.streakCount,
+    lastActiveDate: row.last_active_date ?? data.lastActiveDate ?? row.lastActiveDate,
+    language: row.language ?? data.language ?? row.language,
+    tutorialSeen: row.tutorial_seen ?? data.tutorialSeen ?? row.tutorialSeen,
+    schoolId: row.school_id ?? data.schoolId ?? row.schoolId,
+    createdAt: row.created_at ?? data.createdAt ?? row.createdAt,
+    updatedAt: row.updated_at ?? data.updatedAt ?? row.updatedAt,
+  };
+}
 
 export async function listUsers(req: Request, res: Response) {
   const { items, total, page, limit } = await userService.listUsers({
@@ -25,17 +54,21 @@ export async function listUsers(req: Request, res: Response) {
     schoolId: req.user!.school_id,
   });
   const pagination = buildPaginationMeta(total, page, limit);
-  sendPaginated(res, items, pagination);
+  sendPaginated(res, items.map(mapUserRow), pagination);
 }
 
 export async function getUser(req: Request, res: Response) {
   const result = await userService.getUserByIdService(req.params.userId);
-  sendSuccess(res, result);
+  sendSuccess(res, mapUserRow(result));
 }
 
 export async function createUser(req: Request, res: Response) {
-  const result = await userService.createUser({ ...req.body, schoolId: req.user!.school_id });
-  logAudit(adminAuditEntry(req as ReqWithUser, 'user.create', result.uid, 'user', result.displayName, {
+  const rawResult = await userService.createUser({ ...req.body, schoolId: req.user!.school_id });
+  const result = mapUserRow(rawResult);
+  if (rawResult.generatedPassword) {
+    result.generatedPassword = rawResult.generatedPassword;
+  }
+  logAudit(adminAuditEntry(req as ReqWithUser, 'user.create', result.id, 'user', result.displayName, {
     newValue: { email: result.email, role: result.role, displayName: result.displayName },
     summary: `Created user "${result.displayName}" (${result.role})`,
   }));
@@ -43,8 +76,10 @@ export async function createUser(req: Request, res: Response) {
 }
 
 export async function updateUser(req: Request, res: Response) {
-  const old = await userService.getUserByIdService(req.params.userId);
-  const result = await userService.updateUser(req.params.userId, req.body);
+  const oldRaw = await userService.getUserByIdService(req.params.userId);
+  const old = mapUserRow(oldRaw);
+  const rawResult = await userService.updateUser(req.params.userId, req.body);
+  const result = mapUserRow(rawResult);
   logAudit(adminAuditEntry(req as ReqWithUser, 'user.update', req.params.userId, 'user', old.displayName, {
     oldValue: old,
     newValue: result,
@@ -54,7 +89,8 @@ export async function updateUser(req: Request, res: Response) {
 }
 
 export async function deleteUser(req: Request, res: Response) {
-  const user = await userService.getUserByIdService(req.params.userId);
+  const rawUser = await userService.getUserByIdService(req.params.userId);
+  const user = mapUserRow(rawUser);
   await requireNoDependenciesOrThrow('user', req.params.userId, getUserImpact);
   await userService.deleteUserService(req.params.userId);
   logAudit(adminAuditEntry(req as ReqWithUser, 'user.delete', req.params.userId, 'user', user.displayName));
@@ -62,9 +98,11 @@ export async function deleteUser(req: Request, res: Response) {
 }
 
 export async function toggleActive(req: Request, res: Response) {
-  const user = await userService.getUserByIdService(req.params.userId);
-  const result = await userService.toggleActive(req.params.userId);
-  if (!result) { sendSuccess(res, null, 'User status toggled'); return; }
+  const rawUser = await userService.getUserByIdService(req.params.userId);
+  const user = mapUserRow(rawUser);
+  const rawResult = await userService.toggleActive(req.params.userId);
+  if (!rawResult) { sendSuccess(res, null, 'User status toggled'); return; }
+  const result = mapUserRow(rawResult);
   const action = result.isActive ? 'user.activate' : 'user.deactivate';
   logAudit(adminAuditEntry(req as ReqWithUser, action as AuditAction, req.params.userId, 'user', user.displayName, {
     oldValue: { isActive: user.isActive },
@@ -75,7 +113,8 @@ export async function toggleActive(req: Request, res: Response) {
 }
 
 export async function assignRole(req: Request, res: Response) {
-  const user = await userService.getUserByIdService(req.params.userId);
+  const rawUser = await userService.getUserByIdService(req.params.userId);
+  const user = mapUserRow(rawUser);
   const oldRole = user.role;
   await userService.assignRole(req.params.userId, req.body.role);
   logAudit(adminAuditEntry(req as ReqWithUser, 'role.change', req.params.userId, 'user', user.displayName, {
@@ -88,7 +127,7 @@ export async function assignRole(req: Request, res: Response) {
 
 export async function updateProfile(req: Request, res: Response) {
   const result = await userService.updateProfile(req.user!.uid, req.body);
-  sendSuccess(res, result, 'Profile updated');
+  sendSuccess(res, mapUserRow(result), 'Profile updated');
 }
 
 export async function pingActive(req: Request, res: Response) {

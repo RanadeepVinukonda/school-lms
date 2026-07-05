@@ -176,6 +176,21 @@ export async function verifyToken(req: Request, res: Response) {
 }
 
 export async function logout(req: Request, res: Response) {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split('Bearer ')[1];
+    if (token) {
+      try {
+        const tokenHash = require('crypto').createHash('sha256').update(token).digest('hex');
+        const supabase = getSupabaseAdmin();
+        if (supabase) {
+          await supabase.from('revoked_tokens').insert({ token_hash: tokenHash });
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }
   res.clearCookie('token', { path: '/', ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}) });
   sendSuccess(res, null, 'Logged out successfully');
 }

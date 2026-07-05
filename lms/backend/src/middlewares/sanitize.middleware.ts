@@ -17,7 +17,7 @@ function sanitizeObject(obj: Record<string, unknown>): Record<string, unknown> {
 }
 
 export function sanitizeInput(req: Request, _res: Response, next: NextFunction) {
-  if (req.body && typeof req.body === 'object' && !Array.isArray(req.body)) {
+  if (req.body && typeof req.body === 'object') {
     req.body = sanitizeObject(req.body);
   }
   if (req.query && typeof req.query === 'object') {

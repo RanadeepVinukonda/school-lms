@@ -1,61 +1,96 @@
 import { Platform, Alert, Linking } from 'react-native';
 
-type PermissionStatus = 'granted' | 'denied' | 'undetermined' | 'blocked';
-
-interface PermissionModule {
-  requestAsync: (permission: string) => Promise<{ granted: boolean; canAskAgain: boolean }>;
-  getAsync: (permission: string) => Promise<{ granted: boolean; canAskAgain: boolean }>;
-  CAMERA: string;
-  RECORD_AUDIO: string;
-}
-
-let ExpoPermissions: PermissionModule | null = null;
-
+let ImagePicker: any = null;
 try {
-  ExpoPermissions = require('expo-image-picker');
+  ImagePicker = require('expo-image-picker');
 } catch {
   // expo-image-picker not available
 }
 
-async function checkAndRequest(permissionType: 'camera' | 'microphone'): Promise<boolean> {
-  if (!ExpoPermissions) {
-    Alert.alert(
-      'Permission Error',
-      `This device needs ${permissionType} access for this feature. Please grant permission in Settings.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Open Settings', onPress: () => Linking.openSettings() },
-      ]
-    );
-    return false;
-  }
+let AudioModule: any = null;
+try {
+  AudioModule = require('expo-av');
+} catch {
+  // expo-av not available
+}
 
-  const permission = permissionType === 'camera' ? ExpoPermissions.CAMERA : ExpoPermissions.RECORD_AUDIO;
+async function requestCamera(): Promise<boolean> {
+  if (ImagePicker && typeof ImagePicker.requestCameraPermissionsAsync === 'function') {
+    try {
+      const { status, canAskAgain } = await ImagePicker.getCameraPermissionsAsync();
+      if (status === 'granted') return true;
 
-  try {
-    const { granted, canAskAgain } = await ExpoPermissions.getAsync(permission);
-    if (granted) return true;
+      if (status === 'denied' && !canAskAgain) {
+        Alert.alert(
+          'Permission Required',
+          'Please enable camera access in Settings to use this feature.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => Linking.openSettings() },
+          ]
+        );
+        return false;
+      }
 
-    if (!canAskAgain) {
-      Alert.alert(
-        'Permission Required',
-        `Please enable ${permissionType} access in Settings to use this feature.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Open Settings', onPress: () => Linking.openSettings() },
-        ]
-      );
+      const result = await ImagePicker.requestCameraPermissionsAsync();
+      return result.status === 'granted';
+    } catch {
       return false;
     }
-
-    const result = await ExpoPermissions.requestAsync(permission);
-    return result.granted;
-  } catch {
-    return false;
   }
+
+  if (Platform.OS === 'web') return true;
+
+  Alert.alert(
+    'Permission Error',
+    'Camera access is needed for this feature. Please grant permission in Settings.',
+    [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Open Settings', onPress: () => Linking.openSettings() },
+    ]
+  );
+  return false;
+}
+
+async function requestMicrophone(): Promise<boolean> {
+  if (AudioModule && AudioModule.Audio && typeof AudioModule.Audio.requestPermissionsAsync === 'function') {
+    try {
+      const { status, canAskAgain } = await AudioModule.Audio.getPermissionsAsync();
+      if (status === 'granted') return true;
+
+      if (status === 'denied' && !canAskAgain) {
+        Alert.alert(
+          'Permission Required',
+          'Please enable microphone access in Settings to use this feature.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => Linking.openSettings() },
+          ]
+        );
+        return false;
+      }
+
+      const result = await AudioModule.Audio.requestPermissionsAsync();
+      return result.status === 'granted';
+    } catch {
+      return false;
+    }
+  }
+
+  if (Platform.OS === 'web') return true;
+
+  Alert.alert(
+    'Permission Error',
+    'Microphone access is needed for this feature. Please grant permission in Settings.',
+    [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Open Settings', onPress: () => Linking.openSettings() },
+    ]
+  );
+  return false;
 }
 
 export const permissions = {
-  requestCamera: () => checkAndRequest('camera'),
-  requestMicrophone: () => checkAndRequest('microphone'),
+  requestCamera,
+  requestMicrophone,
 };

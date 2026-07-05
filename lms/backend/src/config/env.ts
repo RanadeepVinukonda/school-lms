@@ -43,7 +43,7 @@ const envSchema = z.object({
   API_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
 
   COOKIE_DOMAIN: z.string().optional(),
-  COOKIE_SECURE: z.coerce.boolean().default(true),
+  COOKIE_SECURE: z.coerce.boolean().default(false),
 });
 
 const parsed = envSchema.safeParse(process.env);

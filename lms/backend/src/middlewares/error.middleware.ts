@@ -33,8 +33,7 @@ export function errorHandler(
       error: {
         message: err.message,
         code: err.code,
-        details: err.details,
-        ...(env.NODE_ENV === 'development' && { stack: err.stack }),
+        ...(env.NODE_ENV === 'development' && { details: err.details, stack: err.stack }),
       },
     });
     return;

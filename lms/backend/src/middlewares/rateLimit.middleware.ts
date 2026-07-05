@@ -13,7 +13,7 @@ export const authRateLimit = rateLimit({
   ...defaults,
   windowMs: env.AUTH_RATE_LIMIT_WINDOW_MS,
   max: env.AUTH_RATE_LIMIT_MAX,
-  skip: (req) => env.NODE_ENV === 'test' || ['/me', '/profile', '/logout'].some(p => req.path.endsWith(p)),
+  skip: (req) => env.NODE_ENV === 'test' || ['/me', '/profile', '/logout'].some(p => req.path === p),
   handler: (_req, _res, next) => {
     next(new AppError(429, 'Too many authentication attempts. Please try again later.'));
   },
@@ -23,7 +23,7 @@ export const apiRateLimit = rateLimit({
   ...defaults,
   windowMs: env.API_RATE_LIMIT_WINDOW_MS,
   max: env.API_RATE_LIMIT_MAX,
-  skip: (req) => env.NODE_ENV === 'test' || (req.path.startsWith('/auth') && !['/me', '/profile', '/logout'].some(p => req.path.endsWith(p))),
+  skip: (req) => env.NODE_ENV === 'test' || (req.path.startsWith('/auth') && !['/me', '/profile', '/logout'].some(p => req.path === p)),
   handler: (_req, _res, next) => {
     next(new AppError(429, 'Too many requests. Please slow down.'));
   },
