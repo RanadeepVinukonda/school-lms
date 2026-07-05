@@ -1,6 +1,6 @@
 {
   "buildCommand": "npm run build:backend && npm run build:frontend",
-  "installCommand": "npm install --prefix backend && npm install --omit=dev && npm install --prefix frontend --omit=dev",
+  "installCommand": "npm ci --prefix backend && npm install --omit=dev && npm install --prefix frontend --omit=dev",
   "outputDirectory": "frontend/dist",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/[...slug]" },
