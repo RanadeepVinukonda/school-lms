@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { toast } from 'sonner';
 import { supabase } from '@/supabase/config';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
@@ -76,7 +77,7 @@ export default function ParentLayout() {
       if (data && data.tutorial_seen === false) {
         setTutorialOpen(true);
       }
-    }).catch(() => {});
+    }).catch(() => toast.error('Failed to check tutorial status'));
   }, [user]);
 
   return (

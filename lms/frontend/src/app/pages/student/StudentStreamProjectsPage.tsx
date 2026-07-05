@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
 import { codingService } from '@/services/codingService';
 import type { StreamProject } from '@/types/coding';
@@ -20,7 +21,7 @@ export default function StudentStreamProjectsPage() {
     setLoading(true);
     codingService.getAllStreamProjects()
       .then(setProjects)
-      .catch(() => {})
+      .catch(() => toast.error('Failed to load projects'))
       .finally(() => setLoading(false));
   }, []);
 

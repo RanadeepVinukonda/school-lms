@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
 import { codingService } from '@/services/codingService';
 import { useAuthStore } from '@/store/authStore';
@@ -26,7 +27,7 @@ export default function StudentCodingPage() {
     setLoading(true);
     codingService.getAllProjects()
       .then(setProjects)
-      .catch(() => {})
+      .catch(() => toast.error('Failed to load projects'))
       .finally(() => setLoading(false));
   }, []);
 

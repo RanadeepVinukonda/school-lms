@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
@@ -31,7 +32,7 @@ export default function K2DashboardPage() {
 
   useEffect(() => {
     if (!user) return;
-    prePrimaryService.getDashboard(user.id).then(setData).catch(() => {});
+    prePrimaryService.getDashboard(user.id).then(setData).catch(() => toast.error('Failed to load dashboard'));
   }, [user]);
 
   return (

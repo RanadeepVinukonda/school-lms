@@ -64,25 +64,20 @@ function mapProfileToUser(
   };
 }
 
-/** Resolve the effective role, checking teacher-class-subject assignments if needed. */
+/** Resolve effective role — only makes network call for parent (composite role check). */
 async function resolveEffectiveRole(
   profile: Record<string, unknown>,
 ): Promise<string> {
-  let effectiveRole = (profile.role as string) || 'student';
+  const role = (profile.role as string) || 'student';
+  if (role !== 'parent') return role;
 
-  if (effectiveRole === 'teacher' || effectiveRole === 'parent') {
-    try {
-      const tcsRes = await api.get('/teacher-class-subject/my');
-      const assignments = tcsRes.data?.data || tcsRes.data || [];
-      if (assignments.length > 0 && effectiveRole === 'parent') {
-        effectiveRole = 'parent,teacher';
-      }
-    } catch {
-      // assignments not available yet
-    }
+  try {
+    const tcsRes = await api.get('/teacher-class-subject/my', { timeout: 10000 });
+    const assignments = tcsRes.data?.data || tcsRes.data || [];
+    return assignments.length > 0 ? 'parent,teacher' : role;
+  } catch {
+    return role;
   }
-
-  return effectiveRole;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -110,19 +105,13 @@ export const useAuthStore = create<AuthStore>()(
         initialized = true;
         set({ isLoading: true });
 
+        // Step 1: Supabase client session + /auth/me
         try {
-          // 1. Try restoring session from Supabase client (persisted in localStorage)
           const { data: { session } } = await supabase.auth.getSession();
-
           if (session?.access_token) {
-            // Store token so it's available in the store
             set({ token: session.access_token });
-
-            // Use /auth/me (authenticate middleware verifies the Bearer token
-            // which is automatically attached by our request interceptor)
-            const res = await api.get('/auth/me');
+            const res = await api.get('/auth/me', { timeout: 10000 });
             const profile = res.data?.data as Record<string, unknown> | undefined;
-
             if (profile) {
               const effectiveRole = await resolveEffectiveRole(profile);
               set({
@@ -133,35 +122,39 @@ export const useAuthStore = create<AuthStore>()(
               return;
             }
           }
+        } catch {
+          // Supabase session invalid or /auth/me failed — try next step
+        }
 
-          // 2. Try persisted token from localStorage (survives Supabase session expiry)
+        // Step 2: Persisted store token + /auth/me
+        try {
           const persistedToken = get().token || readPersistedToken();
           if (persistedToken) {
-            try {
-              const res = await api.get('/auth/me', {
-                headers: { Authorization: `Bearer ${persistedToken}` },
+            const res = await api.get('/auth/me', {
+              headers: { Authorization: `Bearer ${persistedToken}` },
+              timeout: 10000,
+            });
+            const profile = res.data?.data as Record<string, unknown> | undefined;
+            if (profile) {
+              const effectiveRole = await resolveEffectiveRole(profile);
+              set({
+                token: persistedToken,
+                user: mapProfileToUser(profile, effectiveRole),
+                isAuthenticated: true,
+                isLoading: false,
               });
-              const profile = res.data?.data as Record<string, unknown> | undefined;
-              if (profile) {
-                const effectiveRole = await resolveEffectiveRole(profile);
-                set({
-                  token: persistedToken,
-                  user: mapProfileToUser(profile, effectiveRole),
-                  isAuthenticated: true,
-                  isLoading: false,
-                });
-                return;
-              }
-            } catch {
-              // Token invalid — clear it and fall through
-              set({ token: null });
+              return;
             }
           }
+        } catch {
+          // Token invalid — clear and fall through
+          set({ token: null });
+        }
 
-          // 3. Fallback: try cookie-based /auth/session (legacy path)
+        // Step 3: Cookie-based /auth/session
+        try {
           const res = await api.get('/auth/session');
           const sessionData = res.data?.data;
-
           if (sessionData?.user) {
             const p = sessionData.user as Record<string, unknown>;
             const effectiveRole = await resolveEffectiveRole(p);
@@ -170,12 +163,14 @@ export const useAuthStore = create<AuthStore>()(
               isAuthenticated: true,
               isLoading: false,
             });
-          } else {
-            set({ user: null, isAuthenticated: false, isLoading: false });
+            return;
           }
         } catch {
-          set({ user: null, isAuthenticated: false, isLoading: false });
+          // No cookie session — not authenticated
         }
+
+        // All steps failed
+        set({ user: null, isAuthenticated: false, isLoading: false });
       },
     }),
     {

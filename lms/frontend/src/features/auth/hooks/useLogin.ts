@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/supabase/config';
 import { useAuthStore } from '@/store/authStore';
@@ -25,6 +25,7 @@ function setupDashboard(role: string): string {
 
 export function useLogin() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { setUser, setToken } = useAuthStore();
 
   return useMutation({
@@ -94,7 +95,8 @@ export function useLogin() {
       setToken(token);
       setUser({ id: uid, email, displayName, role, isActive, avatar, studentId, classId, classIds, teacherId, firstName, lastName, phone, dateOfBirth, bio, address, tutorialSeen, createdAt, updatedAt });
       toast.success('Welcome back!');
-      navigate(setupDashboard(role), { replace: true });
+      const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname;
+      navigate(from || setupDashboard(role), { replace: true });
     },
     onError: (error: ApiError) => {
       const errorMessages: Record<string, string> = {

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
 import { virtualLabsService } from '@/services/virtualLabsService';
 import { useAuthStore } from '@/store/authStore';
@@ -36,7 +37,7 @@ export default function StudentVirtualLabsPage() {
     setLoading(true);
     virtualLabsService.getAll()
       .then(setLabs)
-      .catch(() => {})
+      .catch(() => toast.error('Failed to load labs'))
       .finally(() => setLoading(false));
   }, []);
 
