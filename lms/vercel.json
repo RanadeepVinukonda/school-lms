@@ -3,6 +3,6 @@
   "installCommand": "npm install --prefix backend --include=dev && npm install --include=dev && npm install --prefix frontend --include=dev",
   "outputDirectory": "frontend/dist",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }
