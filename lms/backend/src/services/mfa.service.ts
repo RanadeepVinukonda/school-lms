@@ -46,7 +46,8 @@ export async function verifyMfa(userId: string, token: string): Promise<boolean>
   });
 
   if (verified) {
-    await supabase.from('user_mfa').update({ verified: true }).eq('user_id', userId);
+    const { error: updateError } = await supabase.from('user_mfa').update({ verified: true }).eq('user_id', userId);
+    if (updateError) throw new Error(`Failed to update MFA: ${updateError.message}`);
   }
 
   return verified;

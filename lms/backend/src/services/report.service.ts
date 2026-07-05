@@ -4,19 +4,21 @@ import { logger } from '../utils/logger';
 
 export async function getReportById(reportId: string) {
   const supabase = getSupabaseClient()!;
-  const { data } = await supabase.from('nosql_docs').select('doc_id, data')
+  const { data, error } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', 'reports').eq('doc_id', reportId).maybeSingle();
+  if (error) throw new Error('Failed to fetch report: ' + error.message);
   if (!data) return null;
   return { id: data.doc_id, ...data.data as Record<string, unknown> };
 }
 
 export async function getLatestReport(type: string) {
   const supabase = getSupabaseClient()!;
-  const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
+  const { data: rows, error } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', 'reports')
     .contains('data', { type })
     .order('created_at', { ascending: false })
     .limit(1);
+  if (error) throw new Error('Failed to fetch latest report: ' + error.message);
   if (!rows || rows.length === 0) return null;
   const row = rows[0];
   return { id: row.doc_id, ...row.data as Record<string, unknown> };

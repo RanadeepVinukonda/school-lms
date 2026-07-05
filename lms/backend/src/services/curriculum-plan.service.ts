@@ -23,7 +23,8 @@ interface CurriculumPlan {
 export async function createPlan(plan: CurriculumPlan) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return null;
-  const { data } = await supabase.from('curriculum_plans').insert(plan).select().single();
+  const { data, error } = await supabase.from('curriculum_plans').insert(plan).select().single();
+  if (error) throw new Error(`Failed to create plan: ${error.message}`);
   return data;
 }
 
@@ -48,12 +49,14 @@ export async function getPlan(id: string, schoolId?: string) {
 export async function updatePlan(id: string, updates: Partial<CurriculumPlan>) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return null;
-  const { data } = await supabase.from('curriculum_plans').update(updates).eq('id', id).select().single();
+  const { data, error } = await supabase.from('curriculum_plans').update(updates).eq('id', id).select().single();
+  if (error) throw new Error(`Failed to update plan: ${error.message}`);
   return data;
 }
 
 export async function deletePlan(id: string) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return;
-  await supabase.from('curriculum_plans').delete().eq('id', id);
+  const { error } = await supabase.from('curriculum_plans').delete().eq('id', id);
+  if (error) throw new Error(`Failed to delete plan: ${error.message}`);
 }

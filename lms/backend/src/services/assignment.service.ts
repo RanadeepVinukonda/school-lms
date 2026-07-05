@@ -98,7 +98,8 @@ function rowToAssignment(row: Record<string, unknown>): Record<string, unknown> 
 /** Update assignment fields. Throws NotFoundError if missing. */
 export async function updateAssignment(assignmentId: string, data: Record<string, unknown>) {
   const supabase = getSupabaseAdmin()!;
-  const { data: existing } = await supabase.from('assignments').select('*').eq('id', assignmentId).maybeSingle();
+  const { data: existing, error: fetchErr } = await supabase.from('assignments').select('*').eq('id', assignmentId).maybeSingle();
+  if (fetchErr) throw fetchErr;
   if (!existing) throw new NotFoundError('Assignment not found');
 
   const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
@@ -108,7 +109,8 @@ export async function updateAssignment(assignmentId: string, data: Record<string
   const { error } = await supabase.from('assignments').update(updateData).eq('id', assignmentId);
   if (error) throw error;
 
-  const { data: updated } = await supabase.from('assignments').select('*').eq('id', assignmentId).single();
+  const { data: updated, error: fetchErr2 } = await supabase.from('assignments').select('*').eq('id', assignmentId).single();
+  if (fetchErr2) throw fetchErr2;
   logger.info('Assignment updated', { assignmentId });
 
   return rowToAssignment(updated || existing);
@@ -117,7 +119,8 @@ export async function updateAssignment(assignmentId: string, data: Record<string
 /** Delete an assignment by id. Throws NotFoundError if missing. */
 export async function deleteAssignment(assignmentId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data: existing } = await supabase.from('assignments').select('id').eq('id', assignmentId).maybeSingle();
+  const { data: existing, error: fetchErr } = await supabase.from('assignments').select('id').eq('id', assignmentId).maybeSingle();
+  if (fetchErr) throw fetchErr;
   if (!existing) throw new NotFoundError('Assignment not found');
 
   const { error } = await supabase.from('assignments').delete().eq('id', assignmentId);
@@ -128,7 +131,8 @@ export async function deleteAssignment(assignmentId: string) {
 /** Fetch a single assignment by id. Throws NotFoundError if missing. */
 export async function getAssignmentById(assignmentId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data: row } = await supabase.from('assignments').select('*').eq('id', assignmentId).maybeSingle();
+  const { data: row, error } = await supabase.from('assignments').select('*').eq('id', assignmentId).maybeSingle();
+  if (error) throw error;
   if (!row) throw new NotFoundError('Assignment not found');
 
   return rowToAssignment(row as Record<string, unknown>);
@@ -185,12 +189,14 @@ export async function submitAssignment(assignmentId: string, studentId: string, 
   attachments?: Array<{ name: string; url: string; type: string; size: number }>;
 }) {
   const supabase = getSupabaseAdmin()!;
-  const { data: assignRow } = await supabase.from('assignments').select('*').eq('id', assignmentId).maybeSingle();
+  const { data: assignRow, error } = await supabase.from('assignments').select('*').eq('id', assignmentId).maybeSingle();
+  if (error) throw error;
   if (!assignRow) throw new NotFoundError('Assignment not found');
   const assignmentData = assignRow as Record<string, unknown>;
 
   const submissionId = `${assignmentId}_${studentId}`;
-  const { data: existingRow } = await supabase.from('submissions').select('*').eq('id', submissionId).maybeSingle();
+  const { data: existingRow, error: fetchErr } = await supabase.from('submissions').select('*').eq('id', submissionId).maybeSingle();
+  if (fetchErr) throw fetchErr;
   const existing = existingRow as Record<string, unknown> | null;
 
   if (existing) {
@@ -241,7 +247,8 @@ export async function gradeSubmission(submissionId: string, graderId: string, da
   status?: string;
 }) {
   const supabase = getSupabaseAdmin()!;
-  const { data: existing } = await supabase.from('submissions').select('*').eq('id', submissionId).maybeSingle();
+  const { data: existing, error: fetchErr } = await supabase.from('submissions').select('*').eq('id', submissionId).maybeSingle();
+  if (fetchErr) throw fetchErr;
   if (!existing) throw new NotFoundError('Submission not found');
 
   const now = new Date().toISOString();
@@ -269,7 +276,8 @@ export async function gradeSubmission(submissionId: string, graderId: string, da
     logger.warn('Failed to send grade notification', { error: err });
   }
 
-  const { data: updated } = await supabase.from('submissions').select('*').eq('id', submissionId).single();
+  const { data: updated, error: fetchErr2 } = await supabase.from('submissions').select('*').eq('id', submissionId).single();
+  if (fetchErr2) throw fetchErr2;
   logger.info('Submission graded', { submissionId, graderId });
 
   return { ...(updated || gradeData) };

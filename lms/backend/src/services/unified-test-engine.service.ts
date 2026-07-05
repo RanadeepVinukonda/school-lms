@@ -645,7 +645,8 @@ export async function submitTestAttempt(attemptId: string, studentId: string, da
   );
   const newLevel = computeLevel(accuracy, avgReactionTime, complexityHandled);
 
-  await supabase.from('users').update({ level: newLevel }).eq('id', studentId);
+  const { error: levelUpdateErr } = await supabase.from('users').update({ level: newLevel }).eq('id', studentId);
+  if (levelUpdateErr) throw new Error(`Failed to update user level: ${levelUpdateErr.message}`);
 
   const result: Record<string, unknown> = {
     answers: gradedAnswers, score, totalPoints, percentage, passed,

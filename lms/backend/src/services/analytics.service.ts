@@ -10,11 +10,12 @@ function safePct(value: number): number {
 export async function getStudentDashboard(studentId: string) {
   const supabase = getSupabaseAdmin()!;
   
-  const { data: enrollments } = await supabase
+  const { data: enrollments, error: enrollmentsErr } = await supabase
     .from('enrollments')
     .select('course_id')
     .eq('student_id', studentId)
     .eq('status', 'active');
+  if (enrollmentsErr) throw new Error(enrollmentsErr.message);
   
   const courseIds = (enrollments || []).map((e: { course_id: string }) => e.course_id);
   const totalCourses = courseIds.length;
@@ -25,10 +26,11 @@ export async function getStudentDashboard(studentId: string) {
     .eq('user_id', studentId)
     .eq('read', false);
 
-  const { data: grades } = await supabase
+  const { data: grades, error: gradesErr } = await supabase
     .from('grades')
     .select('score, total_points')
     .eq('student_id', studentId);
+  if (gradesErr) throw new Error(gradesErr.message);
 
   const gradesList = grades || [];
   const totalScore = gradesList.reduce((sum: number, g: { score?: number }) => sum + (g.score || 0), 0);
@@ -66,10 +68,11 @@ export async function getStudentDashboard(studentId: string) {
 export async function getTeacherDashboard(teacherId: string) {
   const supabase = getSupabaseAdmin()!;
 
-  const { data: courses } = await supabase
+  const { data: courses, error: coursesErr } = await supabase
     .from('courses')
     .select('id, enrollment_count')
     .eq('teacher_id', teacherId);
+  if (coursesErr) throw new Error(coursesErr.message);
 
   const totalCourses = (courses || []).length;
 
@@ -161,11 +164,12 @@ export async function getAdminDashboard() {
 export async function getCourseAnalytics(courseId: string) {
   const supabase = getSupabaseAdmin()!;
   
-  const { data: courseDoc } = await supabase
+  const { data: courseDoc, error: courseDocErr } = await supabase
     .from('courses')
     .select('title')
     .eq('id', courseId)
     .maybeSingle();
+  if (courseDocErr) throw new Error(courseDocErr.message);
   
   if (!courseDoc) {
     return null;
@@ -192,20 +196,22 @@ export async function getCourseAnalytics(courseId: string) {
     .select('id', { count: 'exact', head: true })
     .eq('course_id', courseId);
 
-  const { data: grades } = await supabase
+  const { data: grades, error: gradesErr } = await supabase
     .from('grades')
     .select('score, total_points')
     .eq('course_id', courseId);
+  if (gradesErr) throw new Error(gradesErr.message);
 
   const gradesList = grades || [];
   const totalScore = gradesList.reduce((sum: number, g: { score?: number }) => sum + (g.score || 0), 0);
   const totalPoints = gradesList.reduce((sum: number, g: { total_points?: number }) => sum + (g.total_points || 1), 0);
   const averageGrade = safePct(totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0);
 
-  const { data: lessons } = await supabase
+  const { data: lessons, error: lessonsErr } = await supabase
     .from('lessons')
     .select('id, title, completed_by')
     .eq('course_id', courseId);
+  if (lessonsErr) throw new Error(lessonsErr.message);
 
   const completionRates: Array<{ lesson_id: string; title: string; completed_by: number }> = [];
   for (const row of lessons || []) {
@@ -236,10 +242,11 @@ export async function getCourseAnalytics(courseId: string) {
 async function getAssessmentData(type: 'quiz' | 'assignment' | 'exam') {
   const supabase = getSupabaseAdmin()!;
   const collectionName = type === 'quiz' ? 'quizV2' : type === 'assignment' ? 'assignmentV2' : 'examV2';
-  const { data: docs } = await supabase
+  const { data: docs, error: docsErr } = await supabase
     .from('nosql_docs')
     .select('data, doc_id')
     .eq('collection', collectionName);
+  if (docsErr) throw new Error(docsErr.message);
   const assessments = (docs || []).map((d: any) => ({ ...d.data, id: d.doc_id }));
   const attemptCollectionName = type === 'quiz' ? 'quizAttemptV2' : type === 'assignment' ? 'assignmentSubmissionV2' : 'examAttemptV2';
   return { assessments, attemptCollectionName };
@@ -248,11 +255,12 @@ async function getAssessmentData(type: 'quiz' | 'assignment' | 'exam') {
 export async function getClassPerformance(classId: string) {
   const supabase = getSupabaseAdmin()!;
 
-  const { data: students } = await supabase
+  const { data: students, error: getCpStudentsErr } = await supabase
     .from('users')
     .select('id, data')
     .contains('class_ids', [classId])
     .eq('role', 'student');
+  if (getCpStudentsErr) throw new Error(getCpStudentsErr.message);
   const totalStudents = (students || []).length;
 
   const levelDist = { beginner: 0, intermediate: 0, advanced: 0 };
@@ -272,11 +280,12 @@ export async function getClassPerformance(classId: string) {
       const attemptCollectionName = type === 'quiz' ? 'quizAttemptV2' : type === 'assignment' ? 'assignmentSubmissionV2' : 'examAttemptV2';
       const idField = type === 'quiz' ? 'quizId' : type === 'assignment' ? 'assignmentId' : 'examId';
 
-      const { data: attempts } = await supabase
+      const { data: attempts, error: getCpAttemptsErr } = await supabase
         .from('nosql_docs')
         .select('data')
         .eq('collection', attemptCollectionName)
         .filter('data->>' + idField, 'eq', a.id);
+      if (getCpAttemptsErr) throw new Error(getCpAttemptsErr.message);
 
       const attemptData = (attempts || []).map((d: any) => d.data);
       const scored = attemptData.filter((at: any) => at.percentage != null);
@@ -325,11 +334,12 @@ export async function getClassPerformance(classId: string) {
 export async function getStudentPerformance(studentId: string) {
   const supabase = getSupabaseAdmin()!;
 
-  const { data: userDoc } = await supabase
+  const { data: userDoc, error: userDocErr } = await supabase
     .from('users')
     .select('data')
     .eq('id', studentId)
     .maybeSingle();
+  if (userDocErr) throw new Error(userDocErr.message);
   const userLevel = userDoc ? (userDoc.data as any)?.level || 'beginner' : 'beginner';
 
   const allAttempts: Array<{ type: string; title: string; percentage: number; passed: boolean; submittedAt: string; level: string }> = [];
@@ -339,11 +349,12 @@ export async function getStudentPerformance(studentId: string) {
     const idField = type === 'quiz' ? 'quizId' : type === 'assignment' ? 'assignmentId' : 'examId';
     const parentCollectionName = type === 'quiz' ? 'quizV2' : type === 'assignment' ? 'assignmentV2' : 'examV2';
 
-    const { data: attempts } = await supabase
+    const { data: attempts, error: getSpAttemptsErr } = await supabase
       .from('nosql_docs')
       .select('data, doc_id')
       .eq('collection', attemptCollectionName)
       .filter('data->>studentId', 'eq', studentId);
+    if (getSpAttemptsErr) throw new Error(getSpAttemptsErr.message);
 
     for (const doc of (attempts || [])) {
       const at = doc.data as any;
@@ -351,12 +362,13 @@ export async function getStudentPerformance(studentId: string) {
       let title = type;
 
       if (parentId) {
-        const { data: parent } = await supabase
+        const { data: parent, error: parentErr } = await supabase
           .from('nosql_docs')
           .select('data')
           .eq('collection', parentCollectionName)
           .eq('doc_id', parentId)
           .maybeSingle();
+        if (parentErr) throw new Error(parentErr.message);
         if (parent) title = (parent.data as any)?.title || title;
       }
 
@@ -401,12 +413,13 @@ export async function getAssessmentAnalytics(assessmentId: string, type: 'quiz' 
   const supabase = getSupabaseAdmin()!;
 
   const parentCollectionName = type === 'quiz' ? 'quizV2' : type === 'assignment' ? 'assignmentV2' : 'examV2';
-  const { data: parentDoc } = await supabase
+  const { data: parentDoc, error: parentDocErr } = await supabase
     .from('nosql_docs')
     .select('data')
     .eq('collection', parentCollectionName)
     .eq('doc_id', assessmentId)
     .maybeSingle();
+  if (parentDocErr) throw new Error(parentDocErr.message);
 
   if (!parentDoc) return null;
 
@@ -414,11 +427,12 @@ export async function getAssessmentAnalytics(assessmentId: string, type: 'quiz' 
   const attemptCollectionName = type === 'quiz' ? 'quizAttemptV2' : type === 'assignment' ? 'assignmentSubmissionV2' : 'examAttemptV2';
   const idField = type === 'quiz' ? 'quizId' : type === 'assignment' ? 'assignmentId' : 'examId';
 
-  const { data: attempts } = await supabase
+  const { data: attempts, error: getAaAttemptsErr } = await supabase
     .from('nosql_docs')
     .select('data, doc_id')
     .eq('collection', attemptCollectionName)
     .filter('data->>' + idField, 'eq', assessmentId);
+  if (getAaAttemptsErr) throw new Error(getAaAttemptsErr.message);
 
   const attemptData = (attempts || []).map((d: any) => ({ id: d.doc_id, ...d.data }));
 
@@ -439,9 +453,10 @@ export async function getAssessmentAnalytics(assessmentId: string, type: 'quiz' 
   }
 
   const studentIds = [...new Set(scored.map((a: any) => a.studentId))];
-  const { data: studentDocs } = studentIds.length > 0
+  const { data: studentDocs, error: studentDocsErr } = studentIds.length > 0
     ? await supabase.from('users').select('id, display_name, email, roll_no, student_id').in('id', studentIds)
-    : { data: [] };
+    : { data: [], error: null };
+  if (studentDocsErr) throw new Error(studentDocsErr.message);
   const studentMap = new Map((studentDocs || []).map((s: any) => [s.id, s]));
 
   logger.info('Assessment analytics retrieved', { assessmentId, type });
@@ -478,25 +493,29 @@ export async function getConceptsForClass(classId: string) {
 export async function getConceptOversight() {
   const supabase = getSupabaseAdmin()!;
 
-  const { data: tcsDocs } = await supabase
+  const { data: tcsDocs, error: tcsDocsErr } = await supabase
     .from('nosql_docs')
     .select('data, doc_id')
     .eq('collection', 'teacherClassSubject');
+  if (tcsDocsErr) throw new Error(tcsDocsErr.message);
   const assignments = (tcsDocs || []).map((d: any) => ({ id: d.doc_id, ...d.data }));
 
   const classIds = [...new Set(assignments.map((a: any) => a.classId))];
   const subjectIds = [...new Set(assignments.map((a: any) => a.subjectId))];
   const teacherIds = [...new Set(assignments.map((a: any) => a.teacherId))];
 
-  const { data: classes } = classIds.length > 0
+  const { data: classes, error: gcoClassesErr } = classIds.length > 0
     ? await supabase.from('classes').select('id, name').in('id', classIds)
-    : { data: [] };
-  const { data: subjects } = subjectIds.length > 0
+    : { data: [], error: null };
+  const { data: subjects, error: gcoSubjectsErr } = subjectIds.length > 0
     ? await supabase.from('subjects').select('id, name').in('id', subjectIds)
-    : { data: [] };
-  const { data: teachers } = teacherIds.length > 0
+    : { data: [], error: null };
+  const { data: teachers, error: gcoTeachersErr } = teacherIds.length > 0
     ? await supabase.from('users').select('id, display_name').in('id', teacherIds)
-    : { data: [] };
+    : { data: [], error: null };
+  if (gcoClassesErr) throw new Error(gcoClassesErr.message);
+  if (gcoSubjectsErr) throw new Error(gcoSubjectsErr.message);
+  if (gcoTeachersErr) throw new Error(gcoTeachersErr.message);
 
   const classMap = new Map((classes || []).map((c: any) => [c.id, c.name]));
   const subjectMap = new Map((subjects || []).map((s: any) => [s.id, s.name]));
@@ -512,43 +531,48 @@ export async function getConceptOversight() {
     if (!textbookId) continue;
 
     try {
-      const { data: chapters } = await supabase
+      const { data: chapters, error: chaptersErr } = await supabase
         .from('chapters')
         .select('id')
         .eq('textbook_id', textbookId);
+      if (chaptersErr) throw new Error(chaptersErr.message);
 
       for (const chap of (chapters || [])) {
-        const { data: concepts } = await supabase
+        const { data: concepts, error: gcoConceptsErr } = await supabase
           .from('concepts')
           .select('id, title')
           .eq('chapter_id', chap.id);
+        if (gcoConceptsErr) throw new Error(gcoConceptsErr.message);
 
         for (const concept of (concepts || [])) {
           const conceptName = concept.title || 'Unknown Concept';
 
-          const { data: quizDocs } = await supabase
+          const { data: quizDocs, error: quizDocsErr } = await supabase
             .from('nosql_docs')
             .select('doc_id')
             .eq('collection', 'quizV2')
             .filter('data->>classId', 'eq', assignment.classId)
             .filter('data->>conceptId', 'eq', concept.id);
+          if (quizDocsErr) throw new Error(quizDocsErr.message);
           const quizIds = (quizDocs || []).map((d: any) => d.doc_id);
 
-          const { data: assignDocs } = await supabase
+          const { data: assignDocs, error: assignDocsErr } = await supabase
             .from('nosql_docs')
             .select('doc_id')
             .eq('collection', 'assignmentV2')
             .filter('data->>classId', 'eq', assignment.classId)
             .filter('data->>conceptId', 'eq', concept.id);
+          if (assignDocsErr) throw new Error(assignDocsErr.message);
           const assignmentIds = (assignDocs || []).map((d: any) => d.doc_id);
 
           let quizPercentages: number[] = [];
           for (const qId of quizIds) {
-            const { data: attempts } = await supabase
+            const { data: attempts, error: quizAttemptsErr } = await supabase
               .from('nosql_docs')
               .select('data')
               .eq('collection', 'quizAttemptV2')
               .filter('data->>quizId', 'eq', qId);
+            if (quizAttemptsErr) throw new Error(quizAttemptsErr.message);
             (attempts || []).forEach((d: any) => {
               const at = d.data;
               if (at.percentage != null) quizPercentages.push(at.percentage);
@@ -557,11 +581,12 @@ export async function getConceptOversight() {
 
           let assignmentPercentages: number[] = [];
           for (const aId of assignmentIds) {
-            const { data: submissions } = await supabase
+            const { data: submissions, error: submissionsErr } = await supabase
               .from('nosql_docs')
               .select('data')
               .eq('collection', 'assignmentSubmissionV2')
               .filter('data->>assignmentId', 'eq', aId);
+            if (submissionsErr) throw new Error(submissionsErr.message);
             (submissions || []).forEach((d: any) => {
               const sub = d.data;
               if (sub.percentage != null) assignmentPercentages.push(sub.percentage);
@@ -611,18 +636,24 @@ export async function getConductedTests() {
     supabase.from('subjects').select('id, name'),
     supabase.from('users').select('id, display_name, email').eq('role', 'teacher'),
   ]);
+  for (const res of [quizRes, examRes, assignmentRes, classesRes, subjectsRes, teachersRes]) {
+    if (res.error) throw new Error(res.error.message);
+  }
 
   const classMap = new Map((classesRes.data || []).map((c: any) => [c.id, c.name]));
   const subjectMap = new Map((subjectsRes.data || []).map((s: any) => [s.id, s.name]));
   const teacherMap = new Map((teachersRes.data || []).map((t: any) => [t.id, t.display_name || t.email]));
 
-  const { data: allTextbooks } = await supabase.from('textbooks').select('id');
+  const { data: allTextbooks, error: allTextbooksErr } = await supabase.from('textbooks').select('id');
+  if (allTextbooksErr) throw new Error(allTextbooksErr.message);
   const conceptMap = new Map<string, string>();
   for (const tb of (allTextbooks || [])) {
     try {
-      const { data: chapters } = await supabase.from('chapters').select('id').eq('textbook_id', tb.id);
+      const { data: chapters, error: gctChaptersErr } = await supabase.from('chapters').select('id').eq('textbook_id', tb.id);
+      if (gctChaptersErr) throw new Error(gctChaptersErr.message);
       for (const ch of (chapters || [])) {
-        const { data: concepts } = await supabase.from('concepts').select('id, title').eq('chapter_id', ch.id);
+        const { data: concepts, error: gctConceptsErr } = await supabase.from('concepts').select('id, title').eq('chapter_id', ch.id);
+        if (gctConceptsErr) throw new Error(gctConceptsErr.message);
         (concepts || []).forEach((c: any) => {
           conceptMap.set(c.id, c.title || 'Unknown Concept');
         });
@@ -700,6 +731,7 @@ export async function getConductedTests() {
       } else {
         attemptsRes = await supabase.from('nosql_docs').select('data').eq('collection', 'assignmentSubmissionV2').filter('data->>assignmentId', 'eq', t.id);
       }
+      if (attemptsRes.error) throw new Error(attemptsRes.error.message);
 
       const attempts = (attemptsRes.data || []).map((d: any) => d.data);
       const scored = attempts.filter((at: any) => at.percentage != null);

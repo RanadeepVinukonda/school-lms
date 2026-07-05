@@ -24,19 +24,21 @@ export async function toggleConceptCompletion(data: {
   if (!supabase) throw new Error('Supabase not configured');
   const { conceptId, textbookId, chapterId, classId, teacherId } = data;
 
-  const { data: existing } = await supabase
+  const { data: existing, error: fetchErr } = await supabase
     .from('concept_releases')
     .select('*')
     .eq('concept_id', conceptId)
     .eq('class_id', classId)
     .eq('teacher_id', teacherId);
+  if (fetchErr) throw fetchErr;
 
   const now = new Date().toISOString();
 
   if (existing && existing.length > 0) {
     const doc = existing[0];
     const newCompleted = !doc.completed;
-    await supabase.from('concept_releases').update({ completed: newCompleted, updated_at: now }).eq('id', doc.id);
+    const { error } = await supabase.from('concept_releases').update({ completed: newCompleted, updated_at: now }).eq('id', doc.id);
+    if (error) throw new Error('Failed to update concept release: ' + error.message);
     logger.info('Concept completion toggled', { conceptId, classId, teacherId, completed: newCompleted });
     return {
       id: doc.id,
@@ -51,7 +53,7 @@ export async function toggleConceptCompletion(data: {
   }
 
   const id = `${conceptId}_${classId}_${teacherId}`;
-  await supabase.from('concept_releases').upsert({
+  const { error } = await supabase.from('concept_releases').upsert({
     id,
     concept_id: conceptId,
     textbook_id: textbookId,
@@ -61,6 +63,7 @@ export async function toggleConceptCompletion(data: {
     completed: true,
     updated_at: now,
   });
+  if (error) throw new Error('Failed to upsert concept release: ' + error.message);
   logger.info('Concept completion created', { conceptId, classId, teacherId, completed: true });
   return {
     id,
@@ -82,12 +85,13 @@ export async function getConceptCompletionStatus(
 ): Promise<boolean> {
   const supabase = getSupabaseAdmin();
   if (!supabase) return false;
-  const { data: existing } = await supabase
+  const { data: existing, error } = await supabase
     .from('concept_releases')
     .select('completed')
     .eq('concept_id', conceptId)
     .eq('class_id', classId)
     .eq('teacher_id', teacherId);
+  if (error) throw error;
 
   if (!existing || existing.length === 0) return false;
   return existing[0].completed === true;
@@ -100,11 +104,12 @@ export async function getClassCompletionStatus(
 ): Promise<Record<string, boolean>> {
   const supabase = getSupabaseAdmin();
   if (!supabase) return {};
-  const { data: docs } = await supabase
+  const { data: docs, error } = await supabase
     .from('concept_releases')
     .select('concept_id, completed')
     .eq('class_id', classId)
     .eq('teacher_id', teacherId);
+  if (error) throw error;
 
   const result: Record<string, boolean> = {};
   for (const doc of docs || []) {
@@ -122,18 +127,20 @@ export async function getSubjectProgress(
   const supabase = getSupabaseAdmin();
   if (!supabase) return { completed: 0, total: 0 };
 
-  const { data: textbooks } = await supabase
+  const { data: textbooks, error: tbErr } = await supabase
     .from('textbooks')
     .select('id')
     .eq('subject_id', subjectId)
     .eq('class_id', classId);
+  if (tbErr) throw tbErr;
 
   let totalConcepts = 0;
   for (const textbook of textbooks || []) {
-    const { data: chapters } = await supabase
+    const { data: chapters, error: chErr } = await supabase
       .from('chapters')
       .select('id')
       .eq('textbook_id', textbook.id);
+    if (chErr) throw chErr;
     for (const chapter of chapters || []) {
       const { count } = await supabase
         .from('concepts')
@@ -155,10 +162,11 @@ export async function getStudentProgress(
 ): Promise<Record<string, { completed: boolean; teacherId: string }[]>> {
   const supabase = getSupabaseAdmin();
   if (!supabase) return {};
-  const { data: docs } = await supabase
+  const { data: docs, error } = await supabase
     .from('concept_releases')
     .select('concept_id, completed, teacher_id')
     .eq('class_id', classId);
+  if (error) throw error;
 
   const result: Record<string, { completed: boolean; teacherId: string }[]> = {};
   for (const doc of docs || []) {

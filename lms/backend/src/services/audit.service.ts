@@ -114,8 +114,9 @@ export async function recoverEntity(logId: string) {
 
   const supabase = getSupabaseAdmin()!;
   const collection = entry.targetType + 's';
-  const { data: existing } = await supabase.from('nosql_docs').select('doc_id')
+  const { data: existing, error: fetchErr } = await supabase.from('nosql_docs').select('doc_id')
     .eq('collection', collection).eq('doc_id', entry.targetId).maybeSingle();
+  if (fetchErr) throw fetchErr;
 
   if (existing) {
     throw new Error(`Target ${entry.targetType} "${entry.targetName}" still exists — no recovery needed`);

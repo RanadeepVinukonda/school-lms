@@ -5,12 +5,14 @@ export async function getChallenges(language?: string, schoolId?: string) {
   let q = supabase.from('coding_challenges').select('*');
   if (language) q = q.eq('language', language);
   if (schoolId) q = q.eq('school_id', schoolId);
-  const { data } = await q.order('difficulty');
+  const { data, error } = await q.order('difficulty');
+  if (error) throw new Error('Failed to fetch challenges: ' + error.message);
   return data || [];
 }
 
 export async function getChallenge(id: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return null;
-  const { data } = await supabase.from('coding_challenges').select('*').eq('id', id).maybeSingle();
+  const { data, error } = await supabase.from('coding_challenges').select('*').eq('id', id).maybeSingle();
+  if (error) throw new Error('Failed to fetch challenge: ' + error.message);
   return data;
 }

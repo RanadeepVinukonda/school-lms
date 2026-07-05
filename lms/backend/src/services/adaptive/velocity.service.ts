@@ -17,18 +17,20 @@ export async function getLearningVelocity(studentId: string): Promise<LearningVe
 
   const supabase = getSupabaseAdmin(); if (!supabase) return { studentId, attemptsThisWeek: 0, attemptsLastWeek: 0, velocity: 0, conceptsAttempted: 0, averageMasteryGain: 0 };
 
-  const { data: thisWeek } = await supabase
+  const { data: thisWeek, error: thisWeekErr } = await supabase
     .from('concept_mastery')
     .select('attempt_count, mastery_score, created_at')
     .eq('student_id', studentId)
     .gte('created_at', thisWeekStart);
+  if (thisWeekErr) throw new Error(thisWeekErr.message);
 
-  const { data: lastWeek } = await supabase
+  const { data: lastWeek, error: lastWeekErr } = await supabase
     .from('concept_mastery')
     .select('attempt_count, mastery_score')
     .eq('student_id', studentId)
     .gte('created_at', lastWeekStart)
     .lt('created_at', thisWeekStart);
+  if (lastWeekErr) throw new Error(lastWeekErr.message);
 
   const attemptsThisWeek = (thisWeek || []).reduce((sum, r: any) => sum + (r.attempt_count || 0), 0);
   const attemptsLastWeek = (lastWeek || []).reduce((sum, r: any) => sum + (r.attempt_count || 0), 0);

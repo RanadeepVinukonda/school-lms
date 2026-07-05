@@ -61,7 +61,7 @@ describe('grade.service', () => {
     expect(result).toHaveLength(1);
   });
   it('generates report with summary', async () => {
-    (mockQuery as any).data = [{ score: 85, totalPoints: 100, studentId: 's1' }];
+    (mockQuery as any).data = [{ score: 85, total_points: 100, studentId: 's1' }];
     const result = await generateReport('s1', '2025', '1');
     expect(result.summary).toBeDefined();
     expect(result.summary.letterGrade).toBe('B');

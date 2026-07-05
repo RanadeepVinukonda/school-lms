@@ -37,31 +37,35 @@ export async function syncRoster(schoolId: string, accessToken: string, classroo
       if (!email) continue;
 
       // Check if user already exists
-      const { data: existingUser } = await supabase.from('users').select('*').eq('email', email).maybeSingle();
+      const { data: existingUser, error: userErr1 } = await supabase.from('users').select('*').eq('email', email).maybeSingle();
+      if (userErr1) throw userErr1;
       
       let userId: string;
       if (existingUser) {
         userId = existingUser.id;
       } else {
         // Create user
-        const { data: newUser } = await supabase.from('users').insert({
+        const { data: newUser, error: createUserErr } = await supabase.from('users').insert({
           email,
           display_name: name,
           role: 'student',
           school_id: schoolId,
           class_id: targetClassId
         }).select().single();
+        if (createUserErr) throw new Error(`Failed to create user: ${createUserErr.message}`);
         userId = newUser!.id;
       }
 
       // Add to school student mapping if not exists
-      const { data: existingStudent } = await supabase.from('students').select('*').eq('user_id', userId).maybeSingle();
+      const { data: existingStudent, error: studentErr } = await supabase.from('students').select('*').eq('user_id', userId).maybeSingle();
+      if (studentErr) throw studentErr;
       if (!existingStudent) {
-        await supabase.from('students').insert({
+        const { error: insertStudentErr } = await supabase.from('students').insert({
           user_id: userId,
           school_id: schoolId,
           class_id: targetClassId
         });
+        if (insertStudentErr) throw new Error(`Failed to create student: ${insertStudentErr.message}`);
       }
 
       syncedUsers.push({ email, userId });

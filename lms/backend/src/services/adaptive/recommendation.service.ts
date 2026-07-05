@@ -4,20 +4,22 @@ export async function getRecommendations(studentId: string, schoolId: string): P
   const supabase = getSupabaseAdmin();
   if (!supabase) return [];
 
-  const { data: lowMastery } = await supabase
+  const { data: lowMastery, error: lowMasteryErr } = await supabase
     .from('concept_mastery')
     .select('concept_id, mastery_score')
     .eq('student_id', studentId)
     .lt('mastery_score', 0.7)
     .order('mastery_score')
     .limit(3);
+  if (lowMasteryErr) throw new Error(lowMasteryErr.message);
 
   if (!lowMastery || lowMastery.length === 0) {
-    const { data: unreviewed } = await supabase
+    const { data: unreviewed, error: unreviewedErr } = await supabase
       .from('concepts')
       .select('id')
       .eq('school_id', schoolId)
       .limit(3);
+    if (unreviewedErr) throw new Error(unreviewedErr.message);
 
     return (unreviewed || []).map(c => ({ conceptId: c.id, reason: 'New concept to explore' }));
   }

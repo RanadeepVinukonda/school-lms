@@ -15,9 +15,10 @@ export async function createTimetableEntry(data: {
   const supabase = getSupabaseAdmin()!;
   // ponytail: teacher double-booking guard
   if (data.teacherId) {
-    const { data: existing } = await supabase.from('timetable')
+    const { data: existing, error } = await supabase.from('timetable')
       .select('id').eq('teacher_id', data.teacherId).eq('day', data.day).eq('period', data.period)
       .limit(1);
+    if (error) throw error;
     if (existing && existing.length > 0) {
       logger.warn('Teacher already booked for this period', { teacherId: data.teacherId, day: data.day, period: data.period });
       return null;
@@ -40,13 +41,15 @@ export async function createTimetableEntry(data: {
 
 export async function getTimetableByClass(classId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data } = await supabase.from('timetable').select('*').eq('class_id', classId).order('day').order('period');
+  const { data, error } = await supabase.from('timetable').select('*').eq('class_id', classId).order('day').order('period');
+  if (error) throw error;
   return data || [];
 }
 
 export async function getTimetableBySchool(schoolId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data } = await supabase.from('timetable').select('*').eq('school_id', schoolId).order('day').order('period');
+  const { data, error } = await supabase.from('timetable').select('*').eq('school_id', schoolId).order('day').order('period');
+  if (error) throw error;
   return data || [];
 }
 
@@ -85,7 +88,8 @@ export async function saveTimetableDay(data: {
   const supabase = getSupabaseAdmin()!;
   const toNull = (v: string | undefined | null) => (v && v.trim() ? v : null);
   if (!data.schoolId) {
-    const { data: schools } = await supabase.from('schools').select('id').limit(1);
+    const { data: schools, error: schoolErr } = await supabase.from('schools').select('id').limit(1);
+    if (schoolErr) throw schoolErr;
     data.schoolId = (schools?.[0] as any)?.id || data.schoolId;
   }
   if (!data.schoolId) throw new Error('No school ID available');
@@ -141,6 +145,7 @@ export async function saveTimetableDay(data: {
 
 export async function getTimetableByClassAndDay(classId: string, day: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data } = await supabase.from('timetable').select('*').eq('class_id', classId).eq('day', day).order('period');
+  const { data, error } = await supabase.from('timetable').select('*').eq('class_id', classId).eq('day', day).order('period');
+  if (error) throw error;
   return data || [];
 }

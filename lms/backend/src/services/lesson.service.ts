@@ -6,23 +6,26 @@ import { logger } from '../utils/logger';
 import { TransactionManager } from '../database/transaction-manager';
 
 async function lessonById(supabase: ReturnType<typeof getSupabaseClient>, lessonId: string) {
-  const { data } = await supabase!.from('lessons').select('*').eq('id', lessonId).maybeSingle();
+  const { data, error } = await supabase!.from('lessons').select('*').eq('id', lessonId).maybeSingle();
+  if (error) throw error;
   if (!data) return null;
   return { id: data.id, ...buildDocData(data as Record<string, unknown>, 'lessons') } as any;
 }
 
 async function getNosqlDoc(collection: string, docId: string) {
   const supabase = getSupabaseClient()!;
-  const { data } = await supabase.from('nosql_docs').select('data').eq('collection', collection).eq('doc_id', docId).maybeSingle();
+  const { data, error } = await supabase.from('nosql_docs').select('data').eq('collection', collection).eq('doc_id', docId).maybeSingle();
+  if (error) throw error;
   return data?.data as Record<string, unknown> | undefined;
 }
 
 async function setNosqlDoc(collection: string, docId: string, docData: Record<string, unknown>) {
   const supabase = getSupabaseClient()!;
   const now = new Date().toISOString();
-  await supabase.from('nosql_docs').upsert({
+  const { error } = await supabase.from('nosql_docs').upsert({
     collection, doc_id: docId, data: docData, updated_at: now,
   }, { onConflict: 'collection,doc_id' });
+  if (error) throw new Error(`Failed to upsert nosql_docs: ${error.message}`);
 }
 
 /** Create a new lesson, auto-assign order based on existing lesson count, and increment course lessonCount. */
@@ -44,9 +47,10 @@ export async function createLesson(data: {
   const course = await getNosqlDoc('courses', data.courseId);
   if (!course) throw new NotFoundError('Course not found');
 
-  const { count } = await supabase.from('lessons')
+  const { count, error: countErr } = await supabase.from('lessons')
     .select('*', { count: 'exact', head: true })
     .contains('data', { courseId: data.courseId });
+  if (countErr) throw countErr;
 
   const order = count || 0;
 
@@ -95,7 +99,8 @@ export async function deleteLesson(lessonId: string) {
   const existing = await lessonById(supabase, lessonId);
   if (!existing) throw new NotFoundError('Lesson not found');
 
-  await supabase.from('lessons').delete().eq('id', lessonId);
+  const { error } = await supabase.from('lessons').delete().eq('id', lessonId);
+  if (error) throw new Error(`Failed to delete lessons: ${error.message}`);
 
   if (existing.courseId) {
     const course = await getNosqlDoc('courses', existing.courseId as string);
@@ -123,7 +128,8 @@ export async function listLessonsByCourse(courseId: string, schoolId?: string) {
   let query = supabase.from('lessons').select('*').contains('data', { courseId });
   if (schoolId) query = query.contains('data', { schoolId });
 
-  const { data: rows } = await query.order('order', { ascending: true });
+  const { data: rows, error } = await query.order('order', { ascending: true });
+  if (error) throw error;
   return (rows || []).map((row) => {
     const fields = buildDocData(row as Record<string, unknown>, 'lessons');
     return { id: row.id, ...fields };
@@ -152,16 +158,18 @@ export async function markLessonComplete(lessonId: string, studentId: string) {
   if (!completedBy.includes(studentId)) {
     completedBy.push(studentId);
     const merged = { ...existing, completedBy, updatedAt: new Date().toISOString() };
-    await supabase.from('lessons').update({ data: merged }).eq('id', lessonId);
+    const { error } = await supabase.from('lessons').update({ data: merged }).eq('id', lessonId);
+    if (error) throw new Error(`Failed to update lessons: ${error.message}`);
   }
 
   if (existing.courseId) {
     const enrollmentId = `${existing.courseId}_${studentId}`;
     const enrollment = await getNosqlDoc('enrollment', enrollmentId);
     if (enrollment) {
-      const { count } = await supabase.from('lessons')
+      const { count, error: countErr } = await supabase.from('lessons')
         .select('*', { count: 'exact', head: true })
         .contains('data', { courseId: existing.courseId as string });
+      if (countErr) throw countErr;
       const total = count || 0;
       enrollment.progress = total > 0 ? Math.round((completedBy.length / total) * 100) : 0;
       await setNosqlDoc('enrollment', enrollmentId, enrollment);

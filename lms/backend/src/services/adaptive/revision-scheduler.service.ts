@@ -4,10 +4,11 @@ export async function getOverdueConcepts(studentId: string): Promise<Array<{ con
   const supabase = getSupabaseAdmin();
   if (!supabase) return [];
 
-  const { data } = await supabase
+  const { data, error: dataErr } = await supabase
     .from('concept_mastery')
     .select('concept_id, last_reviewed_at, mastery_score')
     .eq('student_id', studentId);
+  if (dataErr) throw new Error(dataErr.message);
 
   if (!data) return [];
 

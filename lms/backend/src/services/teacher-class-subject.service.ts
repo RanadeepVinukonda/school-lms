@@ -15,7 +15,8 @@ export interface TeacherClassSubject {
 
 async function nosqlDoc(collection: string, docId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data } = await supabase.from('nosql_docs').select('doc_id, data').eq('collection', collection).eq('doc_id', docId).maybeSingle();
+  const { data, error } = await supabase.from('nosql_docs').select('doc_id, data').eq('collection', collection).eq('doc_id', docId).maybeSingle();
+  if (error) throw new Error('Failed to fetch document: ' + error.message);
   return data || null;
 }
 
@@ -27,9 +28,10 @@ export async function assignTeacher(data: {
 }): Promise<TeacherClassSubject> {
   const supabase = getSupabaseAdmin()!;
 
-  const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
+  const { data: rows, error } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', 'teacherClassSubject')
     .contains('data', { classId: data.classId, subjectId: data.subjectId });
+  if (error) throw new Error('Failed to fetch assignments: ' + error.message);
 
   if (rows && rows.length > 0) {
     const currentDoc = rows[0];
@@ -37,7 +39,8 @@ export async function assignTeacher(data: {
     if (current.teacherId !== data.teacherId) {
       const now = new Date().toISOString();
       const updated = { ...current, teacherId: data.teacherId, updatedAt: now };
-      await supabase.from('nosql_docs').update({ data: updated }).eq('collection', 'teacherClassSubject').eq('doc_id', currentDoc.doc_id);
+      const { error: updateError } = await supabase.from('nosql_docs').update({ data: updated }).eq('collection', 'teacherClassSubject').eq('doc_id', currentDoc.doc_id);
+      if (updateError) throw new Error(`Failed to update teacher assignment: ${updateError.message}`);
       return { id: currentDoc.doc_id, ...updated };
     }
     return { id: currentDoc.doc_id, ...current };
@@ -49,9 +52,10 @@ export async function assignTeacher(data: {
     teacherId: data.teacherId, classId: data.classId, subjectId: data.subjectId,
     textbookId: undefined, createdAt: now, updatedAt: now,
   };
-  await supabase.from('nosql_docs').insert({
+  const { error: insertError } = await supabase.from('nosql_docs').insert({
     collection: 'teacherClassSubject', doc_id: docId, data: record, updated_at: now,
   });
+  if (insertError) throw new Error(`Failed to insert teacher assignment: ${insertError.message}`);
 
   logger.info('Teacher assigned to subject', {
     teacherId: data.teacherId, classId: data.classId, subjectId: data.subjectId,
@@ -63,9 +67,10 @@ export async function assignTeacher(data: {
 /** Get all assignments for a teacher, enriched with class name. */
 export async function getTeacherAssignments(teacherId: string): Promise<(TeacherClassSubject & { className: string; subjectName: string })[]> {
   const supabase = getSupabaseAdmin()!;
-  const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
+  const { data: rows, error } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', 'teacherClassSubject')
     .contains('data', { teacherId });
+  if (error) throw new Error('Failed to fetch teacher assignments: ' + error.message);
 
   const results = await Promise.all((rows || []).map(async (row) => {
     const data = { id: row.doc_id, ...row.data as Record<string, unknown> } as unknown as TeacherClassSubject;
@@ -92,10 +97,11 @@ export async function getTeacherAssignments(teacherId: string): Promise<(Teacher
 /** Get the single assignment for a teacher + class. */
 export async function getTeacherAssignment(teacherId: string, classId: string): Promise<TeacherClassSubject | null> {
   const supabase = getSupabaseAdmin()!;
-  const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
+  const { data: rows, error } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', 'teacherClassSubject')
     .contains('data', { teacherId, classId })
     .limit(1);
+  if (error) throw new Error('Failed to fetch teacher assignment: ' + error.message);
 
   if (!rows || rows.length === 0) return null;
   return { id: rows[0].doc_id, ...rows[0].data as Record<string, unknown> } as unknown as TeacherClassSubject;
@@ -104,10 +110,12 @@ export async function getTeacherAssignment(teacherId: string, classId: string): 
 /** Get unassigned subjects for a class (subjects with no teacher-class-subject record). */
 export async function getUnassignedSubjects(classId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data: subjectsRows } = await supabase.from('subjects').select('*').eq('classId', classId);
-  const { data: assignedRows } = await supabase.from('nosql_docs').select('data')
+  const { data: subjectsRows, error: subErr } = await supabase.from('subjects').select('*').eq('classId', classId);
+  if (subErr) throw new Error('Failed to fetch subjects: ' + subErr.message);
+  const { data: assignedRows, error: assignErr } = await supabase.from('nosql_docs').select('data')
     .eq('collection', 'teacherClassSubject')
     .contains('data', { classId });
+  if (assignErr) throw new Error('Failed to fetch assigned subjects: ' + assignErr.message);
 
   const assignedSubjectIds = new Set((assignedRows || []).map((r) => (r.data as Record<string, unknown>).subjectId as string));
 
@@ -119,8 +127,9 @@ export async function getUnassignedSubjects(classId: string) {
 /** Get all assignments with resolved class/subject/teacher names. */
 export async function getAllAssignments() {
   const supabase = getSupabaseAdmin()!;
-  const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
+  const { data: rows, error } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', 'teacherClassSubject');
+  if (error) throw new Error('Failed to fetch assignments: ' + error.message);
   const assignments = (rows || []).map((r) => ({ id: r.doc_id, ...r.data as Record<string, unknown> } as unknown as TeacherClassSubject));
 
   const teacherIds = [...new Set(assignments.map((a) => a.teacherId))];
@@ -128,9 +137,9 @@ export async function getAllAssignments() {
   const subjectIds = [...new Set(assignments.map((a) => a.subjectId))];
 
   const [teacherRes, classRes, subjectRes] = await Promise.all([
-    Promise.all(teacherIds.map(async (id) => { const { data } = await supabase.from('users').select('id, display_name').eq('id', id).maybeSingle(); return data; })),
-    Promise.all(classIds.map(async (id) => { const { data } = await supabase.from('classes').select('id, name').eq('id', id).maybeSingle(); return data; })),
-    Promise.all(subjectIds.map(async (id) => { const { data } = await supabase.from('subjects').select('id, name').eq('id', id).maybeSingle(); return data; })),
+    Promise.all(teacherIds.map(async (id) => { const { data, error: e } = await supabase.from('users').select('id, display_name').eq('id', id).maybeSingle(); if (e) throw new Error('Failed to fetch user: ' + e.message); return data; })),
+    Promise.all(classIds.map(async (id) => { const { data, error: e } = await supabase.from('classes').select('id, name').eq('id', id).maybeSingle(); if (e) throw new Error('Failed to fetch class: ' + e.message); return data; })),
+    Promise.all(subjectIds.map(async (id) => { const { data, error: e } = await supabase.from('subjects').select('id, name').eq('id', id).maybeSingle(); if (e) throw new Error('Failed to fetch subject: ' + e.message); return data; })),
   ]);
 
   const teacherMap = new Map(teacherRes.filter(Boolean).map((s) => [s!.id, s!.display_name || s!.id]));
@@ -148,9 +157,11 @@ export async function getAllAssignments() {
 /** Remove a teacher-class-subject assignment. */
 export async function removeAssignment(assignmentId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data } = await supabase.from('nosql_docs').select('doc_id')
+  const { data, error } = await supabase.from('nosql_docs').select('doc_id')
     .eq('collection', 'teacherClassSubject').eq('doc_id', assignmentId).maybeSingle();
+  if (error) throw new Error('Failed to fetch assignment: ' + error.message);
   if (!data) throw new NotFoundError('Assignment not found');
-  await supabase.from('nosql_docs').delete().eq('collection', 'teacherClassSubject').eq('doc_id', assignmentId);
+  const { error: deleteError } = await supabase.from('nosql_docs').delete().eq('collection', 'teacherClassSubject').eq('doc_id', assignmentId);
+  if (deleteError) throw new Error(`Failed to delete teacher assignment: ${deleteError.message}`);
   logger.info('Teacher-class-subject assignment removed', { assignmentId });
 }

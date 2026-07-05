@@ -29,10 +29,11 @@ export async function createConversation(data: {
     updatedAt: now,
   };
 
-  await supabase.from('nosql_docs').insert({
+  const { error: insertError } = await supabase.from('nosql_docs').insert({
     collection: 'conversations', doc_id: conversationId, data: conversation,
     updated_at: now,
   });
+  if (insertError) throw new Error(`Failed to create conversation: ${insertError.message}`);
 
   logger.info('Conversation created', { conversationId, type: data.type });
 
@@ -77,10 +78,11 @@ export async function sendMessage(data: {
     createdAt: now,
   };
 
-  await supabase.from('nosql_docs').insert({
+  const { error: insertError } = await supabase.from('nosql_docs').insert({
     collection: 'messages', doc_id: messageId, data: message,
     updated_at: now,
   });
+  if (insertError) throw new Error(`Failed to send message: ${insertError.message}`);
 
   const unreadCount: Record<string, number> = {};
   participants.forEach((p: string) => {
@@ -96,8 +98,9 @@ export async function sendMessage(data: {
     unreadCount,
     updatedAt: now,
   };
-  await supabase.from('nosql_docs').update({ data: updatedConv, updated_at: now })
+  const { error: updateError } = await supabase.from('nosql_docs').update({ data: updatedConv, updated_at: now })
     .eq('collection', 'conversations').eq('doc_id', data.conversationId);
+  if (updateError) throw new Error(`Failed to update conversation: ${updateError.message}`);
 
   logger.info('Message sent', { messageId, conversationId: data.conversationId, senderId: data.senderId });
 
@@ -188,8 +191,9 @@ export async function markConversationRead(conversationId: string, userId: strin
   unreadCount[userId] = 0;
 
   const updatedConv = { ...conversationData, unreadCount };
-  await supabase.from('nosql_docs').update({ data: updatedConv })
+  const { error: updateError } = await supabase.from('nosql_docs').update({ data: updatedConv })
     .eq('collection', 'conversations').eq('doc_id', conversationId);
+  if (updateError) throw new Error(`Failed to update conversation: ${updateError.message}`);
 
   const { data: msgRows } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', 'messages')

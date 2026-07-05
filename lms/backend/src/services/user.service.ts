@@ -114,7 +114,8 @@ export async function createUser(data: {
         const now = new Date().toISOString();
         const updateData: Record<string, unknown> = { updated_at: now };
         if (data.childrenIds?.length) updateData.childrenIds = resolvedChildrenIds;
-        await supabase.from('users').update(updateData).eq('id', existingUser.uid);
+        const { error: updateErr } = await supabase.from('users').update(updateData).eq('id', existingUser.uid);
+        if (updateErr) throw new Error(`Failed to update user: ${updateErr.message}`);
         logger.info('Teacher updated with childrenIds by admin', { uid: existingUser.uid, email: generatedEmail });
         const { data: uRow } = await supabase.from('users').select('*').eq('id', existingUser.uid).maybeSingle();
         if (uRow) return stripPw(uRow);
@@ -145,7 +146,8 @@ export async function createUser(data: {
           // Fallback: read-then-write (best-effort if RPC not deployed)
           const { data: cls } = await supabase.from('classes').select('student_count').eq('id', data.classId!).maybeSingle();
           const currentCount = cls?.student_count || 0;
-          await supabase.from('classes').update({ student_count: currentCount + 1, updated_at: now2 }).eq('id', data.classId!);
+          const { error: classUpdateErr } = await supabase.from('classes').update({ student_count: currentCount + 1, updated_at: now2 }).eq('id', data.classId!);
+          if (classUpdateErr) throw new Error(`Failed to update class student count: ${classUpdateErr.message}`);
         }
       }
       return { ...userData2, generatedPassword };
@@ -178,7 +180,8 @@ export async function createUser(data: {
       // Fallback: read-then-write (best-effort if RPC not deployed)
       const { data: cls } = await supabase.from('classes').select('student_count').eq('id', data.classId!).maybeSingle();
       const currentCount = cls?.student_count || 0;
-      await supabase.from('classes').update({ student_count: currentCount + 1, updated_at: now }).eq('id', data.classId!);
+      const { error: classUpdateErr } = await supabase.from('classes').update({ student_count: currentCount + 1, updated_at: now }).eq('id', data.classId!);
+      if (classUpdateErr) throw new Error(`Failed to update class student count: ${classUpdateErr.message}`);
     }
   }
 
@@ -262,7 +265,8 @@ export async function toggleActive(uid: string) {
   if (!exists || !existing) throw new NotFoundError('User not found');
 
   const newIsActive = !existing.is_active;
-  await supabase.from('users').update({ is_active: newIsActive, updated_at: new Date().toISOString() }).eq('id', uid);
+  const { error } = await supabase.from('users').update({ is_active: newIsActive, updated_at: new Date().toISOString() }).eq('id', uid);
+  if (error) throw new Error(`Failed to toggle user active status: ${error.message}`);
   await firebaseUpdateUser(uid, { disabled: !newIsActive });
 
   const { data: updated } = await supabase.from('users').select('*').eq('id', uid).maybeSingle();
@@ -275,7 +279,8 @@ export async function assignRole(uid: string, role: string) {
   const { exists } = await getUserDoc(uid);
   if (!exists) throw new NotFoundError('User not found');
 
-  await supabase.from('users').update({ role, updated_at: new Date().toISOString() }).eq('id', uid);
+  const { error } = await supabase.from('users').update({ role, updated_at: new Date().toISOString() }).eq('id', uid);
+  if (error) throw new Error(`Failed to assign user role: ${error.message}`);
   await setCustomClaims(uid, { role });
   logger.info('User role assigned', { uid, role });
 }
@@ -298,7 +303,8 @@ export async function pingActive(uid: string) {
     streakCount = 1;
   }
 
-  await supabase.from('users').update({ streak_count: streakCount, last_active_date: today.toISOString() }).eq('id', uid);
+  const { error } = await supabase.from('users').update({ streak_count: streakCount, last_active_date: today.toISOString() }).eq('id', uid);
+  if (error) throw new Error(`Failed to update user streak: ${error.message}`);
   return { streakCount, lastActiveDate: today.toISOString() };
 }
 
@@ -350,7 +356,8 @@ export async function updateProfile(uid: string, data: {
   if (data.photoURL !== undefined) updateData.photo_url = data.photoURL;
   if (data.language !== undefined) updateData.language = data.language;
 
-  await supabase.from('users').update(updateData).eq('id', uid);
+  const { error } = await supabase.from('users').update(updateData).eq('id', uid);
+  if (error) throw new Error(`Failed to update user profile: ${error.message}`);
   const { data: updated } = await supabase.from('users').select('*').eq('id', uid).maybeSingle();
   return updated ? stripPw(updated) : null;
 }

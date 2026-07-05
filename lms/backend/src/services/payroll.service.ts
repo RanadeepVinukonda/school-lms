@@ -5,20 +5,24 @@ import { logger } from '../utils/logger';
 export async function configureSalary(schoolId: string, data: { staff_id: string; base_salary: number; allowances?: number; deductions?: number }) {
   const supabase = getSupabaseAdmin(); if (!supabase) return null;
   
-  const { data: existing } = await supabase.from('salary_config').select('id').eq('staff_id', data.staff_id).single();
+  const { data: existing, error: fetchErr } = await supabase.from('salary_config').select('id').eq('staff_id', data.staff_id).single();
+  if (fetchErr && fetchErr.code !== 'PGRST116') throw new Error('Failed to fetch salary config: ' + fetchErr.message);
   
   if (existing) {
-    const { data: result } = await supabase.from('salary_config').update(data).eq('staff_id', data.staff_id).select().single();
+    const { data: result, error } = await supabase.from('salary_config').update(data).eq('staff_id', data.staff_id).select().single();
+    if (error) throw new Error(`Failed to configure salary: ${error.message}`);
     return result;
   } else {
-    const { data: result } = await supabase.from('salary_config').insert({ school_id: schoolId, ...data }).select().single();
+    const { data: result, error } = await supabase.from('salary_config').insert({ school_id: schoolId, ...data }).select().single();
+    if (error) throw new Error(`Failed to configure salary: ${error.message}`);
     return result;
   }
 }
 
 export async function getSalaryConfig(staffId: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return null;
-  const { data } = await supabase.from('salary_config').select('*').eq('staff_id', staffId).single();
+  const { data, error } = await supabase.from('salary_config').select('*').eq('staff_id', staffId).single();
+  if (error) throw new Error('Failed to fetch salary config: ' + error.message);
   return data;
 }
 
@@ -26,15 +30,17 @@ export async function runPayroll(schoolId: string, staffId: string, month: strin
   const supabase = getSupabaseAdmin(); if (!supabase) return null;
 
   // ponytail: duplicate-month check
-  const { data: existing } = await supabase.from('payroll_runs')
+  const { data: existing, error: dupErr } = await supabase.from('payroll_runs')
     .select('id').eq('staff_id', staffId).eq('month', month).maybeSingle();
+  if (dupErr) throw new Error('Failed to check payroll run: ' + dupErr.message);
   if (existing) {
     logger.warn('Payroll already run for this month', { staffId, month });
     return null;
   }
   
   // 1. Fetch salary config
-  const { data: config } = await supabase.from('salary_config').select('*').eq('staff_id', staffId).single();
+  const { data: config, error: configErr } = await supabase.from('salary_config').select('*').eq('staff_id', staffId).single();
+  if (configErr) throw new Error('Failed to fetch salary config: ' + configErr.message);
   if (!config) throw new Error('Salary configuration not found for this staff member');
   
   const base = Number(config.base_salary);
@@ -43,7 +49,7 @@ export async function runPayroll(schoolId: string, staffId: string, month: strin
   const net = base + allowances - deductions;
   
   // 2. Insert payroll run record
-  const { data: result } = await supabase.from('payroll_runs').insert({
+  const { data: result, error } = await supabase.from('payroll_runs').insert({
     school_id: schoolId,
     staff_id: staffId,
     month,
@@ -53,18 +59,19 @@ export async function runPayroll(schoolId: string, staffId: string, month: strin
     net_salary: net,
     status: 'paid'
   }).select().single();
-  
+  if (error) throw new Error(`Failed to run payroll: ${error.message}`);
   return result;
 }
 
 export async function getPayrollRuns(schoolId: string, month: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return [];
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('payroll_runs')
     .select('*, staff:staff_records(*)')
     .eq('school_id', schoolId)
     .eq('month', month)
     .order('created_at', { ascending: false });
+  if (error) throw new Error('Failed to fetch payroll runs: ' + error.message);
   return data || [];
 }
 
@@ -72,11 +79,13 @@ export async function generatePayslipPdf(payrollId: string): Promise<Buffer> {
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error('Database not available');
 
-  const { data: run } = await supabase.from('payroll_runs').select('*, staff:staff_records(*)').eq('id', payrollId).single();
+  const { data: run, error: runErr } = await supabase.from('payroll_runs').select('*, staff:staff_records(*)').eq('id', payrollId).single();
+  if (runErr) throw new Error('Failed to fetch payroll run: ' + runErr.message);
   if (!run) throw new Error('Payroll run not found');
 
   const staff = run.staff as any;
-  const { data: school } = await supabase.from('schools').select('name').limit(1).maybeSingle();
+  const { data: school, error: schoolErr } = await supabase.from('schools').select('name').limit(1).maybeSingle();
+  if (schoolErr) throw new Error('Failed to fetch school: ' + schoolErr.message);
 
   const doc = new PDFDocument({ margin: 50 });
   const buffers: Buffer[] = [];

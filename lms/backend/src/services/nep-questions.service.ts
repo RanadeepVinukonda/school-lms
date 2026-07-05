@@ -169,10 +169,11 @@ export async function saveQuestions(conceptId: string, questions: QuestionData[]
 
 export async function getNEPQuestions(conceptId: string) {
   const supabase = getSupabaseClient()!;
-  const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
+  const { data: rows, error } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', 'nepQuestions')
     .contains('data', { conceptId })
     .order('data->>createdAt', { ascending: false });
+  if (error) throw new Error('Failed to fetch NEP questions: ' + error.message);
 
   return (rows || []).map((r) => ({ ...r.data as Record<string, unknown>, id: r.doc_id }));
 }
@@ -247,9 +248,10 @@ export async function saveRubric(data: {
     updatedAt: now,
   };
 
-  await supabase.from('nosql_docs').insert({
+  const { error: insertError } = await supabase.from('nosql_docs').insert({
     collection: 'gradingRubrics', doc_id: id, data: rubricData, updated_at: now,
   });
+  if (insertError) throw new Error(`Failed to insert rubric: ${insertError.message}`);
   logger.info('Rubric saved', { id, assignmentId: data.assignmentId });
   return rubricData;
 }
@@ -258,14 +260,16 @@ export async function getRubrics(assignmentId?: string) {
   const supabase = getSupabaseClient()!;
   let query = supabase.from('nosql_docs').select('doc_id, data').eq('collection', 'gradingRubrics');
   if (assignmentId) query = query.contains('data', { assignmentId });
-  const { data: rows } = await query.order('data->>createdAt', { ascending: false });
+  const { data: rows, error: rubricsErr } = await query.order('data->>createdAt', { ascending: false });
+  if (rubricsErr) throw new Error('Failed to fetch rubrics: ' + rubricsErr.message);
   return (rows || []).map((r: any) => ({ ...r.data, id: r.doc_id }));
 }
 
 export async function getRubricById(id: string) {
   const supabase = getSupabaseClient()!;
-  const { data } = await supabase.from('nosql_docs').select('doc_id, data')
+  const { data, error } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', 'gradingRubrics').eq('doc_id', id).maybeSingle();
+  if (error) throw new Error('Failed to fetch rubric: ' + error.message);
   if (!data) throw new NotFoundError('Rubric not found');
   return { ...(data.data as Record<string, unknown>), id: data.doc_id };
 }

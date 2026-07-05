@@ -57,11 +57,12 @@ export async function createClass(data: {
 /** Update class fields. Throws NotFoundError if missing. */
 export async function updateClass(classId: string, data: Record<string, unknown>) {
   const supabase = getSupabaseAdmin()!;
-  const { data: existing } = await supabase
+  const { data: existing, error: fetchErr } = await supabase
     .from('classes')
     .select('id')
     .eq('id', classId)
     .maybeSingle();
+  if (fetchErr) throw fetchErr;
 
   if (!existing) {
     throw new NotFoundError('Class not found');
@@ -75,7 +76,8 @@ export async function updateClass(classId: string, data: Record<string, unknown>
   const { error } = await supabase.from('classes').update(updateData).eq('id', classId);
   if (error) throw error;
 
-  const { data: updated } = await supabase.from('classes').select('*').eq('id', classId).single();
+  const { data: updated, error: fetchErr2 } = await supabase.from('classes').select('*').eq('id', classId).single();
+  if (fetchErr2) throw fetchErr2;
   logger.info('Class updated', { classId });
 
   return updated;
@@ -84,11 +86,12 @@ export async function updateClass(classId: string, data: Record<string, unknown>
 /** Delete a class by id. Throws NotFoundError if missing. */
 export async function deleteClass(classId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data: existing } = await supabase
+  const { data: existing, error: fetchErr } = await supabase
     .from('classes')
     .select('id')
     .eq('id', classId)
     .maybeSingle();
+  if (fetchErr) throw fetchErr;
 
   if (!existing) {
     throw new NotFoundError('Class not found');
@@ -156,22 +159,24 @@ export async function getClassById(classId: string) {
 /** Add students to a class by updating their classIds array. */
 export async function addStudents(classId: string, studentIds: string[]) {
   const supabase = getSupabaseAdmin()!;
-  const { data: classDoc } = await supabase
+  const { data: classDoc, error: fetchErr } = await supabase
     .from('classes')
     .select('id')
     .eq('id', classId)
     .maybeSingle();
+  if (fetchErr) throw fetchErr;
 
   if (!classDoc) {
     throw new NotFoundError('Class not found');
   }
 
   for (const studentId of studentIds) {
-    const { data: userDoc } = await supabase
+    const { data: userDoc, error } = await supabase
       .from('users')
       .select('id, class_ids')
       .eq('id', studentId)
       .maybeSingle();
+    if (error) throw error;
 
     if (userDoc) {
       const classIds = userDoc.class_ids || [];
@@ -185,7 +190,8 @@ export async function addStudents(classId: string, studentIds: string[]) {
     }
   }
 
-  const { data: currentClass } = await supabase.from('classes').select('student_ids').eq('id', classId).single();
+  const { data: currentClass, error: fetchErr2 } = await supabase.from('classes').select('student_ids').eq('id', classId).single();
+  if (fetchErr2) throw fetchErr2;
   const currentStudentIds = currentClass?.student_ids || [];
   const newStudentIds = [...new Set([...currentStudentIds, ...studentIds])];
   
@@ -203,26 +209,29 @@ export async function addStudents(classId: string, studentIds: string[]) {
 /** Remove students from a class by filtering their classIds array. */
 export async function removeStudents(classId: string, studentIds: string[]) {
   const supabase = getSupabaseAdmin()!;
-  const { data: classDoc } = await supabase
+  const { data: classDoc, error: fetchErr } = await supabase
     .from('classes')
     .select('id')
     .eq('id', classId)
     .maybeSingle();
+  if (fetchErr) throw fetchErr;
 
   if (!classDoc) {
     throw new NotFoundError('Class not found');
   }
 
   for (const studentId of studentIds) {
-    const { data: userDoc } = await supabase
+    const { data: userDoc, error } = await supabase
       .from('users')
       .select('id, class_ids')
       .eq('id', studentId)
       .maybeSingle();
+    if (error) throw error;
 
     if (userDoc) {
       const newClassIds = (userDoc.class_ids || []).filter((id: string) => id !== classId);
-      await supabase.from('users').update({ class_ids: newClassIds }).eq('id', studentId);
+      const { error } = await supabase.from('users').update({ class_ids: newClassIds }).eq('id', studentId);
+      if (error) throw new Error(`Failed to update users: ${error.message}`);
     }
   }
 
@@ -233,10 +242,11 @@ export async function removeStudents(classId: string, studentIds: string[]) {
 export async function getRoster(classId: string) {
   const supabase = getSupabaseAdmin()!;
   
-  const { data: snapshot } = await supabase
+  const { data: snapshot, error } = await supabase
     .from('users')
     .select('id, display_name, email, role, student_id, roll_no, class_ids')
     .overlaps('class_ids', [classId]);
+  if (error) throw error;
 
   return (snapshot || []).map((doc: any) => ({
     id: doc.id,

@@ -26,9 +26,11 @@ export async function saveMessage(userId: string, message: { role: string; conte
   }
   
   if (session) {
-    await supabase.from('ai_tutor_sessions').update(payload).eq('id', session.id);
+    const { error } = await supabase.from('ai_tutor_sessions').update(payload).eq('id', session.id);
+    if (error) throw new Error('Failed to update tutor session: ' + error.message);
   } else {
-    await supabase.from('ai_tutor_sessions').insert({ user_id: userId, messages: last10, language: language || 'en' });
+    const { error } = await supabase.from('ai_tutor_sessions').insert({ user_id: userId, messages: last10, language: language || 'en' });
+    if (error) throw new Error('Failed to create tutor session: ' + error.message);
   }
   return last10;
 }

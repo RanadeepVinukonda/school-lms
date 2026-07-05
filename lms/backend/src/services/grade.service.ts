@@ -7,7 +7,8 @@ import { createNotification, createBulkNotifications } from './notification.serv
 
 async function gradeRow(gradeId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data } = await supabase.from('grades').select('*').eq('id', gradeId).maybeSingle();
+  const { data, error } = await supabase.from('grades').select('*').eq('id', gradeId).maybeSingle();
+  if (error) throw new Error('Failed to fetch grade: ' + error.message);
   return data || null;
 }
 
@@ -18,7 +19,8 @@ export async function getStudentGrades(studentId: string, academicYear?: string,
   if (schoolId) query = query.eq('school_id', schoolId);
   if (academicYear) query = query.eq('academic_year', academicYear);
 
-  const { data: rows } = await query.order('created_at', { ascending: false });
+  const { data: rows, error } = await query.order('created_at', { ascending: false });
+  if (error) throw new Error('Failed to fetch grades: ' + error.message);
   return rows || [];
 }
 
@@ -45,9 +47,10 @@ export async function getGradebook(query: {
   if (query.term) dbQuery = dbQuery.eq('term', query.term);
   if (query.academicYear) dbQuery = dbQuery.eq('academic_year', query.academicYear);
 
-  const { data: rows, count } = await dbQuery
+  const { data: rows, count, error } = await dbQuery
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
+  if (error) throw new Error('Failed to fetch gradebook: ' + error.message);
 
   return { items: rows || [], total: count || 0, page, limit };
 }
@@ -68,7 +71,7 @@ export async function updateGrade(gradeId: string, data: {
   const now = new Date().toISOString();
 
   const supabase = getSupabaseAdmin()!;
-  await supabase.from('grades').update({
+  const { error: updateError } = await supabase.from('grades').update({
     score: data.score,
     total_points: data.totalPoints,
     letter_grade: letterGrade,
@@ -77,6 +80,7 @@ export async function updateGrade(gradeId: string, data: {
     graded_by: data.gradedBy,
     updated_at: now,
   }).eq('id', gradeId);
+  if (updateError) throw new Error(`Failed to update grade: ${updateError.message}`);
 
   try {
     await createNotification({
@@ -95,7 +99,7 @@ export async function updateGrade(gradeId: string, data: {
   }
 
   logger.info('Grade updated', { gradeId, gradedBy: data.gradedBy });
-  return { ...existing, score: data.score, total_points: data.totalPoints, letter_grade: letterGrade, percentage };
+  return { ...existing, score: data.score, total_points: data.totalPoints, letter_grade: letterGrade, letterGrade, percentage };
 }
 
 /** Bulk update or insert grades for multiple students in a course. Notifies all affected students. */
@@ -116,7 +120,7 @@ export async function bulkUpdate(grades: Array<{
     const percentage = Math.round((grade.score / grade.totalPoints) * 100);
 
     if (existing) {
-      await supabase.from('grades').update({
+      const { error: updateErr } = await supabase.from('grades').update({
         score: grade.score,
         total_points: grade.totalPoints,
         percentage,
@@ -124,8 +128,9 @@ export async function bulkUpdate(grades: Array<{
         graded_by: gradedBy,
         updated_at: now,
       }).eq('id', gradeId);
+      if (updateErr) throw new Error(`Failed to update grade: ${updateErr.message}`);
     } else {
-      await supabase.from('grades').insert({
+      const { error: insertErr } = await supabase.from('grades').insert({
         id: gradeId,
         student_id: grade.studentId,
         course_id: courseId,
@@ -138,6 +143,7 @@ export async function bulkUpdate(grades: Array<{
         created_at: now,
         updated_at: now,
       });
+      if (insertErr) throw new Error(`Failed to insert grade: ${insertErr.message}`);
     }
 
     results.push({ id: gradeId, studentId: grade.studentId, score: grade.score, percentage });
@@ -171,7 +177,8 @@ export async function generateReport(studentId: string, academicYear: string, te
     .eq('academic_year', academicYear).eq('term', term);
   if (schoolId) query = query.eq('school_id', schoolId);
 
-  const { data: rows } = await query;
+  const { data: rows, error } = await query;
+  if (error) throw new Error('Failed to fetch report grades: ' + error.message);
   const gradesList = rows || [];
 
   const totalScore = gradesList.reduce((sum: number, g: any) => sum + (g.score || 0), 0);

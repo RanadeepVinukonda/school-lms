@@ -15,23 +15,29 @@ export async function createFeeSchedule(data: {
   schoolId: string;
 }) {
   const supabase = getSupabaseAdmin()!;
-  const { data: result } = await supabase.from('fee_structures').insert({
-    school_id: data.schoolId, name: data.name, amount: data.amount, due_date: data.dueDate, class_id: data.classId,
+  const { data: result, error } = await supabase.from('fee_structures').insert({
+    school_id: data.schoolId, name: data.name, amount: data.amount, due_date: data.dueDate,
+    class_id: data.classId, academic_year: data.academicYear || null, description: data.description || null,
   }).select().single();
+  if (error) throw new Error(`Failed to create fee schedule: ${error.message}`);
   return result;
 }
 
-export async function listFeeSchedules(schoolId?: string, _academicYear?: string) {
+export async function listFeeSchedules(schoolId?: string, academicYear?: string, classId?: string) {
   const supabase = getSupabaseAdmin()!;
   let q = supabase.from('fee_structures').select('*');
   if (schoolId) q = q.eq('school_id', schoolId);
-  const { data } = await q;
+  if (academicYear) q = q.eq('academic_year', academicYear);
+  if (classId) q = q.eq('class_id', classId);
+  const { data, error } = await q;
+  if (error) throw new Error(`Failed to list fee schedules: ${error.message}`);
   return data || [];
 }
 
 export async function getFeeSchedule(id: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data } = await supabase.from('fee_structures').select('*').eq('id', id).maybeSingle();
+  const { data, error } = await supabase.from('fee_structures').select('*').eq('id', id).maybeSingle();
+  if (error) throw new Error(`Failed to get fee schedule: ${error.message}`);
   return data;
 }
 
@@ -47,11 +53,13 @@ export async function recordPayment(data: {
   studentId: string; feeScheduleId: string; amountPaid: number; paymentMethod?: string; schoolId?: string;
 }) {
   const supabase = getSupabaseAdmin()!;
-  const { data: schedule } = await supabase.from('fee_structures').select('amount').eq('id', data.feeScheduleId).single();
+  const { data: schedule, error: schedErr } = await supabase.from('fee_structures').select('amount').eq('id', data.feeScheduleId).single();
+  if (schedErr) throw new Error(`Fee schedule not found: ${schedErr.message}`);
   if (!schedule) return null;
   const feeAmount = Number(schedule.amount);
-  const { data: existingPayments } = await supabase.from('fee_payments')
+  const { data: existingPayments, error: payErr } = await supabase.from('fee_payments')
     .select('amount').eq('student_id', data.studentId).eq('fee_structure_id', data.feeScheduleId);
+  if (payErr) throw new Error(`Failed to lookup payments: ${payErr.message}`);
   const totalPaid = (existingPayments || []).reduce((s: number, p: any) => s + Number(p.amount), 0);
   const overpayment = totalPaid + data.amountPaid - feeAmount;
   if (overpayment > 0) {
@@ -59,15 +67,17 @@ export async function recordPayment(data: {
       `Payment of ${data.amountPaid} would overpay. Remaining balance: ${feeAmount - totalPaid}`
     );
   }
-  const { data: result } = await supabase.from('fee_payments').insert({
+  const { data: result, error } = await supabase.from('fee_payments').insert({
     student_id: data.studentId, fee_structure_id: data.feeScheduleId, amount: data.amountPaid, school_id: data.schoolId,
   }).select().single();
+  if (error) throw new Error(`Failed to record payment: ${error.message}`);
   return result;
 }
 
 export async function getStudentPayments(studentId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data } = await supabase.from('fee_payments').select('*').eq('student_id', studentId);
+  const { data, error } = await supabase.from('fee_payments').select('*').eq('student_id', studentId);
+  if (error) throw new Error(`Failed to get student payments: ${error.message}`);
   return data || [];
 }
 
@@ -89,10 +99,15 @@ export async function getOutstandingReport(schoolId?: string) {
     paymentQ = paymentQ.eq('school_id', schoolId);
   }
 
-  const [{ data: structures }, { data: payments }, { data: students }] = await Promise.all([
+  const results = await Promise.all([
     structQ, paymentQ, studentQ,
   ]);
 
+  for (const r of results) {
+    if (r.error) throw new Error(`Failed to load outstanding report: ${r.error.message}`);
+  }
+
+  const [structures, payments, students] = results.map(r => r.data);
   if (!structures || !students) return [];
   return buildOutstandingReport(structures, payments || [], students);
 }

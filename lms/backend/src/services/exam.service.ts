@@ -86,11 +86,12 @@ export async function createExam(data: {
 
   // Notify enrolled students
   try {
-    const { data: enrollments } = await supabase
+    const { data: enrollments, error: enrollError } = await supabase
       .from('enrollments')
       .select('student_id')
       .eq('course_id', data.courseId)
       .eq('status', 'active');
+    if (enrollError) throw enrollError;
     
     const notifications = (enrollments || []).map((e: { student_id: string }) => ({
       userId: e.student_id,
@@ -113,11 +114,12 @@ export async function createExam(data: {
 /** Update exam fields. Throws NotFoundError if missing. */
 export async function updateExam(examId: string, data: Record<string, unknown>) {
   const supabase = getSupabaseAdmin()!;
-  const { data: existing } = await supabase
+  const { data: existing, error: fetchError } = await supabase
     .from('exams')
     .select('id')
     .eq('id', examId)
     .maybeSingle();
+  if (fetchError) throw fetchError;
 
   if (!existing) {
     throw new NotFoundError('Exam not found');
@@ -131,7 +133,8 @@ export async function updateExam(examId: string, data: Record<string, unknown>) 
   const { error } = await supabase.from('exams').update(updateData).eq('id', examId);
   if (error) throw error;
 
-  const { data: updated } = await supabase.from('exams').select('*').eq('id', examId).single();
+  const { data: updated, error: readError } = await supabase.from('exams').select('*').eq('id', examId).single();
+  if (readError) throw readError;
   logger.info('Exam updated', { examId });
 
   return updated;
@@ -140,11 +143,12 @@ export async function updateExam(examId: string, data: Record<string, unknown>) 
 /** Delete an exam by id. Throws NotFoundError if missing. */
 export async function deleteExam(examId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data: existing } = await supabase
+  const { data: existing, error: fetchError } = await supabase
     .from('exams')
     .select('id')
     .eq('id', examId)
     .maybeSingle();
+  if (fetchError) throw fetchError;
 
   if (!existing) {
     throw new NotFoundError('Exam not found');
@@ -180,11 +184,12 @@ export async function scheduleExam(examId: string, data: {
   proctorIds?: string[];
 }) {
   const supabase = getSupabaseAdmin()!;
-  const { data: existing } = await supabase
+  const { data: existing, error: fetchError } = await supabase
     .from('exams')
     .select('id, title')
     .eq('id', examId)
     .maybeSingle();
+  if (fetchError) throw fetchError;
 
   if (!existing) {
     throw new NotFoundError('Exam not found');
@@ -205,11 +210,12 @@ export async function scheduleExam(examId: string, data: {
   // Notify students in scheduled classes
   try {
     for (const classId of data.classIds) {
-      const { data: classData } = await supabase
+      const { data: classData, error: classError } = await supabase
         .from('classes')
         .select('id, teacher_ids, student_ids')
         .eq('id', classId)
         .maybeSingle();
+      if (classError) throw classError;
       
       if (classData) {
         const studentIds = (classData.student_ids as string[]) || [];
@@ -230,18 +236,20 @@ export async function scheduleExam(examId: string, data: {
 
   logger.info('Exam scheduled', { examId, classIds: data.classIds });
 
-  const { data: updated } = await supabase.from('exams').select('*').eq('id', examId).single();
+  const { data: updated, error: readError } = await supabase.from('exams').select('*').eq('id', examId).single();
+  if (readError) throw readError;
   return updated;
 }
 
 /** Start an exam attempt for a student. Enforces maxAttempts, increments attemptCount. Uses conflict detection to prevent race conditions. */
 export async function startExamAttempt(examId: string, studentId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data: exam } = await supabase
+  const { data: exam, error: examError } = await supabase
     .from('exams')
     .select('*')
     .eq('id', examId)
     .maybeSingle();
+  if (examError) throw examError;
 
   if (!exam) {
     throw new NotFoundError('Exam not found');
@@ -284,8 +292,10 @@ export async function startExamAttempt(examId: string, studentId: string) {
     throw insertError;
   }
 
-  const { data: currentExam } = await supabase.from('exams').select('attempt_count').eq('id', examId).single();
-  await supabase.from('exams').update({ attempt_count: (currentExam?.attempt_count || 0) + 1 }).eq('id', examId);
+  const { data: currentExam, error: countError } = await supabase.from('exams').select('attempt_count').eq('id', examId).single();
+  if (countError) throw countError;
+  const { error } = await supabase.from('exams').update({ attempt_count: (currentExam?.attempt_count || 0) + 1 }).eq('id', examId);
+  if (error) throw new Error(`Failed to update exams: ${error.message}`);
 
   logger.info('Exam attempt started', { examId, studentId, attemptId });
 
@@ -311,11 +321,12 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
   }
   const validated = parseResult.data;
   const supabase = getSupabaseAdmin()!;
-  const { data: attempt } = await supabase
+  const { data: attempt, error: attemptError } = await supabase
     .from('exam_attempts')
     .select('*')
     .eq('id', attemptId)
     .maybeSingle();
+  if (attemptError) throw attemptError;
 
   if (!attempt) {
     throw new NotFoundError('Attempt not found');
@@ -329,11 +340,12 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
     throw new ForbiddenError('Attempt already submitted');
   }
 
-  const { data: exam } = await supabase
+  const { data: exam, error: examError } = await supabase
     .from('exams')
     .select('*')
     .eq('id', attempt.exam_id)
     .single();
+  if (examError) throw examError;
 
   let score = 0;
   const gradedAnswers = validated.answers.map((answer) => {
@@ -397,11 +409,12 @@ export async function gradeExamAttempt(attemptId: string, graderId: string, data
   feedback?: string;
 }) {
   const supabase = getSupabaseAdmin()!;
-  const { data: attempt } = await supabase
+  const { data: attempt, error: attemptError } = await supabase
     .from('exam_attempts')
     .select('*')
     .eq('id', attemptId)
     .maybeSingle();
+  if (attemptError) throw attemptError;
 
   if (!attempt) {
     throw new NotFoundError('Attempt not found');
@@ -415,7 +428,8 @@ export async function gradeExamAttempt(attemptId: string, graderId: string, data
     status: 'graded',
   };
 
-  await supabase.from('exam_attempts').update(updateData).eq('id', attemptId);
+  const { error } = await supabase.from('exam_attempts').update(updateData).eq('id', attemptId);
+  if (error) throw new Error(`Failed to update exam_attempts: ${error.message}`);
 
   // Notify student of exam grade
   try {
@@ -432,11 +446,12 @@ export async function gradeExamAttempt(attemptId: string, graderId: string, data
 
   logger.info('Exam attempt graded', { attemptId, graderId });
 
-  const { data: updated } = await supabase
+  const { data: updated, error: readError } = await supabase
     .from('exam_attempts')
     .select('*')
     .eq('id', attemptId)
     .single();
+  if (readError) throw readError;
   
   return updated;
 }
@@ -444,41 +459,46 @@ export async function gradeExamAttempt(attemptId: string, graderId: string, data
 /** Toggle whether exam grades are visible to students. */
 export async function releaseExamGrades(examId: string, gradesReleased: boolean) {
   const supabase = getSupabaseAdmin()!;
-  const { data: existing } = await supabase
+  const { data: existing, error } = await supabase
     .from('exams')
     .select('id')
     .eq('id', examId)
     .maybeSingle();
+  if (error) throw error;
 
   if (!existing) {
     throw new NotFoundError('Exam not found');
   }
 
-  await supabase.from('exams').update({ grades_released: gradesReleased, updated_at: new Date().toISOString() }).eq('id', examId);
+  const { error: updateError } = await supabase.from('exams').update({ grades_released: gradesReleased, updated_at: new Date().toISOString() }).eq('id', examId);
+  if (updateError) throw new Error(`Failed to update exams: ${updateError.message}`);
   logger.info('Exam grades release toggled', { examId, gradesReleased });
 
-  const { data: updated } = await supabase.from('exams').select('*').eq('id', examId).single();
+  const { data: updated, error: readError } = await supabase.from('exams').select('*').eq('id', examId).single();
+  if (readError) throw readError;
   return updated;
 }
 
 /** Get all exam results for a specific student, ordered by startedAt desc. */
 export async function getExamResults(examId: string, studentId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data: exam } = await supabase
+  const { data: exam, error } = await supabase
     .from('exams')
     .select('grades_released')
     .eq('id', examId)
     .maybeSingle();
+  if (error) throw error;
   
   if (!exam) throw new NotFoundError('Exam not found');
 
   const resultsGated = !exam.grades_released;
 
-  const { data: attempts } = await supabase
+  const { data: attempts, error: attemptError } = await supabase
     .from('exam_attempts')
     .select('*')
     .eq('exam_id', examId)
     .eq('student_id', studentId);
+  if (attemptError) throw attemptError;
 
   const sorted = (attempts || []).sort((a: any, b: any) => 
     new Date(b.started_at).getTime() - new Date(a.started_at).getTime()

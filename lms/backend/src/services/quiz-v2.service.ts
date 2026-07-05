@@ -511,7 +511,8 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
   );
   const newLevel = computeLevel(accuracy, avgReactionTime, complexityHandled);
 
-  await supabase.from('users').update({ level: newLevel }).eq('id', studentId);
+  const { error: updateErr } = await supabase.from('users').update({ level: newLevel }).eq('id', studentId);
+  if (updateErr) throw updateErr;
 
   const result: Record<string, unknown> = {
     answers: gradedAnswers, score, totalPoints, percentage, passed,

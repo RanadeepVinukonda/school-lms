@@ -150,10 +150,11 @@ export async function generateQuestionsFromExistingBank(params: {
   const supabase = getSupabaseAdmin();
   if (!supabase) return [];
 
-  const { data: existing } = await supabase
+  const { data: existing, error } = await supabase
     .from('concept_questions')
     .select('question, type, difficulty')
     .eq('concept_id', params.conceptId);
+  if (error) throw error;
 
   const existingTypes = new Set((existing || []).map((q: any) => q.type));
   const missingTypes = resolveTypes(params.types).filter((t) => !existingTypes.has(t));
@@ -163,11 +164,12 @@ export async function generateQuestionsFromExistingBank(params: {
   const supabase2 = getSupabaseAdmin();
   if (!supabase2) return [];
 
-  const { data: concept } = await supabase2
+  const { data: concept, error: conceptError } = await supabase2
     .from('concepts')
     .select('title, data')
     .eq('id', params.conceptId)
     .single();
+  if (conceptError) throw conceptError;
 
   const conceptName = concept?.title || concept?.data?.title || 'Untitled Concept';
 

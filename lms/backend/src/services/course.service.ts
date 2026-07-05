@@ -6,14 +6,16 @@ import { parsePagination } from '../utils/pagination';
 
 async function nosqlDoc(collection: string, docId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data } = await supabase.from('nosql_docs').select('doc_id, data').eq('collection', collection).eq('doc_id', docId).maybeSingle();
+  const { data, error } = await supabase.from('nosql_docs').select('doc_id, data').eq('collection', collection).eq('doc_id', docId).maybeSingle();
+  if (error) throw new Error('Failed to fetch document: ' + error.message);
   return data || null;
 }
 
 async function setNosqlDoc(collection: string, docId: string, docData: Record<string, unknown>) {
   const supabase = getSupabaseAdmin()!;
   const now = new Date().toISOString();
-  await supabase.from('nosql_docs').upsert({ collection, doc_id: docId, data: docData, updated_at: now }, { onConflict: 'collection,doc_id' });
+  const { error } = await supabase.from('nosql_docs').upsert({ collection, doc_id: docId, data: docData, updated_at: now }, { onConflict: 'collection,doc_id' });
+  if (error) throw new Error('Failed to upsert document: ' + error.message);
 }
 
 /** Create a new course with draft status and zero enrollment/lesson counts. */
@@ -70,7 +72,8 @@ export async function deleteCourse(courseId: string) {
   const existing = await nosqlDoc('courses', courseId);
   if (!existing) throw new NotFoundError('Course not found');
 
-  await supabase.from('nosql_docs').delete().eq('collection', 'courses').eq('doc_id', courseId);
+  const { error } = await supabase.from('nosql_docs').delete().eq('collection', 'courses').eq('doc_id', courseId);
+  if (error) throw new Error('Failed to delete course: ' + error.message);
   logger.info('Course deleted', { courseId });
 }
 
@@ -103,7 +106,8 @@ export async function listCourses(query: {
   if (query.classId) dbQuery = dbQuery.contains('data', { classId: query.classId });
   if (query.teacherId) dbQuery = dbQuery.contains('data', { teacherId: query.teacherId });
 
-  const { data: rows } = await dbQuery;
+  const { data: rows, error } = await dbQuery;
+  if (error) throw new Error('Failed to fetch courses: ' + error.message);
   let items = (rows || []).map((row) => ({
     id: row.doc_id,
     ...row.data as Record<string, unknown>,
@@ -161,7 +165,8 @@ export async function unenrollStudent(courseId: string, studentId: string) {
   const enrollment = await nosqlDoc('enrollment', enrollmentId);
   if (!enrollment) throw new NotFoundError('Enrollment not found');
 
-  await supabase.from('nosql_docs').delete().eq('collection', 'enrollment').eq('doc_id', enrollmentId);
+  const { error } = await supabase.from('nosql_docs').delete().eq('collection', 'enrollment').eq('doc_id', enrollmentId);
+  if (error) throw new Error('Failed to delete enrollment: ' + error.message);
 
   const existing = await nosqlDoc('courses', courseId);
   if (existing) {
@@ -177,9 +182,10 @@ export async function unenrollStudent(courseId: string, studentId: string) {
 /** Get all active enrollments for a given course. */
 export async function getEnrollments(courseId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
+  const { data: rows, error } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', 'enrollment')
     .contains('data', { courseId, status: 'active' });
+  if (error) throw new Error('Failed to fetch enrollments: ' + error.message);
 
   return (rows || []).map((row) => ({
     id: row.doc_id,

@@ -35,13 +35,14 @@ async function populateMockContent(textbookId: string, textbookTitle: string): P
     const chapInfo = chapDetails[cIdx];
     const chapId = uuidv4();
 
-    await supabase.from('chapters').insert({
+    const { error: insertChapterError } = await supabase.from('chapters').insert({
       id: chapId,
       textbook_id: textbookId,
       title: chapInfo.title,
       order: cIdx + 1,
       summary: `Coverage of ${chapInfo.title}`,
     });
+    if (insertChapterError) throw new Error(`Failed to insert chapters: ${insertChapterError.message}`);
 
     for (let coIdx = 0; coIdx < chapInfo.concepts.length; coIdx++) {
       const conceptTitle = chapInfo.concepts[coIdx];
@@ -57,7 +58,7 @@ async function populateMockContent(textbookId: string, textbookTitle: string): P
         { id: uuidv4(), concept_id: conceptId, textbook_id: textbookId, chapter_id: chapId, type: 'passage', difficulty: 'hots', text: `Based on the passage, what is the main idea about ${conceptTitle}?`, passage_text: `${conceptTitle} is a vital concept that has evolved over time through research.`, options: ['It is static', 'It is dynamic', 'It is irrelevant', 'It is trivial'], answer: 'It is dynamic', explanation: '', points: 10 },
       ];
 
-      await supabase.from('concepts').insert({
+      const { error: insertConceptError } = await supabase.from('concepts').insert({
         id: conceptId,
         chapter_id: chapId,
         textbook_id: textbookId,
@@ -66,14 +67,17 @@ async function populateMockContent(textbookId: string, textbookTitle: string): P
         notes: `Study notes covering key rules and principles of ${conceptTitle}.`,
         video_links: [`https://www.youtube.com/results?search_query=${encodeURIComponent(conceptTitle)}`],
       });
+      if (insertConceptError) throw new Error(`Failed to insert concepts: ${insertConceptError.message}`);
 
       for (const q of questionBank) {
-        await supabase.from('concept_questions').insert(q as Record<string, unknown>);
+        const { error: insertQError } = await supabase.from('concept_questions').insert(q as Record<string, unknown>);
+        if (insertQError) throw new Error(`Failed to insert concept_questions: ${insertQError.message}`);
       }
     }
   }
 
-  await supabase.from('textbooks').update({ status: 'ready', chapter_count: chapDetails.length, updated_at: new Date().toISOString() }).eq('id', textbookId);
+  const { error: updateTbError } = await supabase.from('textbooks').update({ status: 'ready', chapter_count: chapDetails.length, updated_at: new Date().toISOString() }).eq('id', textbookId);
+  if (updateTbError) throw new Error(`Failed to update textbooks: ${updateTbError.message}`);
 }
 
 export async function createTextbook(data: {
@@ -95,7 +99,7 @@ export async function createTextbook(data: {
   let assignment: Record<string, unknown> | null = null;
 
   if (data.teacherRole !== 'admin') {
-    const { data: teacherAssignments } = await supabase
+    const { data: teacherAssignments, error } = await supabase
       .from('nosql_docs')
       .select('data, doc_id')
       .eq('collection', 'teacherClassSubject')
@@ -103,6 +107,7 @@ export async function createTextbook(data: {
       .filter('data->>classId', 'eq', data.classId)
       .filter('data->>subjectId', 'eq', data.subjectId)
       .limit(1);
+    if (error) throw error;
 
     if (!teacherAssignments?.length) {
       throw new ForbiddenError('You are not assigned to teach this subject in this class');
@@ -181,19 +186,21 @@ export async function createTextbook(data: {
   }
 
   if (assignment?.id) {
-    const { data: existing } = await supabase
+    const { data: existing, error } = await supabase
       .from('nosql_docs')
       .select('data')
       .eq('collection', 'teacherClassSubject')
       .eq('doc_id', assignment.id)
       .maybeSingle();
+    if (error) throw error;
     const merged = { ...(existing?.data as Record<string, unknown> ?? {}), textbookId, updatedAt: now };
-    await supabase.from('nosql_docs').upsert({
+    const { error: upsertError } = await supabase.from('nosql_docs').upsert({
       collection: 'teacherClassSubject',
       doc_id: assignment.id,
       data: merged,
       updated_at: now,
     }, { onConflict: 'collection,doc_id' });
+    if (upsertError) throw new Error(`Failed to upsert nosql_docs: ${upsertError.message}`);
   }
 
   logger.info('Textbook created', { textbookId, title: data.title, status });
@@ -213,14 +220,16 @@ export async function reprocessTextbook(textbookId: string, requestingTeacherId:
   if (doc.status !== 'failed') throw new ConflictError(`Cannot reprocess textbook with status "${doc.status}". Only "failed" textbooks can be reprocessed.`);
   if (!doc.storage_path) throw new ConflictError('Textbook has no storagePath — cannot reprocess without an uploaded PDF.');
 
-  await supabase.from('textbooks').update({ status: 'processing', failure_reason: null, updated_at: new Date().toISOString() }).eq('id', textbookId);
+  const { error: updateProcessingError } = await supabase.from('textbooks').update({ status: 'processing', failure_reason: null, updated_at: new Date().toISOString() }).eq('id', textbookId);
+  if (updateProcessingError) throw new Error(`Failed to update textbooks: ${updateProcessingError.message}`);
   try {
     await addUploadJob(textbookId, doc.storage_path);
     logger.info('Textbook reprocessing triggered', { textbookId });
     return { textbookId, status: 'processing' };
   } catch {
     await populateMockContent(textbookId, doc.title);
-    await supabase.from('textbooks').update({ status: 'ready', failure_reason: null, updated_at: new Date().toISOString() }).eq('id', textbookId);
+    const { error: updateReadyError } = await supabase.from('textbooks').update({ status: 'ready', failure_reason: null, updated_at: new Date().toISOString() }).eq('id', textbookId);
+    if (updateReadyError) throw new Error(`Failed to update textbooks: ${updateReadyError.message}`);
     logger.info('Textbook reprocessed with mock content (inline fallback)', { textbookId });
     return { textbookId, status: 'ready' };
   }
@@ -233,7 +242,8 @@ export async function getTextbooksByClassAndSubject(classId: string, subjectId: 
   if (schoolId) {
     query = query.eq('school_id', schoolId);
   }
-  const { data } = await query;
+  const { data, error } = await query;
+  if (error) throw new Error('Failed to fetch textbooks: ' + error.message);
   return data || [];
 }
 
@@ -244,7 +254,8 @@ export async function listAllTextbooks(schoolId?: string) {
   if (schoolId) {
     query = query.eq('school_id', schoolId);
   }
-  const { data } = await query;
+  const { data, error } = await query;
+  if (error) throw new Error('Failed to fetch textbooks: ' + error.message);
   return data || [];
 }
 
@@ -270,7 +281,8 @@ export async function getChapters(textbookId: string, user?: Express.Request['us
   // Verify user has access to this textbook
   await getTextbookById(textbookId, user);
 
-  const { data } = await supabase.from('chapters').select('*').eq('textbook_id', textbookId).order('order', { ascending: true });
+  const { data, error } = await supabase.from('chapters').select('*').eq('textbook_id', textbookId).order('order', { ascending: true });
+  if (error) throw error;
   return data || [];
 }
 
@@ -281,7 +293,8 @@ export async function getConcepts(textbookId: string, chapterId: string, user?: 
   // Verify user has access to this textbook
   await getTextbookById(textbookId, user);
 
-  const { data } = await supabase.from('concepts').select('*').eq('chapter_id', chapterId).eq('textbook_id', textbookId).order('order', { ascending: true });
+  const { data, error } = await supabase.from('concepts').select('*').eq('chapter_id', chapterId).eq('textbook_id', textbookId).order('order', { ascending: true });
+  if (error) throw error;
   return data || [];
 }
 
@@ -301,15 +314,24 @@ export async function deleteTextbook(textbookId: string) {
   const { error: rpcErr } = await supabase.rpc('delete_textbook_cascade', { tid: textbookId });
   if (rpcErr) {
     logger.warn('delete_textbook_cascade RPC failed, falling back to sequential deletes', { textbookId, error: rpcErr.message });
-    await supabase.from('concept_questions').delete().eq('textbook_id', textbookId);
-    await supabase.from('concept_resources').delete().eq('textbook_id', textbookId);
-    await supabase.from('concept_videos').delete().eq('textbook_id', textbookId);
-    await supabase.from('concept_notes').delete().eq('textbook_id', textbookId);
-    await supabase.from('raw_pages').delete().eq('textbook_id', textbookId);
-    await supabase.from('processing_jobs').delete().eq('textbook_id', textbookId);
-    await supabase.from('concepts').delete().eq('textbook_id', textbookId);
-    await supabase.from('chapters').delete().eq('textbook_id', textbookId);
-    await supabase.from('textbooks').delete().eq('id', textbookId);
+    const { error: delErr1 } = await supabase.from('concept_questions').delete().eq('textbook_id', textbookId);
+    if (delErr1) throw new Error(`Failed to delete concept_questions: ${delErr1.message}`);
+    const { error: delErr2 } = await supabase.from('concept_resources').delete().eq('textbook_id', textbookId);
+    if (delErr2) throw new Error(`Failed to delete concept_resources: ${delErr2.message}`);
+    const { error: delErr3 } = await supabase.from('concept_videos').delete().eq('textbook_id', textbookId);
+    if (delErr3) throw new Error(`Failed to delete concept_videos: ${delErr3.message}`);
+    const { error: delErr4 } = await supabase.from('concept_notes').delete().eq('textbook_id', textbookId);
+    if (delErr4) throw new Error(`Failed to delete concept_notes: ${delErr4.message}`);
+    const { error: delErr5 } = await supabase.from('raw_pages').delete().eq('textbook_id', textbookId);
+    if (delErr5) throw new Error(`Failed to delete raw_pages: ${delErr5.message}`);
+    const { error: delErr6 } = await supabase.from('processing_jobs').delete().eq('textbook_id', textbookId);
+    if (delErr6) throw new Error(`Failed to delete processing_jobs: ${delErr6.message}`);
+    const { error: delErr7 } = await supabase.from('concepts').delete().eq('textbook_id', textbookId);
+    if (delErr7) throw new Error(`Failed to delete concepts: ${delErr7.message}`);
+    const { error: delErr8 } = await supabase.from('chapters').delete().eq('textbook_id', textbookId);
+    if (delErr8) throw new Error(`Failed to delete chapters: ${delErr8.message}`);
+    const { error: delErr9 } = await supabase.from('textbooks').delete().eq('id', textbookId);
+    if (delErr9) throw new Error(`Failed to delete textbooks: ${delErr9.message}`);
   }
 
   try {

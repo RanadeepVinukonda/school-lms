@@ -67,6 +67,7 @@ describe('notification.service', () => {
     expect(result.email).toBe(false);
   });
   it('creates multiple notifications', async () => {
+    (mockQuery as any).data = [{ id: 'n-bulk-1' }];
     const result = await createBulkNotifications([{ userId: 'u1', type: 'info', title: 'Bulk', body: 'Test' }]);
     expect(result).toHaveLength(1);
   });

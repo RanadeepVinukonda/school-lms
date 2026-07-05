@@ -13,7 +13,8 @@ const EV2 = 'examV2';
 const EAV2 = 'examAttemptV2';
 
 async function nosqlGet(col: string, id: string) {
-  const { data: row } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  const { data: row, error } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  if (error) throw error;
   return { exists: !!row, data: (row?.data as Record<string, unknown>) ?? null };
 }
 
@@ -26,7 +27,8 @@ async function nosqlSet(col: string, id: string, data: Record<string, unknown>) 
 }
 
 async function nosqlUpdate(col: string, id: string, updates: Record<string, unknown>) {
-  const { data: existing } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  const { data: existing, error: existingError } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  if (existingError) throw existingError;
   const merged = { ...((existing?.data as Record<string, unknown>) || {}), ...updates };
   const { error } = await getSupabaseAdmin()!.from('nosql_docs').upsert({
     collection: col, doc_id: id, data: merged,
@@ -51,12 +53,14 @@ async function nosqlQuery(col: string, filters: Record<string, unknown>) {
 }
 
 async function getConceptsForChapter(textbookId: string, chapterId: string) {
-  const { data: rows } = await getSupabaseAdmin()!.from('concepts').select('*').eq('chapter_id', chapterId);
+  const { data: rows, error } = await getSupabaseAdmin()!.from('concepts').select('*').eq('chapter_id', chapterId);
+  if (error) throw error;
   return rows || [];
 }
 
 async function getQuestionsForConcept(conceptId: string) {
-  const { data: rows } = await getSupabaseAdmin()!.from('concept_questions').select('*').eq('concept_id', conceptId);
+  const { data: rows, error } = await getSupabaseAdmin()!.from('concept_questions').select('*').eq('concept_id', conceptId);
+  if (error) throw error;
   return rows || [];
 }
 
@@ -158,7 +162,8 @@ export async function startExamAttempt(examId: string, studentId: string, select
   const maxAttempts = (examData.maxAttempts as number) || 1;
   if (existingAttempts.length >= maxAttempts) throw new ForbiddenError('Maximum attempts reached');
 
-  const { data: userRow } = await supabase.from('users').select('level').eq('id', studentId).maybeSingle();
+  const { data: userRow, error: userError } = await supabase.from('users').select('level').eq('id', studentId).maybeSingle();
+  if (userError) throw userError;
   const studentLevel: StudentLevel = ((userRow?.level as StudentLevel) || 'beginner');
 
   const concepts = await getConceptsForChapter(examData.textbookId as string, examData.chapterId as string);
@@ -331,7 +336,8 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
   );
   const newLevel = computeLevel(accuracy, avgReactionTime, complexityHandled);
 
-  await supabase.from('users').update({ level: newLevel }).eq('id', studentId);
+  const { error } = await supabase.from('users').update({ level: newLevel }).eq('id', studentId);
+  if (error) throw error;
 
   const result: Record<string, unknown> = {
     answers: gradedAnswers, score, totalPoints, percentage, passed, timeSpent,

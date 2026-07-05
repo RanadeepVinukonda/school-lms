@@ -17,13 +17,16 @@ export async function saveLtiConfig(schoolId: string, data: Omit<LtiConfig, 'sch
   const supabase = getSupabaseAdmin();
   if (!supabase) return null;
 
-  const { data: existing } = await supabase.from('lti_configs').select('id').eq('school_id', schoolId).maybeSingle();
+  const { data: existing, error: fetchErr } = await supabase.from('lti_configs').select('id').eq('school_id', schoolId).maybeSingle();
+  if (fetchErr) throw new Error('Failed to fetch LTI config: ' + fetchErr.message);
 
   if (existing) {
-    const { data: result } = await supabase.from('lti_configs').update(data).eq('school_id', schoolId).select().single();
+    const { data: result, error: updateErr } = await supabase.from('lti_configs').update(data).eq('school_id', schoolId).select().single();
+    if (updateErr) throw new Error(`Failed to update LTI config: ${updateErr.message}`);
     return result;
   } else {
-    const { data: result } = await supabase.from('lti_configs').insert({ school_id: schoolId, ...data }).select().single();
+    const { data: result, error: insertErr } = await supabase.from('lti_configs').insert({ school_id: schoolId, ...data }).select().single();
+    if (insertErr) throw new Error(`Failed to save LTI config: ${insertErr.message}`);
     return result;
   }
 }
@@ -31,7 +34,8 @@ export async function saveLtiConfig(schoolId: string, data: Omit<LtiConfig, 'sch
 export async function getLtiConfig(schoolId: string) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return null;
-  const { data } = await supabase.from('lti_configs').select('*').eq('school_id', schoolId).maybeSingle();
+  const { data, error } = await supabase.from('lti_configs').select('*').eq('school_id', schoolId).maybeSingle();
+  if (error) throw new Error('Failed to fetch LTI config: ' + error.message);
   return data;
 }
 
@@ -52,12 +56,13 @@ export async function handleLtiLaunch(idToken: string) {
     const auds = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
     const aud = auds[0];
 
-    const { data: config } = await supabase
+    const { data: config, error: configErr } = await supabase
       .from('lti_configs')
       .select('*')
       .eq('issuer', iss)
       .eq('client_id', aud)
       .maybeSingle();
+    if (configErr) throw new Error('Failed to fetch LTI config: ' + configErr.message);
 
     if (!config) {
       throw new Error(`LTI platform config not found for issuer: ${iss}, audience: ${aud}`);
@@ -115,14 +120,16 @@ export async function handleLtiLaunch(idToken: string) {
 
     if (!email) throw new Error('Email claim is required in LTI launch ID token');
 
-    let { data: user } = await supabase.from('users').select('*').eq('email', email).maybeSingle();
+    let { data: user, error: userErr } = await supabase.from('users').select('*').eq('email', email).maybeSingle();
+    if (userErr) throw new Error('Failed to fetch user: ' + userErr.message);
     if (!user) {
-      const { data: newUser } = await supabase.from('users').insert({
+      const { data: newUser, error: insertUserErr } = await supabase.from('users').insert({
         email,
         display_name: name,
         role,
         is_active: true
       }).select().single();
+      if (insertUserErr) throw new Error(`Failed to create user: ${insertUserErr.message}`);
       user = newUser;
     }
 

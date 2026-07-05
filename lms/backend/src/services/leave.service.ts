@@ -21,7 +21,8 @@ export async function requestLeave(schoolId: string, data: { staff_id: string; s
     logger.warn('Insufficient leave balance', { staff_id: data.staff_id, requestedDays, balance });
     return null;
   }
-  const { data: result } = await supabase.from('leave_requests').insert({ school_id: schoolId, ...data, status: 'pending' }).select().single();
+  const { data: result, error } = await supabase.from('leave_requests').insert({ school_id: schoolId, ...data, status: 'pending' }).select().single();
+  if (error) throw new Error(`Failed to request leave: ${error.message}`);
   return result;
 }
 
@@ -37,10 +38,11 @@ export async function getLeaveRequests(schoolId: string) {
 
 export async function updateLeaveStatus(id: string, status: 'approved' | 'rejected', approvedBy: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return null;
-  const { data: result } = await supabase
+  const { data: result, error } = await supabase
     .from('leave_requests')
     .update({ status, approved_by: approvedBy })
     .eq('id', id)
     .select().single();
+  if (error) throw new Error(`Failed to update leave status: ${error.message}`);
   return result;
 }

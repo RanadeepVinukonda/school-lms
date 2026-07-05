@@ -37,21 +37,25 @@ const NOSQL = { coding: 'codingProjects', stream: 'streamProjects' };
 
 async function getNsDoc(collection: string, docId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data } = await supabase.from('nosql_docs').select('data, doc_id').eq('collection', collection).eq('doc_id', docId).maybeSingle();
+  const { data, error } = await supabase.from('nosql_docs').select('data, doc_id').eq('collection', collection).eq('doc_id', docId).maybeSingle();
+  if (error) throw new Error('Failed to fetch document: ' + error.message);
   return data ? { id: data.doc_id, ...data.data as Record<string, unknown> } : null;
 }
 
 async function upsertNsDoc(collection: string, docId: string, data: Record<string, unknown>) {
   const supabase = getSupabaseAdmin()!;
   const now = new Date().toISOString();
-  const { data: existing } = await supabase.from('nosql_docs').select('data').eq('collection', collection).eq('doc_id', docId).maybeSingle();
+  const { data: existing, error: fetchErr } = await supabase.from('nosql_docs').select('data').eq('collection', collection).eq('doc_id', docId).maybeSingle();
+  if (fetchErr) throw new Error('Failed to fetch existing document: ' + fetchErr.message);
   const merged = { ...(existing?.data as Record<string, unknown> ?? {}), ...data };
-  await supabase.from('nosql_docs').upsert({ collection, doc_id: docId, data: merged, updated_at: now }, { onConflict: 'collection,doc_id' });
+  const { error } = await supabase.from('nosql_docs').upsert({ collection, doc_id: docId, data: merged, updated_at: now }, { onConflict: 'collection,doc_id' });
+  if (error) throw new Error('Failed to upsert document: ' + error.message);
 }
 
 export async function getAllProjects() {
   const supabase = getSupabaseAdmin()!;
-  const { data: docs } = await supabase.from('nosql_docs').select('data, doc_id').eq('collection', NOSQL.coding).order('updated_at', { ascending: false });
+  const { data: docs, error } = await supabase.from('nosql_docs').select('data, doc_id').eq('collection', NOSQL.coding).order('updated_at', { ascending: false });
+  if (error) throw new Error('Failed to fetch coding projects: ' + error.message);
   return (docs || []).map((d) => ({ id: d.doc_id, ...d.data as Record<string, unknown> }));
 }
 
@@ -66,7 +70,8 @@ export async function createProject(data: Omit<CodingProject, 'id' | 'createdAt'
   const id = uuidv4();
   const now = new Date().toISOString();
   const project = { ...data, collaborators: [], code: data.code || '', createdAt: now, updatedAt: now };
-  await supabase.from('nosql_docs').upsert({ collection: NOSQL.coding, doc_id: id, data: project, created_at: now, updated_at: now }, { onConflict: 'collection,doc_id' });
+  const { error } = await supabase.from('nosql_docs').upsert({ collection: NOSQL.coding, doc_id: id, data: project, created_at: now, updated_at: now }, { onConflict: 'collection,doc_id' });
+  if (error) throw new Error('Failed to upsert coding project: ' + error.message);
   logger.info('Coding project created', { id, title: project.title });
   return { id, ...project };
 }
@@ -89,7 +94,8 @@ export async function deleteProject(id: string, userId: string) {
     throw new ForbiddenError('Not authorized to delete this project');
   }
   const supabase = getSupabaseAdmin()!;
-  await supabase.from('nosql_docs').delete().eq('collection', NOSQL.coding).eq('doc_id', id);
+  const { error } = await supabase.from('nosql_docs').delete().eq('collection', NOSQL.coding).eq('doc_id', id);
+  if (error) throw new Error('Failed to delete coding project: ' + error.message);
   logger.info('Coding project deleted', { id });
 }
 
@@ -162,7 +168,8 @@ export async function executeCode(code: string, language: string) {
 
 export async function getAllStreamProjects() {
   const supabase = getSupabaseAdmin()!;
-  const { data: docs } = await supabase.from('nosql_docs').select('data, doc_id').eq('collection', NOSQL.stream).order('created_at', { ascending: false });
+  const { data: docs, error } = await supabase.from('nosql_docs').select('data, doc_id').eq('collection', NOSQL.stream).order('created_at', { ascending: false });
+  if (error) throw new Error('Failed to fetch stream projects: ' + error.message);
   return (docs || []).map((d) => ({ id: d.doc_id, ...d.data as Record<string, unknown> }));
 }
 
@@ -171,7 +178,8 @@ export async function createStreamProject(data: Omit<StreamProject, 'id' | 'crea
   const id = uuidv4();
   const now = new Date().toISOString();
   const project = { ...data, collaborators: [], createdAt: now };
-  await supabase.from('nosql_docs').upsert({ collection: NOSQL.stream, doc_id: id, data: project, created_at: now, updated_at: now }, { onConflict: 'collection,doc_id' });
+  const { error } = await supabase.from('nosql_docs').upsert({ collection: NOSQL.stream, doc_id: id, data: project, created_at: now, updated_at: now }, { onConflict: 'collection,doc_id' });
+  if (error) throw new Error('Failed to upsert stream project: ' + error.message);
   logger.info('STREAM project created', { id, title: project.title });
   return { id, ...project };
 }
@@ -193,28 +201,33 @@ export async function deleteStreamProject(id: string) {
   const doc = await getNsDoc(NOSQL.stream, id);
   if (!doc) throw new NotFoundError('STREAM project not found');
   const supabase = getSupabaseAdmin()!;
-  await supabase.from('nosql_docs').delete().eq('collection', NOSQL.stream).eq('doc_id', id);
+  const { error } = await supabase.from('nosql_docs').delete().eq('collection', NOSQL.stream).eq('doc_id', id);
+  if (error) throw new Error('Failed to delete stream project: ' + error.message);
   logger.info('STREAM project deleted', { id });
 }
 
 export async function addStreamCollaborator(projectId: string, collaboratorId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data: existing } = await supabase.from('nosql_docs').select('data').eq('collection', NOSQL.stream).eq('doc_id', projectId).maybeSingle();
+  const { data: existing, error } = await supabase.from('nosql_docs').select('data').eq('collection', NOSQL.stream).eq('doc_id', projectId).maybeSingle();
+  if (error) throw new Error('Failed to fetch stream project: ' + error.message);
   if (!existing) throw new NotFoundError('STREAM project not found');
   const data = existing.data as Record<string, unknown>;
   const collaborators = [...new Set([...(data.collaborators as string[] || []), collaboratorId])];
   const now = new Date().toISOString();
-  await supabase.from('nosql_docs').upsert({ collection: NOSQL.stream, doc_id: projectId, data: { ...data, collaborators, updatedAt: now }, updated_at: now }, { onConflict: 'collection,doc_id' });
+  const { error: upsertErr } = await supabase.from('nosql_docs').upsert({ collection: NOSQL.stream, doc_id: projectId, data: { ...data, collaborators, updatedAt: now }, updated_at: now }, { onConflict: 'collection,doc_id' });
+  if (upsertErr) throw new Error('Failed to add collaborator to stream project: ' + upsertErr.message);
   return getNsDoc(NOSQL.stream, projectId) as Promise<Record<string, unknown>>;
 }
 
 export async function removeStreamCollaborator(projectId: string, collaboratorId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data: existing } = await supabase.from('nosql_docs').select('data').eq('collection', NOSQL.stream).eq('doc_id', projectId).maybeSingle();
+  const { data: existing, error } = await supabase.from('nosql_docs').select('data').eq('collection', NOSQL.stream).eq('doc_id', projectId).maybeSingle();
+  if (error) throw new Error('Failed to fetch stream project: ' + error.message);
   if (!existing) throw new NotFoundError('STREAM project not found');
   const data = existing.data as Record<string, unknown>;
   const collaborators = (data.collaborators as string[] || []).filter((c: string) => c !== collaboratorId);
   const now = new Date().toISOString();
-  await supabase.from('nosql_docs').upsert({ collection: NOSQL.stream, doc_id: projectId, data: { ...data, collaborators, updatedAt: now }, updated_at: now }, { onConflict: 'collection,doc_id' });
+  const { error: upsertErr } = await supabase.from('nosql_docs').upsert({ collection: NOSQL.stream, doc_id: projectId, data: { ...data, collaborators, updatedAt: now }, updated_at: now }, { onConflict: 'collection,doc_id' });
+  if (upsertErr) throw new Error('Failed to remove collaborator from stream project: ' + upsertErr.message);
   return getNsDoc(NOSQL.stream, projectId) as Promise<Record<string, unknown>>;
 }

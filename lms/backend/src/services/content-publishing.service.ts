@@ -57,7 +57,8 @@ export async function publishContent(request: PublishRequest): Promise<Published
 
   switch (request.contentType) {
     case 'test': {
-      const { data: testRow } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', QUIZV2).eq('doc_id', request.contentId).maybeSingle();
+      const { data: testRow, error } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', QUIZV2).eq('doc_id', request.contentId).maybeSingle();
+      if (error) throw error;
       if (testRow?.data) {
         const testData = testRow.data as Record<string, unknown>;
         title = (testData.title as string) || 'Untitled Test';
@@ -66,7 +67,8 @@ export async function publishContent(request: PublishRequest): Promise<Published
       break;
     }
     case 'resource': {
-      const { data: resRow } = await getSupabaseAdmin()!.from('concept_resources').select('title, description').eq('id', request.contentId).maybeSingle();
+      const { data: resRow, error } = await getSupabaseAdmin()!.from('concept_resources').select('title, description').eq('id', request.contentId).maybeSingle();
+      if (error) throw error;
       if (resRow) {
         title = resRow.title || 'Resource';
         description = resRow.description || '';
@@ -74,7 +76,8 @@ export async function publishContent(request: PublishRequest): Promise<Published
       break;
     }
     case 'mindmap': {
-      const { data: mmRow } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', MINDMAP).eq('doc_id', request.contentId).maybeSingle();
+      const { data: mmRow, error } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', MINDMAP).eq('doc_id', request.contentId).maybeSingle();
+      if (error) throw error;
       if (mmRow?.data) {
         const mmData = mmRow.data as Record<string, unknown>;
         title = (mmData.title as string) || 'Mind Map';
@@ -83,27 +86,29 @@ export async function publishContent(request: PublishRequest): Promise<Published
       break;
     }
     case 'video': {
-      const videoDoc = await getSupabaseAdmin()!
+      const { data: videoDoc, error: videoErr } = await getSupabaseAdmin()!
         .from('concept_videos')
         .select('title, description')
         .eq('id', request.contentId)
         .single();
-      if (videoDoc.data) {
-        title = videoDoc.data.title || 'Video';
-        description = videoDoc.data.description || '';
+      if (videoErr) throw videoErr;
+      if (videoDoc) {
+        title = videoDoc.title || 'Video';
+        description = videoDoc.description || '';
       }
       break;
     }
     case 'note':
     case 'material': {
-      const noteDoc = await getSupabaseAdmin()!
+      const { data: noteDoc, error: noteErr } = await getSupabaseAdmin()!
         .from('concept_notes')
         .select('summary, notes')
         .eq('concept_id', request.conceptId)
         .single();
-      if (noteDoc.data) {
+      if (noteErr) throw noteErr;
+      if (noteDoc) {
         title = `Notes: ${request.conceptId}`;
-        description = noteDoc.data.summary || noteDoc.data.notes?.substring(0, 200) || '';
+        description = noteDoc.summary || noteDoc.notes?.substring(0, 200) || '';
       }
       break;
     }
@@ -131,10 +136,11 @@ export async function publishContent(request: PublishRequest): Promise<Published
   };
 
   const supabase = getSupabaseAdmin()!;
-  await supabase.from('nosql_docs').upsert({
+  const { error } = await supabase.from('nosql_docs').upsert({
     collection: QUIZV2, doc_id: id, data: published as unknown as Record<string, unknown>,
     updated_at: now,
   }, { onConflict: 'collection,doc_id' });
+  if (error) throw error;
 
   logger.info('Content published', {
     publishId: id,
@@ -155,7 +161,8 @@ export async function publishContent(request: PublishRequest): Promise<Published
         }))
       );
     } else {
-      const { data: studentRows } = await supabase.from('users').select('id').contains('class_ids', [request.classId]);
+      const { data: studentRows, error: studentFetchErr } = await supabase.from('users').select('id').contains('class_ids', [request.classId]);
+      if (studentFetchErr) throw studentFetchErr;
       const studentIds = (studentRows || []).map((r) => r.id);
 
       if (studentIds.length > 0) {
@@ -219,7 +226,8 @@ export async function getPublishedContentForStudent(studentId: string, classIds:
 
 export async function unpublishContent(publishId: string, teacherId: string): Promise<void> {
   const supabase = getSupabaseAdmin()!;
-  const { data: row } = await supabase.from('nosql_docs').select('data').eq('collection', QUIZV2).eq('doc_id', publishId).maybeSingle();
+  const { data: row, error: fetchErr } = await supabase.from('nosql_docs').select('data').eq('collection', QUIZV2).eq('doc_id', publishId).maybeSingle();
+  if (fetchErr) throw fetchErr;
   if (!row?.data) throw new NotFoundError('Published content not found');
 
   const existing = row.data as PublishedContent;

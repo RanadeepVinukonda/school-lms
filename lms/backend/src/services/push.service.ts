@@ -119,7 +119,8 @@ export async function sendPush(userId: string, type: string, title: string, body
         failureCount++;
         const errBody = (await res.json()) as { error?: { status?: string } };
         if (errBody.error?.status === 'UNREGISTERED') {
-          await supabase.from('device_tokens').delete().eq('token', t.token);
+          const { error: deleteError } = await supabase.from('device_tokens').delete().eq('token', t.token);
+          if (deleteError) throw new Error(`Failed to delete device token: ${deleteError.message}`);
           logger.info('Cleaned up stale device token');
         }
       }

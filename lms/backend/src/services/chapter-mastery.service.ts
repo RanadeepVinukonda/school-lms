@@ -5,29 +5,32 @@ export async function checkChapterMastery(chapterId: string, classId: string): P
   const supabase = getSupabaseAdmin();
   if (!supabase) return false;
 
-  const { data: concepts } = await supabase
+  const { data: concepts, error: conceptsError } = await supabase
     .from('concepts')
     .select('id')
     .eq('chapter_id', chapterId);
+  if (conceptsError) throw conceptsError;
 
   if (!concepts || concepts.length === 0) return false;
 
   const conceptIds = concepts.map(c => c.id);
 
-  const { data: students } = await supabase
+  const { data: students, error: studentsError } = await supabase
     .from('users')
     .select('id')
     .eq('class_ids', classId);
+  if (studentsError) throw studentsError;
 
   if (!students || students.length === 0) return false;
 
   const studentIds = students.map(s => s.id);
 
-  const { data: mastery } = await supabase
+  const { data: mastery, error: masteryError } = await supabase
     .from('concept_mastery')
     .select('student_id, mastery_score')
     .in('concept_id', conceptIds)
     .in('student_id', studentIds);
+  if (masteryError) throw masteryError;
 
   if (!mastery || mastery.length === 0) return false;
 
@@ -55,12 +58,13 @@ export async function updateChapterCompletion(chapterId: string, classId: string
 
   if (existing?.data) return true;
 
-  await supabase.from('concept_progress').insert({
+  const { error } = await supabase.from('concept_progress').insert({
     chapter_id: chapterId,
     class_id: classId,
     teacher_id: teacherId,
     completed: true,
   });
+  if (error) throw new Error('Failed to insert concept progress: ' + error.message);
 
   logger.info('Chapter auto-completed', { chapterId, classId });
   return true;

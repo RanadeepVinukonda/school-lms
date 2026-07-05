@@ -82,7 +82,8 @@ const coll = (name: string) => {
 
 async function nosqlGet(collection: string, docId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data } = await supabase.from('nosql_docs').select('doc_id, data').eq('collection', collection).eq('doc_id', docId).maybeSingle();
+  const { data, error } = await supabase.from('nosql_docs').select('doc_id, data').eq('collection', collection).eq('doc_id', docId).maybeSingle();
+  if (error) throw error;
   return data || null;
 }
 
@@ -161,11 +162,12 @@ export async function awardXp(userId: string, amount: number, source: string) {
   const updated = { ...profile, xp: newXp, level: newLevel, updatedAt: new Date().toISOString() };
   await nosqlSet('gamificationProfiles', userId, updated);
 
-  await supabase.from('nosql_docs').insert({
+  const { error: txError } = await supabase.from('nosql_docs').insert({
     collection: 'gamificationTransactions', doc_id: uuidv4(),
     data: { userId, amount, type: 'xp', source, createdAt: new Date().toISOString() },
     updated_at: new Date().toISOString(),
   });
+  if (txError) throw new Error(`Failed to log gamification transaction: ${txError.message}`);
 
   logger.info('XP awarded', { userId, amount, source, newXp, newLevel });
   const profile2 = await ensureProfile(userId);
@@ -181,11 +183,12 @@ export async function awardCoins(userId: string, amount: number, source: string)
   const updated = { ...profile, coins: newCoins, updatedAt: new Date().toISOString() };
   await nosqlSet('gamificationProfiles', userId, updated);
 
-  await supabase.from('nosql_docs').insert({
+  const { error: txError } = await supabase.from('nosql_docs').insert({
     collection: 'gamificationTransactions', doc_id: uuidv4(),
     data: { userId, amount, type: 'coin', source, createdAt: new Date().toISOString() },
     updated_at: new Date().toISOString(),
   });
+  if (txError) throw new Error(`Failed to log gamification transaction: ${txError.message}`);
 
   logger.info('Coins awarded', { userId, amount, source });
   const profile2 = await ensureProfile(userId);
@@ -210,10 +213,12 @@ export async function awardXpAndCoins(
 
   const supabase = getSupabaseAdmin()!;
   try {
-    await Promise.all([
+    const [{ error: xpTxErr }, { error: coinTxErr }] = await Promise.all([
       supabase.from('nosql_docs').insert({ collection: 'gamificationTransactions', doc_id: uuidv4(), data: { userId, amount: xpAmount, type: 'xp', source, createdAt: now }, updated_at: now }),
       supabase.from('nosql_docs').insert({ collection: 'gamificationTransactions', doc_id: uuidv4(), data: { userId, amount: coinAmount, type: 'coin', source, createdAt: now }, updated_at: now }),
     ]);
+    if (xpTxErr) throw new Error(`Failed to log gamification transaction: ${xpTxErr.message}`);
+    if (coinTxErr) throw new Error(`Failed to log gamification transaction: ${coinTxErr.message}`);
   } catch (err) {
     logger.warn('Failed to log gamification transactions', { userId, source, error: err });
   }
@@ -267,16 +272,18 @@ async function checkAndAwardBadges(userId: string, profile: Record<string, unkno
 
 export async function getLeaderboard(limit = 50) {
   const supabase = getSupabaseAdmin()!;
-  const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
+  const { data: rows, error } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', 'gamificationProfiles')
     .order('data->>xp', { ascending: false })
     .limit(limit);
+  if (error) throw error;
 
   const results: Array<{ userId: string; displayName: string; xp: number; level: number; rank: number; avatar?: string }> = [];
   let rank = 1;
   for (const row of rows || []) {
     const data = row.data as Record<string, unknown>;
-    const { data: user } = await supabase.from('users').select('display_name, email, data').eq('id', row.doc_id).maybeSingle();
+    const { data: user, error: userErr } = await supabase.from('users').select('display_name, email, data').eq('id', row.doc_id).maybeSingle();
+    if (userErr) throw userErr;
     if (!user) continue;
     const userData = user.data as Record<string, unknown> || {};
     results.push({
@@ -290,7 +297,8 @@ export async function getLeaderboard(limit = 50) {
     rank++;
   }
   if (results.length === 0) {
-    const { data: allUsers } = await supabase.from('users').select('id, display_name, email, data, role');
+    const { data: allUsers, error: allUsersError } = await supabase.from('users').select('id, display_name, email, data, role');
+    if (allUsersError) throw allUsersError;
     for (const user of allUsers || []) {
       if (user.role === 'student') {
         results.push({
@@ -311,12 +319,14 @@ export async function getLeaderboard(limit = 50) {
 
 export async function getClassLeaderboard(classId: string, limit = 50) {
   const supabase = getSupabaseAdmin()!;
-  const { data: classData } = await supabase.from('classes').select('*').eq('id', classId).maybeSingle();
+  const { data: classData, error } = await supabase.from('classes').select('*').eq('id', classId).maybeSingle();
+  if (error) throw error;
   if (!classData) throw new NotFoundError('Class not found');
 
-  const { data: usersSnap } = await supabase.from('users')
+  const { data: usersSnap, error: snapError } = await supabase.from('users')
     .select('id, display_name, email, data')
     .contains('class_ids', [classId]);
+  if (snapError) throw snapError;
   let studentIds = (usersSnap || []).map((d) => d.id);
 
   if (studentIds.length === 0) {
@@ -328,7 +338,8 @@ export async function getClassLeaderboard(classId: string, limit = 50) {
   const profiles: Array<{ userId: string; xp: number; level: number; displayName: string; avatar?: string }> = [];
   for (const sid of studentIds) {
     const profile = await nosqlGet('gamificationProfiles', sid);
-    const { data: user } = await supabase.from('users').select('display_name, email, data').eq('id', sid).maybeSingle();
+    const { data: user, error: userErr } = await supabase.from('users').select('display_name, email, data').eq('id', sid).maybeSingle();
+    if (userErr) throw userErr;
     if (!user) continue;
     const p = profile?.data as Record<string, unknown> || { xp: 0, level: 1 };
     profiles.push({
@@ -359,9 +370,10 @@ function getMonthKey(date = new Date()): string {
 export async function getDailyChallenges(userId: string) {
   const supabase = getSupabaseAdmin()!;
   const today = new Date().toISOString().split('T')[0];
-  const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
+  const { data: rows, error } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', 'gamificationDailyChallenges')
     .contains('data', { userId, date: today });
+  if (error) throw error;
 
   if (rows && rows.length > 0) {
     return rows.map((r: any) => ({ id: r.doc_id, ...r.data }));
@@ -408,8 +420,9 @@ export async function getDailyChallenges(userId: string) {
 
 export async function completeDailyChallenge(userId: string, challengeId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data } = await supabase.from('nosql_docs').select('data')
+  const { data, error } = await supabase.from('nosql_docs').select('data')
     .eq('collection', 'gamificationDailyChallenges').eq('doc_id', challengeId).maybeSingle();
+  if (error) throw error;
 
   if (!data) throw new NotFoundError('Daily challenge not found');
   const challenge = data.data as Record<string, unknown>;
@@ -417,8 +430,9 @@ export async function completeDailyChallenge(userId: string, challengeId: string
   if (challenge.completed) return { alreadyCompleted: true };
 
   const merged = { ...challenge, completed: true, progress: challenge.target, updatedAt: new Date().toISOString() };
-  await supabase.from('nosql_docs').update({ data: merged })
+  const { error: updateError } = await supabase.from('nosql_docs').update({ data: merged })
     .eq('collection', 'gamificationDailyChallenges').eq('doc_id', challengeId);
+  if (updateError) throw new Error(`Failed to update daily challenge: ${updateError.message}`);
 
   const xpResult = await awardXp(userId, (challenge.xpReward as number) || 30, 'daily_challenge');
   const coinResult = await awardCoins(userId, (challenge.coinReward as number) || 15, 'daily_challenge');
@@ -439,9 +453,10 @@ async function getOrCreatePeriodChallenges(
   collectionName: string,
 ) {
   const supabase = getSupabaseAdmin()!;
-  const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
+  const { data: rows, error } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', collectionName)
     .contains('data', { userId, periodKey });
+  if (error) throw error;
 
   if (rows && rows.length > 0) {
     return rows.map((r: any) => ({ id: r.doc_id, ...r.data }));
@@ -501,8 +516,9 @@ async function completePeriodChallenge(
   source: string,
 ) {
   const supabase = getSupabaseAdmin()!;
-  const { data } = await supabase.from('nosql_docs').select('data')
+  const { data, error } = await supabase.from('nosql_docs').select('data')
     .eq('collection', collectionName).eq('doc_id', challengeId).maybeSingle();
+  if (error) throw error;
 
   if (!data) throw new NotFoundError('Challenge not found');
   const challenge = data.data as Record<string, unknown>;
@@ -510,8 +526,9 @@ async function completePeriodChallenge(
   if (challenge.completed) return { alreadyCompleted: true };
 
   const merged = { ...challenge, completed: true, progress: challenge.target, updatedAt: new Date().toISOString() };
-  await supabase.from('nosql_docs').update({ data: merged })
+  const { error: updateError } = await supabase.from('nosql_docs').update({ data: merged })
     .eq('collection', collectionName).eq('doc_id', challengeId);
+  if (updateError) throw new Error(`Failed to update period challenge: ${updateError.message}`);
 
   const xpResult = await awardXp(userId, (challenge.xpReward as number) || 100, source);
   const coinResult = await awardCoins(userId, (challenge.coinReward as number) || 50, source);

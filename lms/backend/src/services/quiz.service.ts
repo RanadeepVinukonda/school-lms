@@ -125,7 +125,8 @@ export async function deleteQuiz(quizId: string) {
     throw new NotFoundError('Quiz not found');
   }
 
-  await supabase.from('quizzes').delete().eq('id', quizId);
+  const { error } = await supabase.from('quizzes').delete().eq('id', quizId);
+  if (error) throw new Error(`Failed to delete quizzes: ${error.message}`);
   logger.info('Quiz deleted', { quizId });
 }
 
@@ -186,10 +187,12 @@ export async function startAttempt(quizId: string, studentId: string) {
     status: 'in_progress',
   };
 
-  await supabase.from('quiz_attempts').insert(attempt);
+  const { error } = await supabase.from('quiz_attempts').insert(attempt);
+  if (error) throw new Error(`Failed to insert quiz_attempts: ${error.message}`);
   
   const { data: currentQuiz } = await supabase.from('quizzes').select('attempt_count').eq('id', quizId).single();
-  await supabase.from('quizzes').update({ attempt_count: (currentQuiz?.attempt_count || 0) + 1 }).eq('id', quizId);
+  const { error: updateError } = await supabase.from('quizzes').update({ attempt_count: (currentQuiz?.attempt_count || 0) + 1 }).eq('id', quizId);
+  if (updateError) throw new Error(`Failed to update quizzes: ${updateError.message}`);
 
   logger.info('Quiz attempt started', { quizId, studentId, attemptId });
 
@@ -305,7 +308,8 @@ export async function releaseQuizGrades(quizId: string, showResults: boolean) {
     throw new NotFoundError('Quiz not found');
   }
 
-  await supabase.from('quizzes').update({ show_results: showResults, updated_at: new Date().toISOString() }).eq('id', quizId);
+  const { error } = await supabase.from('quizzes').update({ show_results: showResults, updated_at: new Date().toISOString() }).eq('id', quizId);
+  if (error) throw new Error(`Failed to update quizzes: ${error.message}`);
   logger.info('Quiz grades release toggled', { quizId, showResults });
 
   const { data: updated } = await supabase.from('quizzes').select('*').eq('id', quizId).single();

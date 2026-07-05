@@ -68,10 +68,12 @@ async function docById(collectionName: string, docId: string) {
     users: 'users', lessons: 'lessons', courses: 'courses',
   };
   if (TYPED[collectionName]) {
-    const { data } = await supabase().from(TYPED[collectionName]).select('*').eq('id', docId).maybeSingle();
+    const { data, error: docErr } = await supabase().from(TYPED[collectionName]).select('*').eq('id', docId).maybeSingle();
+    if (docErr) throw new Error('Failed to fetch document: ' + docErr.message);
     return data || null;
   }
-  const { data } = await supabase().from('nosql_docs').select('data').eq('collection', collectionName).eq('doc_id', docId).maybeSingle();
+  const { data, error: nosqlErr } = await supabase().from('nosql_docs').select('data').eq('collection', collectionName).eq('doc_id', docId).maybeSingle();
+  if (nosqlErr) throw new Error('Failed to fetch nosql document: ' + nosqlErr.message);
   return data?.data as Record<string, unknown> | null || null;
 }
 
@@ -173,7 +175,8 @@ export async function getCourseImpact(courseId: string): Promise<ImpactReport> {
 }
 
 export async function getLessonImpact(lessonId: string): Promise<ImpactReport> {
-  const { data: lessonRow } = await supabase().from('lessons').select('*').eq('id', lessonId).maybeSingle();
+  const { data: lessonRow, error: lessonErr } = await supabase().from('lessons').select('*').eq('id', lessonId).maybeSingle();
+  if (lessonErr) throw new Error('Failed to fetch lesson: ' + lessonErr.message);
   const lessonData = lessonRow?.data as Record<string, unknown> || {};
   const lessonTitle = lessonData.title || lessonId;
   const completedBy = (lessonData.completedBy as string[]) || [];
@@ -196,7 +199,8 @@ export async function getLessonImpact(lessonId: string): Promise<ImpactReport> {
 }
 
 export async function getAssignmentImpact(assignmentId: string): Promise<ImpactReport> {
-  const { data: assignDoc } = await supabase().from('assignments').select('*').eq('id', assignmentId).maybeSingle();
+  const { data: assignDoc, error: assignErr } = await supabase().from('assignments').select('*').eq('id', assignmentId).maybeSingle();
+  if (assignErr) throw new Error('Failed to fetch assignment: ' + assignErr.message);
   const assignmentTitle = assignDoc?.title || assignmentId;
 
   const submissionCount = await countTyped('submissions', 'assignmentId', assignmentId);
@@ -217,7 +221,8 @@ export async function getAssignmentImpact(assignmentId: string): Promise<ImpactR
 }
 
 export async function getExamImpact(examId: string): Promise<ImpactReport> {
-  const { data: examDoc } = await supabase().from('exams').select('*').eq('id', examId).maybeSingle();
+  const { data: examDoc, error: examErr } = await supabase().from('exams').select('*').eq('id', examId).maybeSingle();
+  if (examErr) throw new Error('Failed to fetch exam: ' + examErr.message);
   const examTitle = examDoc?.title || examId;
 
   const attemptCount = await countNosql('examAttempts', 'examId', examId);
@@ -238,7 +243,8 @@ export async function getExamImpact(examId: string): Promise<ImpactReport> {
 }
 
 export async function getQuizImpact(quizId: string): Promise<ImpactReport> {
-  const { data: quizDoc } = await supabase().from('quizzes').select('*').eq('id', quizId).maybeSingle();
+  const { data: quizDoc, error: quizErr } = await supabase().from('quizzes').select('*').eq('id', quizId).maybeSingle();
+  if (quizErr) throw new Error('Failed to fetch quiz: ' + quizErr.message);
   const quizTitle = quizDoc?.title || quizId;
 
   const attemptCount = await countNosql('quizAttempts', 'quizId', quizId);
@@ -259,7 +265,8 @@ export async function getQuizImpact(quizId: string): Promise<ImpactReport> {
 }
 
 export async function getUserImpact(userId: string): Promise<ImpactReport> {
-  const { data: userDoc } = await supabase().from('users').select('*').eq('id', userId).maybeSingle();
+  const { data: userDoc, error: userErr } = await supabase().from('users').select('*').eq('id', userId).maybeSingle();
+  if (userErr) throw new Error('Failed to fetch user: ' + userErr.message);
   const userName = userDoc?.display_name || userId;
   const userData = userDoc?.data as Record<string, unknown> || {};
 

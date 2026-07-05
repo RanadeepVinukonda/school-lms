@@ -10,7 +10,8 @@ const ASSIGNMENT_SUB_V2 = 'assignmentSubmissionV2';
 
 async function nosqlGet(col: string, id: string): Promise<{ exists: boolean; data: Record<string, unknown> | null }> {
   const supabase = getSupabaseAdmin()!;
-  const { data: row } = await supabase.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  const { data: row, error } = await supabase.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  if (error) throw error;
   return { exists: !!row, data: (row?.data as Record<string, unknown>) ?? null };
 }
 
@@ -25,13 +26,14 @@ async function nosqlSet(col: string, id: string, data: Record<string, unknown>):
 
 async function nosqlUpdate(col: string, id: string, updates: Record<string, unknown>): Promise<void> {
   const supabase = getSupabaseAdmin()!;
-  const { data: existing } = await supabase.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  const { data: existing, error } = await supabase.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  if (error) throw error;
   const merged = { ...((existing?.data as Record<string, unknown>) || {}), ...updates };
-  const { error } = await supabase.from('nosql_docs').upsert({
+  const { error: upsertError } = await supabase.from('nosql_docs').upsert({
     collection: col, doc_id: id, data: merged,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'collection,doc_id' });
-  if (error) throw error;
+  if (upsertError) throw upsertError;
 }
 
 async function nosqlDelete(col: string, id: string): Promise<void> {

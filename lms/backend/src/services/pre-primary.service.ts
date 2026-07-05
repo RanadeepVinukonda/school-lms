@@ -92,13 +92,14 @@ export async function saveTracing(data: {
 
   const tracingData = { ...data, id, createdAt: now, updatedAt: now };
 
-  await supabase.from('nosql_docs').upsert({
+  const { error } = await supabase.from('nosql_docs').upsert({
     collection: 'tracingActivities',
     doc_id: id,
     data: tracingData,
     created_at: now,
     updated_at: now,
   }, { onConflict: 'collection,doc_id' });
+  if (error) throw error;
   logger.info('Tracing saved', { id, studentId: data.studentId });
   return { ...tracingData };
 }
@@ -127,20 +128,22 @@ export async function updateProgress(studentId: string, data: {
 
   if (existing) {
     const merged = { ...existing.data as Record<string, unknown>, ...newData };
-    await supabase.from('nosql_docs').upsert({
+    const { error: upsertErr } = await supabase.from('nosql_docs').upsert({
       collection: 'prePrimaryProgress',
       doc_id: id,
       data: merged,
       updated_at: now,
     }, { onConflict: 'collection,doc_id' });
+    if (upsertErr) throw upsertErr;
   } else {
-    await supabase.from('nosql_docs').upsert({
+    const { error: upsertErr } = await supabase.from('nosql_docs').upsert({
       collection: 'prePrimaryProgress',
       doc_id: id,
       data: { ...newData, id, createdAt: now },
       created_at: now,
       updated_at: now,
     }, { onConflict: 'collection,doc_id' });
+    if (upsertErr) throw upsertErr;
   }
 
   const { data: updated } = await supabase

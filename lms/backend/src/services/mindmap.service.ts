@@ -34,14 +34,16 @@ export interface MindMap {
 
 async function getDoc(mindmapId: string) {
   const supabase = getSupabaseClient()!;
-  const { data } = await supabase.from('nosql_docs').select('doc_id, data').eq('collection', 'mindmaps').eq('doc_id', mindmapId).maybeSingle();
+  const { data, error } = await supabase.from('nosql_docs').select('doc_id, data').eq('collection', 'mindmaps').eq('doc_id', mindmapId).maybeSingle();
+  if (error) throw new Error('Failed to fetch mindmap: ' + error.message);
   return data || null;
 }
 
 async function setDoc(mindmapId: string, docData: Record<string, unknown>) {
   const supabase = getSupabaseClient()!;
   const now = new Date().toISOString();
-  await supabase.from('nosql_docs').upsert({ collection: 'mindmaps', doc_id: mindmapId, data: docData, updated_at: now }, { onConflict: 'collection,doc_id' });
+  const { error: upsertError } = await supabase.from('nosql_docs').upsert({ collection: 'mindmaps', doc_id: mindmapId, data: docData, updated_at: now }, { onConflict: 'collection,doc_id' });
+  if (upsertError) throw new Error(`Failed to upsert mindmap: ${upsertError.message}`);
 }
 
 async function ensureOwnership(mindmapId: string, userId: string): Promise<MindMap> {
@@ -100,14 +102,16 @@ export async function deleteMindMap(mindmapId: string, userId: string): Promise<
     throw new ForbiddenError('Only the owner can delete this mind map');
   }
   const supabase = getSupabaseClient()!;
-  await supabase.from('nosql_docs').delete().eq('collection', 'mindmaps').eq('doc_id', mindmapId);
+  const { error: deleteError } = await supabase.from('nosql_docs').delete().eq('collection', 'mindmaps').eq('doc_id', mindmapId);
+  if (deleteError) throw new Error(`Failed to delete mindmap: ${deleteError.message}`);
 }
 
 export async function getUserMindMaps(userId: string): Promise<MindMap[]> {
   const supabase = getSupabaseClient()!;
-  const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
+  const { data: rows, error } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', 'mindmaps')
     .contains('data', { ownerId: userId });
+  if (error) throw new Error('Failed to fetch mindmaps: ' + error.message);
   return (rows || [])
     .map((r) => ({ id: r.doc_id, ...r.data as Record<string, unknown> } as unknown as MindMap))
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
@@ -115,9 +119,10 @@ export async function getUserMindMaps(userId: string): Promise<MindMap[]> {
 
 export async function getSharedMindMaps(userId: string): Promise<MindMap[]> {
   const supabase = getSupabaseClient()!;
-  const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
+  const { data: rows, error } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', 'mindmaps')
     .contains('data', { sharedWith: [userId] });
+  if (error) throw new Error('Failed to fetch shared mindmaps: ' + error.message);
   return (rows || [])
     .filter((r) => (r.data as Record<string, unknown>).ownerId !== userId)
     .map((r) => ({ id: r.doc_id, ...r.data as Record<string, unknown> } as unknown as MindMap))
