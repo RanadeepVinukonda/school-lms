@@ -28,12 +28,30 @@ function setCsrfCookie(res: Response, token: string) {
   });
 }
 
+// Routes that don't require CSRF validation (public auth endpoints)
+const CSRF_EXEMPT_PATHS = new Set([
+  '/auth/login',
+  '/auth/register',
+  '/auth/refresh',
+  '/auth/logout',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/auth/reset-with-token',
+  '/auth/verify-token',
+]);
+
 export function csrfProtection(req: Request, res: Response, next: NextFunction) {
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
     const cookies = getCookies(req);
     if (!cookies[CSRF_COOKIE]) {
       setCsrfCookie(res, crypto.randomBytes(32).toString('hex'));
     }
+    return next();
+  }
+
+  // Exempt public auth endpoints from CSRF validation
+  const path = req.path.replace(/\/$/, ''); // strip trailing slash
+  if (CSRF_EXEMPT_PATHS.has(path)) {
     return next();
   }
 

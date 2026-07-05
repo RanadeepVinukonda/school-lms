@@ -26,16 +26,16 @@ const assignRoleSchema = z.object({
   classIds: z.array(z.string()).optional(),
 }).passthrough();
 
-router.get('/', authenticate, requireRole('admin'), validate(userQuerySchema, 'query'), asyncHandler(userController.listUsers));
+router.get('/', authenticate, requireRole('admin', 'super_admin'), validate(userQuerySchema, 'query'), asyncHandler(userController.listUsers));
 router.put('/profile', authenticate, validate(updateProfileSchema), asyncHandler(userController.updateProfile));
 router.post('/ping-active', authenticate, validate(pingActiveSchema), asyncHandler(userController.pingActive));
 router.get('/strengths-weaknesses', authenticate, asyncHandler(userController.getStrengthsWeaknesses));
-router.get('/strengths-weaknesses/:userId', authenticate, requireRole('admin', 'teacher'), asyncHandler(userController.getStrengthsWeaknesses));
-router.post('/', authenticate, requireRole('admin'), validate(createUserSchema), asyncHandler(userController.createUser));
-router.get('/:userId', authenticate, requireRole('admin', 'teacher'), asyncHandler(userController.getUser));
-router.put('/:userId', authenticate, requireRole('admin'), validate(updateUserSchema), asyncHandler(userController.updateUser));
-router.delete('/:userId', authenticate, requireRole('admin'), asyncHandler(userController.deleteUser));
-router.patch('/:userId/toggle-active', authenticate, requireRole('admin'), validate(toggleActiveSchema), asyncHandler(userController.toggleActive));
-router.put('/:userId/role', authenticate, requireRole('admin'), validate(assignRoleSchema), asyncHandler(userController.assignRole));
+router.get('/strengths-weaknesses/:userId', authenticate, requireRole('admin', 'super_admin', 'teacher'), asyncHandler(userController.getStrengthsWeaknesses));
+router.post('/', authenticate, requireRole('admin', 'super_admin'), validate(createUserSchema), asyncHandler(userController.createUser));
+router.get('/:userId', authenticate, requireRole('admin', 'super_admin', 'teacher'), asyncHandler(userController.getUser));
+router.put('/:userId', authenticate, requireRole('admin', 'super_admin'), validate(updateUserSchema), asyncHandler(userController.updateUser));
+router.delete('/:userId', authenticate, requireRole('admin', 'super_admin'), asyncHandler(userController.deleteUser));
+router.patch('/:userId/toggle-active', authenticate, requireRole('admin', 'super_admin'), validate(toggleActiveSchema), asyncHandler(userController.toggleActive));
+router.put('/:userId/role', authenticate, requireRole('admin', 'super_admin'), validate(assignRoleSchema), asyncHandler(userController.assignRole));
 
 export default router;

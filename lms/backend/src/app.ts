@@ -45,6 +45,14 @@ if (process.env.NODE_ENV !== 'test') {
 }
 app.use('/', apiRateLimit, auditMiddleware, routes);
 
+// 404 catch-all — must come after all routes
+app.use((_req: express.Request, res: express.Response) => {
+  res.status(404).json({
+    success: false,
+    error: { message: 'Route not found', code: 'NOT_FOUND' },
+  });
+});
+
 app.use(errorHandler);
 
 export default app;

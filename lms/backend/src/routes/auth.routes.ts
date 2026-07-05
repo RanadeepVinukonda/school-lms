@@ -22,8 +22,10 @@ const resetWithTokenSchema = z.object({
 });
 
 const refreshTokenSchema = z.object({
+  refresh_token: z.string().min(1, 'Refresh token required'),
+}).or(z.object({
   refreshToken: z.string().min(1, 'Refresh token required'),
-});
+}));
 
 router.use(authRateLimit);
 

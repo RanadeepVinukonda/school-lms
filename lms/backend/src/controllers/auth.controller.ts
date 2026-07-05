@@ -181,7 +181,8 @@ export async function logout(req: Request, res: Response) {
 }
 
 export async function refresh(req: Request, res: Response) {
-  const { refresh_token } = req.body;
+  // Accept both snake_case (frontend sends) and camelCase (schema validates)
+  const refresh_token = req.body.refresh_token || req.body.refreshToken;
   const result = await authService.refreshToken(refresh_token);
 
   const maxAge = 7 * 24 * 60 * 60 * 1000;
