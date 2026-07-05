@@ -9,6 +9,19 @@ const api = axios.create({
   timeout: 600000,
 });
 
+// Attach Supabase access token as Bearer token on every request
+api.interceptors.request.use(async (config) => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) {
+      config.headers.Authorization = `Bearer ${session.access_token}`;
+    }
+  } catch {
+    // Proceed without token if session retrieval fails
+  }
+  return config;
+});
+
 let isRefreshing = false;
 let failedQueue: Array<{
   resolve: (value: unknown) => void;
