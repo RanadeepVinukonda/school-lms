@@ -47,6 +47,7 @@ router.use('/quizzes', quizRoutes);
 router.use('/exams', examRoutes);
 router.use('/grades', gradeRoutes);
 router.use('/analytics', analyticsRoutes);
+router.use('/analytics-v2', analyticsRoutes);
 router.use('/whiteboard', conceptRoutes);
 router.use('/textbooks', textbookRoutes);
 router.use('/quizzes-v2', quizV2Routes);
