@@ -32,6 +32,16 @@ function readPersistedToken(): string | null {
   }
 }
 
+/** Format error for logging — handles plain objects (ApiError) that aren't Error instances. */
+function formatError(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (e && typeof e === 'object') {
+    const obj = e as Record<string, unknown>;
+    return (obj.message as string) || JSON.stringify(obj);
+  }
+  return String(e);
+}
+
 /** Map a backend user profile object to the normalized store shape. */
 function mapProfileToUser(
   p: Record<string, unknown>,
@@ -124,7 +134,7 @@ export const useAuthStore = create<AuthStore>()(
             }
           }
         } catch (e) {
-          console.warn('[authStore] Step 1 (Supabase session) failed:', e instanceof Error ? e.message : String(e));
+          console.warn('[authStore] Step 1 (Supabase session) failed:', formatError(e));
           set({ isLoading: false });
         }
 
@@ -150,7 +160,7 @@ export const useAuthStore = create<AuthStore>()(
             }
           }
         } catch (e) {
-          console.warn('[authStore] Step 2 (persisted token) failed:', e instanceof Error ? e.message : String(e));
+          console.warn('[authStore] Step 2 (persisted token) failed:', formatError(e));
           set({ token: null, isLoading: false });
         }
 
@@ -170,7 +180,7 @@ export const useAuthStore = create<AuthStore>()(
             return;
           }
         } catch (e) {
-          console.warn('[authStore] Step 3 (cookie session) failed:', e instanceof Error ? e.message : String(e));
+          console.warn('[authStore] Step 3 (cookie session) failed:', formatError(e));
           set({ isLoading: false });
         }
 
