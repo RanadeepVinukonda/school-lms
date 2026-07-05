@@ -77,7 +77,7 @@ async function _authenticate(req: Request, _res: Response, next: NextFunction): 
 
 export const authenticate = asyncHandler(_authenticate);
 
-export function optionalAuth(req: Request, _res: Response, next: NextFunction): void {
+async function _optionalAuth(req: Request, _res: Response, next: NextFunction): Promise<void> {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     next();
@@ -96,31 +96,32 @@ export function optionalAuth(req: Request, _res: Response, next: NextFunction): 
     return;
   }
 
-  supabase.auth.getUser(token)
-    .then(async ({ data: { user }, error }) => {
-      if (error || !user) {
-        next();
-        return;
-      }
-
-      const { data: profile } = await supabase
-        .from('users')
-        .select('role, display_name, school_id')
-        .eq('id', user.id)
-        .single();
-
-      if (profile) {
-        req.user = {
-          uid: user.id,
-          email: user.email || '',
-          role: profile.role as string,
-          name: profile.display_name as string || user.email?.split('@')[0] || 'User',
-          school_id: profile.school_id as string || '',
-        };
-      }
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user) {
       next();
-    })
-    .catch(() => {
-      next();
-    });
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from('users')
+      .select('role, display_name, school_id')
+      .eq('id', user.id)
+      .single();
+
+    if (profile) {
+      req.user = {
+        uid: user.id,
+        email: user.email || '',
+        role: profile.role as string,
+        name: profile.display_name as string || user.email?.split('@')[0] || 'User',
+        school_id: profile.school_id as string || '',
+      };
+    }
+    next();
+  } catch {
+    next();
+  }
 }
+
+export const optionalAuth = asyncHandler(_optionalAuth);

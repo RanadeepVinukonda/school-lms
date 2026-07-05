@@ -1,5 +1,4 @@
 import { Pool, PoolClient } from 'pg';
-import { getSupabaseAdmin } from '../services/supabase';
 import { logger } from '../utils/logger';
 
 interface Transaction {
@@ -9,41 +8,60 @@ interface Transaction {
   delete(collection: string, docId: string): Promise<void>;
 }
 
+function serialize(v: unknown): unknown {
+  if (v === null || v === undefined) return null;
+  if (typeof v === 'object') return JSON.stringify(v);
+  return v;
+}
+
 // ── PgTransaction — real ACID transaction via pg pool client ──
-// Executes all writes within a single PostgreSQL BEGIN/COMMIT/ROLLBACK block.
+// All queries use the same pg client connection inside BEGIN/COMMIT/ROLLBACK.
 class PgTransaction implements Transaction {
   private _ops: Array<() => Promise<void>> = [];
 
   constructor(private client: PoolClient) {}
 
   async get(collection: string, docId: string): Promise<unknown> {
-    const supabase = getSupabaseAdmin();
-    if (!supabase) throw new Error('Supabase not configured');
-    const { data } = await supabase.from(collection).select('*').eq('id', docId).maybeSingle();
-    return data || null;
+    const { rows } = await this.client.query(
+      `SELECT * FROM ${collection} WHERE id = $1 LIMIT 1`,
+      [docId]
+    );
+    return rows[0] || null;
   }
 
   async set(collection: string, docId: string, data: Record<string, unknown>): Promise<void> {
     this._ops.push(async () => {
-      const supabase = getSupabaseAdmin();
-      if (!supabase) throw new Error('Supabase not configured');
-      await supabase.from(collection).upsert({ id: docId, ...data }).eq('id', docId);
+      const entries = Object.entries(data);
+      const keys = ['id', ...entries.map(([k]) => k)];
+      const vals = [docId, ...entries.map(([, v]) => serialize(v))];
+      const ph = keys.map((_, i) => `$${i + 1}`);
+      const updates = entries.map(([k], i) => `${k} = $${i + 2}`);
+      await this.client.query(
+        `INSERT INTO ${collection} (${keys.join(', ')}) VALUES (${ph.join(', ')}) ON CONFLICT (id) DO UPDATE SET ${updates.join(', ')}`,
+        vals
+      );
     });
   }
 
   async update(collection: string, docId: string, data: Record<string, unknown>): Promise<void> {
     this._ops.push(async () => {
-      const supabase = getSupabaseAdmin();
-      if (!supabase) throw new Error('Supabase not configured');
-      await supabase.from(collection).update(data).eq('id', docId);
+      const entries = Object.entries(data);
+      if (entries.length === 0) return;
+      const sets = entries.map(([k], i) => `${k} = $${i + 1}`);
+      const vals = [...entries.map(([, v]) => serialize(v)), docId];
+      await this.client.query(
+        `UPDATE ${collection} SET ${sets.join(', ')} WHERE id = $${entries.length + 1}`,
+        vals
+      );
     });
   }
 
   async delete(collection: string, docId: string): Promise<void> {
     this._ops.push(async () => {
-      const supabase = getSupabaseAdmin();
-      if (!supabase) throw new Error('Supabase not configured');
-      await supabase.from(collection).delete().eq('id', docId);
+      await this.client.query(
+        `DELETE FROM ${collection} WHERE id = $1`,
+        [docId]
+      );
     });
   }
 

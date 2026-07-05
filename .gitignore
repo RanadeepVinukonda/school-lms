@@ -1,6 +1,8 @@
 node_modules/
 dist/
-.env
+**/.env
+**/.env.local
+**/.env.vercel
 *.log
 .DS_Store
 _ignore_this/
@@ -29,3 +31,16 @@ scratch/
 .expo/
 android/
 ios/
+
+# Custom ignored patterns for repository cleanup
+.agent/
+.kilo/
+graphify-out/
+openspec/
+mempalace.yaml
+entities.json
+lms-flowchart.html
+package-lock.json
+*.md
+**/docs/
+

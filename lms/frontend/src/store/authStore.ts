@@ -122,7 +122,31 @@ export const useAuthStore = create<AuthStore>()(
             }
           }
 
-          // 2. Fallback: try cookie-based /auth/session (legacy path)
+          // 2. Try persisted token from Zustand store (survives Supabase session expiry)
+          const persistedToken = get().token;
+          if (persistedToken) {
+            try {
+              const res = await api.get('/auth/me', {
+                headers: { Authorization: `Bearer ${persistedToken}` },
+              });
+              const profile = res.data?.data as Record<string, unknown> | undefined;
+              if (profile) {
+                const effectiveRole = await resolveEffectiveRole(profile);
+                set({
+                  token: persistedToken,
+                  user: mapProfileToUser(profile, effectiveRole),
+                  isAuthenticated: true,
+                  isLoading: false,
+                });
+                return;
+              }
+            } catch {
+              // Token invalid — clear it and fall through
+              set({ token: null });
+            }
+          }
+
+          // 3. Fallback: try cookie-based /auth/session (legacy path)
           const res = await api.get('/auth/session');
           const sessionData = res.data?.data;
 
@@ -146,6 +170,7 @@ export const useAuthStore = create<AuthStore>()(
       name: 'lms-auth-v2',
       partialize: (state) => ({
         user: state.user,
+        token: state.token,
       }),
     },
   ),

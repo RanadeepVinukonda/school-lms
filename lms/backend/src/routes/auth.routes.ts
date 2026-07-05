@@ -29,8 +29,8 @@ router.use(authRateLimit);
 
 router.post('/register', validate(signUpSchema), asyncHandler(authController.register));
 router.post('/login', validate(signInSchema), asyncHandler(authController.login));
-router.post('/forgot-password', validate(forgotPasswordSchema), asyncHandler(authController.forgotPassword));
-router.post('/reset-password', validate(resetPasswordSchema), asyncHandler(authController.resetPassword));
+router.post('/forgot-password', authRateLimit, validate(forgotPasswordSchema), asyncHandler(authController.forgotPassword));
+router.post('/reset-password', authRateLimit, validate(resetPasswordSchema), asyncHandler(authController.resetPassword));
 router.post('/reset-with-token', validate(resetWithTokenSchema), asyncHandler(authController.resetWithToken));
 router.get('/verify-hash', asyncHandler(authController.verifyHash));
 router.post('/change-password', authenticate, validate(changePasswordSchema), asyncHandler(authController.changePassword));

@@ -19,9 +19,16 @@ function parseDuration(isoDuration: string): string {
 
 import ytSearch from 'yt-search';
 
+function timeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms)),
+  ]);
+}
+
 export async function searchVideos(query: string, maxResults = 5) {
   try {
-    const r = await ytSearch(query);
+    const r = await timeout(ytSearch(query), 10000);
     const videos = r.videos.slice(0, maxResults);
     
     return videos.map((v, index) => {

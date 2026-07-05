@@ -206,47 +206,55 @@ async function extractTextVision(imageBuffer: Buffer): Promise<OCRResult | null>
   const base64Image = imageBuffer.toString('base64');
   const url = `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`;
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      requests: [{
-        image: { content: base64Image },
-        features: [{ type: 'DOCUMENT_TEXT_DETECTION', maxResults: 1 }],
-      }],
-    }),
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requests: [{
+          image: { content: base64Image },
+          features: [{ type: 'DOCUMENT_TEXT_DETECTION', maxResults: 1 }],
+        }],
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
 
-  if (!response.ok) {
-    throw new Error(`Google Vision API error: ${response.status} ${response.statusText}`);
+    if (!response.ok) {
+      throw new Error(`Google Vision API error: ${response.status} ${response.statusText}`);
+    }
+
+    const json = await response.json() as {
+      responses: Array<{
+        fullTextAnnotation?: { text: string; pages: Array<{ confidence?: number; blocks?: Array<{ boundingBox: { vertices: Array<{ x?: number; y?: number }> }; paragraphs: Array<{ words: Array<{ symbols: Array<{ text: string }> }> }> }> }> };
+        error?: { message: string };
+      }>;
+    };
+
+    const resp = json.responses?.[0];
+    if (resp?.error) throw new Error(resp.error.message);
+    if (!resp?.fullTextAnnotation) return null;
+
+    const fullText = resp.fullTextAnnotation.text || '';
+    const pageConfidence = resp.fullTextAnnotation.pages?.[0]?.confidence ?? 0.85;
+    const confidence = Math.round(pageConfidence * 100);
+
+    const blocks: OCRBlock[] = (resp.fullTextAnnotation.pages?.[0]?.blocks ?? []).map((b) => {
+      const verts = b.boundingBox?.vertices ?? [];
+      const x0 = verts[0]?.x ?? 0;
+      const y0 = verts[0]?.y ?? 0;
+      const x1 = verts[2]?.x ?? 0;
+      const y1 = verts[2]?.y ?? 0;
+      const text = b.paragraphs?.flatMap(p => p.words?.flatMap(w => w.symbols?.map(s => s.text) ?? []) ?? []).join('') ?? '';
+      return { text, bbox: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 }, confidence };
+    });
+
+    return { text: fullText, confidence, blocks };
+  } finally {
+    clearTimeout(timer);
   }
-
-  const json = await response.json() as {
-    responses: Array<{
-      fullTextAnnotation?: { text: string; pages: Array<{ confidence?: number; blocks?: Array<{ boundingBox: { vertices: Array<{ x?: number; y?: number }> }; paragraphs: Array<{ words: Array<{ symbols: Array<{ text: string }> }> }> }> }> };
-      error?: { message: string };
-    }>;
-  };
-
-  const resp = json.responses?.[0];
-  if (resp?.error) throw new Error(resp.error.message);
-  if (!resp?.fullTextAnnotation) return null;
-
-  const fullText = resp.fullTextAnnotation.text || '';
-  const pageConfidence = resp.fullTextAnnotation.pages?.[0]?.confidence ?? 0.85;
-  const confidence = Math.round(pageConfidence * 100);
-
-  const blocks: OCRBlock[] = (resp.fullTextAnnotation.pages?.[0]?.blocks ?? []).map((b) => {
-    const verts = b.boundingBox?.vertices ?? [];
-    const x0 = verts[0]?.x ?? 0;
-    const y0 = verts[0]?.y ?? 0;
-    const x1 = verts[2]?.x ?? 0;
-    const y1 = verts[2]?.y ?? 0;
-    const text = b.paragraphs?.flatMap(p => p.words?.flatMap(w => w.symbols?.map(s => s.text) ?? []) ?? []).join('') ?? '';
-    return { text, bbox: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 }, confidence };
-  });
-
-  return { text: fullText, confidence, blocks };
 }
 
 export async function mapTextToConcept(

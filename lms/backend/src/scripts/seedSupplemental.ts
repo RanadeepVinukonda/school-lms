@@ -2,6 +2,10 @@ import dotenv from 'dotenv';
 import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
+if (process.env.NODE_ENV === 'production') {
+  throw new Error('Seed scripts must not run in production');
+}
+
 import { getAdminAuth, getAdminFirestore, admin } from '../database/admin';
 import { v4 as uuidv4 } from 'uuid';
 const auth = getAdminAuth();

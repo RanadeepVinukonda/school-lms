@@ -131,7 +131,7 @@ async function geminiChatCompletion(
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 120000);
+    const timer = setTimeout(() => controller.abort(), 10000);
 
     try {
       const res = await fetch(url, {
@@ -236,7 +236,7 @@ async function openaiChatCompletion(
     }
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 120000);
+    const timer = setTimeout(() => controller.abort(), 10000);
     
     try {
       const res = await fetch(env.AI_BASE_URL, {
@@ -342,7 +342,7 @@ export async function textbookChatCompletion(params: ChatRequest): Promise<strin
     if (useResponseFormat) payload.response_format = { type: 'json_object' };
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 120000);
+    const timer = setTimeout(() => controller.abort(), 10000);
 
     try {
       const res = await fetch(baseUrl, {

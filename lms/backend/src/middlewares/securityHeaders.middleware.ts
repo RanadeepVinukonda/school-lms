@@ -42,7 +42,7 @@ const restOfHelmet = helmet({
 const permissionsPolicy = (_req: Request, res: Response, next: () => void) => {
   res.setHeader(
     'Permissions-Policy',
-    'camera=(), microphone=(), geolocation=(), interest-cohort=()'
+    'geolocation=(), interest-cohort=()'
   );
   next();
 };

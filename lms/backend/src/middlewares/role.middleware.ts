@@ -8,7 +8,8 @@ export function requireRole(...roles: string[]) {
       return;
     }
 
-    if (!roles.includes(req.user.role)) {
+    const userRoles = req.user.role.split(',').map((r) => r.trim());
+    if (!roles.some((r) => userRoles.includes(r))) {
       next(new ForbiddenError('Insufficient permissions'));
       return;
     }
@@ -39,7 +40,8 @@ export function requireOwnershipOrRole(
       return;
     }
 
-    if (roles.includes(req.user.role)) {
+    const userRoles = req.user.role.split(',').map((r) => r.trim());
+    if (roles.some((r) => userRoles.includes(r))) {
       next();
       return;
     }

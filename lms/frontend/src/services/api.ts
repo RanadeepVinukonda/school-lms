@@ -9,16 +9,24 @@ const api = axios.create({
   timeout: 600000,
 });
 
-// Attach Supabase access token as Bearer token on every request
+// Attach Bearer token on every request — try Supabase session first, then store token fallback
 api.interceptors.request.use(async (config) => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.access_token) {
       config.headers.Authorization = `Bearer ${session.access_token}`;
+      return config;
     }
   } catch {
-    // Proceed without token if session retrieval fails
+    // Supabase session retrieval failed, fall through to store token
   }
+
+  // Fallback: use token persisted in Zustand store
+  const token = useAuthStore.getState().token;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
   return config;
 });
 
