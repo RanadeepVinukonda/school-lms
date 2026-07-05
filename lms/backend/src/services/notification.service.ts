@@ -248,7 +248,7 @@ export async function updateNotificationPreferences(userId: string, preferences:
   return preferences;
 }
 
-/** Create multiple notifications in a single batch write. */
+/** Create multiple notifications in a single batch write. Batches preference lookups to avoid N+1 queries. */
 export async function createBulkNotifications(
   notifications: Array<{
     userId: string;
@@ -258,41 +258,49 @@ export async function createBulkNotifications(
     data?: Record<string, unknown>;
   }>
 ) {
-  const results: string[] = [];
+  if (notifications.length === 0) return [];
   const supabase = getSupabaseAdmin()!;
 
-  for (const notif of notifications) {
-    // ponytail: check inApp preference per recipient
-    try {
-      const prefs = await getNotificationPreferences(notif.userId);
-      if (prefs.in_app_enabled) {
-        const id = uuidv4();
-        const now = new Date().toISOString();
-        const notification = {
-          id,
-          user_id: notif.userId,
-          type: notif.type,
-          title: notif.title,
-          body: notif.body,
-          data: notif.data || {},
-          priority: 'normal',
-          read: false,
-          read_at: null,
-          created_at: now,
-        };
-        
-        const { error } = await supabase.from('notifications').insert(notification);
-        if (!error) {
-          results.push(id);
-        }
-      }
-    } catch {
-      // ponytail: skip if prefs fetch fails
+  // Batch-fetch all unique user preferences in a single query
+  const userIds = [...new Set(notifications.map((n) => n.userId))];
+  const { data: users } = await supabase
+    .from('users')
+    .select('id, notification_preferences')
+    .in('id', userIds);
+
+  const prefsMap = new Map<string, { in_app_enabled: boolean }>();
+  for (const u of users || []) {
+    const prefs = u.notification_preferences || {};
+    prefsMap.set(u.id, {
+      in_app_enabled: prefs.inApp ?? prefs.in_app_enabled ?? true,
+    });
+  }
+
+  const now = new Date().toISOString();
+  const rows = notifications
+    .filter((n) => prefsMap.get(n.userId)?.in_app_enabled !== false)
+    .map((n) => ({
+      id: uuidv4(),
+      user_id: n.userId,
+      type: n.type,
+      title: n.title,
+      body: n.body,
+      data: n.data || {},
+      priority: 'normal',
+      read: false,
+      read_at: null,
+      created_at: now,
+    }));
+
+  const results: string[] = [];
+  if (rows.length > 0) {
+    const { data: inserted, error } = await supabase.from('notifications').insert(rows).select('id');
+    if (!error && inserted) {
+      results.push(...inserted.map((r: any) => r.id as string));
     }
   }
 
   logger.info('Bulk notifications created', { count: results.length });
-
   sendPushBulk(notifications);
 
   return results;

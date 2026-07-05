@@ -40,10 +40,12 @@ async function _authenticate(req: Request, _res: Response, next: NextFunction): 
 
     const { data: { user }, error } = await supabase.auth.getUser(token);
     if (error || !user) {
+      logger.warn('Auth failed: invalid token', { ip: req.ip, path: req.path, userAgent: req.headers['user-agent'] });
       throw new UnauthorizedError('Invalid or expired token');
     }
 
     if (await isTokenRevoked(token)) {
+      logger.warn('Auth failed: revoked token', { uid: user.id, ip: req.ip, path: req.path });
       throw new UnauthorizedError('Token has been revoked');
     }
 

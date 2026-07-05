@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
+import { z } from 'zod';
 import { getSupabaseAdmin } from './supabase';
-import { NotFoundError, ForbiddenError } from '../utils/errors';
+import { NotFoundError, ForbiddenError, ConflictError, ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 import { createBulkNotifications, createNotification } from './notification.service';
@@ -233,7 +234,7 @@ export async function scheduleExam(examId: string, data: {
   return updated;
 }
 
-/** Start an exam attempt for a student. Enforces maxAttempts, increments attemptCount. */
+/** Start an exam attempt for a student. Enforces maxAttempts, increments attemptCount. Uses conflict detection to prevent race conditions. */
 export async function startExamAttempt(examId: string, studentId: string) {
   const supabase = getSupabaseAdmin()!;
   const { data: exam } = await supabase
@@ -274,8 +275,15 @@ export async function startExamAttempt(examId: string, studentId: string) {
     status: 'in_progress',
   };
 
-  await supabase.from('exam_attempts').insert(attempt);
-  
+  const { error: insertError } = await supabase.from('exam_attempts').insert(attempt);
+  if (insertError) {
+    // 23505 = unique_violation — another concurrent request already created an in-progress attempt
+    if (insertError.code === '23505') {
+      throw new ConflictError('You already have an in-progress attempt for this exam');
+    }
+    throw insertError;
+  }
+
   const { data: currentExam } = await supabase.from('exams').select('attempt_count').eq('id', examId).single();
   await supabase.from('exams').update({ attempt_count: (currentExam?.attempt_count || 0) + 1 }).eq('id', examId);
 
@@ -284,16 +292,24 @@ export async function startExamAttempt(examId: string, studentId: string) {
   return { ...attempt, questions: exam.questions };
 }
 
+const submitExamAttemptSchema = z.object({
+  answers: z.array(z.object({
+    questionId: z.string().min(1),
+    answer: z.union([z.string(), z.array(z.string())]),
+    timeSpent: z.number().min(0).optional(),
+  })),
+  startedAt: z.string().datetime(),
+  submittedAt: z.string().datetime(),
+});
+
 /** Submit an exam attempt, auto-grade multiple-choice / true-false / short-answer questions. */
-export async function submitExamAttempt(attemptId: string, studentId: string, data: {
-  answers: Array<{
-    questionId: string;
-    answer: string | string[];
-    timeSpent?: number;
-  }>;
-  startedAt: string;
-  submittedAt: string;
-}) {
+export async function submitExamAttempt(attemptId: string, studentId: string, data: unknown) {
+  const parseResult = submitExamAttemptSchema.safeParse(data);
+  if (!parseResult.success) {
+    const issues = parseResult.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
+    throw new ValidationError(`Invalid submission data: ${issues}`);
+  }
+  const validated = parseResult.data;
   const supabase = getSupabaseAdmin()!;
   const { data: attempt } = await supabase
     .from('exam_attempts')
@@ -320,7 +336,7 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
     .single();
 
   let score = 0;
-  const gradedAnswers = data.answers.map((answer) => {
+  const gradedAnswers = validated.answers.map((answer) => {
     const question = exam.questions.find(
       (q: { id: string; question_text?: string; type: string; points: number; correct_answer?: string }) => 
         q.id === answer.questionId || q.question_text === answer.questionId
@@ -351,7 +367,7 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
     };
   });
 
-  const timeSpent = data.answers.reduce((sum, a) => sum + (a.timeSpent || 0), 0);
+  const timeSpent = validated.answers.reduce((sum, a) => sum + (a.timeSpent || 0), 0);
   const percentage = exam.total_points > 0 ? Math.round((score / exam.total_points) * 100) : 0;
   const passingScore = exam.passing_score || 50;
   const passed = percentage >= passingScore;
@@ -363,7 +379,7 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
     percentage,
     passed,
     time_spent: timeSpent,
-    submitted_at: data.submittedAt,
+    submitted_at: validated.submittedAt,
     status: 'completed',
   };
 

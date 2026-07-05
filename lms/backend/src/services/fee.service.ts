@@ -1,12 +1,15 @@
 import { getSupabaseAdmin } from './supabase';
-import { Pool } from 'pg';
+import { ValidationError } from '../utils/errors';
 
-function getPool(): Pool | null {
-  const url = process.env.DATABASE_URL;
-  if (!url) return null;
-  return new Pool({ connectionString: url, max: 1 });
-}
-
+/**
+ * Create a new fee schedule for a class.
+ * @param data.name - Display name of the fee schedule
+ * @param data.amount - Total fee amount in smallest currency unit
+ * @param data.dueDate - Optional ISO date string for payment due date
+ * @param data.classId - UUID of the target class
+ * @param data.schoolId - UUID of the school
+ * @returns The created fee_structure row
+ */
 export async function createFeeSchedule(data: {
   name: string; amount: number; dueDate?: string; classId: string; academicYear?: string; description?: string;
   schoolId: string;
@@ -32,11 +35,18 @@ export async function getFeeSchedule(id: string) {
   return data;
 }
 
+/**
+ * Record a fee payment for a student. Rejects overpayments with a ValidationError.
+ * @param data.studentId - UUID of the student paying
+ * @param data.feeScheduleId - UUID of the fee_structure being paid
+ * @param data.amountPaid - Amount paid in this transaction
+ * @returns The created fee_payment row
+ * @throws {ValidationError} if payment would exceed the remaining balance
+ */
 export async function recordPayment(data: {
   studentId: string; feeScheduleId: string; amountPaid: number; paymentMethod?: string; schoolId?: string;
 }) {
   const supabase = getSupabaseAdmin()!;
-  // ponytail: overpayment prevention
   const { data: schedule } = await supabase.from('fee_structures').select('amount').eq('id', data.feeScheduleId).single();
   if (!schedule) return null;
   const feeAmount = Number(schedule.amount);
@@ -45,7 +55,9 @@ export async function recordPayment(data: {
   const totalPaid = (existingPayments || []).reduce((s: number, p: any) => s + Number(p.amount), 0);
   const overpayment = totalPaid + data.amountPaid - feeAmount;
   if (overpayment > 0) {
-    return null; // ponytail: reject overpayment, caller gets null
+    throw new ValidationError(
+      `Payment of ${data.amountPaid} would overpay. Remaining balance: ${feeAmount - totalPaid}`
+    );
   }
   const { data: result } = await supabase.from('fee_payments').insert({
     student_id: data.studentId, fee_structure_id: data.feeScheduleId, amount: data.amountPaid, school_id: data.schoolId,
@@ -59,43 +71,28 @@ export async function getStudentPayments(studentId: string) {
   return data || [];
 }
 
+/**
+ * Build an outstanding fees report: per-student breakdown of total due vs total paid.
+ * @param schoolId - Optional school UUID to scope the report
+ * @returns Array of {studentId, studentName, totalDue, totalPaid, balance}
+ */
 export async function getOutstandingReport(schoolId?: string) {
   const supabase = getSupabaseAdmin()!;
-  const pool = getPool();
-  // ponytail: wrap three queries in a transaction for consistency
-  if (pool) {
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-      await client.query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
-      const { rows: structures } = schoolId
-        ? await client.query('SELECT * FROM fee_structures WHERE school_id = $1', [schoolId])
-        : await client.query('SELECT * FROM fee_structures');
-      const { rows: payments } = schoolId
-        ? await client.query('SELECT * FROM fee_payments WHERE school_id = $1', [schoolId])
-        : await client.query('SELECT * FROM fee_payments');
-      const { rows: students } = schoolId
-        ? await client.query("SELECT id, display_name FROM users WHERE role = 'student' AND school_id = $1", [schoolId])
-        : await client.query("SELECT id, display_name FROM users WHERE role = 'student'");
-      await client.query('COMMIT');
-      return buildOutstandingReport(structures, payments, students);
-    } catch (err) {
-      await client.query('ROLLBACK');
-      throw err;
-    } finally {
-      client.release();
-    }
-  }
-  // ponytail: fallback — parallel reads, no isolation
+
   let structQ = supabase.from('fee_structures').select('*');
   let studentQ = supabase.from('users').select('id, display_name').eq('role', 'student');
   let paymentQ = supabase.from('fee_payments').select('*');
+
   if (schoolId) {
     structQ = structQ.eq('school_id', schoolId);
     studentQ = studentQ.eq('school_id', schoolId);
     paymentQ = paymentQ.eq('school_id', schoolId);
   }
-  const [{ data: structures }, { data: payments }, { data: students }] = await Promise.all([structQ, paymentQ, studentQ]);
+
+  const [{ data: structures }, { data: payments }, { data: students }] = await Promise.all([
+    structQ, paymentQ, studentQ,
+  ]);
+
   if (!structures || !students) return [];
   return buildOutstandingReport(structures, payments || [], students);
 }

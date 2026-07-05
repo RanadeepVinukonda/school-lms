@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseClient } from './supabase';
-import { NotFoundError } from '../utils/errors';
+import { NotFoundError, ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 
@@ -21,7 +21,7 @@ export async function createSubject(data: {
   status?: string;
 }) {
   if (!data.classId) {
-    throw new Error('classId is required when creating a subject');
+    throw new ValidationError('classId is required when creating a subject');
   }
   
   const supabase = getSupabaseClient()!;

@@ -15,6 +15,7 @@ const mockSupabaseClient = {
 
 jest.mock('../services/supabase', () => ({
   getSupabaseClient: jest.fn(() => mockSupabaseClient),
+  getSupabaseAdmin: jest.fn(() => mockSupabaseClient),
 }));
 
 jest.mock('../services/notification.service', () => ({

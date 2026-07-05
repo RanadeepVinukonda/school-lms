@@ -9,16 +9,11 @@ const allowedOrigins = [
   'http://localhost:8080',
 ];
 
-// Allow any vercel.app preview deployment (production too, since
-// env.FRONTEND_URL may not match the ephemeral preview URL)
 const isAllowed = (origin: string): boolean => {
-  if (allowedOrigins.includes(origin)) return true;
-  try {
-    const hostname = new URL(origin).hostname;
-    return hostname.endsWith('.vercel.app');
-  } catch {
-    return false;
+  if (env.NODE_ENV === 'production') {
+    return origin === env.FRONTEND_URL;
   }
+  return allowedOrigins.includes(origin);
 };
 
 export const corsOptions: CorsOptions = {

@@ -6,6 +6,7 @@ import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 import { generateStudentId } from '../utils/studentIdGenerator.js';
 import { generatePassword } from '../utils/passwordGenerator.js';
+import { validatePassword } from '../utils/passwordValidation';
 
 async function getUserDoc(uid: string) {
   const { data, error } = await getSupabaseAdmin()!.from('users').select('*').eq('id', uid).maybeSingle();
@@ -35,11 +36,7 @@ export async function listUsers(query: {
 
   if (query.search) {
     const s = query.search.toLowerCase();
-    const { data: rows, count } = await q.limit(200);
-    const filtered = (rows || []).filter((r: any) =>
-      r.display_name?.toLowerCase().includes(s) || r.email?.toLowerCase().includes(s)
-    ).map(stripPw);
-    return { items: filtered.slice(offset, offset + limit), total: filtered.length, page, limit };
+    q = q.or(`display_name.ilike.%${s}%,email.ilike.%${s}%`);
   }
 
   const { data: rows, count } = await q.range(offset, offset + limit - 1);
@@ -93,6 +90,12 @@ export async function createUser(data: {
 
   const generatedPassword = data.password || generatePassword();
 
+  // Validate caller-supplied password (generated passwords are always valid)
+  if (data.password) {
+    const pwCheck = validatePassword(data.password);
+    if (!pwCheck.valid) throw new ValidationError(pwCheck.errors.join('; '));
+  }
+
   let resolvedChildrenIds = data.childrenIds || [];
   if (resolvedChildrenIds.length > 0) {
     const resolved = await Promise.all(
@@ -137,9 +140,13 @@ export async function createUser(data: {
       await setCustomClaims(existingUser.uid, { role: data.role });
       logger.info('User doc created (auth user existed)', { uid: existingUser.uid, email: generatedEmail, role: data.role });
       if (data.role === 'student') {
-        const { data: cls } = await supabase.from('classes').select('student_count').eq('id', data.classId!).maybeSingle();
-        const currentCount = cls?.student_count || 0;
-        await supabase.from('classes').update({ student_count: currentCount + 1, updated_at: now2 }).eq('id', data.classId!);
+        const { error: rpcErr } = await supabase.rpc('increment_student_count', { class_id: data.classId!, delta: 1 });
+        if (rpcErr) {
+          // Fallback: read-then-write (best-effort if RPC not deployed)
+          const { data: cls } = await supabase.from('classes').select('student_count').eq('id', data.classId!).maybeSingle();
+          const currentCount = cls?.student_count || 0;
+          await supabase.from('classes').update({ student_count: currentCount + 1, updated_at: now2 }).eq('id', data.classId!);
+        }
       }
       return { ...userData2, generatedPassword };
     }
@@ -166,9 +173,13 @@ export async function createUser(data: {
   logger.info('User created by admin', { uid: firebaseUser.uid, email: generatedEmail, role: data.role });
 
   if (data.role === 'student') {
-    const { data: cls } = await supabase.from('classes').select('student_count').eq('id', data.classId!).maybeSingle();
-    const currentCount = cls?.student_count || 0;
-    await supabase.from('classes').update({ student_count: currentCount + 1, updated_at: now }).eq('id', data.classId!);
+    const { error: rpcErr } = await supabase.rpc('increment_student_count', { class_id: data.classId!, delta: 1 });
+    if (rpcErr) {
+      // Fallback: read-then-write (best-effort if RPC not deployed)
+      const { data: cls } = await supabase.from('classes').select('student_count').eq('id', data.classId!).maybeSingle();
+      const currentCount = cls?.student_count || 0;
+      await supabase.from('classes').update({ student_count: currentCount + 1, updated_at: now }).eq('id', data.classId!);
+    }
   }
 
   const { password: _pw, ...userDataSafe } = userData as any;

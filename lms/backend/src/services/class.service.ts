@@ -111,40 +111,30 @@ export async function listClasses(query: {
   schoolId?: string;
 }) {
   const { page, limit } = parsePagination(query);
+  const offset = (page - 1) * limit;
   const supabase = getSupabaseAdmin()!;
-  
-  let baseQuery = supabase.from('classes').select('*');
+
+  let baseQuery = supabase
+    .from('classes')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false });
 
   if (query.schoolId) baseQuery = baseQuery.eq('school_id', query.schoolId);
   if (query.status) baseQuery = baseQuery.eq('status', query.status);
   if (query.academicYear) baseQuery = baseQuery.eq('academic_year', query.academicYear);
 
-  const { data: items, error } = await baseQuery;
+  // Push filters to the database instead of in-memory filtering
+  if (query.teacherId) {
+    baseQuery = baseQuery.contains('teacher_ids', [query.teacherId]);
+  }
+  if (query.search) {
+    baseQuery = baseQuery.or(`name.ilike.%${query.search}%,code.ilike.%${query.search}%`);
+  }
+
+  const { data: items, count, error } = await baseQuery.range(offset, offset + limit - 1);
   if (error) throw error;
 
-  let result = items || [];
-  result = result.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-  if (query.teacherId) {
-    result = result.filter((item: { teacher_ids?: string[] }) =>
-      item.teacher_ids?.includes(query.teacherId!)
-    );
-  }
-
-  if (query.search) {
-    const search = query.search.toLowerCase();
-    result = result.filter(
-      (item: { name?: string; code?: string }) =>
-        item.name?.toLowerCase().includes(search) ||
-        item.code?.toLowerCase().includes(search)
-    );
-  }
-
-  const total = result.length;
-  const offset = (page - 1) * limit;
-  const paged = result.slice(offset, offset + limit);
-
-  return { items: paged, total, page, limit };
+  return { items: items || [], total: count || 0, page, limit };
 }
 
 /** Fetch a single class by id. Throws NotFoundError if missing. */

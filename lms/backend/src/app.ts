@@ -5,7 +5,7 @@ import { corsOptions } from './config/cors';
 import { nonce } from './middlewares/nonce.middleware';
 import { securityHeaders } from './middlewares/securityHeaders.middleware';
 import { errorHandler } from './middlewares/error.middleware';
-import { apiRateLimit } from './middlewares/rateLimit.middleware';
+import { apiRateLimit, authRateLimit } from './middlewares/rateLimit.middleware';
 import { sanitizeInput } from './middlewares/sanitize.middleware';
 import { auditMiddleware } from './middlewares/audit.middleware';
 import { requestId } from './middlewares/requestId.middleware';
@@ -22,7 +22,7 @@ app.use(nonce);
 app.use(securityHeaders);
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1mb', parameterLimit: 1000 }));
+app.use(express.urlencoded({ extended: true, limit: '1mb', parameterLimit: 100 }));
 app.use(metricsMiddleware);
 
 if (process.env.NODE_ENV !== 'test') {
@@ -31,18 +31,12 @@ if (process.env.NODE_ENV !== 'test') {
   }));
 }
 
-// Strip /api prefix — Vercel rewrite preserves original URL with /api prefix
-app.use((req, _res, next) => {
-  if (req.url.startsWith('/api')) {
-    req.url = req.url.replace(/^\/api/, '') || '/';
-  }
-  next();
-});
 app.use(sanitizeInput);
 if (process.env.NODE_ENV !== 'test') {
   app.use(csrfProtection);
   app.get('/csrf-token', csrfTokenHandler);
 }
+app.use('/auth', authRateLimit);
 app.use('/', apiRateLimit, auditMiddleware, routes);
 
 // 404 catch-all — must come after all routes

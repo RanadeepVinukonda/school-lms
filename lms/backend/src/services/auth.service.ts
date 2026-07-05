@@ -1,6 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
+import { createClient } from '@supabase/supabase-js';
 import { getSupabaseAdmin, getSupabaseClient } from './supabase';
 import { createUser as firebaseCreateUser, getUserByEmail, getUserById, setCustomClaims, updateUser as firebaseUpdateUser } from '../database/auth';
+import { validatePassword } from '../utils/passwordValidation';
 
 function mapUserRow(row: Record<string, unknown>): Record<string, unknown> {
   const data = (row.data as Record<string, unknown>) || {};
@@ -29,7 +31,7 @@ function mapUserRow(row: Record<string, unknown>): Record<string, unknown> {
     updatedAt: row.updated_at ?? data.updatedAt,
   };
 }
-import { ConflictError, NotFoundError, UnauthorizedError, ValidationError } from '../utils/errors';
+import { ConflictError, NotFoundError, UnauthorizedError, ValidationError, AppError, RateLimitError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { env } from '../config/env';
 
@@ -42,6 +44,9 @@ export async function register(data: {
   phoneNumber?: string;
   photoURL?: string;
 }) {
+  const pwCheck = validatePassword(data.password);
+  if (!pwCheck.valid) throw new ValidationError(pwCheck.errors.join('; '));
+
   const existingUser = await getUserByEmail(data.email);
   if (existingUser) {
     if (data.role === 'parent' && existingUser.role === 'teacher') {
@@ -180,9 +185,9 @@ export async function forgotPassword(email: string) {
     const body = await res.text();
     logger.error('Failed to send password reset email', { email, status: res.status, body });
     if (res.status === 429) {
-      throw new Error('Too many requests. Please wait at least 60 seconds and try again.');
+      throw new RateLimitError('Too many requests. Please wait at least 60 seconds and try again.');
     }
-    throw new Error('Failed to send reset email. Please try again later.');
+    throw new AppError(502, 'Failed to send reset email. Please try again later.');
   }
 
   logger.info('Password reset email sent via Supabase', { email });
@@ -215,6 +220,9 @@ export async function resetWithToken(accessToken: string, newPassword: string) {
 
 /** Reset a password using Supabase Admin REST API (bypasses client rate limits). */
 export async function resetPassword(uid: string, newPassword: string) {
+  const pwCheck = validatePassword(newPassword);
+  if (!pwCheck.valid) throw new ValidationError(pwCheck.errors.join('; '));
+
   const response = await fetch(
     `${env.SUPABASE_URL}/auth/v1/admin/users/${uid}`,
     {
@@ -231,14 +239,17 @@ export async function resetPassword(uid: string, newPassword: string) {
   if (!response.ok) {
     const body = await response.text();
     logger.error('Failed to reset password', { uid, status: response.status, body });
-    throw new Error('Failed to reset password');
+    throw new AppError(502, 'Failed to reset password');
   }
 
   logger.info('Password reset completed via Supabase Admin', { uid });
 }
 
-/** Change a user's password using Supabase Auth. Verifies current password via REST API, updates via Admin API. */
+/** Change a user's password. Verifies the current password via a temporary client (immediately signed out), then updates via Admin API. */
 export async function changePassword(uid: string, currentPassword: string, newPassword: string) {
+  const pwCheck = validatePassword(newPassword);
+  if (!pwCheck.valid) throw new ValidationError(pwCheck.errors.join('; '));
+
   const supabase = getSupabaseAdmin()!;
   const { data: userRow, error } = await supabase
     .from('users')
@@ -250,21 +261,15 @@ export async function changePassword(uid: string, currentPassword: string, newPa
     throw new NotFoundError('User not found');
   }
   const userData = mapUserRow(userRow as Record<string, unknown>);
-  const response = await fetch(
-    `${env.SUPABASE_URL}/auth/v1/token?grant_type=password`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: env.SUPABASE_ANON_KEY,
-      },
-      body: JSON.stringify({ email: userData.email, password: currentPassword }),
-    }
-  );
 
-  if (!response.ok) {
-    throw new UnauthorizedError('Current password is incorrect');
-  }
+  // Verify current password using a temporary client; sign out immediately to avoid orphaned sessions
+  const tempClient = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+  const { error: signInError } = await tempClient.auth.signInWithPassword({
+    email: userData.email as string,
+    password: currentPassword,
+  });
+  if (signInError) throw new UnauthorizedError('Current password is incorrect');
+  await tempClient.auth.signOut();
 
   await firebaseUpdateUser(uid, { password: newPassword });
 

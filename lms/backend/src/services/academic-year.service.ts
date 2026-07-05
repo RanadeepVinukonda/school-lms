@@ -1,21 +1,31 @@
 import { v4 as uuidv4 } from 'uuid';
-import { getSupabaseClient } from './supabase';
+import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ConflictError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { TransactionManager } from '../database/transaction-manager';
 
 async function nosqlDoc(collection: string, docId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data } = await supabase.from('nosql_docs').select('doc_id, data').eq('collection', collection).eq('doc_id', docId).maybeSingle();
   return data || null;
 }
 
 async function setNosqlDoc(collection: string, docId: string, docData: Record<string, unknown>) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const now = new Date().toISOString();
   await supabase.from('nosql_docs').upsert({ collection, doc_id: docId, data: docData, updated_at: now }, { onConflict: 'collection,doc_id' });
 }
 
+/**
+ * Create a new academic year. If isCurrent is true, all other current years are unset atomically.
+ * @param data.name - Human-readable name (e.g. "2024-25")
+ * @param data.code - Unique short code (e.g. "AY2425")
+ * @param data.startDate - ISO date string for year start
+ * @param data.endDate - ISO date string for year end
+ * @param data.isCurrent - Whether to mark this as the active year
+ * @returns The created academic year object
+ * @throws {ConflictError} if a year with the same code already exists
+ */
 export async function createAcademicYear(data: {
   name: string;
   code: string;
@@ -24,7 +34,7 @@ export async function createAcademicYear(data: {
   isCurrent?: boolean;
   status?: string;
 }) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
 
   const { data: existing } = await supabase.from('nosql_docs').select('doc_id')
     .eq('collection', 'academicYears').contains('data', { code: data.code }).maybeSingle();
@@ -54,8 +64,14 @@ export async function createAcademicYear(data: {
   return yearData;
 }
 
+/**
+ * Update an academic year's fields. If isCurrent is set to true, other current years are unset.
+ * @param id - UUID of the academic year to update
+ * @param data - Partial fields to merge into the existing record
+ * @throws {NotFoundError} if the year doesn't exist
+ */
 export async function updateAcademicYear(id: string, data: Record<string, unknown>) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const existing = await nosqlDoc('academicYears', id);
   if (!existing) throw new NotFoundError('Academic year not found');
 
@@ -84,7 +100,7 @@ export async function updateAcademicYear(id: string, data: Record<string, unknow
 }
 
 export async function deleteAcademicYear(id: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const existing = await nosqlDoc('academicYears', id);
   if (!existing) throw new NotFoundError('Academic year not found');
   await supabase.from('nosql_docs').delete().eq('collection', 'academicYears').eq('doc_id', id);
@@ -98,7 +114,7 @@ export async function getAcademicYearById(id: string) {
 }
 
 export async function listAcademicYears(query: { status?: string; page?: string; limit?: string }) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   let dbQuery = supabase.from('nosql_docs').select('doc_id, data').eq('collection', 'academicYears');
   if (query.status) dbQuery = dbQuery.contains('data', { status: query.status });
 
@@ -117,7 +133,7 @@ export async function listAcademicYears(query: { status?: string; page?: string;
 }
 
 export async function getCurrentAcademicYear() {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', 'academicYears')
     .contains('data', { isCurrent: true, status: 'active' })

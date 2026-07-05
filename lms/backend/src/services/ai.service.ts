@@ -156,7 +156,7 @@ async function geminiChatCompletion(
           throw new AppError(502, 'AI response blocked by content safety filters. Try different prompts.');
         }
 
-        logger.info('Gemini response received', { model, attempt, finishReason: candidate?.finishReason, contentLength: text.length, contentPreview: text.slice(0, 200) });
+        logger.info('Gemini response received', { model, attempt, finishReason: candidate?.finishReason, contentLength: text.length });
 
         const jsonBlock = extractJsonBlock(text);
         const sanitized = sanitizeJson(jsonBlock);
@@ -165,7 +165,7 @@ async function geminiChatCompletion(
           const extracted = parsed.answer || parsed.message || parsed.response || parsed.content || parsed.text || sanitized;
           return typeof extracted === 'string' ? extracted : sanitized;
         } catch {
-          logger.warn('Gemini response was not valid JSON, returning raw', { contentPreview: text.slice(0, 200) });
+          logger.warn('Gemini response was not valid JSON, returning raw', {});
           return text;
         }
       }
@@ -250,7 +250,7 @@ async function openaiChatCompletion(
       if (res.ok) {
         const data = await res.json() as ChatResponse;
         const content = data.choices?.[0]?.message?.content || '';
-        logger.info('AI response received', { model, attempt, useResponseFormat, contentLength: content.length, contentPreview: content.slice(0, 200) });
+        logger.info('AI response received', { model, attempt, useResponseFormat, contentLength: content.length });
 
         if (!jsonMode) {
           return content;
@@ -263,7 +263,7 @@ async function openaiChatCompletion(
           const text = parsed.answer || parsed.message || parsed.response || parsed.content || parsed.text || sanitized;
           return typeof text === 'string' ? text : sanitized;
         } catch {
-          logger.warn('AI response was not valid JSON, returning raw content', { contentPreview: content.slice(0, 200) });
+          logger.warn('AI response was not valid JSON, returning raw content', {});
           return content;
         }
       }
@@ -353,7 +353,7 @@ export async function textbookChatCompletion(params: ChatRequest): Promise<strin
       if (res.ok) {
         const data = await res.json() as ChatResponse;
         const content = data.choices?.[0]?.message?.content || '';
-        logger.info('Textbook AI response received', { model, attempt, contentLength: content.length, contentPreview: content.slice(0, 200) });
+        logger.info('Textbook AI response received', { model, attempt, contentLength: content.length });
 
         if (!jsonMode) return content;
         const jsonBlock = extractJsonBlock(content);
@@ -363,7 +363,7 @@ export async function textbookChatCompletion(params: ChatRequest): Promise<strin
           const text = parsed.answer || parsed.message || parsed.response || parsed.content || parsed.text || sanitized;
           return typeof text === 'string' ? text : sanitized;
         } catch {
-          logger.warn('Textbook AI response was not valid JSON, returning raw', { contentPreview: content.slice(0, 200) });
+          logger.warn('Textbook AI response was not valid JSON, returning raw', {});
           return content;
         }
       }
@@ -414,13 +414,26 @@ function toGeminiModel(model: string): string {
 export async function chatCompletion(params: ChatRequest): Promise<string> {
   const { model = env.AI_MODEL, messages, temperature = 0.7, max_tokens = 2048, jsonMode = false } = params;
 
-  if (env.GEMINI_API_KEY) {
-    return geminiChatCompletion(toGeminiModel(model), messages, temperature, max_tokens, jsonMode);
-  }
-
   if (!env.GEMINI_API_KEY) {
     throw new AppError(502, 'No AI provider configured. Set GEMINI_API_KEY.');
   }
 
-  return openaiChatCompletion(model, messages, temperature, max_tokens, jsonMode);
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      if (env.GEMINI_API_KEY) {
+        return await geminiChatCompletion(toGeminiModel(model), messages, temperature, max_tokens, jsonMode);
+      }
+      return await openaiChatCompletion(model, messages, temperature, max_tokens, jsonMode);
+    } catch (err) {
+      // Retry on transient network errors
+      if (err instanceof TypeError && err.message.toLowerCase().includes('fetch') && attempt < MAX_RETRIES) {
+        const delay = BASE_DELAY_MS * Math.pow(2, attempt);
+        logger.warn(`chatCompletion network error, retrying in ${delay}ms`, { attempt: attempt + 1, error: err.message });
+        await sleep(delay);
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new AppError(504, 'chatCompletion failed after retries');
 }

@@ -297,16 +297,20 @@ export async function deleteTextbook(textbookId: string) {
     await supabase.storage.from(bucket).remove([doc.storage_path]);
   }
 
-  // Cascade delete
-  await supabase.from('concept_questions').delete().eq('textbook_id', textbookId);
-  await supabase.from('concept_resources').delete().eq('textbook_id', textbookId);
-  await supabase.from('concept_videos').delete().eq('textbook_id', textbookId);
-  await supabase.from('concept_notes').delete().eq('textbook_id', textbookId);
-  await supabase.from('raw_pages').delete().eq('textbook_id', textbookId);
-  await supabase.from('processing_jobs').delete().eq('textbook_id', textbookId);
-  await supabase.from('concepts').delete().eq('textbook_id', textbookId);
-  await supabase.from('chapters').delete().eq('textbook_id', textbookId);
-  await supabase.from('textbooks').delete().eq('id', textbookId);
+  // Attempt transactional cascade delete via RPC; fall back to sequential deletes
+  const { error: rpcErr } = await supabase.rpc('delete_textbook_cascade', { tid: textbookId });
+  if (rpcErr) {
+    logger.warn('delete_textbook_cascade RPC failed, falling back to sequential deletes', { textbookId, error: rpcErr.message });
+    await supabase.from('concept_questions').delete().eq('textbook_id', textbookId);
+    await supabase.from('concept_resources').delete().eq('textbook_id', textbookId);
+    await supabase.from('concept_videos').delete().eq('textbook_id', textbookId);
+    await supabase.from('concept_notes').delete().eq('textbook_id', textbookId);
+    await supabase.from('raw_pages').delete().eq('textbook_id', textbookId);
+    await supabase.from('processing_jobs').delete().eq('textbook_id', textbookId);
+    await supabase.from('concepts').delete().eq('textbook_id', textbookId);
+    await supabase.from('chapters').delete().eq('textbook_id', textbookId);
+    await supabase.from('textbooks').delete().eq('id', textbookId);
+  }
 
   try {
     await removeUploadJob(textbookId);

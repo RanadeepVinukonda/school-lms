@@ -1,5 +1,11 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 
+jest.mock('crypto', () => ({
+  ...jest.requireActual('crypto') as any,
+  createPublicKey: jest.fn(() => ({})),
+  verify: jest.fn(() => true),
+}));
+
 jest.mock('../services/supabase', () => ({
   getSupabaseAdmin: jest.fn(() => {
     const chain: any = {
@@ -9,7 +15,12 @@ jest.mock('../services/supabase', () => ({
         data: {
           id: 'config-1',
           school_id: 'school-1',
-          auth_token_url: 'https://moodle.com/oauth2/token'
+          issuer: 'https://moodle.com',
+          client_id: 'client-1',
+          deployment_id: 'deploy-1',
+          auth_token_url: 'https://moodle.com/oauth2/token',
+          auth_login_url: 'https://moodle.com/oauth2/login',
+          jwks_url: 'https://moodle.com/jwks'
         },
         error: null
       }),
@@ -28,15 +39,24 @@ describe('LTI 1.3 Service', () => {
 
   beforeEach(() => {
     originalFetch = globalThis.fetch;
-    globalThis.fetch = jest.fn(() =>
-      Promise.resolve({
+    globalThis.fetch = jest.fn((url: string) => {
+      if (typeof url === 'string' && url.endsWith('/jwks')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve({
+            keys: [{ kid: 'key-1' }]
+          }),
+        } as Response);
+      }
+      return Promise.resolve({
         ok: true,
         status: 200,
         json: () => Promise.resolve({
           access_token: 'moodle-access-token'
         }),
-      } as Response)
-    ) as any;
+      } as Response);
+    }) as any;
   });
 
   afterEach(() => {
@@ -63,9 +83,10 @@ describe('LTI 1.3 Service', () => {
 
   it('should handle LTI launch request', async () => {
     // Generate valid base64 payload JWT segment
-    const header = Buffer.from(JSON.stringify({ alg: 'RS256' })).toString('base64');
+    const header = Buffer.from(JSON.stringify({ alg: 'RS256', kid: 'key-1' })).toString('base64');
     const payload = Buffer.from(JSON.stringify({
       iss: 'https://moodle.com',
+      aud: 'client-1',
       sub: 'user-1',
       email: 'teacher@moodle.com',
       name: 'Moodle Teacher',

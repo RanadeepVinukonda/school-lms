@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { getSupabaseClient } from './supabase';
+import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ConflictError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
@@ -14,7 +14,7 @@ export interface TeacherClassSubject {
 }
 
 async function nosqlDoc(collection: string, docId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data } = await supabase.from('nosql_docs').select('doc_id, data').eq('collection', collection).eq('doc_id', docId).maybeSingle();
   return data || null;
 }
@@ -25,7 +25,7 @@ export async function assignTeacher(data: {
   classId: string;
   subjectId: string;
 }): Promise<TeacherClassSubject> {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
 
   const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', 'teacherClassSubject')
@@ -62,7 +62,7 @@ export async function assignTeacher(data: {
 
 /** Get all assignments for a teacher, enriched with class name. */
 export async function getTeacherAssignments(teacherId: string): Promise<(TeacherClassSubject & { className: string; subjectName: string })[]> {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', 'teacherClassSubject')
     .contains('data', { teacherId });
@@ -91,7 +91,7 @@ export async function getTeacherAssignments(teacherId: string): Promise<(Teacher
 
 /** Get the single assignment for a teacher + class. */
 export async function getTeacherAssignment(teacherId: string, classId: string): Promise<TeacherClassSubject | null> {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', 'teacherClassSubject')
     .contains('data', { teacherId, classId })
@@ -103,7 +103,7 @@ export async function getTeacherAssignment(teacherId: string, classId: string): 
 
 /** Get unassigned subjects for a class (subjects with no teacher-class-subject record). */
 export async function getUnassignedSubjects(classId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: subjectsRows } = await supabase.from('subjects').select('*').eq('classId', classId);
   const { data: assignedRows } = await supabase.from('nosql_docs').select('data')
     .eq('collection', 'teacherClassSubject')
@@ -118,7 +118,7 @@ export async function getUnassignedSubjects(classId: string) {
 
 /** Get all assignments with resolved class/subject/teacher names. */
 export async function getAllAssignments() {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: rows } = await supabase.from('nosql_docs').select('doc_id, data')
     .eq('collection', 'teacherClassSubject');
   const assignments = (rows || []).map((r) => ({ id: r.doc_id, ...r.data as Record<string, unknown> } as unknown as TeacherClassSubject));
@@ -147,7 +147,7 @@ export async function getAllAssignments() {
 
 /** Remove a teacher-class-subject assignment. */
 export async function removeAssignment(assignmentId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data } = await supabase.from('nosql_docs').select('doc_id')
     .eq('collection', 'teacherClassSubject').eq('doc_id', assignmentId).maybeSingle();
   if (!data) throw new NotFoundError('Assignment not found');

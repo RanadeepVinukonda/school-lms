@@ -41,6 +41,7 @@ mempalace.yaml
 entities.json
 lms-flowchart.html
 package-lock.json
+skills-lock.json
 *.md
 **/docs/
 

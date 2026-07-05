@@ -47,9 +47,15 @@ jobs:
       - name: Install frontend dependencies
         working-directory: lms/frontend
         run: npm ci
+      - name: Typecheck frontend
+        working-directory: lms/frontend
+        run: npx tsc --noEmit
       - name: Build frontend
         working-directory: lms/frontend
         run: npm run build
+      - name: Run frontend tests
+        working-directory: lms/frontend
+        run: npm test -- --passWithNoTests
       - name: Run Web Vitals budget check
         working-directory: lms/backend
         run: npx ts-node src/utils/check-web-vitals.ts 45 0.02 1200

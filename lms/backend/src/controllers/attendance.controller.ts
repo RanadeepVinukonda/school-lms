@@ -3,7 +3,10 @@ import * as attendanceService from '../services/attendance.service';
 import { sendSuccess, sendCreated, sendError } from '../utils/response';
 
 export async function markAttendance(req: Request, res: Response) {
-  const result = await attendanceService.markAttendance(req.body);
+  const result = await attendanceService.markAttendance({
+    ...req.body,
+    schoolId: req.user!.school_id,
+  });
   sendCreated(res, result, 'Attendance marked');
 }
 

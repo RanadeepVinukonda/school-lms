@@ -6,17 +6,20 @@ import { env } from '../config/env';
 
 export function errorHandler(
   err: Error,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction
 ): void {
+  const isDev = env.NODE_ENV === 'development';
+  const requestId = req.headers['x-request-id'] as string | undefined;
+
   if (err instanceof multer.MulterError) {
     const message = err.code === 'LIMIT_FILE_SIZE'
       ? 'File exceeds maximum allowed size. Images: 10MB, Videos: 50MB.'
       : err.message;
     res.status(413).json({
       success: false,
-      error: { message },
+      error: { message, code: 'FILE_TOO_LARGE', requestId },
     });
     return;
   }
@@ -26,6 +29,7 @@ export function errorHandler(
       message: err.message,
       code: err.statusCode,
       details: err.details,
+      requestId,
     });
 
     res.status(err.statusCode).json({
@@ -33,7 +37,8 @@ export function errorHandler(
       error: {
         message: err.message,
         code: err.code,
-        ...(env.NODE_ENV === 'development' && { details: err.details, stack: err.stack }),
+        requestId,
+        ...(isDev && { details: err.details, stack: err.stack }),
       },
     });
     return;
@@ -42,14 +47,16 @@ export function errorHandler(
   logger.error('Unhandled error', {
     message: err.message,
     stack: err.stack,
+    requestId,
   });
 
   res.status(500).json({
     success: false,
     error: {
-      message: 'Internal server error',
+      message: isDev ? err.message : 'Internal server error',
       code: ErrorCode.INTERNAL,
-      ...(env.NODE_ENV === 'development' && { message: err.message, stack: err.stack }),
+      requestId,
+      ...(isDev && { stack: err.stack }),
     },
   });
 }

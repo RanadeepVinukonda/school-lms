@@ -89,7 +89,11 @@ async function nosqlGet(collection: string, docId: string) {
 async function nosqlSet(collection: string, docId: string, docData: Record<string, unknown>) {
   const supabase = getSupabaseAdmin()!;
   const now = new Date().toISOString();
-  await supabase.from('nosql_docs').upsert({ collection, doc_id: docId, data: docData, updated_at: now }, { onConflict: 'collection,doc_id' });
+  const { error } = await supabase.from('nosql_docs').upsert({ collection, doc_id: docId, data: docData, updated_at: now }, { onConflict: 'collection,doc_id' });
+  if (error) {
+    logger.error('Failed to write nosql_doc', { collection, docId, error: error.message });
+    throw error;
+  }
 }
 
 export function calculateLevel(xp: number): number {
@@ -373,12 +377,32 @@ export async function getDailyChallenges(userId: string) {
     completed: false,
     createdAt: new Date().toISOString(),
   }));
-  const tm = new TransactionManager();
-  await tm.runTransaction(async (tx) => {
+
+  try {
+    const tm = new TransactionManager();
+    await tm.runTransaction(async (tx) => {
+      for (const c of challenges) {
+        tx.set('gamificationDailyChallenges', c.id, c);
+      }
+    });
+  } catch (txError) {
+    // Fallback: individual upserts when TransactionManager is unavailable (e.g. DATABASE_URL not set)
+    logger.warn('TransactionManager unavailable for daily challenges, using fallback inserts', {
+      error: txError instanceof Error ? txError.message : String(txError),
+    });
+    const now = new Date().toISOString();
     for (const c of challenges) {
-      tx.set('gamificationDailyChallenges', c.id, c);
+      const { error } = await supabase.from('nosql_docs').upsert(
+        { collection: 'gamificationDailyChallenges', doc_id: c.id, data: c, updated_at: now },
+        { onConflict: 'collection,doc_id' }
+      );
+      if (error) {
+        logger.error('Failed to write daily challenge nosql_doc', { challengeId: c.id, error: error.message });
+        throw error;
+      }
     }
-  });
+  }
+
   return challenges;
 }
 
@@ -432,12 +456,33 @@ async function getOrCreatePeriodChallenges(
     completed: false,
     createdAt: new Date().toISOString(),
   }));
-  const tm = new TransactionManager();
-  await tm.runTransaction(async (tx) => {
+
+  try {
+    const tm = new TransactionManager();
+    await tm.runTransaction(async (tx) => {
+      for (const c of challenges) {
+        tx.set(collectionName, c.id, c);
+      }
+    });
+  } catch (txError) {
+    // Fallback: individual upserts when TransactionManager is unavailable (e.g. DATABASE_URL not set)
+    logger.warn('TransactionManager unavailable for period challenges, using fallback inserts', {
+      collection: collectionName,
+      error: txError instanceof Error ? txError.message : String(txError),
+    });
+    const now = new Date().toISOString();
     for (const c of challenges) {
-      tx.set(collectionName, c.id, c);
+      const { error } = await supabase.from('nosql_docs').upsert(
+        { collection: collectionName, doc_id: c.id, data: c, updated_at: now },
+        { onConflict: 'collection,doc_id' }
+      );
+      if (error) {
+        logger.error('Failed to write period challenge nosql_doc', { challengeId: c.id, collection: collectionName, error: error.message });
+        throw error;
+      }
     }
-  });
+  }
+
   return challenges;
 }
 
