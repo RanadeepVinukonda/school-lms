@@ -22,7 +22,7 @@ export function StudentProgressTracker({ classIds }: { classIds: string[] }) {
       for (const classId of classIds) {
         const subjects = await api.get(`/subjects/by-class/${classId}`).then((r) => r.data.data ?? []);
         for (const subject of subjects) {
-          const prog = await api.get(`/concept-progress/subject/${subject.id}/class/${classId}`)
+          const prog = await api.get(`/concept-progress/subject/${subject.id}/${classId}`)
             .then((r) => r.data.data)
             .catch(() => ({ completed: 0, total: 0 }));
           results.push({

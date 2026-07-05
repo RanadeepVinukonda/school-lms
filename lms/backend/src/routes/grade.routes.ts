@@ -21,4 +21,9 @@ router.put('/:gradeId', authenticate, requireRole('teacher', 'admin'), validate(
 router.post('/bulk/:courseId', authenticate, requireRole('teacher', 'admin'), validate(bulkGradeSchema), asyncHandler(gradeController.bulkUpdateGrades));
 router.get('/report/:studentId', authenticate, requireRole('teacher', 'admin', 'parent'), asyncHandler(gradeController.generateReport));
 
+// ponytail: alias for frontend compatibility
+router.get('/', authenticate, requireRole('teacher', 'admin'), asyncHandler(gradeController.getGradebook));
+router.get('/summary', authenticate, requireRole('teacher', 'admin'), asyncHandler(gradeController.getGradebook));
+router.get('/courses/:courseId', authenticate, requireRole('teacher', 'admin'), asyncHandler(gradeController.getGradebook));
+
 export default router;

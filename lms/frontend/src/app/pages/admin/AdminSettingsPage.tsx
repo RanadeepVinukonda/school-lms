@@ -188,7 +188,7 @@ export default function AdminSettingsPage() {
   const [parentForm, setParentForm] = useState({ displayName: '', email: '', password: '', childrenIds: '' as string });
   const createParentMutation = useMutation({
     mutationFn: () =>
-      api.post('/users', {
+      api.post('/auth/users', {
         displayName: parentForm.displayName,
         email: parentForm.email,
         password: parentForm.password,

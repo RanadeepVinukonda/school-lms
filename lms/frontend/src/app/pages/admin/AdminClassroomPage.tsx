@@ -38,7 +38,7 @@ export default function AdminClassroomPage() {
   const { data: classesData = [] } = useQuery({
     queryKey: ['classroom-lms-classes'],
     queryFn: async () => {
-      const res = await api.get('/courses/classes'); // reusing existing class fetching
+      const res = await api.get('/classes');
       return res.data?.data || [];
     }
   });
