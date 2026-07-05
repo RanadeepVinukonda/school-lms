@@ -31,7 +31,7 @@ export async function login(req: Request, res: Response) {
   res.cookie('token', result.token, {
     httpOnly: true,
     secure: env.COOKIE_SECURE,
-    sameSite: 'strict',
+    sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax',
     path: '/',
     maxAge,
     ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
@@ -189,7 +189,7 @@ export async function refresh(req: Request, res: Response) {
   res.cookie('token', result.token, {
     httpOnly: true,
     secure: env.COOKIE_SECURE,
-    sameSite: 'strict',
+    sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax',
     path: '/',
     maxAge,
     ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),

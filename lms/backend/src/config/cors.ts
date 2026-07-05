@@ -9,14 +9,18 @@ const allowedOrigins = [
   'http://localhost:8080',
 ];
 
+// In development, allow any vercel.app preview deployment too
 const isAllowed = (origin: string): boolean => {
   if (allowedOrigins.includes(origin)) return true;
-  try {
-    const hostname = new URL(origin).hostname;
-    return hostname === 'vercel.app' || hostname.endsWith('.vercel.app');
-  } catch {
-    return false;
+  if (env.NODE_ENV !== 'production') {
+    try {
+      const hostname = new URL(origin).hostname;
+      return hostname === 'vercel.app' || hostname.endsWith('.vercel.app');
+    } catch {
+      return false;
+    }
   }
+  return false;
 };
 
 export const corsOptions: CorsOptions = {
@@ -30,7 +34,7 @@ export const corsOptions: CorsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'x-csrf-token'],
   exposedHeaders: ['Content-Disposition'],
   maxAge: 86400,
 };

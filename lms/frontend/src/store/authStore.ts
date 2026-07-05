@@ -98,6 +98,7 @@ export const useAuthStore = create<AuthStore>()(
       },
       logout: async () => {
         await supabase.auth.signOut();
+        initialized = false;
         set({ user: null, token: null, isAuthenticated: false, isLoading: false });
       },
       initialize: async () => {
@@ -122,8 +123,8 @@ export const useAuthStore = create<AuthStore>()(
               return;
             }
           }
-        } catch {
-          // Supabase session invalid or /auth/me failed — try next step
+        } catch (e) {
+          console.warn('[authStore] Step 1 (Supabase session) failed:', e instanceof Error ? e.message : String(e));
         }
 
         // Step 2: Persisted store token + /auth/me
@@ -146,8 +147,8 @@ export const useAuthStore = create<AuthStore>()(
               return;
             }
           }
-        } catch {
-          // Token invalid — clear and fall through
+        } catch (e) {
+          console.warn('[authStore] Step 2 (persisted token) failed:', e instanceof Error ? e.message : String(e));
           set({ token: null });
         }
 
@@ -165,8 +166,8 @@ export const useAuthStore = create<AuthStore>()(
             });
             return;
           }
-        } catch {
-          // No cookie session — not authenticated
+        } catch (e) {
+          console.warn('[authStore] Step 3 (cookie session) failed:', e instanceof Error ? e.message : String(e));
         }
 
         // All steps failed

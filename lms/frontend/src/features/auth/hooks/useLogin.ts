@@ -65,7 +65,9 @@ export function useLogin() {
           if (tcsData && tcsData.length > 0) {
             role = 'parent,teacher';
           }
-        } catch { /* ignore */ }
+        } catch (e) {
+          console.warn('[useLogin] parent-teacher role check failed:', e instanceof Error ? e.message : String(e));
+        }
       }
 
       return {

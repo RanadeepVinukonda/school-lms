@@ -55,6 +55,12 @@ api.interceptors.request.use(async (config) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.access_token) {
       config.headers.Authorization = `Bearer ${session.access_token}`;
+    } else {
+      // Session is null (expired or not restored) — use store token
+      const token = useAuthStore.getState().token;
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
   } catch {
     // Supabase session retrieval failed, fall through to store token
@@ -114,7 +120,16 @@ api.interceptors.response.use(
         const refreshToken = session?.refresh_token;
         if (!refreshToken) throw new Error('No refresh token');
 
-        await api.post('/auth/refresh', { refresh_token: refreshToken }, { timeout: 5000 });
+        const refreshRes = await api.post('/auth/refresh', { refresh_token: refreshToken }, { timeout: 5000 });
+        // Sync refreshed tokens back into Supabase client session
+        const newToken = refreshRes.data?.data?.token;
+        const newRefreshToken = refreshRes.data?.data?.refresh_token;
+        if (newToken) {
+          await supabase.auth.setSession({
+            access_token: newToken,
+            refresh_token: newRefreshToken || refreshToken,
+          });
+        }
         processQueue(null);
         return api(originalRequest);
       } catch (refreshError) {
