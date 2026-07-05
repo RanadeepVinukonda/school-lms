@@ -147,7 +147,7 @@ export async function verifyUserToken(uid: string) {
     throw new UnauthorizedError('User not found');
   }
 
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: userRow, error } = await supabase
     .from('users')
     .select('*')
@@ -239,7 +239,7 @@ export async function resetPassword(uid: string, newPassword: string) {
 
 /** Change a user's password using Supabase Auth. Verifies current password via REST API, updates via Admin API. */
 export async function changePassword(uid: string, currentPassword: string, newPassword: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: userRow, error } = await supabase
     .from('users')
     .select('*')
@@ -299,7 +299,7 @@ export async function refreshToken(refreshToken: string) {
 
 /** Fetch user profile by uid. */
 export async function getUserProfile(uid: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: userRow, error } = await supabase
     .from('users')
     .select('*')
@@ -319,7 +319,7 @@ export async function updateUserProfile(uid: string, data: {
   phoneNumber?: string;
   photoURL?: string;
 }) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: userRow, error: findError } = await supabase
     .from('users')
     .select('*')
