@@ -67,7 +67,7 @@ export default function StudentLayout() {
       if (data && data.tutorial_seen === false) {
         setTutorialOpen(true);
       }
-    }).catch(() => toast.error('Failed to check tutorial status'));
+    }, () => toast.error('Failed to check tutorial status'));
   }, [user]);
 
   return (

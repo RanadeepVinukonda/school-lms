@@ -45,7 +45,7 @@ export default function StudentTimetablePage() {
     enabled: !!selectedClassId,
   });
 
-  const timetableEntries = (((timetableRes as Record<string, unknown>)?.data) || []) as Record<string, unknown>[];
+  const timetableEntries = (timetableRes?.data ?? []) as any[];
 
   const classOptions = useMemo(
     () => classesData.map((c: ClassEntry) => ({ value: c.id, label: c.grade && c.section ? `Class ${c.grade}-${c.section}` : c.name })),

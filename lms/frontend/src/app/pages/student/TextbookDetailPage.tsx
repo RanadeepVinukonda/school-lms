@@ -33,7 +33,7 @@ export default function TextbookDetailPage() {
       const conceptProgress = authUser?.id ? await getAllConceptProgress(authUser.id) : [];
 
       const chapters = await getChaptersForTextbook(id);
-      const chaptersWithConcepts = [];
+      const chaptersWithConcepts: any[] = [];
       for (const ch of chapters) {
         const concepts = await getConceptsForChapter(id, ch.id);
         chaptersWithConcepts.push({

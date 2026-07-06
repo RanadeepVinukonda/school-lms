@@ -256,7 +256,7 @@ export default function AdminStudentsPage() {
                             <td className="px-4 py-3">
                               <span className="text-body-md font-medium">{student.displayName}</span>
                             </td>
-                            <td className="px-4 py-3 text-body-md text-muted-foreground capitalize">{student.gender || '\u2014'}</td>
+                            <td className="px-4 py-3 text-body-md text-muted-foreground capitalize">{(student as any).gender || '\u2014'}</td>
                             <td className="px-4 py-3 text-body-md text-muted-foreground">{student.email}</td>
                             <td className="px-4 py-3 text-body-md text-muted-foreground font-mono">{student.studentId || '\u2014'}</td>
                             <td className="px-4 py-3 text-body-md">{className}</td>

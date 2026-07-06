@@ -156,7 +156,7 @@ export default function AdminSchoolAnalyticsPage() {
                         {gradeData.length === 0 ? (
                           <p className="text-muted-foreground text-center py-8">No grade data available</p>
                         ) : (
-                          <BarChart data={gradeData} labelKey="grade" valueKey="averageScore" color="bg-primary" />
+                          <BarChart data={gradeData as any} labelKey="grade" valueKey="averageScore" color="bg-primary" />
                         )}
                         {gradeData.length > 0 && (
                           <div className="mt-6 border-t border-border/40 pt-4">
@@ -193,7 +193,7 @@ export default function AdminSchoolAnalyticsPage() {
                         {teacherData.length === 0 ? (
                           <p className="text-muted-foreground text-center py-8">No teacher data available</p>
                         ) : (
-                          <BarChart data={teacherData} labelKey="teacherName" valueKey="averageScore" color="bg-secondary" />
+                          <BarChart data={teacherData as any} labelKey="teacherName" valueKey="averageScore" color="bg-secondary" />
                         )}
                         {teacherData.length > 0 && (
                           <div className="mt-6 border-t border-border/40 pt-4">

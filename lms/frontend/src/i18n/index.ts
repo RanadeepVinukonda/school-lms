@@ -14,3 +14,11 @@ export const translations = {
 
 export type LanguageCode = keyof typeof translations;
 export type TranslationKeys = typeof en;
+
+export const languages: { value: LanguageCode; label: string; nativeLabel: string }[] = [
+  { value: 'en', label: 'English', nativeLabel: 'English' },
+  { value: 'te', label: 'Telugu', nativeLabel: 'తెలుగు' },
+  { value: 'hi', label: 'Hindi', nativeLabel: 'हिन्दी' },
+  { value: 'ta', label: 'Tamil', nativeLabel: 'தமிழ்' },
+  { value: 'kn', label: 'Kannada', nativeLabel: 'ಕನ್ನಡ' },
+];

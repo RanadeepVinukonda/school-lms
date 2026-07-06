@@ -524,7 +524,7 @@ export default function StudentAITutorPage() {
                     <span className="text-[10px] text-on-surface-variant/50">{formatTime(msg.timestamp)}</span>
                     {msg.role === 'assistant' && (
                       <button
-                        onClick={() => speakingId === msg.id ? stopSpeaking() : speak(msg.content, msg.id)}
+                        onClick={() => speakingId === msg.id ? stopSpeaking() : speak(msg.content ?? '', msg.id ?? '')}
                         className="text-on-surface-variant/50 hover:text-primary transition-colors"
                         aria-label={speakingId === msg.id ? _('Stop') : _('Read aloud')}
                       >

@@ -229,7 +229,8 @@ export async function getConceptsForChapter(textbookId: string, chapterId: strin
         duration: v.duration,
         channelName: v.channel,
         description: v.description,
-        embedUrl: `https://www.youtube.com/embed/${v.video_id}`
+        embedUrl: `https://www.youtube.com/embed/${v.video_id}`,
+        relevance: v.relevance ?? 0
       }));
     } else {
       concept.videos = [];

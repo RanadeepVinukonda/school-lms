@@ -101,7 +101,7 @@ export default function AdminAcademicYearsPage() {
                 {items.length === 0 ? (
                   <Card className="border-border/60"><CardContent className="p-8 text-center text-muted-foreground"><Icon name="calendar_month" size={48} className="mx-auto mb-3 opacity-40" /><p>No academic years</p></CardContent></Card>
                 ) : (
-                  items.map((y: Record<string, unknown>) => (
+                  items.map((y: any) => (
                     <Card key={y.id} className="border-border/60">
                       <CardContent className="p-5">
                         <div className="flex items-start justify-between gap-4">
@@ -174,7 +174,7 @@ export default function AdminAcademicYearsPage() {
             destructive
             onConfirm={() => {
               if (deleteConfirm) {
-                deleteMutation.mutate(deleteConfirm.id);
+                deleteMutation.mutate(deleteConfirm.id as string);
                 setDeleteConfirm(null);
               }
             }}

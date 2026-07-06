@@ -22,12 +22,7 @@ export function useTranslation() {
   const lang = useSyncExternalStore(subscribe, getLang, getLang);
   const resource = translations[lang];
 
-  function t<K extends keyof TranslationKeys>(key: K): TranslationKeys[K];
-  function t<
-    K1 extends keyof TranslationKeys,
-    K2 extends keyof TranslationKeys[K1]
-  >(key: `${K1}.${Extract<K2, string>}`): TranslationKeys[K1][K2];
-  function t(path: string): any {
+  function t(path: string): string {
     const parts = path.split('.');
     let current: any = resource;
     for (const part of parts) {

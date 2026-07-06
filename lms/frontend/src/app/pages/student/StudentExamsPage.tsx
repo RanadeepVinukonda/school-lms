@@ -79,7 +79,7 @@ export default function StudentExamsPage() {
         return { upcoming: [], past: [], subjects: [] };
       }
 
-      const subjects = allSubjects.filter((s) => studentClass.subjectIds.includes(s.id));
+      const subjects = allSubjects.filter((s) => studentClass.subjectIds!.includes(s.id));
       const examPromises = subjects.map((s) => getExamsBySubject(s.id));
       const examResults = await Promise.all(examPromises);
       const allExams = examResults.flat();

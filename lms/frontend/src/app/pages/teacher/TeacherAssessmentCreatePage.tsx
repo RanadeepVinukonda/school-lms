@@ -51,6 +51,7 @@ interface AssessmentItem {
   passingScore?: number;
   maxAttempts?: number;
   timeLimitMinutes?: number;
+  totalPoints?: number;
 }
 
 let questionIdCounter = 0;
@@ -1385,8 +1386,7 @@ export default function TeacherAssessmentCreatePage() {
                                         }
                                       }}
                                       disabled={
-                                        (assessment.type === 'quiz' && releaseQuizMutation.isPending) ||
-                                        (assessment.type === 'assignment' && releaseAssignmentMutation.isPending)
+                                        (assessment.type === 'quiz' ? releaseQuizMutation.isPending : releaseAssignmentMutation.isPending)
                                       }
                                     >
                                       {_('Release')}

@@ -17,6 +17,7 @@ import { useChatStore, ChatMsg } from '@/store/chatStore';
 
 
 function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string) => Promise<void> }) {
+  const { _ } = useTranslation();
   const [selectedClass, setSelectedClass] = useState('');
   const [pushing, setPushing] = useState(false);
   const { data: classes } = useQuery({ queryKey: ['admin-classes'], queryFn: getAllClasses });
@@ -59,6 +60,7 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string) =
 }
 
 function AssignmentView({ data, onPush }: { data: any; onPush: (d: any, cls: string) => Promise<void> }) {
+  const { _ } = useTranslation();
   const [selectedClass, setSelectedClass] = useState('');
   const [pushing, setPushing] = useState(false);
   const { data: classes } = useQuery({ queryKey: ['admin-classes'], queryFn: getAllClasses });
@@ -88,6 +90,7 @@ function AssignmentView({ data, onPush }: { data: any; onPush: (d: any, cls: str
 }
 
 function MindMapView({ data, onView }: { data: any; onView: (d: any) => void }) {
+  const { _ } = useTranslation();
   return (
     <div className="space-y-3 mt-2">
       <p className="text-sm font-semibold text-primary">{_('Mind Map:')} {data?.centralTopic || data?.topic || _('Generated')}</p>

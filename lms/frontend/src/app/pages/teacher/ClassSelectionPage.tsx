@@ -82,7 +82,6 @@ export default function ClassSelectionPage() {
       try {
         const { data: items } = await supabase.from('classes').select('*');
         setClasses((items || []) as Class[]);
-        setClasses(items);
       } catch {
         setError(_('Failed to load classes'));
       } finally {

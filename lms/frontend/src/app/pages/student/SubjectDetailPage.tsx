@@ -45,7 +45,7 @@ export default function SubjectDetailPage() {
         .filter((tb) => tb.status !== 'processing' && (!authUser?.classId || tb.classId === authUser.classId))
         .map((tb) => ({ ...tb, chapterCount: tb.chapterCount ?? 0 }));
       const firstTb = textbooks[0];
-      let currentChapter = null;
+      let currentChapter: { textbookId: string; textbookTitle: string; id: string; title: string; order: number; conceptCount: number } | null = null;
       if (firstTb) {
         const chapters = await getChaptersForTextbook(firstTb.id);
         const firstCh = chapters[0];

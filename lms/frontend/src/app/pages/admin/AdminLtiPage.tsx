@@ -11,7 +11,7 @@ import { Icon } from '@/components/ui/Icon';
 import { ltiService, LtiConfig } from '@/services/ltiService';
 
 export default function AdminLtiPage() {
-  const { register, handleSubmit, reset } = useForm();
+  const { register, handleSubmit, reset } = useForm<LtiConfig>();
 
   const { data: configRes, isLoading } = useQuery({
     queryKey: ['lti-config'],

@@ -11,6 +11,7 @@ import { getLesson } from '@/services/dataService';
 import { getQuiz, getSubject } from '@/services/dataService';
 import { getTextbook, getChaptersForTextbook } from '@/services/textbookService';
 import { getAssignment } from '@/services/dataService';
+import type { Chapter } from '@/types';
 import { ROUTES } from '@/lib/constants';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -59,7 +60,7 @@ export default function LessonViewPage() {
       ]);
 
       const subject = textbook?.subjectId ? await getSubject(textbook.subjectId) : null;
-      let chapter = null;
+      let chapter: Chapter | null = null;
       if (textbook && lesson?.chapterId) {
         const chapters = await getChaptersForTextbook(textbook.id);
         chapter = chapters.find((ch) => ch.id === lesson.chapterId) ?? null;

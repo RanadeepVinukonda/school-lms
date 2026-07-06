@@ -69,7 +69,7 @@ export default function StudentOCRPage() {
       const mappingResult = await mapToConcept(ocrResult.text, 'auto', questionCount);
       if (mappingResult) {
         setConceptName(mappingResult.conceptName || 'Detected Content');
-        if (mappingResult.questions?.length > 0) {
+        if (mappingResult.questions && mappingResult.questions.length > 0) {
           setQuestions(mappingResult.questions);
         }
       }

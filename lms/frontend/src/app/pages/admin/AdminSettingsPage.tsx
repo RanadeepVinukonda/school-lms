@@ -879,7 +879,7 @@ export default function AdminSettingsPage() {
                       <div key={childId} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/30">
                         <div>
                           <p className="text-sm font-medium">{student?.displayName || childId}</p>
-                          <p className="text-label-xs text-muted-foreground">{student?.studentId || student?.student_id || ''}</p>
+                          <p className="text-label-xs text-muted-foreground">{student?.studentId || ''}</p>
                         </div>
                         <Button
                           variant="ghost"

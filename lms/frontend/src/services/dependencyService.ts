@@ -252,7 +252,8 @@ export async function getTextbookDependencies(textbookId: string): Promise<Depen
     countQuery('conceptReleases', 'textbookId', textbookId),
     supabase.from('textbooks').select('chapter_count').eq('id', textbookId).maybeSingle().then(
       (r) => r.data?.chapter_count || 0,
-    ).catch(() => 0),
+      () => 0,
+    ),
   ]);
 
   const categories: DependencyReport['categories'] = [];
