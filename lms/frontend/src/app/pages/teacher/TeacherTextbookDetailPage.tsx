@@ -115,6 +115,7 @@ export default function TeacherTextbookDetailPage() {
 
   const renderProgressTracker = (tb: any) => {
     const isFailed = tb.status === 'failed';
+    const isReady = tb.status === 'ready';
     const errorLog = tb.failureReason;
     const total = tb.totalConcepts || 0;
     const completed = tb.completedConcepts || 0;
@@ -174,7 +175,7 @@ export default function TeacherTextbookDetailPage() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-              {isFailed && (
+              {(isFailed || isReady) && (
                 <Button
                   onClick={() => reprocessMutation.mutate()}
                   disabled={reprocessMutation.isPending}

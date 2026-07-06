@@ -108,9 +108,12 @@ export async function runUploadPipeline(textbookId: string, storagePath: string)
   let structure: { chapters: Array<{ title: string; order: number; summary: string; concepts: string[] }> } | null = null;
   try {
     const prompt = `You are a professional syllabus compiler. Read this textbook's opening pages and generate a complete curriculum outline for "${title}".
-Extract EVERY single chapter and section from the table of contents. Do not skip any chapters.
+Each individually numbered section (e.g. 1.1, 1.2, 2.1, 2.2) MUST be its own chapter — do NOT group them under a parent Unit as concepts.
+Extract EVERY single numbered section. Do not skip any.
+Include the unit or part name as a prefix in the chapter title when applicable, e.g. "Unit 1 — Two Little Hands (Poem)".
+For each chapter, list actual sub-topics or learning objectives found in the table of contents as concepts (e.g. vocabulary, grammar, poem recitation, key words).
 Return ONLY valid JSON matching this schema (no markdown, no formatting):
-{ "chapters": [{ "title": "Chapter title", "order": 1, "summary": "Short chapter description", "concepts": ["1.1 First Concept Name"] }] }
+{ "chapters": [{ "title": "Chapter title with unit prefix", "order": 1, "summary": "Short chapter description", "concepts": ["Vocabulary", "Key Words", "Learning Objective"] }] }
 Textbook content:\n${tocText}`;
     const rawResponse = await chatCompletion({
       messages: [{ role: 'system', content: 'You respond in valid JSON only.' }, { role: 'user', content: prompt }],
