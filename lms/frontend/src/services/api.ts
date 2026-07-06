@@ -74,7 +74,18 @@ async function getAccessToken(): Promise<string | null> {
   // Use cached token if still valid
   if (cachedToken && !isTokenExpired(cachedToken)) return cachedToken;
 
-  // Try Supabase session (network call — only when cache is stale)
+  // Try refreshing the Supabase session first (handles auto-refresh behind the scenes)
+  try {
+    const { data: { session } } = await supabase.auth.refreshSession();
+    if (session?.access_token) {
+      cachedToken = session.access_token;
+      const payload = decodeJwtPayload(session.access_token);
+      tokenExpiresAt = payload?.exp ? (payload.exp as number) * 1000 : 0;
+      return cachedToken;
+    }
+  } catch { /* fall through */ }
+
+  // Try getting the current session (if refresh didn't work)
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.access_token) {
@@ -180,7 +191,14 @@ api.interceptors.response.use(
         processQueue(refreshError);
         cachedToken = null;
         await useAuthStore.getState().logout();
-        return Promise.reject(error);
+        const data = error.response?.data as any;
+        const errorMessage = data?.error?.message || data?.message || 'Session expired. Please sign in again.';
+        const apiError: ApiError = {
+          message: errorMessage,
+          code: data?.error?.code || 'SESSION_EXPIRED',
+          status: 401,
+        };
+        return Promise.reject(apiError);
       } finally {
         isRefreshing = false;
       }
