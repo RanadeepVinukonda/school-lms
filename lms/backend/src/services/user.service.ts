@@ -77,13 +77,15 @@ export async function createUser(data: {
     ? `${studentId.toLowerCase()}@school.edu`
     : `${data.displayName.toLowerCase().replace(/[^a-z0-9]/g, '')}@school.edu`);
   if (!data.email) {
+    // Batch-check existing emails via DB to avoid Auth API rate limits
+    const baseEmail = generatedEmail.replace('@school.edu', '');
+    const { data: existingRows } = await supabase.from('users').select('email').like('email', `${baseEmail}%@school.edu`);
+    const existingEmails = new Set((existingRows || []).map(r => r.email));
     let suffix = 0;
     let unique = generatedEmail;
-    while (true) {
-      const existingUser = await getUserByEmail(unique);
-      if (!existingUser) break;
+    while (existingEmails.has(unique)) {
       suffix++;
-      unique = generatedEmail.replace('@', `${suffix}@`);
+      unique = `${baseEmail}${suffix}@school.edu`;
     }
     generatedEmail = unique;
   }
@@ -143,21 +145,45 @@ export async function createUser(data: {
       if (data.role === 'student') {
         const { error: rpcErr } = await supabase.rpc('increment_student_count', { class_id: data.classId!, delta: 1 });
         if (rpcErr) {
-          // Fallback: read-then-write (best-effort if RPC not deployed)
-          const { data: cls } = await supabase.from('classes').select('student_count').eq('id', data.classId!).maybeSingle();
-          const currentCount = cls?.student_count || 0;
-          const { error: classUpdateErr } = await supabase.from('classes').update({ student_count: currentCount + 1, updated_at: now2 }).eq('id', data.classId!);
-          if (classUpdateErr) throw new Error(`Failed to update class student count: ${classUpdateErr.message}`);
+          logger.warn('increment_student_count RPC failed (non-critical)', { classId: data.classId, error: rpcErr.message });
         }
       }
       return { ...userData2, generatedPassword };
     }
   }
 
-  const firebaseUser = await firebaseCreateUser({
-    email: generatedEmail, password: generatedPassword,
-    displayName: data.displayName, phoneNumber: data.phoneNumber, photoURL: data.photoURL,
-  });
+  let firebaseUser: Awaited<ReturnType<typeof firebaseCreateUser>>;
+  try {
+    firebaseUser = await firebaseCreateUser({
+      email: generatedEmail, password: generatedPassword,
+      displayName: data.displayName, phoneNumber: data.phoneNumber, photoURL: data.photoURL,
+    });
+  } catch (err: any) {
+    // If user already exists in Auth but DB row is missing, look up via Auth API and create DB row
+    if (err.message?.toLowerCase().includes('already exists') || err.message?.toLowerCase().includes('already registered')) {
+      const supabase = getSupabaseAdmin()!;
+      const { data: authUsers } = await supabase.auth.admin.listUsers({ filter: { email: generatedEmail } });
+      const authUser = authUsers?.users?.[0];
+      if (authUser) {
+        const now = new Date().toISOString();
+        const userData = {
+          id: authUser.id, email: generatedEmail, display_name: data.displayName,
+          role: data.role, phone_number: data.phoneNumber || '', photo_url: data.photoURL || '',
+          class_ids: finalClassIds, class_id: studentClassId || null,
+          student_id: studentId || null, roll_no: data.rollNo || null,
+          academic_year: data.academicYear || null, gender: data.gender || null,
+          children_ids: resolvedChildrenIds, is_active: true, school_id: data.schoolId || '',
+          created_at: now, updated_at: now,
+        };
+        const { error: upsertErr } = await supabase.from('users').upsert(userData, { onConflict: 'id' });
+        if (upsertErr) throw upsertErr;
+        await setCustomClaims(authUser.id, { role: data.role });
+        logger.info('User recovered (auth existed, DB row created)', { uid: authUser.id, email: generatedEmail, role: data.role });
+        return { ...userData, generatedPassword };
+      }
+    }
+    throw err;
+  }
 
   const now = new Date().toISOString();
   const userData: Record<string, unknown> = {
@@ -177,11 +203,7 @@ export async function createUser(data: {
   if (data.role === 'student') {
     const { error: rpcErr } = await supabase.rpc('increment_student_count', { class_id: data.classId!, delta: 1 });
     if (rpcErr) {
-      // Fallback: read-then-write (best-effort if RPC not deployed)
-      const { data: cls } = await supabase.from('classes').select('student_count').eq('id', data.classId!).maybeSingle();
-      const currentCount = cls?.student_count || 0;
-      const { error: classUpdateErr } = await supabase.from('classes').update({ student_count: currentCount + 1, updated_at: now }).eq('id', data.classId!);
-      if (classUpdateErr) throw new Error(`Failed to update class student count: ${classUpdateErr.message}`);
+      logger.warn('increment_student_count RPC failed (non-critical)', { classId: data.classId, error: rpcErr.message });
     }
   }
 

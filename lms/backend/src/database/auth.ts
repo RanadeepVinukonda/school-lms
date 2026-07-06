@@ -125,11 +125,20 @@ export async function revokeTokens(uid: string): Promise<void> {
 export async function getUserByEmail(email: string): Promise<AuthUser | null> {
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error('Supabase not configured');
-  // ponytail: listUsers and filter in-memory — upgrade to admin API filter when available
-  const { data, error } = await supabase.auth.admin.listUsers();
-  if (error) return null;
-  const user = data.users.find((u: any) => u.email === email);
-  return user ? extractUser(user) : null;
+  // Query users table only — avoids Auth admin API rate limits entirely.
+  // The DB row is always created alongside the Auth user, so a missing DB row
+  // means the Auth user does not exist (or was orphaned — handled by createUser).
+  const { data: dbUser } = await supabase.from('users').select('id, email, display_name, role, phone_number, photo_url, is_active').eq('email', email).maybeSingle();
+  if (!dbUser) return null;
+  return {
+    uid: dbUser.id,
+    email: dbUser.email || '',
+    displayName: dbUser.display_name || '',
+    role: dbUser.role || '',
+    phoneNumber: dbUser.phone_number || '',
+    photoURL: dbUser.photo_url || '',
+    disabled: dbUser.is_active === false,
+  };
 }
 
 export async function getUserById(uid: string): Promise<AuthUser | null> {

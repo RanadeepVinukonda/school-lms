@@ -173,7 +173,7 @@ export default function AdminTeachersPage() {
       )}
 
       {/* CREATE TEACHER DIALOG */}
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+      <Dialog open={showCreate} onOpenChange={(open) => { setShowCreate(open); if (!open) setCreateForm({ displayName: '', email: '' }); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Register Teacher</DialogTitle>
