@@ -28,13 +28,13 @@ export async function getStudentDashboard(studentId: string) {
 
   const { data: grades, error: gradesErr } = await supabase
     .from('grades')
-    .select('score, total_points')
-    .eq('student_id', studentId);
+    .select('score, totalPoints')
+    .eq('studentId', studentId);
   if (gradesErr) throw new Error(gradesErr.message);
 
   const gradesList = grades || [];
   const totalScore = gradesList.reduce((sum: number, g: { score?: number }) => sum + (g.score || 0), 0);
-  const totalPoints = gradesList.reduce((sum: number, g: { total_points?: number }) => sum + (g.total_points || 1), 0);
+  const totalPoints = gradesList.reduce((sum: number, g: { totalPoints?: number }) => sum + (g.totalPoints || 1), 0);
   const overallGrade = safePct(totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0);
 
   const now = new Date().toISOString();
@@ -198,13 +198,13 @@ export async function getCourseAnalytics(courseId: string) {
 
   const { data: grades, error: gradesErr } = await supabase
     .from('grades')
-    .select('score, total_points')
-    .eq('course_id', courseId);
+    .select('score, totalPoints')
+    .eq('courseId', courseId);
   if (gradesErr) throw new Error(gradesErr.message);
 
   const gradesList = grades || [];
   const totalScore = gradesList.reduce((sum: number, g: { score?: number }) => sum + (g.score || 0), 0);
-  const totalPoints = gradesList.reduce((sum: number, g: { total_points?: number }) => sum + (g.total_points || 1), 0);
+  const totalPoints = gradesList.reduce((sum: number, g: { totalPoints?: number }) => sum + (g.totalPoints || 1), 0);
   const averageGrade = safePct(totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0);
 
   const { data: lessons, error: lessonsErr } = await supabase

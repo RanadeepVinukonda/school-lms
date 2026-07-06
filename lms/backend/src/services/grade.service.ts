@@ -15,9 +15,9 @@ async function gradeRow(gradeId: string) {
 /** Get all grades for a student, optionally filtered by academic year/schoolId. */
 export async function getStudentGrades(studentId: string, academicYear?: string, schoolId?: string) {
   const supabase = getSupabaseAdmin()!;
-  let query = supabase.from('grades').select('*').eq('student_id', studentId);
-  if (schoolId) query = query.eq('school_id', schoolId);
-  if (academicYear) query = query.eq('academic_year', academicYear);
+  let query = supabase.from('grades').select('*').eq('studentId', studentId);
+  if (schoolId) query = query.eq('schoolId', schoolId);
+  if (academicYear) query = query.eq('academicYear', academicYear);
 
   const { data: rows, error } = await query.order('created_at', { ascending: false });
   if (error) throw new Error('Failed to fetch grades: ' + error.message);
@@ -40,12 +40,12 @@ export async function getGradebook(query: {
   const offset = (page - 1) * limit;
 
   let dbQuery = supabase.from('grades').select('*', { count: 'exact' });
-  if (query.schoolId) dbQuery = dbQuery.eq('school_id', query.schoolId);
-  if (query.classId) dbQuery = dbQuery.eq('class_id', query.classId);
-  if (query.courseId) dbQuery = dbQuery.eq('course_id', query.courseId);
-  if (query.subjectId) dbQuery = dbQuery.eq('subject_id', query.subjectId);
+  if (query.schoolId) dbQuery = dbQuery.eq('schoolId', query.schoolId);
+  if (query.classId) dbQuery = dbQuery.eq('classId', query.classId);
+  if (query.courseId) dbQuery = dbQuery.eq('courseId', query.courseId);
+  if (query.subjectId) dbQuery = dbQuery.eq('subjectId', query.subjectId);
   if (query.term) dbQuery = dbQuery.eq('term', query.term);
-  if (query.academicYear) dbQuery = dbQuery.eq('academic_year', query.academicYear);
+  if (query.academicYear) dbQuery = dbQuery.eq('academicYear', query.academicYear);
 
   const { data: rows, count, error } = await dbQuery
     .order('created_at', { ascending: false })
@@ -73,22 +73,22 @@ export async function updateGrade(gradeId: string, data: {
   const supabase = getSupabaseAdmin()!;
   const { error: updateError } = await supabase.from('grades').update({
     score: data.score,
-    total_points: data.totalPoints,
-    letter_grade: letterGrade,
+    totalPoints: data.totalPoints,
+    letterGrade: letterGrade,
     percentage,
     remarks: data.remarks || '',
-    graded_by: data.gradedBy,
-    updated_at: now,
+    gradedBy: data.gradedBy,
+    updatedAt: now,
   }).eq('id', gradeId);
   if (updateError) throw new Error(`Failed to update grade: ${updateError.message}`);
 
   try {
     await createNotification({
-      userId: existing.student_id as string,
+      userId: existing.studentId as string,
       type: 'grade',
       title: 'Grade Updated',
       body: `Your grade has been updated: ${data.score}/${data.totalPoints} (${percentage}%)`,
-      data: { gradeId, courseId: existing.course_id as string, link: `/student/subjects/${existing.course_id}` },
+      data: { gradeId, courseId: existing.courseId as string, link: `/student/subjects/${existing.courseId}` },
     });
   } catch (err) {
     logger.warn('Failed to send grade notification', {
@@ -99,7 +99,7 @@ export async function updateGrade(gradeId: string, data: {
   }
 
   logger.info('Grade updated', { gradeId, gradedBy: data.gradedBy });
-  return { ...existing, score: data.score, total_points: data.totalPoints, letter_grade: letterGrade, letterGrade, percentage };
+  return { ...existing, score: data.score, totalPoints: data.totalPoints, letterGrade, percentage };
 }
 
 /** Bulk update or insert grades for multiple students in a course. Notifies all affected students. */
@@ -122,26 +122,26 @@ export async function bulkUpdate(grades: Array<{
     if (existing) {
       const { error: updateErr } = await supabase.from('grades').update({
         score: grade.score,
-        total_points: grade.totalPoints,
+        totalPoints: grade.totalPoints,
         percentage,
         feedback: grade.feedback || '',
-        graded_by: gradedBy,
-        updated_at: now,
+        gradedBy: gradedBy,
+        updatedAt: now,
       }).eq('id', gradeId);
       if (updateErr) throw new Error(`Failed to update grade: ${updateErr.message}`);
     } else {
       const { error: insertErr } = await supabase.from('grades').insert({
         id: gradeId,
-        student_id: grade.studentId,
-        course_id: courseId,
+        studentId: grade.studentId,
+        courseId: courseId,
         score: grade.score,
-        total_points: grade.totalPoints,
+        totalPoints: grade.totalPoints,
         percentage,
         feedback: grade.feedback || '',
-        graded_by: gradedBy,
-        school_id: schoolId || '',
-        created_at: now,
-        updated_at: now,
+        gradedBy: gradedBy,
+        schoolId: schoolId || '',
+        createdAt: now,
+        updatedAt: now,
       });
       if (insertErr) throw new Error(`Failed to insert grade: ${insertErr.message}`);
     }
@@ -173,16 +173,16 @@ export async function bulkUpdate(grades: Array<{
 /** Generate a student's report card for a given academic year and term with overall GPA. */
 export async function generateReport(studentId: string, academicYear: string, term: string, schoolId?: string) {
   const supabase = getSupabaseAdmin()!;
-  let query = supabase.from('grades').select('*').eq('student_id', studentId)
-    .eq('academic_year', academicYear).eq('term', term);
-  if (schoolId) query = query.eq('school_id', schoolId);
+  let query = supabase.from('grades').select('*').eq('studentId', studentId)
+    .eq('academicYear', academicYear).eq('term', term);
+  if (schoolId) query = query.eq('schoolId', schoolId);
 
   const { data: rows, error } = await query;
   if (error) throw new Error('Failed to fetch report grades: ' + error.message);
   const gradesList = rows || [];
 
   const totalScore = gradesList.reduce((sum: number, g: any) => sum + (g.score || 0), 0);
-  const totalPoints = gradesList.reduce((sum: number, g: any) => sum + (g.total_points || 1), 0);
+  const totalPoints = gradesList.reduce((sum: number, g: any) => sum + (g.totalPoints || 1), 0);
   const overallPercentage = totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0;
   const gpa = calculateGPA(overallPercentage);
 

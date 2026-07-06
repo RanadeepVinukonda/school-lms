@@ -17,19 +17,19 @@ export async function getGradeComparison(schoolId?: string) {
   const { data: classes } = await classesQuery;
 
   let gradesQuery = supabase.from('grades').select('*');
-  if (schoolId) gradesQuery = gradesQuery.eq('school_id', schoolId);
+  if (schoolId) gradesQuery = gradesQuery.eq('schoolId', schoolId);
   const { data: grades } = await gradesQuery;
 
   const gradeMap: Record<string, { totalScore: number; totalPoints: number; count: number }> = {};
 
   for (const g of (grades || [])) {
-    const student = (users || []).find((u: any) => u.id === g.student_id);
+    const student = (users || []).find((u: any) => u.id === g.studentId);
     if (!student) continue;
     const cls = (classes || []).find((c: any) => c.id === student.class_id || (student.class_ids && student.class_ids.includes(c.id)));
     const gradeKey = cls?.grade || 'Unknown';
     if (!gradeMap[gradeKey]) gradeMap[gradeKey] = { totalScore: 0, totalPoints: 0, count: 0 };
     gradeMap[gradeKey].totalScore += g.score || 0;
-    gradeMap[gradeKey].totalPoints += g.total_points || 0;
+    gradeMap[gradeKey].totalPoints += g.totalPoints || 0;
     gradeMap[gradeKey].count++;
   }
 
@@ -53,7 +53,7 @@ export async function getTeacherComparison(schoolId?: string) {
   const { data: classes } = await classesQuery;
 
   let gradesQuery = supabase.from('grades').select('*');
-  if (schoolId) gradesQuery = gradesQuery.eq('school_id', schoolId);
+  if (schoolId) gradesQuery = gradesQuery.eq('schoolId', schoolId);
   const { data: grades } = await gradesQuery;
 
   const teacherMap: Record<string, { totalScore: number; totalPoints: number; count: number; classIds: Set<string> }> = {};
@@ -68,13 +68,13 @@ export async function getTeacherComparison(schoolId?: string) {
   }
 
   for (const g of (grades || [])) {
-    const cls = (classes || []).find((c: any) => c.id === g.class_id);
+    const cls = (classes || []).find((c: any) => c.id === g.classId);
     if (!cls || !cls.teacher_ids) continue;
     for (const tid of cls.teacher_ids) {
       const data = teacherMap[tid];
       if (data) {
         data.totalScore += g.score || 0;
-        data.totalPoints += g.total_points || 0;
+        data.totalPoints += g.totalPoints || 0;
         data.count++;
       }
     }
@@ -100,17 +100,17 @@ export async function getClassComparison(schoolId?: string) {
   const { data: classes } = await classesQuery;
 
   let gradesQuery = supabase.from('grades').select('*');
-  if (schoolId) gradesQuery = gradesQuery.eq('school_id', schoolId);
+  if (schoolId) gradesQuery = gradesQuery.eq('schoolId', schoolId);
   const { data: grades } = await gradesQuery;
 
   const classMap: Record<string, { totalScore: number; totalPoints: number; count: number }> = {};
 
   for (const g of (grades || [])) {
-    const clsId = g.class_id;
+    const clsId = g.classId;
     if (!clsId) continue;
     if (!classMap[clsId]) classMap[clsId] = { totalScore: 0, totalPoints: 0, count: 0 };
     classMap[clsId].totalScore += g.score || 0;
-    classMap[clsId].totalPoints += g.total_points || 0;
+    classMap[clsId].totalPoints += g.totalPoints || 0;
     classMap[clsId].count++;
   }
 
@@ -135,18 +135,18 @@ export async function getPerformanceTrends(schoolId?: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return [];
 
   let query = supabase.from('grades').select('*');
-  if (schoolId) query = query.eq('school_id', schoolId);
+  if (schoolId) query = query.eq('schoolId', schoolId);
   const { data: grades } = await query;
 
   const monthMap: Record<string, { totalScore: number; totalPoints: number; count: number }> = {};
 
   for (const g of (grades || [])) {
-    const date = g.exam_date || g.created_at || g.updated_at;
+    const date = g.examDate || g.date || g.created_at || g.updatedAt;
     if (!date) continue;
     const month = date.substring(0, 7);
     if (!monthMap[month]) monthMap[month] = { totalScore: 0, totalPoints: 0, count: 0 };
     monthMap[month].totalScore += g.score || 0;
-    monthMap[month].totalPoints += g.total_points || 0;
+    monthMap[month].totalPoints += g.totalPoints || 0;
     monthMap[month].count++;
   }
 

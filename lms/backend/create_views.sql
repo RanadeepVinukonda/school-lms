@@ -41,7 +41,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE TRIGGER trg_classes_delete
 INSTEAD OF DELETE ON classes
 FOR EACH ROW EXECUTE FUNCTION classes_delete();
-CREATE OR REPLACE VIEW grades AS SELECT doc_id AS id, data->>'studentId' AS "studentId", data->>'courseId' AS "courseId", data->>'assignmentId' AS "assignmentId", (data->>'score')::numeric AS "score", (data->>'maxScore')::numeric AS "maxScore", data->>'letterGrade' AS "letterGrade", data->>'comments' AS "comments", data->>'date' AS "date", data->>'semester' AS "semester", data->>'createdAt' AS "createdAt", created_at FROM firestore_docs WHERE collection = 'grades';
+CREATE OR REPLACE VIEW grades AS SELECT doc_id AS id, data->>'studentId' AS "studentId", data->>'courseId' AS "courseId", data->>'assignmentId' AS "assignmentId", (data->>'score')::numeric AS "score", (data->>'maxScore')::numeric AS "maxScore", data->>'letterGrade' AS "letterGrade", data->>'comments' AS "comments", data->>'date' AS "date", data->>'schoolId' AS "schoolId", data->>'classId' AS "classId", data->>'subjectId' AS "subjectId", (data->>'totalPoints')::numeric AS "totalPoints", data->>'academicYear' AS "academicYear", data->>'term' AS "term", data->>'feedback' AS "feedback", data->>'gradedBy' AS "gradedBy", (data->>'percentage')::numeric AS "percentage", data->>'updatedAt' AS "updatedAt", data->>'examDate' AS "examDate", data->>'semester' AS "semester", data->>'createdAt' AS "createdAt", created_at FROM firestore_docs WHERE collection = 'grades';
 
 
 CREATE OR REPLACE FUNCTION grades_upsert() RETURNS TRIGGER AS $$
