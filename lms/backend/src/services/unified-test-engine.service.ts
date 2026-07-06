@@ -178,6 +178,15 @@ export async function createTest(data: {
   const targetTypes = resolveTypes(selectedModels);
   const typeSet = new Set(targetTypes);
 
+  function fallbackText(type: string, _options: any): string {
+    if (type === 'mcq' || type === 'multiple_choice') return 'Choose the correct answer';
+    if (type === 'true_false') return 'State whether true or false';
+    if (type === 'fill_blank') return 'Fill in the blank';
+    if (type === 'matching') return 'Match the following items';
+    if (type === 'numerical') return 'Calculate the answer';
+    return 'Answer the following question';
+  }
+
   let matchingQuestions: any[];
   let aiGeneratedCount = 0;
   let aiErrorMessage = '';
@@ -187,7 +196,7 @@ export async function createTest(data: {
     matchingQuestions = data.questions.map((q: any) => ({
       id: q.id || randomUUID(),
       type: q.type || 'mcq',
-      text: q.text || q.question || '',
+      text: q.text || q.question || fallbackText(q.type, q.options),
       options: q.options || null,
       correctAnswer: q.correctAnswer || '',
       explanation: q.explanation || '',
@@ -204,7 +213,7 @@ export async function createTest(data: {
       return {
         id: q.id,
         type: q.type,
-        text: q.question,
+        text: q.question || fallbackText(q.type, q.options),
         options: q.options,
         correctAnswer: q.correctAnswer || q.answer,
         explanation: q.explanation,
@@ -230,7 +239,7 @@ export async function createTest(data: {
         matchingQuestions.push({
           id: q.id,
           type: q.type,
-          text: q.question,
+          text: q.question || fallbackText(q.type, q.options),
           options: q.options,
           correctAnswer: q.answer,
           explanation: q.explanation,
@@ -256,7 +265,7 @@ export async function createTest(data: {
       questionCount: matchingQuestions.length,
       totalPoints: matchingQuestions.reduce((sum: number, q: any) => sum + (q.points || 0), 0),
       questions: matchingQuestions.map((q: any) => ({
-        id: q.id, type: q.type, text: q.text, options: q.options,
+        id: q.id, type: q.type, text: q.text || fallbackText(q.type, q.options), options: q.options,
         correctAnswer: q.correctAnswer, explanation: q.explanation,
         difficulty: q.difficulty, points: q.points,
       })),
@@ -273,7 +282,7 @@ export async function createTest(data: {
       concept_id: data.conceptId,
       textbook_id: data.textbookId,
       chapter_id: data.chapterId,
-      question: q.text ?? q.question,
+      question: q.text ?? q.question ?? fallbackText(q.type, q.options),
       type: q.type,
       difficulty: q.difficulty,
       options: q.options,
@@ -323,7 +332,7 @@ export async function createTest(data: {
     publishedTo: data.publishedTo || 'class',
     targetStudentIds: data.targetStudentIds || [],
     questions: matchingQuestions.map((q: any) => ({
-      id: q.id, type: q.type, text: q.text, options: q.options,
+      id: q.id, type: q.type, text: q.text || fallbackText(q.type, q.options), options: q.options,
       correctAnswer: q.correctAnswer, explanation: q.explanation,
       difficulty: q.difficulty, points: q.points,
     })),

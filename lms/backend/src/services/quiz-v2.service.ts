@@ -143,7 +143,7 @@ export async function createQuiz(data: {
     matchingQuestions = data.questions.map((q: any) => ({
       id: q.id || uuidv4(),
       type: q.type || 'mcq',
-      text: q.text || q.question || '',
+      text: q.text || q.question || fallbackText(q.type, q.options),
       options: q.options || null,
       correctAnswer: q.correctAnswer || q.answer || '',
       explanation: q.explanation || '',
@@ -220,7 +220,7 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
           matchingQuestions.push({
             id: qId,
             type: q.type || 'mcq',
-            text: q.question || q.text || '',
+            text: q.question || q.text || fallbackText(q.type, q.options),
             options: q.options || null,
             correctAnswer: q.correctAnswer || q.answer || '',
             explanation: q.explanation || '',
@@ -247,18 +247,23 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
   }
 
   if (data.preview) {
+    const previewQuestions = matchingQuestions.map((q: any) => {
+      const rawQuestion = q.question;
+      const rawText = q.text;
+      const dataQuestion = (typeof q.data === 'object' && q.data) ? (q.data.question || q.data.text) : '';
+      const finalText = rawQuestion || rawText || dataQuestion || fallbackText(q.type, q.options);
+      logger.info('[QuizV2 Preview]', { qId: q.id, type: q.type, rawQuestion: rawQuestion?.substring(0, 50), rawText: rawText?.substring(0, 50), dataQuestion: dataQuestion?.substring(0, 50), finalText: finalText?.substring(0, 50) });
+      const correctAnswer = q.answer || q.correctAnswer || (typeof q.data === 'object' && q.data ? (q.data.answer || q.data.correctAnswer) : '') || '';
+      return {
+        id: q.id, type: q.type, text: finalText, options: q.options,
+        correctAnswer, explanation: q.explanation,
+        difficulty: q.difficulty, points: q.points,
+      };
+    });
     return {
       preview: true,
       questionCount: matchingQuestions.length,
-      questions: matchingQuestions.map((q: any) => {
-        const questionText = q.question || q.text || (typeof q.data === 'object' && q.data ? (q.data.question || q.data.text) : '') || fallbackText(q.type, q.options);
-        const correctAnswer = q.answer || q.correctAnswer || (typeof q.data === 'object' && q.data ? (q.data.answer || q.data.correctAnswer) : '') || '';
-        return {
-          id: q.id, type: q.type, text: questionText, options: q.options,
-          correctAnswer, explanation: q.explanation,
-          difficulty: q.difficulty, points: q.points,
-        };
-      }),
+      questions: previewQuestions,
       existingCount: matchingQuestions.length - aiGeneratedCount,
       aiGeneratedCount,
       aiErrorMessage: aiErrorMessage || undefined,
@@ -379,7 +384,7 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
     questionBank = storedQuestions.map((q: any) => ({
       id: q.id || uuidv4(), type: q.type || 'short_answer',
       difficulty: (q.difficulty as Difficulty) || 'medium',
-      text: q.text || q.question || '', options: q.options || undefined,
+      text: q.text || q.question || fallbackText(q.type, q.options), options: q.options || undefined,
       correctAnswer: q.correctAnswer || '', explanation: q.explanation || '',
       points: q.points || 1,
     }));
@@ -390,7 +395,7 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
     questionBank = rows.map((r: any) => ({
       id: r.id, type: r.type || 'short_answer',
       difficulty: (r.difficulty as Difficulty) || 'medium',
-      text: r.text || r.question || '', options: r.options || undefined,
+      text: r.text || r.question || fallbackText(r.type, r.options), options: r.options || undefined,
       correctAnswer: r.correct_answer || r.correctAnswer || '', explanation: r.explanation || '',
       points: r.points || 1,
     }));
@@ -466,7 +471,7 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     questionBank = storedQuestions.map((q: any) => ({
       id: q.id || uuidv4(), type: q.type || 'short_answer',
       difficulty: (q.difficulty as Difficulty) || 'medium',
-      text: q.text || q.question || '', options: q.options || undefined,
+      text: q.text || q.question || fallbackText(q.type, q.options), options: q.options || undefined,
       correctAnswer: q.correctAnswer || '', explanation: q.explanation || '',
       points: q.points || 1,
     }));
@@ -475,7 +480,7 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     questionBank = rows.map((r: any) => ({
       id: r.id, type: r.type || 'short_answer',
       difficulty: (r.difficulty as Difficulty) || 'medium',
-      text: r.text || r.question || '', options: r.options || undefined,
+      text: r.text || r.question || fallbackText(r.type, r.options), options: r.options || undefined,
       correctAnswer: r.correct_answer || r.correctAnswer || '', explanation: r.explanation || '',
       points: r.points || 1,
     }));
