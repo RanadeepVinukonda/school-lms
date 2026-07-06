@@ -174,7 +174,7 @@ export default function StudentQuizzesPage() {
                                 <div className="flex items-center gap-3 mt-2 text-label-xs text-muted-foreground flex-wrap">
                                   <span className="flex items-center gap-1"><Icon name="timer" size={12} />{quiz.timeLimitMinutes}m</span>
                                   <span className="flex items-center gap-1"><Icon name="star" size={12} />{quiz.totalPoints} {_('pts')}</span>
-                                  <span className="flex items-center gap-1"><Icon name="replay" size={12} />{quiz.maxAttempts} {_('attempts')}</span>
+                                  <span className="flex items-center gap-1"><Icon name="replay" size={12} />{quiz.maxAttempts} {_('attempts left')}</span>
                                   {(quiz.selectedModels?.length ?? 0) > 0 && (
                                     <span className="flex items-center gap-1 text-[10px]">
                                       {quiz.selectedModels.slice(0, 3).join(', ')}{quiz.selectedModels.length > 3 ? ` +${quiz.selectedModels.length - 3}` : ''}
