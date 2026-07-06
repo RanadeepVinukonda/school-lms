@@ -109,14 +109,15 @@ export async function runUploadPipeline(textbookId: string, storagePath: string)
   try {
     const prompt = `You are a professional syllabus compiler. Read this textbook's opening pages and generate a complete curriculum outline for "${title}".
 Rules:
-- Each individually numbered section (e.g. 1.1, 1.2, 2.1, 2.2) MUST be its own chapter.
-- DO NOT use "Unit X" as a chapter — Units are groupings, not chapters.
-- Extract EVERY single numbered section. Do not skip any.
-- For the chapter title, keep the numbering and add the unit context as a prefix, e.g. "Unit 1 — Two Little Hands (Poem)".
-- For each chapter's "concepts", list actual learning topics or objectives from that section (e.g. vocabulary words, key phrases, skills, themes).
-- If a section has no explicit sub-topics, use 2-3 generic concepts like "Key Vocabulary", "Reading Practice", "Discussion Questions".
+- Identify the actual main chapters/lessons from the table of contents — these are the top-level numbered entries.
+- DO NOT use "Unit X" as a chapter title. "Units" are groupings, not chapters.
+- For example, if the TOC lists "Unit 1: My Family and Me" with sub-sections "1.1 Two Little Hands", "1.2 Parts of the Body", then the main chapters are "1.1 Two Little Hands" and "1.2 Parts of the Body" — NOT "Unit 1".
+- Determine the number of main chapters from the PDF content itself. If the PDF has 5 main chapters, you MUST output exactly 5 chapters.
+- For each chapter's "concepts", list the sub-topics, learning objectives, or sections found within that chapter (e.g. vocabulary words, key phrases, skills, themes).
+- If a section has no explicit sub-topics found in the text, use 2-3 generic concepts like "Key Vocabulary", "Reading Practice", "Discussion Questions".
+- Extract ALL chapters. Do not merge or skip any.
 Return ONLY valid JSON matching this schema (no markdown, no formatting):
-{ "chapters": [{ "title": "Unit X — Section Name", "order": 1, "summary": "Short description", "concepts": ["Vocabulary", "Key Words"] }] }
+{ "chapters": [{ "title": "Main chapter title (number + name, no unit prefix)", "order": 1, "summary": "Short description", "concepts": ["Sub-topic 1", "Sub-topic 2"] }] }
 Textbook content:\n${tocText}`;
     const rawResponse = await chatCompletion({
       messages: [{ role: 'system', content: 'You respond in valid JSON only.' }, { role: 'user', content: prompt }],
@@ -130,25 +131,6 @@ Textbook content:\n${tocText}`;
     logger.error('TOC Gemini call failed, using fallback', { err });
     await addTextbookLog(textbookId, "[Warning] Gemini TOC call failed. Using default syllabus layout fallback.");
   }
-  // Post-process: if a chapter has concepts matching a numbered pattern (e.g. "1.1 Title"),
-  // promote those concepts to chapters (the AI sometimes ignores the instruction above).
-  if (structure?.chapters?.length) {
-    const promoted: typeof structure.chapters = [];
-    for (const ch of structure.chapters) {
-      const numberedConcepts = ch.concepts.filter((c: string) => /^\d+\.\d+\s/.test(c));
-      if (numberedConcepts.length > 0) {
-        const unitPrefix = ch.title.match(/Unit\s+\d+/)?.[0] || '';
-        numberedConcepts.forEach((nc: string, i: number) => {
-          const title = unitPrefix ? `${unitPrefix} — ${nc}` : nc;
-          promoted.push({ title, order: promoted.length + 1, summary: ch.summary, concepts: ['Key Vocabulary', 'Reading Practice', 'Discussion Questions'] });
-        });
-      } else {
-        promoted.push(ch);
-      }
-    }
-    structure.chapters = promoted;
-  }
-
   if (!structure?.chapters?.length) {
     structure = { chapters: [{ title: 'Chapter 1: Core Concepts', order: 1, summary: 'Foundational topics.', concepts: ['1.1 Introduction', '1.2 Key Principles'] }] };
   }
