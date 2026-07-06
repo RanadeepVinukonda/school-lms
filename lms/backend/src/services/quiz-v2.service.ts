@@ -143,9 +143,9 @@ export async function createQuiz(data: {
     matchingQuestions = data.questions.map((q: any) => ({
       id: q.id || uuidv4(),
       type: q.type || 'mcq',
-      text: q.question || q.text || '',
+      text: q.text || q.question || '',
       options: q.options || null,
-      correctAnswer: q.answer || q.correctAnswer || '',
+      correctAnswer: q.correctAnswer || q.answer || '',
       explanation: q.explanation || '',
       difficulty: q.difficulty || 'medium',
       points: q.points || 2,
@@ -220,9 +220,9 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
           matchingQuestions.push({
             id: qId,
             type: q.type || 'mcq',
-            text: q.question || q.text,
+            text: q.question || q.text || '',
             options: q.options || null,
-            correctAnswer: q.correctAnswer || '',
+            correctAnswer: q.correctAnswer || q.answer || '',
             explanation: q.explanation || '',
             difficulty: q.difficulty || 'medium',
             points: q.points || 2,
@@ -241,11 +241,15 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
     return {
       preview: true,
       questionCount: matchingQuestions.length,
-      questions: matchingQuestions.map((q: any) => ({
-        id: q.id, type: q.type, text: q.question || q.text, options: q.options,
-        correctAnswer: q.answer || q.correctAnswer, explanation: q.explanation,
-        difficulty: q.difficulty, points: q.points,
-      })),
+      questions: matchingQuestions.map((q: any) => {
+        const questionText = q.question || q.text || (typeof q.data === 'object' && q.data ? (q.data.question || q.data.text) : '') || '';
+        const correctAnswer = q.answer || q.correctAnswer || (typeof q.data === 'object' && q.data ? (q.data.answer || q.data.correctAnswer) : '') || '';
+        return {
+          id: q.id, type: q.type, text: questionText, options: q.options,
+          correctAnswer, explanation: q.explanation,
+          difficulty: q.difficulty, points: q.points,
+        };
+      }),
       existingCount: matchingQuestions.length - aiGeneratedCount,
       aiGeneratedCount,
       aiErrorMessage: aiErrorMessage || undefined,
@@ -285,11 +289,15 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
     selectedModels,
     questionCount,
     totalPoints: matchingQuestions.reduce((sum: number, q: any) => sum + (q.points || 0), 0),
-    questions: matchingQuestions.map((q: any) => ({
-      id: q.id, type: q.type, text: q.question || q.text, options: q.options || undefined,
-      correctAnswer: q.answer || q.correctAnswer || '', explanation: q.explanation || '',
-      difficulty: q.difficulty || 'medium', points: q.points || 1,
-    })),
+    questions: matchingQuestions.map((q: any) => {
+      const questionText = q.question || q.text || (typeof q.data === 'object' && q.data ? (q.data.question || q.data.text) : '') || '';
+      const correctAnswer = q.answer || q.correctAnswer || (typeof q.data === 'object' && q.data ? (q.data.answer || q.data.correctAnswer) : '') || '';
+      return {
+        id: q.id, type: q.type, text: questionText, options: q.options || undefined,
+        correctAnswer, explanation: q.explanation || '',
+        difficulty: q.difficulty || 'medium', points: q.points || 1,
+      };
+    }),
     passingScore: data.passingScore ?? 50,
     maxAttempts: data.maxAttempts ?? 3,
     shuffleQuestions: data.shuffleQuestions ?? true,
