@@ -20,11 +20,11 @@ const updateMindMapSchema = z.object({
 }).passthrough();
 
 const shareMindMapSchema = z.object({
-  userId: z.string().min(1),
-  permission: z.enum(['view', 'edit']).optional(),
+  shareWithIds: z.array(z.string()).min(1),
 }).passthrough();
 
 const pinResourceSchema = z.object({
+  nodeId: z.string().min(1),
   resourceId: z.string().min(1),
   resourceType: z.string().min(1),
 }).passthrough();
