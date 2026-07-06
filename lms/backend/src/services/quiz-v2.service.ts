@@ -143,9 +143,9 @@ export async function createQuiz(data: {
     matchingQuestions = data.questions.map((q: any) => ({
       id: q.id || uuidv4(),
       type: q.type || 'mcq',
-      text: q.text || q.question || '',
+      text: q.question || q.text || '',
       options: q.options || null,
-      correctAnswer: q.correctAnswer || '',
+      correctAnswer: q.answer || q.correctAnswer || '',
       explanation: q.explanation || '',
       difficulty: q.difficulty || 'medium',
       points: q.points || 2,
@@ -168,7 +168,7 @@ export async function createQuiz(data: {
 
       let formatInstructions = `- type: one of "${typeNames}"
 - text: the question text
-- options: array of 4 options (only for mcq, true_false, short_answer, fill_blank)
+- options: array of 4 options (for mcq, true_false, fill_blank only — set to null for short_answer)
 - correctAnswer: the correct answer string
 - explanation: brief explanation
 - difficulty: "easy" | "medium" | "hard"
@@ -242,8 +242,8 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
       preview: true,
       questionCount: matchingQuestions.length,
       questions: matchingQuestions.map((q: any) => ({
-        id: q.id, type: q.type, text: q.text, options: q.options,
-        correctAnswer: q.correctAnswer, explanation: q.explanation,
+        id: q.id, type: q.type, text: q.question || q.text, options: q.options,
+        correctAnswer: q.answer || q.correctAnswer, explanation: q.explanation,
         difficulty: q.difficulty, points: q.points,
       })),
       existingCount: matchingQuestions.length - aiGeneratedCount,
@@ -286,8 +286,8 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
     questionCount,
     totalPoints: matchingQuestions.reduce((sum: number, q: any) => sum + (q.points || 0), 0),
     questions: matchingQuestions.map((q: any) => ({
-      id: q.id, type: q.type, text: q.text, options: q.options || undefined,
-      correctAnswer: q.correctAnswer || '', explanation: q.explanation || '',
+      id: q.id, type: q.type, text: q.question || q.text, options: q.options || undefined,
+      correctAnswer: q.answer || q.correctAnswer || '', explanation: q.explanation || '',
       difficulty: q.difficulty || 'medium', points: q.points || 1,
     })),
     passingScore: data.passingScore ?? 50,
