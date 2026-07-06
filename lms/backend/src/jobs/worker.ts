@@ -197,10 +197,12 @@ Context Text:\n${contextText.slice(0, 15000)}`;
       return JSON.parse(cleaned);
     })(),
     (async () => {
-      const prompt = `Generate a comprehensive question bank for: "${conceptTitle}".
-Generate exactly 3 questions for EACH type: mcq, true_false, fill_blank, matching, numerical, descriptive
-Return ONLY valid JSON: { "questions": [{ "question": "", "type": "", "difficulty": "easy|medium|hard|hots", "options": ["A","B","C","D"], "answer": "", "explanation": "", "passageText": null }] }
-Concept: ${conceptTitle} Chapter: ${chapterTitle} Context: ${contextText.slice(0, 8000)}`;
+      const prompt = `Generate a comprehensive question bank for the concept "${conceptTitle}" (from chapter "${chapterTitle}").
+Generate exactly 3 questions for EACH type: mcq, true_false, fill_blank, matching, numerical, descriptive.
+The "question" field MUST contain the full question text — do not leave it empty.
+Return ONLY valid JSON matching this schema (no markdown, no formatting):
+{ "questions": [{ "question": "What is the question text?", "type": "mcq", "difficulty": "easy", "options": ["Option A", "Option B", "Option C", "Option D"], "answer": "Correct answer", "explanation": "Brief explanation", "passageText": null }] }
+Concept context: ${conceptTitle} Chapter: ${chapterTitle} Source: ${contextText.slice(0, 8000)}`;
       const raw = await chatCompletion({ messages: [{ role: 'system', content: 'You respond in clean JSON only.' }, { role: 'user', content: prompt }], temperature: 0.4, max_tokens: 16384, jsonMode: true });
       let cleaned = raw.trim();
       const m = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/);

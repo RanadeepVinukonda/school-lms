@@ -237,12 +237,21 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
     }
   }
 
+  function fallbackText(type: string, options: any): string {
+    if (type === 'mcq') return 'Choose the correct answer';
+    if (type === 'true_false') return 'State whether true or false';
+    if (type === 'fill_blank') return 'Fill in the blank';
+    if (type === 'matching') return 'Match the following items';
+    if (type === 'numerical') return 'Calculate the answer';
+    return 'Answer the following question';
+  }
+
   if (data.preview) {
     return {
       preview: true,
       questionCount: matchingQuestions.length,
       questions: matchingQuestions.map((q: any) => {
-        const questionText = q.question || q.text || (typeof q.data === 'object' && q.data ? (q.data.question || q.data.text) : '') || '';
+        const questionText = q.question || q.text || (typeof q.data === 'object' && q.data ? (q.data.question || q.data.text) : '') || fallbackText(q.type, q.options);
         const correctAnswer = q.answer || q.correctAnswer || (typeof q.data === 'object' && q.data ? (q.data.answer || q.data.correctAnswer) : '') || '';
         return {
           id: q.id, type: q.type, text: questionText, options: q.options,
@@ -290,7 +299,7 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
     questionCount,
     totalPoints: matchingQuestions.reduce((sum: number, q: any) => sum + (q.points || 0), 0),
     questions: matchingQuestions.map((q: any) => {
-      const questionText = q.question || q.text || (typeof q.data === 'object' && q.data ? (q.data.question || q.data.text) : '') || '';
+      const questionText = q.question || q.text || (typeof q.data === 'object' && q.data ? (q.data.question || q.data.text) : '') || fallbackText(q.type, q.options);
       const correctAnswer = q.answer || q.correctAnswer || (typeof q.data === 'object' && q.data ? (q.data.answer || q.data.correctAnswer) : '') || '';
       return {
         id: q.id, type: q.type, text: questionText, options: q.options || undefined,
@@ -315,7 +324,7 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
 
   logger.info('Quiz V2 created', { quizId, classId: data.classId, title: data.title, totalQuestions: matchingQuestions.length });
 
-  return { ...quizData, totalQuestions: matchingQuestions.length, questions: matchingQuestions.map((q: any) => ({ id: q.id, type: q.type, text: q.text, options: q.options, correctAnswer: q.correctAnswer, explanation: q.explanation, difficulty: q.difficulty, points: q.points })) };
+  return { ...quizData, totalQuestions: matchingQuestions.length, questions: matchingQuestions.map((q: any) => ({ id: q.id, type: q.type, text: q.text || q.question || fallbackText(q.type, q.options), options: q.options, correctAnswer: q.correctAnswer, explanation: q.explanation, difficulty: q.difficulty, points: q.points })) };
 }
 
 export async function updateQuiz(quizId: string, teacherId: string, data: Record<string, unknown>) {
