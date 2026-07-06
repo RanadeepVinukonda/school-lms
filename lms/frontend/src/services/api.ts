@@ -47,32 +47,65 @@ async function getCsrfToken(): Promise<string | null> {
   return fetchAndCacheCsrfToken();
 }
 
+// ---------- Cached auth token ----------
+// Avoid calling supabase.auth.getSession() on every request — it hits Auth API and can
+// trigger rate limits under rapid concurrent requests.  We cache the token and only
+// re-fetch when it is missing or clearly expired (based on JWT exp claim).
+let cachedToken: string | null = null;
+let tokenExpiresAt = 0;
+
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    return JSON.parse(atob(parts[1]));
+  } catch { return null; }
+}
+
+function isTokenExpired(token: string): boolean {
+  if (!token) return true;
+  const payload = decodeJwtPayload(token);
+  if (!payload || !payload.exp) return true;
+  // Treat as expired 30 seconds before actual expiry to be safe
+  return (payload.exp as number) * 1000 - 30000 < Date.now();
+}
+
+async function getAccessToken(): Promise<string | null> {
+  // Use cached token if still valid
+  if (cachedToken && !isTokenExpired(cachedToken)) return cachedToken;
+
+  // Try Supabase session (network call — only when cache is stale)
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) {
+      cachedToken = session.access_token;
+      const payload = decodeJwtPayload(session.access_token);
+      tokenExpiresAt = payload?.exp ? (payload.exp as number) * 1000 : 0;
+      return cachedToken;
+    }
+  } catch { /* fall through */ }
+
+  // Fallback to persisted store token
+  const storeToken = useAuthStore.getState().token;
+  if (storeToken && !isTokenExpired(storeToken)) {
+    cachedToken = storeToken;
+    return cachedToken;
+  }
+
+  return null;
+}
+
 // ---------- Auth token interceptor ----------
-// Attach Bearer token on every request — try Supabase session first, then store token fallback
 api.interceptors.request.use(async (config) => {
-  // Skip auth/CSRF for the refresh endpoint itself to avoid expired-token loops
+  // Skip auth for the refresh endpoint itself
   if (config.url === '/auth/refresh') {
     return config;
   }
 
-  // Attach auth token
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.access_token) {
-      config.headers.Authorization = `Bearer ${session.access_token}`;
-    } else {
-      // Session is null (expired or not restored) — use store token
-      const token = useAuthStore.getState().token;
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    }
-  } catch {
-    // Supabase session retrieval failed, fall through to store token
-    const token = useAuthStore.getState().token;
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+  // Attach auth token from cache (avoids per-request Supabase session call)
+  const token = await getAccessToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
 
   // Attach CSRF token on state-changing requests
@@ -130,6 +163,9 @@ api.interceptors.response.use(
         const newToken = refreshRes.data?.data?.token;
         const newRefreshToken = refreshRes.data?.data?.refresh_token;
         if (newToken) {
+          cachedToken = newToken; // update cache
+          const payload = decodeJwtPayload(newToken);
+          tokenExpiresAt = payload?.exp ? (payload.exp as number) * 1000 : 0;
           await supabase.auth.setSession({
             access_token: newToken,
             refresh_token: newRefreshToken || refreshToken,
@@ -142,6 +178,7 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError);
+        cachedToken = null;
         await useAuthStore.getState().logout();
         return Promise.reject(error);
       } finally {
