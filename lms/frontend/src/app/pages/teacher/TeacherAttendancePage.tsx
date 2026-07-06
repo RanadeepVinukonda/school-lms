@@ -63,14 +63,14 @@ export default function TeacherAttendancePage() {
       toast.error(_('Select students'));
       return;
     }
-    markMutation.mutate({ studentIds: selectedStudentIds, classId: selectedClass, date: selectedDate, status: attendanceStatus, markedBy: user?.displayName || 'teacher' });
+    markMutation.mutate({ studentIds: selectedStudentIds, classId: selectedClass, date: selectedDate, status: attendanceStatus, markedBy: userId });
   };
 
   const handleMarkAll = (status: 'present' | 'absent' | 'late' | 'holiday') => {
     if (!selectedClass || !selectedDate) return;
     const ids = classStudents.map((s: any) => s.id).filter(Boolean);
     if (ids.length === 0) return;
-    markMutation.mutate({ studentIds: ids, classId: selectedClass, date: selectedDate, status, markedBy: user?.displayName || 'teacher' });
+    markMutation.mutate({ studentIds: ids, classId: selectedClass, date: selectedDate, status, markedBy: userId });
   };
 
   return (
