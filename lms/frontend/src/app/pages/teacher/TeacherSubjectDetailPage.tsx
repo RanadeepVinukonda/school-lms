@@ -32,7 +32,7 @@ export default function TeacherSubjectDetailPage() {
       const subjectData = allSubjects.find((s) => s.id === subjectId);
 
       return {
-        className: classData?.name ?? classId ?? 'Unknown',
+        className: `${classData?.name ?? ''}${(classData as any)?.section ? ` - ${(classData as any).section}` : ''}` || classId || 'Unknown',
         subjectName: subjectData?.name ?? subjectId ?? 'Unknown',
         textbooks: textbooks.map((tb: any) => ({
           id: tb.id,

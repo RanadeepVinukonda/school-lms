@@ -166,7 +166,7 @@ export default function AdminFeePage() {
                                   <td className="px-4 py-3 font-semibold">{s.name}</td>
                                   <td className="px-4 py-3 font-mono font-bold">Rs. {s.amount?.toFixed(2)}</td>
                                   <td className="px-4 py-3">{s.due_date ? new Date(s.due_date).toLocaleDateString() : '-'}</td>
-                                  <td className="px-4 py-3">{cls?.name || s.class_id || s.classId || '-'}</td>
+                                  <td className="px-4 py-3">{cls ? `${cls.name}${cls.section ? ` - ${cls.section}` : ''}` : s.class_id || s.classId || '-'}</td>
                                   <td className="px-4 py-3">{s.academic_year || s.academicYear || '-'}</td>
                                 </tr>
                               );

@@ -5,6 +5,7 @@ export interface Class {
   description?: string;
   academicYear: string;
   grade: string;
+  section?: string;
   sectionCount: number;
   studentCount: number;
   teacherCount: number;

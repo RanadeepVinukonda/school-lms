@@ -50,7 +50,7 @@ export default function AdminStudentsPage() {
     queryFn: getAllClasses,
   });
 
-  const classOptions = classes.map((c: ClassEntry) => ({ value: c.id, label: c.name }));
+  const classOptions = classes.map((c: ClassEntry) => ({ value: c.id, label: `${c.name}${c.section ? ` - ${c.section}` : ''}` }));
 
   const createMutation = useMutation({
     mutationFn: () =>

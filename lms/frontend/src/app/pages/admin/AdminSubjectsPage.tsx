@@ -527,7 +527,7 @@ export default function AdminSubjectsPage() {
             <div className="space-y-2">
               <Label>Class</Label>
               <OptionsSelect
-                options={allClasses?.map((c) => ({ value: c.id, label: c.name })) || []}
+                options={allClasses?.map((c) => ({ value: c.id, label: `${c.name}${c.section ? ` - ${c.section}` : ''}` })) || []}
                 placeholder="Select class"
                 value={form.classId}
                 onChange={(v: string) => setForm((f) => ({ ...f, classId: v }))}
@@ -595,7 +595,7 @@ export default function AdminSubjectsPage() {
             <div className="space-y-2">
               <Label>Class</Label>
               <OptionsSelect
-                options={allClasses?.map((c) => ({ value: c.id, label: c.name })) || []}
+                options={allClasses?.map((c) => ({ value: c.id, label: `${c.name}${c.section ? ` - ${c.section}` : ''}` })) || []}
                 placeholder="Select class"
                 value={form.classId}
                 onChange={(v: string) => setForm((f) => ({ ...f, classId: v }))}

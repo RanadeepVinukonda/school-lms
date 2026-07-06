@@ -672,7 +672,7 @@ export default function AdminClassesPage() {
   const [studentSaveLoading, setStudentSaveLoading] = useState(false);
 
   const students = useMemo(() => users.filter((u) => hasRole(u.role, 'student')), [users]);
-  const classOptions = useMemo(() => fetchedClasses.map((c) => ({ value: c.id, label: c.name })), [fetchedClasses]);
+  const classOptions = useMemo(() => fetchedClasses.map((c) => ({ value: c.id, label: `${c.name}${c.section ? ` - ${c.section}` : ''}` })), [fetchedClasses]);
 
   const filteredStudents = useMemo(() => {
     return students.filter((s) => {

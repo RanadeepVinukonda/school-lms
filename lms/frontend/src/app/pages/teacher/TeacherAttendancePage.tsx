@@ -89,7 +89,7 @@ export default function TeacherAttendancePage() {
             onChange={(e) => setSelectedClass(e.target.value)}
           >
             <option value="">{_('Select your class...')}</option>
-            {teacherClasses.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {teacherClasses.map((c: any) => <option key={c.id} value={c.id}>{c.name}{c.section ? ` - ${c.section}` : ''}</option>)}
           </select>
           <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-44" />
         </div>

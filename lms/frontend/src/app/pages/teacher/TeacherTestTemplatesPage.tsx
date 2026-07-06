@@ -221,7 +221,7 @@ export default function TeacherTestTemplatesPage() {
                   <label className="text-sm font-medium">{_('Class')}</label>
                   <select value={classId} onChange={(e) => { setClassId(e.target.value); setSubjectId(''); setTextbookId(''); setChapterId(''); }} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1">
                     <option value="">{_('Select class...')}</option>
-                    {classOptions.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    {classOptions.map((c: any) => <option key={c.id} value={c.id}>{c.name}{c.section ? ` - ${c.section}` : ''}</option>)}
                   </select>
                 </div>
                 <div>

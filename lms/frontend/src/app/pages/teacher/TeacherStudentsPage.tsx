@@ -96,7 +96,7 @@ export default function TeacherStudentsPage() {
           id: user.id,
           displayName: user.displayName,
           studentId: user.studentId ?? user.id,
-          className: studentClass?.name ?? _('Unknown'),
+          className: studentClass ? `${studentClass.name}${studentClass.section ? ` - ${studentClass.section}` : ''}` : _('Unknown'),
           overallPercentage,
           subjectCount: studentClass?.subjectIds?.length ?? 0,
         } as StudentRow;
