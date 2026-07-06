@@ -30,6 +30,8 @@ export interface TaskItem {
   timeLimit?: number;
   questionCount?: number;
   duration?: number;
+  maxAttempts?: number;
+  attemptsUsed?: number;
 }
 
 export const FILTER_TABS: { key: FilterTab; label: string; icon: string }[] = [
@@ -155,6 +157,8 @@ export function buildTasks(
       timeLimit: q.timeLimit,
       questionCount: q.questionCount ?? (Array.isArray(q.questions) ? q.questions.length : 0),
       status: q.status,
+      maxAttempts: (q as any).maxAttempts,
+      attemptsUsed: (q as any).attemptsUsed,
     });
   }
 
@@ -283,6 +287,12 @@ function TaskCard({ item }: { item: TaskItem }) {
                       <span className="flex items-center gap-1">
                         <Icon name="quiz" size={14} />
                         {item.questionCount} {_('questions')}
+                      </span>
+                    )}
+                    {item.maxAttempts !== undefined && (
+                      <span className="flex items-center gap-1">
+                        <Icon name="replay" size={14} />
+                        {item.maxAttempts - (item.attemptsUsed ?? 0)} {_('attempts left')}
                       </span>
                     )}
                   </>
