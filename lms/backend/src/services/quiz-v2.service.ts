@@ -77,16 +77,18 @@ async function getConceptQuestions(conceptId: string) {
   return rows || [];
 }
 
-async function upsertQuestions(questions: Array<Record<string, unknown>>, conceptId: string) {
+async function upsertQuestions(questions: Array<Record<string, unknown>>, conceptId: string, textbookId?: string, chapterId?: string) {
   const supabase = getSupabaseAdmin()!;
   for (const q of questions) {
     const { error } = await supabase.from('concept_questions').upsert({
       id: q.id as string,
       concept_id: conceptId,
+      textbook_id: textbookId || (q.textbook_id as string) || '',
+      chapter_id: chapterId || (q.chapter_id as string) || '',
       type: q.type as string,
-      text: (q.text || q.question) as string,
+      question: (q.question || q.text) as string,
       options: q.options || null,
-      correct_answer: q.correctAnswer as string,
+      answer: (q.answer || q.correctAnswer) as string,
       explanation: q.explanation || null,
       difficulty: (q.difficulty as string) || 'medium',
       points: (q.points as number) || 1,
@@ -256,11 +258,11 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
     const existingIds = new Set(existing.map((q: any) => q.id));
     const toSave = matchingQuestions.filter((q: any) => !existingIds.has(q.id));
     if (toSave.length > 0) {
-      await upsertQuestions(toSave, data.conceptId);
+      await upsertQuestions(toSave, data.conceptId, data.textbookId, data.chapterId);
       logger.info('AI-generated questions saved to concept', { conceptId: data.conceptId, count: toSave.length });
     }
   } else {
-    await upsertQuestions(matchingQuestions, data.conceptId);
+    await upsertQuestions(matchingQuestions, data.conceptId, data.textbookId, data.chapterId);
     logger.info('Teacher-edited questions saved to concept', { conceptId: data.conceptId, count: matchingQuestions.length });
   }
 
