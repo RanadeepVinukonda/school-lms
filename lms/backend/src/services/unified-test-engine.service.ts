@@ -522,8 +522,8 @@ export async function startTestAttempt(testId: string, studentId: string): Promi
   const attempts = await nosqlQuery(QAV2, { quizId: testId, studentId });
   if (attempts.length >= tData.maxAttempts) throw new ForbiddenError('Maximum attempts reached');
 
-  const { data: userRow } = await supabase.from('users').select('level').eq('id', studentId).maybeSingle();
-  const studentLevel: StudentLevel = ((userRow?.level as StudentLevel) || 'beginner');
+  const { data: userRow } = await supabase.from('users').select('data').eq('id', studentId).maybeSingle();
+  const studentLevel: StudentLevel = ((userRow?.data as any)?.level as StudentLevel) || 'beginner';
 
   const questionBank = tData.questions || [];
   let available = [...questionBank];
@@ -654,7 +654,9 @@ export async function submitTestAttempt(attemptId: string, studentId: string, da
   );
   const newLevel = computeLevel(accuracy, avgReactionTime, complexityHandled);
 
-  const { error: levelUpdateErr } = await supabase.from('users').update({ level: newLevel }).eq('id', studentId);
+  const { data: existing } = await supabase.from('users').select('data').eq('id', studentId).maybeSingle();
+  const merged = { ...((existing?.data as Record<string, unknown>) || {}), level: newLevel };
+  const { error: levelUpdateErr } = await supabase.from('users').update({ data: merged }).eq('id', studentId);
   if (levelUpdateErr) throw new Error(`Failed to update user level: ${levelUpdateErr.message}`);
 
   const result: Record<string, unknown> = {

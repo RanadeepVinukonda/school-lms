@@ -162,9 +162,9 @@ export async function startExamAttempt(examId: string, studentId: string, select
   const maxAttempts = (examData.maxAttempts as number) || 1;
   if (existingAttempts.length >= maxAttempts) throw new ForbiddenError('Maximum attempts reached');
 
-  const { data: userRow, error: userError } = await supabase.from('users').select('level').eq('id', studentId).maybeSingle();
+  const { data: userRow, error: userError } = await supabase.from('users').select('data').eq('id', studentId).maybeSingle();
   if (userError) throw userError;
-  const studentLevel: StudentLevel = ((userRow?.level as StudentLevel) || 'beginner');
+  const studentLevel: StudentLevel = ((userRow?.data as any)?.level as StudentLevel) || 'beginner';
 
   const concepts = await getConceptsForChapter(examData.textbookId as string, examData.chapterId as string);
   if (concepts.length === 0) throw new NotFoundError('No concepts found in this chapter');
@@ -336,7 +336,9 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
   );
   const newLevel = computeLevel(accuracy, avgReactionTime, complexityHandled);
 
-  const { error } = await supabase.from('users').update({ level: newLevel }).eq('id', studentId);
+  const { data: existing } = await supabase.from('users').select('data').eq('id', studentId).maybeSingle();
+  const merged = { ...((existing?.data as Record<string, unknown>) || {}), level: newLevel };
+  const { error } = await supabase.from('users').update({ data: merged }).eq('id', studentId);
   if (error) throw error;
 
   const result: Record<string, unknown> = {
