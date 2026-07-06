@@ -43,8 +43,8 @@ export default function StudentMindMapsPage() {
       navigate(ROUTES.STUDENT_MIND_MAP_EDITOR(data.id));
     },
     onError: (err: unknown) => {
-      const msg = err instanceof Error ? err.message : 'Failed to create mind map';
-      toast.error(msg);
+      const apiErr = err as { message?: string; status?: number };
+      toast.error(apiErr?.message || 'Failed to create mind map');
     },
   });
 
