@@ -253,21 +253,27 @@ export default function TeacherExamsPage() {
           loadingType="list"
           emptyMessage={_('No exams have been created yet')}
           emptyAction={
-            subjects.length > 0 ? undefined : (
-                <Link to="/teacher/subjects" className="gap-1 inline-flex items-center">
-                  <Icon name="menu_book" size={16} />
-                  {_('Manage Subjects')}
-                </Link>
-            )
+            <Link to="/teacher/exams/create" className="gap-1 inline-flex items-center">
+              <Icon name="add" size={16} />
+              {_('Create Exam')}
+            </Link>
           }
         >
           {() => (
             <>
-              <motion.div variants={cardStackReveal} custom={0}>
-                <h1 className="text-headline-sm">{_('Exams')}</h1>
-                <p className="text-body-md text-muted-foreground">
-                  {_('Correct submissions and manage exams')}
-                </p>
+              <motion.div variants={cardStackReveal} custom={0} className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-headline-sm">{_('Exams')}</h1>
+                  <p className="text-body-md text-muted-foreground">
+                    {_('Correct submissions and manage exams')}
+                  </p>
+                </div>
+                <Link to="/teacher/exams/create">
+                  <Button className="gap-1">
+                    <Icon name="add" size={16} />
+                    {_('Create Exam')}
+                  </Button>
+                </Link>
               </motion.div>
 
               <motion.div variants={cardStackReveal} custom={0}>
