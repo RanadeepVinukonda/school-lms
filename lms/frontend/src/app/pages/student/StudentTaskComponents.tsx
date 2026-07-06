@@ -243,6 +243,8 @@ function TaskCard({ item }: { item: TaskItem }) {
                 <p className="font-semibold text-title-sm truncate">{item.title}</p>
                 {item.status === 'completed' ? (
                   <Badge variant="success" className="text-[10px]">{_('Completed')}</Badge>
+                ) : item.type === 'quiz' ? (
+                  <Badge variant="info" className="text-[10px]">{_('Open')}</Badge>
                 ) : (
                   <UrgencyBadge urgency={item.urgency} date={item.date} />
                 )}
