@@ -59,6 +59,7 @@ export default function StudentDashboardPage() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['student-dashboard', studentId],
     enabled: !!studentId,
+    refetchInterval: 30000,
     queryFn: async () => {
       if (!studentId) throw new Error('Not authenticated');
       const now = new Date();
