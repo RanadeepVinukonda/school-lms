@@ -13,7 +13,7 @@ import { useAuthStore } from '@/store/authStore';
 import { cn, getTimeGreeting } from '@/lib/utils';
 import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
-import { getGradesByStudent, getClass } from '@/services/dataService';
+import { getGradesByStudent, getCompletedQuizAttempts, getCompletedAssignmentAttempts, getClass } from '@/services/dataService';
 
 interface ResultEntry { id: string; itemName: string; score: number; maxScore: number; percentage: number; gradedAt: string; feedback?: string }
 
@@ -64,28 +64,37 @@ export default function StudentDashboardPage() {
       const greeting = getTimeGreeting();
       const authUserData = useAuthStore.getState().user;
 
-      const [grades, classDoc] = await Promise.all([
+      const [grades, quizAttempts, assignAttempts, classDoc] = await Promise.all([
         getGradesByStudent(studentId),
+        getCompletedQuizAttempts(studentId),
+        getCompletedAssignmentAttempts(studentId),
         authUserData?.classId ? getClass(authUserData.classId) : Promise.resolve(null),
       ]);
 
-      const recentResults: ResultEntry[] = grades
+      const allAssessments = [
+        ...grades.map((g) => ({ type: 'grade' as const, ...g })),
+        ...quizAttempts.map((a) => ({ type: 'quiz' as const, ...a })),
+        ...assignAttempts.map((a) => ({ type: 'assignment' as const, ...a })),
+      ];
+
+      const recentResults: ResultEntry[] = allAssessments
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .slice(0, 5)
         .map((g) => ({
           id: g.id, itemName: g.itemName ?? _('Assessment'), score: g.score,
-          maxScore: g.totalPoints, percentage: g.percentage, gradedAt: g.createdAt, feedback: g.feedback,
+          maxScore: g.totalPoints, percentage: g.percentage, gradedAt: g.createdAt, feedback: (g as any).feedback,
         }));
 
-      const avgGrade = grades.length > 0
-        ? Math.round(grades.reduce((s, g) => s + g.percentage, 0) / grades.length) : 0;
+      const scored = allAssessments.filter((a) => a.percentage > 0);
+      const avgGrade = scored.length > 0
+        ? Math.round(scored.reduce((s, g) => s + g.percentage, 0) / scored.length) : 0;
 
       return {
         displayName, greeting, motivationalMessage: messages[messageIndex],
         todayDate: now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
         recentResults, subjectsCount: classDoc?.subjectIds?.length ?? 0,
         className: classDoc?.name ?? null, classGrade: classDoc?.grade ?? null,
-        avgGrade, totalAssessments: grades.length,
+        avgGrade, totalAssessments: allAssessments.length,
       } satisfies DashboardData;
     },
   });
