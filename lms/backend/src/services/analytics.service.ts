@@ -12,12 +12,12 @@ export async function getStudentDashboard(studentId: string) {
   
   const { data: enrollments, error: enrollmentsErr } = await supabase
     .from('enrollments')
-    .select('course_id')
-    .eq('student_id', studentId)
+    .select('courseId')
+    .eq('studentId', studentId)
     .eq('status', 'active');
   if (enrollmentsErr) throw new Error(enrollmentsErr.message);
   
-  const courseIds = (enrollments || []).map((e: { course_id: string }) => e.course_id);
+  const courseIds = (enrollments || []).map((e: { courseId: string }) => e.courseId);
   const totalCourses = courseIds.length;
 
   const { count: unreadNotificationsCount } = await supabase
@@ -202,7 +202,7 @@ export async function getCourseAnalytics(courseId: string) {
   const { count: enrolledStudents } = await supabase
     .from('enrollments')
     .select('id', { count: 'exact', head: true })
-    .eq('course_id', courseId)
+    .eq('courseId', courseId)
     .eq('status', 'active');
 
   const { count: totalLessons } = await supabase
