@@ -30,6 +30,7 @@ export default function StudentTasksPage() {
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-tasks', studentId, classId],
+    refetchInterval: 30000,
     queryFn: async () => {
       if (!studentId) return [];
       const [allSubjects, classDoc] = await Promise.all([
@@ -54,17 +55,20 @@ export default function StudentTasksPage() {
         .filter((q: any) => !!q.releasedAt)
         .map((q: any) => ({ id: q.id, ...q })) as QuizItem[];
 
-      // Fetch student's quiz attempts to determine completion status
+      // Fetch student's quiz attempts to determine completion status and count
       const completedQuizIds = new Set<string>();
+      const quizAttemptCount = new Map<string, number>();
       try {
         const attemptsRes = await api.get(`/quizzes-v2/attempts/my`).then((r) => r.data.data ?? []);
         for (const att of attemptsRes) {
           if (att.status === 'completed') completedQuizIds.add(att.quizId);
+          quizAttemptCount.set(att.quizId, (quizAttemptCount.get(att.quizId) ?? 0) + 1);
         }
       } catch { /* ignore */ }
 
       for (const q of allQuizzes) {
         if (completedQuizIds.has(q.id)) (q as any).status = 'completed';
+        (q as any).attemptsUsed = quizAttemptCount.get(q.id) ?? 0;
       }
 
       // Fetch exams for the student's class using the newer exam-v2 API (class-scoped)

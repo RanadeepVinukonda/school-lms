@@ -6,12 +6,25 @@ import { validate } from '../middlewares/validate.middleware';
 import { asyncHandler } from '../middlewares/asyncHandler';
 import { sendSuccess } from '../utils/response';
 import * as noticeService from '../services/notice.service';
+import { getSupabaseAdmin } from '../services/supabase';
 
 const router = Router();
 
 router.get('/', authenticate, asyncHandler(async (req, res) => {
-  const classId = (req.user as any)?.class_id || undefined;
-  const items = await noticeService.getNotices(req.user!.school_id || '', classId);
+  const user = req.user!;
+  let classIds: string[] = [];
+  if (user.role === 'parent' && (user as any).children_ids?.length > 0) {
+    const supabase = getSupabaseAdmin();
+    if (supabase) {
+      const { data: children } = await supabase.from('users').select('class_id').in('id', (user as any).children_ids);
+      if (children) {
+        classIds = [...new Set(children.map((c) => c.class_id).filter(Boolean))] as string[];
+      }
+    }
+  } else if (user.class_id) {
+    classIds = [user.class_id];
+  }
+  const items = await noticeService.getNotices(user.school_id || '', classIds.length > 0 ? classIds : undefined);
   sendSuccess(res, items);
 }));
 

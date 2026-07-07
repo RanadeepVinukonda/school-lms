@@ -31,7 +31,7 @@ function OutstandingRow({ item }: { item: any }) {
       {expanded && item.schedules?.map((sc: any) => (
         <tr key={`${item.studentId}-${sc.scheduleId}`} className="bg-muted/10 text-sm">
           <td className="px-4 py-2 pl-10 text-muted-foreground">{sc.name}</td>
-          <td className="px-4 py-2 text-muted-foreground">{new Date(sc.dueDate).toLocaleDateString()}</td>
+          <td className="px-4 py-2 text-muted-foreground">{new Date(sc.due_date || sc.dueDate).toLocaleDateString()}</td>
           <td className="px-4 py-2 text-right font-mono">Rs. {sc.amount?.toFixed(2)}</td>
           <td className="px-4 py-2 text-right font-mono text-success">Rs. {(sc.paid || 0)?.toFixed(2)}</td>
           <td className={`px-4 py-2 text-right font-mono font-bold ${(sc.amount - (sc.paid || 0)) > 0 ? 'text-error' : 'text-success'}`}>
@@ -160,14 +160,14 @@ export default function AdminFeePage() {
                           </thead>
                           <tbody className="divide-y divide-border/40 text-title-sm">
                             {(schedulesData as any[])?.map((s: any) => {
-                              const cls = classesData.find((c) => c.id === s.classId);
+                              const cls = classesData.find((c) => c.id === (s.class_id || s.classId));
                               return (
                                 <tr key={s.id} className="hover:bg-muted/20">
                                   <td className="px-4 py-3 font-semibold">{s.name}</td>
                                   <td className="px-4 py-3 font-mono font-bold">Rs. {s.amount?.toFixed(2)}</td>
-                                  <td className="px-4 py-3">{new Date(s.dueDate).toLocaleDateString()}</td>
-                                  <td className="px-4 py-3">{cls?.name || s.classId}</td>
-                                  <td className="px-4 py-3">{s.academicYear}</td>
+                                  <td className="px-4 py-3">{s.due_date ? new Date(s.due_date).toLocaleDateString() : '-'}</td>
+                                  <td className="px-4 py-3">{cls ? `${cls.name}${cls.section ? ` - ${cls.section}` : ''}` : s.class_id || s.classId || '-'}</td>
+                                  <td className="px-4 py-3">{s.academic_year || s.academicYear || '-'}</td>
                                 </tr>
                               );
                             })}
@@ -262,18 +262,15 @@ export default function AdminFeePage() {
                               </thead>
                               <tbody className="divide-y divide-border/40 text-title-sm">
                                 {(studentPayments as any[])?.map((p: any) => {
-                                  const sched = (schedulesData as any[])?.find((s: any) => s.id === p.feeScheduleId);
+                                  const sched = (schedulesData as any[])?.find((s: any) => s.id === (p.fee_structure_id || p.feeScheduleId));
                                   return (
                                     <tr key={p.id} className="hover:bg-muted/20">
-                                      <td className="px-4 py-3 font-semibold">{sched?.name || p.feeScheduleId}</td>
-                                      <td className="px-4 py-3 font-mono font-bold">Rs. {p.amountPaid?.toFixed(2)}</td>
-                                      <td className="px-4 py-3 capitalize">{p.paymentMethod}</td>
-                                      <td className="px-4 py-3 text-muted-foreground">{new Date(p.paymentDate).toLocaleDateString()}</td>
+                                      <td className="px-4 py-3 font-semibold">{sched?.name || p.fee_structure_id || p.feeScheduleId}</td>
+                                      <td className="px-4 py-3 font-mono font-bold">Rs. {(p.amount || p.amountPaid)?.toFixed(2)}</td>
+                                      <td className="px-4 py-3 capitalize">{p.payment_method || p.paymentMethod || '-'}</td>
+                                      <td className="px-4 py-3 text-muted-foreground">{new Date(p.created_at || p.paymentDate).toLocaleDateString()}</td>
                                       <td className="px-4 py-3">
-                                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                                          p.status === 'completed' ? 'bg-success-container text-success' :
-                                          p.status === 'pending' ? 'bg-warning-container text-warning' : 'bg-error-container text-error'
-                                        }`}>{p.status}</span>
+                                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-success-container text-success">completed</span>
                                       </td>
                                     </tr>
                                   );

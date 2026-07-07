@@ -12,9 +12,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { OptionsSelect } from '@/components/ui/select';
 import { attendanceService } from '@/services/attendanceService';
 import { getAllClasses, getAllUsers } from '@/services/dataService';
+import { useAuthStore } from '@/store/authStore';
 
 export default function AdminAttendancePage() {
   const queryClient = useQueryClient();
+  const currentUser = useAuthStore((s) => s.user);
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
@@ -79,7 +81,7 @@ export default function AdminAttendancePage() {
       toast.error('No students in this class');
       return;
     }
-    markMutation.mutate({ studentIds: ids, classId: selectedClass, date: selectedDate, status, markedBy: 'admin' });
+    markMutation.mutate({ studentIds: ids, classId: selectedClass, date: selectedDate, status, markedBy: currentUser?.id || '' });
   };
 
   const handleMarkSelected = () => {
@@ -91,7 +93,7 @@ export default function AdminAttendancePage() {
       toast.error('Select at least one student');
       return;
     }
-    markMutation.mutate({ studentIds: selectedStudentIds, classId: selectedClass, date: selectedDate, status: attendanceStatus, markedBy: 'admin' });
+    markMutation.mutate({ studentIds: selectedStudentIds, classId: selectedClass, date: selectedDate, status: attendanceStatus, markedBy: currentUser?.id || '' });
   };
 
   const toggleStudent = (id: string) => {

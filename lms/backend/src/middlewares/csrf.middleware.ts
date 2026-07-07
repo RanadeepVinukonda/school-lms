@@ -29,14 +29,23 @@ function setCsrfCookie(res: Response, token: string) {
 }
 
 // Routes that don't require CSRF validation (public auth endpoints)
+// Include both /api-prefixed (since middleware runs before prefix-stripping)
+// and unprefixed versions for direct access.
 const CSRF_EXEMPT_PATHS = new Set([
   '/auth/login',
+  '/api/auth/login',
   '/auth/register',
+  '/api/auth/register',
   '/auth/refresh',
+  '/api/auth/refresh',
   '/auth/forgot-password',
+  '/api/auth/forgot-password',
   '/auth/reset-password',
+  '/api/auth/reset-password',
   '/auth/reset-with-token',
+  '/api/auth/reset-with-token',
   '/auth/verify-token',
+  '/api/auth/verify-token',
 ]);
 
 export function csrfProtection(req: Request, res: Response, next: NextFunction) {

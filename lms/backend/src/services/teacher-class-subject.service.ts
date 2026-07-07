@@ -83,7 +83,7 @@ export async function getTeacherAssignments(teacherId: string): Promise<(Teacher
       ]);
       if (classRes.data) {
         const c = classRes.data;
-        className = `${c.grade || ''} ${c.section || ''} ${c.name || ''}`.trim() || c.code || data.classId;
+        className = `${c.name || ''}${c.section ? ` - ${c.section}` : ''}`.trim() || c.code || data.classId;
       }
       if (subjectRes.data) {
         subjectName = subjectRes.data.name || data.subjectId;
@@ -138,12 +138,12 @@ export async function getAllAssignments() {
 
   const [teacherRes, classRes, subjectRes] = await Promise.all([
     Promise.all(teacherIds.map(async (id) => { const { data, error: e } = await supabase.from('users').select('id, display_name').eq('id', id).maybeSingle(); if (e) throw new Error('Failed to fetch user: ' + e.message); return data; })),
-    Promise.all(classIds.map(async (id) => { const { data, error: e } = await supabase.from('classes').select('id, name').eq('id', id).maybeSingle(); if (e) throw new Error('Failed to fetch class: ' + e.message); return data; })),
+    Promise.all(classIds.map(async (id) => { const { data, error: e } = await supabase.from('classes').select('id, name, section').eq('id', id).maybeSingle(); if (e) throw new Error('Failed to fetch class: ' + e.message); return data; })),
     Promise.all(subjectIds.map(async (id) => { const { data, error: e } = await supabase.from('subjects').select('id, name').eq('id', id).maybeSingle(); if (e) throw new Error('Failed to fetch subject: ' + e.message); return data; })),
   ]);
 
   const teacherMap = new Map(teacherRes.filter(Boolean).map((s) => [s!.id, s!.display_name || s!.id]));
-  const classMap = new Map(classRes.filter(Boolean).map((s) => [s!.id, s!.name || s!.id]));
+  const classMap = new Map(classRes.filter(Boolean).map((s) => [s!.id, `${s!.name || ''}${(s as any).section ? ` - ${(s as any).section}` : ''}`.trim() || s!.id]));
   const subjectMap = new Map(subjectRes.filter(Boolean).map((s) => [s!.id, s!.name || s!.id]));
 
   return assignments.map((a) => ({

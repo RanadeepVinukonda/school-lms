@@ -198,11 +198,70 @@ export async function getAllGrades(): Promise<GradeEntry[]> {
   return (data || []) as unknown as GradeEntry[];
 }
 
+export interface AttemptEntry {
+  id: string;
+  studentId: string;
+  courseId?: string;
+  subjectId?: string;
+  classId?: string;
+  itemName?: string;
+  score: number;
+  totalPoints: number;
+  percentage: number;
+  createdAt: string;
+}
+
 /** Fetch grades for a specific student. */
 export async function getGradesByStudent(studentId: string): Promise<GradeEntry[]> {
   const { data, error } = await supabase.from(GRADES_COLLECTION).select('*').eq('studentId', studentId);
   if (error) throw error;
   return (data || []) as unknown as GradeEntry[];
+}
+
+/** Fetch completed quiz attempts for a student from nosql_docs. */
+export async function getCompletedQuizAttempts(studentId: string): Promise<AttemptEntry[]> {
+  const { data, error } = await supabase
+    .from('nosql_docs')
+    .select('doc_id, data, created_at')
+    .eq('collection', 'quizAttemptV2')
+    .filter('data->>studentId', 'eq', studentId)
+    .filter('data->>status', 'eq', 'completed');
+  if (error) return [];
+  return (data || []).map((r: any) => ({
+    id: r.doc_id,
+    studentId,
+    courseId: r.data?.courseId,
+    subjectId: r.data?.subjectId,
+    classId: r.data?.classId,
+    itemName: r.data?.itemName,
+    score: r.data?.score ?? 0,
+    totalPoints: r.data?.totalPoints ?? 0,
+    percentage: r.data?.percentage ?? 0,
+    createdAt: r.created_at || r.data?.submittedAt || new Date().toISOString(),
+  }));
+}
+
+/** Fetch completed assignment attempts for a student from nosql_docs. */
+export async function getCompletedAssignmentAttempts(studentId: string): Promise<AttemptEntry[]> {
+  const { data, error } = await supabase
+    .from('nosql_docs')
+    .select('doc_id, data, created_at')
+    .eq('collection', 'assignmentSubmissionV2')
+    .filter('data->>studentId', 'eq', studentId)
+    .filter('data->>status', 'eq', 'completed');
+  if (error) return [];
+  return (data || []).map((r: any) => ({
+    id: r.doc_id,
+    studentId,
+    courseId: r.data?.courseId,
+    subjectId: r.data?.subjectId,
+    classId: r.data?.classId,
+    itemName: r.data?.itemName,
+    score: r.data?.score ?? 0,
+    totalPoints: r.data?.totalPoints ?? 0,
+    percentage: r.data?.percentage ?? 0,
+    createdAt: r.created_at || r.data?.submittedAt || new Date().toISOString(),
+  }));
 }
 
 /** Fetch notifications for a specific user. */

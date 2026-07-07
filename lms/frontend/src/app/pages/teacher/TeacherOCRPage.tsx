@@ -48,7 +48,7 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string) =
         <Select value={selectedClass} onValueChange={setSelectedClass}>
           <SelectTrigger className="w-48"><SelectValue placeholder={_('Select class...')} /></SelectTrigger>
           <SelectContent>
-            {classes?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            {classes?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}{c.section ? ` - ${c.section}` : ''}</SelectItem>)}
           </SelectContent>
         </Select>
         <Button size="sm" onClick={() => { setPushing(true); onPush(data, selectedClass).finally(() => setPushing(false)); }} disabled={!selectedClass || pushing} loading={pushing}>
@@ -78,7 +78,7 @@ function AssignmentView({ data, onPush }: { data: any; onPush: (d: any, cls: str
         <Select value={selectedClass} onValueChange={setSelectedClass}>
           <SelectTrigger className="w-48"><SelectValue placeholder={_('Select class...')} /></SelectTrigger>
           <SelectContent>
-            {classes?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            {classes?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}{c.section ? ` - ${c.section}` : ''}</SelectItem>)}
           </SelectContent>
         </Select>
         <Button size="sm" onClick={() => { setPushing(true); onPush(data, selectedClass).finally(() => setPushing(false)); }} disabled={!selectedClass || pushing} loading={pushing}>

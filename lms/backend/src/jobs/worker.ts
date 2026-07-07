@@ -108,9 +108,16 @@ export async function runUploadPipeline(textbookId: string, storagePath: string)
   let structure: { chapters: Array<{ title: string; order: number; summary: string; concepts: string[] }> } | null = null;
   try {
     const prompt = `You are a professional syllabus compiler. Read this textbook's opening pages and generate a complete curriculum outline for "${title}".
-Extract EVERY single chapter and section from the table of contents. Do not skip any chapters.
+Rules:
+- Identify the actual main chapters/lessons from the table of contents — these are the top-level numbered entries.
+- DO NOT use "Unit X" as a chapter title. "Units" are groupings, not chapters.
+- For example, if the TOC lists "Unit 1: My Family and Me" with sub-sections "1.1 Two Little Hands", "1.2 Parts of the Body", then the main chapters are "1.1 Two Little Hands" and "1.2 Parts of the Body" — NOT "Unit 1".
+- Determine the number of main chapters from the PDF content itself. If the PDF has 5 main chapters, you MUST output exactly 5 chapters.
+- For each chapter's "concepts", list the sub-topics, learning objectives, or sections found within that chapter (e.g. vocabulary words, key phrases, skills, themes).
+- If a section has no explicit sub-topics found in the text, use 2-3 generic concepts like "Key Vocabulary", "Reading Practice", "Discussion Questions".
+- Extract ALL chapters. Do not merge or skip any.
 Return ONLY valid JSON matching this schema (no markdown, no formatting):
-{ "chapters": [{ "title": "Chapter title", "order": 1, "summary": "Short chapter description", "concepts": ["1.1 First Concept Name"] }] }
+{ "chapters": [{ "title": "Main chapter title (number + name, no unit prefix)", "order": 1, "summary": "Short description", "concepts": ["Sub-topic 1", "Sub-topic 2"] }] }
 Textbook content:\n${tocText}`;
     const rawResponse = await chatCompletion({
       messages: [{ role: 'system', content: 'You respond in valid JSON only.' }, { role: 'user', content: prompt }],
@@ -190,10 +197,12 @@ Context Text:\n${contextText.slice(0, 15000)}`;
       return JSON.parse(cleaned);
     })(),
     (async () => {
-      const prompt = `Generate a comprehensive question bank for: "${conceptTitle}".
-Generate exactly 3 questions for EACH type: mcq, true_false, fill_blank, matching, numerical, descriptive
-Return ONLY valid JSON: { "questions": [{ "question": "", "type": "", "difficulty": "easy|medium|hard|hots", "options": ["A","B","C","D"], "answer": "", "explanation": "", "passageText": null }] }
-Concept: ${conceptTitle} Chapter: ${chapterTitle} Context: ${contextText.slice(0, 8000)}`;
+      const prompt = `Generate a comprehensive question bank for the concept "${conceptTitle}" (from chapter "${chapterTitle}").
+Generate exactly 3 questions for EACH type: mcq, true_false, fill_blank, matching, numerical, descriptive.
+The "question" field MUST contain the full question text — do not leave it empty.
+Return ONLY valid JSON matching this schema (no markdown, no formatting):
+{ "questions": [{ "question": "What is the question text?", "type": "mcq", "difficulty": "easy", "options": ["Option A", "Option B", "Option C", "Option D"], "answer": "Correct answer", "explanation": "Brief explanation", "passageText": null }] }
+Concept context: ${conceptTitle} Chapter: ${chapterTitle} Source: ${contextText.slice(0, 8000)}`;
       const raw = await chatCompletion({ messages: [{ role: 'system', content: 'You respond in clean JSON only.' }, { role: 'user', content: prompt }], temperature: 0.4, max_tokens: 16384, jsonMode: true });
       let cleaned = raw.trim();
       const m = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/);

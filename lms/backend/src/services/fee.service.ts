@@ -90,7 +90,7 @@ export async function getOutstandingReport(schoolId?: string) {
   const supabase = getSupabaseAdmin()!;
 
   let structQ = supabase.from('fee_structures').select('*');
-  let studentQ = supabase.from('users').select('id, display_name').eq('role', 'student');
+  let studentQ = supabase.from('users').select('id, display_name, class_id, class_ids').eq('role', 'student');
   let paymentQ = supabase.from('fee_payments').select('*');
 
   if (schoolId) {
@@ -109,15 +109,39 @@ export async function getOutstandingReport(schoolId?: string) {
 
   const [structures, payments, students] = results.map(r => r.data);
   if (!structures || !students) return [];
-  return buildOutstandingReport(structures, payments || [], students);
+
+  // Fetch class names for display
+  const classIds = [...new Set(students.map((s: any) => s.class_id).filter(Boolean))];
+  let classMap: Record<string, string> = {};
+  if (classIds.length > 0) {
+    const { data: classes } = await supabase.from('classes').select('id, name, grade, section').in('id', classIds);
+    if (classes) {
+      for (const c of classes) {
+        classMap[c.id] = c.name || (c.grade && c.section ? `Class ${c.grade}-${c.section}` : c.id);
+      }
+    }
+  }
+
+  return buildOutstandingReport(structures, payments || [], students, classMap);
 }
 
-function buildOutstandingReport(structures: any[], payments: any[], students: any[]) {
-  const report = (students || []).map((s: Record<string, unknown>) => {
-    const totalDue = (structures || []).reduce((sum: number, f: Record<string, unknown>) => sum + Number(f.amount), 0);
-    const studentPays = (payments || []).filter((p: Record<string, unknown>) => p.student_id === s.id);
-    const totalPaid = studentPays.reduce((sum: number, p: Record<string, unknown>) => sum + Number(p.amount), 0);
-    return { studentId: s.id, studentName: s.display_name || s.id, totalDue, totalPaid, balance: totalDue - totalPaid };
+function buildOutstandingReport(structures: any[], payments: any[], students: any[], classMap: Record<string, string>) {
+  const report = (students || []).map((s: any) => {
+    const studentClassId = s.class_id || (s.class_ids?.[0]);
+    const classStructures = (structures || []).filter((f: any) =>
+      !f.class_id || f.class_id === studentClassId
+    );
+    const totalDue = classStructures.reduce((sum: number, f: any) => sum + Number(f.amount), 0);
+    const studentPays = (payments || []).filter((p: any) => p.student_id === s.id);
+    const totalPaid = studentPays.reduce((sum: number, p: any) => sum + Number(p.amount), 0);
+    return {
+      studentId: s.id,
+      studentName: s.display_name || s.id,
+      className: classMap[studentClassId] || '-',
+      totalDue,
+      totalPaid,
+      balance: totalDue - totalPaid,
+    };
   });
   return report.filter((r: { totalDue: number; totalPaid: number }) => r.totalDue > 0 || r.totalPaid > 0);
 }

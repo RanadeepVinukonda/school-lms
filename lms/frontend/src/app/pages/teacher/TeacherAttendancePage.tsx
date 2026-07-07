@@ -63,14 +63,14 @@ export default function TeacherAttendancePage() {
       toast.error(_('Select students'));
       return;
     }
-    markMutation.mutate({ studentIds: selectedStudentIds, classId: selectedClass, date: selectedDate, status: attendanceStatus, markedBy: user?.displayName || 'teacher' });
+    markMutation.mutate({ studentIds: selectedStudentIds, classId: selectedClass, date: selectedDate, status: attendanceStatus, markedBy: userId });
   };
 
   const handleMarkAll = (status: 'present' | 'absent' | 'late' | 'holiday') => {
     if (!selectedClass || !selectedDate) return;
     const ids = classStudents.map((s: any) => s.id).filter(Boolean);
     if (ids.length === 0) return;
-    markMutation.mutate({ studentIds: ids, classId: selectedClass, date: selectedDate, status, markedBy: user?.displayName || 'teacher' });
+    markMutation.mutate({ studentIds: ids, classId: selectedClass, date: selectedDate, status, markedBy: userId });
   };
 
   return (
@@ -89,7 +89,7 @@ export default function TeacherAttendancePage() {
             onChange={(e) => setSelectedClass(e.target.value)}
           >
             <option value="">{_('Select your class...')}</option>
-            {teacherClasses.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {teacherClasses.map((c: any) => <option key={c.id} value={c.id}>{c.name}{c.section ? ` - ${c.section}` : ''}</option>)}
           </select>
           <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-44" />
         </div>

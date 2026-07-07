@@ -174,7 +174,7 @@ export default function StudentQuizzesPage() {
                                 <div className="flex items-center gap-3 mt-2 text-label-xs text-muted-foreground flex-wrap">
                                   <span className="flex items-center gap-1"><Icon name="timer" size={12} />{quiz.timeLimitMinutes}m</span>
                                   <span className="flex items-center gap-1"><Icon name="star" size={12} />{quiz.totalPoints} {_('pts')}</span>
-                                  <span className="flex items-center gap-1"><Icon name="replay" size={12} />{_('Max')} {quiz.maxAttempts}</span>
+                                  <span className="flex items-center gap-1"><Icon name="replay" size={12} />{quiz.maxAttempts} {_('attempts left')}</span>
                                   {(quiz.selectedModels?.length ?? 0) > 0 && (
                                     <span className="flex items-center gap-1 text-[10px]">
                                       {quiz.selectedModels.slice(0, 3).join(', ')}{quiz.selectedModels.length > 3 ? ` +${quiz.selectedModels.length - 3}` : ''}
@@ -211,10 +211,11 @@ export default function StudentQuizzesPage() {
                                   className={quiz.bestPassed ? 'text-success' : quiz.bestPassed === false ? 'text-error' : 'text-muted-foreground'} />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                   <p className="font-semibold">{quiz.title}</p>
+                                  <Badge variant="success" className="text-[10px] shrink-0">{_('Completed')}</Badge>
                                   {quiz.bestPercentage !== null && (
-                                    <Badge variant={quiz.bestPassed ? 'success' : 'destructive'} className="text-xs shrink-0">
+                                    <Badge variant={quiz.bestPassed ? 'success' : 'destructive'} className="text-[10px] shrink-0">
                                       {_('Best')}: {quiz.bestPercentage}%
                                     </Badge>
                                   )}

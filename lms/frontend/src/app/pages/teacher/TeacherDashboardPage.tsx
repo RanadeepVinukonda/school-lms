@@ -148,7 +148,7 @@ export default function TeacherDashboardPage() {
           { icon: 'assignment', label: _('Exams Created'), value: allExams.length, color: 'text-secondary', bg: 'bg-secondary-container' },
         ],
         teaching: {
-          classes: myClasses.map((c) => ({ id: c.id, name: c.name })),
+          classes: myClasses.map((c) => ({ id: c.id, name: `${c.name}${(c as any).section ? ` - ${(c as any).section}` : ''}` })),
           textbooks: allTextbooks.map((tb) => ({ id: tb.id, title: tb.title, subjectId: tb.subjectId })),
           studentCount: teachingStudentCount,
           subjects: allSubjects.filter(s => subjectIds.includes(s.id)).map(s => ({ id: s.id, name: s.name })),

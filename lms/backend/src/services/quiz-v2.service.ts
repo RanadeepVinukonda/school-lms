@@ -13,6 +13,15 @@ import { computeMastery } from './adaptive/mastery.service';
 const QV2 = 'quizV2';
 const QAV2 = 'quizAttemptV2';
 
+function fallbackText(type: string, _options: any): string {
+  if (type === 'mcq') return 'Choose the correct answer';
+  if (type === 'true_false') return 'State whether true or false';
+  if (type === 'fill_blank') return 'Fill in the blank';
+  if (type === 'matching') return 'Match the following items';
+  if (type === 'numerical') return 'Calculate the answer';
+  return 'Answer the following question';
+}
+
 async function nosqlGet(col: string, id: string) {
   const { data: row } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
   return { exists: !!row, data: (row?.data as Record<string, unknown>) ?? null };
@@ -77,16 +86,18 @@ async function getConceptQuestions(conceptId: string) {
   return rows || [];
 }
 
-async function upsertQuestions(questions: Array<Record<string, unknown>>, conceptId: string) {
+async function upsertQuestions(questions: Array<Record<string, unknown>>, conceptId: string, textbookId?: string, chapterId?: string) {
   const supabase = getSupabaseAdmin()!;
   for (const q of questions) {
     const { error } = await supabase.from('concept_questions').upsert({
       id: q.id as string,
       concept_id: conceptId,
+      textbook_id: textbookId || (q.textbook_id as string) || '',
+      chapter_id: chapterId || (q.chapter_id as string) || '',
       type: q.type as string,
-      text: (q.text || q.question) as string,
+      question: (q.question || q.text) as string,
       options: q.options || null,
-      correct_answer: q.correctAnswer as string,
+      answer: (q.answer || q.correctAnswer) as string,
       explanation: q.explanation || null,
       difficulty: (q.difficulty as string) || 'medium',
       points: (q.points as number) || 1,
@@ -141,9 +152,9 @@ export async function createQuiz(data: {
     matchingQuestions = data.questions.map((q: any) => ({
       id: q.id || uuidv4(),
       type: q.type || 'mcq',
-      text: q.text || q.question || '',
+      text: q.text || q.question || fallbackText(q.type, q.options),
       options: q.options || null,
-      correctAnswer: q.correctAnswer || '',
+      correctAnswer: q.correctAnswer || q.answer || '',
       explanation: q.explanation || '',
       difficulty: q.difficulty || 'medium',
       points: q.points || 2,
@@ -166,7 +177,7 @@ export async function createQuiz(data: {
 
       let formatInstructions = `- type: one of "${typeNames}"
 - text: the question text
-- options: array of 4 options (only for mcq, true_false, short_answer, fill_blank)
+- options: array of 4 options (for mcq, true_false, fill_blank only — set to null for short_answer)
 - correctAnswer: the correct answer string
 - explanation: brief explanation
 - difficulty: "easy" | "medium" | "hard"
@@ -218,9 +229,9 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
           matchingQuestions.push({
             id: qId,
             type: q.type || 'mcq',
-            text: q.question || q.text,
+            text: q.question || q.text || fallbackText(q.type, q.options),
             options: q.options || null,
-            correctAnswer: q.correctAnswer || '',
+            correctAnswer: q.correctAnswer || q.answer || '',
             explanation: q.explanation || '',
             difficulty: q.difficulty || 'medium',
             points: q.points || 2,
@@ -236,14 +247,23 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
   }
 
   if (data.preview) {
+    const previewQuestions = matchingQuestions.map((q: any) => {
+      const rawQuestion = q.question;
+      const rawText = q.text;
+      const dataQuestion = (typeof q.data === 'object' && q.data) ? (q.data.question || q.data.text) : '';
+      const finalText = rawQuestion || rawText || dataQuestion || fallbackText(q.type, q.options);
+      logger.info('[QuizV2 Preview]', { qId: q.id, type: q.type, rawQuestion: rawQuestion?.substring(0, 50), rawText: rawText?.substring(0, 50), dataQuestion: dataQuestion?.substring(0, 50), finalText: finalText?.substring(0, 50) });
+      const correctAnswer = q.answer || q.correctAnswer || (typeof q.data === 'object' && q.data ? (q.data.answer || q.data.correctAnswer) : '') || '';
+      return {
+        id: q.id, type: q.type, text: finalText, options: q.options,
+        correctAnswer, explanation: q.explanation,
+        difficulty: q.difficulty, points: q.points,
+      };
+    });
     return {
       preview: true,
       questionCount: matchingQuestions.length,
-      questions: matchingQuestions.map((q: any) => ({
-        id: q.id, type: q.type, text: q.text, options: q.options,
-        correctAnswer: q.correctAnswer, explanation: q.explanation,
-        difficulty: q.difficulty, points: q.points,
-      })),
+      questions: previewQuestions,
       existingCount: matchingQuestions.length - aiGeneratedCount,
       aiGeneratedCount,
       aiErrorMessage: aiErrorMessage || undefined,
@@ -256,11 +276,11 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
     const existingIds = new Set(existing.map((q: any) => q.id));
     const toSave = matchingQuestions.filter((q: any) => !existingIds.has(q.id));
     if (toSave.length > 0) {
-      await upsertQuestions(toSave, data.conceptId);
+      await upsertQuestions(toSave, data.conceptId, data.textbookId, data.chapterId);
       logger.info('AI-generated questions saved to concept', { conceptId: data.conceptId, count: toSave.length });
     }
   } else {
-    await upsertQuestions(matchingQuestions, data.conceptId);
+    await upsertQuestions(matchingQuestions, data.conceptId, data.textbookId, data.chapterId);
     logger.info('Teacher-edited questions saved to concept', { conceptId: data.conceptId, count: matchingQuestions.length });
   }
 
@@ -283,11 +303,15 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
     selectedModels,
     questionCount,
     totalPoints: matchingQuestions.reduce((sum: number, q: any) => sum + (q.points || 0), 0),
-    questions: matchingQuestions.map((q: any) => ({
-      id: q.id, type: q.type, text: q.text, options: q.options || undefined,
-      correctAnswer: q.correctAnswer || '', explanation: q.explanation || '',
-      difficulty: q.difficulty || 'medium', points: q.points || 1,
-    })),
+    questions: matchingQuestions.map((q: any) => {
+      const questionText = q.question || q.text || (typeof q.data === 'object' && q.data ? (q.data.question || q.data.text) : '') || fallbackText(q.type, q.options);
+      const correctAnswer = q.answer || q.correctAnswer || (typeof q.data === 'object' && q.data ? (q.data.answer || q.data.correctAnswer) : '') || '';
+      return {
+        id: q.id, type: q.type, text: questionText, options: q.options || undefined,
+        correctAnswer, explanation: q.explanation || '',
+        difficulty: q.difficulty || 'medium', points: q.points || 1,
+      };
+    }),
     passingScore: data.passingScore ?? 50,
     maxAttempts: data.maxAttempts ?? 3,
     shuffleQuestions: data.shuffleQuestions ?? true,
@@ -305,7 +329,7 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
 
   logger.info('Quiz V2 created', { quizId, classId: data.classId, title: data.title, totalQuestions: matchingQuestions.length });
 
-  return { ...quizData, totalQuestions: matchingQuestions.length, questions: matchingQuestions.map((q: any) => ({ id: q.id, type: q.type, text: q.text, options: q.options, correctAnswer: q.correctAnswer, explanation: q.explanation, difficulty: q.difficulty, points: q.points })) };
+  return { ...quizData, totalQuestions: matchingQuestions.length, questions: matchingQuestions.map((q: any) => ({ id: q.id, type: q.type, text: q.text || q.question || fallbackText(q.type, q.options), options: q.options, correctAnswer: q.correctAnswer, explanation: q.explanation, difficulty: q.difficulty, points: q.points })) };
 }
 
 export async function updateQuiz(quizId: string, teacherId: string, data: Record<string, unknown>) {
@@ -350,8 +374,8 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
   const maxAttempts = (quizData.maxAttempts as number) || 3;
   if (completedAttempts >= maxAttempts) throw new ForbiddenError('Maximum attempts reached');
 
-  const { data: userRow } = await supabase.from('users').select('level').eq('id', studentId).maybeSingle();
-  const studentLevel: StudentLevel = ((userRow?.level as StudentLevel) || 'beginner');
+  const { data: userRow } = await supabase.from('users').select('data').eq('id', studentId).maybeSingle();
+  const studentLevel: StudentLevel = ((userRow?.data as any)?.level as StudentLevel) || 'beginner';
 
   let questionBank: Array<Record<string, unknown>>;
 
@@ -360,7 +384,7 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
     questionBank = storedQuestions.map((q: any) => ({
       id: q.id || uuidv4(), type: q.type || 'short_answer',
       difficulty: (q.difficulty as Difficulty) || 'medium',
-      text: q.text || q.question || '', options: q.options || undefined,
+      text: q.text || q.question || fallbackText(q.type, q.options), options: q.options || undefined,
       correctAnswer: q.correctAnswer || '', explanation: q.explanation || '',
       points: q.points || 1,
     }));
@@ -371,7 +395,7 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
     questionBank = rows.map((r: any) => ({
       id: r.id, type: r.type || 'short_answer',
       difficulty: (r.difficulty as Difficulty) || 'medium',
-      text: r.text || r.question || '', options: r.options || undefined,
+      text: r.text || r.question || fallbackText(r.type, r.options), options: r.options || undefined,
       correctAnswer: r.correct_answer || r.correctAnswer || '', explanation: r.explanation || '',
       points: r.points || 1,
     }));
@@ -447,7 +471,7 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     questionBank = storedQuestions.map((q: any) => ({
       id: q.id || uuidv4(), type: q.type || 'short_answer',
       difficulty: (q.difficulty as Difficulty) || 'medium',
-      text: q.text || q.question || '', options: q.options || undefined,
+      text: q.text || q.question || fallbackText(q.type, q.options), options: q.options || undefined,
       correctAnswer: q.correctAnswer || '', explanation: q.explanation || '',
       points: q.points || 1,
     }));
@@ -456,7 +480,7 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     questionBank = rows.map((r: any) => ({
       id: r.id, type: r.type || 'short_answer',
       difficulty: (r.difficulty as Difficulty) || 'medium',
-      text: r.text || r.question || '', options: r.options || undefined,
+      text: r.text || r.question || fallbackText(r.type, r.options), options: r.options || undefined,
       correctAnswer: r.correct_answer || r.correctAnswer || '', explanation: r.explanation || '',
       points: r.points || 1,
     }));
@@ -511,7 +535,9 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
   );
   const newLevel = computeLevel(accuracy, avgReactionTime, complexityHandled);
 
-  const { error: updateErr } = await supabase.from('users').update({ level: newLevel }).eq('id', studentId);
+  const { data: existing } = await supabase.from('users').select('data').eq('id', studentId).maybeSingle();
+  const merged = { ...((existing?.data as Record<string, unknown>) || {}), level: newLevel };
+  const { error: updateErr } = await supabase.from('users').update({ data: merged }).eq('id', studentId);
   if (updateErr) throw updateErr;
 
   const result: Record<string, unknown> = {
@@ -520,6 +546,27 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     timeSpent, submittedAt: data.submittedAt, status: 'completed',
   };
   await nosqlUpdate(QAV2, attemptId, result);
+
+  const now = new Date().toISOString();
+  const gradeId = uuidv4();
+  const { error: gradeErr } = await supabase.from('firestore_docs').insert({
+    collection: 'grades',
+    doc_id: gradeId,
+    data: {
+      studentId,
+      courseId: quizData.courseId,
+      subjectId: quizData.subjectId,
+      classId: quizData.classId,
+      itemName: quizData.title,
+      score,
+      totalPoints,
+      percentage,
+      gradedBy: 'auto',
+      createdAt: now,
+      updatedAt: now,
+    },
+  });
+  if (gradeErr) logger.warn('Failed to create quiz grade record', { error: gradeErr.message });
 
   logger.info('Quiz V2 attempt submitted', { attemptId, studentId, score, percentage, newLevel });
 

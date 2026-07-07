@@ -13,7 +13,8 @@ import { useAuthStore } from '@/store/authStore';
 import { cn, getTimeGreeting } from '@/lib/utils';
 import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
-import { getGradesByStudent, getClass } from '@/services/dataService';
+import api from '@/services/api';
+import { getClass } from '@/services/dataService';
 
 interface ResultEntry { id: string; itemName: string; score: number; maxScore: number; percentage: number; gradedAt: string; feedback?: string }
 
@@ -58,34 +59,26 @@ export default function StudentDashboardPage() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['student-dashboard', studentId],
     enabled: !!studentId,
+    refetchInterval: 30000,
     queryFn: async () => {
       if (!studentId) throw new Error('Not authenticated');
       const now = new Date();
       const greeting = getTimeGreeting();
       const authUserData = useAuthStore.getState().user;
 
-      const [grades, classDoc] = await Promise.all([
-        getGradesByStudent(studentId),
+      const [dashRes, classDoc] = await Promise.all([
+        api.get(`/analytics/student/dashboard`).then((r) => r.data.data),
         authUserData?.classId ? getClass(authUserData.classId) : Promise.resolve(null),
       ]);
 
-      const recentResults: ResultEntry[] = grades
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, 5)
-        .map((g) => ({
-          id: g.id, itemName: g.itemName ?? _('Assessment'), score: g.score,
-          maxScore: g.totalPoints, percentage: g.percentage, gradedAt: g.createdAt, feedback: g.feedback,
-        }));
-
-      const avgGrade = grades.length > 0
-        ? Math.round(grades.reduce((s, g) => s + g.percentage, 0) / grades.length) : 0;
+      const recentResults: ResultEntry[] = [];
 
       return {
         displayName, greeting, motivationalMessage: messages[messageIndex],
         todayDate: now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
         recentResults, subjectsCount: classDoc?.subjectIds?.length ?? 0,
         className: classDoc?.name ?? null, classGrade: classDoc?.grade ?? null,
-        avgGrade, totalAssessments: grades.length,
+        avgGrade: dashRes.averageScore ?? 0, totalAssessments: dashRes.totalAssessments ?? 0,
       } satisfies DashboardData;
     },
   });

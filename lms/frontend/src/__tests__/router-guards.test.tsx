@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import { ProtectedRoute } from '@/app/router/ProtectedRoute';
+
+vi.mock('react-router-dom', () => ({
+  MemoryRouter: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  Navigate: () => null,
+  useLocation: () => ({ pathname: '/admin/dashboard', search: '', hash: '', state: null, key: 'default' }),
+}));
 
 vi.mock('@/store/authStore', () => ({
   useAuthStore: vi.fn(),
@@ -17,6 +21,7 @@ vi.mock('@/supabase/config', () => ({
   },
 }));
 
+import { ProtectedRoute } from '@/app/router/ProtectedRoute';
 import { useAuthStore } from '@/store/authStore';
 
 describe('Route Guards', () => {
@@ -34,11 +39,9 @@ describe('Route Guards', () => {
     });
 
     const { container } = render(
-      <MemoryRouter initialEntries={['/admin/dashboard']}>
-        <ProtectedRoute roles={['admin', 'super_admin']}>
-          <div>Admin Content</div>
-        </ProtectedRoute>
-      </MemoryRouter>
+      <ProtectedRoute roles={['admin', 'super_admin']}>
+        <div>Admin Content</div>
+      </ProtectedRoute>
     );
 
     expect(container.textContent).not.toContain('Admin Content');
@@ -54,11 +57,9 @@ describe('Route Guards', () => {
     });
 
     const { container } = render(
-      <MemoryRouter initialEntries={['/admin/dashboard']}>
-        <ProtectedRoute roles={['admin', 'super_admin']}>
-          <div>Admin Content</div>
-        </ProtectedRoute>
-      </MemoryRouter>
+      <ProtectedRoute roles={['admin', 'super_admin']}>
+        <div>Admin Content</div>
+      </ProtectedRoute>
     );
 
     expect(container.textContent).toContain('Admin Content');
@@ -74,11 +75,9 @@ describe('Route Guards', () => {
     });
 
     const { container } = render(
-      <MemoryRouter initialEntries={['/admin/dashboard']}>
-        <ProtectedRoute roles={['admin', 'super_admin']}>
-          <div>Admin Content</div>
-        </ProtectedRoute>
-      </MemoryRouter>
+      <ProtectedRoute roles={['admin', 'super_admin']}>
+        <div>Admin Content</div>
+      </ProtectedRoute>
     );
 
     expect(container.textContent).not.toContain('Admin Content');
@@ -94,11 +93,9 @@ describe('Route Guards', () => {
     });
 
     const { container } = render(
-      <MemoryRouter initialEntries={['/teacher/dashboard']}>
-        <ProtectedRoute roles={['teacher']}>
-          <div>Teacher Content</div>
-        </ProtectedRoute>
-      </MemoryRouter>
+      <ProtectedRoute roles={['teacher']}>
+        <div>Teacher Content</div>
+      </ProtectedRoute>
     );
 
     expect(container.textContent).not.toContain('Teacher Content');
@@ -114,11 +111,9 @@ describe('Route Guards', () => {
     });
 
     const { container } = render(
-      <MemoryRouter initialEntries={['/admin/dashboard']}>
-        <ProtectedRoute roles={['admin', 'super_admin']}>
-          <div>Super Admin Content</div>
-        </ProtectedRoute>
-      </MemoryRouter>
+      <ProtectedRoute roles={['admin', 'super_admin']}>
+        <div>Super Admin Content</div>
+      </ProtectedRoute>
     );
 
     expect(container.textContent).toContain('Super Admin Content');

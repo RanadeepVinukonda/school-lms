@@ -45,7 +45,7 @@ export default function TeacherTimetablePage() {
   const timetableEntries = ((timetableRes as any)?.data || []) as any[];
 
   const classOptions = useMemo(
-    () => classesData.map((c) => ({ value: c.id, label: c.name })),
+    () => classesData.map((c) => ({ value: c.id, label: `${c.name}${c.section ? ` - ${c.section}` : ''}` })),
     [classesData],
   );
 

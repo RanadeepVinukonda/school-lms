@@ -16,7 +16,7 @@ import { jest } from '@jest/globals';
 
 const CHAINABLE_METHODS = [
   'select', 'eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'in', 'not', 'is',
-  'order', 'limit', 'offset', 'contains', 'filter', 'count',
+  'like', 'order', 'limit', 'offset', 'contains', 'filter', 'count',
   'textSearch', 'or', 'overlaps', 'insert', 'update', 'upsert', 'delete',
   'range',
 ] as const;
@@ -32,6 +32,7 @@ export interface MockQueryChain {
   in: jest.Mock<any>;
   not: jest.Mock<any>;
   is: jest.Mock<any>;
+  like: jest.Mock<any>;
   order: jest.Mock<any>;
   limit: jest.Mock<any>;
   range: jest.Mock<any>;

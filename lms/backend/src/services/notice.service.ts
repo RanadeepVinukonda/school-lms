@@ -14,12 +14,14 @@ export async function createNotice(schoolId: string, userId: string, data: { tit
   return result;
 }
 
-export async function getNotices(schoolId: string, classId?: string) {
+export async function getNotices(schoolId: string, classIds?: string | string[]) {
   const supabase = getSupabaseAdmin(); if (!supabase) return [];
   const now = new Date().toISOString();
   let query = supabase.from('notice_board').select('*').eq('school_id', schoolId);
-  if (classId) {
-    query = query.or(`target_class_id.is.null,target_class_id.eq.${classId}`);
+  if (classIds && classIds.length > 0) {
+    const ids = Array.isArray(classIds) ? classIds : [classIds];
+    const filters = ids.map((id) => `target_class_id.eq.${id}`).join(',');
+    query = query.or(`target_class_id.is.null,${filters}`);
   }
   const { data: rawNotices, error } = await query.order('created_at', { ascending: false });
   if (error) throw new Error(`Failed to get notices: ${error.message}`);

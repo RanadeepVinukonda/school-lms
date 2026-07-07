@@ -39,6 +39,7 @@ export default function StudentProfilePage() {
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-profile', authUser?.id],
+    refetchInterval: 30000,
     queryFn: async () => {
       if (!authUser?.id) throw new Error('User not found');
       const firestoreUser = await getUser(authUser.id);

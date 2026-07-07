@@ -36,6 +36,21 @@ export async function verifyToken(idToken: string): Promise<AuthUser> {
   return extractUser(user);
 }
 
+async function retryOnRateLimit<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const isRateLimit = msg.toLowerCase().includes('rate') || msg.toLowerCase().includes('too many') || msg.toLowerCase().includes('429');
+      if (!isRateLimit || attempt === maxRetries - 1) throw err;
+      const delay = Math.min(1000 * Math.pow(2, attempt), 8000);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+
 export async function createUser(params: {
   email: string;
   password: string;
@@ -46,7 +61,7 @@ export async function createUser(params: {
 }): Promise<AuthUser> {
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error('Supabase not configured');
-  const { data, error } = await supabase.auth.admin.createUser({
+  const { data, error } = await retryOnRateLimit(() => supabase.auth.admin.createUser({
     email: params.email,
     password: params.password,
     email_confirm: true,
@@ -56,7 +71,7 @@ export async function createUser(params: {
       photo_url: params.photoURL || '',
     },
     app_metadata: params.role ? { [USER_META_ROLE]: params.role } : undefined,
-  });
+  }));
   if (error || !data.user) throw new Error('Failed to create user: ' + (error?.message || 'Unknown'));
   return extractUser(data.user);
 }
@@ -90,7 +105,7 @@ export async function updateUser(
   if (params.role) appMeta[USER_META_ROLE] = params.role;
   if (Object.keys(appMeta).length > 0) updateBody.app_metadata = appMeta;
 
-  const { data, error } = await supabase.auth.admin.updateUserById(uid, updateBody);
+  const { data, error } = await retryOnRateLimit(() => supabase.auth.admin.updateUserById(uid, updateBody));
   if (error || !data.user) throw new Error('Failed to update user: ' + (error?.message || 'Unknown'));
   return extractUser(data.user);
 }
@@ -98,7 +113,7 @@ export async function updateUser(
 export async function deleteUser(uid: string): Promise<void> {
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error('Supabase not configured');
-  const { error } = await supabase.auth.admin.deleteUser(uid);
+  const { error } = await retryOnRateLimit(() => supabase.auth.admin.deleteUser(uid));
   if (error) throw new Error('Failed to delete user: ' + error.message);
 }
 
@@ -109,9 +124,9 @@ export async function setCustomClaims(
   // ponytail: store claims in app_metadata — not identical to Firebase custom claims but sufficient
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error('Supabase not configured');
-  const { error } = await supabase.auth.admin.updateUserById(uid, {
+  const { error } = await retryOnRateLimit(() => supabase.auth.admin.updateUserById(uid, {
     app_metadata: claims,
-  });
+  }));
   if (error) throw new Error('Failed to set claims: ' + error.message);
 }
 
@@ -125,11 +140,20 @@ export async function revokeTokens(uid: string): Promise<void> {
 export async function getUserByEmail(email: string): Promise<AuthUser | null> {
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error('Supabase not configured');
-  // ponytail: listUsers and filter in-memory — upgrade to admin API filter when available
-  const { data, error } = await supabase.auth.admin.listUsers();
-  if (error) return null;
-  const user = data.users.find((u: any) => u.email === email);
-  return user ? extractUser(user) : null;
+  // Query users table only — avoids Auth admin API rate limits entirely.
+  // The DB row is always created alongside the Auth user, so a missing DB row
+  // means the Auth user does not exist (or was orphaned — handled by createUser).
+  const { data: dbUser } = await supabase.from('users').select('id, email, display_name, role, phone_number, photo_url, is_active').eq('email', email).maybeSingle();
+  if (!dbUser) return null;
+  return {
+    uid: dbUser.id,
+    email: dbUser.email || '',
+    displayName: dbUser.display_name || '',
+    role: dbUser.role || '',
+    phoneNumber: dbUser.phone_number || '',
+    photoURL: dbUser.photo_url || '',
+    disabled: dbUser.is_active === false,
+  };
 }
 
 export async function getUserById(uid: string): Promise<AuthUser | null> {
@@ -146,11 +170,10 @@ export async function listUsers(
 ): Promise<{ users: AuthUser[]; pageToken?: string }> {
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error('Supabase not configured');
-  // ponytail: pagination via page param — Supabase GoTrue uses page/per_page
-  const { data, error } = await supabase.auth.admin.listUsers({
+  const { data, error } = await retryOnRateLimit(() => supabase.auth.admin.listUsers({
     page: 1,
     perPage: maxResults || 1000,
-  });
+  }));
   if (error) return { users: [] };
   return { users: data.users.map(u => extractUser(u)) };
 }

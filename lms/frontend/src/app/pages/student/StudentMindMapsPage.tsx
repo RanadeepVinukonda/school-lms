@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -40,6 +41,10 @@ export default function StudentMindMapsPage() {
       setNewTitle('');
       setNewDesc('');
       navigate(ROUTES.STUDENT_MIND_MAP_EDITOR(data.id));
+    },
+    onError: (err: unknown) => {
+      const apiErr = err as { message?: string; status?: number };
+      toast.error(apiErr?.message || 'Failed to create mind map');
     },
   });
 

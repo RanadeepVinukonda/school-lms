@@ -24,41 +24,57 @@ export async function markAttendance(data: {
   if (existingError) throw existingError;
   const existingStudentIds = new Set((existingRows || []).map((r: any) => r.student_id).filter(Boolean));
 
+  const now = new Date().toISOString();
+
   for (const studentId of data.studentIds) {
     if (existingStudentIds.has(studentId)) {
-      logger.warn('Skipping duplicate attendance', { studentId, date: data.date });
-      continue;
-    }
-    const id = uuidv4();
-    const now = new Date().toISOString();
-    const record = {
-      id,
-      studentId,
-      classId: data.classId,
-      date: data.date,
-      status: data.status,
-      markedBy: data.markedBy,
-      note: data.note || '',
-      markedAt: now,
-      createdAt: now,
-      updatedAt: now,
-    };
-    const dbRecord = {
-      id,
-      student_id: record.studentId,
-      class_id: record.classId,
-      date: record.date,
-      status: record.status,
-      marked_by: record.markedBy,
-      note: record.note,
-      marked_at: record.markedAt,
-      created_at: record.createdAt,
-      updated_at: record.updatedAt,
-    };
-    const { error: insertError } = await supabase.from('attendance').insert(dbRecord);
-    if (insertError) throw insertError;
+      // Update existing record
+      const { error: updateError } = await supabase
+        .from('attendance')
+        .update({
+          status: data.status,
+          marked_by: data.markedBy,
+          note: data.note || '',
+          marked_at: now,
+          updated_at: now,
+        })
+        .eq('student_id', studentId)
+        .eq('class_id', data.classId)
+        .eq('date', data.date);
+      if (updateError) throw updateError;
 
-    records.push(record);
+      records.push({ studentId, classId: data.classId, date: data.date, status: data.status, markedBy: data.markedBy, note: data.note || '', markedAt: now, updatedAt: now });
+    } else {
+      // Insert new record
+      const id = uuidv4();
+      const dbRecord = {
+        id,
+        student_id: studentId,
+        class_id: data.classId,
+        date: data.date,
+        status: data.status,
+        marked_by: data.markedBy,
+        note: data.note || '',
+        marked_at: now,
+        created_at: now,
+        updated_at: now,
+      };
+      const { error: insertError } = await supabase.from('attendance').insert(dbRecord);
+      if (insertError) throw insertError;
+
+      records.push({
+        id,
+        studentId,
+        classId: data.classId,
+        date: data.date,
+        status: data.status,
+        markedBy: data.markedBy,
+        note: data.note || '',
+        markedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
   }
 
   logger.info('Attendance marked', { classId: data.classId, date: data.date, count: records.length });

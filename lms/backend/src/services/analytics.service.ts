@@ -12,12 +12,12 @@ export async function getStudentDashboard(studentId: string) {
   
   const { data: enrollments, error: enrollmentsErr } = await supabase
     .from('enrollments')
-    .select('course_id')
-    .eq('student_id', studentId)
+    .select('courseId')
+    .eq('studentId', studentId)
     .eq('status', 'active');
   if (enrollmentsErr) throw new Error(enrollmentsErr.message);
   
-  const courseIds = (enrollments || []).map((e: { course_id: string }) => e.course_id);
+  const courseIds = (enrollments || []).map((e: { courseId: string }) => e.courseId);
   const totalCourses = courseIds.length;
 
   const { count: unreadNotificationsCount } = await supabase
@@ -28,14 +28,37 @@ export async function getStudentDashboard(studentId: string) {
 
   const { data: grades, error: gradesErr } = await supabase
     .from('grades')
-    .select('score, total_points')
-    .eq('student_id', studentId);
+    .select('score, totalPoints, percentage')
+    .eq('studentId', studentId);
   if (gradesErr) throw new Error(gradesErr.message);
 
   const gradesList = grades || [];
   const totalScore = gradesList.reduce((sum: number, g: { score?: number }) => sum + (g.score || 0), 0);
-  const totalPoints = gradesList.reduce((sum: number, g: { total_points?: number }) => sum + (g.total_points || 1), 0);
+  const totalPoints = gradesList.reduce((sum: number, g: { totalPoints?: number }) => sum + (g.totalPoints || 1), 0);
   const overallGrade = safePct(totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0);
+
+  const { data: quizAttempts } = await supabase
+    .from('nosql_docs')
+    .select('data')
+    .eq('collection', 'quizAttemptV2')
+    .eq('data->>studentId', studentId)
+    .eq('data->>status', 'completed');
+
+  const { data: assignAttempts } = await supabase
+    .from('nosql_docs')
+    .select('data')
+    .eq('collection', 'assignmentSubmissionV2')
+    .eq('data->>studentId', studentId)
+    .eq('data->>status', 'completed');
+
+  const allPercentages: number[] = [];
+  for (const g of gradesList) { if (g.percentage > 0) allPercentages.push(g.percentage); }
+  for (const a of (quizAttempts || [])) { const pct = (a.data as any)?.percentage; if (pct > 0) allPercentages.push(pct); }
+  for (const a of (assignAttempts || [])) { const pct = (a.data as any)?.percentage; if (pct > 0) allPercentages.push(pct); }
+
+  const totalAssessments = gradesList.length + (quizAttempts?.length || 0) + (assignAttempts?.length || 0);
+  const avgGrade = allPercentages.length > 0
+    ? Math.round(allPercentages.reduce((s, p) => s + p, 0) / allPercentages.length) : 0;
 
   const now = new Date().toISOString();
   
@@ -57,7 +80,8 @@ export async function getStudentDashboard(studentId: string) {
     totalCourses,
     unreadNotifications: unreadNotificationsCount || 0,
     overallGrade,
-    averageScore: overallGrade,
+    averageScore: avgGrade,
+    totalAssessments,
     pendingAssignments: pendingAssignments || 0,
     upcomingExams: upcomingExams || 0,
     recentActivity: [],
@@ -178,7 +202,7 @@ export async function getCourseAnalytics(courseId: string) {
   const { count: enrolledStudents } = await supabase
     .from('enrollments')
     .select('id', { count: 'exact', head: true })
-    .eq('course_id', courseId)
+    .eq('courseId', courseId)
     .eq('status', 'active');
 
   const { count: totalLessons } = await supabase
@@ -198,13 +222,13 @@ export async function getCourseAnalytics(courseId: string) {
 
   const { data: grades, error: gradesErr } = await supabase
     .from('grades')
-    .select('score, total_points')
-    .eq('course_id', courseId);
+    .select('score, totalPoints')
+    .eq('courseId', courseId);
   if (gradesErr) throw new Error(gradesErr.message);
 
   const gradesList = grades || [];
   const totalScore = gradesList.reduce((sum: number, g: { score?: number }) => sum + (g.score || 0), 0);
-  const totalPoints = gradesList.reduce((sum: number, g: { total_points?: number }) => sum + (g.total_points || 1), 0);
+  const totalPoints = gradesList.reduce((sum: number, g: { totalPoints?: number }) => sum + (g.totalPoints || 1), 0);
   const averageGrade = safePct(totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0);
 
   const { data: lessons, error: lessonsErr } = await supabase

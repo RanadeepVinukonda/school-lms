@@ -243,6 +243,27 @@ export async function submitAssignment(attemptId: string, studentId: string, dat
   const result: Record<string, unknown> = { answers: gradedAnswers, score, totalPoints: assignmentData.totalPoints, percentage, passed, timeSpent, submittedAt: data.submittedAt, status: 'completed', level };
   await nosqlUpdate(ASSIGNMENT_SUB_V2, attemptId, result);
 
+  const now = new Date().toISOString();
+  const gradeId = uuidv4();
+  const { error: gradeErr } = await getSupabaseAdmin()!.from('firestore_docs').insert({
+    collection: 'grades',
+    doc_id: gradeId,
+    data: {
+      studentId,
+      courseId: assignmentData.courseId,
+      subjectId: assignmentData.subjectId,
+      classId: assignmentData.classId,
+      itemName: assignmentData.title,
+      score,
+      totalPoints: assignmentData.totalPoints,
+      percentage,
+      gradedBy: 'auto',
+      createdAt: now,
+      updatedAt: now,
+    },
+  });
+  if (gradeErr) logger.warn('Failed to create assignment grade record', { error: gradeErr.message });
+
   logger.info('Assignment V2 attempt submitted', { attemptId, studentId, score, percentage, level });
   return { id: attemptId, ...attemptData, ...result };
 }

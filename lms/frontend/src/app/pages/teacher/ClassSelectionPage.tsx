@@ -177,7 +177,7 @@ export default function ClassSelectionPage() {
 
       const selectedNames = classes
         .filter((c) => selectedIds.has(c.id))
-        .map((c) => c.name)
+        .map((c) => `${c.name}${c.section ? ` - ${c.section}` : ''}`)
         .join(', ');
 
       logAudit({
@@ -276,7 +276,7 @@ export default function ClassSelectionPage() {
                     <div className="flex items-start gap-3">
                       <Checkbox checked={checked} onCheckedChange={() => toggle(cls.id)} />
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-lg font-semibold">{cls.name}</h3>
+                        <h3 className="text-lg font-semibold">{cls.name}{cls.section ? ` - ${cls.section}` : ''}</h3>
                         <p className="text-sm text-muted-foreground">
                           {_('Grade')} {cls.grade}{cls.code ? ` · ${cls.code}` : ''}
                         </p>

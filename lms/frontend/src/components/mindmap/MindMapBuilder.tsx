@@ -189,6 +189,8 @@ export function MindMapBuilder({ nodes, edges, onChange, readOnly = false }: Min
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNode && !readOnly) {
         deleteNode(selectedNode);
       }
