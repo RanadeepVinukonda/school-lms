@@ -28,7 +28,7 @@ export async function getStudentDashboard(studentId: string) {
 
   const { data: grades, error: gradesErr } = await supabase
     .from('grades')
-    .select('score, totalPoints')
+    .select('score, totalPoints, percentage')
     .eq('studentId', studentId);
   if (gradesErr) throw new Error(gradesErr.message);
 
@@ -36,6 +36,29 @@ export async function getStudentDashboard(studentId: string) {
   const totalScore = gradesList.reduce((sum: number, g: { score?: number }) => sum + (g.score || 0), 0);
   const totalPoints = gradesList.reduce((sum: number, g: { totalPoints?: number }) => sum + (g.totalPoints || 1), 0);
   const overallGrade = safePct(totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0);
+
+  const { data: quizAttempts } = await supabase
+    .from('nosql_docs')
+    .select('data')
+    .eq('collection', 'quizAttemptV2')
+    .filter('data->>studentId', 'eq', studentId)
+    .filter('data->>status', 'eq', 'completed');
+
+  const { data: assignAttempts } = await supabase
+    .from('nosql_docs')
+    .select('data')
+    .eq('collection', 'assignmentSubmissionV2')
+    .filter('data->>studentId', 'eq', studentId)
+    .filter('data->>status', 'eq', 'completed');
+
+  const allPercentages: number[] = [];
+  for (const g of gradesList) { if (g.percentage > 0) allPercentages.push(g.percentage); }
+  for (const a of (quizAttempts || [])) { const pct = (a.data as any)?.percentage; if (pct > 0) allPercentages.push(pct); }
+  for (const a of (assignAttempts || [])) { const pct = (a.data as any)?.percentage; if (pct > 0) allPercentages.push(pct); }
+
+  const totalAssessments = gradesList.length + (quizAttempts?.length || 0) + (assignAttempts?.length || 0);
+  const avgGrade = allPercentages.length > 0
+    ? Math.round(allPercentages.reduce((s, p) => s + p, 0) / allPercentages.length) : 0;
 
   const now = new Date().toISOString();
   
@@ -57,7 +80,8 @@ export async function getStudentDashboard(studentId: string) {
     totalCourses,
     unreadNotifications: unreadNotificationsCount || 0,
     overallGrade,
-    averageScore: overallGrade,
+    averageScore: avgGrade,
+    totalAssessments,
     pendingAssignments: pendingAssignments || 0,
     upcomingExams: upcomingExams || 0,
     recentActivity: [],
