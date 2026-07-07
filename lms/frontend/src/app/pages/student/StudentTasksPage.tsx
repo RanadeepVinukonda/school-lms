@@ -30,6 +30,7 @@ export default function StudentTasksPage() {
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-tasks', studentId, classId],
+    refetchInterval: 30000,
     queryFn: async () => {
       if (!studentId) return [];
       const [allSubjects, classDoc] = await Promise.all([
