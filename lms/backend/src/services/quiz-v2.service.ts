@@ -13,6 +13,15 @@ import { computeMastery } from './adaptive/mastery.service';
 const QV2 = 'quizV2';
 const QAV2 = 'quizAttemptV2';
 
+function fallbackText(type: string, _options: any): string {
+  if (type === 'mcq') return 'Choose the correct answer';
+  if (type === 'true_false') return 'State whether true or false';
+  if (type === 'fill_blank') return 'Fill in the blank';
+  if (type === 'matching') return 'Match the following items';
+  if (type === 'numerical') return 'Calculate the answer';
+  return 'Answer the following question';
+}
+
 async function nosqlGet(col: string, id: string) {
   const { data: row } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
   return { exists: !!row, data: (row?.data as Record<string, unknown>) ?? null };
@@ -235,15 +244,6 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
         logger.error('Failed to generate questions for quiz', { conceptName, error: errMsg });
       }
     }
-  }
-
-  function fallbackText(type: string, options: any): string {
-    if (type === 'mcq') return 'Choose the correct answer';
-    if (type === 'true_false') return 'State whether true or false';
-    if (type === 'fill_blank') return 'Fill in the blank';
-    if (type === 'matching') return 'Match the following items';
-    if (type === 'numerical') return 'Calculate the answer';
-    return 'Answer the following question';
   }
 
   if (data.preview) {
@@ -546,6 +546,27 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     timeSpent, submittedAt: data.submittedAt, status: 'completed',
   };
   await nosqlUpdate(QAV2, attemptId, result);
+
+  const now = new Date().toISOString();
+  const gradeId = uuidv4();
+  const { error: gradeErr } = await supabase.from('firestore_docs').insert({
+    collection: 'grades',
+    doc_id: gradeId,
+    data: {
+      studentId,
+      courseId: quizData.courseId,
+      subjectId: quizData.subjectId,
+      classId: quizData.classId,
+      itemName: quizData.title,
+      score,
+      totalPoints,
+      percentage,
+      gradedBy: 'auto',
+      createdAt: now,
+      updatedAt: now,
+    },
+  });
+  if (gradeErr) logger.warn('Failed to create quiz grade record', { error: gradeErr.message });
 
   logger.info('Quiz V2 attempt submitted', { attemptId, studentId, score, percentage, newLevel });
 

@@ -162,8 +162,8 @@ export async function createUser(data: {
     // If user already exists in Auth but DB row is missing, look up via Auth API and create DB row
     if (err.message?.toLowerCase().includes('already exists') || err.message?.toLowerCase().includes('already registered')) {
       const supabase = getSupabaseAdmin()!;
-      const { data: authUsers } = await supabase.auth.admin.listUsers({ filter: { email: generatedEmail } });
-      const authUser = authUsers?.users?.[0];
+      const { data: authUsers } = await supabase.auth.admin.listUsers();
+      const authUser = authUsers?.users?.find((u: any) => u.email === generatedEmail);
       if (authUser) {
         const now = new Date().toISOString();
         const userData = {
