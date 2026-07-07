@@ -41,15 +41,15 @@ export async function getStudentDashboard(studentId: string) {
     .from('nosql_docs')
     .select('data')
     .eq('collection', 'quizAttemptV2')
-    .filter('data->>studentId', 'eq', studentId)
-    .filter('data->>status', 'eq', 'completed');
+    .eq('data->>studentId', studentId)
+    .eq('data->>status', 'completed');
 
   const { data: assignAttempts } = await supabase
     .from('nosql_docs')
     .select('data')
     .eq('collection', 'assignmentSubmissionV2')
-    .filter('data->>studentId', 'eq', studentId)
-    .filter('data->>status', 'eq', 'completed');
+    .eq('data->>studentId', studentId)
+    .eq('data->>status', 'completed');
 
   const allPercentages: number[] = [];
   for (const g of gradesList) { if (g.percentage > 0) allPercentages.push(g.percentage); }
