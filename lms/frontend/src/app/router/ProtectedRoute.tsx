@@ -39,7 +39,8 @@ export function ProtectedRoute({ children, roles, checkSetup }: ProtectedRoutePr
   }
 
   if (!isAuthenticated || !user) {
-    return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
+    if (location.pathname === ROUTES.LOGIN) return null;
+    return <Navigate to={ROUTES.LOGIN} replace />;
   }
 
   if (roles && !hasAnyRole(user.role, roles)) {
