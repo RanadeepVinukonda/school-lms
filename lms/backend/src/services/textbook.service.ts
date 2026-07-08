@@ -163,26 +163,25 @@ export async function createTextbook(data: {
 
   if (insertError) throw insertError;
 
-  const populateAndMaybeEnrich = async () => {
-    await populateMockContent(textbookId, data.title);
-    if (pdfUrl) {
-      try {
-        const { processUploadInline } = require('./pipeline.service');
-        await processUploadInline(textbookId);
-      } catch (err) {
-        logger.info('Background AI enrichment not available, mock content is ready', { textbookId });
-      }
-    }
-  };
-
   try {
     await addUploadJob(textbookId, storagePath);
     status = 'processing';
     logger.info('Textbook upload job added to background queue', { textbookId });
   } catch (err) {
-    logger.error('Failed to add upload job, falling back to inline', { textbookId, err });
-    populateAndMaybeEnrich().catch((e: unknown) => logger.error('Background populate failed', { textbookId, e }));
-    status = 'ready';
+    logger.info('pg-boss unavailable — processing inline', { textbookId, err: err instanceof Error ? err.message : String(err) });
+    try {
+      await populateMockContent(textbookId, data.title);
+      status = 'ready';
+      if (pdfUrl) {
+        const { processUploadInline } = require('./pipeline.service');
+        processUploadInline(textbookId).catch((e: unknown) =>
+          logger.info('AI enrichment not available, mock content is ready', { textbookId })
+        );
+      }
+    } catch (mockErr) {
+      logger.error('Mock content generation failed', { textbookId, err: mockErr });
+      status = 'error';
+    }
   }
 
   if (assignment?.id) {

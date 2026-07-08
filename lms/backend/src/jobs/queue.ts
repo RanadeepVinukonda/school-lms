@@ -23,8 +23,8 @@ async function getBoss() {
 export async function addUploadJob(textbookId: string, storagePath: string) {
   const b = await getBoss();
   if (!b) {
-    logger.info('pg-boss not available, skipping job send. Textbook will process inline.', { textbookId });
-    return;
+    logger.info('pg-boss not available, throwing so caller triggers inline processing.', { textbookId });
+    throw new Error('pg-boss not available');
   }
   await b.send('uploadQueue', { textbookId, storagePath }, {
     jobId: `upload_${textbookId}`,

@@ -27,7 +27,12 @@ export async function getNotices(schoolId: string, classIds?: string | string[])
   if (error) throw new Error(`Failed to get notices: ${error.message}`);
   if (!rawNotices || rawNotices.length === 0) return [];
   // ponytail: client-side filter for expired — add DB-level filter when expires_at is indexed
-  const notices = rawNotices.filter(n => !n.expires_at || n.expires_at >= now);
+  const notices = rawNotices.filter(n => {
+    if (!n.expires_at) return true;
+    const expiresAt = new Date(n.expires_at).getTime();
+    const nowMs = new Date(now).getTime();
+    return isNaN(expiresAt) || expiresAt >= nowMs;
+  });
 
   const userIds = [...new Set(notices.map(n => n.created_by).filter(Boolean))];
   if (userIds.length > 0) {

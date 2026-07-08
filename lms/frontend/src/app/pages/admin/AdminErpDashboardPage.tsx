@@ -18,7 +18,7 @@ import { staggerContainer, cardStackReveal } from '@/lib/motion';
 const QUICK_LINKS = [
   { icon: 'payments', label: 'Fee Management', href: '/admin/fee', color: 'text-primary', bg: 'bg-primary-container' },
   { icon: 'calendar_month', label: 'Timetable', href: '/admin/timetable', color: 'text-success', bg: 'bg-success-container' },
-  { icon: 'campaign', label: 'Notice Board', href: '/admin/notice-board', color: 'text-warning', bg: 'bg-warning-container' },
+  { icon: 'campaign', label: 'Notice Board', href: '/admin/noticeboard', color: 'text-warning', bg: 'bg-warning-container' },
   { icon: 'fact_check', label: 'Attendance', href: '/admin/attendance', color: 'text-error', bg: 'bg-error-container' },
   { icon: 'directions_bus', label: 'Transport', href: '/admin/transport', color: 'text-info', bg: 'bg-info-container' },
   { icon: 'inventory_2', label: 'Inventory', href: '/admin/inventory', color: 'text-secondary', bg: 'bg-secondary-container' },
@@ -279,7 +279,7 @@ export default function AdminErpDashboardPage() {
                     )}
                     <div className="text-right pt-2">
                       <Button variant="outline" size="sm" asChild>
-                        <Link to="/admin/notice-board">
+                        <Link to="/admin/noticeboard">
                           <Icon name="open_in_new" size={14} className="mr-1" />
                           All Notices
                         </Link>
