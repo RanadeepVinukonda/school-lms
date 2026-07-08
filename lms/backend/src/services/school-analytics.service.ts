@@ -56,23 +56,23 @@ export async function getTeacherComparison(schoolId?: string) {
   if (schoolId) gradesQuery = gradesQuery.eq('schoolId', schoolId);
   const { data: grades } = await gradesQuery;
 
+  const { data: classTeachers } = await supabase
+    .from('class_teachers')
+    .select('teacher_id, class_id')
+    .eq('status', 'active');
+
   const teacherMap: Record<string, { totalScore: number; totalPoints: number; count: number; classIds: Set<string> }> = {};
 
-  for (const cls of (classes || [])) {
-    if (cls.teacher_ids) {
-      for (const tid of cls.teacher_ids) {
-        if (!teacherMap[tid]) teacherMap[tid] = { totalScore: 0, totalPoints: 0, count: 0, classIds: new Set() };
-        teacherMap[tid].classIds.add(cls.id);
-      }
-    }
+  for (const ct of (classTeachers || [])) {
+    if (!teacherMap[ct.teacher_id]) teacherMap[ct.teacher_id] = { totalScore: 0, totalPoints: 0, count: 0, classIds: new Set() };
+    teacherMap[ct.teacher_id].classIds.add(ct.class_id);
   }
 
   for (const g of (grades || [])) {
     const cls = (classes || []).find((c: any) => c.id === g.classId);
-    if (!cls || !cls.teacher_ids) continue;
-    for (const tid of cls.teacher_ids) {
-      const data = teacherMap[tid];
-      if (data) {
+    if (!cls) continue;
+    for (const [tid, data] of Object.entries(teacherMap)) {
+      if (data.classIds.has(cls.id)) {
         data.totalScore += g.score || 0;
         data.totalPoints += g.totalPoints || 0;
         data.count++;

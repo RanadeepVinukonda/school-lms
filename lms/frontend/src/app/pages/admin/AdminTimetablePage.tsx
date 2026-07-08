@@ -249,25 +249,25 @@ export default function AdminTimetablePage() {
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="overflow-x-auto">
-                  <table className="w-full min-w-[700px] border-collapse">
+                <CardContent>
+                  <table className="w-full border-collapse table-fixed">
                     <thead>
                       <tr className="border-b border-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
-                        <th className="px-3 py-2.5 text-center w-14">#</th>
-                        <th className="px-3 py-2.5">Subject</th>
-                        <th className="px-3 py-2.5">Teacher</th>
-                        <th className="px-3 py-2.5 w-20">Room</th>
-                        <th className="px-3 py-2.5 w-28">Start</th>
-                        <th className="px-3 py-2.5 w-28">End</th>
+                        <th className="px-3 py-2.5 text-center w-12">#</th>
+                        <th className="px-3 py-2.5 w-2/6">Subject</th>
+                        <th className="px-3 py-2.5 w-2/6">Teacher</th>
+                        <th className="px-3 py-2.5 w-16">Room</th>
+                        <th className="px-3 py-2.5 w-24">Start</th>
+                        <th className="px-3 py-2.5 w-24">End</th>
                         <th className="px-3 py-2.5 w-12"></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/40">
                       {rows.map((row) => (
                         <tr key={row.id} className="hover:bg-muted/10 transition-colors">
-                          <td className="px-3 py-2 text-center">
+                          <td className="px-2 py-2 text-center">
                             <select
-                              className="h-9 w-16 rounded-lg border border-border/60 bg-surface text-foreground text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary"
+                              className="h-9 w-14 rounded-lg border border-border/60 bg-surface text-foreground text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary"
                               value={row.period}
                               onChange={(e) => updateRow(row.id, 'period', Number(e.target.value))}
                             >
@@ -354,7 +354,7 @@ export default function AdminTimetablePage() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-title-sm">Week View</CardTitle>
               </CardHeader>
-              <CardContent className="overflow-x-auto">
+              <CardContent>
                 {!hasEntries ? (
                   <div className="py-12 text-center text-muted-foreground">
                     <Icon name="calendar_month" size={48} className="mx-auto text-muted-foreground/30 mb-3" />
@@ -362,50 +362,50 @@ export default function AdminTimetablePage() {
                     <p className="text-body-sm text-muted-foreground mt-1">Select a day above and add periods</p>
                   </div>
                 ) : (
-                  <table className="w-full min-w-[700px] text-left border-collapse">
+                  <table className="w-full text-left border-collapse table-fixed">
                     <thead>
                       <tr className="border-b border-border/60 bg-muted/30">
-                        <th className="px-3 py-3 text-label-sm font-bold text-muted-foreground uppercase tracking-wider w-16 text-center">Period</th>
+                        <th className="px-2 py-2 text-label-sm font-bold text-muted-foreground uppercase tracking-wider w-10 text-center">Period</th>
                         {DAYS.map((day) => (
-                          <th key={day} className="px-3 py-3 text-label-sm font-bold text-muted-foreground uppercase tracking-wider text-center">{DAY_SHORT[day]}</th>
+                          <th key={day} className="px-2 py-2 text-label-xs font-bold text-muted-foreground uppercase tracking-wider text-center">{DAY_SHORT[day]}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/40">
                       {periodNumbers.map((period) => (
                         <tr key={period} className="hover:bg-muted/10 transition-colors">
-                          <td className="px-3 py-3 font-semibold text-muted-foreground text-center align-middle text-label-sm">{period}</td>
+                          <td className="px-2 py-2 font-semibold text-muted-foreground text-center align-middle text-label-xs">{period}</td>
                           {DAYS.map((day) => {
                             const entries = entriesByDayPeriod.get(`${day}-${period}`) || [];
                             return (
-                              <td key={day} className="px-2 py-2 align-top min-w-[150px]">
+                              <td key={day} className="px-1.5 py-1.5 align-top">
                                 {entries.length === 0 ? (
-                                  <div className="h-full min-h-[72px] flex items-center justify-center">
+                                  <div className="h-full min-h-[64px] flex items-center justify-center">
                                     <span className="text-muted-foreground/20 select-none text-label-xs">&mdash;</span>
                                   </div>
                                 ) : (
-                                  <div className="space-y-1.5">
+                                  <div className="space-y-1">
                                     {entries.map((entry) => (
                                       <div
                                         key={entry.id}
-                                        className="rounded-lg border border-border/60 bg-surface p-2.5 shadow-sm"
+                                        className="rounded-lg border border-border/60 bg-surface p-1.5 shadow-sm"
                                       >
-                                        <p className="text-label-sm font-semibold text-foreground truncate">
+                                        <p className="text-label-xs font-semibold text-foreground leading-tight">
                                           {subjectMap.get(entry.subject_id || entry.subjectId || '') || entry.subject_id || entry.subjectId || '—'}
                                         </p>
                                         {(entry.teacher_id || entry.teacherId) && (
-                                          <p className="text-label-xs text-muted-foreground mt-0.5 truncate">
+                                          <p className="text-label-xs text-muted-foreground mt-0.5 leading-tight">
                                             {teacherMap.get(entry.teacher_id || entry.teacherId || '') || entry.teacher_id || entry.teacherId}
                                           </p>
                                         )}
                                         {entry.room && (
-                                          <Badge variant="outline" className="text-[10px] mt-1 py-0 h-4 px-1.5">
-                                            <Icon name="meeting_room" size={10} className="mr-0.5" />
+                                          <Badge variant="outline" className="text-[9px] mt-1 py-0 h-3.5 px-1 leading-none">
+                                            <Icon name="meeting_room" size={8} className="mr-0.5" />
                                             {entry.room}
                                           </Badge>
                                         )}
                                         {(entry.start_time || entry.startTime || entry.end_time || entry.endTime) && (
-                                          <p className="text-label-xs text-muted-foreground/70 mt-1 font-mono">
+                                          <p className="text-label-xs text-muted-foreground/70 mt-0.5 font-mono leading-tight">
                                             {entry.start_time || entry.startTime || '—'} &ndash; {entry.end_time || entry.endTime || '—'}
                                           </p>
                                         )}

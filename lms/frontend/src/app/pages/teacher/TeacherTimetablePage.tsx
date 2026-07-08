@@ -123,8 +123,8 @@ export default function TeacherTimetablePage() {
             emptyMessage={_('No timetable entries for this class')}
           >
             {() => (
-              <div className="border border-border/60 rounded-xl overflow-x-auto bg-surface">
-                <table className="w-full text-left min-w-[750px]">
+              <div className="border border-border/60 rounded-xl bg-surface">
+                <table className="w-full text-left table-fixed">
                   <thead>
                     <tr className="border-b border-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
                       <th className="px-3 py-3 text-center w-16">{_('Period')}</th>
@@ -142,30 +142,30 @@ export default function TeacherTimetablePage() {
                         {DAYS.map((day) => {
                           const entries = grid[day]?.[period] ?? [];
                           return (
-                            <td key={`${day}-${period}`} className="px-4 py-4 align-top min-w-[180px]">
+                            <td key={`${day}-${period}`} className="px-2 py-3 align-top w-1/6">
                               {entries.length === 0 ? (
-                                <div className="min-h-[80px] flex items-center justify-center">
+                                <div className="min-h-[72px] flex items-center justify-center">
                                   <span className="text-muted-foreground/20">&mdash;</span>
                                 </div>
                               ) : (
-                                <div className="space-y-3">
+                                <div className="space-y-1.5">
                                   {entries.map((entry: any) => (
                                     <div key={entry.id}>
-                                      <p className="text-body-md font-semibold text-primary">
+                                      <p className="text-label-sm font-semibold text-primary leading-snug">
                                         {subjectMap.get(entry.subject_id || entry.subjectId || '') || entry.subject_id || entry.subjectId || _('Subject')}
                                       </p>
                                       {(entry.teacher_id || entry.teacherId) && (
-                                        <p className="text-body-sm text-muted-foreground mt-1">
+                                        <p className="text-label-xs text-muted-foreground mt-0.5 leading-snug">
                                           {teacherMap.get(entry.teacher_id || entry.teacherId || '') || entry.teacher_id || entry.teacherId}
                                         </p>
                                       )}
                                       {entry.room && (
-                                        <p className="text-body-sm text-muted-foreground mt-1">
+                                        <p className="text-label-xs text-muted-foreground mt-0.5 leading-snug">
                                           {entry.room}
                                         </p>
                                       )}
                                       {(entry.start_time || entry.startTime || entry.end_time || entry.endTime) && (
-                                        <p className="text-body-sm text-muted-foreground/60 mt-1">
+                                        <p className="text-label-xs text-muted-foreground/60 mt-0.5 leading-snug">
                                           {(entry.start_time || entry.startTime || '—').slice(0, 5)} &ndash; {(entry.end_time || entry.endTime || '—').slice(0, 5)}
                                         </p>
                                       )}
