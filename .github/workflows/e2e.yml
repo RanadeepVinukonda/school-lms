@@ -1,0 +1,26 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  playwright:
+    name: Playwright Web E2E
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Frontend Dependencies
+        working-directory: lms/frontend
+        run: npm ci
+      - name: Install Playwright Browsers
+        working-directory: lms/frontend
+        run: npx playwright install --with-deps
+      - name: Run E2E Tests
+        working-directory: lms/frontend
+        run: npx playwright test --pass-with-no-tests
