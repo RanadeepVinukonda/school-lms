@@ -169,6 +169,29 @@ export async function getAdminDashboard() {
     .select('id', { count: 'exact', head: true })
     .eq('status', 'active');
 
+  const { count: totalGrades } = await supabase
+    .from('grades')
+    .select('id', { count: 'exact', head: true });
+
+  const { data: gradeScores } = await supabase
+    .from('grades')
+    .select('score, totalPoints');
+
+  let averagePerformance = 0;
+  let atRiskCount = 0;
+  if (gradeScores && gradeScores.length > 0) {
+    let totalScore = 0;
+    let totalPoints = 0;
+    for (const g of gradeScores) {
+      totalScore += (g.score as number) || 0;
+      totalPoints += (g.totalPoints as number) || 0;
+      if (((g.score as number) || 0) < ((g.totalPoints as number) || 1) * 0.4) {
+        atRiskCount++;
+      }
+    }
+    averagePerformance = totalPoints > 0 ? safePct(Math.round((totalScore / totalPoints) * 100)) : 0;
+  }
+
   logger.info('Admin dashboard retrieved');
 
   return {
@@ -181,6 +204,9 @@ export async function getAdminDashboard() {
     publishedCourses: publishedCourses || 0,
     totalClasses: totalClasses || 0,
     activeClasses: activeClasses || 0,
+    averagePerformance,
+    atRiskCount,
+    totalGrades: totalGrades || 0,
   };
 }
 
