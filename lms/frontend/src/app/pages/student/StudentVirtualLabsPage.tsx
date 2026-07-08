@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useQuery } from '@tanstack/react-query';
 import { virtualLabsService } from '@/services/virtualLabsService';
 import { useAuthStore } from '@/store/authStore';
 import type { VirtualLab } from '@/types/virtualLab';
 import { ROUTES } from '@/lib/constants';
 import { Icon } from '@/components/ui/Icon';
+import { LoadingSkeleton } from '@/components/common/LoadingSkeleton';
+import { ErrorState } from '@/components/common/ErrorState';
 
 const SUBJECT_ICONS: Record<string, string> = {
   physics: 'bolt',
@@ -28,18 +30,14 @@ const DIFFICULTY_BADGES: Record<string, string> = {
 
 export default function StudentVirtualLabsPage() {
   const { _ } = useTranslation();
-  const [labs, setLabs] = useState<VirtualLab[]>([]);
   const [filter, setFilter] = useState<string>('all');
-  const [loading, setLoading] = useState(true);
   const user = useAuthStore((s) => s.user);
 
-  useEffect(() => {
-    setLoading(true);
-    virtualLabsService.getAll()
-      .then(setLabs)
-      .catch(() => toast.error('Failed to load labs'))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: labs = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['student-virtual-labs', user?.id],
+    queryFn: () => virtualLabsService.getAll(),
+    enabled: !!user?.id,
+  });
 
   const grouped = labs.reduce<Record<string, VirtualLab[]>>((acc, lab) => {
     const key = lab.subject || 'other';
@@ -75,12 +73,10 @@ export default function StudentVirtualLabsPage() {
         ))}
       </div>
 
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-48 rounded-xl bg-surface-variant animate-pulse" />
-          ))}
-        </div>
+      {isLoading ? (
+        <LoadingSkeleton type="card" />
+      ) : error ? (
+        <ErrorState title={_('Failed to load labs')} message={_('Could not fetch virtual labs')} onRetry={() => refetch()} />
       ) : filteredLabs.length === 0 ? (
         <div className="text-center py-16">
           <Icon name="science" size={48} className="text-on-surface-variant/40 mx-auto" />

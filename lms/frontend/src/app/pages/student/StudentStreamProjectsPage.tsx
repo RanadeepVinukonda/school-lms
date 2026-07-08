@@ -1,29 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useQuery } from '@tanstack/react-query';
 import { codingService } from '@/services/codingService';
 import type { StreamProject } from '@/types/coding';
 import StreamProjectCard from '@/components/coding/StreamProjectCard';
 import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/button';
+import { LoadingSkeleton } from '@/components/common/LoadingSkeleton';
+import { ErrorState } from '@/components/common/ErrorState';
 
 const ALL_SUBJECTS = ['science', 'technology', 'engineering', 'arts', 'mathematics', 'coding', 'robotics'];
 
 export default function StudentStreamProjectsPage() {
   const { _ } = useTranslation();
   const navigate = useNavigate();
-  const [projects, setProjects] = useState<StreamProject[]>([]);
   const [filter, setFilter] = useState<string>('all');
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    setLoading(true);
-    codingService.getAllStreamProjects()
-      .then(setProjects)
-      .catch(() => toast.error('Failed to load projects'))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: projects = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['student-stream-projects'],
+    queryFn: () => codingService.getAllStreamProjects(),
+  });
 
   const filteredProjects = filter === 'all'
     ? projects
@@ -71,12 +68,10 @@ export default function StudentStreamProjectsPage() {
         ))}
       </div>
 
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-56 rounded-xl bg-surface-variant animate-pulse" />
-          ))}
-        </div>
+      {isLoading ? (
+        <LoadingSkeleton type="card" />
+      ) : error ? (
+        <ErrorState title={_('Failed to load projects')} message={_('Could not fetch STREAM projects')} onRetry={() => refetch()} />
       ) : filteredProjects.length === 0 ? (
         <div className="text-center py-16">
           <Icon name="school" size={48} className="text-on-surface-variant/40 mx-auto" />

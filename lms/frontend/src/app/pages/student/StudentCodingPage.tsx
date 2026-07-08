@@ -1,12 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '@/hooks/useTranslation';
 import { codingService } from '@/services/codingService';
 import { useAuthStore } from '@/store/authStore';
 import type { CodingProject } from '@/types/coding';
 import { ROUTES } from '@/lib/constants';
 import { Icon } from '@/components/ui/Icon';
+import { LoadingSkeleton } from '@/components/common/LoadingSkeleton';
+import { ErrorState } from '@/components/common/ErrorState';
+import { Button } from '@/components/ui/button';
 
 const LANGUAGE_BADGES: Record<string, string> = {
   javascript: 'bg-yellow-100 text-yellow-700',
@@ -18,45 +22,40 @@ export default function StudentCodingPage() {
   const { _ } = useTranslation();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
-  const [projects, setProjects] = useState<CodingProject[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'projects' | 'stream'>('projects');
 
-  useEffect(() => {
-    setLoading(true);
-    codingService.getAllProjects()
-      .then(setProjects)
-      .catch(() => toast.error('Failed to load projects'))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: projects = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['student-coding-projects', user?.id],
+    queryFn: () => codingService.getAllProjects(),
+    enabled: !!user?.id,
+  });
 
-  const handleCreate = async () => {
-    if (!user) return;
-    setCreating(true);
-    try {
-      const project = await codingService.createProject({
-        title: 'Untitled Project',
-        language: 'javascript',
-        code: '',
-        ownerId: user.id,
-      });
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => codingService.deleteProject(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['student-coding-projects', user?.id] });
+      toast.success(_('Project deleted'));
+    },
+    onError: () => toast.error(_('Failed to delete project')),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: () => codingService.createProject({
+      title: 'Untitled Project',
+      language: 'javascript' as const,
+      code: '',
+      ownerId: user!.id,
+    }),
+    onSuccess: (project) => {
       navigate(ROUTES.STUDENT_CODING_EDITOR(project.id));
-    } catch {
-      //
-    } finally {
-      setCreating(false);
-    }
-  };
+    },
+    onError: () => toast.error(_('Failed to create project')),
+  });
 
-  const handleDelete = async (id: string, e: React.MouseEvent) => {
+  const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    try {
-      await codingService.deleteProject(id);
-      setProjects((prev) => prev.filter((p) => p.id !== id));
-    } catch {
-      //
-    }
+    deleteMutation.mutate(id);
   };
 
   return (
@@ -67,12 +66,12 @@ export default function StudentCodingPage() {
           <p className="text-on-surface-variant mt-1">{_('Write, run, and collaborate on code projects')}</p>
         </div>
         <button
-          onClick={handleCreate}
-          disabled={creating}
+          onClick={() => createMutation.mutate()}
+          disabled={createMutation.isPending}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 transition-colors"
         >
           <Icon name="add" size={18} />
-          {creating ? _('Creating...') : _('New Project')}
+          {createMutation.isPending ? _('Creating...') : _('New Project')}
         </button>
       </div>
 
@@ -97,14 +96,10 @@ export default function StudentCodingPage() {
             {tab.label}
           </button>
         ))}
-      </div>
-
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-40 rounded-xl bg-surface-variant animate-pulse" />
-          ))}
-        </div>
+      </div>              {isLoading ? (
+        <LoadingSkeleton type="card" />
+      ) : error ? (
+        <ErrorState title={_('Failed to load projects')} message={_('Could not fetch coding projects')} onRetry={() => refetch()} />
       ) : projects.length === 0 ? (
         <div className="text-center py-16">
           <Icon name="code" size={48} className="text-on-surface-variant/40 mx-auto" />
