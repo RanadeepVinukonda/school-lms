@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
-import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import { ActivityIndicator, View, StyleSheet, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useAuthStore, authService, LoginScreen } from '@genesis-lms/shared';
+import { useAuthStore, authService, LoginScreen, API_BASE_URL, registerForPushNotifications } from '@genesis-lms/shared';
 import AppNavigator from './src/navigation/AppNavigator';
 
 const Stack = createNativeStackNavigator();
@@ -25,6 +25,22 @@ export default function App() {
     };
     restoreSession();
   }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    (async () => {
+      try {
+        const pushToken = await registerForPushNotifications();
+        if (!pushToken) return;
+        const token = useAuthStore.getState().token;
+        await fetch(`${API_BASE_URL}/api/device-tokens`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ token: pushToken, platform: Platform.OS }),
+        });
+      } catch { /* notification registration non-critical */ }
+    })();
+  }, [isAuthenticated]);
 
   if (isLoading) {
     return (

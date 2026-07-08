@@ -10,3 +10,4 @@ export { default as LoadingState } from './components/LoadingState';
 export { default as ErrorState } from './components/ErrorState';
 export { default as EmptyState } from './components/EmptyState';
 export { permissions } from './utils/permissions';
+export { registerForPushNotifications, setupNotificationListeners } from './utils/notifications';

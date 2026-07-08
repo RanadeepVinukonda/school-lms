@@ -1,0 +1,51 @@
+name: Mobile Build (EAS)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'lms/mobile/**'
+      - '.github/workflows/mobile-build.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'lms/mobile/**'
+      - '.github/workflows/mobile-build.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: lms/mobile/package-lock.json
+
+      - name: Install dependencies
+        working-directory: lms/mobile
+        run: npm ci
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build Student App (Preview)
+        working-directory: lms/mobile/student
+        run: eas build --platform all --profile preview --non-interactive
+
+      - name: Build Teacher App (Preview)
+        working-directory: lms/mobile/teacher
+        run: eas build --platform all --profile preview --non-interactive
+
+      - name: Build Parent App (Preview)
+        working-directory: lms/mobile/parent
+        run: eas build --platform all --profile preview --non-interactive
