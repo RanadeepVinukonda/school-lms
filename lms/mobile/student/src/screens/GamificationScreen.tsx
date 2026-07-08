@@ -2,22 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, RefreshControl } from 'react-native';
 import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
-const FALLBACK_DATA = {
-  streak: 12,
-  coins: 420,
-  xp: 1120,
-  badges: [
-    { title: 'Fast Learner', desc: 'Completed 5 lessons in one day', icon: '⚡' },
-    { title: 'Coder Expert', desc: 'Solved python basics milestone', icon: '🐍' },
-    { title: 'Tutor Friend', desc: 'Chatted with AI Tutor 10 times', icon: '🤖' },
-  ],
-  leaderboard: [
-    { rank: 1, name: 'Srinivas Murthy', points: 1540, emoji: '🥇' },
-    { rank: 2, name: 'Priya Patel', points: 1420, emoji: '🥈' },
-    { rank: 3, name: 'Rahul Verma', points: 1390, emoji: '🥉' },
-    { rank: 4, name: 'You (Learner)', points: 1120, emoji: '👤' },
-  ],
-};
+
 
 export default function GamificationScreen() {
   const [refreshing, setRefreshing] = useState(false);
@@ -30,7 +15,7 @@ export default function GamificationScreen() {
     try {
       const res = await api.get('/student/gamification');
       setData(res.data);
-    } catch { setData(FALLBACK_DATA); }
+    } catch (e) { console.warn('API call failed:', e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 

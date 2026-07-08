@@ -2,10 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
-const FALLBACK_CHILDREN = [
-  { id: 'ch1', name: 'Arjun S.', class: 'Grade 10A', mastery: 78, attendance: 94, avgGrade: 'B+' },
-  { id: 'ch2', name: 'Priya S.', class: 'Grade 8B', mastery: 92, attendance: 98, avgGrade: 'A' },
-];
+
 
 export default function DashboardScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
@@ -18,7 +15,7 @@ export default function DashboardScreen({ navigation }: any) {
     try {
       const res = await api.get('/parent/dashboard');
       setChildren(res.data);
-    } catch { setChildren(FALLBACK_CHILDREN); }
+    } catch (e) { console.warn('API call failed:', e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 

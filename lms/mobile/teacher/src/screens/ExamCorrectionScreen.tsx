@@ -2,15 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
 import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
-const FALLBACK_EXAM = {
-  studentName: 'Aarav Sharma',
-  coursework: 'Physics Mechanics Essay',
-  prompt: "Explain Newton's Second Law of Motion and give a real-life example.",
-  answer: "\"Newton's second law says that force equals mass times acceleration (F=ma). An example is pushing a heavy shopping cart compared to an empty shopping cart. The empty cart accelerates faster because it has less mass.\"",
-  aiScore: 8,
-  maxScore: 10,
-  confidence: 94,
-};
+
 
 export default function ExamCorrectionScreen({ navigation, route }: any) {
   const [refreshing, setRefreshing] = useState(false);
@@ -28,7 +20,7 @@ export default function ExamCorrectionScreen({ navigation, route }: any) {
       const res = await api.get(endpoint);
       setExam(res.data);
       setAdjustedScore(String(res.data?.aiScore ?? res.data?.maxScore ?? 8));
-    } catch { setExam(FALLBACK_EXAM); }
+    } catch (e) { console.warn('API call failed:', e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); setRefreshing(false); }
   }, [examId]);
 

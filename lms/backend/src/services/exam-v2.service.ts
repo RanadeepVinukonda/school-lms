@@ -13,13 +13,13 @@ const EV2 = 'examV2';
 const EAV2 = 'examAttemptV2';
 
 async function nosqlGet(col: string, id: string) {
-  const { data: row, error } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  const { data: row, error } = await getSupabaseAdmin().from('firestore_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
   if (error) throw error;
   return { exists: !!row, data: (row?.data as Record<string, unknown>) ?? null };
 }
 
 async function nosqlSet(col: string, id: string, data: Record<string, unknown>) {
-  const { error } = await getSupabaseAdmin()!.from('nosql_docs').upsert({
+  const { error } = await getSupabaseAdmin().from('firestore_docs').upsert({
     collection: col, doc_id: id, data,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'collection,doc_id' });
@@ -27,10 +27,10 @@ async function nosqlSet(col: string, id: string, data: Record<string, unknown>) 
 }
 
 async function nosqlUpdate(col: string, id: string, updates: Record<string, unknown>) {
-  const { data: existing, error: existingError } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  const { data: existing, error: existingError } = await getSupabaseAdmin().from('firestore_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
   if (existingError) throw existingError;
   const merged = { ...((existing?.data as Record<string, unknown>) || {}), ...updates };
-  const { error } = await getSupabaseAdmin()!.from('nosql_docs').upsert({
+  const { error } = await getSupabaseAdmin().from('firestore_docs').upsert({
     collection: col, doc_id: id, data: merged,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'collection,doc_id' });
@@ -38,12 +38,12 @@ async function nosqlUpdate(col: string, id: string, updates: Record<string, unkn
 }
 
 async function nosqlDelete(col: string, id: string) {
-  const { error } = await getSupabaseAdmin()!.from('nosql_docs').delete().eq('collection', col).eq('doc_id', id);
+  const { error } = await getSupabaseAdmin().from('firestore_docs').delete().eq('collection', col).eq('doc_id', id);
   if (error) throw error;
 }
 
 async function nosqlQuery(col: string, filters: Record<string, unknown>) {
-  let q: any = getSupabaseAdmin()!.from('nosql_docs').select('doc_id, data').eq('collection', col);
+  let q: any = getSupabaseAdmin().from('firestore_docs').select('doc_id, data').eq('collection', col);
   for (const [k, v] of Object.entries(filters)) {
     q = q.contains('data', { [k]: v });
   }
@@ -53,13 +53,13 @@ async function nosqlQuery(col: string, filters: Record<string, unknown>) {
 }
 
 async function getConceptsForChapter(textbookId: string, chapterId: string) {
-  const { data: rows, error } = await getSupabaseAdmin()!.from('concepts').select('*').eq('chapter_id', chapterId);
+  const { data: rows, error } = await getSupabaseAdmin().from('concepts').select('*').eq('chapter_id', chapterId);
   if (error) throw error;
   return rows || [];
 }
 
 async function getQuestionsForConcept(conceptId: string) {
-  const { data: rows, error } = await getSupabaseAdmin()!.from('concept_questions').select('*').eq('concept_id', conceptId);
+  const { data: rows, error } = await getSupabaseAdmin().from('concept_questions').select('*').eq('concept_id', conceptId);
   if (error) throw error;
   return rows || [];
 }
@@ -148,7 +148,7 @@ export async function releaseExam(examId: string, teacherId: string) {
 }
 
 export async function startExamAttempt(examId: string, studentId: string, selectedModels: string[]) {
-  const supabase = getSupabaseAdmin()!;
+  const supabase = getSupabaseAdmin();
   const { exists: examExists, data: examData } = await nosqlGet(EV2, examId);
   if (!examExists || !examData) throw new NotFoundError('Exam not found');
 
@@ -261,7 +261,7 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
   startedAt: string;
   submittedAt: string;
 }) {
-  const supabase = getSupabaseAdmin()!;
+  const supabase = getSupabaseAdmin();
   const attemptData = (await nosqlGet(EAV2, attemptId)).data as Record<string, unknown> | null;
   if (!attemptData) throw new NotFoundError('Attempt not found');
   if (attemptData.studentId !== studentId) throw new ForbiddenError('Not your attempt');

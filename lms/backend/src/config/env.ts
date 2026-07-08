@@ -37,8 +37,8 @@ const envSchema = z.object({
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().default('noreply@school-lms.com'),
 
-  AUTH_RATE_LIMIT_MAX: z.coerce.number().default(5),
-  AUTH_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000),
+  AUTH_RATE_LIMIT_MAX: z.coerce.number().default(20),
+  AUTH_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(300000),
   API_RATE_LIMIT_MAX: z.coerce.number().default(100),
   API_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
 

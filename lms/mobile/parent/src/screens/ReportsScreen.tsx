@@ -2,23 +2,9 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
-const FALLBACK_CHILDREN = [
-  { id: 'ch1', name: 'Arjun S.' },
-  { id: 'ch2', name: 'Priya S.' },
-];
 
-const FALLBACK_REPORT = {
-  studentName: 'Arjun S.',
-  summary: 'Arjun has shown consistent improvement in Mathematics this week. His Physics scores need attention.',
-  strengths: ['Strong problem-solving skills', 'Excellent in Algebra', 'Good class participation'],
-  learningGaps: ['Physics - Mechanics concepts need revision', 'English grammar'],
-  recommendations: [
-    { area: 'Physics Tutoring', suggestion: 'Schedule extra practice sessions for Newtonian mechanics.', priority: 'high' },
-    { area: 'Daily Reading', suggestion: 'Read for 20 minutes daily to improve comprehension.', priority: 'medium' },
-  ],
-  weeklyOverview: 'Completed 12/15 assignments. Attendance at 94%. Active in math club.',
-  nextSteps: ['Review Physics chapter 4-6', 'Complete English essay draft', 'Attend math club session'],
-};
+
+
 
 export default function ReportsScreen() {
   const [refreshing, setRefreshing] = useState(false);
@@ -34,7 +20,7 @@ export default function ReportsScreen() {
     try {
       const res = await api.get('/parent/children');
       setChildren(res.data);
-    } catch { setChildren(FALLBACK_CHILDREN); }
+    } catch (e) { console.warn('API call failed:', e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 
@@ -50,7 +36,7 @@ export default function ReportsScreen() {
     try {
       const res = await api.get(`/parent/reports/${childId}`);
       setReport(res.data);
-    } catch { setReport(FALLBACK_REPORT); }
+    } catch (e) { console.warn('API call failed:', e instanceof Error ? e.message : String(e)); }
     finally { setGenerating(false); }
   };
 

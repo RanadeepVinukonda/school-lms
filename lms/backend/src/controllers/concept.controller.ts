@@ -5,12 +5,12 @@ import { logger } from '../utils/logger';
 
 /** Fetch whiteboard strokes for a concept, scoped to the requesting teacher. */
 export async function getWhiteboard(req: Request, res: Response) {
-  const supabase = getSupabaseAdmin()!;
+  const supabase = getSupabaseAdmin();
   const { conceptId } = req.params;
   const teacherId = req.user!.uid;
   const docId = `${teacherId}_${conceptId}`;
 
-  const { data } = await supabase.from('nosql_docs').select('data').eq('collection', 'whiteboards').eq('doc_id', docId).maybeSingle();
+  const { data } = await supabase.from('firestore_docs').select('data').eq('collection', 'whiteboards').eq('doc_id', docId).maybeSingle();
 
   if (!data) {
     sendSuccess(res, { strokes: [] });
@@ -22,7 +22,7 @@ export async function getWhiteboard(req: Request, res: Response) {
 
 /** Save (overwrite) whiteboard strokes for a concept, scoped to the requesting teacher. */
 export async function saveWhiteboard(req: Request, res: Response) {
-  const supabase = getSupabaseAdmin()!;
+  const supabase = getSupabaseAdmin();
   const { conceptId } = req.params;
   const teacherId = req.user!.uid;
   const { strokes } = req.body;
@@ -33,7 +33,7 @@ export async function saveWhiteboard(req: Request, res: Response) {
   }
   const docId = `${teacherId}_${conceptId}`;
 
-  await supabase.from('nosql_docs').upsert({
+  await supabase.from('firestore_docs').upsert({
     collection: 'whiteboards',
     doc_id: docId,
     data: { strokes, teacherId, conceptId, updatedAt: new Date().toISOString() },

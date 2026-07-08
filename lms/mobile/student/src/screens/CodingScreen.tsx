@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
 import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
-const FALLBACK_CHALLENGE = { title: 'Python Coding Playground', description: 'Write and run Python scripts directly on your device.', starterCode: 'def greet(name):\n    return f"Hello, {name}!"\n\nprint(greet("Genesis Coder"))' };
+
 
 export default function CodingScreen() {
   const [refreshing, setRefreshing] = useState(false);
@@ -17,10 +17,10 @@ export default function CodingScreen() {
     setLoading(true); setError(null);
     try {
       const res = await api.get('/student/coding/challenges');
-      const d = Array.isArray(res.data) ? res.data[0] : (res.data || FALLBACK_CHALLENGE);
+      const d = Array.isArray(res.data) ? res.data[0] : (res.data || null);
       setChallenge(d);
-      setCode(d.starterCode || FALLBACK_CHALLENGE.starterCode);
-    } catch { setChallenge(FALLBACK_CHALLENGE); setCode(FALLBACK_CHALLENGE.starterCode); }
+      setCode(d?.starterCode || '');
+    } catch (e) { console.warn('Failed to load challenge:', e instanceof Error ? e.message : String(e)); setError('Could not load coding challenge.'); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 

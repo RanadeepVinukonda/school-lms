@@ -2,19 +2,13 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
-const FALLBACK_STUDENTS = [
-  { id: '1', name: 'Aarav Sharma', present: true },
-  { id: '2', name: 'Ananya Iyer', present: true },
-  { id: '3', name: 'Kabir Mehta', present: false },
-  { id: '4', name: 'Meera Deshmukh', present: true },
-];
 
 export default function ClassAttendanceScreen({ route, navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { classId, className } = route.params || { className: 'Grade 10A' };
-  const [students, setStudents] = useState<any>(null);
+  const [students, setStudents] = useState<Array<{ id: string; name: string; present: boolean }> | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const fetchRoster = useCallback(async () => {
@@ -23,7 +17,7 @@ export default function ClassAttendanceScreen({ route, navigation }: any) {
       const endpoint = classId ? `/attendance/${classId}/roster` : '/attendance/roster';
       const res = await api.get(endpoint);
       setStudents(Array.isArray(res.data) ? res.data : (res.data?.students || res.data));
-    } catch { setStudents(FALLBACK_STUDENTS); }
+    } catch (e) { console.warn('Failed to load roster:', e instanceof Error ? e.message : String(e)); setError('Could not load student roster.'); }
     finally { setLoading(false); setRefreshing(false); }
   }, [classId]);
 
@@ -36,20 +30,25 @@ export default function ClassAttendanceScreen({ route, navigation }: any) {
   const roster = students;
 
   const toggleStatus = (id: string) => {
-    setStudents(prev => prev.map(s => s.id === id ? { ...s, present: !s.present } : s));
+    setStudents(prev => prev ? prev.map(s => s.id === id ? { ...s, present: !s.present } : s) : prev);
   };
 
   const markAllPresent = () => {
-    setStudents(prev => prev.map(s => ({ ...s, present: true })));
+    setStudents(prev => prev ? prev.map(s => ({ ...s, present: true })) : prev);
   };
 
-  const submitAttendance = () => {
+  const submitAttendance = async () => {
     setSubmitting(true);
-    setTimeout(() => {
-      setSubmitting(false);
+    try {
+      await api.post(`/attendance/${classId}`, { students, date: new Date().toISOString().split('T')[0] });
       Alert.alert('Attendance saved successfully!');
       navigation.goBack();
-    }, 1500);
+    } catch (e) {
+      Alert.alert('Error', 'Failed to save attendance. Please try again.');
+      console.warn('Attendance save failed:', e instanceof Error ? e.message : String(e));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

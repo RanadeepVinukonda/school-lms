@@ -9,15 +9,15 @@ const ASSIGNMENT_V2 = 'assignmentV2';
 const ASSIGNMENT_SUB_V2 = 'assignmentSubmissionV2';
 
 async function nosqlGet(col: string, id: string): Promise<{ exists: boolean; data: Record<string, unknown> | null }> {
-  const supabase = getSupabaseAdmin()!;
-  const { data: row, error } = await supabase.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  const supabase = getSupabaseAdmin();
+  const { data: row, error } = await supabase.from('firestore_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
   if (error) throw error;
   return { exists: !!row, data: (row?.data as Record<string, unknown>) ?? null };
 }
 
 async function nosqlSet(col: string, id: string, data: Record<string, unknown>): Promise<void> {
-  const supabase = getSupabaseAdmin()!;
-  const { error } = await supabase.from('nosql_docs').upsert({
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase.from('firestore_docs').upsert({
     collection: col, doc_id: id, data,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'collection,doc_id' });
@@ -25,11 +25,11 @@ async function nosqlSet(col: string, id: string, data: Record<string, unknown>):
 }
 
 async function nosqlUpdate(col: string, id: string, updates: Record<string, unknown>): Promise<void> {
-  const supabase = getSupabaseAdmin()!;
-  const { data: existing, error } = await supabase.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  const supabase = getSupabaseAdmin();
+  const { data: existing, error } = await supabase.from('firestore_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
   if (error) throw error;
   const merged = { ...((existing?.data as Record<string, unknown>) || {}), ...updates };
-  const { error: upsertError } = await supabase.from('nosql_docs').upsert({
+  const { error: upsertError } = await supabase.from('firestore_docs').upsert({
     collection: col, doc_id: id, data: merged,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'collection,doc_id' });
@@ -37,14 +37,14 @@ async function nosqlUpdate(col: string, id: string, updates: Record<string, unkn
 }
 
 async function nosqlDelete(col: string, id: string): Promise<void> {
-  const supabase = getSupabaseAdmin()!;
-  const { error } = await supabase.from('nosql_docs').delete().eq('collection', col).eq('doc_id', id);
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase.from('firestore_docs').delete().eq('collection', col).eq('doc_id', id);
   if (error) throw error;
 }
 
 async function nosqlQuery(col: string, filters: Array<{ field: string; value: unknown }>, options?: { orderBy?: string; orderDir?: 'asc' | 'desc'; limit?: number; offset?: number }): Promise<Array<{ id: string; [key: string]: unknown }>> {
-  const supabase = getSupabaseAdmin()!;
-  let q: any = supabase.from('nosql_docs').select('*').eq('collection', col);
+  const supabase = getSupabaseAdmin();
+  let q: any = supabase.from('firestore_docs').select('*').eq('collection', col);
   for (const f of filters) {
     q = q.contains('data', { [f.field]: f.value });
   }
@@ -245,7 +245,7 @@ export async function submitAssignment(attemptId: string, studentId: string, dat
 
   const now = new Date().toISOString();
   const gradeId = uuidv4();
-  const { error: gradeErr } = await getSupabaseAdmin()!.from('firestore_docs').insert({
+  const { error: gradeErr } = await getSupabaseAdmin().from('firestore_docs').insert({
     collection: 'grades',
     doc_id: gradeId,
     data: {

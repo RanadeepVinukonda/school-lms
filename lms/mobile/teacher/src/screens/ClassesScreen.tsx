@@ -2,11 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
-const FALLBACK_CLASSES = [
-  { id: 'class-10a', name: 'Grade 10A', subject: 'Mathematics (MATH101)', strength: 32 },
-  { id: 'class-10b', name: 'Grade 10B', subject: 'Physics (PHYS101)', strength: 28 },
-  { id: 'class-9a', name: 'Grade 9A', subject: 'Mathematics (MATH90)', strength: 35 },
-];
+
 
 export default function ClassesScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
@@ -19,7 +15,7 @@ export default function ClassesScreen({ navigation }: any) {
     try {
       const res = await api.get('/teacher/classes');
       setData(res.data);
-    } catch { setData(FALLBACK_CLASSES); }
+    } catch (e) { console.warn('API call failed:', e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 

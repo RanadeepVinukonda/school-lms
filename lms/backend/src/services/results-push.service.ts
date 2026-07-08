@@ -7,15 +7,15 @@ const COLLECTION_MAP: Record<string, string> = {
 };
 
 async function updateShowResults(collection: string, docId: string, data: Record<string, unknown>, now: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseClient();
   const merged = { ...data, showResults: true, updatedAt: now };
-  const { error } = await supabase.from('nosql_docs').update({ data: merged, updated_at: now })
+  const { error } = await supabase.from('firestore_docs').update({ data: merged, updated_at: now })
     .eq('collection', collection).eq('doc_id', docId);
   if (error) throw new Error(`Failed to update show results: ${error.message}`);
 }
 
 export async function releaseAssessmentsForClass(classId: string, teacherId: string, options?: { type?: 'quiz' | 'assignment' | 'exam' }) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseClient();
   const now = new Date().toISOString();
   let updatedCount = 0;
 
@@ -23,7 +23,7 @@ export async function releaseAssessmentsForClass(classId: string, teacherId: str
 
   for (const type of types) {
     const coll = COLLECTION_MAP[type];
-    const { data: rows, error } = await supabase.from('nosql_docs').select('doc_id, data')
+    const { data: rows, error } = await supabase.from('firestore_docs').select('doc_id, data')
       .eq('collection', coll)
       .contains('data', { classId, teacherId });
     if (error) throw new Error('Failed to fetch assessments: ' + error.message);
@@ -41,9 +41,9 @@ export async function releaseAssessmentsForClass(classId: string, teacherId: str
 }
 
 export async function releaseSingleAssessment(assessmentId: string, type: 'quiz' | 'assignment' | 'exam', teacherId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseClient();
   const coll = COLLECTION_MAP[type];
-  const { data, error } = await supabase.from('nosql_docs').select('data')
+  const { data, error } = await supabase.from('firestore_docs').select('data')
     .eq('collection', coll).eq('doc_id', assessmentId).maybeSingle();
   if (error) throw new Error('Failed to fetch assessment: ' + error.message);
 

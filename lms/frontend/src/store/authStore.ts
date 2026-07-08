@@ -19,6 +19,8 @@ interface AuthStore {
 }
 
 let initialized = false;
+/** Cache resolved effective role for parent users (avoid repeated /teacher-class-subject/my calls). */
+let cachedEffectiveRole: string | null = null;
 
 /** Read persisted token from localStorage directly (bypasses zustand persist rehydration timing). */
 function readPersistedToken(): string | null {
@@ -30,16 +32,6 @@ function readPersistedToken(): string | null {
   } catch {
     return null;
   }
-}
-
-/** Format error for logging — handles plain objects (ApiError) that aren't Error instances. */
-function formatError(e: unknown): string {
-  if (e instanceof Error) return e.message;
-  if (e && typeof e === 'object') {
-    const obj = e as Record<string, unknown>;
-    return (obj.message as string) || JSON.stringify(obj);
-  }
-  return String(e);
 }
 
 /** Map a backend user profile object to the normalized store shape. */
@@ -74,17 +66,19 @@ function mapProfileToUser(
   };
 }
 
-/** Resolve effective role — only makes network call for parent (composite role check). */
+/** Resolve effective role — only makes network call for parent (composite role check). Cached after first call. */
 async function resolveEffectiveRole(
   profile: Record<string, unknown>,
 ): Promise<string> {
   const role = (profile.role as string) || 'student';
   if (role !== 'parent') return role;
+  if (cachedEffectiveRole) return cachedEffectiveRole;
 
   try {
     const tcsRes = await api.get('/teacher-class-subject/my', { timeout: 10000 });
     const assignments = tcsRes.data?.data || tcsRes.data || [];
-    return assignments.length > 0 ? 'parent,teacher' : role;
+    cachedEffectiveRole = assignments.length > 0 ? 'parent,teacher' : role;
+    return cachedEffectiveRole;
   } catch {
     return role;
   }
@@ -107,6 +101,7 @@ export const useAuthStore = create<AuthStore>()(
         return roles.some(r => userHasRole(user.role, r));
       },
       logout: async () => {
+        cachedEffectiveRole = null;
         await supabase.auth.signOut();
         initialized = false;
         set({ user: null, token: null, isAuthenticated: false, isLoading: false });
@@ -116,8 +111,8 @@ export const useAuthStore = create<AuthStore>()(
         initialized = true;
         set({ isLoading: true });
 
-        // Step 1: Supabase client session + /auth/me
         try {
+          // Step 1: Supabase session
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.access_token) {
             set({ token: session.access_token });
@@ -133,14 +128,8 @@ export const useAuthStore = create<AuthStore>()(
               return;
             }
           }
-        } catch (e) {
-          console.warn('[authStore] Step 1 (Supabase session) failed:', formatError(e));
-          set({ isLoading: false });
-        }
 
-        // Step 2: Persisted store token + /auth/me
-        try {
-          set({ isLoading: true });
+          // Step 2: Persisted token
           const persistedToken = get().token || readPersistedToken();
           if (persistedToken) {
             const res = await api.get('/auth/me', {
@@ -160,13 +149,11 @@ export const useAuthStore = create<AuthStore>()(
             }
           }
         } catch (e) {
-          console.warn('[authStore] Step 2 (persisted token) failed:', formatError(e));
-          set({ token: null, isLoading: false });
+          console.warn('[authStore] Auth initialization failed:', e instanceof Error ? e.message : String(e));
         }
 
-        // Step 3: Cookie-based /auth/session
+        // Step 3: Cookie-based session fallback
         try {
-          set({ isLoading: true });
           const res = await api.get('/auth/session');
           const sessionData = res.data?.data;
           if (sessionData?.user) {
@@ -179,13 +166,12 @@ export const useAuthStore = create<AuthStore>()(
             });
             return;
           }
-        } catch (e) {
-          console.warn('[authStore] Step 3 (cookie session) failed:', formatError(e));
-          set({ isLoading: false });
+        } catch {
+          // Cookie fallback failed — no session
         }
 
         // All steps failed
-        set({ user: null, isAuthenticated: false, isLoading: false });
+        set({ user: null, token: null, isAuthenticated: false, isLoading: false });
       },
     }),
     {

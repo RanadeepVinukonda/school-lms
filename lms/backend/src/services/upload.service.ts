@@ -43,8 +43,8 @@ export async function uploadFileService(
     createdAt: new Date().toISOString(),
   };
 
-  const supabase = getSupabaseAdmin()!;
-  const { error } = await supabase.from('nosql_docs').insert({
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase.from('firestore_docs').insert({
     collection: 'uploads', doc_id: fileRecord.id, data: fileRecord,
     updated_at: new Date().toISOString(),
   });
@@ -56,8 +56,8 @@ export async function uploadFileService(
 }
 
 export async function getFileUrlService(fileId: string) {
-  const supabase = getSupabaseAdmin()!;
-  const { data, error } = await supabase.from('nosql_docs').select('data')
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase.from('firestore_docs').select('data')
     .eq('collection', 'uploads').eq('doc_id', fileId).maybeSingle();
   if (error) throw new Error('Failed to fetch file: ' + error.message);
   if (!data) {
@@ -67,8 +67,8 @@ export async function getFileUrlService(fileId: string) {
 }
 
 export async function deleteFileService(fileId: string) {
-  const supabase = getSupabaseAdmin()!;
-  const { data, error } = await supabase.from('nosql_docs').select('data')
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase.from('firestore_docs').select('data')
     .eq('collection', 'uploads').eq('doc_id', fileId).maybeSingle();
   if (error) throw new Error('Failed to fetch file: ' + error.message);
   if (!data) {
@@ -79,7 +79,7 @@ export async function deleteFileService(fileId: string) {
   if (fileData.path) {
     await deleteCloudinaryFile(fileData.path as string);
   }
-  const { error: deleteError } = await supabase.from('nosql_docs').delete()
+  const { error: deleteError } = await supabase.from('firestore_docs').delete()
     .eq('collection', 'uploads').eq('doc_id', fileId);
   if (deleteError) throw deleteError;
 

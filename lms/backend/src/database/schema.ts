@@ -34,7 +34,7 @@ export const TYPED_TABLES: Record<string, Set<string>> = {
 };
 
 export function isTyped(c: string): boolean { return c in TYPED_TABLES; }
-export function table(c: string): string { return isTyped(c) ? c.toLowerCase() : 'nosql_docs'; }
+export function table(c: string): string { return isTyped(c) ? c.toLowerCase() : 'firestore_docs'; }
 export function typedCols(c: string): Set<string> | undefined { return TYPED_TABLES[c]; }
 
 // ── camelCase ↔ snake_case with acronym support ──

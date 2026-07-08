@@ -2,19 +2,6 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, RefreshControl } from 'react-native';
 import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
-const FALLBACK_DATA = {
-  welcomeName: 'Teacher',
-  classPct: 84,
-  classLabel: 'Grade 10A Average Mastery',
-  pendingGradings: [
-    { title: 'Algebra Midterm Exam (10A)', count: '14 submissions pending', due: 'Due Today' },
-    { title: 'Mechanics Lab Report (10B)', count: '8 submissions pending', due: 'Due Tomorrow' },
-  ],
-  quickStats: [
-    { val: '96%', label: "Today's Attendance" },
-    { val: '12', label: 'Active Subjects' },
-  ],
-};
 
 export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
@@ -27,7 +14,7 @@ export default function DashboardScreen() {
     try {
       const res = await api.get('/teacher/dashboard');
       setData(res.data);
-    } catch { setData(FALLBACK_DATA); }
+    } catch (e) { console.warn('Failed to load dashboard:', e instanceof Error ? e.message : String(e)); setError('Could not load dashboard.'); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 

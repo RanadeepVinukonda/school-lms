@@ -218,10 +218,10 @@ export async function getGradesByStudent(studentId: string): Promise<GradeEntry[
   return (data || []) as unknown as GradeEntry[];
 }
 
-/** Fetch completed quiz attempts for a student from nosql_docs. */
+/** Fetch completed quiz attempts for a student from firestore_docs. */
 export async function getCompletedQuizAttempts(studentId: string): Promise<AttemptEntry[]> {
   const { data, error } = await supabase
-    .from('nosql_docs')
+    .from('firestore_docs')
     .select('doc_id, data, created_at')
     .eq('collection', 'quizAttemptV2')
     .filter('data->>studentId', 'eq', studentId)
@@ -241,10 +241,10 @@ export async function getCompletedQuizAttempts(studentId: string): Promise<Attem
   }));
 }
 
-/** Fetch completed assignment attempts for a student from nosql_docs. */
+/** Fetch completed assignment attempts for a student from firestore_docs. */
 export async function getCompletedAssignmentAttempts(studentId: string): Promise<AttemptEntry[]> {
   const { data, error } = await supabase
-    .from('nosql_docs')
+    .from('firestore_docs')
     .select('doc_id, data, created_at')
     .eq('collection', 'assignmentSubmissionV2')
     .filter('data->>studentId', 'eq', studentId)

@@ -2,11 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
-const FALLBACK_QUESTIONS = [
-  { q: 'Solve for x: 3x + 5 = 20', options: ['x = 3', 'x = 5', 'x = 4', 'x = 6'], correct: 1 },
-  { q: 'Find the slope of the line parallel to y = -2x + 7', options: ['2', '-2', '1/2', '-1/2'], correct: 1 },
-  { q: 'What is the y-intercept of the line 4x - 2y = 8?', options: ['4', '-4', '2', '-2'], correct: 1 },
-];
+
 
 export default function QuizScreen({ route, navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
@@ -24,7 +20,7 @@ export default function QuizScreen({ route, navigation }: any) {
       const endpoint = chapterId ? `/quiz/${chapterId}` : '/quiz';
       const res = await api.get(endpoint);
       setQuestions(res.data);
-    } catch { setQuestions(FALLBACK_QUESTIONS); }
+    } catch (e) { console.warn('API call failed:', e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); setRefreshing(false); }
   }, [chapterId]);
 

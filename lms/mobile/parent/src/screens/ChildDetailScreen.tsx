@@ -2,32 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, RefreshControl } from 'react-native';
 import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
-const FALLBACK_DETAIL = {
-  name: 'Arjun S.',
-  class: 'Grade 10A',
-  initials: 'A',
-  mastery: 78,
-  attendance: 94,
-  avgGrade: 'B+',
-  subjects: [
-    { name: 'Mathematics', score: 82, color: '#6366f1' },
-    { name: 'Physics', score: 71, color: '#ef4444' },
-    { name: 'Chemistry', score: 88, color: '#10b981' },
-    { name: 'English', score: 76, color: '#f59e0b' },
-  ],
-  recentGrades: [
-    { subject: 'Mathematics', exam: 'Algebra Midterm', score: 85, date: '2026-06-20' },
-    { subject: 'Physics', exam: 'Mechanics Quiz', score: 68, date: '2026-06-18' },
-    { subject: 'Chemistry', exam: 'Periodic Table Test', score: 92, date: '2026-06-15' },
-  ],
-  attendanceLog: [
-    { date: 'Mon', status: 'present' as const },
-    { date: 'Tue', status: 'present' as const },
-    { date: 'Wed', status: 'absent' as const },
-    { date: 'Thu', status: 'present' as const },
-    { date: 'Fri', status: 'present' as const },
-  ],
-};
+
 
 export default function ChildDetailScreen({ route }: any) {
   const [refreshing, setRefreshing] = useState(false);
@@ -41,7 +16,7 @@ export default function ChildDetailScreen({ route }: any) {
     try {
       const res = childId ? await api.get(`/parent/children/${childId}`) : await api.get('/parent/children');
       setData(res.data);
-    } catch { setData({ ...FALLBACK_DETAIL, name: childName || FALLBACK_DETAIL.name }); }
+    } catch (e) { console.warn('Failed to load child details:', e instanceof Error ? e.message : String(e)); setError('Could not load child details.'); }
     finally { setLoading(false); setRefreshing(false); }
   }, [childId]);
 

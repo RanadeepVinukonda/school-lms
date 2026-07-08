@@ -1,10 +1,12 @@
 import { create } from 'zustand';
+import { supabase } from '@/supabase/config';
 import { extractTextFromPDF } from '@/lib/pdfUtils';
 import { extractChapters, generateConceptContentAndQuestions } from '@/services/aiService';
 import { searchVideosForConcept } from '@/services/youtubeService';
 import { createTextbook, saveChapters } from '@/services/textbookService';
 import { getStudentsByClass, createEnrollment } from '@/services/dataService';
 import type { Chapter, Concept, GeneratedQuestion, GeneratedAssignment } from '@/types/textbook';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export type UploadStage =
   | 'idle'
@@ -30,6 +32,9 @@ export interface UploadTask {
   log: string[];
   error: string | null;
 }
+
+/** Module-level map of Realtime channels keyed by taskId — keeps non-serializable objects out of Zustand state. */
+const realtimeChannels = new Map<string, RealtimeChannel>();
 
 interface UploadStore {
   tasks: UploadTask[];
@@ -59,6 +64,60 @@ function makeId() {
 
 /** Prevents parallel processing of the same task. */
 const runningTasks = new Set<string>();
+
+/** Subscribe to processing_jobs table for live progress updates. */
+function subscribeToJobProgress(taskId: string, textbookId: string): void {
+  const channel = supabase
+    .channel(`processing_${textbookId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'processing_jobs',
+        filter: `textbook_id=eq.${textbookId}`,
+      },
+      (payload) => {
+        const newData = payload.new as Record<string, unknown>;
+        if (newData) {
+          const progress = (newData.progress as number) ?? 0;
+          const currentStep = (newData.current_step as string) || '';
+          const status = (newData.status as string) || '';
+          
+          useUploadStore.setState((s) => ({
+            tasks: s.tasks.map((t) =>
+              t.id === taskId
+                ? { ...t, progress: Math.round(progress), log: [...t.log, `Processing: ${currentStep} (${Math.round(progress)}%)`] }
+                : t
+            ),
+          }));
+
+          // Auto-complete when job is done
+          if (status === 'completed' || status === 'ready') {
+            useUploadStore.setState((s) => ({
+              tasks: s.tasks.map((t) =>
+                t.id === taskId ? { ...t, stage: 'complete', progress: 100, log: [...t.log, 'Processing complete!'] } : t
+              ),
+            }));
+            supabase.removeChannel(channel);
+            realtimeChannels.delete(taskId);
+          } else if (status === 'failed') {
+            const errorMsg = (newData.error as string) || 'Processing failed';
+            useUploadStore.setState((s) => ({
+              tasks: s.tasks.map((t) =>
+                t.id === taskId ? { ...t, stage: 'error', error: errorMsg, log: [...t.log, `Error: ${errorMsg}`] } : t
+              ),
+            }));
+            supabase.removeChannel(channel);
+            realtimeChannels.delete(taskId);
+          }
+        }
+      },
+    )
+    .subscribe();
+
+  realtimeChannels.set(taskId, channel);
+}
 
 async function runProcessing(taskId: string) {
   if (runningTasks.has(taskId)) return;
@@ -105,6 +164,9 @@ async function runProcessing(taskId: string) {
     update({ textbookId: id });
     addLog(`Textbook created with ID: ${id}`);
 
+    // Subscribe to processing job progress (channel stored in module-level Map, not in Zustand state)
+    subscribeToJobProgress(taskId, id);
+
     update({ stage: 'extracting', progress: 15 });
     addLog('Extracting text from PDF...');
     const text = await extractTextFromPDF(task.file);
@@ -133,7 +195,6 @@ async function runProcessing(taskId: string) {
         update({ stage: 'generating', progress: Math.min(Math.round(stagePct), 75) });
         addLog(`Generating content, questions & assignments for: ${cp.title}`);
 
-        // Consolidated AI call: content + questions + assignments
         const conceptTitle = cp.title || cp.description || `Concept ${coi + 1}`;
         let summary = cp.description || `Study of ${conceptTitle}`;
         let notes = `Detailed notes for ${conceptTitle}. This concept covers key principles and applications.`;
@@ -149,7 +210,7 @@ async function runProcessing(taskId: string) {
         let questionBank: GeneratedQuestion[] = [];
         let assignments: Concept['assignments'] = [];
 
-        // Rate limit guard: 10s between AI calls (Gemini free: ~10 req/min, OpenRouter: ~1 req/60s with retry)
+        // Rate limit guard: 10s between AI calls
         await new Promise((r) => setTimeout(r, coi === 0 && ci === 0 ? 0 : 10000));
 
         try {
@@ -207,7 +268,7 @@ async function runProcessing(taskId: string) {
           textbookId: id,
           title: conceptTitle,
           summary: summary ?? `Study of ${conceptTitle}`,
-          notes: notes ?? `Detailed notes for ${conceptTitle}. This concept covers key principles and applications.`,
+          notes: notes ?? `Detailed notes for ${conceptTitle}.`,
           learningObjectives: learningObjectives ?? [`Understand ${conceptTitle}`],
           keywords: keywords ?? [conceptTitle.toLowerCase().replace(/\s+/g, '_')],
           difficulty: difficulty ?? 'intermediate',
@@ -251,11 +312,18 @@ async function runProcessing(taskId: string) {
     update({ progress: 100, stage: 'complete' });
     addLog('Textbook processing complete!');
   } catch (err) {
-    update({ stage: 'error',
+    update({
+      stage: 'error',
       error: err instanceof Error ? err.message : 'Unknown error',
     });
     addLog(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
   } finally {
+    // Clean up Realtime subscription from module-level map
+    const channel = realtimeChannels.get(taskId);
+    if (channel) {
+      supabase.removeChannel(channel);
+      realtimeChannels.delete(taskId);
+    }
     runningTasks.delete(taskId);
   }
 }
@@ -276,12 +344,22 @@ export const useUploadStore = create<UploadStore>((set, get) => ({
   },
 
   removeTask: (id) => {
+    const channel = realtimeChannels.get(id);
+    if (channel) {
+      supabase.removeChannel(channel);
+      realtimeChannels.delete(id);
+    }
     set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) }));
   },
 
   retryTask: (id) => {
     const task = get().tasks.find((t) => t.id === id);
     if (!task) return;
+    const channel = realtimeChannels.get(id);
+    if (channel) {
+      supabase.removeChannel(channel);
+      realtimeChannels.delete(id);
+    }
     set((s) => ({
       tasks: s.tasks.map((t) =>
         t.id === id

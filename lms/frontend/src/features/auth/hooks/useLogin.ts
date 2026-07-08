@@ -57,7 +57,7 @@ export function useLogin() {
       if (role === 'parent') {
         try {
           const { data: tcsData } = await supabase
-            .from('nosql_docs')
+            .from('firestore_docs')
             .select('doc_id')
             .eq('collection', 'teacherClassSubject')
             .filter('data->>teacherId', 'eq', authData.user.id)

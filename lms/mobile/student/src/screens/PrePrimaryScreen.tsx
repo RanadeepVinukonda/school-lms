@@ -2,22 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
-const FALLBACK_CONTENT = {
-  phonics: [
-    { char: 'A', sound: 'Apple' },
-    { char: 'B', sound: 'Ball' },
-    { char: 'C', sound: 'Cat' },
-    { char: 'D', sound: 'Dog' },
-  ],
-  tracing: [
-    { name: 'Trace Line', desc: '-----------------' },
-    { name: 'Trace Circle', desc: 'o o o o o o' },
-  ],
-  stories: [
-    { title: 'The Clever Crow', readTime: '2 min read' },
-    { title: 'The Lion and The Mouse', readTime: '3 min read' },
-  ],
-};
+
 
 export default function PrePrimaryScreen() {
   const [refreshing, setRefreshing] = useState(false);
@@ -31,7 +16,7 @@ export default function PrePrimaryScreen() {
     try {
       const res = await api.get('/student/preprimary/content');
       setContent(res.data);
-    } catch { setContent(FALLBACK_CONTENT); }
+    } catch (e) { console.warn('API call failed:', e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 

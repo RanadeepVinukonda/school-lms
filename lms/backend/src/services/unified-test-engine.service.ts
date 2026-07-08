@@ -85,12 +85,12 @@ const TYPE_MAP: Record<string, string[]> = {
 };
 
 async function nosqlGet(col: string, id: string) {
-  const { data: row } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  const { data: row } = await getSupabaseAdmin().from('firestore_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
   return { exists: !!row, data: (row?.data as Record<string, unknown>) ?? null };
 }
 
 async function nosqlSet(col: string, id: string, data: Record<string, unknown>) {
-  const { error } = await getSupabaseAdmin()!.from('nosql_docs').upsert({
+  const { error } = await getSupabaseAdmin().from('firestore_docs').upsert({
     collection: col, doc_id: id, data,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'collection,doc_id' });
@@ -98,9 +98,9 @@ async function nosqlSet(col: string, id: string, data: Record<string, unknown>) 
 }
 
 async function nosqlUpdate(col: string, id: string, updates: Record<string, unknown>) {
-  const { data: existing } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  const { data: existing } = await getSupabaseAdmin().from('firestore_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
   const merged = { ...((existing?.data as Record<string, unknown>) || {}), ...updates };
-  const { error } = await getSupabaseAdmin()!.from('nosql_docs').upsert({
+  const { error } = await getSupabaseAdmin().from('firestore_docs').upsert({
     collection: col, doc_id: id, data: merged,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'collection,doc_id' });
@@ -108,12 +108,12 @@ async function nosqlUpdate(col: string, id: string, updates: Record<string, unkn
 }
 
 async function nosqlDelete(col: string, id: string) {
-  const { error } = await getSupabaseAdmin()!.from('nosql_docs').delete().eq('collection', col).eq('doc_id', id);
+  const { error } = await getSupabaseAdmin().from('firestore_docs').delete().eq('collection', col).eq('doc_id', id);
   if (error) throw error;
 }
 
 async function nosqlQuery(col: string, filters: Record<string, unknown>) {
-  let q: any = getSupabaseAdmin()!.from('nosql_docs').select('doc_id, data').eq('collection', col);
+  let q: any = getSupabaseAdmin().from('firestore_docs').select('doc_id, data').eq('collection', col);
   for (const [k, v] of Object.entries(filters)) {
     q = q.contains('data', { [k]: v });
   }
@@ -167,7 +167,7 @@ export async function createTest(data: {
     throw new ForbiddenError('You are not assigned to this class');
   }
 
-  const { data: conceptData } = await getSupabaseAdmin()!.from('concepts').select('title, name').eq('id', data.conceptId).maybeSingle();
+  const { data: conceptData } = await getSupabaseAdmin().from('concepts').select('title, name').eq('id', data.conceptId).maybeSingle();
   if (!conceptData) {
     throw new NotFoundError('Concept not found');
   }
@@ -354,7 +354,7 @@ export async function createTest(data: {
   });
 
   try {
-    const supabase2 = getSupabaseAdmin()!;
+    const supabase2 = getSupabaseAdmin();
     const { data: classData } = await supabase2.from('classes').select('name').eq('id', data.classId).maybeSingle();
 
     if (data.publishedTo === 'students' && (data.targetStudentIds ?? []).length > 0) {
@@ -507,7 +507,7 @@ export async function republishTest(testId: string, teacherId: string): Promise<
 }
 
 export async function startTestAttempt(testId: string, studentId: string): Promise<any> {
-  const supabase = getSupabaseAdmin()!;
+  const supabase = getSupabaseAdmin();
   const { exists: testExists, data: testData } = await nosqlGet(QV2, testId);
   if (!testExists || !testData) throw new NotFoundError('Test not found');
   if (!testData.releasedAt) throw new ForbiddenError('Test is not yet released');
@@ -562,7 +562,7 @@ export async function submitTestAttempt(attemptId: string, studentId: string, da
   startedAt: string;
   submittedAt: string;
 }): Promise<any> {
-  const supabase = getSupabaseAdmin()!;
+  const supabase = getSupabaseAdmin();
   const attemptData = (await nosqlGet(QAV2, attemptId)).data as Record<string, unknown> | null;
   if (!attemptData) throw new NotFoundError('Attempt not found');
   if (attemptData.studentId !== studentId) throw new ForbiddenError('Not your attempt');
@@ -713,7 +713,7 @@ export async function getTestResults(testId: string, studentId: string, isPrivil
   const studentNames = new Map<string, string>();
   if (isPrivileged) {
     const studentIds = [...new Set(sorted.map((a: any) => a.studentId))] as string[];
-    const { data: rows } = await getSupabaseAdmin()!.from('users').select('id, display_name, email').in('id', studentIds);
+    const { data: rows } = await getSupabaseAdmin().from('users').select('id, display_name, email').in('id', studentIds);
     if (rows) { for (const r of rows) studentNames.set(r.id, r.display_name || r.email || 'Unknown'); }
   }
 
@@ -769,7 +769,7 @@ export async function getClassAttempts(classId: string): Promise<any[]> {
   }
 
   const studentIds = [...new Set(allAttempts.map((a: any) => a.studentId))] as string[];
-  const { data: rows } = await getSupabaseAdmin()!.from('users').select('id, display_name, email').in('id', studentIds);
+  const { data: rows } = await getSupabaseAdmin().from('users').select('id, display_name, email').in('id', studentIds);
   const studentNames = new Map<string, string>();
   if (rows) { for (const r of rows) studentNames.set(r.id, r.display_name || r.email || 'Unknown'); }
 

@@ -12,13 +12,13 @@ import 'katex/dist/katex.min.css';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000,
+      retry: 2,
+      refetchOnWindowFocus: true,
+      staleTime: 30 * 1000,
       gcTime: 10 * 60 * 1000,
     },
     mutations: {
-      retry: 0,
+      retry: 1,
     },
   },
 });

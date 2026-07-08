@@ -13,19 +13,19 @@ async function lessonById(supabase: ReturnType<typeof getSupabaseClient>, lesson
 }
 
 async function getNosqlDoc(collection: string, docId: string) {
-  const supabase = getSupabaseClient()!;
-  const { data, error } = await supabase.from('nosql_docs').select('data').eq('collection', collection).eq('doc_id', docId).maybeSingle();
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.from('firestore_docs').select('data').eq('collection', collection).eq('doc_id', docId).maybeSingle();
   if (error) throw error;
   return data?.data as Record<string, unknown> | undefined;
 }
 
 async function setNosqlDoc(collection: string, docId: string, docData: Record<string, unknown>) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseClient();
   const now = new Date().toISOString();
-  const { error } = await supabase.from('nosql_docs').upsert({
+  const { error } = await supabase.from('firestore_docs').upsert({
     collection, doc_id: docId, data: docData, updated_at: now,
   }, { onConflict: 'collection,doc_id' });
-  if (error) throw new Error(`Failed to upsert nosql_docs: ${error.message}`);
+  if (error) throw new Error(`Failed to upsert firestore_docs: ${error.message}`);
 }
 
 /** Create a new lesson, auto-assign order based on existing lesson count, and increment course lessonCount. */
@@ -40,7 +40,7 @@ export async function createLesson(data: {
   isPublished?: boolean;
   schoolId?: string;
 }) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseClient();
   const lessonId = uuidv4();
   const now = new Date().toISOString();
 
@@ -81,7 +81,7 @@ export async function createLesson(data: {
 
 /** Update lesson fields. Throws NotFoundError if missing. */
 export async function updateLesson(lessonId: string, data: Record<string, unknown>) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseClient();
   const existing = await lessonById(supabase, lessonId);
   if (!existing) throw new NotFoundError('Lesson not found');
 
@@ -95,7 +95,7 @@ export async function updateLesson(lessonId: string, data: Record<string, unknow
 
 /** Delete a lesson by id and decrement the parent course's lessonCount. */
 export async function deleteLesson(lessonId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseClient();
   const existing = await lessonById(supabase, lessonId);
   if (!existing) throw new NotFoundError('Lesson not found');
 
@@ -116,7 +116,7 @@ export async function deleteLesson(lessonId: string) {
 
 /** Fetch a single lesson by id. Throws NotFoundError if missing. */
 export async function getLessonById(lessonId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseClient();
   const lesson = await lessonById(supabase, lessonId);
   if (!lesson) throw new NotFoundError('Lesson not found');
   return lesson;
@@ -124,7 +124,7 @@ export async function getLessonById(lessonId: string) {
 
 /** List lessons for a course ordered by their `order` field ascending. */
 export async function listLessonsByCourse(courseId: string, schoolId?: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseClient();
   let query = supabase.from('lessons').select('*').contains('data', { courseId });
   if (schoolId) query = query.contains('data', { schoolId });
 
@@ -150,7 +150,7 @@ export async function reorderLessons(lessonIds: string[]) {
 
 /** Mark a lesson as complete for a student. Updates course enrollment progress. */
 export async function markLessonComplete(lessonId: string, studentId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseClient();
   const existing = await lessonById(supabase, lessonId);
   if (!existing) throw new NotFoundError('Lesson not found');
 

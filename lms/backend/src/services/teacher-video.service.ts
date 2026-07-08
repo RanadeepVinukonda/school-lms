@@ -18,7 +18,7 @@ export async function addVideo(data: {
   conceptId?: string;
   tags?: string[];
 }) {
-  const supabase = getSupabaseAdmin()!;
+  const supabase = getSupabaseAdmin();
   const videoId = uuidv4();
   const now = new Date().toISOString();
 
@@ -40,7 +40,7 @@ export async function addVideo(data: {
     updatedAt: now,
   };
 
-  const { error: insertError } = await supabase.from('nosql_docs').insert({
+  const { error: insertError } = await supabase.from('firestore_docs').insert({
     collection: 'teacherVideos', doc_id: videoId, data: videoData, updated_at: now,
   });
   if (insertError) throw new Error(`Failed to insert video: ${insertError.message}`);
@@ -56,8 +56,8 @@ export async function listVideos(teacherId: string, query?: {
   conceptId?: string;
   tag?: string;
 }) {
-  const supabase = getSupabaseAdmin()!;
-  let dbQuery = supabase.from('nosql_docs').select('doc_id, data')
+  const supabase = getSupabaseAdmin();
+  let dbQuery = supabase.from('firestore_docs').select('doc_id, data')
     .eq('collection', 'teacherVideos')
     .contains('data', { teacherId });
 
@@ -73,8 +73,8 @@ export async function listVideos(teacherId: string, query?: {
 }
 
 export async function removeVideo(videoId: string, teacherId: string) {
-  const supabase = getSupabaseAdmin()!;
-  const { data, error } = await supabase.from('nosql_docs').select('data')
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase.from('firestore_docs').select('data')
     .eq('collection', 'teacherVideos').eq('doc_id', videoId).maybeSingle();
   if (error) throw new Error('Failed to fetch video: ' + error.message);
 
@@ -85,7 +85,7 @@ export async function removeVideo(videoId: string, teacherId: string) {
     throw new ForbiddenError('You do not own this video');
   }
 
-  const { error: deleteError } = await supabase.from('nosql_docs').delete().eq('collection', 'teacherVideos').eq('doc_id', videoId);
+  const { error: deleteError } = await supabase.from('firestore_docs').delete().eq('collection', 'teacherVideos').eq('doc_id', videoId);
   if (deleteError) throw new Error(`Failed to delete video: ${deleteError.message}`);
   logger.info('Teacher video removed', { videoId, teacherId });
 }
@@ -95,8 +95,8 @@ export async function attachVideoToConcept(videoId: string, teacherId: string, d
   chapterId: string;
   conceptId: string;
 }) {
-  const supabase = getSupabaseAdmin()!;
-  const { data: existing, error: fetchErr } = await supabase.from('nosql_docs').select('data')
+  const supabase = getSupabaseAdmin();
+  const { data: existing, error: fetchErr } = await supabase.from('firestore_docs').select('data')
     .eq('collection', 'teacherVideos').eq('doc_id', videoId).maybeSingle();
   if (fetchErr) throw new Error('Failed to fetch video: ' + fetchErr.message);
 
@@ -116,7 +116,7 @@ export async function attachVideoToConcept(videoId: string, teacherId: string, d
     updatedAt: now,
   };
 
-  const { error: updateError } = await supabase.from('nosql_docs').update({ data: updated, updated_at: now })
+  const { error: updateError } = await supabase.from('firestore_docs').update({ data: updated, updated_at: now })
     .eq('collection', 'teacherVideos').eq('doc_id', videoId);
   if (updateError) throw new Error(`Failed to update video: ${updateError.message}`);
 

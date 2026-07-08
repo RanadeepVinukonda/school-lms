@@ -30,7 +30,7 @@ describe('assignTeacher', () => {
       subjectId: 's1',
     });
 
-    expect(mockSupabase.from).toHaveBeenCalledWith('nosql_docs');
+    expect(mockSupabase.from).toHaveBeenCalledWith('firestore_docs');
     expect(mockQuery.insert).toHaveBeenCalled();
     expect(result.teacherId).toBe('t1');
     expect(result.id).toBeDefined();

@@ -9,7 +9,7 @@ import { generatePassword } from '../utils/passwordGenerator.js';
 import { validatePassword } from '../utils/passwordValidation';
 
 async function getUserDoc(uid: string) {
-  const { data, error } = await getSupabaseAdmin()!.from('users').select('*').eq('id', uid).maybeSingle();
+  const { data, error } = await getSupabaseAdmin().from('users').select('*').eq('id', uid).maybeSingle();
   if (error) throw error;
   return { exists: !!data, data: data || null };
 }
@@ -23,7 +23,7 @@ export async function listUsers(query: {
   page?: string; limit?: string; role?: string; search?: string;
   status?: string; classId?: string; sortBy?: string; sortOrder?: string; schoolId?: string;
 }) {
-  const supabase = getSupabaseAdmin()!;
+  const supabase = getSupabaseAdmin();
   const { page, limit } = parsePagination(query);
   const offset = (page - 1) * limit;
 
@@ -54,7 +54,7 @@ export async function createUser(data: {
   phoneNumber?: string; photoURL?: string; classIds?: string[]; classId?: string;
   rollNo?: number; academicYear?: string; gender?: string; childrenIds?: string[]; schoolId?: string;
 }) {
-  const supabase = getSupabaseAdmin()!;
+  const supabase = getSupabaseAdmin();
   let studentId = '';
   let finalClassIds = data.classIds || [];
   let studentClassId = data.classId || '';
@@ -161,7 +161,7 @@ export async function createUser(data: {
   } catch (err: any) {
     // If user already exists in Auth but DB row is missing, look up via Auth API and create DB row
     if (err.message?.toLowerCase().includes('already exists') || err.message?.toLowerCase().includes('already registered')) {
-      const supabase = getSupabaseAdmin()!;
+      const supabase = getSupabaseAdmin();
       const { data: authUsers } = await supabase.auth.admin.listUsers();
       const authUser = authUsers?.users?.find((u: any) => u.email === generatedEmail);
       if (authUser) {
@@ -207,8 +207,8 @@ export async function createUser(data: {
     }
   }
 
-  const { password: _pw, ...userDataSafe } = userData as any;
-  return { ...userDataSafe, generatedPassword };
+  const { password: _pw, ...userDataSafe } = userData;
+  return { ...userDataSafe, generatedPassword } as unknown as Record<string, unknown> & { generatedPassword: string };
 }
 
 export async function updateUser(uid: string, data: {
@@ -216,7 +216,7 @@ export async function updateUser(uid: string, data: {
   classIds?: string[]; classId?: string; rollNo?: number; academicYear?: string;
   childrenIds?: string[]; gender?: string;
 }) {
-  const supabase = getSupabaseAdmin()!;
+  const supabase = getSupabaseAdmin();
   const { exists, data: existing } = await getUserDoc(uid);
   if (!exists || !existing) throw new NotFoundError('User not found');
 
@@ -275,14 +275,14 @@ export async function updateUser(uid: string, data: {
 export async function deleteUserService(uid: string) {
   const { exists } = await getUserDoc(uid);
   if (!exists) throw new NotFoundError('User not found');
-  const { error } = await getSupabaseAdmin()!.from('users').delete().eq('id', uid);
+  const { error } = await getSupabaseAdmin().from('users').delete().eq('id', uid);
   if (error) throw error;
   await firebaseDeleteUser(uid);
   logger.info('User deleted by admin', { uid });
 }
 
 export async function toggleActive(uid: string) {
-  const supabase = getSupabaseAdmin()!;
+  const supabase = getSupabaseAdmin();
   const { exists, data: existing } = await getUserDoc(uid);
   if (!exists || !existing) throw new NotFoundError('User not found');
 
@@ -297,7 +297,7 @@ export async function toggleActive(uid: string) {
 }
 
 export async function assignRole(uid: string, role: string) {
-  const supabase = getSupabaseAdmin()!;
+  const supabase = getSupabaseAdmin();
   const { exists } = await getUserDoc(uid);
   if (!exists) throw new NotFoundError('User not found');
 
@@ -308,7 +308,7 @@ export async function assignRole(uid: string, role: string) {
 }
 
 export async function pingActive(uid: string) {
-  const supabase = getSupabaseAdmin()!;
+  const supabase = getSupabaseAdmin();
   const { data: existing } = await supabase.from('users').select('last_active_date, streak_count').eq('id', uid).maybeSingle();
   if (!existing) throw new NotFoundError('User not found');
 
@@ -331,9 +331,9 @@ export async function pingActive(uid: string) {
 }
 
 export async function getStrengthsWeaknesses(uid: string) {
-  const supabase = getSupabaseAdmin()!;
-  const { data: quizRows } = await supabase.from('nosql_docs').select('data').eq('collection', 'quizAttempts').contains('data', { studentId: uid });
-  const { data: examRows } = await supabase.from('nosql_docs').select('data').eq('collection', 'examAttempts').contains('data', { studentId: uid });
+  const supabase = getSupabaseAdmin();
+  const { data: quizRows } = await supabase.from('firestore_docs').select('data').eq('collection', 'quizAttempts').contains('data', { studentId: uid });
+  const { data: examRows } = await supabase.from('firestore_docs').select('data').eq('collection', 'examAttempts').contains('data', { studentId: uid });
 
   const conceptScores: Record<string, { totalScore: number; totalMax: number; count: number }> = {};
 
@@ -368,7 +368,7 @@ export async function getStrengthsWeaknesses(uid: string) {
 export async function updateProfile(uid: string, data: {
   displayName?: string; phoneNumber?: string; photoURL?: string; language?: string;
 }) {
-  const supabase = getSupabaseAdmin()!;
+  const supabase = getSupabaseAdmin();
   const { exists } = await getUserDoc(uid);
   if (!exists) throw new NotFoundError('User not found');
 

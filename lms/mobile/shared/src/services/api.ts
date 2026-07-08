@@ -6,7 +6,7 @@ import type { ApiError } from '../types';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: 60000, // 60s default; individual requests can override with their own timeout
   headers: { 'Content-Type': 'application/json' },
 });
 

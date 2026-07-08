@@ -6,7 +6,7 @@ import { getSupabaseAdmin } from '../services/supabase';
  * for all textbooks they have access to.
  */
 export async function getMyEnrollments(req: Request, res: Response) {
-  const supabase = getSupabaseAdmin()!;
+  const supabase = getSupabaseAdmin();
   if (!req.user) {
     res.status(401).json({ success: false, error: { message: 'Unauthorized' } });
     return;
@@ -38,7 +38,7 @@ export async function getMyEnrollments(req: Request, res: Response) {
   const conceptReleases: any[] = [];
   if (studentClassId && textbooks.length > 0) {
     const tbIds = textbooks.map((t) => t.id);
-    const { data: releaseRows } = await supabase.from('nosql_docs')
+    const { data: releaseRows } = await supabase.from('firestore_docs')
       .select('doc_id, data')
       .eq('collection', 'conceptReleases')
       .in('data->>textbookId', tbIds);

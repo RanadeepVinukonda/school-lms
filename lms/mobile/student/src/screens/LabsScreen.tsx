@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
-const FALLBACK_LAB = { title: 'Water Molecule Boiling Point Lab', description: 'Adjust temperature and observe molecule state change simulation.', initialTemp: 25 };
+
 
 export default function LabsScreen() {
   const [refreshing, setRefreshing] = useState(false);
@@ -19,7 +19,7 @@ export default function LabsScreen() {
       const d = Array.isArray(res.data) ? res.data[0] : res.data;
       setLab(d);
       if (d?.initialTemp) setTemperature(d.initialTemp);
-    } catch { setLab(FALLBACK_LAB); }
+    } catch (e) { console.warn('API call failed:', e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 

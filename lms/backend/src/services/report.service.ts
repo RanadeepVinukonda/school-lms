@@ -3,8 +3,8 @@ import { getSupabaseClient } from './supabase';
 import { logger } from '../utils/logger';
 
 export async function getReportById(reportId: string) {
-  const supabase = getSupabaseClient()!;
-  const { data, error } = await supabase.from('nosql_docs').select('doc_id, data')
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.from('firestore_docs').select('doc_id, data')
     .eq('collection', 'reports').eq('doc_id', reportId).maybeSingle();
   if (error) throw new Error('Failed to fetch report: ' + error.message);
   if (!data) return null;
@@ -12,8 +12,8 @@ export async function getReportById(reportId: string) {
 }
 
 export async function getLatestReport(type: string) {
-  const supabase = getSupabaseClient()!;
-  const { data: rows, error } = await supabase.from('nosql_docs').select('doc_id, data')
+  const supabase = getSupabaseClient();
+  const { data: rows, error } = await supabase.from('firestore_docs').select('doc_id, data')
     .eq('collection', 'reports')
     .contains('data', { type })
     .order('created_at', { ascending: false })

@@ -40,13 +40,13 @@ const DEFAULT_SETTINGS = {
 
 /** Get all settings. Initializes with defaults if the 'general' document doesn't exist. */
 export async function getSettings() {
-  const supabase = getSupabaseAdmin()!;
-  const { data, error } = await supabase.from('nosql_docs').select('data')
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase.from('firestore_docs').select('data')
     .eq('collection', 'settings').eq('doc_id', 'general').maybeSingle();
   if (error) throw new Error('Failed to fetch settings: ' + error.message);
 
   if (!data) {
-    const { error: insertError } = await supabase.from('nosql_docs').insert({
+    const { error: insertError } = await supabase.from('firestore_docs').insert({
       collection: 'settings', doc_id: 'general', data: DEFAULT_SETTINGS,
       updated_at: new Date().toISOString(),
     });
@@ -59,14 +59,14 @@ export async function getSettings() {
 
 /** Update settings by merging the given data with existing values. Creates the document if needed. */
 export async function updateSettings(data: Record<string, unknown>) {
-  const supabase = getSupabaseAdmin()!;
-  const { data: existing, error: fetchErr } = await supabase.from('nosql_docs').select('data')
+  const supabase = getSupabaseAdmin();
+  const { data: existing, error: fetchErr } = await supabase.from('firestore_docs').select('data')
     .eq('collection', 'settings').eq('doc_id', 'general').maybeSingle();
   if (fetchErr) throw new Error('Failed to fetch existing settings: ' + fetchErr.message);
 
   const now = new Date().toISOString();
   if (!existing) {
-    const { error: insertError } = await supabase.from('nosql_docs').insert({
+    const { error: insertError } = await supabase.from('firestore_docs').insert({
       collection: 'settings', doc_id: 'general',
       data: { ...DEFAULT_SETTINGS, ...data, updatedAt: now },
       updated_at: now,
@@ -74,12 +74,12 @@ export async function updateSettings(data: Record<string, unknown>) {
     if (insertError) throw new Error(`Failed to update settings: ${insertError.message}`);
   } else {
     const merged = { ...existing.data as Record<string, unknown>, ...data, updatedAt: now };
-    const { error: updateError } = await supabase.from('nosql_docs').update({ data: merged, updated_at: now })
+    const { error: updateError } = await supabase.from('firestore_docs').update({ data: merged, updated_at: now })
       .eq('collection', 'settings').eq('doc_id', 'general');
     if (updateError) throw new Error(`Failed to update settings: ${updateError.message}`);
   }
 
-  const { data: updated, error: updatedErr } = await supabase.from('nosql_docs').select('data')
+  const { data: updated, error: updatedErr } = await supabase.from('firestore_docs').select('data')
     .eq('collection', 'settings').eq('doc_id', 'general').maybeSingle();
   if (updatedErr) throw new Error('Failed to fetch updated settings: ' + updatedErr.message);
   logger.info('Settings updated');

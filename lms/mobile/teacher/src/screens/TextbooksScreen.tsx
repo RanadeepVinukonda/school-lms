@@ -2,26 +2,12 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
-const FALLBACK_CLASSES: any[] = [
-  { id: 'c1', name: 'Grade 10A', subjects: [
-    { id: 's1', name: 'Mathematics', color: '#6366f1', textbooks: [
-      { id: 'tb1', title: 'Algebra Textbook Vol 1', chapterCount: 12, status: 'ready' },
-      { id: 'tb2', title: 'Geometry Reference', chapterCount: 8, status: 'processing' },
-    ]},
-    { id: 's2', name: 'Physics', color: '#ef4444', textbooks: [
-      { id: 'tb3', title: 'Mechanics 101', chapterCount: 10, status: 'ready' },
-    ]},
-  ]},
-  { id: 'c2', name: 'Grade 10B', subjects: [
-    { id: 's1', name: 'Mathematics', color: '#6366f1', textbooks: [] },
-  ]},
-];
 
 export default function TextbooksScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [classes, setClasses] = useState<any>(null);
+  const [classes, setClasses] = useState<Record<string, unknown> | null>(null);
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
 
@@ -30,7 +16,7 @@ export default function TextbooksScreen() {
     try {
       const res = await api.get('/teacher/textbooks');
       setClasses(res.data);
-    } catch { setClasses(FALLBACK_CLASSES); }
+    } catch (e) { console.warn('Failed to load textbooks:', e instanceof Error ? e.message : String(e)); setError('Could not load textbooks.'); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 

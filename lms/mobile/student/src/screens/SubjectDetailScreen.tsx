@@ -2,11 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
-const FALLBACK_CHAPTERS = [
-  { id: 1, title: 'Chapter 1: Linear Equations', lessons: ['Introduction to Linear Equations', 'Solving Equations with Two Variables', 'Graphing Linear Functions'] },
-  { id: 2, title: 'Chapter 2: Quadratic Equations', lessons: ['Introduction to Quadratics', 'Factoring Quadratic Form', 'The Quadratic Formula'] },
-  { id: 3, title: 'Chapter 3: Complex Numbers', lessons: ['Imaginary Unit i', 'Complex Arithmetic Operations', 'Polar Form representation'] },
-];
+
 
 export default function SubjectDetailScreen({ route, navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
@@ -22,7 +18,7 @@ export default function SubjectDetailScreen({ route, navigation }: any) {
       const endpoint = subjectId ? `/subjects/${subjectId}/chapters` : '/subjects/chapters';
       const res = await api.get(endpoint);
       setChapters(res.data);
-    } catch { setChapters(FALLBACK_CHAPTERS); }
+    } catch (e) { console.warn('API call failed:', e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); setRefreshing(false); }
   }, [subjectId]);
 

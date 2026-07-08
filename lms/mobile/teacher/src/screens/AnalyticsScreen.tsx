@@ -2,24 +2,9 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { api, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
-const FALLBACK_CLASSES = [
-  { id: 'c1', name: 'Grade 10A' },
-  { id: 'c2', name: 'Grade 10B' },
-  { id: 'c3', name: 'Grade 9A' },
-];
 
-const FALLBACK_OVERVIEW = {
-  totalStudents: 32,
-  totalAssessments: 8,
-  avgScore: 74,
-  passRate: 81,
-  studentLevelDistribution: { beginner: 6, intermediate: 18, advanced: 8 },
-  assessments: [
-    { title: 'Algebra Midterm', type: 'exam', avgScore: 78, passRate: 85, attemptCount: 30, released: true },
-    { title: 'Geometry Quiz 3', type: 'quiz', avgScore: 65, passRate: 60, attemptCount: 28, released: true },
-    { title: 'Statistics Exam', type: 'exam', avgScore: 82, passRate: 90, attemptCount: 25, released: false },
-  ],
-};
+
+
 
 export default function AnalyticsScreen() {
   const [refreshing, setRefreshing] = useState(false);
@@ -36,7 +21,7 @@ export default function AnalyticsScreen() {
     try {
       const res = await api.get('/teacher/classes');
       setClasses(res.data);
-    } catch { setClasses(FALLBACK_CLASSES); }
+    } catch (e) { console.warn('API call failed:', e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 
@@ -48,7 +33,7 @@ export default function AnalyticsScreen() {
     try {
       const res = await api.get(`/teacher/analytics/${classId}`);
       setOverview(res.data);
-    } catch { setOverview(FALLBACK_OVERVIEW); }
+    } catch (e) { console.warn('API call failed:', e instanceof Error ? e.message : String(e)); }
     finally { setOverviewLoading(false); }
   }, []);
 

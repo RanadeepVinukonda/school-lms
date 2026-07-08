@@ -57,7 +57,7 @@ export async function publishContent(request: PublishRequest): Promise<Published
 
   switch (request.contentType) {
     case 'test': {
-      const { data: testRow, error } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', QUIZV2).eq('doc_id', request.contentId).maybeSingle();
+      const { data: testRow, error } = await getSupabaseAdmin().from('firestore_docs').select('data').eq('collection', QUIZV2).eq('doc_id', request.contentId).maybeSingle();
       if (error) throw error;
       if (testRow?.data) {
         const testData = testRow.data as Record<string, unknown>;
@@ -67,7 +67,7 @@ export async function publishContent(request: PublishRequest): Promise<Published
       break;
     }
     case 'resource': {
-      const { data: resRow, error } = await getSupabaseAdmin()!.from('concept_resources').select('title, description').eq('id', request.contentId).maybeSingle();
+      const { data: resRow, error } = await getSupabaseAdmin().from('concept_resources').select('title, description').eq('id', request.contentId).maybeSingle();
       if (error) throw error;
       if (resRow) {
         title = resRow.title || 'Resource';
@@ -76,7 +76,7 @@ export async function publishContent(request: PublishRequest): Promise<Published
       break;
     }
     case 'mindmap': {
-      const { data: mmRow, error } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', MINDMAP).eq('doc_id', request.contentId).maybeSingle();
+      const { data: mmRow, error } = await getSupabaseAdmin().from('firestore_docs').select('data').eq('collection', MINDMAP).eq('doc_id', request.contentId).maybeSingle();
       if (error) throw error;
       if (mmRow?.data) {
         const mmData = mmRow.data as Record<string, unknown>;
@@ -86,7 +86,7 @@ export async function publishContent(request: PublishRequest): Promise<Published
       break;
     }
     case 'video': {
-      const { data: videoDoc, error: videoErr } = await getSupabaseAdmin()!
+      const { data: videoDoc, error: videoErr } = await getSupabaseAdmin()
         .from('concept_videos')
         .select('title, description')
         .eq('id', request.contentId)
@@ -100,7 +100,7 @@ export async function publishContent(request: PublishRequest): Promise<Published
     }
     case 'note':
     case 'material': {
-      const { data: noteDoc, error: noteErr } = await getSupabaseAdmin()!
+      const { data: noteDoc, error: noteErr } = await getSupabaseAdmin()
         .from('concept_notes')
         .select('summary, notes')
         .eq('concept_id', request.conceptId)
@@ -135,8 +135,8 @@ export async function publishContent(request: PublishRequest): Promise<Published
     status: request.scheduledAt ? 'scheduled' : 'published',
   };
 
-  const supabase = getSupabaseAdmin()!;
-  const { error } = await supabase.from('nosql_docs').upsert({
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase.from('firestore_docs').upsert({
     collection: QUIZV2, doc_id: id, data: published as unknown as Record<string, unknown>,
     updated_at: now,
   }, { onConflict: 'collection,doc_id' });
@@ -189,8 +189,8 @@ function rowToPublished(r: { doc_id: string; data: unknown }): PublishedContent 
 }
 
 export async function getPublishedContent(classId: string, contentType?: PublishableContentType): Promise<PublishedContent[]> {
-  const supabase = getSupabaseAdmin()!;
-  let q: any = supabase.from('nosql_docs').select('doc_id, data').eq('collection', QUIZV2).contains('data', { classId });
+  const supabase = getSupabaseAdmin();
+  let q: any = supabase.from('firestore_docs').select('doc_id, data').eq('collection', QUIZV2).contains('data', { classId });
 
   if (contentType) {
     q = q.contains('data', { contentType });
@@ -205,11 +205,11 @@ export async function getPublishedContent(classId: string, contentType?: Publish
 
 export async function getPublishedContentForStudent(studentId: string, classIds: string[]): Promise<PublishedContent[]> {
   if (classIds.length === 0) return [];
-  const supabase = getSupabaseAdmin()!;
+  const supabase = getSupabaseAdmin();
   const allContent: PublishedContent[] = [];
 
   for (const classId of classIds) {
-    const { data: rows, error } = await supabase.from('nosql_docs').select('doc_id, data').eq('collection', QUIZV2).contains('data', { classId });
+    const { data: rows, error } = await supabase.from('firestore_docs').select('doc_id, data').eq('collection', QUIZV2).contains('data', { classId });
     if (error) throw error;
 
     const items = (rows || []).map(rowToPublished);
@@ -225,15 +225,15 @@ export async function getPublishedContentForStudent(studentId: string, classIds:
 }
 
 export async function unpublishContent(publishId: string, teacherId: string): Promise<void> {
-  const supabase = getSupabaseAdmin()!;
-  const { data: row, error: fetchErr } = await supabase.from('nosql_docs').select('data').eq('collection', QUIZV2).eq('doc_id', publishId).maybeSingle();
+  const supabase = getSupabaseAdmin();
+  const { data: row, error: fetchErr } = await supabase.from('firestore_docs').select('data').eq('collection', QUIZV2).eq('doc_id', publishId).maybeSingle();
   if (fetchErr) throw fetchErr;
   if (!row?.data) throw new NotFoundError('Published content not found');
 
   const existing = row.data as PublishedContent;
   if (existing.teacherId !== teacherId) throw new ForbiddenError('Not your content');
 
-  const { error } = await supabase.from('nosql_docs').delete().eq('collection', QUIZV2).eq('doc_id', publishId);
+  const { error } = await supabase.from('firestore_docs').delete().eq('collection', QUIZV2).eq('doc_id', publishId);
   if (error) throw error;
   logger.info('Content unpublished', { publishId });
 }
@@ -247,8 +247,8 @@ export async function getContentStats(teacherId: string): Promise<{
   byType: Record<string, number>;
   recentPublishes: PublishedContent[];
 }> {
-  const supabase = getSupabaseAdmin()!;
-  const { data: rows, error } = await supabase.from('nosql_docs').select('doc_id, data').eq('collection', QUIZV2).contains('data', { teacherId });
+  const supabase = getSupabaseAdmin();
+  const { data: rows, error } = await supabase.from('firestore_docs').select('doc_id, data').eq('collection', QUIZV2).contains('data', { teacherId });
   if (error) throw error;
 
   const items = (rows || []).map(rowToPublished);

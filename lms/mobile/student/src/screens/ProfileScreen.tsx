@@ -2,11 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { api, permissions, LoadingState, ErrorState, EmptyState } from '@genesis-lms/shared';
 
-const FALLBACK_PROFILE = {
-  initials: 'SL',
-  name: 'Student Learner',
-  school: 'Genesis Academy',
-};
+
 
 export default function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
@@ -22,7 +18,7 @@ export default function ProfileScreen() {
     try {
       const res = await api.get('/student/profile');
       setProfile(res.data);
-    } catch { setProfile(FALLBACK_PROFILE); }
+    } catch (e) { console.warn('API call failed:', e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 

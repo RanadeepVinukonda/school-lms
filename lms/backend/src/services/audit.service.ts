@@ -39,7 +39,7 @@ export async function logAudit(entry: Omit<AuditEntry, 'timestamp'>): Promise<vo
   };
 
   try {
-    const supabase = getSupabaseAdmin()!;
+    const supabase = getSupabaseAdmin();
     const { error } = await supabase.from('auditlogs').insert(auditDoc);
     if (error) throw error;
     logger.info('Audit log created', { action: entry.action, targetId: entry.targetId });
@@ -74,7 +74,7 @@ export function adminAuditEntry(
 export async function listAuditLogs(query: { page?: string; limit?: string; action?: string }) {
   const { page, limit } = parsePagination(query);
   const offset = (page - 1) * limit;
-  const supabase = getSupabaseAdmin()!;
+  const supabase = getSupabaseAdmin();
 
   let countQ: any = supabase.from('auditlogs').select('*', { count: 'exact', head: true });
   let listQ: any = supabase.from('auditlogs').select('*').order('timestamp', { ascending: false });
@@ -97,7 +97,7 @@ export async function listAuditLogs(query: { page?: string; limit?: string; acti
 
 /** Fetch a single audit log by document ID. */
 export async function getAuditLogById(logId: string) {
-  const supabase = getSupabaseAdmin()!;
+  const supabase = getSupabaseAdmin();
   const { data: row, error } = await supabase.from('auditlogs').select('*').eq('id', logId).maybeSingle();
   if (error || !row) throw new NotFoundError('Audit log not found');
   return { id: row.id, ...row };
@@ -112,9 +112,9 @@ export async function recoverEntity(logId: string) {
     throw new Error('Audit log contains no oldValue snapshot to recover from');
   }
 
-  const supabase = getSupabaseAdmin()!;
+  const supabase = getSupabaseAdmin();
   const collection = entry.targetType + 's';
-  const { data: existing, error: fetchErr } = await supabase.from('nosql_docs').select('doc_id')
+  const { data: existing, error: fetchErr } = await supabase.from('firestore_docs').select('doc_id')
     .eq('collection', collection).eq('doc_id', entry.targetId).maybeSingle();
   if (fetchErr) throw fetchErr;
 
@@ -129,7 +129,7 @@ export async function recoverEntity(logId: string) {
     recoveredFromLog: logId,
   };
 
-  const { error } = await supabase.from('nosql_docs').upsert({
+  const { error } = await supabase.from('firestore_docs').upsert({
     collection, doc_id: entry.targetId, data: restoreData,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'collection,doc_id' });

@@ -49,7 +49,7 @@ export async function scanMultipleImages(req: Request, res: Response) {
 }
 
 export async function mapToConcept(req: Request, res: Response) {
-  const supabase = getSupabaseAdmin()!;
+  const supabase = getSupabaseAdmin();
   const { text, textbookId, count, type } = req.body;
 
   if (!text || typeof text !== 'string') {
@@ -186,8 +186,8 @@ export async function pushQuiz(req: Request, res: Response) {
     updatedAt: now,
   };
 
-  const supabase = getSupabaseAdmin()!;
-  await supabase.from('nosql_docs').upsert({ collection: 'quizV2', doc_id: id, data: doc }, { onConflict: 'collection,doc_id' });
+  const supabase = getSupabaseAdmin();
+  await supabase.from('firestore_docs').upsert({ collection: 'quizV2', doc_id: id, data: doc }, { onConflict: 'collection,doc_id' });
   logger.info('OCR quiz pushed to quizV2', { quizId: id, classId, questionCount: questions.length });
   sendCreated(res, doc);
 }
@@ -228,14 +228,14 @@ export async function pushAssignment(req: Request, res: Response) {
     updatedAt: now,
   };
 
-  const supabase = getSupabaseAdmin()!;
-  await supabase.from('nosql_docs').upsert({ collection: 'assignmentV2', doc_id: id, data: doc }, { onConflict: 'collection,doc_id' });
+  const supabase = getSupabaseAdmin();
+  await supabase.from('firestore_docs').upsert({ collection: 'assignmentV2', doc_id: id, data: doc }, { onConflict: 'collection,doc_id' });
   logger.info('OCR assignment pushed to assignmentV2', { assignmentId: id, classId });
   sendCreated(res, doc);
 }
 
 export async function getConceptsForTextbook(req: Request, res: Response) {
-  const supabase = getSupabaseAdmin()!;
+  const supabase = getSupabaseAdmin();
   const { textbookId } = req.params;
 
   if (!textbookId) {
