@@ -11,7 +11,7 @@ export async function publishContent(req: Request, res: Response) {
 export async function getPublishedContent(req: Request, res: Response) {
   const result = await contentPublishingService.getPublishedContent(
     req.params.classId,
-    req.query.contentType as any,
+    req.query.contentType as 'test' | 'resource' | 'mindmap' | 'video' | 'note' | 'material' | undefined,
   );
   sendSuccess(res, result);
 }
@@ -36,7 +36,7 @@ export async function getStudentContent(req: Request, res: Response) {
   const { data: userDoc } = supabase
     ? await supabase.from('users').select('classIds').eq('id', req.user!.uid).single()
     : { data: null };
-  const classIds = (userDoc as any)?.classIds || [];
+  const classIds = ((userDoc as Record<string, unknown>)?.classIds as string[]) || [];
   const result = await contentPublishingService.getPublishedContentForStudent(req.user!.uid, classIds);
   sendSuccess(res, result);
 }

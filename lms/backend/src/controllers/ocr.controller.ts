@@ -71,11 +71,11 @@ export async function mapToConcept(req: Request, res: Response) {
   }
 
   const { data: chapters } = await supabase.from('chapters').select('id').eq('textbook_id', textbookId);
-  const chapterIds = (chapters || []).map((c: any) => c.id);
+  const chapterIds = (chapters || []).map((c: { id: string }) => c.id);
   const { data: conceptRows } = chapterIds.length > 0
     ? await supabase.from('concepts').select('id, title, summary').in('chapter_id', chapterIds)
     : { data: [] };
-  const concepts: Array<{ id: string; title: string; summary: string }> = (conceptRows || []).map((c: any) => ({
+  const concepts: Array<{ id: string; title: string; summary: string }> = (conceptRows || []).map((c: { id: string; title?: string; summary?: string }) => ({
     id: c.id, title: c.title || 'Untitled', summary: c.summary || '',
   }));
 
@@ -123,7 +123,7 @@ export async function chat(req: Request, res: Response) {
 export async function pushQuiz(req: Request, res: Response) {
   const { classId, subjectId, questions: reqQuestions } = req.body;
   const questionsRaw = reqQuestions || req.body.data?.questions;
-  const userId = (req as any).user?.id || 'unknown';
+  const userId = (req as unknown as { user?: { id: string } }).user?.id || 'unknown';
 
   if (!questionsRaw || !Array.isArray(questionsRaw) || questionsRaw.length === 0) {
     throw new ValidationError('Quiz data must contain a questions array');
@@ -140,17 +140,17 @@ export async function pushQuiz(req: Request, res: Response) {
     return 'short_answer';
   };
 
-  const questions = questionsRaw.map((q: any) => {
+  const questions = questionsRaw.map((q: Record<string, unknown>) => {
     const mapped: Record<string, unknown> = {
       id: q.id || require('uuid').v4(),
       text: q.question || q.questionText,
-      type: normalizeType(q.type),
-      points: q.points || 1,
-      correctAnswer: q.correctAnswer || '',
-      explanation: q.explanation || '',
-      difficulty: q.difficulty || 'medium',
+      type: normalizeType(q.type as string),
+      points: (q.points as number) || 1,
+      correctAnswer: (q.correctAnswer as string) || '',
+      explanation: (q.explanation as string) || '',
+      difficulty: (q.difficulty as string) || 'medium',
     };
-    if (Array.isArray(q.options) && q.options.length > 0) {
+    if (Array.isArray(q.options) && (q.options as any[]).length > 0) {
       mapped.options = q.options;
     }
     return mapped;
@@ -161,7 +161,7 @@ export async function pushQuiz(req: Request, res: Response) {
   const totalPoints = questions.reduce((s: number, q: any) => s + q.points, 0);
 
   // Collect unique question types for selectedModels
-  const uniqueTypes = [...new Set(questions.map((q: any) => q.type))];
+  const uniqueTypes = [...new Set(questions.map((q: Record<string, unknown>) => q.type as string))];
 
   const doc = {
     id,
@@ -198,7 +198,7 @@ export async function pushAssignment(req: Request, res: Response) {
   const assignmentInstructions = instructions || req.body.data?.instructions;
   const assignmentQuestions = reqQuestions || req.body.data?.questions || [];
   const assignmentDescription = reqDesc || req.body.data?.description || '';
-  const userId = (req as any).user?.id || 'unknown';
+  const userId = (req as unknown as { user?: { id: string } }).user?.id || 'unknown';
 
   if (!assignmentTitle) {
     throw new ValidationError('Assignment data must contain a title');
@@ -243,7 +243,7 @@ export async function getConceptsForTextbook(req: Request, res: Response) {
   }
 
   const { data: chapters } = await supabase.from('chapters').select('id, title').eq('textbook_id', textbookId);
-  const chapterIds = (chapters || []).map((c: any) => c.id);
+  const chapterIds = (chapters || []).map((c: { id: string }) => c.id);
   const { data: conceptRows } = chapterIds.length > 0
     ? await supabase.from('concepts').select('id, chapter_id, title, summary').in('chapter_id', chapterIds)
     : { data: [] };

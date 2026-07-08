@@ -62,17 +62,18 @@ export async function getChildDashboard(req: Request, res: Response) {
     if (cls) className = cls.name;
   }
 
-  const scoredGrades = (grades as any[]).filter((g: any) => g.percentage != null);
+  const scoredGrades = grades.filter((g: { percentage?: number }) => g.percentage != null);
   const avgScore = scoredGrades.length > 0
     ? Math.round(scoredGrades.reduce((s: number, g: any) => s + g.percentage, 0) / scoredGrades.length)
     : 0;
 
+  const perf = performance as Record<string, unknown> | undefined;
   sendSuccess(res, {
     student,
     className,
-    overallAvgScore: (performance as any)?.overallAvgScore ?? avgScore,
-    totalAttempts: (performance as any)?.totalAttempts ?? 0,
-    recentActivity: (performance as any)?.recentActivity ?? [],
+    overallAvgScore: (perf?.overallAvgScore as number) ?? avgScore,
+    totalAttempts: (perf?.totalAttempts as number) ?? 0,
+    recentActivity: (perf?.recentActivity ?? []) as Record<string, unknown>[],
     grades: grades,
   });
 }
@@ -114,7 +115,7 @@ export async function getChildReport(req: Request, res: Response) {
   if (!studentRow) throw new NotFoundError('Student not found');
   const studentName = studentRow.display_name || 'Student';
 
-  const performance = (await analyticsService.getStudentPerformance(studentId)) as any;
+  const performance = await analyticsService.getStudentPerformance(studentId);
   const recentGrades = await gradeService.getStudentGrades(studentId);
 
   const prompt = `You are an educational AI assistant generating a weekly progress report for a parent.
@@ -155,9 +156,9 @@ Generate a JSON report with this exact structure:
     report = JSON.parse(raw);
   } catch (err) {
     logger.warn('AI report generation failed, returning data-driven fallback', { studentId, error: err });
-    const activity = (performance?.recentActivity ?? []) as any[];
-    const quizzes = (performance?.quizzes ?? []) as any[];
-    const assignments = (performance?.assignments ?? []) as any[];
+    const activity = (performance?.recentActivity ?? []) as Array<Record<string, unknown>>;
+    const quizzes = (performance?.quizzes ?? []) as Array<Record<string, unknown>>;
+    const assignments = (performance?.assignments ?? []) as Array<Record<string, unknown>>;
 
     const highScores = activity.filter((a: any) => a.score >= 75);
     const lowScores = activity.filter((a: any) => a.score < 50);
@@ -170,7 +171,7 @@ Generate a JSON report with this exact structure:
       ? lowScores.map((a: any) => `Needs improvement in "${a.title}" (${a.score}%)`)
       : (activity.length > 0 ? ['Continue to review and reinforce concepts'] : ['Begin attempting assessments to identify areas for growth']);
 
-    const recs: any[] = [];
+    const recs: Array<{ area: string; suggestion: string; priority: string }> = [];
     const avg = performance?.overallAvgScore ?? 0;
     if (avg < 50) recs.push({ area: 'Core Concepts', suggestion: 'Focus on strengthening foundational concepts. Consider requesting extra help sessions.', priority: 'high' as const });
     else if (avg < 75) recs.push({ area: 'Review', suggestion: 'Regular revision of class notes and completing practice problems will help improve scores.', priority: 'medium' as const });
@@ -216,7 +217,7 @@ export async function getRecommendations(req: Request, res: Response) {
     return;
   }
 
-  const allRecommendations: any[] = [];
+  const allRecommendations: Array<{ studentId: string; studentName: string; averageScore: number; totalAssessments: number; recommendations: Array<{ area: string; suggestion: string; priority: string }> }> = [];
 
   for (const childId of childrenIds) {
     const { data: studentRow } = await supabase.from('users').select('display_name').eq('id', childId).maybeSingle();
