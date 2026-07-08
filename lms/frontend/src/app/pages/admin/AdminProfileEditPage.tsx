@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,9 +22,7 @@ export default function AdminProfileEditPage() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
-  const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [loadingProfile, setLoadingProfile] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
@@ -36,24 +35,25 @@ export default function AdminProfileEditPage() {
 
   const [avatarPreview, setAvatarPreview] = useState('');
 
-  useEffect(() => {
-    if (!user?.id) { setLoadingProfile(false); return; }
-    getUser(user.id)
-      .then((userDoc) => {
-        if (userDoc) {
-          setForm({
-            displayName: userDoc.displayName || '',
-            email: userDoc.email || '',
-            phone: userDoc.phone || '',
-            bio: userDoc.bio || '',
-            address: userDoc.address || '',
-          });
-          setAvatarPreview(userDoc.avatar || '');
-        }
-        setLoadingProfile(false);
-      })
-      .catch(() => { setLoadingProfile(false); toast.error('Failed to load profile data'); });
-  }, [user?.id]);
+  const { isLoading: loadingProfile } = useQuery({
+    queryKey: ['admin-profile-edit', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const userDoc = await getUser(user.id);
+      if (userDoc) {
+        setForm({
+          displayName: userDoc.displayName || '',
+          email: userDoc.email || '',
+          phone: userDoc.phone || '',
+          bio: userDoc.bio || '',
+          address: userDoc.address || '',
+        });
+        setAvatarPreview(userDoc.avatar || '');
+      }
+      return userDoc;
+    },
+    enabled: !!user?.id,
+  });
 
   const handleChange = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -74,22 +74,20 @@ export default function AdminProfileEditPage() {
     }
   };
 
-  const handleSave = async () => {
-    if (!user) return;
-    setSaving(true);
-    try {
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error('Not authenticated');
       const data: Record<string, unknown> = { ...form };
       if (avatarPreview) data.avatar = avatarPreview;
       await updateUser(user.id, data);
       setUser({ ...user, ...data } as typeof user);
+    },
+    onSuccess: () => {
       toast.success('Profile updated');
       navigate(ROUTES.ADMIN_DASHBOARD);
-    } catch {
-      toast.error('Failed to update profile');
-    } finally {
-      setSaving(false);
-    }
-  };
+    },
+    onError: () => toast.error('Failed to update profile'),
+  });
 
   return (
     <>
@@ -149,8 +147,8 @@ export default function AdminProfileEditPage() {
 
               <div className="flex gap-3 pt-2">
                 <Button variant="outline" className="flex-1" onClick={() => navigate(ROUTES.ADMIN_DASHBOARD)}>Cancel</Button>
-                <Button className="flex-1" onClick={handleSave} disabled={saving || loadingProfile}>
-                  {saving ? 'Saving...' : loadingProfile ? 'Loading...' : 'Save Changes'}
+                <Button className="flex-1" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || loadingProfile}>
+                  {saveMutation.isPending ? 'Saving...' : loadingProfile ? 'Loading...' : 'Save Changes'}
                 </Button>
               </div>
             </CardContent>
