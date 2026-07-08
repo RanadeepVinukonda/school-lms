@@ -38,14 +38,14 @@ export async function getStudentDashboard(studentId: string) {
   const overallGrade = safePct(totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0);
 
   const { data: quizAttempts } = await supabase
-    .from('nosql_docs')
+    .from('firestore_docs')
     .select('data')
     .eq('collection', 'quizAttemptV2')
     .eq('data->>studentId', studentId)
     .eq('data->>status', 'completed');
 
   const { data: assignAttempts } = await supabase
-    .from('nosql_docs')
+    .from('firestore_docs')
     .select('data')
     .eq('collection', 'assignmentSubmissionV2')
     .eq('data->>studentId', studentId)
@@ -293,7 +293,7 @@ async function getAssessmentData(type: 'quiz' | 'assignment' | 'exam') {
   const supabase = getSupabaseAdmin()!;
   const collectionName = type === 'quiz' ? 'quizV2' : type === 'assignment' ? 'assignmentV2' : 'examV2';
   const { data: docs, error: docsErr } = await supabase
-    .from('nosql_docs')
+    .from('firestore_docs')
     .select('data, doc_id')
     .eq('collection', collectionName);
   if (docsErr) throw new Error(docsErr.message);
@@ -331,7 +331,7 @@ export async function getClassPerformance(classId: string) {
       const idField = type === 'quiz' ? 'quizId' : type === 'assignment' ? 'assignmentId' : 'examId';
 
       const { data: attempts, error: getCpAttemptsErr } = await supabase
-        .from('nosql_docs')
+        .from('firestore_docs')
         .select('data')
         .eq('collection', attemptCollectionName)
         .filter('data->>' + idField, 'eq', a.id);
@@ -400,7 +400,7 @@ export async function getStudentPerformance(studentId: string) {
     const parentCollectionName = type === 'quiz' ? 'quizV2' : type === 'assignment' ? 'assignmentV2' : 'examV2';
 
     const { data: attempts, error: getSpAttemptsErr } = await supabase
-      .from('nosql_docs')
+      .from('firestore_docs')
       .select('data, doc_id')
       .eq('collection', attemptCollectionName)
       .filter('data->>studentId', 'eq', studentId);
@@ -413,7 +413,7 @@ export async function getStudentPerformance(studentId: string) {
 
       if (parentId) {
         const { data: parent, error: parentErr } = await supabase
-          .from('nosql_docs')
+          .from('firestore_docs')
           .select('data')
           .eq('collection', parentCollectionName)
           .eq('doc_id', parentId)
@@ -464,7 +464,7 @@ export async function getAssessmentAnalytics(assessmentId: string, type: 'quiz' 
 
   const parentCollectionName = type === 'quiz' ? 'quizV2' : type === 'assignment' ? 'assignmentV2' : 'examV2';
   const { data: parentDoc, error: parentDocErr } = await supabase
-    .from('nosql_docs')
+    .from('firestore_docs')
     .select('data')
     .eq('collection', parentCollectionName)
     .eq('doc_id', assessmentId)
@@ -478,7 +478,7 @@ export async function getAssessmentAnalytics(assessmentId: string, type: 'quiz' 
   const idField = type === 'quiz' ? 'quizId' : type === 'assignment' ? 'assignmentId' : 'examId';
 
   const { data: attempts, error: getAaAttemptsErr } = await supabase
-    .from('nosql_docs')
+    .from('firestore_docs')
     .select('data, doc_id')
     .eq('collection', attemptCollectionName)
     .filter('data->>' + idField, 'eq', assessmentId);
@@ -544,7 +544,7 @@ export async function getConceptOversight() {
   const supabase = getSupabaseAdmin()!;
 
   const { data: tcsDocs, error: tcsDocsErr } = await supabase
-    .from('nosql_docs')
+    .from('firestore_docs')
     .select('data, doc_id')
     .eq('collection', 'teacherClassSubject');
   if (tcsDocsErr) throw new Error(tcsDocsErr.message);
@@ -598,7 +598,7 @@ export async function getConceptOversight() {
           const conceptName = concept.title || 'Unknown Concept';
 
           const { data: quizDocs, error: quizDocsErr } = await supabase
-            .from('nosql_docs')
+            .from('firestore_docs')
             .select('doc_id')
             .eq('collection', 'quizV2')
             .filter('data->>classId', 'eq', assignment.classId)
@@ -607,7 +607,7 @@ export async function getConceptOversight() {
           const quizIds = (quizDocs || []).map((d: any) => d.doc_id);
 
           const { data: assignDocs, error: assignDocsErr } = await supabase
-            .from('nosql_docs')
+            .from('firestore_docs')
             .select('doc_id')
             .eq('collection', 'assignmentV2')
             .filter('data->>classId', 'eq', assignment.classId)
@@ -618,7 +618,7 @@ export async function getConceptOversight() {
           let quizPercentages: number[] = [];
           for (const qId of quizIds) {
             const { data: attempts, error: quizAttemptsErr } = await supabase
-              .from('nosql_docs')
+              .from('firestore_docs')
               .select('data')
               .eq('collection', 'quizAttemptV2')
               .filter('data->>quizId', 'eq', qId);
@@ -632,7 +632,7 @@ export async function getConceptOversight() {
           let assignmentPercentages: number[] = [];
           for (const aId of assignmentIds) {
             const { data: submissions, error: submissionsErr } = await supabase
-              .from('nosql_docs')
+              .from('firestore_docs')
               .select('data')
               .eq('collection', 'assignmentSubmissionV2')
               .filter('data->>assignmentId', 'eq', aId);
@@ -679,9 +679,9 @@ export async function getConductedTests() {
   const supabase = getSupabaseAdmin()!;
 
   const [quizRes, examRes, assignmentRes, classesRes, subjectsRes, teachersRes] = await Promise.all([
-    supabase.from('nosql_docs').select('data, doc_id').eq('collection', 'quizV2'),
-    supabase.from('nosql_docs').select('data, doc_id').eq('collection', 'examV2'),
-    supabase.from('nosql_docs').select('data, doc_id').eq('collection', 'assignmentV2'),
+    supabase.from('firestore_docs').select('data, doc_id').eq('collection', 'quizV2'),
+    supabase.from('firestore_docs').select('data, doc_id').eq('collection', 'examV2'),
+    supabase.from('firestore_docs').select('data, doc_id').eq('collection', 'assignmentV2'),
     supabase.from('classes').select('id, name'),
     supabase.from('subjects').select('id, name'),
     supabase.from('users').select('id, display_name, email').eq('role', 'teacher'),
@@ -775,11 +775,11 @@ export async function getConductedTests() {
     try {
       let attemptsRes;
       if (t.type === 'Quiz') {
-        attemptsRes = await supabase.from('nosql_docs').select('data').eq('collection', 'quizAttemptV2').filter('data->>quizId', 'eq', t.id);
+        attemptsRes = await supabase.from('firestore_docs').select('data').eq('collection', 'quizAttemptV2').filter('data->>quizId', 'eq', t.id);
       } else if (t.type === 'Exam') {
-        attemptsRes = await supabase.from('nosql_docs').select('data').eq('collection', 'examAttemptV2').filter('data->>examId', 'eq', t.id);
+        attemptsRes = await supabase.from('firestore_docs').select('data').eq('collection', 'examAttemptV2').filter('data->>examId', 'eq', t.id);
       } else {
-        attemptsRes = await supabase.from('nosql_docs').select('data').eq('collection', 'assignmentSubmissionV2').filter('data->>assignmentId', 'eq', t.id);
+        attemptsRes = await supabase.from('firestore_docs').select('data').eq('collection', 'assignmentSubmissionV2').filter('data->>assignmentId', 'eq', t.id);
       }
       if (attemptsRes.error) throw new Error(attemptsRes.error.message);
 

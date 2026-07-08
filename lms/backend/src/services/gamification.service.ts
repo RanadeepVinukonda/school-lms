@@ -82,7 +82,7 @@ const coll = (name: string) => {
 
 async function nosqlGet(collection: string, docId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data, error } = await supabase.from('nosql_docs').select('doc_id, data').eq('collection', collection).eq('doc_id', docId).maybeSingle();
+  const { data, error } = await supabase.from('firestore_docs').select('doc_id, data').eq('collection', collection).eq('doc_id', docId).maybeSingle();
   if (error) throw error;
   return data || null;
 }
@@ -90,7 +90,7 @@ async function nosqlGet(collection: string, docId: string) {
 async function nosqlSet(collection: string, docId: string, docData: Record<string, unknown>) {
   const supabase = getSupabaseAdmin()!;
   const now = new Date().toISOString();
-  const { error } = await supabase.from('nosql_docs').upsert({ collection, doc_id: docId, data: docData, updated_at: now }, { onConflict: 'collection,doc_id' });
+  const { error } = await supabase.from('firestore_docs').upsert({ collection, doc_id: docId, data: docData, updated_at: now }, { onConflict: 'collection,doc_id' });
   if (error) {
     logger.error('Failed to write nosql_doc', { collection, docId, error: error.message });
     throw error;
@@ -162,7 +162,7 @@ export async function awardXp(userId: string, amount: number, source: string) {
   const updated = { ...profile, xp: newXp, level: newLevel, updatedAt: new Date().toISOString() };
   await nosqlSet('gamificationProfiles', userId, updated);
 
-  const { error: txError } = await supabase.from('nosql_docs').insert({
+  const { error: txError } = await supabase.from('firestore_docs').insert({
     collection: 'gamificationTransactions', doc_id: uuidv4(),
     data: { userId, amount, type: 'xp', source, createdAt: new Date().toISOString() },
     updated_at: new Date().toISOString(),
@@ -183,7 +183,7 @@ export async function awardCoins(userId: string, amount: number, source: string)
   const updated = { ...profile, coins: newCoins, updatedAt: new Date().toISOString() };
   await nosqlSet('gamificationProfiles', userId, updated);
 
-  const { error: txError } = await supabase.from('nosql_docs').insert({
+  const { error: txError } = await supabase.from('firestore_docs').insert({
     collection: 'gamificationTransactions', doc_id: uuidv4(),
     data: { userId, amount, type: 'coin', source, createdAt: new Date().toISOString() },
     updated_at: new Date().toISOString(),
@@ -214,8 +214,8 @@ export async function awardXpAndCoins(
   const supabase = getSupabaseAdmin()!;
   try {
     const [{ error: xpTxErr }, { error: coinTxErr }] = await Promise.all([
-      supabase.from('nosql_docs').insert({ collection: 'gamificationTransactions', doc_id: uuidv4(), data: { userId, amount: xpAmount, type: 'xp', source, createdAt: now }, updated_at: now }),
-      supabase.from('nosql_docs').insert({ collection: 'gamificationTransactions', doc_id: uuidv4(), data: { userId, amount: coinAmount, type: 'coin', source, createdAt: now }, updated_at: now }),
+      supabase.from('firestore_docs').insert({ collection: 'gamificationTransactions', doc_id: uuidv4(), data: { userId, amount: xpAmount, type: 'xp', source, createdAt: now }, updated_at: now }),
+      supabase.from('firestore_docs').insert({ collection: 'gamificationTransactions', doc_id: uuidv4(), data: { userId, amount: coinAmount, type: 'coin', source, createdAt: now }, updated_at: now }),
     ]);
     if (xpTxErr) throw new Error(`Failed to log gamification transaction: ${xpTxErr.message}`);
     if (coinTxErr) throw new Error(`Failed to log gamification transaction: ${coinTxErr.message}`);
@@ -272,7 +272,7 @@ async function checkAndAwardBadges(userId: string, profile: Record<string, unkno
 
 export async function getLeaderboard(limit = 50) {
   const supabase = getSupabaseAdmin()!;
-  const { data: rows, error } = await supabase.from('nosql_docs').select('doc_id, data')
+  const { data: rows, error } = await supabase.from('firestore_docs').select('doc_id, data')
     .eq('collection', 'gamificationProfiles')
     .order('data->>xp', { ascending: false })
     .limit(limit);
@@ -370,7 +370,7 @@ function getMonthKey(date = new Date()): string {
 export async function getDailyChallenges(userId: string) {
   const supabase = getSupabaseAdmin()!;
   const today = new Date().toISOString().split('T')[0];
-  const { data: rows, error } = await supabase.from('nosql_docs').select('doc_id, data')
+  const { data: rows, error } = await supabase.from('firestore_docs').select('doc_id, data')
     .eq('collection', 'gamificationDailyChallenges')
     .contains('data', { userId, date: today });
   if (error) throw error;
@@ -404,7 +404,7 @@ export async function getDailyChallenges(userId: string) {
     });
     const now = new Date().toISOString();
     for (const c of challenges) {
-      const { error } = await supabase.from('nosql_docs').upsert(
+      const { error } = await supabase.from('firestore_docs').upsert(
         { collection: 'gamificationDailyChallenges', doc_id: c.id, data: c, updated_at: now },
         { onConflict: 'collection,doc_id' }
       );
@@ -420,7 +420,7 @@ export async function getDailyChallenges(userId: string) {
 
 export async function completeDailyChallenge(userId: string, challengeId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data, error } = await supabase.from('nosql_docs').select('data')
+  const { data, error } = await supabase.from('firestore_docs').select('data')
     .eq('collection', 'gamificationDailyChallenges').eq('doc_id', challengeId).maybeSingle();
   if (error) throw error;
 
@@ -430,7 +430,7 @@ export async function completeDailyChallenge(userId: string, challengeId: string
   if (challenge.completed) return { alreadyCompleted: true };
 
   const merged = { ...challenge, completed: true, progress: challenge.target, updatedAt: new Date().toISOString() };
-  const { error: updateError } = await supabase.from('nosql_docs').update({ data: merged })
+  const { error: updateError } = await supabase.from('firestore_docs').update({ data: merged })
     .eq('collection', 'gamificationDailyChallenges').eq('doc_id', challengeId);
   if (updateError) throw new Error(`Failed to update daily challenge: ${updateError.message}`);
 
@@ -453,7 +453,7 @@ async function getOrCreatePeriodChallenges(
   collectionName: string,
 ) {
   const supabase = getSupabaseAdmin()!;
-  const { data: rows, error } = await supabase.from('nosql_docs').select('doc_id, data')
+  const { data: rows, error } = await supabase.from('firestore_docs').select('doc_id, data')
     .eq('collection', collectionName)
     .contains('data', { userId, periodKey });
   if (error) throw error;
@@ -487,7 +487,7 @@ async function getOrCreatePeriodChallenges(
     });
     const now = new Date().toISOString();
     for (const c of challenges) {
-      const { error } = await supabase.from('nosql_docs').upsert(
+      const { error } = await supabase.from('firestore_docs').upsert(
         { collection: collectionName, doc_id: c.id, data: c, updated_at: now },
         { onConflict: 'collection,doc_id' }
       );
@@ -516,7 +516,7 @@ async function completePeriodChallenge(
   source: string,
 ) {
   const supabase = getSupabaseAdmin()!;
-  const { data, error } = await supabase.from('nosql_docs').select('data')
+  const { data, error } = await supabase.from('firestore_docs').select('data')
     .eq('collection', collectionName).eq('doc_id', challengeId).maybeSingle();
   if (error) throw error;
 
@@ -526,7 +526,7 @@ async function completePeriodChallenge(
   if (challenge.completed) return { alreadyCompleted: true };
 
   const merged = { ...challenge, completed: true, progress: challenge.target, updatedAt: new Date().toISOString() };
-  const { error: updateError } = await supabase.from('nosql_docs').update({ data: merged })
+  const { error: updateError } = await supabase.from('firestore_docs').update({ data: merged })
     .eq('collection', collectionName).eq('doc_id', challengeId);
   if (updateError) throw new Error(`Failed to update period challenge: ${updateError.message}`);
 

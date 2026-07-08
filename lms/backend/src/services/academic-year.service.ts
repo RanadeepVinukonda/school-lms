@@ -6,7 +6,7 @@ import { TransactionManager } from '../database/transaction-manager';
 
 async function nosqlDoc(collection: string, docId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data, error } = await supabase.from('nosql_docs').select('doc_id, data').eq('collection', collection).eq('doc_id', docId).maybeSingle();
+  const { data, error } = await supabase.from('firestore_docs').select('doc_id, data').eq('collection', collection).eq('doc_id', docId).maybeSingle();
   if (error) throw new Error('Failed to fetch document: ' + error.message);
   return data || null;
 }
@@ -14,7 +14,7 @@ async function nosqlDoc(collection: string, docId: string) {
 async function setNosqlDoc(collection: string, docId: string, docData: Record<string, unknown>) {
   const supabase = getSupabaseAdmin()!;
   const now = new Date().toISOString();
-  const { error } = await supabase.from('nosql_docs').upsert({ collection, doc_id: docId, data: docData, updated_at: now }, { onConflict: 'collection,doc_id' });
+  const { error } = await supabase.from('firestore_docs').upsert({ collection, doc_id: docId, data: docData, updated_at: now }, { onConflict: 'collection,doc_id' });
   if (error) throw error;
 }
 
@@ -38,7 +38,7 @@ export async function createAcademicYear(data: {
 }) {
   const supabase = getSupabaseAdmin()!;
 
-  const { data: existing, error: fetchError } = await supabase.from('nosql_docs').select('doc_id')
+  const { data: existing, error: fetchError } = await supabase.from('firestore_docs').select('doc_id')
     .eq('collection', 'academicYears').contains('data', { code: data.code }).maybeSingle();
   if (fetchError) throw new Error('Failed to check existing academic year: ' + fetchError.message);
   if (existing) throw new ConflictError('Academic year with this code already exists');
@@ -47,7 +47,7 @@ export async function createAcademicYear(data: {
   const now = new Date().toISOString();
 
   if (data.isCurrent) {
-    const { data: prevRows, error: prevError } = await supabase.from('nosql_docs').select('doc_id, data')
+    const { data: prevRows, error: prevError } = await supabase.from('firestore_docs').select('doc_id, data')
       .eq('collection', 'academicYears').contains('data', { isCurrent: true });
     if (prevError) throw new Error('Failed to fetch current academic years: ' + prevError.message);
     const yearData = { ...data, id, status: data.status || 'active', createdAt: now, updatedAt: now };
@@ -81,7 +81,7 @@ export async function updateAcademicYear(id: string, data: Record<string, unknow
 
   if (data.isCurrent === true) {
     const now = new Date().toISOString();
-    const { data: prevRows, error: prevError } = await supabase.from('nosql_docs').select('doc_id, data')
+    const { data: prevRows, error: prevError } = await supabase.from('firestore_docs').select('doc_id, data')
       .eq('collection', 'academicYears').contains('data', { isCurrent: true });
     if (prevError) throw new Error('Failed to fetch current academic years: ' + prevError.message);
     const tm = new TransactionManager();
@@ -108,7 +108,7 @@ export async function deleteAcademicYear(id: string) {
   const supabase = getSupabaseAdmin()!;
   const existing = await nosqlDoc('academicYears', id);
   if (!existing) throw new NotFoundError('Academic year not found');
-  const { error } = await supabase.from('nosql_docs').delete().eq('collection', 'academicYears').eq('doc_id', id);
+  const { error } = await supabase.from('firestore_docs').delete().eq('collection', 'academicYears').eq('doc_id', id);
   if (error) throw error;
   logger.info('Academic year deleted', { id });
 }
@@ -121,7 +121,7 @@ export async function getAcademicYearById(id: string) {
 
 export async function listAcademicYears(query: { status?: string; page?: string; limit?: string }) {
   const supabase = getSupabaseAdmin()!;
-  let dbQuery = supabase.from('nosql_docs').select('doc_id, data').eq('collection', 'academicYears');
+  let dbQuery = supabase.from('firestore_docs').select('doc_id, data').eq('collection', 'academicYears');
   if (query.status) dbQuery = dbQuery.contains('data', { status: query.status });
 
   const { data: rows, error } = await dbQuery.order('data->>createdAt', { ascending: false });
@@ -141,7 +141,7 @@ export async function listAcademicYears(query: { status?: string; page?: string;
 
 export async function getCurrentAcademicYear() {
   const supabase = getSupabaseAdmin()!;
-  const { data: rows, error } = await supabase.from('nosql_docs').select('doc_id, data')
+  const { data: rows, error } = await supabase.from('firestore_docs').select('doc_id, data')
     .eq('collection', 'academicYears')
     .contains('data', { isCurrent: true, status: 'active' })
     .limit(1);

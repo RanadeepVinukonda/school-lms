@@ -20,7 +20,7 @@ export async function generateWeeklyReport() {
   };
 
   const supabase = getSupabaseAdmin()!;
-  const { error } = await supabase.from('nosql_docs').upsert({
+  const { error } = await supabase.from('firestore_docs').upsert({
     collection: 'reports',
     doc_id: report.id,
     data: report,
@@ -48,7 +48,7 @@ export async function generateMonthlyReport() {
   };
 
   const supabase = getSupabaseAdmin()!;
-  const { error } = await supabase.from('nosql_docs').upsert({
+  const { error } = await supabase.from('firestore_docs').upsert({
     collection: 'reports',
     doc_id: report.id,
     data: report,
@@ -73,18 +73,18 @@ async function gatherReportData(startDate: string, endDate: string) {
   const avgGrade = totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0;
 
   const { count: totalCourses } = await supabase
-    .from('nosql_docs')
+    .from('firestore_docs')
     .select('*', { count: 'exact', head: true })
     .eq('collection', 'courses');
 
   const { data: assignments } = await supabase
-    .from('nosql_docs')
+    .from('firestore_docs')
     .select('doc_id')
     .eq('collection', 'assignmentV2');
   const totalAssignments = (assignments || []).length;
 
   const { data: submissions } = await supabase
-    .from('nosql_docs')
+    .from('firestore_docs')
     .select('doc_id')
     .eq('collection', 'assignmentSubmissionV2')
     .gte('data->>submittedAt', startDate);

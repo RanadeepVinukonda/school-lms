@@ -6,7 +6,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 const client = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 client.connect().then(() => {
   client.query(`
-    CREATE TABLE IF NOT EXISTS nosql_docs (
+    CREATE TABLE IF NOT EXISTS firestore_docs (
       collection TEXT NOT NULL, 
       doc_id TEXT NOT NULL, 
       data JSONB NOT NULL DEFAULT '{}', 
@@ -14,9 +14,9 @@ client.connect().then(() => {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now(), 
       PRIMARY KEY (collection, doc_id)
     ); 
-    CREATE INDEX IF NOT EXISTS idx_nosql_docs_collection ON nosql_docs(collection);
+    CREATE INDEX IF NOT EXISTS idx_firestore_docs_collection ON firestore_docs(collection);
   `).then(() => {
-    console.log('nosql_docs created successfully');
+    console.log('firestore_docs created successfully');
     
     // Also notify PostgREST schema cache to reload (fixes the error)
     return client.query('NOTIFY pgrst, \'reload schema\'');

@@ -30,7 +30,7 @@ async function countTyped(table: string, field: string, value: string): Promise<
 
 async function countNosql(collection: string, field: string, value: string): Promise<number> {
   try {
-    const { count } = await supabase().from('nosql_docs')
+    const { count } = await supabase().from('firestore_docs')
       .select('*', { count: 'exact', head: true })
       .eq('collection', collection)
       .contains('data', { [field]: value });
@@ -72,7 +72,7 @@ async function docById(collectionName: string, docId: string) {
     if (docErr) throw new Error('Failed to fetch document: ' + docErr.message);
     return data || null;
   }
-  const { data, error: nosqlErr } = await supabase().from('nosql_docs').select('data').eq('collection', collectionName).eq('doc_id', docId).maybeSingle();
+  const { data, error: nosqlErr } = await supabase().from('firestore_docs').select('data').eq('collection', collectionName).eq('doc_id', docId).maybeSingle();
   if (nosqlErr) throw new Error('Failed to fetch nosql document: ' + nosqlErr.message);
   return data?.data as Record<string, unknown> | null || null;
 }

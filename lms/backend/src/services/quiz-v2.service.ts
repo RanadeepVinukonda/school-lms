@@ -23,12 +23,12 @@ function fallbackText(type: string, _options: any): string {
 }
 
 async function nosqlGet(col: string, id: string) {
-  const { data: row } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  const { data: row } = await getSupabaseAdmin()!.from('firestore_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
   return { exists: !!row, data: (row?.data as Record<string, unknown>) ?? null };
 }
 
 async function nosqlSet(col: string, id: string, data: Record<string, unknown>) {
-  const { error } = await getSupabaseAdmin()!.from('nosql_docs').upsert({
+  const { error } = await getSupabaseAdmin()!.from('firestore_docs').upsert({
     collection: col, doc_id: id, data,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'collection,doc_id' });
@@ -36,9 +36,9 @@ async function nosqlSet(col: string, id: string, data: Record<string, unknown>) 
 }
 
 async function nosqlUpdate(col: string, id: string, updates: Record<string, unknown>) {
-  const { data: existing } = await getSupabaseAdmin()!.from('nosql_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  const { data: existing } = await getSupabaseAdmin()!.from('firestore_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
   const merged = { ...((existing?.data as Record<string, unknown>) || {}), ...updates };
-  const { error } = await getSupabaseAdmin()!.from('nosql_docs').upsert({
+  const { error } = await getSupabaseAdmin()!.from('firestore_docs').upsert({
     collection: col, doc_id: id, data: merged,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'collection,doc_id' });
@@ -46,12 +46,12 @@ async function nosqlUpdate(col: string, id: string, updates: Record<string, unkn
 }
 
 async function nosqlDelete(col: string, id: string) {
-  const { error } = await getSupabaseAdmin()!.from('nosql_docs').delete().eq('collection', col).eq('doc_id', id);
+  const { error } = await getSupabaseAdmin()!.from('firestore_docs').delete().eq('collection', col).eq('doc_id', id);
   if (error) throw error;
 }
 
 async function nosqlQuery(col: string, filters: Record<string, unknown>) {
-  let q: any = getSupabaseAdmin()!.from('nosql_docs').select('doc_id, data').eq('collection', col);
+  let q: any = getSupabaseAdmin()!.from('firestore_docs').select('doc_id, data').eq('collection', col);
   for (const [k, v] of Object.entries(filters)) {
     q = q.contains('data', { [k]: v });
   }

@@ -18,7 +18,7 @@ async function checkOverdueTests(): Promise<void> {
     const supabase = getSupabaseAdmin()!;
 
     const { data: tests } = await supabase
-      .from('nosql_docs')
+      .from('firestore_docs')
       .select('doc_id, data')
       .eq('collection', 'examV2')
       .filter('data->>endDate', 'lt', now);
@@ -43,7 +43,7 @@ async function checkOverdueTests(): Promise<void> {
         if (!students || students.length === 0) continue;
 
         const { data: attempts } = await supabase
-          .from('nosql_docs')
+          .from('firestore_docs')
           .select('data')
           .eq('collection', 'examAttemptV2')
           .contains('data', { examId: testId });

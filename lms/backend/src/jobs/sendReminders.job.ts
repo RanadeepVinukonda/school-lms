@@ -8,7 +8,7 @@ async function hasReminderBeenSent(type: string, refId: string, userId: string):
   const supabase = getSupabaseAdmin()!;
   const docId = `${type}_${refId}_${userId}`;
   const { data } = await supabase
-    .from('nosql_docs')
+    .from('firestore_docs')
     .select('doc_id')
     .eq('collection', SENT_REMINDERS_COLLECTION)
     .eq('doc_id', docId)
@@ -19,7 +19,7 @@ async function hasReminderBeenSent(type: string, refId: string, userId: string):
 async function markReminderSent(type: string, refId: string, userId: string): Promise<void> {
   const supabase = getSupabaseAdmin()!;
   const docId = `${type}_${refId}_${userId}`;
-  const { error } = await supabase.from('nosql_docs').upsert({
+  const { error } = await supabase.from('firestore_docs').upsert({
     collection: SENT_REMINDERS_COLLECTION,
     doc_id: docId,
     data: { type, refId, userId, sentAt: new Date().toISOString() },
@@ -47,7 +47,7 @@ export async function checkUpcomingDeadlines() {
     if (assignments && assignments.length > 0) {
       for (const assignment of assignments) {
         const { data: enrollments } = await supabase
-          .from('nosql_docs')
+          .from('firestore_docs')
           .select('doc_id, data')
           .eq('collection', 'enrollment')
           .contains('data', { courseId: assignment.course_id, status: 'active' });

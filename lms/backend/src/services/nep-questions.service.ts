@@ -169,7 +169,7 @@ export async function saveQuestions(conceptId: string, questions: QuestionData[]
 
 export async function getNEPQuestions(conceptId: string) {
   const supabase = getSupabaseClient()!;
-  const { data: rows, error } = await supabase.from('nosql_docs').select('doc_id, data')
+  const { data: rows, error } = await supabase.from('firestore_docs').select('doc_id, data')
     .eq('collection', 'nepQuestions')
     .contains('data', { conceptId })
     .order('data->>createdAt', { ascending: false });
@@ -248,7 +248,7 @@ export async function saveRubric(data: {
     updatedAt: now,
   };
 
-  const { error: insertError } = await supabase.from('nosql_docs').insert({
+  const { error: insertError } = await supabase.from('firestore_docs').insert({
     collection: 'gradingRubrics', doc_id: id, data: rubricData, updated_at: now,
   });
   if (insertError) throw new Error(`Failed to insert rubric: ${insertError.message}`);
@@ -258,7 +258,7 @@ export async function saveRubric(data: {
 
 export async function getRubrics(assignmentId?: string) {
   const supabase = getSupabaseClient()!;
-  let query = supabase.from('nosql_docs').select('doc_id, data').eq('collection', 'gradingRubrics');
+  let query = supabase.from('firestore_docs').select('doc_id, data').eq('collection', 'gradingRubrics');
   if (assignmentId) query = query.contains('data', { assignmentId });
   const { data: rows, error: rubricsErr } = await query.order('data->>createdAt', { ascending: false });
   if (rubricsErr) throw new Error('Failed to fetch rubrics: ' + rubricsErr.message);
@@ -267,7 +267,7 @@ export async function getRubrics(assignmentId?: string) {
 
 export async function getRubricById(id: string) {
   const supabase = getSupabaseClient()!;
-  const { data, error } = await supabase.from('nosql_docs').select('doc_id, data')
+  const { data, error } = await supabase.from('firestore_docs').select('doc_id, data')
     .eq('collection', 'gradingRubrics').eq('doc_id', id).maybeSingle();
   if (error) throw new Error('Failed to fetch rubric: ' + error.message);
   if (!data) throw new NotFoundError('Rubric not found');

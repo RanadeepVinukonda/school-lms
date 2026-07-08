@@ -10,7 +10,7 @@ export async function cleanupExpiredData() {
 
   try {
     const { data: expiredTokens } = await supabase
-      .from('nosql_docs')
+      .from('firestore_docs')
       .select('doc_id')
       .eq('collection', 'tokens')
       .filter('data->>expiresAt', 'lt', now)
@@ -44,7 +44,7 @@ export async function cleanupExpiredData() {
 
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { data: inProgressAttempts } = await supabase
-      .from('nosql_docs')
+      .from('firestore_docs')
       .select('doc_id')
       .eq('collection', 'quizAttempts')
       .contains('data', { status: 'in_progress' })
@@ -62,7 +62,7 @@ export async function cleanupExpiredData() {
 
     const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
     const { data: inProgressExamAttempts } = await supabase
-      .from('nosql_docs')
+      .from('firestore_docs')
       .select('doc_id')
       .eq('collection', 'examAttempts')
       .contains('data', { status: 'in_progress' })

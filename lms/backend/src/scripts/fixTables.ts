@@ -17,9 +17,9 @@ async function fixTables() {
     await client.connect();
     console.log('Connected to Postgres.');
 
-    console.log('Creating nosql_docs table...');
+    console.log('Creating firestore_docs table...');
     await client.query(`
-      CREATE TABLE IF NOT EXISTS nosql_docs (
+      CREATE TABLE IF NOT EXISTS firestore_docs (
         collection TEXT NOT NULL,
         doc_id TEXT NOT NULL,
         data JSONB NOT NULL DEFAULT '{}',
@@ -29,10 +29,7 @@ async function fixTables() {
       );
     `);
     
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_nosql_docs_collection ON nosql_docs(collection);`);
-
-    console.log('Dropping legacy firestore_docs...');
-    await client.query('DROP TABLE IF EXISTS firestore_docs;');
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_firestore_docs_collection ON firestore_docs(collection);`);
 
     console.log('Tables fixed successfully.');
   } catch (error) {

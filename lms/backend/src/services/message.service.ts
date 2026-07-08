@@ -29,7 +29,7 @@ export async function createConversation(data: {
     updatedAt: now,
   };
 
-  const { error: insertError } = await supabase.from('nosql_docs').insert({
+  const { error: insertError } = await supabase.from('firestore_docs').insert({
     collection: 'conversations', doc_id: conversationId, data: conversation,
     updated_at: now,
   });
@@ -50,7 +50,7 @@ export async function sendMessage(data: {
   parentMessageId?: string;
 }) {
   const supabase = getSupabaseClient()!;
-  const { data: conv } = await supabase.from('nosql_docs').select('data')
+  const { data: conv } = await supabase.from('firestore_docs').select('data')
     .eq('collection', 'conversations').eq('doc_id', data.conversationId).maybeSingle();
 
   if (!conv) {
@@ -78,7 +78,7 @@ export async function sendMessage(data: {
     createdAt: now,
   };
 
-  const { error: insertError } = await supabase.from('nosql_docs').insert({
+  const { error: insertError } = await supabase.from('firestore_docs').insert({
     collection: 'messages', doc_id: messageId, data: message,
     updated_at: now,
   });
@@ -98,7 +98,7 @@ export async function sendMessage(data: {
     unreadCount,
     updatedAt: now,
   };
-  const { error: updateError } = await supabase.from('nosql_docs').update({ data: updatedConv, updated_at: now })
+  const { error: updateError } = await supabase.from('firestore_docs').update({ data: updatedConv, updated_at: now })
     .eq('collection', 'conversations').eq('doc_id', data.conversationId);
   if (updateError) throw new Error(`Failed to update conversation: ${updateError.message}`);
 
@@ -113,12 +113,12 @@ export async function getConversations(userId: string, query: { page?: string; l
   const { page, limit } = parsePagination(query);
   const offset = (page - 1) * limit;
 
-  const { count } = await supabase.from('nosql_docs')
+  const { count } = await supabase.from('firestore_docs')
     .select('*', { count: 'exact', head: true })
     .eq('collection', 'conversations')
     .contains('data', { participants: [userId] });
 
-  const { data: rows } = await supabase.from('nosql_docs')
+  const { data: rows } = await supabase.from('firestore_docs')
     .select('doc_id, data')
     .eq('collection', 'conversations')
     .contains('data', { participants: [userId] })
@@ -143,7 +143,7 @@ export async function getMessages(conversationId: string, userId: string, query:
   after?: string;
 }) {
   const supabase = getSupabaseClient()!;
-  const { data: conv } = await supabase.from('nosql_docs').select('data')
+  const { data: conv } = await supabase.from('firestore_docs').select('data')
     .eq('collection', 'conversations').eq('doc_id', conversationId).maybeSingle();
 
   if (!conv) {
@@ -158,12 +158,12 @@ export async function getMessages(conversationId: string, userId: string, query:
   const { page, limit } = parsePagination(query);
   const offset = (page - 1) * limit;
 
-  const { count } = await supabase.from('nosql_docs')
+  const { count } = await supabase.from('firestore_docs')
     .select('*', { count: 'exact', head: true })
     .eq('collection', 'messages')
     .contains('data', { conversationId });
 
-  const { data: rows } = await supabase.from('nosql_docs')
+  const { data: rows } = await supabase.from('firestore_docs')
     .select('doc_id, data')
     .eq('collection', 'messages')
     .contains('data', { conversationId })
@@ -179,7 +179,7 @@ export async function getMessages(conversationId: string, userId: string, query:
 /** Mark all messages in a conversation as read for the given user. Updates unreadCount and reads messages. */
 export async function markConversationRead(conversationId: string, userId: string) {
   const supabase = getSupabaseClient()!;
-  const { data: conv } = await supabase.from('nosql_docs').select('data')
+  const { data: conv } = await supabase.from('firestore_docs').select('data')
     .eq('collection', 'conversations').eq('doc_id', conversationId).maybeSingle();
 
   if (!conv) {
@@ -191,11 +191,11 @@ export async function markConversationRead(conversationId: string, userId: strin
   unreadCount[userId] = 0;
 
   const updatedConv = { ...conversationData, unreadCount };
-  const { error: updateError } = await supabase.from('nosql_docs').update({ data: updatedConv })
+  const { error: updateError } = await supabase.from('firestore_docs').update({ data: updatedConv })
     .eq('collection', 'conversations').eq('doc_id', conversationId);
   if (updateError) throw new Error(`Failed to update conversation: ${updateError.message}`);
 
-  const { data: msgRows } = await supabase.from('nosql_docs').select('doc_id, data')
+  const { data: msgRows } = await supabase.from('firestore_docs').select('doc_id, data')
     .eq('collection', 'messages')
     .contains('data', { conversationId })
     .not('data', 'cs', `{"readBy": ["${userId}"]}`);

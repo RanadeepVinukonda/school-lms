@@ -10,7 +10,7 @@ client.connect().then(async () => {
     const tables = tablesRes.rows.map(r => r.table_name as string);
     
     for (const table of tables) {
-      if (['nosql_docs', 'firestore_docs'].includes(table)) continue;
+      if (['firestore_docs', 'firestore_docs'].includes(table)) continue;
       const colRes = await client.query("SELECT column_name FROM information_schema.columns WHERE table_name = $1;", [table]);
       const cols = colRes.rows.map(r => `'${r.column_name}'`);
       console.log(`  ${table}: new Set([${cols.join(',')}]),`);

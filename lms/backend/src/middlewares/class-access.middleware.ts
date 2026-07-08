@@ -92,7 +92,7 @@ export async function requireTeacherSubjectAccess(req: Request, _res: Response, 
   try {
     const supabase = getSupabaseAdmin()!;
     const { data: matches } = await supabase
-      .from('nosql_docs')
+      .from('firestore_docs')
       .select('doc_id')
       .eq('collection', 'teacherClassSubject')
       .contains('data', { teacherId: req.user.uid, classId, subjectId })

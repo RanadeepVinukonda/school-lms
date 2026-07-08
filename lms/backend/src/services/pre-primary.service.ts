@@ -22,7 +22,7 @@ export async function getDashboardData(studentId: string) {
   };
 
   const { data: progressDocs } = await supabase
-    .from('nosql_docs')
+    .from('firestore_docs')
     .select('data, doc_id')
     .eq('collection', 'prePrimaryProgress')
     .filter('data->>studentId', 'eq', studentId);
@@ -41,7 +41,7 @@ export async function getDashboardData(studentId: string) {
 export async function getLessons() {
   const supabase = getSupabaseAdmin()!;
   const { data: docs } = await supabase
-    .from('nosql_docs')
+    .from('firestore_docs')
     .select('data, doc_id')
     .eq('collection', 'prePrimaryLessons')
     .order('data->>order', { ascending: true });
@@ -55,7 +55,7 @@ export async function getLessons() {
 export async function getFlashcards(subjectId: string) {
   const supabase = getSupabaseAdmin()!;
   const { data: docs } = await supabase
-    .from('nosql_docs')
+    .from('firestore_docs')
     .select('data, doc_id')
     .eq('collection', 'flashcards')
     .filter('data->>subjectId', 'eq', subjectId);
@@ -69,7 +69,7 @@ export async function getFlashcards(subjectId: string) {
 export async function getStories() {
   const supabase = getSupabaseAdmin()!;
   const { data: docs } = await supabase
-    .from('nosql_docs')
+    .from('firestore_docs')
     .select('data, doc_id')
     .eq('collection', 'stories')
     .order('data->>order', { ascending: true });
@@ -92,7 +92,7 @@ export async function saveTracing(data: {
 
   const tracingData = { ...data, id, createdAt: now, updatedAt: now };
 
-  const { error } = await supabase.from('nosql_docs').upsert({
+  const { error } = await supabase.from('firestore_docs').upsert({
     collection: 'tracingActivities',
     doc_id: id,
     data: tracingData,
@@ -114,7 +114,7 @@ export async function updateProgress(studentId: string, data: {
   const now = new Date().toISOString();
 
   const { data: existing } = await supabase
-    .from('nosql_docs')
+    .from('firestore_docs')
     .select('data')
     .eq('collection', 'prePrimaryProgress')
     .eq('doc_id', id)
@@ -128,7 +128,7 @@ export async function updateProgress(studentId: string, data: {
 
   if (existing) {
     const merged = { ...existing.data as Record<string, unknown>, ...newData };
-    const { error: upsertErr } = await supabase.from('nosql_docs').upsert({
+    const { error: upsertErr } = await supabase.from('firestore_docs').upsert({
       collection: 'prePrimaryProgress',
       doc_id: id,
       data: merged,
@@ -136,7 +136,7 @@ export async function updateProgress(studentId: string, data: {
     }, { onConflict: 'collection,doc_id' });
     if (upsertErr) throw upsertErr;
   } else {
-    const { error: upsertErr } = await supabase.from('nosql_docs').upsert({
+    const { error: upsertErr } = await supabase.from('firestore_docs').upsert({
       collection: 'prePrimaryProgress',
       doc_id: id,
       data: { ...newData, id, createdAt: now },
@@ -147,7 +147,7 @@ export async function updateProgress(studentId: string, data: {
   }
 
   const { data: updated } = await supabase
-    .from('nosql_docs')
+    .from('firestore_docs')
     .select('data')
     .eq('collection', 'prePrimaryProgress')
     .eq('doc_id', id)

@@ -18,9 +18,9 @@ async function resetDatabase() {
 
     // 2. Delete all NoSQL data
     console.log('Deleting all NoSQL generic data...');
-    const { error: err2 } = await supabase.from('nosql_docs').delete().neq('collection', 'DO_NOT_DELETE');
+    const { error: err2 } = await supabase.from('firestore_docs').delete().neq('collection', 'DO_NOT_DELETE');
     if (err2) {
-       console.log('nosql_docs might not exist yet, ignoring...', err2.message);
+       console.log('firestore_docs might not exist yet, ignoring...', err2.message);
     }
     
     // Also try dropping old firestore_docs if it exists
