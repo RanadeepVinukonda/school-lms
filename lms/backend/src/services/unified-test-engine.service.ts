@@ -559,8 +559,6 @@ export async function startTestAttempt(testId: string, studentId: string): Promi
 
 export async function submitTestAttempt(attemptId: string, studentId: string, data: {
   answers: Array<{ questionId: string; answer: string | string[]; timeSpent?: number }>;
-  startedAt: string;
-  submittedAt: string;
 }): Promise<any> {
   const supabase = getSupabaseAdmin();
   const attemptData = (await nosqlGet(QAV2, attemptId)).data as Record<string, unknown> | null;
@@ -571,10 +569,12 @@ export async function submitTestAttempt(attemptId: string, studentId: string, da
   const testData = (await nosqlGet(QV2, attemptData.quizId as string)).data as Record<string, unknown> | null;
   if (!testData) throw new NotFoundError('Test not found');
 
-  const startedAtMs = new Date(data.startedAt).getTime();
-  const submittedAtMs = new Date(data.submittedAt).getTime();
-  const elapsedMinutes = (submittedAtMs - startedAtMs) / 60000;
-  if (elapsedMinutes > (testData.timeLimitMinutes as number)) throw new ForbiddenError('Time limit exceeded');
+  const storedStartedAt = attemptData.startedAt as string;
+  if (!storedStartedAt) throw new ForbiddenError('Invalid attempt state');
+  const submittedAt = new Date().toISOString();
+  const elapsedMinutes = (new Date(submittedAt).getTime() - new Date(storedStartedAt).getTime()) / 60000;
+  const graceMinutes = 5;
+  if (elapsedMinutes > ((testData.timeLimitMinutes as number) + graceMinutes)) throw new ForbiddenError('Time limit exceeded');
 
   const questionBank = (testData.questions as any[]) || [];
   const showResults = !!(testData.showResults);
@@ -661,7 +661,7 @@ export async function submitTestAttempt(attemptId: string, studentId: string, da
 
   const result: Record<string, unknown> = {
     answers: gradedAnswers, score, totalPoints, percentage, passed,
-    timeSpent, submittedAt: data.submittedAt, status: 'completed',
+    timeSpent, submittedAt, status: 'completed',
   };
   await nosqlUpdate(QAV2, attemptId, result);
 

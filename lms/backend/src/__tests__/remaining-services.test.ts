@@ -68,12 +68,12 @@ describe('ClassService', () => {
     (mockQuery as any).data = [];
     (mockQuery as any).count = 0;
     const result = await classService.listClasses({});
-    expect(result.items).toBeDefined();
+    expect(result.data.items).toBeDefined();
   });
   it('gets class by id', async () => {
     mockQuery.maybeSingle.mockResolvedValue(({ data: { name: 'Class A' }, error: null }) as any);
     const result = await classService.getClassById('c1');
-    expect(result.name).toBe('Class A');
+    expect(result.data.name).toBe('Class A');
   });
 });
 

@@ -28,7 +28,7 @@ export function requireFeature(feature: string) {
       .eq('school_id', req.user.school_id)
       .maybeSingle();
 
-    const plan = (sub?.plan as string) || 'free';
+    const plan = sub?.status === 'active' ? (sub.plan || 'free') : 'free';
     const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.free;
 
     if (!limits.features.includes(feature)) {

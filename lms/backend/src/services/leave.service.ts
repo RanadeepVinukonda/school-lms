@@ -36,8 +36,13 @@ export async function getLeaveRequests(schoolId: string) {
   return data || [];
 }
 
-export async function updateLeaveStatus(id: string, status: 'approved' | 'rejected', approvedBy: string) {
+export async function updateLeaveStatus(schoolId: string, id: string, status: 'approved' | 'rejected', approvedBy: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return null;
+
+  const { data: existing, error: fetchErr } = await supabase.from('leave_requests').select('school_id').eq('id', id).single();
+  if (fetchErr) throw new Error('Failed to fetch leave request: ' + fetchErr.message);
+  if (!existing || existing.school_id !== schoolId) throw new Error('Leave request not found in this school');
+
   const { data: result, error } = await supabase
     .from('leave_requests')
     .update({ status, approved_by: approvedBy })

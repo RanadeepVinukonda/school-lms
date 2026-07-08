@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from './supabase';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
+import { ServiceResult, success, failure } from '../types/service-result';
 
 /** Create a new class with zero student count. */
 export async function createClass(data: {
@@ -112,48 +113,54 @@ export async function listClasses(query: {
   academicYear?: string;
   search?: string;
   schoolId?: string;
-}) {
-  const { page, limit } = parsePagination(query);
-  const offset = (page - 1) * limit;
-  const supabase = getSupabaseAdmin()!;
+}): Promise<ServiceResult<{ items: any[]; total: number; page: number; limit: number }>> {
+  try {
+    const { page, limit } = parsePagination(query);
+    const offset = (page - 1) * limit;
+    const supabase = getSupabaseAdmin()!;
 
-  let baseQuery = supabase
-    .from('classes')
-    .select('*', { count: 'exact' })
-    .order('created_at', { ascending: false });
+    let baseQuery = supabase
+      .from('classes')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false });
 
-  if (query.schoolId) baseQuery = baseQuery.eq('school_id', query.schoolId);
-  if (query.status) baseQuery = baseQuery.eq('status', query.status);
-  if (query.academicYear) baseQuery = baseQuery.eq('academic_year', query.academicYear);
+    if (query.schoolId) baseQuery = baseQuery.eq('school_id', query.schoolId);
+    if (query.status) baseQuery = baseQuery.eq('status', query.status);
+    if (query.academicYear) baseQuery = baseQuery.eq('academic_year', query.academicYear);
 
-  // Push filters to the database instead of in-memory filtering
-  if (query.teacherId) {
-    baseQuery = baseQuery.contains('teacher_ids', [query.teacherId]);
+    if (query.teacherId) {
+      baseQuery = baseQuery.contains('teacher_ids', [query.teacherId]);
+    }
+    if (query.search) {
+      baseQuery = baseQuery.or(`name.ilike.%${query.search}%,code.ilike.%${query.search}%`);
+    }
+
+    const { data: items, count, error } = await baseQuery.range(offset, offset + limit - 1);
+    if (error) return failure(error.message, 'DB_ERROR');
+
+    return success({ items: items || [], total: count || 0, page, limit });
+  } catch (err: any) {
+    return failure(err.message, 'LIST_CLASSES_ERROR');
   }
-  if (query.search) {
-    baseQuery = baseQuery.or(`name.ilike.%${query.search}%,code.ilike.%${query.search}%`);
-  }
-
-  const { data: items, count, error } = await baseQuery.range(offset, offset + limit - 1);
-  if (error) throw error;
-
-  return { items: items || [], total: count || 0, page, limit };
 }
 
 /** Fetch a single class by id. Throws NotFoundError if missing. */
-export async function getClassById(classId: string) {
-  const supabase = getSupabaseAdmin()!;
-  const { data, error } = await supabase
-    .from('classes')
-    .select('*')
-    .eq('id', classId)
-    .maybeSingle();
+export async function getClassById(classId: string): Promise<ServiceResult<any>> {
+  try {
+    const supabase = getSupabaseAdmin()!;
+    const { data, error } = await supabase
+      .from('classes')
+      .select('*')
+      .eq('id', classId)
+      .maybeSingle();
 
-  if (error || !data) {
-    throw new NotFoundError('Class not found');
+    if (error) return failure(error.message, 'DB_ERROR');
+    if (!data) return failure('Class not found', 'NOT_FOUND');
+
+    return success(data);
+  } catch (err: any) {
+    return failure(err.message, 'GET_CLASS_ERROR');
   }
-
-  return data;
 }
 
 /** Add students to a class by updating their classIds array. */

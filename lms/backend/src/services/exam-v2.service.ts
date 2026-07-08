@@ -258,8 +258,6 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
     answer: string | string[];
     timeSpent?: number;
   }>;
-  startedAt: string;
-  submittedAt: string;
 }) {
   const supabase = getSupabaseAdmin();
   const attemptData = (await nosqlGet(EAV2, attemptId)).data as Record<string, unknown> | null;
@@ -270,10 +268,12 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
   const examData = (await nosqlGet(EV2, attemptData.examId as string)).data as Record<string, unknown> | null;
   if (!examData) throw new NotFoundError('Exam not found');
 
-  const startedAtMs = new Date(data.startedAt).getTime();
-  const submittedAtMs = new Date(data.submittedAt).getTime();
-  const elapsedMinutes = (submittedAtMs - startedAtMs) / 60000;
-  if (elapsedMinutes > (examData.timeLimitMinutes as number)) throw new ForbiddenError('Time limit exceeded');
+  const storedStartedAt = attemptData.startedAt as string;
+  if (!storedStartedAt) throw new ForbiddenError('Invalid attempt state');
+  const submittedAt = new Date().toISOString();
+  const elapsedMinutes = (new Date(submittedAt).getTime() - new Date(storedStartedAt).getTime()) / 60000;
+  const graceMinutes = 5;
+  if (elapsedMinutes > ((examData.timeLimitMinutes as number) + graceMinutes)) throw new ForbiddenError('Time limit exceeded');
 
   const concepts = await getConceptsForChapter(examData.textbookId as string, examData.chapterId as string);
   const allQuestionBank: Array<{
@@ -343,7 +343,7 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
 
   const result: Record<string, unknown> = {
     answers: gradedAnswers, score, totalPoints, percentage, passed, timeSpent,
-    submittedAt: data.submittedAt, status: 'completed',
+    submittedAt, status: 'completed',
   };
   await nosqlUpdate(EAV2, attemptId, result);
 

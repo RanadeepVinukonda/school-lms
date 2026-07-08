@@ -448,8 +448,6 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     answer: string | string[];
     timeSpent?: number;
   }>;
-  startedAt: string;
-  submittedAt: string;
 }) {
   const supabase = getSupabaseAdmin()!;
   const attemptData = (await nosqlGet(QAV2, attemptId)).data as Record<string, unknown> | null;
@@ -460,10 +458,12 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
   const quizData = (await nosqlGet(QV2, attemptData.quizId as string)).data as Record<string, unknown> | null;
   if (!quizData) throw new NotFoundError('Quiz not found');
 
-  const startedAtMs = new Date(data.startedAt).getTime();
-  const submittedAtMs = new Date(data.submittedAt).getTime();
-  const elapsedMinutes = (submittedAtMs - startedAtMs) / 60000;
-  if (elapsedMinutes > (quizData.timeLimitMinutes as number)) throw new ForbiddenError('Time limit exceeded');
+  const storedStartedAt = attemptData.startedAt as string;
+  if (!storedStartedAt) throw new ForbiddenError('Invalid attempt state');
+  const submittedAt = new Date().toISOString();
+  const elapsedMinutes = (new Date(submittedAt).getTime() - new Date(storedStartedAt).getTime()) / 60000;
+  const graceMinutes = 5;
+  if (elapsedMinutes > ((quizData.timeLimitMinutes as number) + graceMinutes)) throw new ForbiddenError('Time limit exceeded');
 
   let questionBank: Array<Record<string, unknown>>;
   const storedQuestions = quizData.questions as Array<Record<string, unknown>> | undefined;
@@ -543,7 +543,7 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
   const result: Record<string, unknown> = {
     answers: gradedAnswers, score, totalPoints, percentage, passed,
     showResults: (quizData.showResults as boolean) ?? false,
-    timeSpent, submittedAt: data.submittedAt, status: 'completed',
+    timeSpent, submittedAt, status: 'completed',
   };
   await nosqlUpdate(QAV2, attemptId, result);
 

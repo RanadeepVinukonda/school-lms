@@ -19,9 +19,9 @@ export async function configureSalary(schoolId: string, data: { staff_id: string
   }
 }
 
-export async function getSalaryConfig(staffId: string) {
+export async function getSalaryConfig(schoolId: string, staffId: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return null;
-  const { data, error } = await supabase.from('salary_config').select('*').eq('staff_id', staffId).single();
+  const { data, error } = await supabase.from('salary_config').select('*').eq('school_id', schoolId).eq('staff_id', staffId).single();
   if (error) throw new Error('Failed to fetch salary config: ' + error.message);
   return data;
 }
@@ -75,11 +75,11 @@ export async function getPayrollRuns(schoolId: string, month: string) {
   return data || [];
 }
 
-export async function generatePayslipPdf(payrollId: string): Promise<Buffer> {
+export async function generatePayslipPdf(schoolId: string, payrollId: string): Promise<Buffer> {
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error('Database not available');
 
-  const { data: run, error: runErr } = await supabase.from('payroll_runs').select('*, staff:staff_records(*)').eq('id', payrollId).single();
+  const { data: run, error: runErr } = await supabase.from('payroll_runs').select('*, staff:staff_records(*)').eq('id', payrollId).eq('school_id', schoolId).single();
   if (runErr) throw new Error('Failed to fetch payroll run: ' + runErr.message);
   if (!run) throw new Error('Payroll run not found');
 

@@ -3,9 +3,10 @@ import { createClient } from '@supabase/supabase-js';
 import { getSupabaseAdmin, getSupabaseClient } from './supabase';
 import { createUser as firebaseCreateUser, getUserByEmail, getUserById, setCustomClaims, updateUser as firebaseUpdateUser } from '../database/auth';
 import { validatePassword } from '../utils/passwordValidation';
-import { ConflictError, NotFoundError, UnauthorizedError, ValidationError, AppError, RateLimitError } from '../utils/errors';
+import { NotFoundError, UnauthorizedError, ValidationError, AppError, RateLimitError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { env } from '../config/env';
+import { ServiceResult, success, failure } from '../types/service-result';
 
 export interface UserProfile {
   id: string;
@@ -66,109 +67,117 @@ export async function register(data: {
   role: string;
   phoneNumber?: string;
   photoURL?: string;
-}): Promise<UserProfile> {
-  const pwCheck = validatePassword(data.password);
-  if (!pwCheck.valid) throw new ValidationError(pwCheck.errors.join('; '));
+}): Promise<ServiceResult<UserProfile>> {
+  try {
+    const pwCheck = validatePassword(data.password);
+    if (!pwCheck.valid) return failure(pwCheck.errors.join('; '), 'VALIDATION');
 
-  const existingUser = await getUserByEmail(data.email);
-  if (existingUser) {
-    if (data.role === 'parent' && existingUser.role === 'teacher') {
-      logger.info('Teacher re-registered as parent', { uid: existingUser.uid, email: data.email });
-      return {
-        id: existingUser.uid,
-        email: data.email,
-        displayName: data.displayName,
-        role: existingUser.role,
-        isActive: true,
-      };
+    const existingUser = await getUserByEmail(data.email);
+    if (existingUser) {
+      if (data.role === 'parent' && existingUser.role === 'teacher') {
+        logger.info('Teacher re-registered as parent', { uid: existingUser.uid, email: data.email });
+        return success({
+          id: existingUser.uid,
+          email: data.email,
+          displayName: data.displayName,
+          role: existingUser.role,
+          isActive: true,
+        });
+      }
+      return failure('A user with this email already exists', 'CONFLICT');
     }
-    throw new ConflictError('A user with this email already exists');
+
+    const firebaseUser = await firebaseCreateUser({
+      email: data.email,
+      password: data.password,
+      displayName: data.displayName,
+      phoneNumber: data.phoneNumber,
+      photoURL: data.photoURL,
+    });
+
+    await setCustomClaims(firebaseUser.uid, { role: data.role });
+
+    const now = new Date().toISOString();
+    const userData: UserProfile = {
+      id: firebaseUser.uid,
+      email: data.email,
+      displayName: data.displayName,
+      role: data.role,
+      phoneNumber: data.phoneNumber || '',
+      photoURL: data.photoURL || '',
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const dbData: Record<string, unknown> = {
+      id: userData.id,
+      email: userData.email,
+      display_name: userData.displayName,
+      role: userData.role,
+      phone_number: userData.phoneNumber,
+      photo_url: userData.photoURL,
+      is_active: userData.isActive,
+      created_at: now,
+      updated_at: now,
+    };
+
+    const supabase = getSupabaseAdmin();
+    const { error } = await supabase.from('users').insert(dbData);
+    if (error) return failure(error.message, 'DB_ERROR');
+
+    logger.info('User registered', { uid: userData.id, email: data.email, role: data.role });
+    return success(userData);
+  } catch (err: any) {
+    return failure(err.message, 'REGISTER_ERROR');
   }
-
-  const firebaseUser = await firebaseCreateUser({
-    email: data.email,
-    password: data.password,
-    displayName: data.displayName,
-    phoneNumber: data.phoneNumber,
-    photoURL: data.photoURL,
-  });
-
-  await setCustomClaims(firebaseUser.uid, { role: data.role });
-
-  const now = new Date().toISOString();
-  const userData: UserProfile = {
-    id: firebaseUser.uid,
-    email: data.email,
-    displayName: data.displayName,
-    role: data.role,
-    phoneNumber: data.phoneNumber || '',
-    photoURL: data.photoURL || '',
-    isActive: true,
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  const dbData: Record<string, unknown> = {
-    id: userData.id,
-    email: userData.email,
-    display_name: userData.displayName,
-    role: userData.role,
-    phone_number: userData.phoneNumber,
-    photo_url: userData.photoURL,
-    is_active: userData.isActive,
-    created_at: now,
-    updated_at: now,
-  };
-
-  const supabase = getSupabaseAdmin();
-  const { error } = await supabase.from('users').insert(dbData);
-  if (error) throw error;
-
-  logger.info('User registered', { uid: userData.id, email: data.email, role: data.role });
-  return userData;
 }
 
 /** Authenticate a user by email and password using Supabase Auth REST API. */
-export async function login(email: string, password: string): Promise<{ user: UserProfile; uid: string; token: string }> {
-  const response = await fetch(
-    `${env.SUPABASE_URL}/auth/v1/token?grant_type=password`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: env.SUPABASE_ANON_KEY,
-      },
-      body: JSON.stringify({ email: email.toLowerCase(), password }),
+export async function login(email: string, password: string): Promise<ServiceResult<{ user: UserProfile; uid: string; token: string }>> {
+  try {
+    const response = await fetch(
+      `${env.SUPABASE_URL}/auth/v1/token?grant_type=password`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: env.SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ email: email.toLowerCase(), password }),
+      }
+    );
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      return failure((body as { error_description?: string }).error_description || 'Invalid email or password', 'AUTH_FAILED');
     }
-  );
 
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    throw new UnauthorizedError((body as { error_description?: string }).error_description || 'Invalid email or password');
+    const result = await response.json() as { user?: { id: string }; access_token?: string; refresh_token?: string };
+    const uid = result.user?.id;
+    if (!uid) return failure('Authentication failed', 'AUTH_FAILED');
+
+    const supabase = getSupabaseAdmin();
+    const { data: userRow, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', uid)
+      .maybeSingle();
+
+    if (userError || !userRow) {
+      return failure('User not found', 'NOT_FOUND');
+    }
+
+    const userData = mapUserRow(userRow);
+    if (!userData.isActive) {
+      return failure('Account is disabled', 'DISABLED');
+    }
+
+    logger.info('User logged in', { uid, email });
+    return success({ user: userData, uid, token: result.access_token || '' });
+  } catch (err: any) {
+    return failure(err.message, 'LOGIN_ERROR');
   }
-
-  const data = await response.json() as { user?: { id: string }; access_token?: string; refresh_token?: string };
-  const uid = data.user?.id;
-  if (!uid) throw new UnauthorizedError('Authentication failed');
-
-  const supabase = getSupabaseAdmin();
-  const { data: userRow, error: userError } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', uid)
-    .maybeSingle();
-
-  if (userError || !userRow) {
-    throw new UnauthorizedError('User not found');
-  }
-
-  const userData = mapUserRow(userRow);
-  if (!userData.isActive) {
-    throw new UnauthorizedError('Account is disabled');
-  }
-
-  logger.info('User logged in', { uid, email });
-  return { user: userData, uid, token: data.access_token || '' };
 }
 
 /** Verify a user's token by uid. Returns user profile. */
@@ -313,16 +322,21 @@ export async function refreshToken(refreshToken: string): Promise<{ token: strin
 }
 
 /** Fetch user profile by uid. */
-export async function getUserProfile(uid: string): Promise<UserProfile> {
-  const supabase = getSupabaseAdmin();
-  const { data: userRow, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', uid)
-    .maybeSingle();
+export async function getUserProfile(uid: string): Promise<ServiceResult<UserProfile>> {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data: userRow, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', uid)
+      .maybeSingle();
 
-  if (error || !userRow) throw new NotFoundError('User not found');
-  return mapUserRow(userRow);
+    if (error) return failure(error.message, 'DB_ERROR');
+    if (!userRow) return failure('User not found', 'NOT_FOUND');
+    return success(mapUserRow(userRow));
+  } catch (err: any) {
+    return failure(err.message, 'GET_PROFILE_ERROR');
+  }
 }
 
 /** Update a user's own profile fields. */
@@ -330,32 +344,38 @@ export async function updateUserProfile(uid: string, data: {
   displayName?: string;
   phoneNumber?: string;
   photoURL?: string;
-}): Promise<UserProfile> {
-  const supabase = getSupabaseAdmin();
-  const { data: userRow, error: findError } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', uid)
-    .maybeSingle();
+}): Promise<ServiceResult<UserProfile>> {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data: userRow, error: findError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', uid)
+      .maybeSingle();
 
-  if (findError || !userRow) throw new NotFoundError('User not found');
+    if (findError) return failure(findError.message, 'DB_ERROR');
+    if (!userRow) return failure('User not found', 'NOT_FOUND');
 
-  const updateData: Record<string, unknown> = {
-    updated_at: new Date().toISOString(),
-  };
-  if (data.displayName) updateData.display_name = data.displayName;
-  if (data.phoneNumber !== undefined) updateData.phone_number = data.phoneNumber;
-  if (data.photoURL !== undefined) updateData.photo_url = data.photoURL;
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+    if (data.displayName) updateData.display_name = data.displayName;
+    if (data.phoneNumber !== undefined) updateData.phone_number = data.phoneNumber;
+    if (data.photoURL !== undefined) updateData.photo_url = data.photoURL;
 
-  const { error: updateError } = await supabase.from('users').update(updateData).eq('id', uid);
-  if (updateError) throw updateError;
+    const { error: updateError } = await supabase.from('users').update(updateData).eq('id', uid);
+    if (updateError) return failure(updateError.message, 'DB_ERROR');
 
-  const { data: updatedUser, error: fetchError } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', uid)
-    .single();
+    const { data: updatedUser, error: fetchError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', uid)
+      .single();
 
-  if (fetchError || !updatedUser) throw new NotFoundError('User not found');
-  return mapUserRow(updatedUser);
+    if (fetchError) return failure(fetchError.message, 'DB_ERROR');
+    if (!updatedUser) return failure('User not found', 'NOT_FOUND');
+    return success(mapUserRow(updatedUser));
+  } catch (err: any) {
+    return failure(err.message, 'UPDATE_PROFILE_ERROR');
+  }
 }
