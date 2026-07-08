@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import * as textbookService from '../services/textbook.service';
-import { sendSuccess, sendCreated } from '../utils/response';
+import { sendSuccess, sendCreated, sendAccepted } from '../utils/response';
 import { logger } from '../utils/logger';
 
 import fs from 'fs/promises';
@@ -14,7 +14,7 @@ export async function createTextbook(req: Request, res: Response) {
       teacherRole: req.user!.role,
       schoolId: req.user!.school_id,
     });
-    sendCreated(res, result, 'Textbook created');
+    sendAccepted(res, result, 'Textbook upload accepted — processing');
   } finally {
     if (req.file?.path) {
       await fs.unlink(req.file.path).catch((err) => {
@@ -70,5 +70,5 @@ export async function reprocessTextbook(req: Request, res: Response) {
     req.user!.uid,
     req.user!.role
   );
-  sendSuccess(res, result, 'Textbook reprocessing triggered');
+  sendAccepted(res, result, 'Textbook reprocessing triggered');
 }

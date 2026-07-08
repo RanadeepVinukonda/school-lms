@@ -83,39 +83,28 @@ export async function createTextbook(data: {
 
   if (insertError) throw insertError;
 
-  // Submit to background processing queue
+  // Submit to background processing queue (fire-and-forget when inline)
   try {
     await addUploadJob(textbookId, storagePath);
-    status = 'processing';
     logger.info('Textbook upload job added to background queue', { textbookId });
   } catch (err) {
-    // pg-boss unavailable — attempt inline AI processing
-    logger.info('pg-boss unavailable — attempting inline processing', {
+    logger.info('pg-boss unavailable — firing inline processing', {
       textbookId,
       err: err instanceof Error ? err.message : String(err),
     });
     try {
       const { processUploadInline } = require('./pipeline.service');
-      await processUploadInline(textbookId);
-      status = 'ready';
-      const { error: updateReadyError } = await supabase
-        .from('textbooks')
-        .update({ status: 'ready', chapter_count: 0, updated_at: now })
-        .eq('id', textbookId);
-      if (updateReadyError) logger.error('Failed to update textbook status to ready', { textbookId, error: updateReadyError });
-    } catch (aiErr) {
-      logger.error('AI pipeline processing failed — setting textbook status to error', {
-        textbookId,
-        error: aiErr instanceof Error ? aiErr.message : String(aiErr),
+      processUploadInline(textbookId).catch(async (aiErr: unknown) => {
+        logger.error('Inline pipeline failed', { textbookId, error: aiErr instanceof Error ? aiErr.message : String(aiErr) });
+        await supabase.from('textbooks').update({
+          status: 'error', failure_reason: 'AI processing failed. Please try again later.', updated_at: now,
+        }).eq('id', textbookId);
       });
-      status = 'error';
-      const { error: updateErr } = await supabase
-        .from('textbooks')
-        .update({ status: 'error', failure_reason: 'AI processing failed. Please try again later.', updated_at: now })
-        .eq('id', textbookId);
-      if (updateErr) logger.error('Failed to set textbook error status', { textbookId, error: updateErr });
+    } catch (loadErr) {
+      logger.error('Failed to load pipeline.service', { textbookId, error: loadErr });
     }
   }
+  status = 'processing';
 
   logger.info('Textbook created', { textbookId, title: data.title, status });
   return {
@@ -153,26 +142,19 @@ export async function reprocessTextbook(textbookId: string, requestingTeacherId:
     logger.info('Textbook reprocessing triggered', { textbookId });
     return { textbookId, status: 'processing' };
   } catch {
-    // pg-boss unavailable, attempt inline processing
-    logger.info('pg-boss unavailable for reprocess — attempting inline', { textbookId });
+    logger.info('pg-boss unavailable for reprocess — firing inline', { textbookId });
     try {
       const { processUploadInline } = require('./pipeline.service');
-      await processUploadInline(textbookId);
-      const { error: updateReadyError } = await supabase
-        .from('textbooks')
-        .update({ status: 'ready', failure_reason: null, updated_at: new Date().toISOString() })
-        .eq('id', textbookId);
-      if (updateReadyError) throw updateReadyError;
-      logger.info('Textbook reprocessed via inline pipeline', { textbookId });
-      return { textbookId, status: 'ready' };
-    } catch (aiErr) {
-      logger.error('Inline reprocessing failed', { textbookId, error: aiErr instanceof Error ? aiErr.message : String(aiErr) });
-      await supabase
-        .from('textbooks')
-        .update({ status: 'failed', failure_reason: 'AI reprocessing failed. Please try again later.', updated_at: new Date().toISOString() })
-        .eq('id', textbookId);
-      return { textbookId, status: 'failed' };
+      processUploadInline(textbookId).catch(async (aiErr: unknown) => {
+        logger.error('Inline reprocessing failed', { textbookId, error: aiErr instanceof Error ? aiErr.message : String(aiErr) });
+        await supabase.from('textbooks').update({
+          status: 'failed', failure_reason: 'AI reprocessing failed. Please try again later.', updated_at: new Date().toISOString(),
+        }).eq('id', textbookId);
+      });
+    } catch (loadErr) {
+      logger.error('Failed to load pipeline.service for reprocess', { textbookId, error: loadErr });
     }
+    return { textbookId, status: 'processing' };
   }
 }
 
