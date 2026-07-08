@@ -313,7 +313,7 @@ export async function pingActive(uid: string) {
   if (!existing) throw new NotFoundError('User not found');
 
   const now = new Date();
-  const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   const lastActive = existing.last_active_date ? new Date(existing.last_active_date) : null;
   let streakCount = existing.streak_count ?? 0;
 

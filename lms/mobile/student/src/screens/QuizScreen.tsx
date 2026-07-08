@@ -8,7 +8,7 @@ export default function QuizScreen({ route, navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [questions, setQuestions] = useState<Record<string, unknown> | null>(null);
+  const [questions, setQuestions] = useState<any>(null);
   const { chapterTitle, chapterId } = route.params || { chapterTitle: 'Linear Equations' };
   const [step, setStep] = useState(0);
   const [score, setScore] = useState(0);

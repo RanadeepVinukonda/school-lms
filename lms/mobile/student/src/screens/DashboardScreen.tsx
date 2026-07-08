@@ -6,7 +6,7 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dashboardData, setDashboardData] = useState<Record<string, unknown> | null>(null);
+  const [dashboardData, setDashboardData] = useState<any>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -61,7 +61,7 @@ export default function DashboardScreen() {
           <Text style={styles.progressLabel}>{d.level ?? 'Beginner'} Level</Text>
         </View>
         <View style={styles.progressBarBg}>
-          <View style={[styles.progressBarFill, { width: `${d.mastery ?? 0}%` }]} />
+          <View style={[styles.progressBarFill, { width: `${d.mastery ?? 0}%` as any }]} />
         </View>
       </View>
 

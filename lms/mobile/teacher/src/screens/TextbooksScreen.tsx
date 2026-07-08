@@ -7,7 +7,7 @@ export default function TextbooksScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [classes, setClasses] = useState<Record<string, unknown> | null>(null);
+  const [classes, setClasses] = useState<any>(null);
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
 
@@ -23,9 +23,9 @@ export default function TextbooksScreen() {
   useEffect(() => { fetchData(); }, [fetchData]);
   const onRefresh = useCallback(() => { setRefreshing(true); fetchData(); }, [fetchData]);
 
-  const clsList = Array.isArray(classes) ? classes : ((classes?.classes as Record<string, unknown>[]) || []);
-  const cls = clsList.find((c) => c.id === selectedClassId);
-  const sub = (cls?.subjects as Record<string, unknown>[])?.find((s) => s.id === selectedSubjectId);
+  const clsList = Array.isArray(classes) ? classes : ((classes?.classes as any[]) || []);
+  const cls = clsList.find((c: any) => c.id === selectedClassId) as any;
+  const sub = (cls?.subjects as any[])?.find((s: any) => s.id === selectedSubjectId) as any;
 
   const reset = () => { setSelectedClassId(null); setSelectedSubjectId(null); };
 
@@ -78,7 +78,7 @@ export default function TextbooksScreen() {
       {selectedClassId && !selectedSubjectId && cls && (
         <>
           <TouchableOpacity style={styles.backBtn} onPress={reset}><Text style={styles.backText}>← Back to Classes</Text></TouchableOpacity>
-          {cls.subjects.map((s) => (
+          {cls.subjects.map((s: any) => (
             <TouchableOpacity key={s.id} style={styles.subjectCard} onPress={() => setSelectedSubjectId(s.id)}>
               <View style={styles.subjectInfo}>
                 <View style={[styles.subjectDot, { backgroundColor: s.color }]} />
@@ -105,7 +105,7 @@ export default function TextbooksScreen() {
               <Text style={styles.emptyText}>No textbooks uploaded yet</Text>
             </View>
           ) : (
-            sub.textbooks.map((tb) => (
+            sub.textbooks.map((tb: any) => (
               <View key={tb.id} style={styles.tbCard}>
                 <View style={styles.tbHeader}>
                   <Text style={styles.tbIcon}>📖</Text>

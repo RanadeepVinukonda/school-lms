@@ -8,7 +8,7 @@ export default function PrePrimaryScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [content, setContent] = useState<Record<string, unknown> | null>(null);
+  const [content, setContent] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'phonics' | 'tracing' | 'stories'>('phonics');
 
   const fetchContent = useCallback(async () => {

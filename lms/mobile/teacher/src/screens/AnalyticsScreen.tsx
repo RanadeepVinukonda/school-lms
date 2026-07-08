@@ -10,10 +10,10 @@ export default function AnalyticsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [classes, setClasses] = useState<Record<string, unknown> | null>(null);
+  const [classes, setClasses] = useState<any>(null);
   const [selectedClassId, setSelectedClassId] = useState('');
   const [activeTab, setActiveTab] = useState<'overview' | 'concepts'>('overview');
-  const [overview, setOverview] = useState<Record<string, unknown> | null>(null);
+  const [overview, setOverview] = useState<any>(null);
   const [overviewLoading, setOverviewLoading] = useState(false);
 
   const fetchClasses = useCallback(async () => {
@@ -108,7 +108,7 @@ export default function AnalyticsScreen() {
                   return (
                     <View key={level} style={styles.levelRow}>
                       <Text style={styles.levelLabel}>{level.charAt(0).toUpperCase() + level.slice(1)}</Text>
-                      <View style={styles.progressBg}><View style={[styles.progressFill, { width: `${pct}%` }]} /></View>
+                      <View style={styles.progressBg}><View style={[styles.progressFill, { width: `${pct}%` as any }]} /></View>
                       <Text style={styles.levelCount}>{count}</Text>
                     </View>
                   );
@@ -116,7 +116,7 @@ export default function AnalyticsScreen() {
               </View>
 
               <Text style={styles.sectionTitle}>Assessments ({data.assessments.length})</Text>
-              {data.assessments.map((a, i) => (
+              {data.assessments.map((a: any, i: number) => (
                 <View key={i} style={styles.assessmentCard}>
                   <View style={styles.assessmentHeader}>
                     <Text style={styles.assessmentTitle}>{a.title}</Text>

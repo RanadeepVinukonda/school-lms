@@ -8,7 +8,7 @@ export default function ChildDetailScreen({ route }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<Record<string, unknown> | null>(null);
+  const [data, setData] = useState<any>(null);
   const { childId, childName } = route?.params ?? {};
 
   const fetchData = useCallback(async () => {
@@ -44,12 +44,12 @@ export default function ChildDetailScreen({ route }: any) {
       </View>
 
       <Text style={styles.sectionTitle}>Subject-wise Mastery</Text>
-      {data.subjects.map((sub, i) => (
+      {data.subjects.map((sub: any, i: number) => (
         <View key={i} style={styles.subjectRow}>
           <View style={[styles.subjectDot, { backgroundColor: sub.color }]} />
           <Text style={styles.subjectName}>{sub.name}</Text>
           <View style={styles.progressBg}>
-            <View style={[styles.progressFill, { width: `${sub.score}%`, backgroundColor: sub.color }]} />
+            <View style={[styles.progressFill, { width: `${sub.score}%` as any, backgroundColor: sub.color }]} />
           </View>
           <Text style={styles.subjectScore}>{sub.score}%</Text>
         </View>
@@ -57,7 +57,7 @@ export default function ChildDetailScreen({ route }: any) {
 
       <Text style={styles.sectionTitle}>Attendance This Week</Text>
       <View style={styles.attendanceRow}>
-        {data.attendanceLog.map((day, i) => (
+        {data.attendanceLog.map((day: any, i: number) => (
           <View key={i} style={styles.attendanceDay}>
             <Text style={styles.attendanceDate}>{day.date}</Text>
             <Text style={[styles.attendanceStatus, day.status === 'present' ? styles.present : styles.absent]}>
@@ -68,7 +68,7 @@ export default function ChildDetailScreen({ route }: any) {
       </View>
 
       <Text style={styles.sectionTitle}>Recent Exam Grades</Text>
-      {data.recentGrades.map((g, i) => (
+      {data.recentGrades.map((g: any, i: number) => (
         <View key={i} style={styles.gradeCard}>
           <View style={styles.gradeInfo}>
             <Text style={styles.gradeSubject}>{g.subject}</Text>

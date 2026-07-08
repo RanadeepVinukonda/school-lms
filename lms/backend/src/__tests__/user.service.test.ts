@@ -83,7 +83,8 @@ describe('user.service', () => {
 
   describe('pingActive', () => {
     it('updates streak for active user', async () => {
-      const today = new Date(); today.setUTCHours(0, 0, 0, 0);
+      const now = new Date();
+      const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
       const yesterday = new Date(today.getTime() - 86400000).toISOString();
       // pingActive uses .select().eq().maybeSingle() then .update().eq()
       mockQuery.maybeSingle.mockResolvedValue(({ data: { streak_count: 5, last_active_date: yesterday }, error: null }) as any);

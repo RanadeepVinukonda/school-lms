@@ -10,10 +10,10 @@ export default function ReportsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [children, setChildren] = useState<Record<string, unknown> | null>(null);
+  const [children, setChildren] = useState<any>(null);
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
-  const [report, setReport] = useState<Record<string, unknown> | null>(null);
+  const [report, setReport] = useState<any>(null);
 
   const fetchChildren = useCallback(async () => {
     setLoading(true); setError(null);
@@ -83,7 +83,7 @@ export default function ReportsScreen() {
               <>
                 <Text style={styles.reportLabel}>⭐ Strengths</Text>
                 <View style={styles.tagRow}>
-                  {report.strengths.map((s, i) => (
+                  {report.strengths.map((s: any, i: number) => (
                     <View key={i} style={styles.successTag}><Text style={styles.successTagText}>{s}</Text></View>
                   ))}
                 </View>
@@ -94,7 +94,7 @@ export default function ReportsScreen() {
               <>
                 <Text style={styles.reportLabel}>⚠️ Learning Gaps</Text>
                 <View style={styles.tagRow}>
-                  {report.learningGaps.map((g, i) => (
+                  {report.learningGaps.map((g: any, i: number) => (
                     <View key={i} style={styles.warningTag}><Text style={styles.warningTagText}>{g}</Text></View>
                   ))}
                 </View>
@@ -104,7 +104,7 @@ export default function ReportsScreen() {
             {report.recommendations.length > 0 && (
               <>
                 <Text style={styles.reportLabel}>💡 Recommendations</Text>
-                {report.recommendations.map((rec, i) => (
+                {report.recommendations.map((rec: any, i: number) => (
                   <View key={i} style={styles.recRow}>
                     <Text style={[styles.recPriority, rec.priority === 'high' ? styles.highP : styles.medP]}>
                       {rec.priority === 'high' ? '!!' : '!'}
@@ -128,7 +128,7 @@ export default function ReportsScreen() {
             {report.nextSteps.length > 0 && (
               <>
                 <Text style={styles.reportLabel}>📋 Next Steps</Text>
-                {report.nextSteps.map((step, i) => (
+                {report.nextSteps.map((step: any, i: number) => (
                   <Text key={i} style={styles.stepItem}>{i + 1}. {step}</Text>
                 ))}
               </>

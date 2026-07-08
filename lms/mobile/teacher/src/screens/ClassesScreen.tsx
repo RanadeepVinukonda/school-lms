@@ -8,7 +8,7 @@ export default function ClassesScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<Record<string, unknown> | null>(null);
+  const [data, setData] = useState<any>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true); setError(null);

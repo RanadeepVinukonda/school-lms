@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { ActivityIndicator, View, StyleSheet, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useAuthStore, authService, LoginScreen, API_BASE_URL, registerForPushNotifications } from '@genesis-lms/shared';
+import { useAuthStore, authService, LoginScreen, API_BASE_URL, registerForPushNotifications, OfflineIndicator } from '@genesis-lms/shared';
 import AppNavigator from './src/navigation/AppNavigator';
 
 const Stack = createNativeStackNavigator();
@@ -51,17 +51,20 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!isAuthenticated ? (
-          <Stack.Screen name="Login">
-            {() => <LoginScreen role="parent" />}
-          </Stack.Screen>
-        ) : (
-          <Stack.Screen name="Main" component={AppNavigator} />
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <View style={{ flex: 1 }}>
+      <OfflineIndicator />
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {!isAuthenticated ? (
+            <Stack.Screen name="Login">
+              {() => <LoginScreen role="parent" />}
+            </Stack.Screen>
+          ) : (
+            <Stack.Screen name="Main" component={AppNavigator} />
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </View>
   );
 }
 

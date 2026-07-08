@@ -7,7 +7,7 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<Record<string, unknown> | null>(null);
+  const [data, setData] = useState<any>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true); setError(null);
@@ -45,7 +45,7 @@ export default function DashboardScreen() {
           <Text style={styles.metricLabel}>{d.classLabel}</Text>
         </View>
         <View style={styles.progressBarBg}>
-          <View style={[styles.progressBarFill, { width: `${d.classPct}%` }]} />
+          <View style={[styles.progressBarFill, { width: `${d.classPct}%` as any }]} />
         </View>
       </View>
 
