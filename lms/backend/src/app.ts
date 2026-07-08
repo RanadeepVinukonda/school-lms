@@ -11,6 +11,8 @@ import { auditMiddleware } from './middlewares/audit.middleware';
 import { requestId } from './middlewares/requestId.middleware';
 import { metricsMiddleware } from './middlewares/metrics.middleware';
 import { csrfProtection, csrfTokenHandler } from './middlewares/csrf.middleware';
+import { timeoutMiddleware } from './middlewares/timeout.middleware';
+import healthRoute from './routes/health';
 import routes from './routes/index';
 import { logger } from './utils/logger';
 
@@ -24,6 +26,8 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb', parameterLimit: 100 }));
 app.use(metricsMiddleware);
+app.use(timeoutMiddleware());
+app.use('/health', healthRoute);
 
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('combined', {

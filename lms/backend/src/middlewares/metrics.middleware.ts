@@ -17,8 +17,15 @@ const httpRequestTotal = new promClient.Counter({
   labelNames: ['method', 'route', 'status'],
 });
 
+const httpErrorsTotal = new promClient.Counter({
+  name: 'http_errors_total',
+  help: 'Total number of HTTP errors by status code',
+  labelNames: ['method', 'route', 'status'],
+});
+
 register.registerMetric(httpRequestDuration);
 register.registerMetric(httpRequestTotal);
+register.registerMetric(httpErrorsTotal);
 
 export function metricsMiddleware(req: Request, res: Response, next: NextFunction) {
   const start = Date.now();
@@ -27,9 +34,14 @@ export function metricsMiddleware(req: Request, res: Response, next: NextFunctio
     const labels = { method: req.method, route, status: res.statusCode.toString() };
     httpRequestDuration.observe(labels, (Date.now() - start) / 1000);
     httpRequestTotal.inc(labels);
+    if (res.statusCode >= 400) {
+      httpErrorsTotal.inc(labels);
+    }
   });
   next();
 }
+
+export { register, httpRequestDuration, httpRequestTotal, httpErrorsTotal };
 
 export async function metricsHandler(_req: Request, res: Response) {
   res.set('Content-Type', register.contentType);

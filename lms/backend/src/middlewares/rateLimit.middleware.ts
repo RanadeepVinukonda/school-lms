@@ -46,3 +46,13 @@ export const strictRateLimit = rateLimit({
     next(new AppError(429, 'Too many requests. Please try again later.'));
   },
 });
+
+export const schoolRateLimit = rateLimit({
+  ...defaults,
+  windowMs: 60 * 1000,
+  max: 1000,
+  keyGenerator: (req) => (req as any).user?.school_id || (req as any).ip || 'unknown',
+  handler: (_req, _res, next) => {
+    next(new AppError(429, 'School rate limit exceeded. Please slow down.'));
+  },
+});

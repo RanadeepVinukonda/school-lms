@@ -1,4 +1,5 @@
-import { Pool, PoolClient } from 'pg';
+import { PoolClient } from 'pg';
+import { getConnectionPool } from './connection-manager';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '../utils/logger';
 
@@ -178,18 +179,6 @@ class SupabaseTransaction implements Transaction {
   }
 }
 
-// ── Connection pool (singleton) ──
-
-let _pool: Pool | null = null;
-
-function getPool(): Pool | null {
-  if (_pool) return _pool;
-  const url = process.env.DATABASE_URL;
-  if (!url) return null;
-  _pool = new Pool({ connectionString: url, max: 5 });
-  return _pool;
-}
-
 // ── TransactionManager ──
 
 export class TransactionManager {
@@ -213,9 +202,8 @@ export class TransactionManager {
   async runTransaction<T>(
     updateFunction: (transaction: Transaction) => Promise<T>,
   ): Promise<T> {
-    const pool = getPool();
-
-    if (pool) {
+    try {
+      const pool = getConnectionPool();
       const client = await pool.connect();
       try {
         const pgTx = new PgTransaction(client, this.supabaseClient);
@@ -225,16 +213,15 @@ export class TransactionManager {
       } finally {
         client.release();
       }
+    } catch {
+      if (this.supabaseClient) {
+        const supabaseTx = new SupabaseTransaction(this.supabaseClient);
+        return updateFunction(supabaseTx);
+      }
+      throw new Error(
+        'TransactionManager: DATABASE_URL not configured and no Supabase client provided. ' +
+          'Set DATABASE_URL or pass a SupabaseClient to the TransactionManager constructor.',
+      );
     }
-
-    if (this.supabaseClient) {
-      const supabaseTx = new SupabaseTransaction(this.supabaseClient);
-      return updateFunction(supabaseTx);
-    }
-
-    throw new Error(
-      'TransactionManager: DATABASE_URL not configured and no Supabase client provided. ' +
-        'Set DATABASE_URL or pass a SupabaseClient to the TransactionManager constructor.',
-    );
   }
 }

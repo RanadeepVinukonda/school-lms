@@ -38,9 +38,35 @@ if (!process.env.VERCEL) {
   );
 }
 
-export const logger = winston.createLogger({
+const baseLogger = winston.createLogger({
   level: env.NODE_ENV === 'production' ? 'info' : 'debug',
   format: logFormat,
   transports,
   exitOnError: false,
 });
+
+type LogLevels = 'error' | 'warn' | 'info' | 'debug';
+type LogMethod = (message: string, meta?: Record<string, unknown>) => void;
+
+export interface Logger {
+  error: LogMethod;
+  warn: LogMethod;
+  info: LogMethod;
+  debug: LogMethod;
+  child: (context: Record<string, unknown>) => Logger;
+}
+
+function createLogger(winstonLogger: winston.Logger, defaultMeta: Record<string, unknown> = {}): Logger {
+  const log = (level: LogLevels, message: string, meta?: Record<string, unknown>) => {
+    winstonLogger.log(level, message, { ...defaultMeta, ...meta });
+  };
+  return {
+    error: (message: string, meta?: Record<string, unknown>) => log('error', message, meta),
+    warn: (message: string, meta?: Record<string, unknown>) => log('warn', message, meta),
+    info: (message: string, meta?: Record<string, unknown>) => log('info', message, meta),
+    debug: (message: string, meta?: Record<string, unknown>) => log('debug', message, meta),
+    child: (context: Record<string, unknown>) => createLogger(winstonLogger, { ...defaultMeta, ...context }),
+  };
+}
+
+export const logger = createLogger(baseLogger);
