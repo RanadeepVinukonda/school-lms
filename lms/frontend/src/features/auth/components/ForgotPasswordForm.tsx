@@ -23,7 +23,7 @@ import { useMutation } from '@tanstack/react-query';
 import { authService } from '@/services/authService';
 import { toast } from 'sonner';
 
-export function ForgotPasswordForm() {
+export default function ForgotPasswordForm() {
   const [cooldown, setCooldown] = useState(0);
 
   const {

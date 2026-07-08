@@ -24,7 +24,7 @@ import { authService } from '@/services/authService';
 import { supabase } from '@/supabase/config';
 import { toast } from 'sonner';
 
-export function ResetPasswordForm() {
+export default function ResetPasswordForm() {
   const [recoveryState, setRecoveryState] = useState<'loading' | 'valid' | 'invalid'>('loading');
   const [uid, setUid] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
