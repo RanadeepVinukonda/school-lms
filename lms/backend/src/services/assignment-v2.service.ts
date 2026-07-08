@@ -239,10 +239,9 @@ export async function submitAssignment(attemptId: string, studentId: string, dat
   const complexityHandled = computeComplexityHandled(correctMap, difficultyMap);
   const level = computeLevel(accuracy, avgReactionTimeSec, complexityHandled);
 
-  const result: Record<string, unknown> = { answers: gradedAnswers, score, totalPoints: assignmentData.totalPoints, percentage, passed, timeSpent, submittedAt: data.submittedAt, status: 'completed', level };
-  await nosqlUpdate(ASSIGNMENT_SUB_V2, attemptId, result);
-
   const now = new Date().toISOString();
+  const result: Record<string, unknown> = { answers: gradedAnswers, score, totalPoints: assignmentData.totalPoints, percentage, passed, timeSpent, submittedAt: now, status: 'completed', level };
+  await nosqlUpdate(ASSIGNMENT_SUB_V2, attemptId, result);
   const gradeId = uuidv4();
   const { error: gradeErr } = await getSupabaseAdmin().from('firestore_docs').insert({
     collection: 'grades',
