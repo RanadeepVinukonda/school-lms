@@ -9,6 +9,20 @@ import './index.css';
 import './lib/motion.css';
 import 'katex/dist/katex.min.css';
 
+// ── PWA / Service Worker ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js').then(
+      (registration) => {
+        console.log('[SW] ServiceWorker registered:', registration.scope);
+      },
+      (err) => {
+        console.warn('[SW] ServiceWorker registration failed:', err);
+      },
+    );
+  });
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

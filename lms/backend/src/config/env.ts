@@ -10,7 +10,7 @@ const envSchema = z.object({
   PORT: z.coerce.number().positive().max(65535).default(3001),
   FRONTEND_URL: z.string().default('http://localhost:5173'),
   GEMINI_API_KEY: isTest ? z.string().default('mock-gemini-api-key') : z.string().min(1),
-  AI_API_KEY: z.string().optional(),
+  AI_API_KEY: z.string().optional().default(''),
   AI_BASE_URL: z.string().default('https://openrouter.ai/api/v1/chat/completions'),
   AI_MODEL: z.string().default('openai/gpt-4o-mini'),
 
@@ -25,9 +25,10 @@ const envSchema = z.object({
   SUPABASE_URL: isTest ? z.string().default('https://mock-supabase-url.supabase.co') : z.string().min(1),
   SUPABASE_ANON_KEY: isTest ? z.string().default('mock-supabase-anon-key') : z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: isTest ? z.string().default('mock-supabase-service-role-key') : z.string().min(1),
-  SUPABASE_STORAGE_BUCKET: z.string().optional(),
+  SUPABASE_STORAGE_BUCKET: z.string().default('textbooks'),
 
   DATABASE_URL: z.string().optional(),
+  SUPABASE_JWT_SECRET: z.string().optional(),
   SENTRY_DSN: z.string().optional(),
   FIREBASE_SERVICE_ACCOUNT_KEY: z.string().optional(),
 

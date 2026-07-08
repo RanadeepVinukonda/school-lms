@@ -146,7 +146,7 @@ function processQueue(error: unknown) {
 
 api.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError<ApiError>) => {
+  async (error: AxiosError<{ error?: { message: string; code?: string; details?: Array<{ field: string; message: string }> }; message?: string; code?: string }>) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
     if (
@@ -191,11 +191,11 @@ api.interceptors.response.use(
         processQueue(refreshError);
         cachedToken = null;
         await useAuthStore.getState().logout();
-        const data = error.response?.data as any;
-        const errorMessage = data?.error?.message || data?.message || 'Session expired. Please sign in again.';
+        const errData = error.response?.data;
+        const errorMessage = errData?.error?.message || errData?.message || 'Session expired. Please sign in again.';
         const apiError: ApiError = {
           message: errorMessage,
-          code: data?.error?.code || 'SESSION_EXPIRED',
+          code: errData?.error?.code || 'SESSION_EXPIRED',
           status: 401,
         };
         return Promise.reject(apiError);
@@ -204,15 +204,15 @@ api.interceptors.response.use(
       }
     }
 
-    const data = error.response?.data as any;
-    const errorMessage = data?.error?.message || data?.message || error.message;
-    const details = data?.error?.details as Array<{ field: string; message: string }> | undefined;
+    const errData = error.response?.data;
+    const errorMessage = errData?.error?.message || errData?.message || error.message;
+    const details = errData?.error?.details;
     const message = details && details.length > 0
       ? details.map((d) => d.message).join('; ')
       : errorMessage;
     const apiError: ApiError = {
       message: message || 'An unexpected error occurred',
-      code: data?.error?.code || data?.code,
+      code: errData?.error?.code || errData?.code,
       status: error.response?.status,
     };
     return Promise.reject(apiError);
