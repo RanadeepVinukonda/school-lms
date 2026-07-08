@@ -1,15 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { virtualLabsService } from '@/services/virtualLabsService';
 import { useAuthStore } from '@/store/authStore';
-import type { VirtualLab } from '@/types/virtualLab';
 import CircuitLab from '@/components/virtual-labs/CircuitLab';
 import MechanicsLab from '@/components/virtual-labs/MechanicsLab';
 import ReactionLab from '@/components/virtual-labs/ReactionLab';
 import CellExplorer from '@/components/virtual-labs/CellExplorer';
 import { ROUTES } from '@/lib/constants';
 import { Icon } from '@/components/ui/Icon';
+import { ErrorState } from '@/components/common/ErrorState';
+import { LoadingSkeleton } from '@/components/common/LoadingSkeleton';
 
 const SUBJECT_LABELS: Record<string, string> = {
   physics: 'Physics',
@@ -29,44 +32,47 @@ export default function StudentVirtualLabDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
-  const [lab, setLab] = useState<VirtualLab | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [completing, setCompleting] = useState(false);
+  const queryClient = useQueryClient();
   const [completed, setCompleted] = useState(false);
 
-  useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    virtualLabsService.getById(id)
-      .then(setLab)
-      .catch(() => navigate(ROUTES.STUDENT_LABS, { replace: true }))
-      .finally(() => setLoading(false));
-  }, [id, navigate]);
+  const { data: lab, isLoading, error } = useQuery({
+    queryKey: ['virtual-lab', id],
+    queryFn: async () => {
+      if (!id) throw new Error('No lab ID');
+      const lab = await virtualLabsService.getById(id);
+      return lab;
+    },
+    enabled: !!id,
+  });
 
-  const handleComplete = async () => {
-    if (!id) return;
-    setCompleting(true);
-    try {
-      await virtualLabsService.markComplete(id);
+  const completeMutation = useMutation({
+    mutationFn: () => {
+      if (!id) throw new Error('No lab ID');
+      return virtualLabsService.markComplete(id);
+    },
+    onSuccess: () => {
       setCompleted(true);
-    } catch {
-      //
-    } finally {
-      setCompleting(false);
-    }
-  };
+      toast.success(_('Lab completed! +100 XP'));
+      queryClient.invalidateQueries({ queryKey: ['student-virtual-labs', user?.id] });
+    },
+    onError: () => {
+      toast.error(_('Failed to mark lab as complete'));
+    },
+  });
 
-  if (loading) {
-    return (
-      <div className="max-w-5xl mx-auto px-4 py-6">
-        <div className="h-8 w-64 bg-surface-variant rounded animate-pulse mb-4" />
-        <div className="h-4 w-96 bg-surface-variant rounded animate-pulse mb-8" />
-        <div className="h-96 bg-surface-variant rounded-xl animate-pulse" />
-      </div>
-    );
+  if (isLoading) {
+    return <LoadingSkeleton type="detail" />;
   }
 
-  if (!lab) return null;
+  if (error || !lab) {
+    return (
+      <ErrorState
+        title={_('Failed to load lab')}
+        message={_('The virtual lab could not be found.')}
+        onRetry={() => window.location.reload()}
+      />
+    );
+  }
 
   const SimulationComponent = SIMULATION_COMPONENTS[lab.type];
 
@@ -118,15 +124,15 @@ export default function StudentVirtualLabDetailPage() {
 
       <div className="flex justify-end">
         <button
-          onClick={handleComplete}
-          disabled={completing || completed}
+          onClick={() => completeMutation.mutate()}
+          disabled={completeMutation.isPending || completed}
           className={`px-6 py-3 rounded-xl text-sm font-semibold transition-all ${
             completed
               ? 'bg-green-100 text-green-700 border border-green-300'
               : 'bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50'
           }`}
         >
-          {completing ? _('Completing...') : completed ? '✓ ' + _('Completed!') : _('Complete Lab')}
+          {completeMutation.isPending ? _('Completing...') : completed ? '✓ ' + _('Completed!') : _('Complete Lab')}
         </button>
       </div>
 

@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Icon } from '@/components/ui/Icon';
-import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/lib/motion';
+import { scrollReveal } from '@/lib/motion';
 import { getInitials } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import { uploadProfileImage } from '@/services/cloudinaryService';
@@ -23,9 +24,7 @@ export default function StudentProfileEditPage() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
-  const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [loadingProfile, setLoadingProfile] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
@@ -39,25 +38,26 @@ export default function StudentProfileEditPage() {
 
   const [avatarPreview, setAvatarPreview] = useState('');
 
-  useEffect(() => {
-    if (!user?.id) { setLoadingProfile(false); return; }
-    getUser(user.id)
-      .then((userDoc) => {
-        if (userDoc) {
-          setForm({
-            displayName: userDoc.displayName || '',
-            email: userDoc.email || '',
-            phone: userDoc.phone || '',
-            bio: userDoc.bio || '',
-            address: userDoc.address || '',
-            dateOfBirth: userDoc.dateOfBirth || '',
-          });
-          setAvatarPreview(userDoc.avatar || '');
-        }
-        setLoadingProfile(false);
-      })
-      .catch(() => { setLoadingProfile(false); toast.error(_('Failed to load profile data')); });
-  }, [user?.id]);
+  const { isLoading: loadingProfile } = useQuery({
+    queryKey: ['student-profile-edit', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const userDoc = await getUser(user.id);
+      if (userDoc) {
+        setForm({
+          displayName: userDoc.displayName || '',
+          email: userDoc.email || '',
+          phone: userDoc.phone || '',
+          bio: userDoc.bio || '',
+          address: userDoc.address || '',
+          dateOfBirth: userDoc.dateOfBirth || '',
+        });
+        setAvatarPreview(userDoc.avatar || '');
+      }
+      return userDoc;
+    },
+    enabled: !!user?.id,
+  });
 
   const handleChange = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -78,22 +78,20 @@ export default function StudentProfileEditPage() {
     }
   };
 
-  const handleSave = async () => {
-    if (!user) return;
-    setSaving(true);
-    try {
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error('Not authenticated');
       const data: Record<string, unknown> = { ...form };
       if (avatarPreview) data.avatar = avatarPreview;
       await updateUser(user.id, data);
       setUser({ ...user, ...data } as typeof user);
+    },
+    onSuccess: () => {
       toast.success(_('Profile updated'));
       navigate(ROUTES.STUDENT_PROFILE);
-    } catch {
-      toast.error(_('Failed to update profile'));
-    } finally {
-      setSaving(false);
-    }
-  };
+    },
+    onError: () => toast.error(_('Failed to update profile')),
+  });
 
   return (
     <>
@@ -159,8 +157,8 @@ export default function StudentProfileEditPage() {
 
               <div className="flex gap-3 pt-2">
                 <Button variant="outline" className="flex-1" onClick={() => navigate(ROUTES.STUDENT_PROFILE)}>{_('Cancel')}</Button>
-                <Button className="flex-1" onClick={handleSave} disabled={saving || loadingProfile}>
-                  {saving ? _('Saving...') : loadingProfile ? _('Loading...') : _('Save Changes')}
+                <Button className="flex-1" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || loadingProfile}>
+                  {saveMutation.isPending ? _('Saving...') : loadingProfile ? _('Loading...') : _('Save Changes')}
                 </Button>
               </div>
             </CardContent>

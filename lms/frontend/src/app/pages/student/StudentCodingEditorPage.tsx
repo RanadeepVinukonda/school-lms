@@ -1,55 +1,60 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { codingService } from '@/services/codingService';
 import { useAuthStore } from '@/store/authStore';
-import type { CodingProject } from '@/types/coding';
 import CodeEditor from '@/components/coding/CodeEditor';
 import { ROUTES } from '@/lib/constants';
 import { Icon } from '@/components/ui/Icon';
+import { ErrorState } from '@/components/common/ErrorState';
 
 export default function StudentCodingEditorPage() {
   const { _ } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
-  const [project, setProject] = useState<CodingProject | null>(null);
+  const queryClient = useQueryClient();
   const [code, setCode] = useState('');
   const [title, setTitle] = useState('');
   const [language, setLanguage] = useState<'javascript' | 'python' | 'html'>('javascript');
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(false);
 
-  useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    codingService.getProjectById(id)
-      .then((p) => {
-        setProject(p);
-        setCode(p.code || '');
-        setTitle(p.title);
-        setLanguage(p.language);
-      })
-      .catch(() => navigate(ROUTES.STUDENT_CODING, { replace: true }))
-      .finally(() => setLoading(false));
-  }, [id, navigate]);
+  const { data: project, isLoading, error } = useQuery({
+    queryKey: ['coding-project', id],
+    queryFn: async () => {
+      if (!id) throw new Error('No project ID');
+      const p = await codingService.getProjectById(id);
+      setCode(p.code || '');
+      setTitle(p.title);
+      setLanguage(p.language);
+      return p;
+    },
+    enabled: !!id,
+  });
 
-  const handleSave = useCallback(async () => {
-    if (!id) return;
-    setSaving(true);
-    try {
-      await codingService.updateProject(id, { title, code, language });
+  const saveMutation = useMutation({
+    mutationFn: () => {
+      if (!id) throw new Error('No project ID');
+      return codingService.updateProject(id, { title, code, language });
+    },
+    onSuccess: () => {
       setSaved(true);
       setDirty(false);
+      queryClient.invalidateQueries({ queryKey: ['coding-project', id] });
       setTimeout(() => setSaved(false), 2000);
-    } catch {
-      //
-    } finally {
-      setSaving(false);
-    }
-  }, [id, title, code, language]);
+      toast.success(_('Project saved'));
+    },
+    onError: () => {
+      toast.error(_('Failed to save project'));
+    },
+  });
+
+  const handleSave = useCallback(() => {
+    saveMutation.mutate();
+  }, [saveMutation]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -72,7 +77,7 @@ export default function StudentCodingEditorPage() {
     setDirty(true);
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-6">
         <div className="h-8 w-64 bg-surface-variant rounded animate-pulse mb-4" />
@@ -81,7 +86,15 @@ export default function StudentCodingEditorPage() {
     );
   }
 
-  if (!project) return null;
+  if (error || !project) {
+    return (
+      <ErrorState
+        title={_('Failed to load project')}
+        message={_('The project you are looking for could not be found.')}
+        onRetry={() => window.location.reload()}
+      />
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 h-[calc(100vh-8rem)] flex flex-col space-y-4">
@@ -109,7 +122,7 @@ export default function StudentCodingEditorPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={handleSave}
-            disabled={saving}
+            disabled={saveMutation.isPending}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               saved
                 ? 'bg-green-100 text-green-700'
@@ -117,7 +130,7 @@ export default function StudentCodingEditorPage() {
             } disabled:opacity-50`}
           >
             <Icon name={saved ? 'check' : 'save'} size={16} />
-            {saving ? _('Saving...') : saved ? _('Saved!') : _('Save')}
+            {saveMutation.isPending ? _('Saving...') : saved ? _('Saved!') : _('Save')}
           </button>
           <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-surface-variant text-on-surface-variant hover:bg-surface-variant/70 transition-colors">
             <Icon name="share" size={16} />
