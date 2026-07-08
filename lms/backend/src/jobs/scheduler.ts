@@ -1,16 +1,25 @@
 import { randomUUID } from 'crypto';
 import { logger } from '../utils/logger';
+import { getBoss } from './queue';
 import { checkUpcomingDeadlines } from './sendReminders.job';
 import { cleanupExpiredData, cleanupSoftDeletedRecords } from './cleanupExpired.job';
 import { generateWeeklyReport, generateMonthlyReport } from './generateReports.job';
 import { getSupabaseAdmin } from '../services/supabase';
 import { TransactionManager } from '../database/transaction-manager';
 
-const jobs: Map<string, NodeJS.Timeout> = new Map();
+const timers: Map<string, ReturnType<typeof setInterval>> = new Map();
+let bossAvailable = false;
 
-// ─── Overdue test checker ─────────────────────────────────────────────────────
+const SCHEDULES = [
+  { name: 'sendReminders', cron: '*/30 * * * *' },
+  { name: 'cleanupExpired', cron: '0 * * * *' },
+  { name: 'overdueTests', cron: '*/5 * * * *' },
+  { name: 'weeklyReport', cron: '0 6 * * 1' },
+  { name: 'monthlyReport', cron: '0 6 1 * *' },
+  { name: 'softDeleteCleanup', cron: '0 */6 * * *' },
+] as const;
 
-async function checkOverdueTests(): Promise<void> {
+export async function checkOverdueTests(): Promise<void> {
   logger.info('Checking overdue tests...');
 
   try {
@@ -100,80 +109,75 @@ async function checkOverdueTests(): Promise<void> {
   }
 }
 
-// ─── Scheduler lifecycle ──────────────────────────────────────────────────────
-
-export function startScheduler() {
+export async function startScheduler(): Promise<void> {
   logger.info('Starting job scheduler...');
 
-  const reminderJob = setInterval(
-    () => {
-      checkUpcomingDeadlines().catch((err) =>
-        logger.error('Reminder job failed', err),
-      );
-    },
-    30 * 60 * 1000,
-  );
-  jobs.set('sendReminders', reminderJob);
+  const b = await getBoss();
+  if (b) {
+    for (const s of SCHEDULES) {
+      await b.schedule(s.name, s.cron);
+    }
+    bossAvailable = true;
 
-  const cleanupJob = setInterval(
-    () => {
-      cleanupExpiredData().catch((err) =>
-        logger.error('Cleanup job failed', err),
-      );
-    },
-    60 * 60 * 1000,
-  );
-  jobs.set('cleanupExpired', cleanupJob);
+    await b.send('overdueTests', {}, { startAfter: 15 });
+    logger.info(`Registered ${SCHEDULES.length} pg-boss schedules`);
+    return;
+  }
 
-  // Overdue test checker — every 5 minutes
-  const overdueJob = setInterval(
-    () => {
-      checkOverdueTests().catch((err) =>
-        logger.error('Overdue test job failed', err),
-      );
-    },
-    5 * 60 * 1000,
-  );
-  jobs.set('overdueTests', overdueJob);
+  logger.warn('pg-boss unavailable — using setInterval fallback (single-instance only)');
 
-  // Run overdue check once at startup after a short delay
+  timers.set('sendReminders', setInterval(() => {
+    checkUpcomingDeadlines().catch(err => logger.error('sendReminders failed', err));
+  }, 30 * 60 * 1000));
+
+  timers.set('cleanupExpired', setInterval(() => {
+    cleanupExpiredData().catch(err => logger.error('cleanupExpired failed', err));
+  }, 60 * 60 * 1000));
+
+  timers.set('overdueTests', setInterval(() => {
+    checkOverdueTests().catch(err => logger.error('overdueTests failed', err));
+  }, 5 * 60 * 1000));
+
   setTimeout(() => {
-    checkOverdueTests().catch((err) =>
-      logger.error('Initial overdue check failed', err),
-    );
+    checkOverdueTests().catch(err => logger.error('Initial overdue check failed', err));
   }, 15_000);
 
-  // Weekly report — check every hour, run if Monday
-  const weeklyReportJob = setInterval(() => {
+  timers.set('weeklyReport', setInterval(() => {
     const now = new Date();
     if (now.getDay() === 1 && now.getHours() === 6) {
-      generateWeeklyReport().catch(err => logger.error('Weekly report generation failed', err));
+      generateWeeklyReport().catch(err => logger.error('weeklyReport failed', err));
     }
-  }, 60 * 60 * 1000);
-  jobs.set('weeklyReport', weeklyReportJob);
+  }, 60 * 60 * 1000));
 
-  // Monthly report — check every hour, run if 1st of month
-  const monthlyReportJob = setInterval(() => {
+  timers.set('monthlyReport', setInterval(() => {
     const now = new Date();
     if (now.getDate() === 1 && now.getHours() === 6) {
-      generateMonthlyReport().catch(err => logger.error('Monthly report generation failed', err));
+      generateMonthlyReport().catch(err => logger.error('monthlyReport failed', err));
     }
-  }, 60 * 60 * 1000);
-  jobs.set('monthlyReport', monthlyReportJob);
+  }, 60 * 60 * 1000));
 
-  // Soft-delete cleanup — every 6 hours
-  const softDeleteCleanup = setInterval(() => {
-    cleanupSoftDeletedRecords().catch(err => logger.error('Soft-delete cleanup failed', err));
-  }, 6 * 60 * 60 * 1000);
-  jobs.set('softDeleteCleanup', softDeleteCleanup);
+  timers.set('softDeleteCleanup', setInterval(() => {
+    cleanupSoftDeletedRecords().catch(err => logger.error('softDeleteCleanup failed', err));
+  }, 6 * 60 * 60 * 1000));
 
-  logger.info('Scheduler started with 6 jobs (sendReminders, cleanupExpired, overdueTests, weeklyReport, monthlyReport, softDeleteCleanup)');
+  logger.info('setInterval fallback scheduler started with 6 timers');
 }
 
-export function stopScheduler() {
-  for (const [name, interval] of jobs.entries()) {
-    clearInterval(interval);
-    logger.info(`Job ${name} stopped`);
+export async function stopScheduler(): Promise<void> {
+  if (bossAvailable) {
+    const b = await getBoss();
+    if (b) {
+      for (const s of SCHEDULES) {
+        await b.unschedule(s.name);
+      }
+      logger.info('pg-boss schedules removed');
+    }
   }
-  jobs.clear();
+
+  for (const [name, timer] of timers.entries()) {
+    clearInterval(timer);
+    logger.info(`Timer ${name} stopped`);
+  }
+  timers.clear();
+  bossAvailable = false;
 }

@@ -56,4 +56,12 @@ export async function addMasteryJob(studentId: string, conceptId: string, accura
   return true;
 }
 
+export async function stopBoss(): Promise<void> {
+  if (boss && bossReady) {
+    await boss.stop();
+    bossReady = false;
+    logger.info('pg-boss stopped');
+  }
+}
+
 export { getBoss };

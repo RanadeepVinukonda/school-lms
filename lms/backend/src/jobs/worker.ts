@@ -8,6 +8,10 @@ import { env } from '../config/env';
 import { logger } from '../utils/logger';
 import { getBoss } from './queue';
 import { computeMasteryInline } from '../services/adaptive/mastery.service';
+import { checkUpcomingDeadlines } from './sendReminders.job';
+import { cleanupExpiredData, cleanupSoftDeletedRecords } from './cleanupExpired.job';
+import { checkOverdueTests } from './scheduler';
+import { generateWeeklyReport, generateMonthlyReport } from './generateReports.job';
 
 async function addTextbookLog(textbookId: string, message: string) {
   try {
@@ -322,5 +326,21 @@ export async function startWorkers() {
     }
   });
 
-  logger.info('pg-boss workers registered: uploadQueue, masteryQueue');
+  // Scheduled job workers — handle cron-fired jobs from scheduler.ts
+  const scheduledJobs = [
+    { name: 'sendReminders', handler: checkUpcomingDeadlines },
+    { name: 'cleanupExpired', handler: cleanupExpiredData },
+    { name: 'overdueTests', handler: checkOverdueTests },
+    { name: 'softDeleteCleanup', handler: cleanupSoftDeletedRecords },
+    { name: 'weeklyReport', handler: generateWeeklyReport },
+    { name: 'monthlyReport', handler: generateMonthlyReport },
+  ];
+
+  for (const sj of scheduledJobs) {
+    await b.work(sj.name, async () => {
+      await sj.handler();
+    });
+  }
+
+  logger.info('pg-boss workers registered: uploadQueue, masteryQueue, and 6 scheduled jobs');
 }

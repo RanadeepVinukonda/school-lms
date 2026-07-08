@@ -2,8 +2,9 @@ import * as Sentry from '@sentry/node';
 import app from './app';
 import { env } from './config/env';
 import { logger } from './utils/logger';
-import { startScheduler } from './jobs/scheduler';
+import { startScheduler, stopScheduler } from './jobs/scheduler';
 import { startWorkers } from './jobs/worker';
+import { stopBoss } from './jobs/queue';
 
 if (env.SENTRY_DSN) {
   Sentry.init({ dsn: env.SENTRY_DSN, environment: env.NODE_ENV });
@@ -17,8 +18,8 @@ function startServer() {
       logger.info(`Server running in ${env.NODE_ENV} mode on port ${env.PORT}`);
       logger.info(`Health check: http://localhost:${env.PORT}/api/health`);
 
-      startScheduler();
-      startWorkers();
+      startScheduler().catch((err) => logger.error('Scheduler start failed', err));
+      startWorkers().catch((err) => logger.error('Workers start failed', err));
     });
   } catch (error) {
     logger.error('Failed to start server', error);
@@ -38,8 +39,10 @@ process.on('unhandledRejection', (reason: Error | unknown) => {
   });
 });
 
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received. Shutting down gracefully...');
+async function shutdown(signal: string) {
+  logger.info(`${signal} received. Shutting down gracefully...`);
+  await stopScheduler().catch((err) => logger.error('Scheduler stop failed', err));
+  await stopBoss().catch((err) => logger.error('pg-boss stop failed', err));
   if (server) {
     server.close(() => {
       logger.info('Http server closed.');
@@ -48,18 +51,9 @@ process.on('SIGTERM', () => {
   } else {
     process.exit(0);
   }
-});
+}
 
-process.on('SIGINT', () => {
-  logger.info('SIGINT received. Shutting down gracefully...');
-  if (server) {
-    server.close(() => {
-      logger.info('Http server closed.');
-      process.exit(0);
-    });
-  } else {
-    process.exit(0);
-  }
-});
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 startServer();
