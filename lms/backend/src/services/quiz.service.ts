@@ -125,7 +125,7 @@ export async function deleteQuiz(quizId: string) {
     throw new NotFoundError('Quiz not found');
   }
 
-  const { error } = await supabase.from('quizzes').delete().eq('id', quizId);
+  const { error } = await supabase.from('quizzes').update({ deleted_at: new Date().toISOString() }).eq('id', quizId);
   if (error) throw new Error(`Failed to delete quizzes: ${error.message}`);
   logger.info('Quiz deleted', { quizId });
 }

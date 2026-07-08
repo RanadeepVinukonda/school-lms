@@ -99,7 +99,7 @@ export async function deleteLesson(lessonId: string) {
   const existing = await lessonById(supabase, lessonId);
   if (!existing) throw new NotFoundError('Lesson not found');
 
-  const { error } = await supabase.from('lessons').delete().eq('id', lessonId);
+  const { error } = await supabase.from('lessons').update({ deleted_at: new Date().toISOString() }).eq('id', lessonId);
   if (error) throw new Error(`Failed to delete lessons: ${error.message}`);
 
   if (existing.courseId) {

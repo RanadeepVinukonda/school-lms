@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ConflictError } from '../utils/errors';
 import { logger } from '../utils/logger';
+import { deleteDocument } from './document.service';
 import { TransactionManager } from '../database/transaction-manager';
 
 async function nosqlDoc(collection: string, docId: string) {
@@ -108,8 +109,7 @@ export async function deleteAcademicYear(id: string) {
   const supabase = getSupabaseAdmin()!;
   const existing = await nosqlDoc('academicYears', id);
   if (!existing) throw new NotFoundError('Academic year not found');
-  const { error } = await supabase.from('firestore_docs').delete().eq('collection', 'academicYears').eq('doc_id', id);
-  if (error) throw error;
+  await deleteDocument('academicYears', id);
   logger.info('Academic year deleted', { id });
 }
 

@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 import { logger } from '../utils/logger';
 import { checkUpcomingDeadlines } from './sendReminders.job';
-import { cleanupExpiredData } from './cleanupExpired.job';
+import { cleanupExpiredData, cleanupSoftDeletedRecords } from './cleanupExpired.job';
 import { generateWeeklyReport, generateMonthlyReport } from './generateReports.job';
 import { getSupabaseAdmin } from '../services/supabase';
 import { TransactionManager } from '../database/transaction-manager';
@@ -161,7 +161,13 @@ export function startScheduler() {
   }, 60 * 60 * 1000);
   jobs.set('monthlyReport', monthlyReportJob);
 
-  logger.info('Scheduler started with 5 jobs (sendReminders, cleanupExpired, overdueTests, weeklyReport, monthlyReport)');
+  // Soft-delete cleanup — every 6 hours
+  const softDeleteCleanup = setInterval(() => {
+    cleanupSoftDeletedRecords().catch(err => logger.error('Soft-delete cleanup failed', err));
+  }, 6 * 60 * 60 * 1000);
+  jobs.set('softDeleteCleanup', softDeleteCleanup);
+
+  logger.info('Scheduler started with 6 jobs (sendReminders, cleanupExpired, overdueTests, weeklyReport, monthlyReport, softDeleteCleanup)');
 }
 
 export function stopScheduler() {

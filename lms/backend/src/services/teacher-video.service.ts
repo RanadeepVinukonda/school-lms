@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
+import { deleteDocument } from './document.service';
 import { searchVideos } from './youtube.service';
 
 export async function addVideo(data: {
@@ -85,8 +86,7 @@ export async function removeVideo(videoId: string, teacherId: string) {
     throw new ForbiddenError('You do not own this video');
   }
 
-  const { error: deleteError } = await supabase.from('firestore_docs').delete().eq('collection', 'teacherVideos').eq('doc_id', videoId);
-  if (deleteError) throw new Error(`Failed to delete video: ${deleteError.message}`);
+  await deleteDocument('teacherVideos', videoId);
   logger.info('Teacher video removed', { videoId, teacherId });
 }
 

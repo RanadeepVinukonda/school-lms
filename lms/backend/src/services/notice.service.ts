@@ -50,6 +50,6 @@ export async function getNotices(schoolId: string, classIds?: string | string[])
 
 export async function deleteNotice(id: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return;
-  const { error } = await supabase.from('notice_board').delete().eq('id', id);
+  const { error } = await supabase.from('notice_board').update({ deleted_at: new Date().toISOString() }).eq('id', id);
   if (error) throw new Error(`Failed to delete notice: ${error.message}`);
 }

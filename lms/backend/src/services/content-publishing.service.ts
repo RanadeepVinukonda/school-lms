@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { getTeacherAssignment } from './teacher-class-subject.service';
+import { deleteDocument } from './document.service';
 import { createBulkNotifications } from './notification.service';
 
 const QUIZV2 = 'quizV2';
@@ -233,8 +234,7 @@ export async function unpublishContent(publishId: string, teacherId: string): Pr
   const existing = row.data as PublishedContent;
   if (existing.teacherId !== teacherId) throw new ForbiddenError('Not your content');
 
-  const { error } = await supabase.from('firestore_docs').delete().eq('collection', QUIZV2).eq('doc_id', publishId);
-  if (error) throw error;
+  await deleteDocument(QUIZV2, publishId);
   logger.info('Content unpublished', { publishId });
 }
 

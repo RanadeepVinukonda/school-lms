@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from './supabase';
 import { NotFoundError } from '../utils/errors';
+import { deleteDocument } from './document.service';
 import { logger } from '../utils/logger';
 
 export interface LabElement {
@@ -77,8 +78,7 @@ export async function updateLab(id: string, data: Partial<VirtualLab>) {
 export async function deleteLab(id: string) {
   const doc = await getNsDoc(NOSQL_LABS, id);
   if (!doc) throw new NotFoundError('Virtual lab not found');
-  const { error } = await getSupabaseAdmin().from('firestore_docs').delete().eq('collection', NOSQL_LABS).eq('doc_id', id);
-  if (error) throw new Error(`Failed to delete virtual lab: ${error.message}`);
+  await deleteDocument(NOSQL_LABS, id);
   logger.info('Virtual lab deleted', { id });
 }
 

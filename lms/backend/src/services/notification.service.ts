@@ -170,7 +170,7 @@ export async function deleteNotification(notificationId: string, userId: string)
 
   const { error } = await supabase
     .from('notifications')
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq('id', notificationId);
 
   if (error) throw error;

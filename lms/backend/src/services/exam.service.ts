@@ -154,7 +154,7 @@ export async function deleteExam(examId: string) {
     throw new NotFoundError('Exam not found');
   }
 
-  const { error } = await supabase.from('exams').delete().eq('id', examId);
+  const { error } = await supabase.from('exams').update({ deleted_at: new Date().toISOString() }).eq('id', examId);
   if (error) throw error;
 
   logger.info('Exam deleted', { examId });

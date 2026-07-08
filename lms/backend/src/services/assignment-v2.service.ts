@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
+import { deleteDocument } from './document.service';
 import { computeLevel, computeComplexityHandled, type Difficulty, type StudentLevel } from './ai-level.service';
 
 const ASSIGNMENT_V2 = 'assignmentV2';
@@ -37,9 +38,7 @@ async function nosqlUpdate(col: string, id: string, updates: Record<string, unkn
 }
 
 async function nosqlDelete(col: string, id: string): Promise<void> {
-  const supabase = getSupabaseAdmin();
-  const { error } = await supabase.from('firestore_docs').delete().eq('collection', col).eq('doc_id', id);
-  if (error) throw error;
+  await deleteDocument(col, id);
 }
 
 async function nosqlQuery(col: string, filters: Array<{ field: string; value: unknown }>, options?: { orderBy?: string; orderDir?: 'asc' | 'desc'; limit?: number; offset?: number }): Promise<Array<{ id: string; [key: string]: unknown }>> {

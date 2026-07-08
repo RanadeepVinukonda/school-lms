@@ -75,7 +75,7 @@ export async function updateTimetableEntry(id: string, data: Record<string, unkn
 
 export async function deleteTimetableEntry(id: string) {
   const supabase = getSupabaseAdmin()!;
-  const { error } = await supabase.from('timetable').delete().eq('id', id);
+  const { error } = await supabase.from('timetable').update({ deleted_at: new Date().toISOString() }).eq('id', id);
   if (error) {
     logger.error('Failed to delete timetable entry', { error: error.message, id });
   }
@@ -129,7 +129,7 @@ export async function saveTimetableDay(data: {
   }
 
   // ponytail: fallback when no pg pool — sequential ops
-  const { error: delErr } = await supabase.from('timetable').delete().eq('class_id', data.classId).eq('day', data.day);
+  const { error: delErr } = await supabase.from('timetable').update({ deleted_at: new Date().toISOString() }).eq('class_id', data.classId).eq('day', data.day);
   if (delErr) {
     logger.error('Failed to clear timetable day', { error: delErr.message, classId: data.classId, day: data.day });
     throw new Error('Failed to clear existing entries');

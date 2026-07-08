@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
+import { deleteDocument } from './document.service';
 import { logger } from '../utils/logger';
 
 const TMPL = 'testTemplates';
@@ -30,8 +31,7 @@ async function nUpdate(col: string, id: string, updates: Record<string, unknown>
 }
 
 async function nDelete(col: string, id: string) {
-  const { error } = await getSupabaseAdmin().from('firestore_docs').delete().eq('collection', col).eq('doc_id', id);
-  if (error) throw error;
+  await deleteDocument(col, id);
 }
 
 async function nQuery(col: string, filters: Record<string, unknown>) {

@@ -6,6 +6,7 @@ import { writeFile, unlink } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
+import { deleteDocument } from './document.service';
 import { logger } from '../utils/logger';
 
 const exec = promisify(execFile);
@@ -93,9 +94,7 @@ export async function deleteProject(id: string, userId: string) {
   if ((doc as CodingProject).ownerId !== userId) {
     throw new ForbiddenError('Not authorized to delete this project');
   }
-  const supabase = getSupabaseAdmin();
-  const { error } = await supabase.from('firestore_docs').delete().eq('collection', NOSQL.coding).eq('doc_id', id);
-  if (error) throw new Error('Failed to delete coding project: ' + error.message);
+  await deleteDocument(NOSQL.coding, id);
   logger.info('Coding project deleted', { id });
 }
 
@@ -200,9 +199,7 @@ export async function updateStreamProject(id: string, data: Partial<StreamProjec
 export async function deleteStreamProject(id: string) {
   const doc = await getNsDoc(NOSQL.stream, id);
   if (!doc) throw new NotFoundError('STREAM project not found');
-  const supabase = getSupabaseAdmin();
-  const { error } = await supabase.from('firestore_docs').delete().eq('collection', NOSQL.stream).eq('doc_id', id);
-  if (error) throw new Error('Failed to delete stream project: ' + error.message);
+  await deleteDocument(NOSQL.stream, id);
   logger.info('STREAM project deleted', { id });
 }
 

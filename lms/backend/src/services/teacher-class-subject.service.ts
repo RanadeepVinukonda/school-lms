@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ConflictError } from '../utils/errors';
+import { deleteDocument } from './document.service';
 import { logger } from '../utils/logger';
 
 export interface TeacherClassSubject {
@@ -161,7 +162,6 @@ export async function removeAssignment(assignmentId: string) {
     .eq('collection', 'teacherClassSubject').eq('doc_id', assignmentId).maybeSingle();
   if (error) throw new Error('Failed to fetch assignment: ' + error.message);
   if (!data) throw new NotFoundError('Assignment not found');
-  const { error: deleteError } = await supabase.from('firestore_docs').delete().eq('collection', 'teacherClassSubject').eq('doc_id', assignmentId);
-  if (deleteError) throw new Error(`Failed to delete teacher assignment: ${deleteError.message}`);
+  await deleteDocument('teacherClassSubject', assignmentId);
   logger.info('Teacher-class-subject assignment removed', { assignmentId });
 }

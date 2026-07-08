@@ -2,6 +2,39 @@ import { getSupabaseAdmin } from '../services/supabase';
 import { logger } from '../utils/logger';
 import { TransactionManager } from '../database/transaction-manager';
 
+const SOFT_DELETE_TABLES = [
+  'subjects', 'courses', 'lessons', 'assignments', 'quizzes', 'exams', 'classes',
+  'notice_board', 'staff_records', 'suppliers', 'inventory_categories', 'inventory_items',
+  'transport_routes', 'transport_stops', 'transport_assignments', 'curriculum_plans',
+  'device_tokens', 'timetable', 'users',
+];
+
+export async function cleanupSoftDeletedRecords() {
+  const supabase = getSupabaseAdmin()!;
+  const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  for (const table of SOFT_DELETE_TABLES) {
+    try {
+      const { data, error } = await supabase
+        .from(table)
+        .delete()
+        .lt('deleted_at', cutoff);
+
+      if (error) {
+        logger.error(`Failed to purge soft-deleted records from ${table}`, { error: error.message });
+        continue;
+      }
+
+      const count = (data as unknown as Array<unknown> | null)?.length ?? 0;
+      if (count > 0) {
+        logger.info(`Purged ${count} soft-deleted records from ${table}`);
+      }
+    } catch (err) {
+      logger.error(`Failed to purge soft-deleted records from ${table}`, { error: err });
+    }
+  }
+}
+
 export async function cleanupExpiredData() {
   logger.info('Cleaning up expired data...');
 

@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
+import { deleteDocument } from './document.service';
 
 export interface MindMapNode {
   id: string;
@@ -101,9 +102,7 @@ export async function deleteMindMap(mindmapId: string, userId: string): Promise<
   if (existing.ownerId !== userId) {
     throw new ForbiddenError('Only the owner can delete this mind map');
   }
-  const supabase = getSupabaseAdmin()!;
-  const { error: deleteError } = await supabase.from('firestore_docs').delete().eq('collection', 'mindmaps').eq('doc_id', mindmapId);
-  if (deleteError) throw new Error(`Failed to delete mindmap: ${deleteError.message}`);
+  await deleteDocument('mindmaps', mindmapId);
 }
 
 export async function getUserMindMaps(userId: string): Promise<MindMap[]> {

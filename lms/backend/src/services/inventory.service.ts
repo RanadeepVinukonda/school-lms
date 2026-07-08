@@ -24,7 +24,7 @@ export async function updateSupplier(id: string, data: { name?: string; contact_
 
 export async function deleteSupplier(id: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return;
-  const { error } = await supabase.from('suppliers').delete().eq('id', id);
+  const { error } = await supabase.from('suppliers').update({ deleted_at: new Date().toISOString() }).eq('id', id);
   if (error) throw new Error(`Failed to delete supplier: ${error.message}`);
 }
 
@@ -52,7 +52,7 @@ export async function updateCategory(id: string, data: { name?: string; descript
 
 export async function deleteCategory(id: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return;
-  const { error } = await supabase.from('inventory_categories').delete().eq('id', id);
+  const { error } = await supabase.from('inventory_categories').update({ deleted_at: new Date().toISOString() }).eq('id', id);
   if (error) throw new Error(`Failed to delete category: ${error.message}`);
 }
 
@@ -91,7 +91,7 @@ export async function updateItem(id: string, data: { name?: string; category_id?
 
 export async function deleteItem(id: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return;
-  const { error } = await supabase.from('inventory_items').delete().eq('id', id);
+  const { error } = await supabase.from('inventory_items').update({ deleted_at: new Date().toISOString() }).eq('id', id);
   if (error) throw new Error(`Failed to delete item: ${error.message}`);
 }
 

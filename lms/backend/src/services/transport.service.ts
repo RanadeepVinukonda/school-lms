@@ -32,7 +32,7 @@ export async function updateRoute(id: string, data: { name?: string; vehicle_num
 
 export async function deleteRoute(id: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return;
-  const { error } = await supabase.from('transport_routes').delete().eq('id', id);
+  const { error } = await supabase.from('transport_routes').update({ deleted_at: new Date().toISOString() }).eq('id', id);
   if (error) throw new Error(`Failed to delete route: ${error.message}`);
 }
 
@@ -60,7 +60,7 @@ export async function updateStop(id: string, data: { name?: string; pickup_time?
 
 export async function deleteStop(id: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return;
-  const { error } = await supabase.from('transport_stops').delete().eq('id', id);
+  const { error } = await supabase.from('transport_stops').update({ deleted_at: new Date().toISOString() }).eq('id', id);
   if (error) throw new Error(`Failed to delete stop: ${error.message}`);
 }
 
@@ -95,7 +95,7 @@ export async function getStudentAssignment(studentId: string) {
 
 export async function deleteAssignment(id: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return;
-  const { error } = await supabase.from('transport_assignments').delete().eq('id', id);
+  const { error } = await supabase.from('transport_assignments').update({ deleted_at: new Date().toISOString() }).eq('id', id);
   if (error) throw new Error(`Failed to delete assignment: ${error.message}`);
 }
 

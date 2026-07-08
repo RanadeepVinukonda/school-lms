@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
+import { deleteDocument } from './document.service';
 import { logger } from '../utils/logger';
 
 const QP = 'questionPapers';
@@ -52,9 +53,7 @@ async function nosqlUpdate(col: string, id: string, updates: Record<string, unkn
 }
 
 async function nosqlDelete(col: string, id: string) {
-  const supabase = getSupabaseAdmin()!;
-  const { error } = await supabase.from('firestore_docs').delete().eq('collection', col).eq('doc_id', id);
-  if (error) throw error;
+  await deleteDocument(col, id);
 }
 
 export async function createPaper(data: {

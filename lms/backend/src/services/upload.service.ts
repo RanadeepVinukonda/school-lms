@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { uploadBufferToCloudinary, deleteCloudinaryFile } from './cloudinary.service';
 import { getSupabaseAdmin } from './supabase';
 import { ValidationError, NotFoundError } from '../utils/errors';
+import { deleteDocument } from './document.service';
 import { logger } from '../utils/logger';
 
 const ALLOWED_MIME_TYPES: Record<string, string[]> = {
@@ -79,9 +80,7 @@ export async function deleteFileService(fileId: string) {
   if (fileData.path) {
     await deleteCloudinaryFile(fileData.path as string);
   }
-  const { error: deleteError } = await supabase.from('firestore_docs').delete()
-    .eq('collection', 'uploads').eq('doc_id', fileId);
-  if (deleteError) throw deleteError;
+  await deleteDocument('uploads', fileId);
 
   logger.info('File deleted from Cloudinary', { fileId });
 }

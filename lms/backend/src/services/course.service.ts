@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
+import { deleteDocument } from './document.service';
 import { parsePagination } from '../utils/pagination';
 
 async function nosqlDoc(collection: string, docId: string) {
@@ -67,8 +68,7 @@ export async function deleteCourse(courseId: string) {
   const supabase = getSupabaseAdmin();
   const existing = await nosqlDoc('courses', courseId);
   if (!existing) throw new NotFoundError('Course not found');
-  const { error } = await supabase.from('firestore_docs').delete().eq('collection', 'courses').eq('doc_id', courseId);
-  if (error) throw new Error('Failed to delete course: ' + error.message);
+  await deleteDocument('courses', courseId);
   logger.info('Course deleted', { courseId });
 }
 
@@ -153,8 +153,7 @@ export async function unenrollStudent(courseId: string, studentId: string) {
   const enrollment = await nosqlDoc('enrollment', enrollmentId);
   if (!enrollment) throw new NotFoundError('Enrollment not found');
 
-  const { error } = await supabase.from('firestore_docs').delete().eq('collection', 'enrollment').eq('doc_id', enrollmentId);
-  if (error) throw new Error('Failed to delete enrollment: ' + error.message);
+  await deleteDocument('enrollment', enrollmentId);
 
   const existing = await nosqlDoc('courses', courseId);
   if (existing) {

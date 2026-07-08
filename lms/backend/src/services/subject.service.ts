@@ -95,7 +95,7 @@ export async function deleteSubject(subjectId: string) {
     throw new NotFoundError('Subject not found');
   }
 
-  const { error } = await supabase.from('subjects').delete().eq('id', subjectId);
+  const { error } = await supabase.from('subjects').update({ deleted_at: new Date().toISOString() }).eq('id', subjectId);
   if (error) throw error;
 
   logger.info('Subject deleted', { subjectId });

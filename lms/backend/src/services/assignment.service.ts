@@ -123,7 +123,7 @@ export async function deleteAssignment(assignmentId: string) {
   if (fetchErr) throw fetchErr;
   if (!existing) throw new NotFoundError('Assignment not found');
 
-  const { error } = await supabase.from('assignments').delete().eq('id', assignmentId);
+  const { error } = await supabase.from('assignments').update({ deleted_at: new Date().toISOString() }).eq('id', assignmentId);
   if (error) throw error;
   logger.info('Assignment deleted', { assignmentId });
 }

@@ -275,7 +275,7 @@ export async function updateUser(uid: string, data: {
 export async function deleteUserService(uid: string) {
   const { exists } = await getUserDoc(uid);
   if (!exists) throw new NotFoundError('User not found');
-  const { error } = await getSupabaseAdmin().from('users').delete().eq('id', uid);
+  const { error } = await getSupabaseAdmin().from('users').update({ deleted_at: new Date().toISOString() }).eq('id', uid);
   if (error) throw error;
   await firebaseDeleteUser(uid);
   logger.info('User deleted by admin', { uid });

@@ -57,6 +57,6 @@ export async function updatePlan(id: string, updates: Partial<CurriculumPlan>) {
 export async function deletePlan(id: string) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return;
-  const { error } = await supabase.from('curriculum_plans').delete().eq('id', id);
+  const { error } = await supabase.from('curriculum_plans').update({ deleted_at: new Date().toISOString() }).eq('id', id);
   if (error) throw new Error(`Failed to delete plan: ${error.message}`);
 }

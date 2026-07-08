@@ -30,7 +30,7 @@ export async function updateStaff(id: string, data: { name?: string; role?: 'tea
 
 export async function deleteStaff(id: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return;
-  const { error } = await supabase.from('staff_records').delete().eq('id', id);
+  const { error } = await supabase.from('staff_records').update({ deleted_at: new Date().toISOString() }).eq('id', id);
   if (error) throw new Error(`Failed to delete staff: ${error.message}`);
 }
 

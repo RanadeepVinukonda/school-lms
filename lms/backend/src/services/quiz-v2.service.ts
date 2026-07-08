@@ -8,6 +8,7 @@ import { getTeacherAssignment } from './teacher-class-subject.service';
 import { computeLevel, computeComplexityHandled } from './ai-level.service';
 import type { Difficulty, StudentLevel } from './ai-level.service';
 import * as gamificationService from './gamification.service';
+import { deleteDocument } from './document.service';
 import { computeMastery } from './adaptive/mastery.service';
 
 const QV2 = 'quizV2';
@@ -46,8 +47,7 @@ async function nosqlUpdate(col: string, id: string, updates: Record<string, unkn
 }
 
 async function nosqlDelete(col: string, id: string) {
-  const { error } = await getSupabaseAdmin()!.from('firestore_docs').delete().eq('collection', col).eq('doc_id', id);
-  if (error) throw error;
+  await deleteDocument(col, id);
 }
 
 async function nosqlQuery(col: string, filters: Record<string, unknown>) {

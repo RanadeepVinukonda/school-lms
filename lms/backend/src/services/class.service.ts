@@ -97,7 +97,7 @@ export async function deleteClass(classId: string) {
     throw new NotFoundError('Class not found');
   }
 
-  const { error } = await supabase.from('classes').delete().eq('id', classId);
+  const { error } = await supabase.from('classes').update({ deleted_at: new Date().toISOString() }).eq('id', classId);
   if (error) throw error;
 
   logger.info('Class deleted', { classId });
