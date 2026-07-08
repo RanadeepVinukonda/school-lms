@@ -12,6 +12,7 @@ import { ROUTES } from '@/lib/constants';
 import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { getChildren } from '@/services/parentService';
 import { formatDate } from '@/lib/format';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
 function SectionTitle({ label, title }: { label: string; title: string }) {
   const ref = useRef(null);
@@ -39,6 +40,14 @@ export default function ParentDashboardPage() {
       const children = await getChildren();
       return { children };
     },
+    refetchInterval: 120000,
+  });
+
+  // Realtime: auto-refresh when children's grades change
+  useRealtimeSubscription({
+    table: 'grades',
+    event: 'INSERT',
+    callback: () => { refetch(); },
   });
 
   const parentName = user?.displayName?.split(' ')[0] ?? 'Parent';

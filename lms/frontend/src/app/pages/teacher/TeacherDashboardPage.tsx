@@ -2,7 +2,7 @@ import { useMemo, useRef, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Link } from 'react-router-dom';
 import { motion, useInView } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +18,7 @@ import {
 import { getTextbooksBySubject } from '@/services/textbookService';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
 import { staggerContainer, cardStackReveal } from '@/lib/motion';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
 interface NeedsAttentionItem {
   icon: string; label: string; count: number;
@@ -89,8 +90,11 @@ export default function TeacherDashboardPage() {
   const todayKey = todayDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
   const todayLabel = todayDate.toLocaleDateString('en-US', { weekday: 'long' });
 
+  const queryClient = useQueryClient();
+
   const { isLoading, error, refetch, data } = useQuery({
     queryKey: ['teacher-dashboard', user?.id],
+    refetchInterval: 120000,
     queryFn: async (): Promise<DashboardData> => {
       const [allSubjects, allClasses, students, allGrades, assignmentsRes] = await Promise.all([
         getAllSubjects(), getAllClasses(), getUserByRole('student'), getAllGrades(),
@@ -155,6 +159,23 @@ export default function TeacherDashboardPage() {
         },
       };
     },
+  });
+
+  // Realtime: auto-refresh dashboard on submissions, grades, corrections
+  useRealtimeSubscription({
+    table: 'submissions',
+    event: 'INSERT',
+    callback: () => { queryClient.invalidateQueries({ queryKey: ['teacher-dashboard', user?.id] }); },
+  });
+  useRealtimeSubscription({
+    table: 'grades',
+    event: 'INSERT',
+    callback: () => { queryClient.invalidateQueries({ queryKey: ['teacher-dashboard', user?.id] }); },
+  });
+  useRealtimeSubscription({
+    table: 'corrections',
+    event: 'INSERT',
+    callback: () => { queryClient.invalidateQueries({ queryKey: ['teacher-dashboard', user?.id] }); },
   });
 
   const teacherName = user?.displayName?.split(' ')[0] ?? _('Teacher');

@@ -15,6 +15,7 @@ import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import api from '@/services/api';
 import { getClass } from '@/services/dataService';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
 interface ResultEntry { id: string; itemName: string; score: number; maxScore: number; percentage: number; gradedAt: string; feedback?: string }
 
@@ -59,7 +60,7 @@ export default function StudentDashboardPage() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['student-dashboard', studentId],
     enabled: !!studentId,
-    refetchInterval: 30000,
+    refetchInterval: 60000,
     queryFn: async () => {
       if (!studentId) throw new Error('Not authenticated');
       const now = new Date();
@@ -81,6 +82,26 @@ export default function StudentDashboardPage() {
         avgGrade: dashRes.averageScore ?? 0, totalAssessments: dashRes.totalAssessments ?? 0,
       } satisfies DashboardData;
     },
+  });
+
+  // Realtime: auto-refresh dashboard when new grades or corrections are added
+  useRealtimeSubscription({
+    table: 'grades',
+    event: 'INSERT',
+    filter: studentId ? { column: 'studentId', value: studentId } : undefined,
+    callback: () => { refetch(); },
+  });
+  useRealtimeSubscription({
+    table: 'corrections',
+    event: 'INSERT',
+    filter: studentId ? { column: 'studentId', value: studentId } : undefined,
+    callback: () => { refetch(); },
+  });
+  useRealtimeSubscription({
+    table: 'notifications',
+    event: 'INSERT',
+    filter: studentId ? { column: 'userId', value: studentId } : undefined,
+    callback: () => { refetch(); },
   });
 
   return (

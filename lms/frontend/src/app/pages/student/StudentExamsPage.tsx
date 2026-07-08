@@ -13,6 +13,7 @@ import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/
 import { useQuery } from '@tanstack/react-query';
 import { getAllSubjects, getClass, getExamsBySubject, getCorrectionsByStudent } from '@/services/dataService';
 import { useAuthStore } from '@/store/authStore';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import type { ExamItem, CorrectionItem } from '@/services/dataService';
 
 function Countdown({ endDate }: { endDate: string }) {
@@ -67,6 +68,7 @@ export default function StudentExamsPage() {
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-exams', user?.id, user?.classId],
+    refetchInterval: 120000,
     queryFn: async () => {
       if (!user?.classId) return { upcoming: [], past: [], subjects: [] };
       const [allSubjects, studentClass, corrections] = await Promise.all([
@@ -116,6 +118,14 @@ export default function StudentExamsPage() {
       return { upcoming, past, subjects: uniqueSubjects };
     },
     enabled: !!user,
+  });
+
+  // Realtime: auto-refresh when new corrections are published
+  useRealtimeSubscription({
+    table: 'corrections',
+    event: 'INSERT',
+    filter: user?.id ? { column: 'studentId', value: user.id } : undefined,
+    callback: () => { refetch(); },
   });
 
   return (

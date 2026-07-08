@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { getNotificationsByUser, markNotificationRead, markAllNotificationsRead } from '@/services/dataService';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { cn } from '@/lib/utils';
 
 function relativeTime(iso: string): string {
@@ -35,7 +36,15 @@ export default function NotificationsPage() {
     queryKey: ['notifications-page', user?.id],
     queryFn: () => getNotificationsByUser(user!.id),
     enabled: !!user,
-    refetchInterval: 30000,
+    refetchInterval: 60000,
+  });
+
+  // Realtime: auto-refresh notifications list when new notifications arrive
+  useRealtimeSubscription({
+    table: 'notifications',
+    event: 'INSERT',
+    filter: user?.id ? { column: 'userId', value: user.id } : undefined,
+    callback: () => { refetch(); },
   });
 
   const displayed = filter === 'unread' ? items.filter((n) => !n.read) : items;

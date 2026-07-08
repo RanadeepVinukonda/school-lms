@@ -16,6 +16,7 @@ import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { getAllUsers, getAllClasses, getAllGrades, getAllExams, getAllAssignments } from '@/services/dataService';
 import { analyticsService } from '@/services/analyticsService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
 interface ExamDoc { id: string; title: string; startDate?: string; endDate?: string; createdAt?: string; }
 interface AssignmentDoc { id: string; title: string; dueDate?: string; createdAt?: string; }
@@ -181,6 +182,23 @@ export default function AdminDashboardPage() {
     : activeTab === 'oversight' ? refetchOversight
     : activeTab === 'tests_monitor' ? refetchTests
     : () => { refetchOverview(); };
+
+  // Realtime: auto-refresh when new exams, assignments, or grades are added
+  useRealtimeSubscription({
+    table: 'exams',
+    event: 'INSERT',
+    callback: () => { queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] }); },
+  });
+  useRealtimeSubscription({
+    table: 'assignments',
+    event: 'INSERT',
+    callback: () => { queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] }); },
+  });
+  useRealtimeSubscription({
+    table: 'grades',
+    event: 'INSERT',
+    callback: () => { queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] }); },
+  });
 
   const TABS = [
     { key: 'overview' as const, icon: 'dashboard', label: _('Overview') },
