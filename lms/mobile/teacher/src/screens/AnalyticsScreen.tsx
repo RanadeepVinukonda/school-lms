@@ -10,10 +10,10 @@ export default function AnalyticsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [classes, setClasses] = useState<any>(null);
+  const [classes, setClasses] = useState<Record<string, unknown> | null>(null);
   const [selectedClassId, setSelectedClassId] = useState('');
   const [activeTab, setActiveTab] = useState<'overview' | 'concepts'>('overview');
-  const [overview, setOverview] = useState<any>(null);
+  const [overview, setOverview] = useState<Record<string, unknown> | null>(null);
   const [overviewLoading, setOverviewLoading] = useState(false);
 
   const fetchClasses = useCallback(async () => {

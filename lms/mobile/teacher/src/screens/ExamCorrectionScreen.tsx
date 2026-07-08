@@ -8,7 +8,7 @@ export default function ExamCorrectionScreen({ navigation, route }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [exam, setExam] = useState<any>(null);
+  const [exam, setExam] = useState<Record<string, unknown> | null>(null);
   const { examId } = route?.params ?? {};
   const [adjustedScore, setAdjustedScore] = useState('8');
   const [saving, setSaving] = useState(false);

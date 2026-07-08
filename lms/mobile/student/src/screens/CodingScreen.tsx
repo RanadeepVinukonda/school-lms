@@ -8,7 +8,7 @@ export default function CodingScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [challenge, setChallenge] = useState<any>(null);
+  const [challenge, setChallenge] = useState<Record<string, unknown> | null>(null);
   const [code, setCode] = useState('');
   const [output, setOutput] = useState('');
   const [running, setRunning] = useState(false);

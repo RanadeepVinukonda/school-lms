@@ -8,7 +8,7 @@ export default function SubjectDetailScreen({ route, navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [chapters, setChapters] = useState<any>(null);
+  const [chapters, setChapters] = useState<Record<string, unknown> | null>(null);
   const { subjectTitle, subjectId } = route.params || { subjectTitle: 'Mathematics' };
   const [activeChapter, setActiveChapter] = useState<number | null>(null);
 

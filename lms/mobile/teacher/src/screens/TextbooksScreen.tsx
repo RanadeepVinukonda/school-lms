@@ -23,9 +23,9 @@ export default function TextbooksScreen() {
   useEffect(() => { fetchData(); }, [fetchData]);
   const onRefresh = useCallback(() => { setRefreshing(true); fetchData(); }, [fetchData]);
 
-  const clsList = Array.isArray(classes) ? classes : (classes?.classes || []);
-  const cls = clsList.find((c: any) => c.id === selectedClassId);
-  const sub = cls?.subjects.find((s: any) => s.id === selectedSubjectId);
+  const clsList = Array.isArray(classes) ? classes : ((classes?.classes as Record<string, unknown>[]) || []);
+  const cls = clsList.find((c) => c.id === selectedClassId);
+  const sub = (cls?.subjects as Record<string, unknown>[])?.find((s) => s.id === selectedSubjectId);
 
   const reset = () => { setSelectedClassId(null); setSelectedSubjectId(null); };
 

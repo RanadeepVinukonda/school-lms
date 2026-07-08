@@ -6,7 +6,7 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [dashboardData, setDashboardData] = useState<Record<string, unknown> | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -22,7 +22,13 @@ export default function DashboardScreen() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    let cancelled = false;
+    fetchData().then(() => {
+      if (cancelled) return;
+    });
+    return () => { cancelled = true; };
+  }, [fetchData]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -32,6 +38,10 @@ export default function DashboardScreen() {
   if (loading && !refreshing) return <LoadingState />;
   if (error) return <ErrorState message={error} onRetry={fetchData} />;
   if (!dashboardData) return <EmptyState message="No dashboard data available yet." />;
+
+  const d = dashboardData;
+  const tasks = Array.isArray(d.tasks) ? d.tasks : [];
+  const achievements = Array.isArray(d.achievements) ? d.achievements : [];
 
   return (
     <ScrollView
@@ -47,11 +57,11 @@ export default function DashboardScreen() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>My Overall Mastery</Text>
         <View style={styles.progressRow}>
-          <Text style={styles.progressPct}>78%</Text>
-          <Text style={styles.progressLabel}>Beginner-Intermediate Level</Text>
+          <Text style={styles.progressPct}>{d.mastery ?? 0}%</Text>
+          <Text style={styles.progressLabel}>{d.level ?? 'Beginner'} Level</Text>
         </View>
         <View style={styles.progressBarBg}>
-          <View style={[styles.progressBarFill, { width: '78%' }]} />
+          <View style={[styles.progressBarFill, { width: `${d.mastery ?? 0}%` }]} />
         </View>
       </View>
 
@@ -59,18 +69,15 @@ export default function DashboardScreen() {
         <Text style={styles.sectionTitle}>Upcoming Tasks</Text>
       </View>
 
-      {[
-        { title: 'Algebra Midterm Exam', date: 'Tomorrow at 9:00 AM', tag: 'Exam', color: '#ff1744' },
-        { title: 'Physics Virtual Lab Assignment', date: 'Jul 5, 2026', tag: 'Lab', color: '#00e5ff' },
-        { title: 'AI Tutor Conversation practice', date: 'Jul 7, 2026', tag: 'Chat', color: '#7c4dff' }
-      ].map((item, idx) => (
+      {tasks.length === 0 && <EmptyState message="No upcoming tasks." />}
+      {tasks.map((item: any, idx: number) => (
         <View key={idx} style={styles.taskItem}>
-          <View style={[styles.taskIndicator, { backgroundColor: item.color }]} />
+          <View style={[styles.taskIndicator, { backgroundColor: item.color || '#6200ee' }]} />
           <View style={styles.taskDetails}>
             <Text style={styles.taskName}>{item.title}</Text>
             <Text style={styles.taskDate}>{item.date}</Text>
           </View>
-          <Text style={styles.taskTag}>{item.tag}</Text>
+          <Text style={styles.taskTag}>{item.tag || 'Task'}</Text>
         </View>
       ))}
 
@@ -78,9 +85,10 @@ export default function DashboardScreen() {
         <Text style={styles.sectionTitle}>Recent Achievements</Text>
       </View>
       <View style={styles.card}>
-        <Text style={styles.activityItem}>Earned "Phonics Master" Badge in Phonics Sandbox</Text>
-        <Text style={styles.activityItem}>Passed Python Basic Coding Challenge (10/10 Score)</Text>
-        <Text style={styles.activityItem}>Completed Water Cycle Virtual Lab Simulation</Text>
+        {achievements.length === 0 && <Text style={styles.activityItem}>No recent achievements.</Text>}
+        {achievements.map((item: any, idx: number) => (
+          <Text key={idx} style={styles.activityItem}>{item.description || item.title || String(item)}</Text>
+        ))}
       </View>
     </ScrollView>
   );

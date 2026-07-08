@@ -8,7 +8,7 @@ export default function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Record<string, unknown> | null>(null);
   const [lang, setLang] = useState('en');
   const [scans, setScans] = useState<string[]>([]);
   const [scanning, setScanning] = useState(false);

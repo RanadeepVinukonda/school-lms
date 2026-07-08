@@ -10,10 +10,10 @@ export default function ReportsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [children, setChildren] = useState<any>(null);
+  const [children, setChildren] = useState<Record<string, unknown> | null>(null);
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
-  const [report, setReport] = useState<any>(null);
+  const [report, setReport] = useState<Record<string, unknown> | null>(null);
 
   const fetchChildren = useCallback(async () => {
     setLoading(true); setError(null);

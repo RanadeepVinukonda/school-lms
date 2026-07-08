@@ -8,7 +8,7 @@ export default function DashboardScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [children, setChildren] = useState<any>(null);
+  const [children, setChildren] = useState<Record<string, unknown> | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true); setError(null);
@@ -19,7 +19,11 @@ export default function DashboardScreen({ navigation }: any) {
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    let cancelled = false;
+    fetchData().then(() => { if (cancelled) return; });
+    return () => { cancelled = true; };
+  }, [fetchData]);
   const onRefresh = useCallback(() => { setRefreshing(true); fetchData(); }, [fetchData]);
 
   if (loading && !refreshing) return <LoadingState />;

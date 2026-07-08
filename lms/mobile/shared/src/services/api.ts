@@ -2,7 +2,18 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { supabase } from '../supabase/config';
 import { API_BASE_URL } from '../utils/constants';
 import { useAuthStore } from '../store/authStore';
-import type { ApiError } from '../types';
+
+interface ErrorResponse {
+  error?: { message: string; code?: string; details?: Array<{ field: string; message: string }> };
+  message?: string;
+  code?: string;
+}
+
+interface ApiError {
+  message: string;
+  code?: string;
+  status?: number;
+}
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -28,7 +39,7 @@ function processQueue(error: unknown, token: string | null = null) {
 
 api.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError<ApiError>) => {
+  async (error: AxiosError<ErrorResponse>) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
     if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
       if (isRefreshing) {
@@ -55,7 +66,14 @@ api.interceptors.response.use(
         return Promise.reject(error);
       } finally { isRefreshing = false; }
     }
-    return Promise.reject({ message: error.response?.data?.message || error.message, code: error.response?.data?.code, status: error.response?.status });
+    const errData = error.response?.data;
+    const errorMessage = errData?.error?.message || errData?.message || error.message;
+    const apiError: ApiError = {
+      message: errorMessage,
+      code: errData?.error?.code || errData?.code,
+      status: error.response?.status,
+    };
+    return Promise.reject(apiError);
   },
 );
 

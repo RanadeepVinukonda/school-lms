@@ -8,7 +8,7 @@ export default function LabsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [lab, setLab] = useState<any>(null);
+  const [lab, setLab] = useState<Record<string, unknown> | null>(null);
   const [running, setRunning] = useState(false);
   const [temperature, setTemperature] = useState(25);
 
