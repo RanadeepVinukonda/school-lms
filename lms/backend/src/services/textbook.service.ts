@@ -119,7 +119,7 @@ export async function createTextbook(data: {
   const now = new Date().toISOString();
   let storagePath = '';
   let pdfUrl = '';
-  let status: 'processing' | 'ready' = 'ready';
+  let status: 'processing' | 'ready' | 'error' = 'ready';
 
   if (data.cloudinaryUrl && data.cloudinaryPublicId) {
     // ponytail: existing cloudinary URL passed through; R2 migration for existing uploads deferred
