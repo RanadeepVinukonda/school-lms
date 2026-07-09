@@ -77,6 +77,10 @@ if (process.env.NODE_ENV !== 'test') {
   app.get('/csrf-token', csrfTokenHandler);
 }
 
+app.use('/api/auth', authRateLimit);
+app.use('/api', apiRateLimit, auditMiddleware, routes);
+app.use('/api/user', gdprRoutes);
+
 app.use('/auth', authRateLimit);
 app.use('/', apiRateLimit, auditMiddleware, routes);
 app.use('/user', gdprRoutes);
