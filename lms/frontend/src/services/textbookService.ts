@@ -84,28 +84,30 @@ export async function saveChapters(textbookId: string, chapters: Chapter[]): Pro
 
   for (const chapter of chapters) {
     const { concepts, ...chapterData } = chapter;
-    await supabase.from(CHAPTERS_COLLECTION).upsert({
+    const { error: chErr } = await supabase.from(CHAPTERS_COLLECTION).upsert({
       textbook_id: textbookId,
       ...chapterData,
       id: chapter.id,
       order: chapterData.order ?? 0,
       createdAt: new Date().toISOString(),
-    });
+    }, { onConflict: 'id', ignoreDuplicates: false });
+    if (chErr) throw new Error(`Failed to save chapter "${chapter.title}": ${chErr.message}`);
 
     for (const concept of concepts) {
       const { questionBank, ...conceptData } = concept;
-      await supabase.from(CONCEPTS_COLLECTION).upsert({
+      const { error: coErr } = await supabase.from(CONCEPTS_COLLECTION).upsert({
         textbook_id: textbookId,
         chapter_id: chapter.id,
         ...conceptData,
         id: concept.id,
         order: conceptData.order ?? 0,
         createdAt: new Date().toISOString(),
-      });
+      }, { onConflict: 'id', ignoreDuplicates: false });
+      if (coErr) throw new Error(`Failed to save concept "${concept.title}": ${coErr.message}`);
 
       if (Array.isArray(questionBank)) {
         for (const q of questionBank) {
-          await supabase.from('concept_questions').upsert({
+          const { error: qErr } = await supabase.from('concept_questions').upsert({
             id: q.id,
             concept_id: concept.id,
             textbook_id: textbookId,
@@ -116,7 +118,8 @@ export async function saveChapters(textbookId: string, chapters: Chapter[]): Pro
             answer: q.correctAnswer,
             explanation: q.explanation || '',
             created_at: new Date().toISOString(),
-          });
+          }, { onConflict: 'id', ignoreDuplicates: false });
+          if (qErr) throw new Error(`Failed to save question: ${qErr.message}`);
         }
       }
     }

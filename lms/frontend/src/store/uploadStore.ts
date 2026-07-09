@@ -185,6 +185,7 @@ async function runProcessing(taskId: string) {
 
     for (let ci = 0; ci < structure.chapters.length; ci++) {
       const ch = structure.chapters[ci];
+      const chapterUuid = crypto.randomUUID();
       const concepts: Concept[] = [];
 
       for (let coi = 0; coi < ch.concepts.length; coi++) {
@@ -226,7 +227,7 @@ async function runProcessing(taskId: string) {
           }
 
           questionBank = (result.questionBank || []).map((q, i) => ({
-            id: `${conceptTitle.replace(/\s+/g, '_')}_q_${i}`,
+            id: crypto.randomUUID(),
             type: (q.type as GeneratedQuestion['type']) ?? 'mcq',
             difficulty: (q.difficulty as GeneratedQuestion['difficulty']) ?? 'medium',
             category: (q.category as GeneratedQuestion['category']) ?? 'recall',
@@ -238,7 +239,7 @@ async function runProcessing(taskId: string) {
           }));
 
           assignments = (result.assignments || []).map((a, i) => ({
-            id: `${conceptTitle.replace(/\s+/g, '_')}_a_${i}`,
+            id: crypto.randomUUID(),
             title: a.title ?? 'Assignment',
             instructions: a.instructions ?? '',
             marks: a.marks ?? 10,
@@ -263,8 +264,8 @@ async function runProcessing(taskId: string) {
         }
 
         concepts.push({
-          id: `concept_${id}_ch${ci}_co${coi}`,
-          chapterId: `ch_${id}_${ci}`,
+          id: crypto.randomUUID(),
+          chapterId: chapterUuid,
           textbookId: id,
           title: conceptTitle,
           summary: summary ?? `Study of ${conceptTitle}`,
@@ -282,7 +283,7 @@ async function runProcessing(taskId: string) {
       }
 
       chapters.push({
-        id: `ch_${id}_${ci}`,
+        id: chapterUuid,
         textbookId: id,
         title: ch.title,
         order: ci,
