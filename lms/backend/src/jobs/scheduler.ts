@@ -1,6 +1,5 @@
 import { randomUUID } from 'crypto';
 import { logger } from '../utils/logger';
-import { getBoss } from './queue';
 import { checkUpcomingDeadlines } from './sendReminders.job';
 import { cleanupExpiredData, cleanupSoftDeletedRecords } from './cleanupExpired.job';
 import { generateWeeklyReport, generateMonthlyReport } from './generateReports.job';
@@ -8,16 +7,6 @@ import { getSupabaseAdmin } from '../services/supabase';
 import { TransactionManager } from '../database/transaction-manager';
 
 const timers: Map<string, ReturnType<typeof setInterval>> = new Map();
-let bossAvailable = false;
-
-const SCHEDULES = [
-  { name: 'sendReminders', cron: '*/30 * * * *' },
-  { name: 'cleanupExpired', cron: '0 * * * *' },
-  { name: 'overdueTests', cron: '*/5 * * * *' },
-  { name: 'weeklyReport', cron: '0 6 * * 1' },
-  { name: 'monthlyReport', cron: '0 6 1 * *' },
-  { name: 'softDeleteCleanup', cron: '0 */6 * * *' },
-] as const;
 
 export async function checkOverdueTests(): Promise<void> {
   logger.info('Checking overdue tests...');
@@ -110,21 +99,7 @@ export async function checkOverdueTests(): Promise<void> {
 }
 
 export async function startScheduler(): Promise<void> {
-  logger.info('Starting job scheduler...');
-
-  const b = await getBoss();
-  if (b) {
-    for (const s of SCHEDULES) {
-      await b.schedule(s.name, s.cron);
-    }
-    bossAvailable = true;
-
-    await b.send('overdueTests', {}, { startAfter: 15 });
-    logger.info(`Registered ${SCHEDULES.length} pg-boss schedules`);
-    return;
-  }
-
-  logger.warn('pg-boss unavailable — using setInterval fallback (single-instance only)');
+  logger.info('Starting job scheduler (setInterval-based, 6 timers)...');
 
   timers.set('sendReminders', setInterval(() => {
     checkUpcomingDeadlines().catch(err => logger.error('sendReminders failed', err));
@@ -160,24 +135,13 @@ export async function startScheduler(): Promise<void> {
     cleanupSoftDeletedRecords().catch(err => logger.error('softDeleteCleanup failed', err));
   }, 6 * 60 * 60 * 1000));
 
-  logger.info('setInterval fallback scheduler started with 6 timers');
+  logger.info('Scheduler started with 6 setInterval timers');
 }
 
 export async function stopScheduler(): Promise<void> {
-  if (bossAvailable) {
-    const b = await getBoss();
-    if (b) {
-      for (const s of SCHEDULES) {
-        await b.unschedule(s.name);
-      }
-      logger.info('pg-boss schedules removed');
-    }
-  }
-
   for (const [name, timer] of timers.entries()) {
     clearInterval(timer);
     logger.info(`Timer ${name} stopped`);
   }
   timers.clear();
-  bossAvailable = false;
 }

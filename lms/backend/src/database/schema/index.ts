@@ -14,6 +14,7 @@ import {
   vector,
 } from 'drizzle-orm/pg-core';
 
+
 export const users = pgTable('users', {
   id: uuid('id').primaryKey(),
   email: text('email').notNull(),
@@ -216,7 +217,7 @@ export const classes = pgTable('classes', {
 
 export const attendance = pgTable('attendance', {
   id: uuid('id').primaryKey(),
-  studentId: uuid('student_id').notNull(),
+  studentId: uuid('student_id').notNull().references(() => users.id),
   classId: uuid('class_id').notNull(),
   date: text('date').notNull(),
   status: text('status', { enum: ['present', 'absent', 'late', 'holiday'] }).notNull(),
@@ -244,7 +245,7 @@ export const feeStructures = pgTable('fee_structures', {
 export const feePayments = pgTable('fee_payments', {
   id: uuid('id').primaryKey(),
   studentId: uuid('student_id').notNull(),
-  feeStructureId: uuid('fee_structure_id').notNull(),
+  feeStructureId: uuid('fee_structure_id').notNull().references(() => feeStructures.id),
   amount: numeric('amount').notNull(),
   schoolId: uuid('school_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ConflictError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { env } from '../config/env';
-import { addUploadJob, removeUploadJob } from '../jobs/queue';
+import { addUploadJob } from '../jobs/queue';
 
 export async function createTextbook(data: {
   title: string;
@@ -83,12 +83,12 @@ export async function createTextbook(data: {
 
   if (insertError) throw insertError;
 
-  // Submit to background processing queue (fire-and-forget when inline)
+  // Submit to Inngest background processing (fire-and-forget when inline)
   try {
     await addUploadJob(textbookId, storagePath);
-    logger.info('Textbook upload job added to background queue', { textbookId });
+    logger.info('Textbook upload job sent to Inngest', { textbookId });
   } catch (err) {
-    logger.info('pg-boss unavailable — firing inline processing', {
+    logger.info('Inngest unavailable — firing inline processing', {
       textbookId,
       err: err instanceof Error ? err.message : String(err),
     });
@@ -139,10 +139,10 @@ export async function reprocessTextbook(textbookId: string, requestingTeacherId:
 
   try {
     await addUploadJob(textbookId, doc.storage_path);
-    logger.info('Textbook reprocessing triggered', { textbookId });
+    logger.info('Textbook reprocessing triggered via Inngest', { textbookId });
     return { textbookId, status: 'processing' };
   } catch {
-    logger.info('pg-boss unavailable for reprocess — firing inline', { textbookId });
+    logger.info('Inngest unavailable for reprocess — firing inline', { textbookId });
     try {
       const { processUploadInline } = require('./pipeline.service');
       processUploadInline(textbookId).catch(async (aiErr: unknown) => {
@@ -225,12 +225,6 @@ export async function deleteTextbook(textbookId: string) {
       const { error: delErr } = await supabase.from(table as any).delete().eq('textbook_id', textbookId);
       if (delErr) throw new Error(`Failed to delete ${table}: ${delErr.message}`);
     }
-  }
-
-  try {
-    await removeUploadJob(textbookId);
-  } catch (e) {
-    logger.error('Failed to remove upload job during textbook deletion', { textbookId, e });
   }
 
   logger.info('Textbook deleted', { textbookId });

@@ -4,7 +4,48 @@ import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 import { getEnrollments } from './course.service';
+import { BaseService, DbRecord } from '../lib/base-service';
 import { createBulkNotifications, createNotification } from './notification.service';
+
+interface AssignmentRecord extends DbRecord {
+  title: string;
+  description: string;
+  course_id?: string;
+  courseId?: string;
+  due_date?: string;
+  dueDate?: string;
+  points: number;
+  submission_count?: number;
+  submissionCount?: number;
+  is_published?: boolean;
+  isPublished?: boolean;
+  school_id?: string;
+  schoolId?: string;
+}
+
+/**
+ * BaseService wrapper for assignments CRUD.
+ */
+class AssignmentBaseService extends BaseService<AssignmentRecord> {
+  protected table = 'assignments';
+  protected softDelete = true;
+  protected defaultSortColumn = 'created_at';
+  protected defaultSortOrder: 'asc' | 'desc' = 'desc';
+
+  protected async afterFind(record: AssignmentRecord): Promise<AssignmentRecord> {
+    // Map snake_case DB columns to camelCase response
+    return {
+      ...record,
+      courseId: record.course_id || record.courseId,
+      dueDate: record.due_date || record.dueDate,
+      submissionCount: record.submission_count ?? record.submissionCount ?? 0,
+      isPublished: record.is_published ?? record.isPublished ?? false,
+      schoolId: record.school_id || record.schoolId,
+    } as AssignmentRecord;
+  }
+}
+
+const assignmentBase = new AssignmentBaseService();
 
 /** Create a new assignment and notify enrolled students. */
 export async function createAssignment(data: {
@@ -69,82 +110,31 @@ export async function createAssignment(data: {
   return { ...assignmentData };
 }
 
-function rowToAssignment(row: Record<string, unknown>): Record<string, unknown> {
-  return {
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    subjectId: row.subjectId,
-    subjectName: row.subjectName,
-    chapterId: row.chapterId,
-    textbookId: row.textbookId,
-    lessonId: row.lessonId,
-    courseId: row.courseId,
-    dueDate: row.dueDate,
-    points: row.points,
-    maxAttempts: row.maxAttempts,
-    allowLateSubmission: row.allowLateSubmission,
-    latePenaltyPercent: row.latePenaltyPercent,
-    passingGrade: row.passingGrade,
-    status: row.status,
-    submissionCount: row.submissionCount,
-    isPublished: row.isPublished,
-    schoolId: (row as any).school_id ?? row.schoolId,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-  };
-}
-
 /** Update assignment fields. Throws NotFoundError if missing. */
 export async function updateAssignment(assignmentId: string, data: Record<string, unknown>) {
-  const supabase = getSupabaseAdmin()!;
-  const { data: existing, error: fetchErr } = await supabase.from('assignments').select('*').eq('id', assignmentId).maybeSingle();
-  if (fetchErr) throw fetchErr;
-  if (!existing) throw new NotFoundError('Assignment not found');
-
-  const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
-  for (const [k, v] of Object.entries(data)) {
-    updateData[k === 'schoolId' ? 'school_id' : k] = v;
-  }
-  const { error } = await supabase.from('assignments').update(updateData).eq('id', assignmentId);
-  if (error) throw error;
-
-  const { data: updated, error: fetchErr2 } = await supabase.from('assignments').select('*').eq('id', assignmentId).single();
-  if (fetchErr2) throw fetchErr2;
+  const updated = await assignmentBase.update(assignmentId, data as Partial<AssignmentRecord>);
   logger.info('Assignment updated', { assignmentId });
-
-  return rowToAssignment(updated || existing);
+  return updated;
 }
 
-/** Delete an assignment by id. Throws NotFoundError if missing. */
+/** Soft-delete an assignment by id. Throws NotFoundError if missing. */
 export async function deleteAssignment(assignmentId: string) {
-  const supabase = getSupabaseAdmin()!;
-  const { data: existing, error: fetchErr } = await supabase.from('assignments').select('id').eq('id', assignmentId).maybeSingle();
-  if (fetchErr) throw fetchErr;
-  if (!existing) throw new NotFoundError('Assignment not found');
-
-  const { error } = await supabase.from('assignments').update({ deleted_at: new Date().toISOString() }).eq('id', assignmentId);
-  if (error) throw error;
+  await assignmentBase.delete(assignmentId);
   logger.info('Assignment deleted', { assignmentId });
 }
 
 /** Fetch a single assignment by id. Throws NotFoundError if missing. */
 export async function getAssignmentById(assignmentId: string) {
-  const supabase = getSupabaseAdmin()!;
-  const { data: row, error } = await supabase.from('assignments').select('*').eq('id', assignmentId).maybeSingle();
-  if (error) throw error;
-  if (!row) throw new NotFoundError('Assignment not found');
-
-  return rowToAssignment(row as Record<string, unknown>);
+  return assignmentBase.findByIdOrThrow(assignmentId);
 }
 
-/** List all assignments with optional courseId filter, paginated by createdAt desc. */
+/** List all assignments with optional courseId filter, paginated. */
 export async function listAllAssignments(query: { page?: string; limit?: string; courseId?: string; schoolId?: string }) {
   const { page, limit } = parsePagination(query);
   const supabase = getSupabaseAdmin()!;
 
-  let countQ: any = supabase.from('assignments').select('*', { count: 'exact', head: true });
-  let listQ: any = supabase.from('assignments').select('*').order('createdAt', { ascending: false });
+  let countQ = supabase.from('assignments').select('*', { count: 'exact', head: true });
+  let listQ = supabase.from('assignments').select('*').order('createdAt', { ascending: false });
 
   if (query.schoolId) { countQ = countQ.eq('school_id', query.schoolId); listQ = listQ.eq('school_id', query.schoolId); }
   if (query.courseId) { countQ = countQ.eq('courseId', query.courseId); listQ = listQ.eq('courseId', query.courseId); }
@@ -157,30 +147,13 @@ export async function listAllAssignments(query: { page?: string; limit?: string;
   const { data: rows, error } = await listQ.range(offset, offset + limit - 1);
   if (error) throw error;
 
-  const items = (rows || []).map((r: any) => rowToAssignment(r));
+  const items = (rows || []).map((r: any) => r);
   return { items, total, page, limit };
 }
 
 /** List assignments for a specific course, paginated. */
 export async function listAssignmentsByCourse(courseId: string, query: { page?: string; limit?: string; schoolId?: string }) {
-  const { page, limit } = parsePagination(query);
-  const supabase = getSupabaseAdmin()!;
-
-  let countQ: any = supabase.from('assignments').select('*', { count: 'exact', head: true }).eq('courseId', courseId);
-  let listQ: any = supabase.from('assignments').select('*').eq('courseId', courseId).order('createdAt', { ascending: false });
-
-  if (query.schoolId) { countQ = countQ.eq('school_id', query.schoolId); listQ = listQ.eq('school_id', query.schoolId); }
-
-  const { count, error: countErr } = await countQ;
-  if (countErr) throw countErr;
-  const total = count || 0;
-
-  const offset = (page - 1) * limit;
-  const { data: rows, error } = await listQ.range(offset, offset + limit - 1);
-  if (error) throw error;
-
-  const items = (rows || []).map((r: any) => rowToAssignment(r));
-  return { items, total, page, limit };
+  return listAllAssignments({ ...query, courseId });
 }
 
 /** Submit a student's assignment. Increments attemptCount if resubmitting, enforces maxAttempts. */
@@ -263,7 +236,6 @@ export async function gradeSubmission(submissionId: string, graderId: string, da
   const { error } = await supabase.from('submissions').update(gradeData).eq('id', submissionId);
   if (error) throw error;
 
-  // Notify student of grade
   try {
     await createNotification({
       userId: existing.studentId as string,

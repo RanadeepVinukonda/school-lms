@@ -1,12 +1,12 @@
 import type { Request, Response } from 'express';
-import { getSupabaseAdmin } from '../services/supabase';
+import { getSupabaseClient } from '../services/supabase';
 
 /**
  * Get current student's enrollments and a consolidated list of concept release statuses 
  * for all textbooks they have access to.
  */
 export async function getMyEnrollments(req: Request, res: Response) {
-  const supabase = getSupabaseAdmin();
+  const supabase = getSupabaseClient();
   if (!req.user) {
     res.status(401).json({ success: false, error: { message: 'Unauthorized' } });
     return;

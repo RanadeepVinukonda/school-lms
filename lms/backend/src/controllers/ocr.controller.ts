@@ -3,7 +3,7 @@ import * as ocrService from '../services/ocr.service';
 import { sendSuccess, sendError } from '../utils/response';
 import { sendCreated } from '../utils/response';
 import { logger } from '../utils/logger';
-import { getSupabaseAdmin } from '../services/supabase';
+import { getSupabaseAdmin, getSupabaseClient } from '../services/supabase';
 import { AppError, ValidationError } from '../utils/errors';
 
 export async function scanImage(req: Request, res: Response) {
@@ -49,7 +49,7 @@ export async function scanMultipleImages(req: Request, res: Response) {
 }
 
 export async function mapToConcept(req: Request, res: Response) {
-  const supabase = getSupabaseAdmin();
+  const supabase = getSupabaseClient();
   const { text, textbookId, count, type } = req.body;
 
   if (!text || typeof text !== 'string') {
@@ -235,7 +235,7 @@ export async function pushAssignment(req: Request, res: Response) {
 }
 
 export async function getConceptsForTextbook(req: Request, res: Response) {
-  const supabase = getSupabaseAdmin();
+  const supabase = getSupabaseClient();
   const { textbookId } = req.params;
 
   if (!textbookId) {

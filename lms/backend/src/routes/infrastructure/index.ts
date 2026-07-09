@@ -21,11 +21,26 @@ router.get('/health', (_req, res) => {
 router.get('/ready', async (_req, res) => {
   const supabase = getSupabaseAdmin();
   let dbOk = false;
+  let poolTotal = 0;
+  let poolIdle = 0;
   try {
     const { error } = await supabase!.from('users').select('id').limit(1);
     dbOk = !error;
   } catch { dbOk = false; }
-  res.status(dbOk ? 200 : 503).json({ status: dbOk ? 'ok' : 'degraded', database: dbOk });
+
+  try {
+    const { healthCheck: hc, getConnectionPool: gcp } = await import('../../database/connection-manager');
+    const pool = gcp();
+    poolTotal = pool.totalCount;
+    poolIdle = pool.idleCount;
+    dbOk = await hc() || dbOk;
+  } catch { /* pool stats unavailable */ }
+
+  res.status(dbOk ? 200 : 503).json({
+    status: dbOk ? 'ok' : 'degraded',
+    database: dbOk,
+    pool: { total: poolTotal, idle: poolIdle },
+  });
 });
 
 router.get('/metrics', authenticate, requireRole('admin'), metricsHandler);

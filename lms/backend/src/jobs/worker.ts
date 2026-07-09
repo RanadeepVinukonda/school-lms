@@ -6,12 +6,6 @@ import { searchAndRankVideos } from '../services/video-ranker.service';
 import { matchAndRankResources } from '../services/resource-ranker.service';
 import { env } from '../config/env';
 import { logger } from '../utils/logger';
-import { getBoss } from './queue';
-import { computeMasteryInline } from '../services/adaptive/mastery.service';
-import { checkUpcomingDeadlines } from './sendReminders.job';
-import { cleanupExpiredData, cleanupSoftDeletedRecords } from './cleanupExpired.job';
-import { checkOverdueTests } from './scheduler';
-import { generateWeeklyReport, generateMonthlyReport } from './generateReports.job';
 
 async function addTextbookLog(textbookId: string, message: string) {
   try {
@@ -22,7 +16,6 @@ async function addTextbookLog(textbookId: string, message: string) {
     const { data: tb } = await supabase.from('textbooks').select('logs').eq('id', textbookId).single();
     const logs = (tb?.logs as string[]) || [];
     logs.push(logEntry);
-    // ponytail: trim to last 50 entries
     const trimmed = logs.slice(-50);
     await supabase.from('textbooks').update({ logs: trimmed, updated_at: new Date().toISOString() }).eq('id', textbookId);
   } catch (err) {
@@ -55,7 +48,7 @@ async function updateJobProgress(
   }
 }
 
-// ── Exported pipeline for inline execution ──────────────────────
+// ── Exported pipeline for inline / Inngest execution ───────────
 
 export async function runUploadPipeline(textbookId: string, storagePath: string) {
   logger.info('runUploadPipeline: Starting PDF extraction and TOC planning', { textbookId });
@@ -268,8 +261,7 @@ Concept context: ${conceptTitle} Chapter: ${chapterTitle} Source: ${contextText.
     try { await supabase.from('concept_notes').update({ embedding: embeddingResult.value }).eq('id', conceptId); } catch { /* noop */ }
   } else { errors.push(`embedding: ${reasonOf(embeddingResult)}`); }
 
-  // ponytail: atomic increment via RPC (PostgreSQL UPDATE ... RETURNING is single-statement atomic)
-  const { data: rpcData, error: rpcError } = await supabase.rpc('increment_completed_concepts', { t_id: textbookId });
+  const { data: rpcData } = await supabase.rpc('increment_completed_concepts', { t_id: textbookId });
   const newCompleted = (rpcData as number) || 0;
   const { data: tbData } = await supabase.from('textbooks').select('total_concepts').eq('id', textbookId).single();
   const totalConcepts = (tbData?.total_concepts as number) || 0;
@@ -290,57 +282,4 @@ Concept context: ${conceptTitle} Chapter: ${chapterTitle} Source: ${contextText.
   }
 }
 
-// ── pg-boss workers ──────────────────────────────────────────
 
-export async function startWorkers() {
-  const b = await getBoss();
-  if (!b) {
-    logger.info('pg-boss not available — workers not started (processing will run inline)');
-    return;
-  }
-
-  await b.work('uploadQueue', async (jobs: any | any[]) => {
-    const jobArray = Array.isArray(jobs) ? jobs : [jobs];
-    for (const job of jobArray) {
-      const { textbookId, storagePath } = job.data;
-      try {
-        await runUploadPipeline(textbookId, storagePath);
-      } catch (err: any) {
-        logger.error('pg-boss upload worker failed', { textbookId, err: err.message });
-        await updateJobProgress(textbookId, 0, 'done', 'FAILED', err.message);
-        throw err;
-      }
-    }
-  });
-
-  await b.work('masteryQueue', async (jobs: any | any[]) => {
-    const jobArray = Array.isArray(jobs) ? jobs : [jobs];
-    for (const job of jobArray) {
-      const { studentId, conceptId, accuracy } = job.data;
-      try {
-        await computeMasteryInline(studentId, conceptId, accuracy);
-      } catch (err: any) {
-        logger.error('pg-boss mastery worker failed', { studentId, conceptId, err: err.message });
-        throw err;
-      }
-    }
-  });
-
-  // Scheduled job workers — handle cron-fired jobs from scheduler.ts
-  const scheduledJobs = [
-    { name: 'sendReminders', handler: checkUpcomingDeadlines },
-    { name: 'cleanupExpired', handler: cleanupExpiredData },
-    { name: 'overdueTests', handler: checkOverdueTests },
-    { name: 'softDeleteCleanup', handler: cleanupSoftDeletedRecords },
-    { name: 'weeklyReport', handler: generateWeeklyReport },
-    { name: 'monthlyReport', handler: generateMonthlyReport },
-  ];
-
-  for (const sj of scheduledJobs) {
-    await b.work(sj.name, async () => {
-      await sj.handler();
-    });
-  }
-
-  logger.info('pg-boss workers registered: uploadQueue, masteryQueue, and 6 scheduled jobs');
-}

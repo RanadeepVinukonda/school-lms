@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import * as contentPublishingService from '../services/content-publishing.service';
-import { getSupabaseAdmin } from '../services/supabase';
+import { getSupabaseClient } from '../services/supabase';
 import { sendSuccess, sendCreated } from '../utils/response';
 
 export async function publishContent(req: Request, res: Response) {
@@ -32,7 +32,7 @@ export async function scheduleContent(req: Request, res: Response) {
 }
 
 export async function getStudentContent(req: Request, res: Response) {
-  const supabase = getSupabaseAdmin();
+  const supabase = getSupabaseClient();
   const { data: userDoc } = supabase
     ? await supabase.from('users').select('classIds').eq('id', req.user!.uid).single()
     : { data: null };

@@ -1,6 +1,5 @@
 import { PoolClient } from 'pg';
 import { getConnectionPool } from './connection-manager';
-import { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '../utils/logger';
 
 // ── Types ──
@@ -10,21 +9,21 @@ export interface SqlQuery {
   query(text: string, params?: any[]): Promise<{ rows: any[]; rowCount: number | null }>;
 }
 
+/**
+ * A transaction that supports get/set/update/delete via raw SQL over the same
+ * pg.PoolClient connection. This guarantees ACID semantics.
+ *
+ * IMPORTANT: Do NOT use supabase.from() calls inside a transaction block.
+ * Supabase uses a separate HTTP connection to PostgREST and bypasses the
+ * transaction boundary. Use `tx.db().query(...)` or `tx.set(...)` instead.
+ */
 export interface Transaction {
   get(collection: string, docId: string): Promise<unknown>;
   set(collection: string, docId: string, data: Record<string, unknown>): Promise<void>;
   update(collection: string, docId: string, data: Record<string, unknown>): Promise<void>;
   delete(collection: string, docId: string): Promise<void>;
-  /** Raw SQL query interface running inside this transaction (same connection / scope). */
+  /** Raw SQL query interface running inside this transaction (same connection). */
   db(): SqlQuery;
-  /**
-   * Supabase client.
-   * WARNING: when accessed inside a pg-backed transaction (DATABASE_URL set), writes via
-   * this client bypass ACID guarantees — they use a separate HTTP connection to PostgREST.
-   * A one-time warning is logged on first access. Use `transaction.db()` for raw SQL
-   * within the transaction instead.
-   */
-  supabase: SupabaseClient;
 }
 
 // ── Helpers ──
@@ -39,27 +38,8 @@ function serialize(v: unknown): unknown {
 
 class PgTransaction implements Transaction {
   private _ops: Array<() => Promise<void>> = [];
-  private _supabaseWarned = false;
 
-  constructor(
-    private client: PoolClient,
-    private _supabaseClient: SupabaseClient | undefined,
-  ) {}
-
-  get supabase(): SupabaseClient {
-    if (!this._supabaseWarned && this._supabaseClient) {
-      this._supabaseWarned = true;
-      logger.warn(
-        'Transaction.supabase: accessing Supabase client inside a pg transaction bypasses ACID guarantees. Use transaction.db() for raw SQL within the transaction instead.',
-      );
-    }
-    if (!this._supabaseClient) {
-      throw new Error(
-        'Transaction.supabase: no Supabase client available. Pass a SupabaseClient to the TransactionManager constructor.',
-      );
-    }
-    return this._supabaseClient;
-  }
+  constructor(private client: PoolClient) {}
 
   db(): SqlQuery {
     return {
@@ -126,102 +106,37 @@ class PgTransaction implements Transaction {
   }
 }
 
-// ── SupabaseTransaction — no ACID, direct PostgREST HTTP calls ──
-
-class SupabaseTransaction implements Transaction {
-  constructor(private _supabase: SupabaseClient) {}
-
-  get supabase(): SupabaseClient {
-    return this._supabase;
-  }
-
-  db(): SqlQuery {
-    throw new Error(
-      'Transaction.db() is not available when using SupabaseTransaction. ' +
-        'Raw SQL queries require a PostgreSQL connection (set DATABASE_URL). ' +
-        'Use transaction.supabase.from() methods instead.',
-    );
-  }
-
-  async get(collection: string, docId: string): Promise<unknown> {
-    const { data, error } = await this._supabase
-      .from(collection)
-      .select('*')
-      .eq('id', docId)
-      .maybeSingle();
-    if (error) throw error;
-    return data ?? null;
-  }
-
-  async set(collection: string, docId: string, data: Record<string, unknown>): Promise<void> {
-    const { error } = await this._supabase
-      .from(collection)
-      .upsert({ id: docId, ...(data as any) });
-    if (error) throw error;
-  }
-
-  async update(collection: string, docId: string, data: Record<string, unknown>): Promise<void> {
-    const entries = Object.entries(data);
-    if (entries.length === 0) return;
-    const { error } = await this._supabase
-      .from(collection)
-      .update(data as any)
-      .eq('id', docId);
-    if (error) throw error;
-  }
-
-  async delete(collection: string, docId: string): Promise<void> {
-    const { error } = await this._supabase
-      .from(collection)
-      .delete()
-      .eq('id', docId);
-    if (error) throw error;
-  }
-}
-
 // ── TransactionManager ──
 
 export class TransactionManager {
   /**
-   * @param supabaseClient Optional Supabase client. Required when DATABASE_URL is not set.
-   */
-  constructor(private supabaseClient?: SupabaseClient) {}
-
-  /**
-   * Run operations inside a transaction-like scope.
+   * Run operations inside a real ACID transaction via pg PoolClient.
    *
-   * - **DATABASE_URL set**: real ACID transaction via pg (BEGIN / COMMIT / ROLLBACK).
-   *   All `get`/`set`/`update`/`delete` ops use the same PoolClient connection.
+   * REQUIREMENTS:
+   * - DATABASE_URL must be set in environment.
+   * - All writes MUST go through `tx.db().query()`, `tx.set()`, `tx.update()`, or `tx.delete()`.
+   * - Do NOT use `supabase.from().insert()` inside the callback — it bypasses the transaction.
    *
-   * - **DATABASE_URL not set, SupabaseClient provided**: falls back to Supabase HTTP calls
-   *   (PostgREST).  Every operation is an individual HTTP request — **no ACID guarantees**.
-   *   Functional for non-critical writes or prototyping.
-   *
-   * - **Neither available**: throws.
+   * @throws Error if DATABASE_URL is not configured.
    */
   async runTransaction<T>(
     updateFunction: (transaction: Transaction) => Promise<T>,
   ): Promise<T> {
+    const pool = getConnectionPool();
+    const client = await pool.connect();
     try {
-      const pool = getConnectionPool();
-      const client = await pool.connect();
-      try {
-        const pgTx = new PgTransaction(client, this.supabaseClient);
-        const r = await updateFunction(pgTx);
-        await pgTx.execute();
-        return r;
-      } finally {
-        client.release();
-      }
-    } catch {
-      if (this.supabaseClient) {
-        const supabaseTx = new SupabaseTransaction(this.supabaseClient);
-        return updateFunction(supabaseTx);
-      }
-      throw new Error(
-        'TransactionManager: DATABASE_URL not configured and no Supabase client provided. ' +
-          'Set DATABASE_URL or pass a SupabaseClient to the TransactionManager constructor.',
-      );
+      const pgTx = new PgTransaction(client);
+      const r = await updateFunction(pgTx);
+      await pgTx.execute();
+      return r;
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
+      logger.error('Transaction rolled back', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      throw err;
+    } finally {
+      client.release();
     }
   }
 }

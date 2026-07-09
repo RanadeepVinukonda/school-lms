@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { createClient } from '@supabase/supabase-js';
 import { getSupabaseAdmin, getSupabaseClient } from './supabase';
-import { createUser as firebaseCreateUser, getUserByEmail, getUserById, setCustomClaims, updateUser as firebaseUpdateUser } from '../database/auth';
+import { createUser, getUserByEmail, getUserById, updateUser, setCustomClaims } from '../database/auth';
 import { validatePassword } from '../utils/passwordValidation';
 import { NotFoundError, UnauthorizedError, ValidationError, AppError, RateLimitError } from '../utils/errors';
 import { logger } from '../utils/logger';
@@ -87,7 +87,7 @@ export async function register(data: {
       return failure('A user with this email already exists', 'CONFLICT');
     }
 
-    const firebaseUser = await firebaseCreateUser({
+    const authUser = await createUser({
       email: data.email,
       password: data.password,
       displayName: data.displayName,
@@ -95,11 +95,11 @@ export async function register(data: {
       photoURL: data.photoURL,
     });
 
-    await setCustomClaims(firebaseUser.uid, { role: data.role });
+    await setCustomClaims(authUser.uid, { role: data.role });
 
     const now = new Date().toISOString();
     const userData: UserProfile = {
-      id: firebaseUser.uid,
+      id: authUser.uid,
       email: data.email,
       displayName: data.displayName,
       role: data.role,
@@ -253,7 +253,6 @@ export async function resetPassword(uid: string, newPassword: string): Promise<v
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
         Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
       },
       body: JSON.stringify({ password: newPassword }),
@@ -293,7 +292,7 @@ export async function changePassword(uid: string, currentPassword: string, newPa
   if (signInError) throw new UnauthorizedError('Current password is incorrect');
   await tempClient.auth.signOut();
 
-  await firebaseUpdateUser(uid, { password: newPassword });
+  await updateUser(uid, { password: newPassword });
   logger.info('Password changed', { uid });
 }
 

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { getSupabaseAdmin } from '../services/supabase';
-import { NotFoundError } from '../utils/errors';
+import { getSupabaseAdmin, getSupabaseClient } from '../services/supabase';
+import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { sendSuccess } from '../utils/response';
 
 export async function createSchool(req: Request, res: Response) {
@@ -12,7 +12,8 @@ export async function createSchool(req: Request, res: Response) {
 }
 
 export async function getSchool(req: Request, res: Response) {
-  const { data } = await getSupabaseAdmin()!.from('schools').select('*').eq('id', req.params.id).maybeSingle();
+  if (req.params.id !== req.user!.school_id) throw new ForbiddenError('Access denied');
+  const { data } = await getSupabaseClient().from('schools').select('*').eq('id', req.params.id).maybeSingle();
   if (!data) throw new NotFoundError('School not found');
   sendSuccess(res, data);
 }
@@ -26,7 +27,8 @@ export async function updateSchool(req: Request, res: Response) {
 }
 
 export async function getBranding(req: Request, res: Response) {
-  const { data } = await getSupabaseAdmin()!.from('schools').select('logo_url, primary_color, name').eq('id', req.params.id).maybeSingle();
+  if (req.params.id !== req.user!.school_id) throw new ForbiddenError('Access denied');
+  const { data } = await getSupabaseClient().from('schools').select('logo_url, primary_color, name').eq('id', req.params.id).maybeSingle();
   if (!data) throw new NotFoundError('School not found');
   sendSuccess(res, data);
 }

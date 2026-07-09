@@ -9,7 +9,7 @@ jest.mock('../services/supabase', () => ({
 }));
 jest.mock('../services/notification.service', () => ({ createNotification: jest.fn(() => Promise.resolve({ id: 'n1' })), createBulkNotifications: jest.fn(() => Promise.resolve([])) }));
 jest.mock('../services/course.service', () => ({ getEnrollments: jest.fn(() => Promise.resolve([])), createCourse: jest.fn(() => Promise.resolve({ id: 'c1' })) }));
-jest.mock('../jobs/queue', () => ({ addUploadJob: jest.fn(() => Promise.resolve()), removeUploadJob: jest.fn(() => Promise.resolve()) }));
+jest.mock('../jobs/queue', () => ({ addUploadJob: jest.fn(() => Promise.resolve()) }));
 jest.mock('../utils/studentIdGenerator.js', () => ({ generateStudentId: jest.fn(() => 'STU001') }));
 
 import * as academicYearService from '../services/academic-year.service';

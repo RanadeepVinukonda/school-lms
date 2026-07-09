@@ -10,6 +10,7 @@ jest.mock('pg', () => {
     release: jest.fn(),
   };
   const mockPool = {
+    query: jest.fn(() => Promise.resolve({ rows: [] })),
     connect: jest.fn(() => Promise.resolve(mockClient)),
     end: jest.fn(() => Promise.resolve()),
     on: jest.fn(),
@@ -41,6 +42,11 @@ jest.mock('../database/transaction-manager', () => ({
 
 jest.mock('../utils/logger', () => ({
   logger: { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() },
+}));
+
+// Mock Inngest serve to prevent real InngestCommHandler init (hangs in tests)
+jest.mock('inngest/express', () => ({
+  serve: () => (_req: any, _res: any, next: any) => next(),
 }));
 
 // Placeholder test so Jest doesn't complain about empty suite

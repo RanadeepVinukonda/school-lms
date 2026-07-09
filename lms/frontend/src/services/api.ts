@@ -6,7 +6,7 @@ import type { ApiError } from '@/types';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 600000,
+  timeout: 30000,
 });
 
 // ---------- CSRF token management ----------

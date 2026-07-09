@@ -42,9 +42,17 @@ const envSchema = z.object({
   AUTH_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(300000),
   API_RATE_LIMIT_MAX: z.coerce.number().default(100),
   API_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
+  AI_RATE_LIMIT_MAX: z.coerce.number().default(10),
+  AI_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
 
   COOKIE_DOMAIN: z.string().optional(),
   COOKIE_SECURE: z.coerce.boolean().default(false),
+
+  API_DOCS_ENABLED: z.coerce.boolean().default(process.env.NODE_ENV !== 'production'),
+  API_DOCS_USERNAME: z.string().optional(),
+  API_DOCS_PASSWORD: z.string().optional(),
+
+  LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
 });
 
 const parsed = envSchema.safeParse(process.env);

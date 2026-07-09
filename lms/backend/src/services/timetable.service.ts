@@ -1,12 +1,6 @@
 import { getSupabaseAdmin } from './supabase';
 import { logger } from '../utils/logger';
-import { Pool } from 'pg';
-
-function getPool(): Pool | null {
-  const url = process.env.DATABASE_URL;
-  if (!url) return null;
-  return new Pool({ connectionString: url, max: 1 });
-}
+import { getConnectionPool } from '../database/connection-manager';
 
 export async function createTimetableEntry(data: {
   classId: string; day: string; period: number; subjectId?: string; teacherId?: string; room?: string;
@@ -103,8 +97,8 @@ export async function saveTimetableDay(data: {
   }));
 
   // ponytail: atomic transaction — delete then insert within a single pg transaction
-  const pool = getPool();
-  if (pool) {
+  try {
+    const pool = getConnectionPool();
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -126,21 +120,22 @@ export async function saveTimetableDay(data: {
       client.release();
     }
     return rows;
+  } catch (poolErr) {
+    logger.warn('Pg pool unavailable for timetable transaction, falling back to Supabase ops', { error: poolErr instanceof Error ? poolErr.message : String(poolErr) });
+    // ponytail: fallback when no pg pool — sequential ops
+    const { error: delErr } = await supabase.from('timetable').update({ deleted_at: new Date().toISOString() }).eq('class_id', data.classId).eq('day', data.day);
+    if (delErr) {
+      logger.error('Failed to clear timetable day', { error: delErr.message, classId: data.classId, day: data.day });
+      throw new Error('Failed to clear existing entries');
+    }
+    if (rows.length === 0) return [];
+    const { data: result, error } = await supabase.from('timetable').insert(rows).select();
+    if (error) {
+      logger.error('Failed to save timetable day', { error: error.message, classId: data.classId, day: data.day });
+      throw new Error(error.message);
+    }
+    return result;
   }
-
-  // ponytail: fallback when no pg pool — sequential ops
-  const { error: delErr } = await supabase.from('timetable').update({ deleted_at: new Date().toISOString() }).eq('class_id', data.classId).eq('day', data.day);
-  if (delErr) {
-    logger.error('Failed to clear timetable day', { error: delErr.message, classId: data.classId, day: data.day });
-    throw new Error('Failed to clear existing entries');
-  }
-  if (rows.length === 0) return [];
-  const { data: result, error } = await supabase.from('timetable').insert(rows).select();
-  if (error) {
-    logger.error('Failed to save timetable day', { error: error.message, classId: data.classId, day: data.day });
-    throw new Error(error.message);
-  }
-  return result;
 }
 
 export async function getTimetableByClassAndDay(classId: string, day: string) {

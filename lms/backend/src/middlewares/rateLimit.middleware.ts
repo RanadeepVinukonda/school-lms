@@ -38,15 +38,6 @@ export const uploadRateLimit = rateLimit({
   },
 });
 
-export const strictRateLimit = rateLimit({
-  ...defaults,
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  handler: (_req, _res, next) => {
-    next(new AppError(429, 'Too many requests. Please try again later.'));
-  },
-});
-
 export const schoolRateLimit = rateLimit({
   ...defaults,
   windowMs: 60 * 1000,
@@ -54,5 +45,15 @@ export const schoolRateLimit = rateLimit({
   keyGenerator: (req) => (req as any).user?.school_id || (req as any).ip || 'unknown',
   handler: (_req, _res, next) => {
     next(new AppError(429, 'School rate limit exceeded. Please slow down.'));
+  },
+});
+
+export const aiRateLimit = rateLimit({
+  ...defaults,
+  windowMs: env.AI_RATE_LIMIT_WINDOW_MS,
+  max: env.AI_RATE_LIMIT_MAX,
+  keyGenerator: (req) => (req as any).user?.id || (req as any).ip || 'unknown',
+  handler: (_req, _res, next) => {
+    next(new AppError(429, 'AI rate limit exceeded. Please slow down.'));
   },
 });

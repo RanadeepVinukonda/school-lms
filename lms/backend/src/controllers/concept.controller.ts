@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
-import { getSupabaseAdmin } from '../services/supabase';
+import { getSupabaseClient } from '../services/supabase';
 import { sendSuccess } from '../utils/response';
 import { logger } from '../utils/logger';
 
 /** Fetch whiteboard strokes for a concept, scoped to the requesting teacher. */
 export async function getWhiteboard(req: Request, res: Response) {
-  const supabase = getSupabaseAdmin();
+  const supabase = getSupabaseClient();
   const { conceptId } = req.params;
   const teacherId = req.user!.uid;
   const docId = `${teacherId}_${conceptId}`;
@@ -22,7 +22,7 @@ export async function getWhiteboard(req: Request, res: Response) {
 
 /** Save (overwrite) whiteboard strokes for a concept, scoped to the requesting teacher. */
 export async function saveWhiteboard(req: Request, res: Response) {
-  const supabase = getSupabaseAdmin();
+  const supabase = getSupabaseClient();
   const { conceptId } = req.params;
   const teacherId = req.user!.uid;
   const { strokes } = req.body;

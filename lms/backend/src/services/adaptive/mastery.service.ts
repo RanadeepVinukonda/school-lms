@@ -1,32 +1,7 @@
 import { getSupabaseAdmin } from '../supabase';
 
+// ponytail: removed addMasteryJob call — always returned false, was dead code.
 export async function computeMastery(studentId: string, conceptId: string, accuracy: number): Promise<number> {
-  try {
-    const { addMasteryJob } = require('../../jobs/queue');
-    const queued = await addMasteryJob(studentId, conceptId, accuracy);
-    if (queued) {
-      const supabase = getSupabaseAdmin();
-      if (supabase) {
-        const { data: existing, error: existingErr } = await supabase
-          .from('concept_mastery')
-          .select('mastery_score, attempt_count')
-          .eq('student_id', studentId)
-          .eq('concept_id', conceptId)
-          .maybeSingle();
-        if (existingErr) throw new Error(existingErr.message);
-
-        const prevScore = (existing?.mastery_score as number) || 0;
-        const attemptCount = (existing?.attempt_count as number) || 0;
-        const newScore = attemptCount === 0
-          ? accuracy
-          : (prevScore * attemptCount + accuracy) / (attemptCount + 1);
-        return Math.round(newScore * 100) / 100;
-      }
-      return accuracy;
-    }
-  } catch (err) {
-    // fallback to inline if pg-boss or dynamic require fails
-  }
   return computeMasteryInline(studentId, conceptId, accuracy);
 }
 

@@ -1,79 +1,135 @@
 import { getSupabaseAdmin } from './supabase';
+import { getConnectionPool } from '../database/connection-manager';
 import { ValidationError } from '../utils/errors';
+import { BaseService, DbRecord } from '../lib/base-service';
+
+interface FeeStructureRecord extends DbRecord {
+  school_id?: string;
+  name: string;
+  amount: number;
+  due_date?: string;
+  class_id?: string;
+  academic_year?: string;
+  description?: string;
+}
+
+/**
+ * BaseService wrapper for fee_structures CRUD.
+ */
+class FeeBaseService extends BaseService<FeeStructureRecord> {
+  protected table = 'fee_structures';
+  protected softDelete = false;
+  protected defaultSortColumn = 'created_at';
+  protected defaultSortOrder: 'asc' | 'desc' = 'desc';
+}
+
+const feeBase = new FeeBaseService();
 
 /**
  * Create a new fee schedule for a class.
- * @param data.name - Display name of the fee schedule
- * @param data.amount - Total fee amount in smallest currency unit
- * @param data.dueDate - Optional ISO date string for payment due date
- * @param data.classId - UUID of the target class
- * @param data.schoolId - UUID of the school
- * @returns The created fee_structure row
  */
 export async function createFeeSchedule(data: {
-  name: string; amount: number; dueDate?: string; classId: string; academicYear?: string; description?: string;
+  name: string;
+  amount: number;
+  dueDate?: string;
+  classId: string;
+  academicYear?: string;
+  description?: string;
   schoolId: string;
-}) {
-  const supabase = getSupabaseAdmin()!;
-  const { data: result, error } = await supabase.from('fee_structures').insert({
-    school_id: data.schoolId, name: data.name, amount: data.amount, due_date: data.dueDate,
-    class_id: data.classId, academic_year: data.academicYear || null, description: data.description || null,
-  }).select().single();
-  if (error) throw new Error(`Failed to create fee schedule: ${error.message}`);
+}): Promise<FeeStructureRecord> {
+  const result = await feeBase.create({
+    school_id: data.schoolId,
+    name: data.name,
+    amount: data.amount,
+    due_date: data.dueDate || null,
+    class_id: data.classId,
+    academic_year: data.academicYear || null,
+    description: data.description || null,
+  } as Partial<FeeStructureRecord>);
   return result;
-}
-
-export async function listFeeSchedules(schoolId?: string, academicYear?: string, classId?: string) {
-  const supabase = getSupabaseAdmin()!;
-  let q = supabase.from('fee_structures').select('*');
-  if (schoolId) q = q.eq('school_id', schoolId);
-  if (academicYear) q = q.eq('academic_year', academicYear);
-  if (classId) q = q.eq('class_id', classId);
-  const { data, error } = await q;
-  if (error) throw new Error(`Failed to list fee schedules: ${error.message}`);
-  return data || [];
-}
-
-export async function getFeeSchedule(id: string) {
-  const supabase = getSupabaseAdmin()!;
-  const { data, error } = await supabase.from('fee_structures').select('*').eq('id', id).maybeSingle();
-  if (error) throw new Error(`Failed to get fee schedule: ${error.message}`);
-  return data;
 }
 
 /**
- * Record a fee payment for a student. Rejects overpayments with a ValidationError.
- * @param data.studentId - UUID of the student paying
- * @param data.feeScheduleId - UUID of the fee_structure being paid
- * @param data.amountPaid - Amount paid in this transaction
- * @returns The created fee_payment row
- * @throws {ValidationError} if payment would exceed the remaining balance
+ * List fee schedules with optional filters.
  */
-export async function recordPayment(data: {
-  studentId: string; feeScheduleId: string; amountPaid: number; paymentMethod?: string; schoolId?: string;
-}) {
-  const supabase = getSupabaseAdmin()!;
-  const { data: schedule, error: schedErr } = await supabase.from('fee_structures').select('amount').eq('id', data.feeScheduleId).single();
-  if (schedErr) throw new Error(`Fee schedule not found: ${schedErr.message}`);
-  if (!schedule) return null;
-  const feeAmount = Number(schedule.amount);
-  const { data: existingPayments, error: payErr } = await supabase.from('fee_payments')
-    .select('amount').eq('student_id', data.studentId).eq('fee_structure_id', data.feeScheduleId);
-  if (payErr) throw new Error(`Failed to lookup payments: ${payErr.message}`);
-  const totalPaid = (existingPayments || []).reduce((s: number, p: any) => s + Number(p.amount), 0);
-  const overpayment = totalPaid + data.amountPaid - feeAmount;
-  if (overpayment > 0) {
-    throw new ValidationError(
-      `Payment of ${data.amountPaid} would overpay. Remaining balance: ${feeAmount - totalPaid}`
-    );
-  }
-  const { data: result, error } = await supabase.from('fee_payments').insert({
-    student_id: data.studentId, fee_structure_id: data.feeScheduleId, amount: data.amountPaid, school_id: data.schoolId,
-  }).select().single();
-  if (error) throw new Error(`Failed to record payment: ${error.message}`);
-  return result;
+export async function listFeeSchedules(
+  schoolId?: string,
+  academicYear?: string,
+  classId?: string
+): Promise<FeeStructureRecord[]> {
+  const result = await feeBase.list({
+    schoolId,
+    ...(academicYear ? { academic_year: academicYear } : {}),
+    ...(classId ? { class_id: classId } : {}),
+  });
+  return result.items;
 }
 
+/**
+ * Get a single fee schedule by id.
+ */
+export async function getFeeSchedule(id: string): Promise<FeeStructureRecord | null> {
+  return feeBase.findById(id);
+}
+
+/**
+ * Record a fee payment for a student inside an ACID transaction.
+ * Uses raw SQL via getConnectionPool() to guarantee atomic read-then-write.
+ */
+export async function recordPayment(data: {
+  studentId: string;
+  feeScheduleId: string;
+  amountPaid: number;
+  paymentMethod?: string;
+  schoolId?: string;
+}) {
+  const pool = getConnectionPool();
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    const { rows: schedules } = await client.query(
+      `SELECT amount FROM fee_structures WHERE id = $1 LIMIT 1`,
+      [data.feeScheduleId],
+    );
+    if (!schedules.length) throw new Error('Fee schedule not found');
+    const feeAmount = Number(schedules[0].amount);
+
+    const { rows: existingPayments } = await client.query(
+      `SELECT COALESCE(SUM(amount), 0) AS total_paid FROM fee_payments WHERE student_id = $1 AND fee_structure_id = $2`,
+      [data.studentId, data.feeScheduleId],
+    );
+    const totalPaid = Number(existingPayments[0]?.total_paid || 0);
+    const overpayment = totalPaid + data.amountPaid - feeAmount;
+    if (overpayment > 0) {
+      await client.query('ROLLBACK');
+      throw new ValidationError(
+        `Payment of ${data.amountPaid} would overpay. Remaining balance: ${feeAmount - totalPaid}`
+      );
+    }
+
+    const { rows: result } = await client.query(
+      `INSERT INTO fee_payments (student_id, fee_structure_id, amount, school_id)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [data.studentId, data.feeScheduleId, data.amountPaid, data.schoolId || null],
+    );
+
+    await client.query('COMMIT');
+    return result[0];
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    if (err instanceof ValidationError) throw err;
+    throw new Error(`Failed to record payment: ${err instanceof Error ? err.message : String(err)}`);
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Get payments for a specific student.
+ */
 export async function getStudentPayments(studentId: string) {
   const supabase = getSupabaseAdmin()!;
   const { data, error } = await supabase.from('fee_payments').select('*').eq('student_id', studentId);
@@ -83,8 +139,6 @@ export async function getStudentPayments(studentId: string) {
 
 /**
  * Build an outstanding fees report: per-student breakdown of total due vs total paid.
- * @param schoolId - Optional school UUID to scope the report
- * @returns Array of {studentId, studentName, totalDue, totalPaid, balance}
  */
 export async function getOutstandingReport(schoolId?: string) {
   const supabase = getSupabaseAdmin()!;
@@ -99,9 +153,7 @@ export async function getOutstandingReport(schoolId?: string) {
     paymentQ = paymentQ.eq('school_id', schoolId);
   }
 
-  const results = await Promise.all([
-    structQ, paymentQ, studentQ,
-  ]);
+  const results = await Promise.all([structQ, paymentQ, studentQ]);
 
   for (const r of results) {
     if (r.error) throw new Error(`Failed to load outstanding report: ${r.error.message}`);
@@ -110,7 +162,6 @@ export async function getOutstandingReport(schoolId?: string) {
   const [structures, payments, students] = results.map(r => r.data);
   if (!structures || !students) return [];
 
-  // Fetch class names for display
   const classIds = [...new Set(students.map((s: any) => s.class_id).filter(Boolean))];
   let classMap: Record<string, string> = {};
   if (classIds.length > 0) {

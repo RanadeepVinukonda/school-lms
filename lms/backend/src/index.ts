@@ -3,8 +3,7 @@ import app from './app';
 import { env } from './config/env';
 import { logger } from './utils/logger';
 import { startScheduler, stopScheduler } from './jobs/scheduler';
-import { startWorkers } from './jobs/worker';
-import { stopBoss } from './jobs/queue';
+import { closeConnectionPool } from './database/connection-manager';
 
 if (env.SENTRY_DSN) {
   Sentry.init({ dsn: env.SENTRY_DSN, environment: env.NODE_ENV });
@@ -17,9 +16,10 @@ function startServer() {
     server = app.listen(env.PORT, () => {
       logger.info(`Server running in ${env.NODE_ENV} mode on port ${env.PORT}`);
       logger.info(`Health check: http://localhost:${env.PORT}/api/health`);
+      logger.info(`Inngest serve: http://localhost:${env.PORT}/api/inngest`);
 
+      // Start scheduled jobs (sendReminders, cleanupExpired, overdueTests, etc.)
       startScheduler().catch((err) => logger.error('Scheduler start failed', err));
-      startWorkers().catch((err) => logger.error('Workers start failed', err));
     });
   } catch (error) {
     logger.error('Failed to start server', error);
@@ -42,7 +42,7 @@ process.on('unhandledRejection', (reason: Error | unknown) => {
 async function shutdown(signal: string) {
   logger.info(`${signal} received. Shutting down gracefully...`);
   await stopScheduler().catch((err) => logger.error('Scheduler stop failed', err));
-  await stopBoss().catch((err) => logger.error('pg-boss stop failed', err));
+  await closeConnectionPool().catch((err) => logger.error('Pool drain failed', err));
   if (server) {
     server.close(() => {
       logger.info('Http server closed.');

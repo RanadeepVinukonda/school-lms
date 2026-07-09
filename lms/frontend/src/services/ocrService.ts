@@ -74,7 +74,7 @@ export async function scanMultipleImages(images: File[]): Promise<{ text: string
     const resized = new File([blob], img.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' });
     formData.append('images', resized);
   }
-  const res = await api.post('/ocr/scan-multiple', formData);
+  const res = await api.post('/ocr/scan-multiple', formData, { timeout: 120000 });
   return res.data.data;
 }
 

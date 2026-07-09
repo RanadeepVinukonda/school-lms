@@ -24,6 +24,14 @@ export function errorHandler(
     return;
   }
 
+  if (err.message?.includes('not allowed by CORS')) {
+    res.status(403).json({
+      success: false,
+      error: { message: 'Origin not allowed', code: 'CORS_ERROR', requestId },
+    });
+    return;
+  }
+
   if (err instanceof AppError) {
     logger.warn('Application error', {
       message: err.message,

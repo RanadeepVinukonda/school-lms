@@ -1,47 +1,64 @@
+import { BaseService, DbRecord } from '../lib/base-service';
 import { getSupabaseAdmin } from './supabase';
 import { logger } from '../utils/logger';
 
-// ROUTES
+// ── Route Service ───────────────────────────────────────
+
+interface TransportRouteRecord extends DbRecord {
+  name: string;
+  vehicle_number?: string;
+  driver_name?: string;
+  driver_phone?: string;
+}
+
+class TransportRouteService extends BaseService<TransportRouteRecord> {
+  protected readonly table = 'transport_routes';
+  protected softDelete = true;
+}
+
+const routeService = new TransportRouteService();
+
 export async function createRoute(schoolId: string, data: { name: string; vehicle_number?: string; driver_name?: string; driver_phone?: string }) {
-  const supabase = getSupabaseAdmin(); if (!supabase) return null;
-  const { data: result, error } = await supabase.from('transport_routes').insert({ school_id: schoolId, ...data }).select().single();
-  if (error) throw new Error(`Failed to create route: ${error.message}`);
-  return result;
+  return routeService.create({ school_id: schoolId, ...data } as any);
 }
 
 export async function getRoutes(schoolId: string) {
-  const supabase = getSupabaseAdmin(); if (!supabase) return [];
-  const { data, error } = await supabase.from('transport_routes').select('*').eq('school_id', schoolId).order('created_at', { ascending: false });
-  if (error) throw error;
-  return data || [];
+  const result = await routeService.list({ schoolId, limit: 100 });
+  return result.items;
 }
 
 export async function getRouteById(id: string) {
-  const supabase = getSupabaseAdmin(); if (!supabase) return null;
-  const { data, error } = await supabase.from('transport_routes').select('*').eq('id', id).single();
-  if (error) throw error;
-  return data;
+  return routeService.findById(id);
 }
 
 export async function updateRoute(id: string, data: { name?: string; vehicle_number?: string; driver_name?: string; driver_phone?: string }) {
-  const supabase = getSupabaseAdmin(); if (!supabase) return null;
-  const { data: result, error } = await supabase.from('transport_routes').update(data).eq('id', id).select().single();
-  if (error) throw new Error(`Failed to update route: ${error.message}`);
-  return result;
+  return routeService.update(id, data as any);
 }
 
 export async function deleteRoute(id: string) {
-  const supabase = getSupabaseAdmin(); if (!supabase) return;
-  const { error } = await supabase.from('transport_routes').update({ deleted_at: new Date().toISOString() }).eq('id', id);
-  if (error) throw new Error(`Failed to delete route: ${error.message}`);
+  return routeService.delete(id);
 }
 
-// STOPS
+// ── Stop Service ────────────────────────────────────────
+
+interface TransportStopRecord extends DbRecord {
+  route_id: string;
+  name: string;
+  pickup_time?: string;
+  drop_time?: string;
+  fare?: number;
+  sequence?: number;
+}
+
+class TransportStopService extends BaseService<TransportStopRecord> {
+  protected readonly table = 'transport_stops';
+  protected softDelete = true;
+}
+
+const stopService = new TransportStopService();
+
 export async function createStop(schoolId: string, data: { route_id: string; name: string; pickup_time?: string; drop_time?: string; fare?: number; sequence?: number }) {
-  const supabase = getSupabaseAdmin(); if (!supabase) return null;
-  const { data: result, error } = await supabase.from('transport_stops').insert({ school_id: schoolId, ...data }).select().single();
-  if (error) throw new Error(`Failed to create stop: ${error.message}`);
-  return result;
+  return stopService.create({ school_id: schoolId, ...data } as any);
 }
 
 export async function getStops(routeId: string) {
@@ -52,36 +69,31 @@ export async function getStops(routeId: string) {
 }
 
 export async function updateStop(id: string, data: { name?: string; pickup_time?: string; drop_time?: string; fare?: number; sequence?: number }) {
-  const supabase = getSupabaseAdmin(); if (!supabase) return null;
-  const { data: result, error } = await supabase.from('transport_stops').update(data).eq('id', id).select().single();
-  if (error) throw new Error(`Failed to update stop: ${error.message}`);
-  return result;
+  return stopService.update(id, data as any);
 }
 
 export async function deleteStop(id: string) {
-  const supabase = getSupabaseAdmin(); if (!supabase) return;
-  const { error } = await supabase.from('transport_stops').update({ deleted_at: new Date().toISOString() }).eq('id', id);
-  if (error) throw new Error(`Failed to delete stop: ${error.message}`);
+  return stopService.delete(id);
 }
 
-// ASSIGNMENTS
+// ── Assignments (non-standard CRUD, kept as-is + enhanced) ─
+
 export async function assignStudent(schoolId: string, data: { student_id: string; route_id: string; stop_id?: string }) {
   const supabase = getSupabaseAdmin(); if (!supabase) return null;
   const { data: existing, error } = await supabase.from('transport_assignments').select('id, route_id').eq('student_id', data.student_id).maybeSingle();
   if (error) throw error;
   const oldRouteId = existing?.route_id;
-  
+
   if (existing) {
-    const { data: result, error } = await supabase.from('transport_assignments').update(data).eq('student_id', data.student_id).select().single();
-    if (error) throw new Error(`Failed to assign student: ${error.message}`);
-    // ponytail: log old route change — upgrade to push notification when notification service supports transport events
+    const { data: result, error: updErr } = await supabase.from('transport_assignments').update(data).eq('student_id', data.student_id).select().single();
+    if (updErr) throw new Error(`Failed to assign student: ${updErr.message}`);
     if (oldRouteId && oldRouteId !== data.route_id) {
       logger.info('Student re-routed', { studentId: data.student_id, fromRoute: oldRouteId, toRoute: data.route_id });
     }
     return result;
   } else {
-    const { data: result, error } = await supabase.from('transport_assignments').insert({ school_id: schoolId, ...data }).select().single();
-    if (error) throw new Error(`Failed to assign student: ${error.message}`);
+    const { data: result, error: insErr } = await supabase.from('transport_assignments').insert({ school_id: schoolId, ...data }).select().single();
+    if (insErr) throw new Error(`Failed to assign student: ${insErr.message}`);
     return result;
   }
 }
@@ -99,13 +111,14 @@ export async function deleteAssignment(id: string) {
   if (error) throw new Error(`Failed to delete assignment: ${error.message}`);
 }
 
-// ATTENDANCE
+// ── Attendance (kept as-is — complex queries with joins) ─
+
 export async function markAttendance(schoolId: string, markedBy: string, data: { student_id: string; route_id: string; status: 'boarded' | 'alighted' | 'absent'; direction: 'morning' | 'evening' }) {
   const supabase = getSupabaseAdmin(); if (!supabase) return null;
   const { data: result, error } = await supabase.from('transport_attendance').insert({
     school_id: schoolId,
     marked_by: markedBy,
-    ...data
+    ...data,
   }).select().single();
   if (error) throw new Error(`Failed to mark attendance: ${error.message}`);
   return result;
@@ -115,7 +128,6 @@ export async function getAttendance(schoolId: string, routeId: string, date: str
   const supabase = getSupabaseAdmin(); if (!supabase) return [];
   const startOfDay = `${date}T00:00:00.000Z`;
   const endOfDay = `${date}T23:59:59.999Z`;
-  
   const { data, error } = await supabase
     .from('transport_attendance')
     .select('*, student:users(id, display_name)')

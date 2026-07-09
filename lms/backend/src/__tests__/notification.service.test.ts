@@ -16,12 +16,16 @@ beforeEach(() => {
   mockQuery.select.mockReturnThis();
   mockQuery.update.mockReturnThis();
   mockQuery.delete.mockReturnThis();
+  mockQuery.insert.mockReturnThis();
+  mockQuery.is.mockReturnThis();
   (mockQuery as any).upsert = jest.fn<any>().mockReturnThis();
-  delete (mockQuery as any).data;
-  delete (mockQuery as any).error;
-  delete (mockQuery as any).count;
+  (mockQuery as any).data = undefined;
+  (mockQuery as any).error = undefined;
+  (mockQuery as any).count = undefined;
   // Default: user preferences exist with inApp enabled
   mockQuery.maybeSingle.mockResolvedValue(({ data: { notification_preferences: { email: true, push: true, sms: false, inApp: true, in_app_enabled: true }, id: 'u1' }, error: null }) as any);
+  // Default: successful create
+  mockQuery.single.mockResolvedValue(({ data: { id: 'n-new', title: 'Test', body: 'Hello', read: false, user_id: 'u1', type: 'info' }, error: null }) as any);
 });
 
 describe('notification.service', () => {

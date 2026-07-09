@@ -19,8 +19,6 @@ import {
   type ResetPasswordFormData,
 } from '@/features/auth/schemas/authSchemas';
 import { ROUTES } from '@/lib/constants';
-import { useMutation } from '@tanstack/react-query';
-import { authService } from '@/services/authService';
 import { supabase } from '@/supabase/config';
 import { toast } from 'sonner';
 
@@ -75,7 +73,8 @@ export default function ResetPasswordForm() {
   const mutation = useMutation({
     mutationFn: async (data: ResetPasswordFormData) => {
       if (!uid) throw new Error('Session expired. Please request a new reset link.');
-      await authService.resetPassword(uid, data.password);
+      const { error } = await supabase.auth.updateUser({ password: data.password });
+      if (error) throw error;
     },
     onSuccess: () => {
       toast.success('Password has been reset successfully');

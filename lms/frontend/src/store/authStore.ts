@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { supabase } from '@/supabase/config';
 import api from '@/services/api';
 import { hasRole as userHasRole } from '@/lib/roleHelpers';
@@ -21,18 +20,6 @@ interface AuthStore {
 let initialized = false;
 /** Cache resolved effective role for parent users (avoid repeated /teacher-class-subject/my calls). */
 let cachedEffectiveRole: string | null = null;
-
-/** Read persisted token from localStorage directly (bypasses zustand persist rehydration timing). */
-function readPersistedToken(): string | null {
-  try {
-    const raw = localStorage.getItem('lms-auth-v2');
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return parsed?.state?.token || null;
-  } catch {
-    return null;
-  }
-}
 
 /** Map a backend user profile object to the normalized store shape. */
 function mapProfileToUser(
@@ -84,102 +71,70 @@ async function resolveEffectiveRole(
   }
 }
 
-export const useAuthStore = create<AuthStore>()(
-  persist(
-    (set, get) => ({
-      user: null,
-      token: null,
-      isAuthenticated: false,
-      isLoading: true,
-      setUser: (user) =>
-        set({ user, isAuthenticated: !!user }),
-      setToken: (token) => set({ token }),
-      setLoading: (isLoading) => set({ isLoading }),
-      hasRole: (roles) => {
-        const user = get().user;
-        if (!user) return false;
-        return roles.some(r => userHasRole(user.role, r));
-      },
-      logout: async () => {
-        cachedEffectiveRole = null;
-        await supabase.auth.signOut();
-        initialized = false;
-        set({ user: null, token: null, isAuthenticated: false, isLoading: false });
-      },
-      initialize: async () => {
-        if (initialized) return;
-        initialized = true;
-        set({ isLoading: true });
+export const useAuthStore = create<AuthStore>()((set, get) => ({
+  user: null,
+  token: null,
+  isAuthenticated: false,
+  isLoading: true,
+  setUser: (user) =>
+    set({ user, isAuthenticated: !!user }),
+  setToken: (token) => set({ token }),
+  setLoading: (isLoading) => set({ isLoading }),
+  hasRole: (roles) => {
+    const user = get().user;
+    if (!user) return false;
+    return roles.some(r => userHasRole(user.role, r));
+  },
+  logout: async () => {
+    cachedEffectiveRole = null;
+    await supabase.auth.signOut();
+    initialized = false;
+    set({ user: null, token: null, isAuthenticated: false, isLoading: false });
+  },
+  initialize: async () => {
+    if (initialized) return;
+    initialized = true;
+    set({ isLoading: true });
 
-        try {
-          // Step 1: Supabase session
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.access_token) {
-            set({ token: session.access_token });
-            const res = await api.get('/auth/me', { timeout: 10000 });
-            const profile = res.data?.data as Record<string, unknown> | undefined;
-            if (profile) {
-              const effectiveRole = await resolveEffectiveRole(profile);
-              set({
-                user: mapProfileToUser(profile, effectiveRole),
-                isAuthenticated: true,
-                isLoading: false,
-              });
-              return;
-            }
-          }
+    try {
+      // Step 1: Cookie-based session (httpOnly cookie, XSS-safe)
+      const res = await api.get('/auth/session');
+      const sessionData = res.data?.data;
+      if (sessionData?.user) {
+        const p = sessionData.user as Record<string, unknown>;
+        const effectiveRole = await resolveEffectiveRole(p);
+        set({
+          user: mapProfileToUser(p, effectiveRole),
+          isAuthenticated: true,
+          isLoading: false,
+        });
+        return;
+      }
+    } catch {
+      // Cookie session not available
+    }
 
-          // Step 2: Persisted token
-          const persistedToken = get().token || readPersistedToken();
-          if (persistedToken) {
-            const res = await api.get('/auth/me', {
-              headers: { Authorization: `Bearer ${persistedToken}` },
-              timeout: 10000,
-            });
-            const profile = res.data?.data as Record<string, unknown> | undefined;
-            if (profile) {
-              const effectiveRole = await resolveEffectiveRole(profile);
-              set({
-                token: persistedToken,
-                user: mapProfileToUser(profile, effectiveRole),
-                isAuthenticated: true,
-                isLoading: false,
-              });
-              return;
-            }
-          }
-        } catch (e) {
-          console.warn('[authStore] Auth initialization failed:', e instanceof Error ? e.message : String(e));
+    try {
+      // Step 2: Supabase SDK session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        set({ token: session.access_token });
+        const res = await api.get('/auth/me', { timeout: 10000 });
+        const profile = res.data?.data as Record<string, unknown> | undefined;
+        if (profile) {
+          const effectiveRole = await resolveEffectiveRole(profile);
+          set({
+            user: mapProfileToUser(profile, effectiveRole),
+            isAuthenticated: true,
+            isLoading: false,
+          });
+          return;
         }
+      }
+    } catch (e) {
+      console.warn('[authStore] Auth initialization failed:', e instanceof Error ? e.message : String(e));
+    }
 
-        // Step 3: Cookie-based session fallback
-        try {
-          const res = await api.get('/auth/session');
-          const sessionData = res.data?.data;
-          if (sessionData?.user) {
-            const p = sessionData.user as Record<string, unknown>;
-            const effectiveRole = await resolveEffectiveRole(p);
-            set({
-              user: mapProfileToUser(p, effectiveRole),
-              isAuthenticated: true,
-              isLoading: false,
-            });
-            return;
-          }
-        } catch {
-          // Cookie fallback failed — no session
-        }
-
-        // All steps failed
-        set({ user: null, token: null, isAuthenticated: false, isLoading: false });
-      },
-    }),
-    {
-      name: 'lms-auth-v2',
-      partialize: (state) => ({
-        user: state.user,
-        token: state.token,
-      }),
-    },
-  ),
-);
+    set({ user: null, token: null, isAuthenticated: false, isLoading: false });
+  },
+}));

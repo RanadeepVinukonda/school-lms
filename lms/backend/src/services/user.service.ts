@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from './supabase';
-import { createUser as firebaseCreateUser, updateUser as firebaseUpdateUser, deleteUser as firebaseDeleteUser, getUserByEmail, getUserById, setCustomClaims } from '../database/auth';
+import { createUser as createAuthUser, updateUser, deleteUser, getUserByEmail, getUserById, setCustomClaims } from '../database/auth';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
@@ -139,7 +139,7 @@ export async function createUser(data: {
       };
       const { error } = await supabase.from('users').upsert(userData2, { onConflict: 'id' });
       if (error) throw error;
-      await firebaseUpdateUser(existingUser.uid, { password: generatedPassword });
+      await updateUser(existingUser.uid, { password: generatedPassword });
       await setCustomClaims(existingUser.uid, { role: data.role });
       logger.info('User doc created (auth user existed)', { uid: existingUser.uid, email: generatedEmail, role: data.role });
       if (data.role === 'student') {
@@ -152,9 +152,9 @@ export async function createUser(data: {
     }
   }
 
-  let firebaseUser: Awaited<ReturnType<typeof firebaseCreateUser>>;
+  let authUser: Awaited<ReturnType<typeof createAuthUser>>;
   try {
-    firebaseUser = await firebaseCreateUser({
+    authUser = await createAuthUser({
       email: generatedEmail, password: generatedPassword,
       displayName: data.displayName, phoneNumber: data.phoneNumber, photoURL: data.photoURL,
     });
@@ -187,7 +187,7 @@ export async function createUser(data: {
 
   const now = new Date().toISOString();
   const userData: Record<string, unknown> = {
-    id: firebaseUser.uid, email: generatedEmail, display_name: data.displayName,
+    id: authUser.uid, email: generatedEmail, display_name: data.displayName,
     role: data.role, phone_number: data.phoneNumber || '', photo_url: data.photoURL || '',
     class_ids: finalClassIds, class_id: studentClassId || null,
     student_id: studentId || null, roll_no: data.rollNo || null,
@@ -197,8 +197,8 @@ export async function createUser(data: {
   };
   const { error } = await supabase.from('users').upsert(userData, { onConflict: 'id' });
   if (error) throw error;
-  await setCustomClaims(firebaseUser.uid, { role: data.role });
-  logger.info('User created by admin', { uid: firebaseUser.uid, email: generatedEmail, role: data.role });
+  await setCustomClaims(authUser.uid, { role: data.role });
+  logger.info('User created by admin', { uid: authUser.uid, email: generatedEmail, role: data.role });
 
   if (data.role === 'student') {
     const { error: rpcErr } = await supabase.rpc('increment_student_count', { class_id: data.classId!, delta: 1 });
@@ -265,7 +265,7 @@ export async function updateUser(uid: string, data: {
   const { error: updErr } = await supabase.from('users').update(updateData).eq('id', uid);
   if (updErr) throw updErr;
 
-  if (data.disabled !== undefined) await firebaseUpdateUser(uid, { disabled: data.disabled });
+  if (data.disabled !== undefined) await updateUser(uid, { disabled: data.disabled });
 
   const { data: updated } = await supabase.from('users').select('*').eq('id', uid).maybeSingle();
   logger.info('User updated by admin', { uid });
@@ -277,7 +277,7 @@ export async function deleteUserService(uid: string) {
   if (!exists) throw new NotFoundError('User not found');
   const { error } = await getSupabaseAdmin().from('users').update({ deleted_at: new Date().toISOString() }).eq('id', uid);
   if (error) throw error;
-  await firebaseDeleteUser(uid);
+  await deleteUser(uid);
   logger.info('User deleted by admin', { uid });
 }
 
@@ -289,7 +289,7 @@ export async function toggleActive(uid: string) {
   const newIsActive = !existing.is_active;
   const { error } = await supabase.from('users').update({ is_active: newIsActive, updated_at: new Date().toISOString() }).eq('id', uid);
   if (error) throw new Error(`Failed to toggle user active status: ${error.message}`);
-  await firebaseUpdateUser(uid, { disabled: !newIsActive });
+  await updateUser(uid, { disabled: !newIsActive });
 
   const { data: updated } = await supabase.from('users').select('*').eq('id', uid).maybeSingle();
   logger.info('User active status toggled', { uid, isActive: newIsActive });

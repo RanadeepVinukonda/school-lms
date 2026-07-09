@@ -1,4 +1,5 @@
 import { Pool } from 'pg';
+import { logger } from '../utils/logger';
 
 let _pool: Pool | null = null;
 
@@ -6,8 +7,9 @@ export function getConnectionPool(): Pool {
   if (_pool) return _pool;
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error('DATABASE_URL not configured');
-  _pool = new Pool({ connectionString: url, max: 5, idleTimeoutMillis: 30000 });
-  _pool.on('error', (err) => console.error('Unexpected pool error', err));
+  const poolMax = parseInt(process.env.DATABASE_POOL_MAX || '20', 10);
+  _pool = new Pool({ connectionString: url, max: poolMax, idleTimeoutMillis: 30000 });
+  _pool.on('error', (err) => logger.error('Unexpected pool error', { error: err }));
   return _pool;
 }
 

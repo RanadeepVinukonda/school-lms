@@ -6,13 +6,17 @@ jest.mock('../services/supabase', () => ({
       insert: () => chain,
       select: () => chain,
       eq: () => chain,
+      is: () => chain,
       limit: () => chain,
       order: () => chain,
+      range: () => Promise.resolve({ data: [{ id: 'mock-id', name: 'Test Route' }], error: null, count: 1 }),
       single: () => Promise.resolve({ data: { id: 'mock-id', name: 'Test Route' }, error: null }),
       update: () => chain,
       delete: () => chain,
       gte: () => chain,
       lte: () => chain,
+      maybeSingle: () => Promise.resolve({ data: { id: 'mock-id', name: 'Test Route' }, error: null }),
+      or: () => chain,
     };
     return { from: jest.fn(() => chain) };
   }),

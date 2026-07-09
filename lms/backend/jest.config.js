@@ -1,5 +1,6 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} */
 module.exports = {
+  coverageReporters: ['text', 'lcov', 'clover'],
   preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],

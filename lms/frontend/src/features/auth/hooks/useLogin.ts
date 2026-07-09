@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/supabase/config';
+import api from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
 import { getPrimaryRole } from '@/lib/roleHelpers';
@@ -91,11 +92,14 @@ export function useLogin() {
         createdAt: (p.created_at as string) || new Date().toISOString(),
         updatedAt: (p.updated_at as string) || new Date().toISOString(),
         token: session.access_token,
+        refreshToken: session.refresh_token,
       };
     },
-    onSuccess: ({ uid, email, displayName, role, isActive, avatar, studentId, classId, classIds, teacherId, firstName, lastName, phone, dateOfBirth, bio, address, tutorialSeen, createdAt, updatedAt, token }) => {
+    onSuccess: ({ uid, email, displayName, role, isActive, avatar, studentId, classId, classIds, teacherId, firstName, lastName, phone, dateOfBirth, bio, address, tutorialSeen, createdAt, updatedAt, token, refreshToken }) => {
       setToken(token);
       setUser({ id: uid, email, displayName, role, isActive, avatar, studentId, classId, classIds, teacherId, firstName, lastName, phone, dateOfBirth, bio, address, tutorialSeen, createdAt, updatedAt });
+      // Set httpOnly cookie via backend
+      api.post('/auth/refresh', { refresh_token: refreshToken }).catch(() => {});
       toast.success('Welcome back!');
       const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname;
       navigate(from || setupDashboard(role), { replace: true });

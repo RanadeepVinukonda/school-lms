@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { asyncHandler } from '../middlewares/asyncHandler';
 import { authenticate } from '../middlewares/auth.middleware';
-import { strictRateLimit } from '../middlewares/rateLimit.middleware';
+import { aiRateLimit } from '../middlewares/rateLimit.middleware';
 import { validate } from '../middlewares/validate.middleware';
 import { z } from 'zod';
 import * as aiController from '../controllers/ai.controller';
@@ -18,6 +18,6 @@ const chatSchema = z.object({
   jsonMode: z.boolean().optional(),
 });
 
-router.post('/chat', authenticate, strictRateLimit, validate(chatSchema), asyncHandler(aiController.chat));
+router.post('/chat', authenticate, aiRateLimit, validate(chatSchema), asyncHandler(aiController.chat));
 
 export default router;

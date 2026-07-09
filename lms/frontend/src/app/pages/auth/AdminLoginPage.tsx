@@ -15,6 +15,7 @@ import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
 import { hasRole } from '@/lib/roleHelpers';
 import { supabase } from '@/supabase/config';
+import api from '@/services/api';
 import { cardStackReveal } from '@/lib/motion';
 
 const adminLoginSchema = z.object({
@@ -53,6 +54,9 @@ export default function AdminLoginPage() {
       });
       if (signInError || !authData.user) throw signInError || new Error('Login failed');
       setToken(authData.session?.access_token || '');
+      if (authData.session?.refresh_token) {
+        api.post('/auth/refresh', { refresh_token: authData.session.refresh_token }).catch(() => {});
+      }
       const { data: profileData } = await supabase.from('users').select('*').eq('id', authData.user.id).maybeSingle();
       if (!profileData) {
         setError('User profile not found. Please contact your administrator.');
