@@ -11,7 +11,7 @@
     "@genesis-lms/shared": "*",
     "@react-navigation/bottom-tabs": "^6.5.20",
     "@react-navigation/native": "^6.1.17",
-    "@react-navigation/native-stack": "^6.9.26",
+    "@react-navigation/native-stack": "^7.17.10",
     "expo": "~51.0.0",
     "expo-status-bar": "~1.12.1",
     "expo-notifications": "~0.28.0",
