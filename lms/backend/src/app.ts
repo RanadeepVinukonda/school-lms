@@ -37,6 +37,15 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb', parameterLimit: 100 }));
 app.use(metricsMiddleware);
 app.use(timeoutMiddleware());
+
+// Strip /api prefix — Vercel rewrite adds /api, must strip BEFORE route matching
+app.use((req, _res, next) => {
+  if (req.url.startsWith('/api')) {
+    req.url = req.url.replace(/^\/api/, '') || '/';
+  }
+  next();
+});
+
 app.use('/health', healthRoute);
 
 if (env.API_DOCS_ENABLED) {
@@ -67,14 +76,6 @@ if (process.env.NODE_ENV !== 'test') {
   app.use(csrfProtection);
   app.get('/csrf-token', csrfTokenHandler);
 }
-
-// Strip /api prefix — Vercel rewrite preserves /api prefix on incoming requests
-app.use((req, _res, next) => {
-  if (req.url.startsWith('/api')) {
-    req.url = req.url.replace(/^\/api/, '') || '/';
-  }
-  next();
-});
 
 app.use('/auth', authRateLimit);
 app.use('/', apiRateLimit, auditMiddleware, routes);
