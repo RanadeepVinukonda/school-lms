@@ -6,7 +6,7 @@
   "framework": null,
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/[...slug]" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/((?!api/|assets/|.*\\.[a-zA-Z0-9]+$).*)", "destination": "/index.html" }
   ],
   "functions": {
     "api/[...slug].ts": {
