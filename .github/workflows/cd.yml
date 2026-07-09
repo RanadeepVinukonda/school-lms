@@ -34,7 +34,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build & push backend
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: lms/backend
           push: true
@@ -63,7 +63,7 @@ jobs:
         run: echo "${{ secrets.FRONTEND_ENV }}" | base64 -d > lms/frontend/.env
 
       - name: Build & push frontend
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: lms/frontend
           push: true
