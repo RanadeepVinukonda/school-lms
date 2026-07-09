@@ -108,8 +108,8 @@ router.get('/export', authenticate, async (req: Request, res: Response) => {
     const downloadToken = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    // Store the export result with expiry
-    await supabase.from('export_logs').insert({
+    // Store the export result with expiry (fire-and-forget; export still returned inline if persist fails)
+    const { error: persistError } = await supabase.from('export_logs').insert({
       user_id: userId,
       token: downloadToken,
       expires_at: expiresAt,
@@ -122,9 +122,11 @@ router.get('/export', authenticate, async (req: Request, res: Response) => {
         assignments: assignmentsRes.data || [],
       },
       created_at: new Date().toISOString(),
-    }).catch((err: Error) => {
-      logger.warn('Failed to persist export, returning inline', { userId, err: err.message });
     });
+
+    if (persistError) {
+      logger.warn('Failed to persist export, returning inline', { userId, err: persistError.message });
+    }
 
     res.json({
       success: true,

@@ -31,8 +31,8 @@ router.get('/ready', async (_req, res) => {
   try {
     const { healthCheck: hc, getConnectionPool: gcp } = await import('../../database/connection-manager');
     const pool = gcp();
-    poolTotal = pool.totalCount;
-    poolIdle = pool.idleCount;
+    poolTotal = (pool as any).totalCount || 0;
+    poolIdle = (pool as any).idleCount || 0;
     dbOk = await hc() || dbOk;
   } catch { /* pool stats unavailable */ }
 

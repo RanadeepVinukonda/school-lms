@@ -7,14 +7,16 @@ on:
     branches: [main]
 
 jobs:
-  gitleaks:
-    name: Gitleaks Secret Scan
+  # Gitleaks scan is defined in test.yml — duplicated here to prevent conflicts
+  zap-scan:
+    name: OWASP ZAP Baseline Scan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: ZAP Scan
+        uses: zaproxy/action-baseline@v0.12.0
         with:
-          fetch-depth: 0
-      - name: Gitleaks Scan
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          target: ${{ vars.STAGING_URL || 'https://staging.school-lms.com' }}
+          rules_file_name: .github/zap.conf
+          allow_issue_writing: false
+          fail_action: true

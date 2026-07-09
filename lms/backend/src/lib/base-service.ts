@@ -85,7 +85,7 @@ export abstract class BaseService<T extends DbRecord> {
     if (error) {
       throw new Error(`Failed to create ${this.table}: ${error.message}`);
     }
-    return this.afterFind(data as T);
+    return this.afterFind(data as unknown as T);
   }
 
   /**
@@ -103,7 +103,7 @@ export abstract class BaseService<T extends DbRecord> {
     if (error) {
       throw new Error(`Failed to find ${this.table} by id: ${error.message}`);
     }
-    return data ? await this.afterFind(data as T) : null;
+    return data ? await this.afterFind(data as unknown as T) : null;
   }
 
   /**
@@ -137,7 +137,7 @@ export abstract class BaseService<T extends DbRecord> {
       throw new Error(`Failed to update ${this.table}: ${error.message}`);
     }
     logger.info(`${this.table} updated`, { id });
-    return await this.afterFind(data as T);
+    return await this.afterFind(data as unknown as T);
   }
 
   /**
