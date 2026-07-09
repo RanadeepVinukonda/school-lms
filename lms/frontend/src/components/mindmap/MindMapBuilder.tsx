@@ -280,7 +280,7 @@ export function MindMapBuilder({ nodes, edges, onChange, readOnly = false }: Min
                       y1={source.y}
                       x2={target.x}
                       y2={target.y}
-                      stroke="#94a3b8"
+                      stroke="hsl(var(--border))"
                       strokeWidth={2}
                       strokeLinecap="round"
                     />
@@ -289,7 +289,7 @@ export function MindMapBuilder({ nodes, edges, onChange, readOnly = false }: Min
                         x={(source.x + target.x) / 2}
                         y={(source.y + target.y) / 2 - 8}
                         textAnchor="middle"
-                        fill="#64748b"
+                        fill="hsl(var(--muted-foreground))"
                         fontSize={10}
                         className="select-none"
                       >
@@ -303,7 +303,7 @@ export function MindMapBuilder({ nodes, edges, onChange, readOnly = false }: Min
                         width={16}
                         height={16}
                         rx={4}
-                        fill="#ef4444"
+                        fill="hsl(var(--destructive))"
                         className="cursor-pointer opacity-0 hover:opacity-100 transition-opacity"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -368,14 +368,15 @@ export function MindMapBuilder({ nodes, edges, onChange, readOnly = false }: Min
                       rx={8}
                       fill={node.color || '#6366f1'}
                       fillOpacity={0.15}
-                      stroke={isSelected ? node.color || '#6366f1' : '#e2e8f0'}
+                      stroke={isSelected ? node.color || '#6366f1' : 'hsl(var(--border))'}
                       strokeWidth={isSelected ? 2.5 : 1.5}
                     />
                     {isEditing ? (
                       <foreignObject x={node.x - 55} y={node.y - 15} width={110} height={30}>
                         <input
                           autoFocus
-                          className="w-full h-full px-1 text-xs font-medium rounded border border-primary outline-none bg-white"
+                          className="w-full h-full px-1 text-xs font-medium rounded border border-primary outline-none bg-background"
+
                           value={editLabel}
                           onChange={(e) => setEditLabel(e.target.value)}
                           onBlur={() => updateNodeLabel(node.id, editLabel)}
@@ -391,7 +392,7 @@ export function MindMapBuilder({ nodes, edges, onChange, readOnly = false }: Min
                         y={node.y}
                         textAnchor="middle"
                         dominantBaseline="middle"
-                        fill="#1e293b"
+                        fill="hsl(var(--foreground))"
                         fontSize={11}
                         fontWeight={600}
                         className="select-none pointer-events-none"
@@ -418,7 +419,7 @@ export function MindMapBuilder({ nodes, edges, onChange, readOnly = false }: Min
                           width={16}
                           height={16}
                           rx={4}
-                          fill="#ef4444"
+                          fill="hsl(var(--destructive))"
                         />
                         <text
                           x={node.x + 58}

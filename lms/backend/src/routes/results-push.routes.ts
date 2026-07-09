@@ -10,8 +10,7 @@ const router = Router();
 
 const releaseBatchSchema = z.object({
   classId: z.string().min(1),
-  assessmentType: z.string().min(1),
-  assessmentIds: z.array(z.string().min(1)).min(1),
+  type: z.string().optional(),
 }).passthrough();
 
 const releaseSingleSchema = z.object({

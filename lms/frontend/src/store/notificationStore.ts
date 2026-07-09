@@ -20,8 +20,12 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   resetUnread: () => set({ unreadCount: 0 }),
 
   subscribeToNotifications: (userId: string) => {
+    // Use timestamped channel name to prevent 'cannot add postgres_changes
+    // callbacks after subscribe' error when re-subscribing. supabase.channel()
+    // returns an existing channel if the name matches, causing conflicts.
+    const channelName = `notifications_${userId}_${Date.now()}`;
     const channel = supabase
-      .channel(`notifications_${userId}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
