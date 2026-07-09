@@ -47,7 +47,7 @@ export default function TeacherTextbookDetailPage() {
     enabled: !!textbookId,
   });
 
-  useRealtimeInvalidation([{ table: 'textbooks', queryKey: ['teacher-textbook', textbookId] }]);
+  useRealtimeInvalidation([{ table: 'textbooks', queryKey: ['teacher-textbook', textbookId ?? ''] }]);
 
   const logEndRef = useRef<HTMLDivElement | null>(null);
 

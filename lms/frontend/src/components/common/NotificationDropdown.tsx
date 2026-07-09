@@ -67,7 +67,7 @@ export default function NotificationDropdown() {
     enabled: !!user && open,
   });
 
-  useRealtimeInvalidation([{ table: 'notifications', queryKey: ['notifications-dropdown', user?.id] }]);
+  useRealtimeInvalidation([{ table: 'notifications', queryKey: ['notifications-dropdown', user?.id ?? ''] }]);
 
   const items: Item[] = useMemo(
     () => rawItems.map((n) => ({ ...n, message: n.body || n.title, priority: derivePriority(n.type) })),

@@ -128,7 +128,7 @@ export default function StudentExamsPage() {
     callback: () => { refetch(); },
   });
 
-  useRealtimeInvalidation([{ table: 'exams', queryKey: ['student-exams', user?.id, user?.classId] }]);
+  useRealtimeInvalidation([{ table: 'exams', queryKey: ['student-exams', user?.id ?? '', user?.classId ?? ''] }]);
 
   return (
     <>

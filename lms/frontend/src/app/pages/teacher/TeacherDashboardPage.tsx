@@ -178,7 +178,7 @@ export default function TeacherDashboardPage() {
     callback: () => { queryClient.invalidateQueries({ queryKey: ['teacher-dashboard', user?.id] }); },
   });
 
-  useRealtimeInvalidation([{ table: 'submissions', queryKey: ['teacher-dashboard', user?.id] }]);
+  useRealtimeInvalidation([{ table: 'submissions', queryKey: ['teacher-dashboard', user?.id ?? ''] }]);
 
   const teacherName = user?.displayName?.split(' ')[0] ?? _('Teacher');
 

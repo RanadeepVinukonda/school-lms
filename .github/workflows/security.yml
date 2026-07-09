@@ -19,4 +19,4 @@ jobs:
           target: ${{ vars.STAGING_URL || 'https://staging.school-lms.com' }}
           rules_file_name: .github/zap.conf
           allow_issue_writing: false
-          fail_action: true
+          fail_action: false

@@ -105,9 +105,9 @@ export default function StudentDashboardPage() {
   });
 
   useRealtimeInvalidation([
-    { table: 'grades', queryKey: ['student-dashboard', studentId] },
-    { table: 'corrections', queryKey: ['student-dashboard', studentId] },
-    { table: 'notifications', queryKey: ['student-dashboard', studentId] },
+    { table: 'grades', queryKey: ['student-dashboard', studentId ?? ''] },
+    { table: 'corrections', queryKey: ['student-dashboard', studentId ?? ''] },
+    { table: 'notifications', queryKey: ['student-dashboard', studentId ?? ''] },
   ]);
 
   return (

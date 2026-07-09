@@ -84,7 +84,7 @@ export default function StudentTasksPage() {
     enabled: !!studentId,
   });
 
-  useRealtimeInvalidation([{ table: 'assignments', queryKey: ['student-tasks', studentId, classId] }]);
+  useRealtimeInvalidation([{ table: 'assignments', queryKey: ['student-tasks', studentId ?? '', classId ?? ''] }]);
 
   const { data: subjectsData } = useQuery({
     queryKey: ['student-subjects', studentId, classId],

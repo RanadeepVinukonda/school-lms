@@ -77,7 +77,7 @@ export default function StudentProfilePage() {
     enabled: !!authUser,
   });
 
-  useRealtimeInvalidation([{ table: 'profiles', queryKey: ['student-profile', authUser?.id] }]);
+  useRealtimeInvalidation([{ table: 'profiles', queryKey: ['student-profile', authUser?.id ?? ''] }]);
 
   return (
     <>

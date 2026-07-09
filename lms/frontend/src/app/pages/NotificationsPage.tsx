@@ -47,7 +47,7 @@ export default function NotificationsPage() {
     callback: () => { refetch(); },
   });
 
-  useRealtimeInvalidation([{ table: 'notifications', queryKey: ['notifications-page', user?.id] }]);
+  useRealtimeInvalidation([{ table: 'notifications', queryKey: ['notifications-page', user?.id ?? ''] }]);
 
   const displayed = filter === 'unread' ? items.filter((n) => !n.read) : items;
 

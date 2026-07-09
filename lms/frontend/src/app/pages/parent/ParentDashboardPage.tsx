@@ -50,7 +50,7 @@ export default function ParentDashboardPage() {
     callback: () => { refetch(); },
   });
 
-  useRealtimeInvalidation([{ table: 'grades', queryKey: ['parent-dashboard', user?.id] }]);
+  useRealtimeInvalidation([{ table: 'grades', queryKey: ['parent-dashboard', user?.id ?? ''] }]);
 
   const parentName = user?.displayName?.split(' ')[0] ?? 'Parent';
   const childCount = data?.children?.length ?? 0;

@@ -19,6 +19,7 @@ import {
   type ResetPasswordFormData,
 } from '@/features/auth/schemas/authSchemas';
 import { ROUTES } from '@/lib/constants';
+import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/supabase/config';
 import { toast } from 'sonner';
 
