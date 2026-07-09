@@ -85,6 +85,10 @@ app.use('/auth', authRateLimit);
 app.use('/', apiRateLimit, auditMiddleware, routes);
 app.use('/user', gdprRoutes);
 
+app.get('/', (req, res) => {
+  res.json({ success: true, status: 'ok', message: 'School LMS API is running.' });
+});
+
 // 404 catch-all — must come after all routes
 app.use((_req: express.Request, res: express.Response) => {
   res.status(404).json({
