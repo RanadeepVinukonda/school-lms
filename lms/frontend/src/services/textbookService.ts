@@ -21,12 +21,14 @@ const snakeToCamel = (obj: any): any => {
 
 /** Create a new textbook document in Supabase. Returns the new document id. */
 export async function createTextbook(data: Omit<Textbook, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-  const { data: inserted } = await supabase.from(TEXTBOOKS_COLLECTION).insert({
+  const { data: inserted, error } = await supabase.from(TEXTBOOKS_COLLECTION).insert({
     ...data,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   }).select('id').single();
-  const id = inserted?.id || crypto.randomUUID();
+  if (error) throw new Error(`Failed to create textbook: ${error.message}`);
+  if (!inserted?.id) throw new Error('Textbook created but no ID returned');
+  const id = inserted.id;
   logAudit({
     action: 'textbook.create',
     targetId: id,
