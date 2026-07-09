@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -44,11 +45,9 @@ export default function TeacherTextbookDetailPage() {
       return tb;
     },
     enabled: !!textbookId,
-    refetchInterval: (query) => {
-      const data = query.state.data as { status?: string } | undefined;
-      return data?.status === 'processing' ? 3000 : false;
-    },
   });
+
+  useRealtimeInvalidation([{ table: 'textbooks', queryKey: ['teacher-textbook', textbookId] }]);
 
   const logEndRef = useRef<HTMLDivElement | null>(null);
 

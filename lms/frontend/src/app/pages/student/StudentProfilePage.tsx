@@ -17,6 +17,7 @@ import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { useQuery } from '@tanstack/react-query';
+import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
 import { changePassword } from '@/supabase/auth';
 import { getAllSubjects, getGradesByStudent, getUser, getClass } from '@/services/dataService';
 import { XPBar } from '@/components/gamification/XPBar';
@@ -39,7 +40,6 @@ export default function StudentProfilePage() {
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-profile', authUser?.id],
-    refetchInterval: 30000,
     queryFn: async () => {
       if (!authUser?.id) throw new Error('User not found');
       const firestoreUser = await getUser(authUser.id);
@@ -76,6 +76,8 @@ export default function StudentProfilePage() {
     },
     enabled: !!authUser,
   });
+
+  useRealtimeInvalidation([{ table: 'profiles', queryKey: ['student-profile', authUser?.id] }]);
 
   return (
     <>

@@ -19,6 +19,7 @@ import { getTextbooksBySubject } from '@/services/textbookService';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
 import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
+import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
 
 interface NeedsAttentionItem {
   icon: string; label: string; count: number;
@@ -94,7 +95,6 @@ export default function TeacherDashboardPage() {
 
   const { isLoading, error, refetch, data } = useQuery({
     queryKey: ['teacher-dashboard', user?.id],
-    refetchInterval: 120000,
     queryFn: async (): Promise<DashboardData> => {
       const [allSubjects, allClasses, students, allGrades, assignmentsRes] = await Promise.all([
         getAllSubjects(), getAllClasses(), getUserByRole('student'), getAllGrades(),
@@ -177,6 +177,8 @@ export default function TeacherDashboardPage() {
     event: 'INSERT',
     callback: () => { queryClient.invalidateQueries({ queryKey: ['teacher-dashboard', user?.id] }); },
   });
+
+  useRealtimeInvalidation([{ table: 'submissions', queryKey: ['teacher-dashboard', user?.id] }]);
 
   const teacherName = user?.displayName?.split(' ')[0] ?? _('Teacher');
 

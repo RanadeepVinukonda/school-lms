@@ -12,6 +12,7 @@ import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { getNotificationsByUser, markNotificationRead, markAllNotificationsRead } from '@/services/dataService';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
+import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
 import { cn } from '@/lib/utils';
 
 function relativeTime(iso: string): string {
@@ -36,7 +37,6 @@ export default function NotificationsPage() {
     queryKey: ['notifications-page', user?.id],
     queryFn: () => getNotificationsByUser(user!.id),
     enabled: !!user,
-    refetchInterval: 60000,
   });
 
   // Realtime: auto-refresh notifications list when new notifications arrive
@@ -46,6 +46,8 @@ export default function NotificationsPage() {
     filter: user?.id ? { column: 'userId', value: user.id } : undefined,
     callback: () => { refetch(); },
   });
+
+  useRealtimeInvalidation([{ table: 'notifications', queryKey: ['notifications-page', user?.id] }]);
 
   const displayed = filter === 'unread' ? items.filter((n) => !n.read) : items;
 

@@ -16,6 +16,7 @@ import { ROUTES } from '@/lib/constants';
 import api from '@/services/api';
 import { getClass } from '@/services/dataService';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
+import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
 
 interface ResultEntry { id: string; itemName: string; score: number; maxScore: number; percentage: number; gradedAt: string; feedback?: string }
 
@@ -60,7 +61,6 @@ export default function StudentDashboardPage() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['student-dashboard', studentId],
     enabled: !!studentId,
-    refetchInterval: 60000,
     queryFn: async () => {
       if (!studentId) throw new Error('Not authenticated');
       const now = new Date();
@@ -103,6 +103,12 @@ export default function StudentDashboardPage() {
     filter: studentId ? { column: 'userId', value: studentId } : undefined,
     callback: () => { refetch(); },
   });
+
+  useRealtimeInvalidation([
+    { table: 'grades', queryKey: ['student-dashboard', studentId] },
+    { table: 'corrections', queryKey: ['student-dashboard', studentId] },
+    { table: 'notifications', queryKey: ['student-dashboard', studentId] },
+  ]);
 
   return (
     <>

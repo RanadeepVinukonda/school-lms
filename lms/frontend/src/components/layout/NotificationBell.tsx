@@ -11,6 +11,7 @@ import { ROUTES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import { useQuery } from '@tanstack/react-query';
+import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
 import { getNotificationsByUser } from '@/services/dataService';
 
 export function NotificationBell() {
@@ -22,8 +23,9 @@ export function NotificationBell() {
     queryKey: ['notifications', userId],
     queryFn: () => getNotificationsByUser(userId),
     enabled: !!userId,
-    refetchInterval: 30000,
   });
+
+  useRealtimeInvalidation([{ table: 'notifications', queryKey: ['notifications', userId] }]);
 
   const unreadItems = items.filter((n) => !n.read);
 

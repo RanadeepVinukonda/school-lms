@@ -1,0 +1,18 @@
+name: Load Tests
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # weekly
+  workflow_dispatch:
+
+jobs:
+  k6:
+    name: K6 Load Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run K6 smoke test
+        uses: grafana/k6-action@v1
+        with:
+          filename: tests/load/smoke.js
+          flags: --env BASE_URL=${{ secrets.LOAD_TEST_BASE_URL || 'http://localhost:3001' }}

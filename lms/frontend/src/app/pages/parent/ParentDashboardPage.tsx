@@ -13,6 +13,7 @@ import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { getChildren } from '@/services/parentService';
 import { formatDate } from '@/lib/format';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
+import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
 
 function SectionTitle({ label, title }: { label: string; title: string }) {
   const ref = useRef(null);
@@ -40,7 +41,6 @@ export default function ParentDashboardPage() {
       const children = await getChildren();
       return { children };
     },
-    refetchInterval: 120000,
   });
 
   // Realtime: auto-refresh when children's grades change
@@ -49,6 +49,8 @@ export default function ParentDashboardPage() {
     event: 'INSERT',
     callback: () => { refetch(); },
   });
+
+  useRealtimeInvalidation([{ table: 'grades', queryKey: ['parent-dashboard', user?.id] }]);
 
   const parentName = user?.displayName?.split(' ')[0] ?? 'Parent';
   const childCount = data?.children?.length ?? 0;

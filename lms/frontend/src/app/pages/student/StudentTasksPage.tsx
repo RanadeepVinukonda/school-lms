@@ -5,6 +5,7 @@ import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { useQuery } from '@tanstack/react-query';
+import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
 import api from '@/services/api';
 import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/lib/motion';
 import { getAllSubjects, getClass } from '@/services/dataService';
@@ -30,7 +31,6 @@ export default function StudentTasksPage() {
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-tasks', studentId, classId],
-    refetchInterval: 30000,
     queryFn: async () => {
       if (!studentId) return [];
       const [allSubjects, classDoc] = await Promise.all([
@@ -83,6 +83,8 @@ export default function StudentTasksPage() {
     },
     enabled: !!studentId,
   });
+
+  useRealtimeInvalidation([{ table: 'assignments', queryKey: ['student-tasks', studentId, classId] }]);
 
   const { data: subjectsData } = useQuery({
     queryKey: ['student-subjects', studentId, classId],

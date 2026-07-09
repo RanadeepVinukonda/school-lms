@@ -12,6 +12,8 @@ import { requestId } from './middlewares/requestId.middleware';
 import { metricsMiddleware } from './middlewares/metrics.middleware';
 import { csrfProtection, csrfTokenHandler } from './middlewares/csrf.middleware';
 import { timeoutMiddleware } from './middlewares/timeout.middleware';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger';
 import healthRoute from './routes/health';
 import routes from './routes/index';
 import { logger } from './utils/logger';
@@ -28,6 +30,8 @@ app.use(express.urlencoded({ extended: true, limit: '1mb', parameterLimit: 100 }
 app.use(metricsMiddleware);
 app.use(timeoutMiddleware());
 app.use('/health', healthRoute);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use('/api-docs.json', (_req, res) => res.json(swaggerSpec));
 
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('combined', {

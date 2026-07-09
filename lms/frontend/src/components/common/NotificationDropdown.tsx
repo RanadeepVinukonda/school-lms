@@ -15,6 +15,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { toast } from 'sonner';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
 import { getNotificationsByUser, markNotificationRead, markAllNotificationsRead } from '@/services/dataService';
 
 type Priority = 'urgent' | 'high' | 'medium' | 'low';
@@ -64,8 +65,9 @@ export default function NotificationDropdown() {
     queryKey: ['notifications-dropdown', user?.id],
     queryFn: () => getNotificationsByUser(user!.id),
     enabled: !!user && open,
-    refetchInterval: 30000,
   });
+
+  useRealtimeInvalidation([{ table: 'notifications', queryKey: ['notifications-dropdown', user?.id] }]);
 
   const items: Item[] = useMemo(
     () => rawItems.map((n) => ({ ...n, message: n.body || n.title, priority: derivePriority(n.type) })),

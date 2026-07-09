@@ -14,6 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getAllSubjects, getClass, getExamsBySubject, getCorrectionsByStudent } from '@/services/dataService';
 import { useAuthStore } from '@/store/authStore';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
+import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
 import type { ExamItem, CorrectionItem } from '@/services/dataService';
 
 function Countdown({ endDate }: { endDate: string }) {
@@ -68,7 +69,6 @@ export default function StudentExamsPage() {
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-exams', user?.id, user?.classId],
-    refetchInterval: 120000,
     queryFn: async () => {
       if (!user?.classId) return { upcoming: [], past: [], subjects: [] };
       const [allSubjects, studentClass, corrections] = await Promise.all([
@@ -127,6 +127,8 @@ export default function StudentExamsPage() {
     filter: user?.id ? { column: 'studentId', value: user.id } : undefined,
     callback: () => { refetch(); },
   });
+
+  useRealtimeInvalidation([{ table: 'exams', queryKey: ['student-exams', user?.id, user?.classId] }]);
 
   return (
     <>
