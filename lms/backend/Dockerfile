@@ -1,11 +1,11 @@
-FROM node:20-alpine AS builder
+FROM node:26-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --ignore-scripts
 COPY . .
 RUN npm run build
 
-FROM node:20-alpine AS production
+FROM node:26-alpine AS production
 WORKDIR /app
 RUN addgroup --system app && adduser --system --ingroup app app
 COPY package*.json ./
