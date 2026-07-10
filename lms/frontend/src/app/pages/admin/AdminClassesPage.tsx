@@ -434,38 +434,10 @@ export default function AdminClassesPage() {
   const handleAssignTeacher = async () => {
     setAssignLoading(true);
     try {
-      let teacherId = selectedTeacherId;
-
-      if (registerNewTeacherInline) {
-        if (!newTeacherName.trim()) {
-          toast.error('Please enter teacher name');
-          setAssignLoading(false);
-          return;
-        }
-
-        const cleanTeacher = newTeacherName.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const subject = subjects.find((s) => s.id === assignSubjectId);
-        const cleanSub = subject ? subject.name.toLowerCase().replace(/[^a-z0-9]/g, '') : 'sub';
-        const generatedEmail = `${cleanTeacher}+${cleanSub}@school.edu`;
-
-        const registerRes = await userService.create({
-          displayName: newTeacherName,
-          email: generatedEmail,
-          role: 'teacher',
-        });
-
-        const teacherData = registerRes.data as any;
-        teacherId = teacherData.uid || teacherData.id;
-
-        setCreatedCredentials({
-          displayName: teacherData.displayName,
-          email: teacherData.email,
-          generatedPassword: teacherData.generatedPassword,
-        });
-      }
+      const teacherId = selectedTeacherId;
 
       if (!teacherId) {
-        toast.error('Please select or register a teacher');
+        toast.error('Please select a teacher');
         setAssignLoading(false);
         return;
       }
@@ -675,7 +647,11 @@ export default function AdminClassesPage() {
   const [studentSaveLoading, setStudentSaveLoading] = useState(false);
 
   const students = useMemo(() => users.filter((u) => hasRole(u.role, 'student')), [users]);
-  const classOptions = useMemo(() => fetchedClasses.map((c) => ({ value: c.id, label: `${c.name}${c.section ? ` - ${c.section}` : ''}` })), [fetchedClasses]);
+  const classOptions = useMemo(() => fetchedClasses.map((c) => {
+    const capName = c.name.split(' ').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    const label = c.section ? `${capName}-Section ${c.section}` : capName;
+    return { value: c.id, label };
+  }), [fetchedClasses]);
 
   const filteredStudents = useMemo(() => {
     return students.filter((s) => {
@@ -1371,29 +1347,19 @@ export default function AdminClassesPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Assign Teacher</DialogTitle>
-            <DialogDescription>Select an existing teacher or register a new one.</DialogDescription>
+            <DialogDescription>Select an existing teacher.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {!registerNewTeacherInline && (
-              <div className="space-y-2">
-                <Label>Select Teacher</Label>
-                <OptionsSelect
-                  options={users.filter((u) => hasRole(u.role, 'teacher')).map((t) => ({ value: t.id, label: t.displayName }))}
-                  placeholder="Choose a teacher..."
-                  value={selectedTeacherId}
-                  onChange={(v: string) => setSelectedTeacherId(v)}
-                />
-                <Button variant="link" size="sm" className="px-0" onClick={() => setRegisterNewTeacherInline(true)}>Or register a new teacher</Button>
-              </div>
-            )}
-            {registerNewTeacherInline && (
-              <div className="space-y-2">
-                <Label>New Teacher Name</Label>
-                <Input placeholder="Teacher's full name" value={newTeacherName} onChange={(e) => setNewTeacherName(e.target.value)} />
-                <Button variant="link" size="sm" className="px-0" onClick={() => setRegisterNewTeacherInline(false)}>Back to selection</Button>
-              </div>
-            )}
-            <Button className="w-full" onClick={handleAssignTeacher} disabled={assignLoading || (!selectedTeacherId && !newTeacherName)}>
+            <div className="space-y-2">
+              <Label>Select Teacher</Label>
+              <OptionsSelect
+                options={users.filter((u) => hasRole(u.role, 'teacher')).map((t) => ({ value: t.id, label: t.displayName }))}
+                placeholder="Choose a teacher..."
+                value={selectedTeacherId}
+                onChange={(v: string) => setSelectedTeacherId(v)}
+              />
+            </div>
+            <Button className="w-full" onClick={handleAssignTeacher} disabled={assignLoading || !selectedTeacherId}>
               {assignLoading ? 'Assigning...' : 'Assign Teacher'}
             </Button>
           </div>

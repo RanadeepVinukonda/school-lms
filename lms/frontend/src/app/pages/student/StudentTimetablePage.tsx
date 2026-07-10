@@ -48,7 +48,11 @@ export default function StudentTimetablePage() {
   const timetableEntries = (timetableRes?.data ?? []) as any[];
 
   const classOptions = useMemo(
-    () => classesData.map((c: ClassEntry) => ({ value: c.id, label: c.grade && c.section ? `Class ${c.grade}-${c.section}` : c.name })),
+    () => classesData.map((c: ClassEntry) => {
+      const capName = c.name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      const label = c.section ? `${capName}-Section ${c.section}` : capName;
+      return { value: c.id, label };
+    }),
     [classesData],
   );
 

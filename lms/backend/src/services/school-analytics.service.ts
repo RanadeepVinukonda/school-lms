@@ -16,13 +16,12 @@ export async function getGradeComparison(schoolId?: string) {
   if (schoolId) classesQuery = classesQuery.eq('school_id', schoolId);
   const { data: classes } = await classesQuery;
 
-  let gradesQuery = supabase.from('grades').select('*');
-  if (schoolId) gradesQuery = gradesQuery.eq('schoolId', schoolId);
-  const { data: grades } = await gradesQuery;
+  const { data: rawGrades } = await supabase.from('grades').select('*');
+  const grades = (rawGrades || []).filter(g => !schoolId || !g.schoolId || g.schoolId === schoolId);
 
   const gradeMap: Record<string, { totalScore: number; totalPoints: number; count: number }> = {};
 
-  for (const g of (grades || [])) {
+  for (const g of grades) {
     const student = (users || []).find((u: any) => u.id === g.studentId);
     if (!student) continue;
     const cls = (classes || []).find((c: any) => c.id === student.class_id || (student.class_ids && student.class_ids.includes(c.id)));
@@ -52,23 +51,20 @@ export async function getTeacherComparison(schoolId?: string) {
   if (schoolId) classesQuery = classesQuery.eq('school_id', schoolId);
   const { data: classes } = await classesQuery;
 
-  let gradesQuery = supabase.from('grades').select('*');
-  if (schoolId) gradesQuery = gradesQuery.eq('schoolId', schoolId);
-  const { data: grades } = await gradesQuery;
-
-  const { data: classTeachers } = await supabase
-    .from('class_teachers')
-    .select('teacher_id, class_id')
-    .eq('status', 'active');
+  const { data: rawGrades } = await supabase.from('grades').select('*');
+  const grades = (rawGrades || []).filter(g => !schoolId || !g.schoolId || g.schoolId === schoolId);
 
   const teacherMap: Record<string, { totalScore: number; totalPoints: number; count: number; classIds: Set<string> }> = {};
 
-  for (const ct of (classTeachers || [])) {
-    if (!teacherMap[ct.teacher_id]) teacherMap[ct.teacher_id] = { totalScore: 0, totalPoints: 0, count: 0, classIds: new Set() };
-    teacherMap[ct.teacher_id].classIds.add(ct.class_id);
+  const teachers = (users || []).filter((u: any) => u.role === 'teacher');
+  for (const t of teachers) {
+    const tClassIds = t.class_ids || (t.class_id ? [t.class_id] : []);
+    if (!teacherMap[t.id]) {
+      teacherMap[t.id] = { totalScore: 0, totalPoints: 0, count: 0, classIds: new Set(tClassIds) };
+    }
   }
 
-  for (const g of (grades || [])) {
+  for (const g of grades) {
     const cls = (classes || []).find((c: any) => c.id === g.classId);
     if (!cls) continue;
     for (const [tid, data] of Object.entries(teacherMap)) {
@@ -84,7 +80,7 @@ export async function getTeacherComparison(schoolId?: string) {
     const teacher = (users || []).find((u: any) => u.id === teacherId);
     return {
       teacherId,
-      teacherName: teacher?.display_name || 'Unknown',
+      teacherName: teacher?.display_name || teacher?.displayName || 'Unknown',
       averageScore: data.totalPoints > 0 ? safePct(Math.round((data.totalScore / data.totalPoints) * 100)) : 0,
       studentCount: data.count,
       classCount: data.classIds.size,
@@ -99,13 +95,12 @@ export async function getClassComparison(schoolId?: string) {
   if (schoolId) classesQuery = classesQuery.eq('school_id', schoolId);
   const { data: classes } = await classesQuery;
 
-  let gradesQuery = supabase.from('grades').select('*');
-  if (schoolId) gradesQuery = gradesQuery.eq('schoolId', schoolId);
-  const { data: grades } = await gradesQuery;
+  const { data: rawGrades } = await supabase.from('grades').select('*');
+  const grades = (rawGrades || []).filter(g => !schoolId || !g.schoolId || g.schoolId === schoolId);
 
   const classMap: Record<string, { totalScore: number; totalPoints: number; count: number }> = {};
 
-  for (const g of (grades || [])) {
+  for (const g of grades) {
     const clsId = g.classId;
     if (!clsId) continue;
     if (!classMap[clsId]) classMap[clsId] = { totalScore: 0, totalPoints: 0, count: 0 };
@@ -134,14 +129,13 @@ export async function getSchoolOverview() {
 export async function getPerformanceTrends(schoolId?: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return [];
 
-  let query = supabase.from('grades').select('*');
-  if (schoolId) query = query.eq('schoolId', schoolId);
-  const { data: grades } = await query;
+  const { data: rawGrades } = await supabase.from('grades').select('*');
+  const grades = (rawGrades || []).filter(g => !schoolId || !g.schoolId || g.schoolId === schoolId);
 
   const monthMap: Record<string, { totalScore: number; totalPoints: number; count: number }> = {};
 
-  for (const g of (grades || [])) {
-    const date = g.examDate || g.date || g.created_at || g.updatedAt;
+  for (const g of grades) {
+    const date = g.examDate || g.date || g.createdAt || g.created_at || g.updatedAt;
     if (!date) continue;
     const month = date.substring(0, 7);
     if (!monthMap[month]) monthMap[month] = { totalScore: 0, totalPoints: 0, count: 0 };

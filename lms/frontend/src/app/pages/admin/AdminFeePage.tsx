@@ -120,7 +120,11 @@ export default function AdminFeePage() {
                   <Input type="date" placeholder="Due Date" value={newSchedule.dueDate} onChange={(e) => setNewSchedule({ ...newSchedule, dueDate: e.target.value })} />
                   <select className="h-10 px-3 rounded-lg border border-border/60 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary" value={newSchedule.classId} onChange={(e) => setNewSchedule({ ...newSchedule, classId: e.target.value })}>
                     <option value="">Select Class</option>
-                    {classesData.map((c) => <option key={c.id} value={c.id}>{c.grade && c.section ? `Class ${c.grade}-${c.section}` : c.name}</option>)}
+                    {classesData.map((c) => {
+                      const capName = c.name.split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                      const label = c.section ? `${capName}-Section ${c.section}` : capName;
+                      return <option key={c.id} value={c.id}>{label}</option>;
+                    })}
                   </select>
                   <AcademicYearSelect
                     value={newSchedule.academicYear}

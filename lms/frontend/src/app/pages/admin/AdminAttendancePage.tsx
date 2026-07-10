@@ -65,9 +65,13 @@ export default function AdminAttendancePage() {
               onChange={(e) => setSelectedClass(e.target.value)}
             >
               <option value="">Select a class...</option>
-              {classesData.map((c) => (
-                <option key={c.id} value={c.id}>{c.grade && c.section ? `Class ${c.grade}-${c.section}` : c.name}</option>
-              ))}
+              {classesData.map((c) => {
+                const capName = c.name.split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                const label = c.section ? `${capName}-Section ${c.section}` : capName;
+                return (
+                  <option key={c.id} value={c.id}>{label}</option>
+                );
+              })}
             </select>
           </div>
           <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-44" />

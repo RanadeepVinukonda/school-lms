@@ -182,9 +182,13 @@ export default function AdminTimetablePage() {
               onChange={(e) => { setSelectedClassId(e.target.value); setSelectedDay(''); }}
             >
               <option value="">Select a class to manage timetable</option>
-              {classesData.map((c) => (
-                <option key={c.id} value={c.id}>{c.grade && c.section ? `Class ${c.grade}-${c.section}` : c.name}</option>
-              ))}
+              {classesData.map((c) => {
+                const capName = c.name.split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                const label = c.section ? `${capName}-Section ${c.section}` : capName;
+                return (
+                  <option key={c.id} value={c.id}>{label}</option>
+                );
+              })}
             </select>
           </CardContent>
         </Card>
@@ -253,7 +257,7 @@ export default function AdminTimetablePage() {
                   <table className="w-full border-collapse table-fixed">
                     <thead>
                       <tr className="border-b border-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
-                        <th className="px-3 py-2.5 text-center w-12">#</th>
+                        <th className="px-3 py-2.5 text-center w-16">#</th>
                         <th className="px-3 py-2.5 w-2/6">Subject</th>
                         <th className="px-3 py-2.5 w-2/6">Teacher</th>
                         <th className="px-3 py-2.5 w-16">Room</th>
@@ -267,7 +271,7 @@ export default function AdminTimetablePage() {
                         <tr key={row.id} className="hover:bg-muted/10 transition-colors">
                           <td className="px-2 py-2 text-center">
                             <select
-                              className="h-9 w-14 rounded-lg border border-border/60 bg-surface text-foreground text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary"
+                              className="h-9 w-full rounded-lg border border-border/60 bg-surface text-foreground text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary"
                               value={row.period}
                               onChange={(e) => updateRow(row.id, 'period', Number(e.target.value))}
                             >

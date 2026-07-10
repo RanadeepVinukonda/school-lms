@@ -118,7 +118,11 @@ export default function AdminClassroomPage() {
                 <div>
                   <label className="text-label-sm text-muted-foreground mb-1 block">LMS Target Class Hub *</label>
                   <OptionsSelect
-                    options={classesData.map((c: any) => ({ value: c.id, label: `${c.name}${c.section ? ` - ${c.section}` : ''}` }))}
+                    options={classesData.map((c: any) => {
+                      const capName = c.name.split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                      const label = c.section ? `${capName}-Section ${c.section}` : capName;
+                      return { value: c.id, label };
+                    })}
                     value={selectedLmsClass}
                     onValueChange={setSelectedLmsClass}
                     className="w-full"

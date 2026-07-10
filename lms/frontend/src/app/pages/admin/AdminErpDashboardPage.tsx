@@ -16,6 +16,15 @@ import { timetableService } from '@/services/timetableService';
 import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
+function SectionTitle({ label, title }: { label: string; title: string }) {
+  return (
+    <div className="mb-4">
+      <span className="text-[10px] font-bold tracking-wider text-muted-foreground/60 uppercase block">{label}</span>
+      <h2 className="text-title-md md:text-title-lg font-bold tracking-tight text-foreground">{title}</h2>
+    </div>
+  );
+}
+
 const QUICK_LINKS = [
   {
     icon: 'payments',
@@ -208,14 +217,11 @@ export default function AdminErpDashboardPage() {
                 
                 {/* Key Metrics */}
                 <section>
-                  <h2 className="text-title-sm font-bold text-foreground mb-4 flex items-center gap-2 tracking-wide uppercase text-xs">
-                    <Icon name="monitoring" className="text-primary" size={16} />
-                    Key School Metrics
-                  </h2>
+                  <SectionTitle label="Analytics" title="Key School Metrics" />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {statCards.map((s, i) => (
                       <motion.div key={s.label} variants={cardStackReveal} custom={i} className="group">
-                        <Card className="border-border/50 bg-card hover:bg-accent/5 hover:border-primary/20 transition-all duration-300 shadow-sm relative overflow-hidden h-full">
+                        <Card className="border-border/60 bg-card hover:bg-accent/5 hover:border-primary/20 transition-all duration-300 shadow-sm relative overflow-hidden h-full">
                           {/* Accent Border Indicator based on color scheme */}
                           <div className={cn(
                             "absolute top-0 left-0 right-0 h-1",
@@ -248,15 +254,12 @@ export default function AdminErpDashboardPage() {
 
                 {/* Simplified Quick Links */}
                 <section>
-                  <h2 className="text-title-sm font-bold text-foreground mb-4 flex items-center gap-2 tracking-wide uppercase text-xs">
-                    <Icon name="bolt" className="text-warning" size={16} />
-                    Quick Actions
-                  </h2>
+                  <SectionTitle label="Navigation" title="Quick Actions" />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {QUICK_LINKS.map((link, idx) => (
                       <motion.div key={link.href} variants={cardStackReveal} custom={idx + statCards.length} className="group">
                         <Link to={link.href} className="block h-full">
-                          <Card className="border-border/50 bg-card hover:bg-accent/5 hover:border-primary/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-pointer h-full relative overflow-hidden">
+                          <Card className="border-border/60 bg-card hover:bg-accent/5 hover:border-primary/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-pointer h-full relative overflow-hidden">
                             <CardContent className="p-5 flex items-start gap-4">
                               <div className={cn(
                                 "h-11 w-11 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-105 shrink-0",
@@ -288,11 +291,8 @@ export default function AdminErpDashboardPage() {
 
                 {/* Outstanding Fees Panel */}
                 <section>
-                  <h2 className="text-title-sm font-bold text-foreground mb-4 flex items-center gap-2 tracking-wide uppercase text-xs">
-                    <Icon name="account_balance_wallet" className="text-error" size={16} />
-                    Outstanding Dues
-                  </h2>
-                  <Card className="border-border/50 shadow-sm bg-card overflow-hidden">
+                  <SectionTitle label="Financials" title="Outstanding Dues" />
+                  <Card className="border-border/60 shadow-sm bg-card overflow-hidden">
                     <CardContent className="p-4">
                       {outstandingList.filter((r: any) => r.balance > 0).length === 0 ? (
                         <div className="flex flex-col items-center py-10 text-muted-foreground text-center">
@@ -333,11 +333,8 @@ export default function AdminErpDashboardPage() {
 
                 {/* Active Notice Board Panel */}
                 <section>
-                  <h2 className="text-title-sm font-bold text-foreground mb-4 flex items-center gap-2 tracking-wide uppercase text-xs">
-                    <Icon name="campaign" className="text-warning" size={16} />
-                    Active Notices
-                  </h2>
-                  <Card className="border-border/50 shadow-sm bg-card overflow-hidden">
+                  <SectionTitle label="Bulletins" title="Active Notices" />
+                  <Card className="border-border/60 shadow-sm bg-card overflow-hidden">
                     <CardContent className="p-4">
                       {noticesList.length === 0 ? (
                         <div className="flex flex-col items-center py-10 text-muted-foreground text-center">
