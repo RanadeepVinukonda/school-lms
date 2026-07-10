@@ -28,7 +28,10 @@ export async function listAcademicYears(req: Request, res: Response) {
   sendSuccess(res, result);
 }
 
-export async function getCurrentAcademicYear(_req: Request, res: Response) {
+export async function getCurrentAcademicYear(req: Request, res: Response) {
   const result = await academicYearService.getCurrentAcademicYear();
-  sendSuccess(res, result);
+  sendSuccess(res, {
+    academicYear: result?.name || result?.code || req.activeAcademicYear,
+    ...result,
+  });
 }

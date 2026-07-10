@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Icon } from '@/components/ui/Icon';
+import { AcademicYearSelect } from '@/components/ui/academic-year-select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { feeService } from '@/services/feeService';
 import { getAllClasses, getAllUsers } from '@/services/dataService';
@@ -121,7 +122,12 @@ export default function AdminFeePage() {
                     <option value="">Select Class</option>
                     {classesData.map((c) => <option key={c.id} value={c.id}>{c.grade && c.section ? `Class ${c.grade}-${c.section}` : c.name}</option>)}
                   </select>
-                  <Input placeholder="Academic Year (e.g. 2025-2026)" value={newSchedule.academicYear} onChange={(e) => setNewSchedule({ ...newSchedule, academicYear: e.target.value })} />
+                  <AcademicYearSelect
+                    value={newSchedule.academicYear}
+                    onChange={(v) => setNewSchedule({ ...newSchedule, academicYear: v })}
+                    placeholder="Academic Year"
+                    globalSwitcher
+                  />
                   <Input placeholder="Description (optional)" value={newSchedule.description} onChange={(e) => setNewSchedule({ ...newSchedule, description: e.target.value })} />
                 </div>
                 <Button className="mt-4" onClick={() => createScheduleMutation.mutate(newSchedule)} loading={createScheduleMutation.isPending} disabled={!newSchedule.name || !newSchedule.amount || !newSchedule.dueDate || !newSchedule.classId || !newSchedule.academicYear}>

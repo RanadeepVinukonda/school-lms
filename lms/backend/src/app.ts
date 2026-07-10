@@ -12,6 +12,7 @@ import { requestLogger } from './middlewares/requestLogger.middleware';
 import { metricsMiddleware } from './middlewares/metrics.middleware';
 import { csrfProtection, csrfTokenHandler } from './middlewares/csrf.middleware';
 import { timeoutMiddleware } from './middlewares/timeout.middleware';
+import { academicYearMiddleware } from './middlewares/academicYear.middleware';
 import { inngest } from './jobs/inngest/client';
 import { serve } from 'inngest/express';
 import { textbookPipeline } from './jobs/inngest/functions/textbook-pipeline';
@@ -77,12 +78,8 @@ if (process.env.NODE_ENV !== 'test') {
   app.get('/csrf-token', csrfTokenHandler);
 }
 
-app.use('/api/auth', authRateLimit);
-app.use('/api', apiRateLimit, auditMiddleware, routes);
-app.use('/api/user', gdprRoutes);
-
 app.use('/auth', authRateLimit);
-app.use('/', apiRateLimit, auditMiddleware, routes);
+app.use('/', apiRateLimit, academicYearMiddleware, auditMiddleware, routes);
 app.use('/user', gdprRoutes);
 
 app.get('/', (req, res) => {

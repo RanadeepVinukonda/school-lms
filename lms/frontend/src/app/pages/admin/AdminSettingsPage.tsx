@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Icon } from '@/components/ui/Icon';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { AcademicYearSelect } from '@/components/ui/academic-year-select';
 import { OptionsSelect } from '@/components/ui/select';
 import {
   Dialog,
@@ -405,7 +406,12 @@ export default function AdminSettingsPage() {
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                               <Label>Academic Year</Label>
-                              <Input className="border-border/60 placeholder:text-muted-foreground" value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} />
+                              <AcademicYearSelect
+                                value={academicYear}
+                                onChange={(v) => setAcademicYear(v)}
+                                className="border-border/60"
+                                globalSwitcher
+                              />
                             </div>
                             <div className="space-y-2">
                               <Label>Semester</Label>

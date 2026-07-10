@@ -1,4 +1,4 @@
-// @ts-nocheck — pre-existing errors unrelated to sprint changes
+
 import { Request, Response } from 'express';
 import * as classService from '../services/class.service';
 import { requireNoDependenciesOrThrow, getClassImpact } from '../services/impact.service';
@@ -8,7 +8,7 @@ import type { ReqWithUser, QueryParams } from '../types/common';
 
 export async function createClass(req: Request, res: Response) {
   const result = await classService.createClass({ ...req.body, schoolId: req.user!.school_id });
-  logAudit(adminAuditEntry(req as ReqWithUser, 'class.create', result.id, 'class', result.name, {
+  logAudit(adminAuditEntry(req as ReqWithUser, 'class.create', result.id, 'class', result.name || 'Unknown', {
     newValue: result,
     summary: `Created class "${result.name}"`,
   }));
@@ -16,18 +16,20 @@ export async function createClass(req: Request, res: Response) {
 }
 
 export async function updateClass(req: Request, res: Response) {
-  const old = await classService.getClassById(req.params.classId);
+  const oldResult = await classService.getClassById(req.params.classId);
+  const old = (oldResult.success && oldResult.data) ? oldResult.data : {};
   const result = await classService.updateClass(req.params.classId, req.body);
-  logAudit(adminAuditEntry(req as ReqWithUser, 'class.update', req.params.classId, 'class', old.name, {
+  logAudit(adminAuditEntry(req as ReqWithUser, 'class.update', req.params.classId, 'class', old.name || 'Unknown', {
     oldValue: old,
     newValue: result,
-    summary: `Updated class "${old.name}"`,
+    summary: `Updated class "${old.name || req.params.classId}"`,
   }));
   sendSuccess(res, result, 'Class updated');
 }
 
 export async function deleteClass(req: Request, res: Response) {
-  const cls = await classService.getClassById(req.params.classId);
+  const clsResult = await classService.getClassById(req.params.classId);
+  const cls = (clsResult.success && clsResult.data) ? clsResult.data : { name: 'Unknown' };
   await requireNoDependenciesOrThrow('class', req.params.classId, getClassImpact);
   await classService.deleteClass(req.params.classId);
   logAudit(adminAuditEntry(req as ReqWithUser, 'class.delete', req.params.classId, 'class', cls.name));
@@ -35,8 +37,10 @@ export async function deleteClass(req: Request, res: Response) {
 }
 
 export async function listClasses(req: Request, res: Response) {
+  const academicYear = (req.query.academicYear as string) || req.activeAcademicYear;
   const result = await classService.listClasses({
     ...(req.query as QueryParams),
+    academicYear,
     schoolId: req.user!.school_id,
   });
   sendSuccess(res, result);

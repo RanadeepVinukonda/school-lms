@@ -12,4 +12,5 @@ export { default as ErrorState } from './components/ErrorState';
 export { default as EmptyState } from './components/EmptyState';
 export { default as OfflineIndicator } from './components/OfflineIndicator';
 export { permissions } from './utils/permissions';
+export { getActiveAcademicYear, getCachedAcademicYear, withAcademicYear, withAcademicYearSync } from './services/academicYearService';
 export { registerForPushNotifications, setupNotificationListeners } from './utils/notifications';

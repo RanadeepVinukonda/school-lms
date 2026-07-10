@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Icon } from '@/components/ui/Icon';
+import { AcademicYearSelect } from '@/components/ui/academic-year-select';
+import { useActiveAcademicYear } from '@/context/ActiveAcademicYearContext';
 import {
   Dialog,
   DialogContent,
@@ -60,6 +62,7 @@ const subjectIconOptions = [
 ];
 
 export default function AdminClassesPage() {
+  const { activeYear } = useActiveAcademicYear();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('classes');
@@ -160,7 +163,7 @@ export default function AdminClassesPage() {
         grade: g,
         section: classSection.trim() || '',
         roomNumber: classRoomNumber.trim() || '',
-        academicYear: new Date().getFullYear().toString(),
+        academicYear: activeYear,
         teacherIds: [],
         subjectIds: [],
         studentCount: 0,
@@ -1416,7 +1419,12 @@ export default function AdminClassesPage() {
               </div>
               <div className="space-y-2">
                 <Label>Academic Year</Label>
-                <Input value={studentForm.academicYear} onChange={(e) => setStudentForm((f) => ({ ...f, academicYear: e.target.value }))} />
+                <AcademicYearSelect
+                  value={studentForm.academicYear}
+                  onChange={(v) => setStudentForm((f) => ({ ...f, academicYear: v }))}
+                  placeholder="Select Academic Year"
+                  globalSwitcher
+                />
               </div>
             </div>
             <div className="space-y-2">
@@ -1536,7 +1544,12 @@ export default function AdminClassesPage() {
             </div>
             <div className="space-y-2">
               <Label>Academic Year</Label>
-              <Input value={editStudentForm.academicYear} onChange={(e) => setEditStudentForm((f) => ({ ...f, academicYear: e.target.value }))} />
+              <AcademicYearSelect
+                value={editStudentForm.academicYear}
+                onChange={(v) => setEditStudentForm((f) => ({ ...f, academicYear: v }))}
+                placeholder="Select Academic Year"
+                globalSwitcher
+              />
             </div>
             <Button className="w-full" onClick={handleUpdateStudent} disabled={studentSaveLoading}>
               {studentSaveLoading ? 'Saving...' : 'Save Changes'}

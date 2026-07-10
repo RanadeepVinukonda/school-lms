@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from 'sonner';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { ActiveAcademicYearProvider } from '@/context/ActiveAcademicYearContext';
 import App from './app/App';
 import './index.css';
 import './lib/motion.css';
@@ -41,7 +42,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
-        <ErrorBoundary><App /></ErrorBoundary>
+        <ActiveAcademicYearProvider>
+          <ErrorBoundary><App /></ErrorBoundary>
+        </ActiveAcademicYearProvider>
         <Toaster
           position="top-right"
           richColors

@@ -22,7 +22,9 @@ export async function downloadReceipt(req: Request, res: Response) {
 }
 
 export async function listFeeSchedules(req: Request, res: Response) {
-  const result = await feeService.listFeeSchedules(req.user!.school_id, req.query.academicYear as string, req.query.classId as string);
+  const academicYear = (req.query.academicYear as string) || req.activeAcademicYear;
+  const result = await feeService.listFeeSchedules(req.user!.school_id, academicYear, req.query.classId as string);
+
   sendSuccess(res, result);
 }
 

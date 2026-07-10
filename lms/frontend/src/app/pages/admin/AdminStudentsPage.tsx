@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { AcademicYearSelect } from '@/components/ui/academic-year-select';
 import { OptionsSelect } from '@/components/ui/select';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -362,18 +363,12 @@ export default function AdminStudentsPage() {
               </div>
             <div className="space-y-2">
               <Label>Academic Year</Label>
-              <select
-                className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-body-md"
+              <AcademicYearSelect
                 value={createForm.academicYear}
-                onChange={(e) => setCreateForm((f) => ({ ...f, academicYear: e.target.value }))}
-              >
-                <option value="">Select Academic Year</option>
-                <option value="2024">2024</option>
-                <option value="2025">2025</option>
-                <option value="2026">2026</option>
-                <option value="2027">2027</option>
-                <option value="2028">2028</option>
-              </select>
+                onChange={(v) => setCreateForm((f) => ({ ...f, academicYear: v }))}
+                placeholder="Select Academic Year"
+                globalSwitcher
+              />
             </div>
           </div>
           <DialogFooter>
@@ -499,18 +494,12 @@ export default function AdminStudentsPage() {
               </div>
             <div className="space-y-2">
               <Label>Academic Year</Label>
-              <select
-                className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-body-md"
+              <AcademicYearSelect
                 value={editForm.academicYear}
-                onChange={(e) => setEditForm((f) => ({ ...f, academicYear: e.target.value }))}
-              >
-                <option value="">Select Academic Year</option>
-                <option value="2024">2024</option>
-                <option value="2025">2025</option>
-                <option value="2026">2026</option>
-                <option value="2027">2027</option>
-                <option value="2028">2028</option>
-              </select>
+                onChange={(v) => setEditForm((f) => ({ ...f, academicYear: v }))}
+                placeholder="Select Academic Year"
+                globalSwitcher
+              />
             </div>
           </div>
           <DialogFooter>

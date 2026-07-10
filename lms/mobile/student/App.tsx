@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { ActivityIndicator, View, StyleSheet, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useAuthStore, authService, LoginScreen, API_BASE_URL, registerForPushNotifications, OfflineIndicator } from '@genesis-lms/shared';
+import { useAuthStore, authService, LoginScreen, API_BASE_URL, registerForPushNotifications, OfflineIndicator, getActiveAcademicYear } from '@genesis-lms/shared';
 import AppNavigator from './src/navigation/AppNavigator';
 
 const Stack = createNativeStackNavigator();
@@ -24,6 +24,11 @@ export default function App() {
       }
     };
     restoreSession();
+  }, []);
+
+  useEffect(() => {
+    // Pre-fetch active academic year on startup so it's cached for screens
+    getActiveAcademicYear().catch(() => {});
   }, []);
 
   useEffect(() => {

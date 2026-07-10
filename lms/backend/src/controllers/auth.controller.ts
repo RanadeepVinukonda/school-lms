@@ -1,5 +1,5 @@
-// @ts-nocheck — pre-existing errors unrelated to sprint changes
 import { Request, Response } from 'express';
+import crypto from 'crypto';
 import * as authService from '../services/auth.service';
 import { sendSuccess, sendCreated } from '../utils/response';
 import { env } from '../config/env';
@@ -28,15 +28,17 @@ export async function login(req: Request, res: Response) {
   const { email, password } = req.body;
   const result = await authService.login(email, password);
 
-  const maxAge = 7 * 24 * 60 * 60 * 1000;
-  res.cookie('token', result.token, {
-    httpOnly: true,
-    secure: env.COOKIE_SECURE,
-    sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax',
-    path: '/',
-    maxAge,
-    ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
-  });
+  if (result.success && result.data) {
+    const maxAge = 7 * 24 * 60 * 60 * 1000;
+    res.cookie('token', result.data.token, {
+      httpOnly: true,
+      secure: env.COOKIE_SECURE,
+      sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      path: '/',
+      maxAge,
+      ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
+    });
+  }
 
   sendSuccess(res, result, 'Login successful');
 }
@@ -87,7 +89,7 @@ export async function logout(req: Request, res: Response) {
     const token = authHeader.split('Bearer ')[1];
     if (token) {
       try {
-        const tokenHash = require('crypto').createHash('sha256').update(token).digest('hex');
+        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
         const supabase = getSupabaseAdmin();
         if (supabase) {
           await supabase.from('revoked_tokens').insert({ token_hash: tokenHash });

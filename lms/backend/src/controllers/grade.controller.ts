@@ -5,7 +5,9 @@ import { sendSuccess } from '../utils/response';
 import type { ReqWithUser, QueryParams } from '../types/common';
 
 export async function getStudentGrades(req: Request, res: Response) {
-  const result = await gradeService.getStudentGrades(req.params.studentId, req.query.academicYear as string, req.user!.school_id);
+  const academicYear = (req.query.academicYear as string) || req.activeAcademicYear;
+  const result = await gradeService.getStudentGrades(req.params.studentId, academicYear, req.user!.school_id);
+
   sendSuccess(res, result);
 }
 
@@ -35,6 +37,8 @@ export async function bulkUpdateGrades(req: Request, res: Response) {
 }
 
 export async function generateReport(req: Request, res: Response) {
-  const result = await gradeService.generateReport(req.params.studentId, req.query.academicYear as string, req.query.term as string, req.user!.school_id);
+  const academicYear = (req.query.academicYear as string) || req.activeAcademicYear;
+  const result = await gradeService.generateReport(req.params.studentId, academicYear, req.query.term as string, req.user!.school_id);
+
   sendSuccess(res, result);
 }

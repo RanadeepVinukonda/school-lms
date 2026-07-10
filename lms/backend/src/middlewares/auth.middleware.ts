@@ -19,6 +19,8 @@ declare global {
         school_id?: string;
         [key: string]: unknown;
       };
+      /** The active academic year string (e.g. "2026") resolved by academicYearMiddleware. */
+      activeAcademicYear: string;
     }
   }
 }
