@@ -362,64 +362,72 @@ export default function AdminTimetablePage() {
                     <p className="text-body-sm text-muted-foreground mt-1">Select a day above and add periods</p>
                   </div>
                 ) : (
-                  <table className="w-full text-left border-collapse table-fixed">
-                    <thead>
-                      <tr className="border-b border-border/60 bg-muted/30">
-                        <th className="px-2 py-2 text-label-sm font-bold text-muted-foreground uppercase tracking-wider w-10 text-center">Period</th>
-                        {DAYS.map((day) => (
-                          <th key={day} className="px-2 py-2 text-label-xs font-bold text-muted-foreground uppercase tracking-wider text-center">{DAY_SHORT[day]}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/40">
-                      {periodNumbers.map((period) => (
-                        <tr key={period} className="hover:bg-muted/10 transition-colors">
-                          <td className="px-2 py-2 font-semibold text-muted-foreground text-center align-middle text-label-xs">{period}</td>
-                          {DAYS.map((day) => {
-                            const entries = entriesByDayPeriod.get(`${day}-${period}`) || [];
-                            return (
-                              <td key={day} className="px-1.5 py-1.5 align-top">
-                                {entries.length === 0 ? (
-                                  <div className="h-full min-h-[64px] flex items-center justify-center">
-                                    <span className="text-muted-foreground/20 select-none text-label-xs">&mdash;</span>
-                                  </div>
-                                ) : (
-                                  <div className="space-y-1">
-                                    {entries.map((entry) => (
-                                      <div
-                                        key={entry.id}
-                                        className="rounded-lg border border-border/60 bg-surface p-1.5 shadow-sm"
-                                      >
-                                        <p className="text-label-xs font-semibold text-foreground leading-tight">
-                                          {subjectMap.get(entry.subject_id || entry.subjectId || '') || entry.subject_id || entry.subjectId || '—'}
-                                        </p>
-                                        {(entry.teacher_id || entry.teacherId) && (
-                                          <p className="text-label-xs text-muted-foreground mt-0.5 leading-tight">
-                                            {teacherMap.get(entry.teacher_id || entry.teacherId || '') || entry.teacher_id || entry.teacherId}
-                                          </p>
-                                        )}
-                                        {entry.room && (
-                                          <Badge variant="outline" className="text-[9px] mt-1 py-0 h-3.5 px-1 leading-none">
-                                            <Icon name="meeting_room" size={8} className="mr-0.5" />
-                                            {entry.room}
-                                          </Badge>
-                                        )}
-                                        {(entry.start_time || entry.startTime || entry.end_time || entry.endTime) && (
-                                          <p className="text-label-xs text-muted-foreground/70 mt-0.5 font-mono leading-tight">
-                                            {entry.start_time || entry.startTime || '—'} &ndash; {entry.end_time || entry.endTime || '—'}
-                                          </p>
-                                        )}
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </td>
-                            );
-                          })}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left min-w-[800px]">
+                      <thead>
+                        <tr className="border-b border-border/60 bg-muted/30">
+                          <th className="px-4 py-3 text-center w-20 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">Period</th>
+                          {DAYS.map((day) => (
+                            <th key={day} className="px-4 py-3 text-center min-w-[140px] text-label-sm font-bold text-muted-foreground uppercase tracking-wider">{DAY_SHORT[day]}</th>
+                          ))}
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-border/40">
+                        {periodNumbers.map((period) => (
+                          <tr key={period} className="hover:bg-muted/5 transition-colors">
+                            <td className="px-4 py-4 text-center font-bold text-muted-foreground text-label-sm align-middle">
+                              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-muted/60 text-foreground font-semibold">
+                                {period}
+                              </span>
+                            </td>
+                            {DAYS.map((day) => {
+                              const entries = entriesByDayPeriod.get(`${day}-${period}`) || [];
+                              return (
+                                <td key={day} className="px-3 py-4 align-top">
+                                  {entries.length === 0 ? (
+                                    <div className="min-h-[72px] flex items-center justify-center rounded-lg border border-dashed border-border/30 bg-muted/5">
+                                      <span className="text-muted-foreground/20 select-none">&mdash;</span>
+                                    </div>
+                                  ) : (
+                                    <div className="space-y-2">
+                                      {entries.map((entry) => (
+                                        <div
+                                          key={entry.id}
+                                          className="p-2.5 rounded-lg border border-border/60 bg-card hover:bg-accent/5 hover:border-primary/20 transition-all shadow-sm flex flex-col gap-1"
+                                        >
+                                          <p className="text-label-sm font-bold text-primary leading-tight truncate">
+                                            {subjectMap.get(entry.subject_id || entry.subjectId || '') || entry.subject_id || entry.subjectId || '—'}
+                                          </p>
+                                          {(entry.teacher_id || entry.teacherId) && (
+                                            <p className="text-[10px] text-muted-foreground leading-none flex items-center gap-1.5 truncate">
+                                              <Icon name="person" size={10} className="text-muted-foreground/60 shrink-0" />
+                                              <span className="truncate">{teacherMap.get(entry.teacher_id || entry.teacherId || '') || entry.teacher_id || entry.teacherId}</span>
+                                            </p>
+                                          )}
+                                          {entry.room && (
+                                            <p className="text-[10px] text-muted-foreground leading-none flex items-center gap-1.5 truncate">
+                                              <Icon name="meeting_room" size={10} className="text-muted-foreground/60 shrink-0" />
+                                              <span className="truncate">{entry.room}</span>
+                                            </p>
+                                          )}
+                                          {(entry.start_time || entry.startTime || entry.end_time || entry.endTime) && (
+                                            <p className="text-[9px] text-muted-foreground/60 font-mono leading-none flex items-center gap-1.5 mt-0.5 border-t border-border/20 pt-1.5">
+                                              <Icon name="schedule" size={10} className="text-muted-foreground/40 shrink-0" />
+                                              <span>{(entry.start_time || entry.startTime || '—').slice(0, 5)} &ndash; {(entry.end_time || entry.endTime || '—').slice(0, 5)}</span>
+                                            </p>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </CardContent>
             </Card>

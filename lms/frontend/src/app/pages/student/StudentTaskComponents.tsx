@@ -292,7 +292,7 @@ function TaskCard({ item }: { item: TaskItem }) {
                     {item.maxAttempts !== undefined && (
                       <span className="flex items-center gap-1">
                         <Icon name="replay" size={14} />
-                        {item.maxAttempts - (item.attemptsUsed ?? 0)} {_('attempts left')}
+                        {Math.max(0, item.maxAttempts - (item.attemptsUsed ?? 0))} {_('attempts left')}
                       </span>
                     )}
                   </>

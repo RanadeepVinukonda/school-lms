@@ -98,7 +98,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
 
       try {
         // Step 1: Cookie-based session (httpOnly cookie, XSS-safe)
-        const res = await api.get('/auth/session');
+        const res = await api.get(`/auth/session?t=${Date.now()}`);
         const sessionData = res.data?.data;
         if (sessionData?.user) {
           const p = sessionData.user as Record<string, unknown>;
@@ -119,7 +119,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.access_token) {
           set({ token: session.access_token });
-          const res = await api.get('/auth/me', { timeout: 10000 });
+          const res = await api.get(`/auth/me?t=${Date.now()}`, { timeout: 10000 });
           const profile = res.data?.data as Record<string, unknown> | undefined;
           if (profile) {
             const effectiveRole = await resolveEffectiveRole(profile);

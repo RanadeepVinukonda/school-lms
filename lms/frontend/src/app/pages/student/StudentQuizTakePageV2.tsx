@@ -176,8 +176,22 @@ export default function StudentQuizTakePageV2() {
       const res = await api.get(`${basePath}/${assessmentId}`);
       return res.data.data as AssessmentInfo;
     },
+  });
+
+  const { data: pastAttempts = [] } = useQuery({
+    queryKey: ['my-attempts', assessmentId, assessmentType],
+    queryFn: async () => {
+      const endpoint = assessmentType === 'exam' ? '/unified-test-engine/attempts/my' : '/quizzes-v2/attempts/my';
+      const res = await api.get(endpoint);
+      const allAttempts = res.data.data ?? [];
+      return allAttempts.filter((a: any) => a.quizId === assessmentId || a.examId === assessmentId);
+    },
     enabled: !!assessmentId,
   });
+
+  const attemptsUsed = pastAttempts.length;
+  const maxAttempts = assessmentInfo?.maxAttempts ?? (assessmentType === 'exam' ? 1 : 3);
+  const isAttemptsExceeded = attemptsUsed >= maxAttempts;
 
   const startMutation = useMutation({
     mutationFn: async (models: QuestionModel[]) => {
@@ -557,7 +571,7 @@ export default function StudentQuizTakePageV2() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-sm mx-auto text-body-md">
+            <div className="grid grid-cols-2 gap-3 max-w-md mx-auto text-body-md">
               <div className="bg-muted rounded-xl p-3 text-center">
                 <p className="text-display-xs font-bold">{assessmentInfo.questionCount ?? '--'}</p>
                 <p className="text-label-xs text-muted-foreground">{_('Questions')}</p>
@@ -569,6 +583,10 @@ export default function StudentQuizTakePageV2() {
               <div className="bg-muted rounded-xl p-3 text-center">
                 <p className="text-display-xs font-bold">{assessmentInfo.totalPoints || '--'}</p>
                 <p className="text-label-xs text-muted-foreground">{_('Points')}</p>
+              </div>
+              <div className="bg-muted rounded-xl p-3 text-center">
+                <p className="text-display-xs font-bold">{attemptsUsed} / {maxAttempts}</p>
+                <p className="text-label-xs text-muted-foreground">{_('Attempts Used')}</p>
               </div>
             </div>
 
@@ -584,16 +602,24 @@ export default function StudentQuizTakePageV2() {
               </div>
             )}
 
+            {isAttemptsExceeded && (
+              <p className="text-sm font-semibold text-destructive text-center">
+                {_('You have reached the maximum attempt limit for this assessment.')}
+              </p>
+            )}
+
             <Button
               size="lg"
               className="w-full text-body-lg"
               onClick={handleStart}
-              disabled={startMutation.isPending || selectedModels.length === 0}
+              disabled={startMutation.isPending || selectedModels.length === 0 || isAttemptsExceeded}
             >
               {startMutation.isPending ? (
                 <><Loader2 className="h-5 w-5 mr-2 animate-spin" />{_('Starting...')}</>
+              ) : isAttemptsExceeded ? (
+                <>{_('Attempts Exceeded')}</>
               ) : (
-                <><Play className="h-5 w-5 mr-2" />{_('Start')} {assessmentInfo.isRepublished ? _('Interactive Session') : _('Exam')}</>
+                <><Play className="h-5 w-5 mr-2" />{_('Start')} {assessmentInfo.isRepublished ? _('Interactive Practice') : _('Exam')}</>
               )}
             </Button>
           </motion.div>

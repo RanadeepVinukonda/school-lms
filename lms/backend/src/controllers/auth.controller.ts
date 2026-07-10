@@ -44,6 +44,7 @@ export async function login(req: Request, res: Response) {
 }
 
 export async function getProfile(req: Request, res: Response) {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   const result = await authService.getUserProfile(req.user!.uid);
   sendSuccess(res, result);
 }
@@ -122,6 +123,7 @@ export async function refresh(req: Request, res: Response) {
 }
 
 export async function getSession(req: Request, res: Response) {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   const cookies = parseCookies(req.headers.cookie);
   const token = cookies.token;
   if (!token) {

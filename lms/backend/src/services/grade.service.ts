@@ -31,10 +31,10 @@ const gradeBase = new GradeBaseService();
 /** Get all grades for a student. */
 export async function getStudentGrades(studentId: string, academicYear?: string, schoolId?: string) {
   const supabase = getSupabaseAdmin();
-  let query = supabase.from('grades').select('*').eq('student_id', studentId);
-  if (schoolId) query = query.eq('school_id', schoolId);
-  if (academicYear) query = query.eq('academic_year', academicYear);
-  const { data: rows, error } = await query.order('created_at', { ascending: false });
+  let query = supabase.from('grades').select('*').eq('studentId', studentId);
+  if (schoolId) query = query.eq('schoolId', schoolId);
+  if (academicYear) query = query.eq('academicYear', academicYear);
+  const { data: rows, error } = await query.order('createdAt', { ascending: false });
   if (error) throw new Error('Failed to fetch grades: ' + error.message);
   return (rows || []).map(toGradeResponse);
 }
@@ -56,13 +56,13 @@ export async function getGradebook(query: {
   const offset = (page - 1) * limit;
 
   let dbQuery = supabase.from('grades').select('*', { count: 'exact' });
-  if (query.schoolId) dbQuery = dbQuery.eq('school_id', query.schoolId);
-  if (query.courseId) dbQuery = dbQuery.eq('course_id', query.courseId);
+  if (query.schoolId) dbQuery = dbQuery.eq('schoolId', query.schoolId);
+  if (query.courseId) dbQuery = dbQuery.eq('courseId', query.courseId);
   if (query.term) dbQuery = dbQuery.eq('term', query.term);
-  if (query.academicYear) dbQuery = dbQuery.eq('academic_year', query.academicYear);
+  if (query.academicYear) dbQuery = dbQuery.eq('academicYear', query.academicYear);
 
   const { data: rows, count, error } = await dbQuery
-    .order('created_at', { ascending: false })
+    .order('createdAt', { ascending: false })
     .range(offset, offset + limit - 1);
   if (error) throw new Error('Failed to fetch gradebook: ' + error.message);
   return { items: (rows || []).map(toGradeResponse), total: count || 0, page, limit };
@@ -84,24 +84,24 @@ export async function updateGrade(gradeId: string, data: {
 
   await gradeBase.update(gradeId, {
     score: data.score,
-    total_points: data.totalPoints,
-    letter_grade: letterGrade,
+    totalPoints: data.totalPoints,
+    letterGrade,
     percentage,
     remarks: data.remarks || '',
-    graded_by: data.gradedBy,
+    gradedBy: data.gradedBy,
   } as any);
 
   try {
     await createNotification({
-      userId: existing.student_id,
+      userId: existing.studentId || (existing as any).student_id,
       type: 'grade',
       title: 'Grade Updated',
       body: `Your grade has been updated: ${data.score}/${data.totalPoints} (${percentage}%)`,
-      data: { gradeId, courseId: existing.course_id, link: `/student/subjects/${existing.course_id}` },
+      data: { gradeId, courseId: existing.courseId || (existing as any).course_id, link: `/student/subjects/${existing.courseId || (existing as any).course_id}` },
     });
   } catch (err) {
     logger.warn('Failed to send grade notification', {
-      gradeId, studentId: existing.student_id,
+      gradeId, studentId: existing.studentId || (existing as any).student_id,
       error: err instanceof Error ? err.message : String(err),
     });
   }
@@ -127,15 +127,15 @@ export async function bulkUpdate(grades: Array<{
 
     if (existing) {
       await supabase.from('grades').update({
-        score: grade.score, total_points: grade.totalPoints, percentage,
-        feedback: grade.feedback || '', graded_by: gradedBy, updated_at: now,
+        score: grade.score, totalPoints: grade.totalPoints, percentage,
+        feedback: grade.feedback || '', gradedBy: gradedBy, updatedAt: now,
       }).eq('id', gradeId);
     } else {
       const { error: insertErr } = await supabase.from('grades').insert({
-        id: gradeId, student_id: grade.studentId, course_id: courseId,
-        score: grade.score, total_points: grade.totalPoints, percentage,
-        feedback: grade.feedback || '', graded_by: gradedBy,
-        school_id: schoolId || '', created_at: now, updated_at: now,
+        id: gradeId, studentId: grade.studentId, courseId,
+        score: grade.score, totalPoints: grade.totalPoints, percentage,
+        feedback: grade.feedback || '', gradedBy: gradedBy,
+        schoolId: schoolId || '', createdAt: now, updatedAt: now,
       });
       if (insertErr) throw new Error(`Failed to insert grade: ${insertErr.message}`);
     }
@@ -165,10 +165,10 @@ export async function bulkUpdate(grades: Array<{
 export async function generateReport(studentId: string, academicYear: string, term: string, schoolId?: string) {
   const supabase = getSupabaseAdmin();
   let query = supabase.from('grades').select('*')
-    .eq('student_id', studentId)
-    .eq('academic_year', academicYear)
+    .eq('studentId', studentId)
+    .eq('academicYear', academicYear)
     .eq('term', term);
-  if (schoolId) query = query.eq('school_id', schoolId);
+  if (schoolId) query = query.eq('schoolId', schoolId);
 
   const { data: rows, error } = await query;
   if (error) throw new Error('Failed to fetch report grades: ' + error.message);
@@ -194,20 +194,20 @@ export async function generateReport(studentId: string, academicYear: string, te
 function toGradeResponse(row: Record<string, unknown>): Record<string, unknown> {
   return {
     id: row.id,
-    studentId: row.student_id,
-    courseId: row.course_id,
+    studentId: row.studentId || row.student_id,
+    courseId: row.courseId || row.course_id,
     score: row.score,
-    totalPoints: row.total_points,
-    letterGrade: row.letter_grade,
+    totalPoints: row.totalPoints || row.total_points || row.maxScore || row.max_score,
+    letterGrade: row.letterGrade || row.letter_grade,
     percentage: row.percentage,
     feedback: row.feedback,
     remarks: row.remarks,
-    gradedBy: row.graded_by,
-    schoolId: row.school_id,
-    academicYear: row.academic_year,
+    gradedBy: row.gradedBy || row.graded_by,
+    schoolId: row.schoolId || row.school_id,
+    academicYear: row.academicYear || row.academic_year,
     term: row.term,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    createdAt: row.createdAt || row.created_at,
+    updatedAt: row.updatedAt || row.updated_at,
   };
 }
 

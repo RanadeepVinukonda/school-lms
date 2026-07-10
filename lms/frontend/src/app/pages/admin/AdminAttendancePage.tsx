@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -9,19 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Icon } from '@/components/ui/Icon';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { OptionsSelect } from '@/components/ui/select';
 import { attendanceService } from '@/services/attendanceService';
 import { getAllClasses, getAllUsers } from '@/services/dataService';
-import { useAuthStore } from '@/store/authStore';
 
 export default function AdminAttendancePage() {
-  const queryClient = useQueryClient();
-  const currentUser = useAuthStore((s) => s.user);
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
-  const [attendanceStatus, setAttendanceStatus] = useState<'present' | 'absent' | 'late' | 'holiday'>('present');
-  const [studentSearch, setStudentSearch] = useState('');
 
   const { data: classesData = [] } = useQuery({
     queryKey: ['admin-classes'],
@@ -32,20 +26,6 @@ export default function AdminAttendancePage() {
     queryKey: ['admin-users'],
     queryFn: getAllUsers,
   });
-
-  const students = useMemo(() => usersData.filter((u) => u.role === 'student'), [usersData]);
-
-  const classStudents = useMemo(() => {
-    if (!selectedClass) return [];
-    return students.filter((s) => {
-      const matchesClass = s.classId === selectedClass || (s.classIds && s.classIds.includes(selectedClass));
-      if (!studentSearch) return matchesClass;
-      const q = studentSearch.toLowerCase();
-      return matchesClass && (s.displayName?.toLowerCase().includes(q) || s.studentId?.toLowerCase().includes(q));
-    });
-  }, [students, selectedClass, studentSearch]);
-
-  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
 
   const { data: attendanceData, isLoading: attLoading, isError: attError, refetch: refetchAtt } = useQuery({
     queryKey: ['class-attendance', selectedClass, selectedDate],
@@ -58,47 +38,6 @@ export default function AdminAttendancePage() {
     queryFn: () => attendanceService.getAttendanceReport(selectedClass).then((r) => r.data),
     enabled: !!selectedClass && activeTab === 'report',
   });
-
-  const markMutation = useMutation({
-    mutationFn: (data: { studentIds: string[]; classId: string; date: string; status: 'present' | 'absent' | 'late' | 'holiday'; markedBy: string; note?: string }) =>
-      attendanceService.markAttendance(data),
-    onSuccess: () => {
-      toast.success('Attendance marked successfully');
-      setSelectedStudentIds([]);
-      refetchAtt();
-      queryClient.invalidateQueries({ queryKey: ['attendance'] });
-    },
-    onError: (err: any) => toast.error(err.message || 'Failed to mark attendance'),
-  });
-
-  const handleMarkAll = (status: 'present' | 'absent' | 'late' | 'holiday') => {
-    if (!selectedClass || !selectedDate) {
-      toast.error('Select a class and date first');
-      return;
-    }
-    const ids = classStudents.map((s) => s.id).filter(Boolean) as string[];
-    if (ids.length === 0) {
-      toast.error('No students in this class');
-      return;
-    }
-    markMutation.mutate({ studentIds: ids, classId: selectedClass, date: selectedDate, status, markedBy: currentUser?.id || '' });
-  };
-
-  const handleMarkSelected = () => {
-    if (!selectedClass || !selectedDate) {
-      toast.error('Select a class and date first');
-      return;
-    }
-    if (selectedStudentIds.length === 0) {
-      toast.error('Select at least one student');
-      return;
-    }
-    markMutation.mutate({ studentIds: selectedStudentIds, classId: selectedClass, date: selectedDate, status: attendanceStatus, markedBy: currentUser?.id || '' });
-  };
-
-  const toggleStudent = (id: string) => {
-    setSelectedStudentIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
-  };
 
   const todayAttendance = useMemo(() => {
     if (!attendanceData) return { present: 0, absent: 0, late: 0, holiday: 0 };
@@ -137,7 +76,6 @@ export default function AdminAttendancePage() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full overflow-x-auto inline-flex">
             <TabsTrigger value="overview">Class Overview</TabsTrigger>
-            <TabsTrigger value="mark">Mark Attendance</TabsTrigger>
             <TabsTrigger value="report">Reports</TabsTrigger>
           </TabsList>
 
@@ -225,96 +163,7 @@ export default function AdminAttendancePage() {
             )}
           </TabsContent>
 
-          <TabsContent value="mark" className="space-y-6">
-            {!selectedClass ? (
-              <Card className="border-border/60">
-                <CardContent className="flex flex-col items-center gap-4 py-16 text-muted-foreground">
-                  <Icon name="group_add" size={48} className="opacity-50" />
-                  <p className="text-title-sm font-semibold">Select a class and date to mark attendance</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-6">
-                <div className="flex gap-3 items-center flex-wrap">
-                  <Input
-                    placeholder="Search students..."
-                    className="w-64"
-                    value={studentSearch}
-                    onChange={(e) => setStudentSearch(e.target.value)}
-                  />
-                  <OptionsSelect
-                    options={[
-                      { value: 'present', label: 'Present' },
-                      { value: 'absent', label: 'Absent' },
-                      { value: 'late', label: 'Late' },
-                      { value: 'holiday', label: 'Holiday' },
-                    ]}
-                    value={attendanceStatus}
-                    onChange={(v: string) => setAttendanceStatus(v as any)}
-                    className="w-36"
-                  />
-                  <Button onClick={handleMarkSelected} loading={markMutation.isPending}>
-                    <Icon name="check" size={16} className="mr-1.5" />
-                    Mark Selected
-                  </Button>
-                  <Button variant="outline" onClick={() => handleMarkAll('present')}>Mark All Present</Button>
-                  <Button variant="destructive" onClick={() => handleMarkAll('absent')}>Mark All Absent</Button>
-                </div>
 
-                <Card className="border-border/60">
-                  <CardContent className="p-0">
-                    {classStudents.length === 0 ? (
-                      <div className="flex flex-col items-center gap-4 py-16 text-muted-foreground">
-                        <Icon name="search_off" size={48} className="opacity-50" />
-                        <p className="text-title-sm font-semibold">No students found</p>
-                      </div>
-                    ) : (
-                      <div className="border border-border/60 rounded-xl overflow-x-auto">
-                        <table className="w-full text-left">
-                          <thead>
-                            <tr className="border-b border-b-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
-                              <th className="px-4 py-3 w-10">
-                                <input
-                                  type="checkbox"
-                                  className="rounded border-border"
-                                  checked={selectedStudentIds.length === classStudents.length && classStudents.length > 0}
-                                  onChange={() => {
-                                    if (selectedStudentIds.length === classStudents.length) {
-                                      setSelectedStudentIds([]);
-                                    } else {
-                                      setSelectedStudentIds(classStudents.map((s) => s.id).filter(Boolean) as string[]);
-                                    }
-                                  }}
-                                />
-                              </th>
-                              <th className="px-4 py-3">Student Name</th>
-                              <th className="px-4 py-3">Student ID</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-border/40 text-title-sm">
-                            {classStudents.map((s) => (
-                              <tr key={s.id} className={`hover:bg-muted/20 transition-colors ${selectedStudentIds.includes(s.id) ? 'bg-primary/5' : ''}`}>
-                                <td className="px-4 py-3">
-                                  <input
-                                    type="checkbox"
-                                    className="rounded border-border"
-                                    checked={selectedStudentIds.includes(s.id)}
-                                    onChange={() => toggleStudent(s.id)}
-                                  />
-                                </td>
-                                <td className="px-4 py-3 font-semibold">{s.displayName || s.email}</td>
-                                <td className="px-4 py-3 text-muted-foreground font-mono">{s.studentId || s.id.slice(0, 8)}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-          </TabsContent>
 
           <TabsContent value="report" className="space-y-6">
             {!selectedClass ? (

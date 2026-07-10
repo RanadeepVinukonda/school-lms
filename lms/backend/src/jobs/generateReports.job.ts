@@ -67,9 +67,9 @@ async function gatherReportData(startDate: string, endDate: string) {
   const students = (allUsers || []).filter(u => u.role === 'student');
   const teachers = (allUsers || []).filter(u => u.role === 'teacher');
 
-  const { data: grades } = await supabase.from('grades').select('score, max_score');
+  const { data: grades } = await supabase.from('grades').select('score, totalPoints');
   const totalScore = (grades || []).reduce((s, g) => s + (g.score || 0), 0);
-  const totalPoints = (grades || []).reduce((s, g) => s + (g.max_score || 1), 0);
+  const totalPoints = (grades || []).reduce((s, g: any) => s + (g.totalPoints || 1), 0);
   const avgGrade = totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0;
 
   const { count: totalCourses } = await supabase

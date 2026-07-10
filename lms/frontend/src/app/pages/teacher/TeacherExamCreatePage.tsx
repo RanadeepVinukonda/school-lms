@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -165,6 +165,7 @@ export default function TeacherExamCreatePage() {
   ] as const;
 
   const [selectedClassId, setSelectedClassId] = useState('');
+  const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const [selectedTextbookId, setSelectedTextbookId] = useState('');
   const [selectedChapterId, setSelectedChapterId] = useState('');
 
@@ -183,7 +184,17 @@ export default function TeacherExamCreatePage() {
   });
 
   const assignmentList: TeacherAssignment[] = assignments ?? [];
-  const selectedAssignment = assignmentList.find((a) => a.classId === selectedClassId);
+  const classAssignments = assignmentList.filter((a) => a.classId === selectedClassId);
+  const effectiveSubjectId = selectedSubjectId || classAssignments[0]?.subjectId || '';
+  const selectedAssignment = classAssignments.find((a) => a.subjectId === effectiveSubjectId);
+
+  useEffect(() => {
+    if (classAssignments.length > 0) {
+      setSelectedSubjectId(classAssignments[0].subjectId);
+    } else {
+      setSelectedSubjectId('');
+    }
+  }, [selectedClassId, classAssignments]);
 
   const { data: textbooks = [], isLoading: textbooksLoading } = useQuery({
     queryKey: ['textbooks-by-subject', selectedAssignment?.subjectId],
@@ -398,13 +409,14 @@ export default function TeacherExamCreatePage() {
                   value={selectedClassId}
                   onChange={(e) => {
                     setSelectedClassId(e.target.value);
+                    setSelectedSubjectId('');
                     setSelectedTextbookId('');
                     setSelectedChapterId('');
                   }}
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm mt-1.5 focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >
                   <option value="">{_('Select a class...')}</option>
-                  {assignmentList.map((a) => (
+                  {[...new Map(assignmentList.map((a) => [a.classId, a]))].map(([_, a]) => (
                     <option key={a.classId} value={a.classId}>
                       {a.className}
                     </option>
@@ -414,10 +426,29 @@ export default function TeacherExamCreatePage() {
 
               {selectedAssignment && (
                 <div>
-                  <Label>{_('Subject')}</Label>
-                  <div className="w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground mt-1.5">
-                    {selectedAssignment.subjectName}
-                  </div>
+                  <Label htmlFor="subject-select">{_('Subject')}</Label>
+                  {classAssignments.length > 1 ? (
+                    <select
+                      id="subject-select"
+                      value={selectedSubjectId}
+                      onChange={(e) => {
+                        setSelectedSubjectId(e.target.value);
+                        setSelectedTextbookId('');
+                        setSelectedChapterId('');
+                      }}
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm mt-1.5 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    >
+                      {classAssignments.map((a) => (
+                        <option key={a.subjectId} value={a.subjectId}>
+                          {a.subjectName}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground mt-1.5">
+                      {selectedAssignment.subjectName}
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -370,9 +370,9 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
   if (!quizData.releasedAt) throw new ForbiddenError('Quiz is not yet released');
 
   const attempts = await nosqlQuery(QAV2, { quizId, studentId });
-  const completedAttempts = attempts.filter((d: any) => d.status === 'completed').length;
+  const totalAttempts = attempts.length;
   const maxAttempts = (quizData.maxAttempts as number) || 3;
-  if (completedAttempts >= maxAttempts) throw new ForbiddenError('Maximum attempts reached');
+  if (totalAttempts >= maxAttempts) throw new ForbiddenError('Maximum attempts reached');
 
   const { data: userRow } = await supabase.from('users').select('data').eq('id', studentId).maybeSingle();
   const studentLevel: StudentLevel = ((userRow?.data as any)?.level as StudentLevel) || 'beginner';
@@ -612,14 +612,22 @@ export async function getQuizResults(quizId: string, studentId: string) {
   const resultsGated = !(quizData.showResults as boolean);
 
   const attempts = await nosqlQuery(QAV2, { quizId, studentId });
-  const sorted = attempts.sort((a: any, b: any) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+
+  const completed = attempts.filter((a: any) => a.status === 'completed' && a.percentage != null);
+  if (completed.length === 0) {
+    return [];
+  }
+
+  const best = completed.reduce((best: any, curr: any) =>
+    curr.percentage > best.percentage ? curr : best
+  );
 
   const quizQuestionsMap: Record<string, { correctAnswer: string; explanation: string; difficulty: string }> = {};
   for (const q of ((quizData.questions as any[]) || [])) {
     quizQuestionsMap[q.id] = { correctAnswer: q.correctAnswer || '', explanation: q.explanation || '', difficulty: q.difficulty || 'medium' };
   }
 
-  return sorted.map((data: any) => {
+  const results = [best].map((data: any) => {
     if (resultsGated && data.status === 'completed') {
       return {
         id: data.id, quizId: data.quizId, studentId: data.studentId,
@@ -649,6 +657,8 @@ export async function getQuizResults(quizId: string, studentId: string) {
     const pct = Math.round((regradedScore / tp) * 100);
     return { ...data, showResults: (quizData.showResults as boolean) ?? false, answers, score: regradedScore, percentage: pct };
   });
+
+  return results;
 }
 
 export async function getQuizById(quizId: string) {
