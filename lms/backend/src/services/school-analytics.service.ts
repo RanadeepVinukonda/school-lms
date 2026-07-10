@@ -22,10 +22,9 @@ export async function getGradeComparison(schoolId?: string) {
   const gradeMap: Record<string, { totalScore: number; totalPoints: number; count: number }> = {};
 
   for (const g of grades) {
-    const student = (users || []).find((u: any) => u.id === g.studentId);
-    if (!student) continue;
-    const cls = (classes || []).find((c: any) => c.id === student.class_id || (student.class_ids && student.class_ids.includes(c.id)));
-    const gradeKey = cls?.grade || 'Unknown';
+    const cls = g.classId ? (classes || []).find((c: any) => c.id === g.classId) : null;
+    if (!cls) continue;
+    const gradeKey = cls.name || cls.grade?.toString() || 'Unknown';
     if (!gradeMap[gradeKey]) gradeMap[gradeKey] = { totalScore: 0, totalPoints: 0, count: 0 };
     gradeMap[gradeKey].totalScore += g.score || 0;
     gradeMap[gradeKey].totalPoints += g.totalPoints || 0;
