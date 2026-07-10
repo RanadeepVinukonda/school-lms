@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { StyleSheet, Text, View, ScrollView, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
+import { api } from '@genesis-lms/shared';
 
 export default function AssessmentCreateScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
@@ -9,17 +10,24 @@ export default function AssessmentCreateScreen({ navigation }: any) {
   const [maxScore, setMaxScore] = useState('100');
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title.trim()) {
       Alert.alert('Assessment title is required');
       return;
     }
     setSubmitting(true);
-    setTimeout(() => {
-      setSubmitting(false);
+    try {
+      await api.post('/teacher/assessments', {
+        title: title.trim(),
+        description: description.trim(),
+        maxScore: parseInt(maxScore, 10) || 100,
+      });
       Alert.alert('Assessment created and published successfully!');
       navigation.goBack();
-    }, 1500);
+    } catch (e: any) {
+      Alert.alert('Failed to create assessment', e?.message || 'An unexpected error occurred.');
+    }
+    setSubmitting(false);
   };
 
   return (

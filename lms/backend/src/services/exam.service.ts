@@ -125,9 +125,10 @@ export async function updateExam(examId: string, data: Record<string, unknown>) 
     throw new NotFoundError('Exam not found');
   }
 
+  const allowedFields = ['title', 'description', 'duration', 'totalPoints', 'isPublished', 'shuffleQuestions', 'instructions', 'passingScore'];
   const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
   for (const [k, v] of Object.entries(data)) {
-    updateData[k] = v;
+    if (allowedFields.includes(k)) updateData[k] = v;
   }
 
   const { error } = await supabase.from('exams').update(updateData).eq('id', examId);
@@ -292,6 +293,7 @@ export async function startExamAttempt(examId: string, studentId: string) {
     throw insertError;
   }
 
+  // ponytail: approximate counter — exact count from exam_attempts table if needed
   const { data: currentExam, error: countError } = await supabase.from('exams').select('attempt_count').eq('id', examId).single();
   if (countError) throw countError;
   const { error } = await supabase.from('exams').update({ attempt_count: (currentExam?.attempt_count || 0) + 1 }).eq('id', examId);

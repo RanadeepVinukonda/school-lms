@@ -17,7 +17,7 @@ interface AuthStore {
   initialize: () => Promise<void>;
 }
 
-let initialized = false;
+let initPromise: Promise<void> | null = null;
 /** Cache resolved effective role for parent users (avoid repeated /teacher-class-subject/my calls). */
 let cachedEffectiveRole: string | null = null;
 
@@ -88,53 +88,55 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   logout: async () => {
     cachedEffectiveRole = null;
     await supabase.auth.signOut();
-    initialized = false;
+    initPromise = null;
     set({ user: null, token: null, isAuthenticated: false, isLoading: false });
   },
   initialize: async () => {
-    if (initialized) return;
-    initialized = true;
-    set({ isLoading: true });
+    if (initPromise) return initPromise;
+    initPromise = (async () => {
+      set({ isLoading: true });
 
-    try {
-      // Step 1: Cookie-based session (httpOnly cookie, XSS-safe)
-      const res = await api.get('/auth/session');
-      const sessionData = res.data?.data;
-      if (sessionData?.user) {
-        const p = sessionData.user as Record<string, unknown>;
-        const effectiveRole = await resolveEffectiveRole(p);
-        set({
-          user: mapProfileToUser(p, effectiveRole),
-          isAuthenticated: true,
-          isLoading: false,
-        });
-        return;
-      }
-    } catch {
-      // Cookie session not available
-    }
-
-    try {
-      // Step 2: Supabase SDK session
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token) {
-        set({ token: session.access_token });
-        const res = await api.get('/auth/me', { timeout: 10000 });
-        const profile = res.data?.data as Record<string, unknown> | undefined;
-        if (profile) {
-          const effectiveRole = await resolveEffectiveRole(profile);
+      try {
+        // Step 1: Cookie-based session (httpOnly cookie, XSS-safe)
+        const res = await api.get('/auth/session');
+        const sessionData = res.data?.data;
+        if (sessionData?.user) {
+          const p = sessionData.user as Record<string, unknown>;
+          const effectiveRole = await resolveEffectiveRole(p);
           set({
-            user: mapProfileToUser(profile, effectiveRole),
+            user: mapProfileToUser(p, effectiveRole),
             isAuthenticated: true,
             isLoading: false,
           });
           return;
         }
+      } catch {
+        // Cookie session not available
       }
-    } catch (e) {
-      console.warn('[authStore] Auth initialization failed:', e instanceof Error ? e.message : String(e));
-    }
 
-    set({ user: null, token: null, isAuthenticated: false, isLoading: false });
+      try {
+        // Step 2: Supabase SDK session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          set({ token: session.access_token });
+          const res = await api.get('/auth/me', { timeout: 10000 });
+          const profile = res.data?.data as Record<string, unknown> | undefined;
+          if (profile) {
+            const effectiveRole = await resolveEffectiveRole(profile);
+            set({
+              user: mapProfileToUser(profile, effectiveRole),
+              isAuthenticated: true,
+              isLoading: false,
+            });
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('[authStore] Auth initialization failed:', e instanceof Error ? e.message : String(e));
+      }
+
+      set({ user: null, token: null, isAuthenticated: false, isLoading: false });
+    })();
+    return initPromise;
   },
 }));

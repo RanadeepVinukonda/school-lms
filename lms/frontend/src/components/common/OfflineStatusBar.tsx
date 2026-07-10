@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Icon } from '@/components/ui/Icon';
 import { offlineService } from '@/services/offlineService';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -6,18 +6,21 @@ import { useTranslation } from '@/hooks/useTranslation';
 export function OfflineStatusBar() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showBackOnline, setShowBackOnline] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const { t } = useTranslation();
 
   const handleOnline = useCallback(() => {
     setIsOnline(true);
     setShowBackOnline(true);
     offlineService.syncQueue();
-    setTimeout(() => setShowBackOnline(false), 4000);
+    clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => setShowBackOnline(false), 4000);
   }, []);
 
   const handleOffline = useCallback(() => {
     setIsOnline(false);
     setShowBackOnline(false);
+    clearTimeout(timeoutRef.current);
   }, []);
 
   useEffect(() => {
@@ -26,6 +29,7 @@ export function OfflineStatusBar() {
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      clearTimeout(timeoutRef.current);
     };
   }, [handleOnline, handleOffline]);
 

@@ -12,7 +12,7 @@ const router = Router();
 
 router.post('/mark', authenticate, requireRole('admin', 'teacher'), requireSchoolAccess, validate(markAttendanceSchema), asyncHandler(attendanceController.markAttendance));
 router.get('/class/:classId', authenticate, requireSchoolAccess, requireClassAccess('admin', 'super_admin', 'teacher'), asyncHandler(attendanceController.getClassAttendance));
-router.get('/student/:studentId', authenticate, requireSchoolAccess, asyncHandler(attendanceController.getStudentAttendance));
+router.get('/student/:studentId', authenticate, requireRole('teacher', 'admin', 'parent'), requireSchoolAccess, asyncHandler(attendanceController.getStudentAttendance));
 router.get('/report/:classId', authenticate, requireSchoolAccess, requireClassAccess('admin', 'super_admin', 'teacher'), asyncHandler(attendanceController.getAttendanceReport));
 router.get('/export/:classId', authenticate, requireSchoolAccess, requireClassAccess('admin', 'super_admin', 'teacher'), asyncHandler(attendanceController.exportAttendanceCSV));
 

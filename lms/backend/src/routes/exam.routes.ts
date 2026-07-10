@@ -14,13 +14,14 @@ const gradeAttemptSchema = z.object({
   feedback: z.string().optional(),
   totalScore: z.number().min(0).optional(),
   gradedBy: z.string().optional(),
-}).passthrough();
+});
 
 const releaseExamGradesSchema = z.object({
   classIds: z.array(z.string()).optional(),
-}).passthrough();
+  gradesReleased: z.boolean(),
+});
 
-const startExamAttemptSchema = z.object({}).passthrough();
+const startExamAttemptSchema = z.object({});
 
 router.get('/', authenticate, asyncHandler(examController.listAllExams));
 router.post('/', authenticate, requireRole('teacher', 'admin'), validate(createExamSchema), asyncHandler(examController.createExam));

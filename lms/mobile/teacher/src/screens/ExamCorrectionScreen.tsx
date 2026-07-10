@@ -32,17 +32,20 @@ export default function ExamCorrectionScreen({ navigation, route }: any) {
   const d = exam;
 
   const saveGrade = async () => {
+    const parsed = parseInt(adjustedScore, 10);
+    if (!Number.isFinite(parsed) || parsed < 0 || parsed > d.maxScore) {
+      Alert.alert('Invalid score', `Score must be a number between 0 and ${d.maxScore}.`);
+      return;
+    }
     setSaving(true);
     try {
-      await api.post(`/teacher/exams/${examId || 'grade'}`, { score: parseInt(adjustedScore, 10) });
+      await api.post(`/teacher/exams/${examId || 'grade'}`, { score: parsed });
       Alert.alert('Grade finalized successfully!');
-    } catch {
-      setTimeout(() => {
-        Alert.alert('Grade finalized and pushed back successfully!');
-      }, 500);
+      navigation.goBack();
+    } catch (e: any) {
+      Alert.alert('Failed to save grade', e?.message || 'An unexpected error occurred.');
     }
     setSaving(false);
-    navigation.goBack();
   };
 
   return (

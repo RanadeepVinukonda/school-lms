@@ -77,24 +77,34 @@ export default function CodeEditor({ value, onChange, language, onLanguageChange
 
     try {
       if (language === 'javascript') {
-        const originalLog = console.log;
-        const logs: string[] = [];
-        console.log = (...args: unknown[]) => {
-          logs.push(args.map((a) => (typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a))).join(' '));
+        // ponytail: sandbox JS execution instead of new Function() in main context
+        const code = `
+          try {
+            const logs = [];
+            const origLog = console.log;
+            console.log = (...args) => logs.push(args.map(a => typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)).join(' '));
+            const result = (function() { ${value} })();
+            console.log = origLog;
+            const output = logs.join('\\n') + (result !== undefined ? '\\n=> ' + (typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result)) : '');
+            parent.postMessage({ type: '__sandbox_result__', output: output || '(no output)' }, '*');
+          } catch(e) {
+            parent.postMessage({ type: '__sandbox_result__', error: e.message }, '*');
+          }
+        `;
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.setAttribute('sandbox', 'allow-scripts');
+        document.body.appendChild(iframe);
+        const msgHandler = (e: MessageEvent) => {
+          if (e.data?.type === '__sandbox_result__' && e.source === iframe.contentWindow) {
+            window.removeEventListener('message', msgHandler);
+            document.body.removeChild(iframe);
+            if (e.data.error) { setError(e.data.error); if (onRun) onRun(e.data.error); }
+            else { setOutput(e.data.output); if (onRun) onRun(e.data.output); }
+          }
         };
-        try {
-          const result = new Function(value)();
-          console.log = originalLog;
-          const outputText = logs.join('\n');
-          const finalOutput = outputText + (result !== undefined ? `\n=> ${typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result)}` : '');
-          setOutput(finalOutput || 'Execution completed (no output)');
-          if (onRun) onRun(finalOutput || 'Execution completed (no output)');
-        } catch (e) {
-          console.log = originalLog;
-          const errMsg = e instanceof Error ? e.message : String(e);
-          setError(errMsg);
-          if (onRun) onRun(errMsg);
-        }
+        window.addEventListener('message', msgHandler);
+        iframe.src = 'data:text/html;charset=utf-8,' + encodeURIComponent('<script>' + code.replace(/<\/script>/g, '<\\/script>') + '<\/script>');
       } else if (language === 'html') {
         setOutput('HTML rendered in preview below');
         if (onRun) onRun('HTML rendered in preview below');

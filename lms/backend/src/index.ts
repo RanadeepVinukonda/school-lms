@@ -38,6 +38,7 @@ process.on('unhandledRejection', (reason: Error | unknown) => {
     message: reason instanceof Error ? reason.message : 'Unknown rejection',
     stack: reason instanceof Error ? reason.stack : undefined,
   });
+  process.exit(1);
 });
 
 async function shutdown(signal: string) {

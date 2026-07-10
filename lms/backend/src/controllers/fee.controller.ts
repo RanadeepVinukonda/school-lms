@@ -17,7 +17,7 @@ export async function downloadReceipt(req: Request, res: Response) {
     res.send(pdf);
   } catch (err) {
     logger.error('Receipt generation failed', { paymentId: req.params.id, error: err instanceof Error ? err.message : String(err) });
-    sendSuccess(res, null, 'Receipt not available');
+    res.status(404).json({ success: false, message: 'Receipt not available' });
   }
 }
 

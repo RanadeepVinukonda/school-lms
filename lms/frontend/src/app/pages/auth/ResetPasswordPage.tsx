@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { Loader2, Lock, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { supabase } from '@/supabase/config';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,7 +37,6 @@ function getPasswordStrength(password: string): { score: number; label: string; 
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const { register, handleSubmit, watch, formState: { errors } } = useForm<ResetForm>({
@@ -46,15 +46,16 @@ export default function ResetPasswordPage() {
   const password = watch('password') || '';
   const strength = useMemo(() => getPasswordStrength(password), [password]);
 
-  const onSubmit = async () => {
+  const onSubmit = async (data: ResetForm) => {
     setIsLoading(true);
     try {
-      await new Promise(r => setTimeout(r, 1500));
+      const { error } = await supabase.auth.updateUser({ password: data.password });
+      if (error) throw error;
       setIsSuccess(true);
       toast.success('Password reset successfully');
       setTimeout(() => navigate('/auth/login'), 2000);
-    } catch {
-      toast.error('Failed to reset password');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to reset password');
     } finally {
       setIsLoading(false);
     }

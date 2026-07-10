@@ -9,7 +9,8 @@ export function requireClassAccess(...roles: string[]) {
       return;
     }
 
-    if (roles.includes(req.user.role)) {
+    const userRoles = (req.user.role || '').split(',').map(r => r.trim());
+    if (userRoles.some(r => roles.includes(r))) {
       next();
       return;
     }
@@ -43,7 +44,8 @@ export function requireClassAccessByParam(paramName: string, ...roles: string[])
       return;
     }
 
-    if (roles.includes(req.user.role)) {
+    const userRoles = (req.user.role || '').split(',').map(r => r.trim());
+    if (userRoles.some(r => roles.includes(r))) {
       next();
       return;
     }

@@ -70,8 +70,9 @@ async function triggerSyncMutations() {
           }
         });
       } catch (err: any) {
-        const isNetworkErr = !err.response || err.code === 'ECONNABORTED';
-        if (isNetworkErr) {
+        const status = err.response?.status;
+        const isRetryable = !status || err.code === 'ECONNABORTED' || (status >= 500);
+        if (isRetryable) {
           remainingQueue.push(...queue.slice(queue.indexOf(item)));
           break;
         }

@@ -42,13 +42,19 @@ export function useTranslation() {
   }
 
   const changeLanguage = async (newLang: LanguageCode) => {
+    const prevLang = getLang();
     useLanguageStore.getState().setLanguage(newLang);
     const user = useAuthStore.getState().user;
     if (user) {
       const updatedUser = { ...user, language: newLang };
       useAuthStore.getState().setUser(updatedUser);
-      const { supabase } = await import('@/supabase/config');
-      await supabase.from('users').update({ language: newLang }).eq('id', user.id);
+      try {
+        const { supabase } = await import('@/supabase/config');
+        await supabase.from('users').update({ language: newLang }).eq('id', user.id);
+      } catch {
+        useLanguageStore.getState().setLanguage(prevLang);
+        useAuthStore.getState().setUser(user);
+      }
     }
   };
 

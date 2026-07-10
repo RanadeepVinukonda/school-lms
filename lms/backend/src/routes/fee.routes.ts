@@ -13,8 +13,8 @@ router.post('/schedules', authenticate, requireRole('admin'), validate(createFee
 router.get('/schedules', authenticate, requireRole('admin'), asyncHandler(feeController.listFeeSchedules));
 router.get('/schedules/:id', authenticate, requireRole('admin'), asyncHandler(feeController.getFeeSchedule));
 router.post('/payments', authenticate, requireRole('admin'), idempotency(), validate(recordPaymentSchema), asyncHandler(feeController.recordPayment));
-router.get('/payments/student/:studentId', authenticate, asyncHandler(feeController.getStudentPayments));
+router.get('/payments/student/:studentId', authenticate, requireRole('admin'), asyncHandler(feeController.getStudentPayments));
 router.get('/reports/outstanding', authenticate, requireRole('admin'), asyncHandler(feeController.getOutstandingReport));
-router.get('/payments/:id/receipt', authenticate, asyncHandler(feeController.downloadReceipt));
+router.get('/payments/:id/receipt', authenticate, requireRole('admin'), asyncHandler(feeController.downloadReceipt));
 
 export default router;

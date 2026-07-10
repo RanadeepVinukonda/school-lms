@@ -119,9 +119,15 @@ export async function exportAttendanceCSV(classId: string): Promise<string> {
     const { data: students } = await supabase.from('users').select('id, display_name').in('id', studentIds);
     for (const s of students || []) nameMap[s.id] = s.display_name || s.id;
   }
+  function escapeCSV(val: string): string {
+    if (/^[=+\-@\t]/.test(val)) val = `'${val}`;
+    if (val.includes(',') || val.includes('"') || val.includes('\n')) val = `"${val.replace(/"/g, '""')}"`;
+    return val;
+  }
+
   const header = 'StudentId,StudentName,Date,Status,MarkedBy,Note,MarkedAt';
   const rows = records.map((r) =>
-    `${r.studentId},${(nameMap[r.studentId] || r.studentId).replace(/,/g, ';')},${r.date},${r.status},${r.markedBy},${(r.note || '').replace(/,/g, ';')},${r.markedAt}`);
+    [r.studentId, (nameMap[r.studentId] || r.studentId), r.date, r.status, r.markedBy, (r.note || ''), r.markedAt].map(escapeCSV).join(','));
   return [header, ...rows].join('\n');
 }
 
