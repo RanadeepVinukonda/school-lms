@@ -268,4 +268,22 @@ router.get('/deep', async (_req: Request, res: Response) => {
   } satisfies DeepHealthResponse);
 });
 
+/* ── Table existence check (diagnostic, no auth) ────────────── */
+
+router.get('/tables', async (_req: Request, res: Response) => {
+  const { getSupabaseAdmin } = await import('../services/supabase');
+  const supabase = getSupabaseAdmin();
+  const tables = ['fee_structures', 'fee_payments', 'timetable', 'classes', 'subjects', 'courses', 'firestore_docs', 'users', 'schools'];
+  const results: Record<string, { exists: boolean; count: number; error?: string }> = {};
+  for (const table of tables) {
+    try {
+      const { count, error } = await supabase.from(table).select('*', { count: 'exact', head: true });
+      results[table] = { exists: !error, count: count ?? 0, error: error?.message };
+    } catch (err) {
+      results[table] = { exists: false, count: 0, error: (err as Error).message };
+    }
+  }
+  res.json({ success: true, tables: results });
+});
+
 export default router;
