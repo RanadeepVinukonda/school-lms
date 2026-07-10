@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getSupabaseClient } from '../services/supabase';
+import { getSupabaseAdmin } from '../services/supabase';
 import * as analyticsService from '../services/analytics.service';
 import * as gradeService from '../services/grade.service';
 import { chatCompletion } from '../services/ai.service';
@@ -9,7 +9,7 @@ import { logger } from '../utils/logger';
 import { env } from '../config/env';
 
 export async function getChildren(req: Request, res: Response) {
-  const supabase = getSupabaseClient();
+  const supabase = getSupabaseAdmin();
   const parentId = req.user!.uid;
 
   const { data: parentDoc } = await supabase.from('users').select('children_ids').eq('id', parentId).maybeSingle();
@@ -38,7 +38,7 @@ export async function getChildren(req: Request, res: Response) {
 }
 
 export async function getChildDashboard(req: Request, res: Response) {
-  const supabase = getSupabaseClient();
+  const supabase = getSupabaseAdmin();
   const { studentId } = req.params;
   const parentId = req.user!.uid;
 
@@ -79,7 +79,7 @@ export async function getChildDashboard(req: Request, res: Response) {
 }
 
 export async function getChildProgress(req: Request, res: Response) {
-  const supabase = getSupabaseClient();
+  const supabase = getSupabaseAdmin();
   const { studentId } = req.params;
   const parentId = req.user!.uid;
 
@@ -100,7 +100,7 @@ export async function getChildProgress(req: Request, res: Response) {
 }
 
 export async function getChildReport(req: Request, res: Response) {
-  const supabase = getSupabaseClient();
+  const supabase = getSupabaseAdmin();
   const { studentId } = req.params;
   const parentId = req.user!.uid;
 
@@ -205,7 +205,7 @@ Generate a JSON report with this exact structure:
 }
 
 export async function getRecommendations(req: Request, res: Response) {
-  const supabase = getSupabaseClient();
+  const supabase = getSupabaseAdmin();
   const parentId = req.user!.uid;
 
   const { data: parentDoc } = await supabase.from('users').select('children_ids').eq('id', parentId).maybeSingle();
