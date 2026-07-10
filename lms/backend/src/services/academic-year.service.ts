@@ -3,7 +3,6 @@ import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ConflictError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { deleteDocument } from './document.service';
-import { TransactionManager } from '../database/transaction-manager';
 
 async function nosqlDoc(collection: string, docId: string) {
   const supabase = getSupabaseAdmin()!;
@@ -52,14 +51,10 @@ export async function createAcademicYear(data: {
       .eq('collection', 'academicYears').contains('data', { isCurrent: true });
     if (prevError) throw new Error('Failed to fetch current academic years: ' + prevError.message);
     const yearData = { ...data, id, status: data.status || 'active', createdAt: now, updatedAt: now };
-    const tm = new TransactionManager();
-    await tm.runTransaction(async (tx) => {
-      for (const d of prevRows || []) {
-        const docData = { ...d.data as Record<string, unknown>, isCurrent: false, updatedAt: now };
-        tx.update('academicYears', d.doc_id, docData);
-      }
-      tx.set('academicYears', id, yearData);
-    });
+    for (const d of prevRows || []) {
+      await setNosqlDoc('academicYears', d.doc_id, { ...d.data as Record<string, unknown>, isCurrent: false, updatedAt: now });
+    }
+    await setNosqlDoc('academicYears', id, yearData);
     return yearData;
   }
 
@@ -85,17 +80,13 @@ export async function updateAcademicYear(id: string, data: Record<string, unknow
     const { data: prevRows, error: prevError } = await supabase.from('firestore_docs').select('doc_id, data')
       .eq('collection', 'academicYears').contains('data', { isCurrent: true });
     if (prevError) throw new Error('Failed to fetch current academic years: ' + prevError.message);
-    const tm = new TransactionManager();
-    await tm.runTransaction(async (tx) => {
-      for (const d of prevRows || []) {
-        if (d.doc_id !== id) {
-          const docData = { ...d.data as Record<string, unknown>, isCurrent: false, updatedAt: now };
-          tx.update('academicYears', d.doc_id, docData);
-        }
+    for (const d of prevRows || []) {
+      if (d.doc_id !== id) {
+        await setNosqlDoc('academicYears', d.doc_id, { ...d.data as Record<string, unknown>, isCurrent: false, updatedAt: now });
       }
-      const merged = { ...existing.data as Record<string, unknown>, ...data, updatedAt: now };
-      tx.update('academicYears', id, merged);
-    });
+    }
+    const merged = { ...existing.data as Record<string, unknown>, ...data, updatedAt: now };
+    await setNosqlDoc('academicYears', id, merged);
   } else {
     const merged = { ...existing.data as Record<string, unknown>, ...data, updatedAt: new Date().toISOString() };
     await setNosqlDoc('academicYears', id, merged);
