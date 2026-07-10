@@ -83,12 +83,6 @@ export async function getGradeComparison(schoolId?: string) {
 export async function getTeacherComparison(schoolId?: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return [];
 
-  const [fsClassNameMap] = await Promise.all([loadClassNameMap(supabase)]);
-
-  let classesQuery = supabase.from('classes').select('*');
-  if (schoolId) classesQuery = classesQuery.eq('school_id', schoolId);
-  const { data: classes } = await classesQuery;
-
   let usersQuery = supabase.from('users').select('*');
   if (schoolId) usersQuery = usersQuery.eq('school_id', schoolId);
   const { data: users } = await usersQuery;
@@ -108,8 +102,7 @@ export async function getTeacherComparison(schoolId?: string) {
   const teacherMap: Record<string, { totalScore: number; totalPoints: number; count: number; classIds: Set<string> }> = {};
   const teachers = (users || []).filter((u: any) => u.role === 'teacher');
   for (const t of teachers) {
-    const tClassIds = t.class_ids || (t.class_id ? [t.class_id] : []);
-    teacherMap[t.id] = { totalScore: 0, totalPoints: 0, count: 0, classIds: new Set(tClassIds) };
+    teacherMap[t.id] = { totalScore: 0, totalPoints: 0, count: 0, classIds: new Set() };
   }
 
   function processAttempts(attempts: any[], idField: string, assessments: any[]) {
@@ -119,15 +112,13 @@ export async function getTeacherComparison(schoolId?: string) {
       if (pct == null) continue;
       const doc = docById.get(a.data?.[idField]);
       if (!doc) continue;
+      const teacherId = doc.teacherId || doc.teacher_id || '';
+      if (!teacherId || !teacherMap[teacherId]) continue;
       const classId = doc.classId || doc.class_id || '';
-      if (!classId) continue;
-      for (const [tid, data] of Object.entries(teacherMap)) {
-        if (data.classIds.has(classId)) {
-          data.totalScore += pct;
-          data.totalPoints += 100;
-          data.count++;
-        }
-      }
+      teacherMap[teacherId].totalScore += pct;
+      teacherMap[teacherId].totalPoints += 100;
+      teacherMap[teacherId].count++;
+      if (classId) teacherMap[teacherId].classIds.add(classId);
     }
   }
 
