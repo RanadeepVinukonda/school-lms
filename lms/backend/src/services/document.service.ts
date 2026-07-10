@@ -11,10 +11,12 @@ export interface DocumentRecord {
   deleted_at: string | null;
 }
 
+const DOC_TABLE = 'firestore_docs';
+
 export async function getDocument(collection: string, docId: string): Promise<DocumentRecord | null> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
-    .from('document_store')
+    .from(DOC_TABLE)
     .select('*')
     .eq('collection', collection)
     .eq('doc_id', docId)
@@ -39,7 +41,7 @@ export async function setDocument(
     updated_at: now,
   };
   if (schoolId) record.school_id = schoolId;
-  const { error } = await supabase.from('document_store').upsert(record, {
+  const { error } = await supabase.from(DOC_TABLE).upsert(record, {
     onConflict: 'collection,doc_id',
   });
   if (error) throw new Error('Failed to set document: ' + error.message);
@@ -52,7 +54,7 @@ export async function updateDocument(
 ): Promise<void> {
   const supabase = getSupabaseAdmin();
   const { data: existing, error: fetchErr } = await supabase
-    .from('document_store')
+    .from(DOC_TABLE)
     .select('data')
     .eq('collection', collection)
     .eq('doc_id', docId)
@@ -61,7 +63,7 @@ export async function updateDocument(
   if (fetchErr) throw new Error('Failed to fetch document for update: ' + fetchErr.message);
   const merged = { ...(existing?.data as Record<string, unknown> ?? {}), ...data };
   const { error } = await supabase
-    .from('document_store')
+    .from(DOC_TABLE)
     .update({ data: merged, updated_at: new Date().toISOString() })
     .eq('collection', collection)
     .eq('doc_id', docId);
@@ -71,7 +73,7 @@ export async function updateDocument(
 export async function deleteDocument(collection: string, docId: string): Promise<void> {
   const supabase = getSupabaseAdmin();
   const { error } = await supabase
-    .from('document_store')
+    .from(DOC_TABLE)
     .update({ deleted_at: new Date().toISOString() })
     .eq('collection', collection)
     .eq('doc_id', docId)
@@ -82,7 +84,7 @@ export async function deleteDocument(collection: string, docId: string): Promise
 export async function hardDeleteDocument(collection: string, docId: string): Promise<void> {
   const supabase = getSupabaseAdmin();
   const { error } = await supabase
-    .from('document_store')
+    .from(DOC_TABLE)
     .delete()
     .eq('collection', collection)
     .eq('doc_id', docId);
@@ -96,7 +98,7 @@ export async function listDocuments(
   const supabase = getSupabaseAdmin();
 
   let query = supabase
-    .from('document_store')
+    .from(DOC_TABLE)
     .select('*', { count: 'exact' })
     .eq('collection', collection);
 
@@ -145,7 +147,7 @@ export async function migrateFromFirestoreDocs(): Promise<{ migrated: number; er
     };
 
     const { error: upsertErr } = await supabase
-      .from('document_store')
+      .from(DOC_TABLE)
       .upsert(record, { onConflict: 'collection,doc_id' });
 
     if (upsertErr) {

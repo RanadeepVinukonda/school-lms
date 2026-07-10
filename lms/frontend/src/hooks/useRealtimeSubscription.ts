@@ -42,7 +42,7 @@ export function useRealtimeSubscription({
   callbackRef.current = callback;
 
   useEffect(() => {
-    const channelName = `${table}_${event}_${filter ? `${filter.column}_${filter.value}` : 'all'}`;
+    const channelName = `${table}_${event}_${filter ? `${filter.column}_${filter.value}` : 'all'}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
     const realtimeChannel = supabase
       .channel(channelName)

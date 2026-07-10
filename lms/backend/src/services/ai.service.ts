@@ -316,7 +316,15 @@ export async function textbookChatCompletion(params: ChatRequest): Promise<strin
   // Use GEMINI_API_KEY for textbook/OCR tasks when available
   if (env.GEMINI_API_KEY) {
     const geminiModel = toGeminiModel(env.AI_TEXTBOOK_MODEL || env.AI_MODEL || 'gemini-2.0-flash');
-    return geminiChatCompletion(geminiModel, messages, temperature, max_tokens, jsonMode);
+    try {
+      return await geminiChatCompletion(geminiModel, messages, temperature, max_tokens, jsonMode);
+    } catch (err) {
+      if (err instanceof AppError && (err.message.includes('404') || err.message.includes('400') || err.message.includes('not found'))) {
+        logger.warn('Gemini model failed, falling back to gemini-2.0-flash', { model: geminiModel });
+        return geminiChatCompletion('gemini-2.0-flash', messages, temperature, max_tokens, jsonMode);
+      }
+      throw err;
+    }
   }
 
   const apiKey = env.AI_TEXTBOOK_API_KEY || env.GEMINI_API_KEY;

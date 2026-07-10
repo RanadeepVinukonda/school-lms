@@ -15,7 +15,7 @@ export function useRealtimeInvalidation(configs: RealtimeConfig[]) {
   useEffect(() => {
     const channels = configs.map(({ table, queryKey, schema = 'public', event = '*' }) => {
       const channel = supabase
-        .channel(`realtime-${table}`)
+        .channel(`realtime-${table}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`)
         .on(
           'postgres_changes' as any,
           { event, schema, table },
