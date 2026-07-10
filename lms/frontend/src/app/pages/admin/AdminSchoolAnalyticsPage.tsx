@@ -279,46 +279,74 @@ export default function AdminSchoolAnalyticsPage() {
                         {trendData.length === 0 ? (
                           <p className="text-muted-foreground text-center py-8">No trend data available</p>
                         ) : (
-                          <div className="space-y-4">
-                            <div className="flex items-end gap-1 sm:gap-2 h-32 sm:h-48 overflow-x-auto pb-2">
-                              {trendData.map((t, i) => {
+                          <div className="space-y-6">
+                            <div className="flex items-end gap-3 h-48 overflow-x-auto pb-2 px-2">
+                              {(() => {
                                 const maxVal = Math.max(...trendData.map((x) => x.averageScore), 1);
-                                const height = (t.averageScore / maxVal) * 100;
-                                return (
-                                  <div key={t.month} className="flex-1 flex flex-col items-center gap-1 min-w-[32px]">
-                                    <span className="text-[9px] sm:text-[10px] font-mono text-muted-foreground">{t.averageScore ?? 0}%</span>
-                                    <motion.div
-                                      initial={{ height: 0 }}
-                                      animate={{ height: `${height}%` }}
-                                      transition={{ duration: 0.5, delay: i * 0.05 }}
-                                      className="w-full rounded-t-md bg-primary"
-                                    />
-                                    <span className="text-[9px] sm:text-[10px] text-muted-foreground sm:rotate-45 sm:origin-left whitespace-nowrap">
-                                      {(t.month ?? '').slice(5)}
-                                    </span>
-                                  </div>
-                                );
-                              })}
+                                return trendData.map((t, i) => {
+                                  const height = (t.averageScore / maxVal) * 100;
+                                  const date = new Date(t.month + '-02T00:00:00');
+                                  const label = date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+                                  return (
+                                    <div key={t.month} className="flex-1 flex flex-col items-center gap-1.5 min-w-[56px]">
+                                      <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.4, delay: i * 0.08 }}
+                                        className="text-label-sm font-mono font-bold text-primary"
+                                      >
+                                        {t.averageScore ?? 0}%
+                                      </motion.div>
+                                      <motion.div
+                                        initial={{ height: 0 }}
+                                        animate={{ height: `${height}%` }}
+                                        transition={{ duration: 0.5, delay: i * 0.08, ease: 'easeOut' }}
+                                        className="w-full max-w-[48px] rounded-lg bg-primary/80 hover:bg-primary transition-colors cursor-pointer relative group"
+                                      >
+                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-surface border border-border/60 rounded-lg px-2.5 py-1 text-label-xs font-mono whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
+                                          {t.count} record{t.count !== 1 ? 's' : ''}
+                                        </div>
+                                      </motion.div>
+                                      <motion.span
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ duration: 0.3, delay: i * 0.08 }}
+                                        className="text-label-xs text-muted-foreground font-medium"
+                                      >
+                                        {label}
+                                      </motion.span>
+                                    </div>
+                                  );
+                                });
+                              })()}
                             </div>
-                            <div className="border-t border-border/40 pt-4">
-                              <table className="w-full text-left text-title-sm">
-                                <thead>
-                                  <tr className="text-label-sm text-muted-foreground uppercase tracking-wider">
-                                    <th className="pb-2 font-bold">Month</th>
-                                    <th className="pb-2 font-bold">Avg Score</th>
-                                    <th className="pb-2 font-bold">Records</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-border/40">
-                                  {trendData.map((t) => (
-                                    <tr key={t.month} className="hover:bg-muted/20">
-                                      <td className="py-2 font-semibold">{t.month}</td>
-                                      <td className="py-2 font-mono">{t.averageScore ?? 0}%</td>
-                                      <td className="py-2 text-muted-foreground">{t.count ?? 0}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-border/40">
+                              {(() => {
+                                const total = trendData.reduce((s, t) => s + t.count, 0);
+                                const avg = trendData.length > 0
+                                  ? Math.round(trendData.reduce((s, t) => s + t.averageScore, 0) / trendData.length)
+                                  : 0;
+                                const best = trendData.reduce((a, b) => (a.averageScore > b.averageScore ? a : b), trendData[0]);
+                                const date = new Date(best.month + '-02T00:00:00');
+                                const bestLabel = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                                return (
+                                  <>
+                                    <div className="rounded-xl bg-muted/30 p-4 text-center">
+                                      <p className="text-label-sm text-muted-foreground">Overall Avg</p>
+                                      <p className="text-display-xs font-bold mt-1 text-primary">{avg}%</p>
+                                    </div>
+                                    <div className="rounded-xl bg-muted/30 p-4 text-center">
+                                      <p className="text-label-sm text-muted-foreground">Total Records</p>
+                                      <p className="text-display-xs font-bold mt-1">{total}</p>
+                                    </div>
+                                    <div className="rounded-xl bg-muted/30 p-4 text-center">
+                                      <p className="text-label-sm text-muted-foreground">Best Month</p>
+                                      <p className="text-display-xs font-bold mt-1 text-success">{best.averageScore}%</p>
+                                      <p className="text-label-xs text-muted-foreground mt-0.5">{bestLabel}</p>
+                                    </div>
+                                  </>
+                                );
+                              })()}
                             </div>
                           </div>
                         )}
