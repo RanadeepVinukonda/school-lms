@@ -53,8 +53,18 @@ export async function getChildDashboard(req: Request, res: Response) {
   if (!studentRow) throw new NotFoundError('Student not found');
   const { password: _sp, ...student } = studentRow;
 
-  const grades = await gradeService.getStudentGrades(studentId);
-  const performance = await analyticsService.getStudentPerformance(studentId);
+  let grades: any[] = [];
+  let performance: Record<string, unknown> | null = null;
+  try {
+    grades = await gradeService.getStudentGrades(studentId);
+  } catch (err) {
+    logger.warn('Failed to fetch student grades for dashboard', { studentId, error: err });
+  }
+  try {
+    performance = await analyticsService.getStudentPerformance(studentId) as Record<string, unknown> | null;
+  } catch (err) {
+    logger.warn('Failed to fetch student performance for dashboard', { studentId, error: err });
+  }
 
   let className: string | null = null;
   if (studentRow.class_id) {
@@ -67,13 +77,12 @@ export async function getChildDashboard(req: Request, res: Response) {
     ? Math.round(scoredGrades.reduce((s: number, g: any) => s + g.percentage, 0) / scoredGrades.length)
     : 0;
 
-  const perf = performance as Record<string, unknown> | undefined;
   sendSuccess(res, {
     student,
     className,
-    overallAvgScore: (perf?.overallAvgScore as number) ?? avgScore,
-    totalAttempts: (perf?.totalAttempts as number) ?? 0,
-    recentActivity: (perf?.recentActivity ?? []) as Record<string, unknown>[],
+    overallAvgScore: (performance?.overallAvgScore as number) ?? avgScore,
+    totalAttempts: (performance?.totalAttempts as number) ?? 0,
+    recentActivity: (performance?.recentActivity ?? []) as Record<string, unknown>[],
     grades: grades,
   });
 }

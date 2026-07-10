@@ -433,7 +433,7 @@ export async function getStudentPerformance(studentId: string) {
     }
   }
 
-  allAttempts.sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
+  allAttempts.sort((a, b) => (b.submittedAt || '').localeCompare(a.submittedAt || ''));
 
   const scored = allAttempts.filter((a) => a.percentage > 0);
   const overallAvg = scored.length > 0
