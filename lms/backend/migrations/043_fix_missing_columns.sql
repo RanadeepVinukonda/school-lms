@@ -15,7 +15,7 @@ UPDATE fee_structures SET school_id = (SELECT id FROM schools LIMIT 1) WHERE sch
 ALTER TABLE fee_structures ALTER COLUMN school_id SET NOT NULL;
 
 -- Backfill timetable.school_id from classes
-UPDATE timetable SET school_id = c.school_id FROM classes c WHERE timetable.class_id = c.id AND timetable.school_id IS NULL;
+UPDATE timetable SET school_id = c.school_id FROM classes c WHERE timetable.class_id::uuid = c.id AND timetable.school_id IS NULL;
 
 -- Add children_ids index for parent lookup
 CREATE INDEX IF NOT EXISTS idx_users_children_ids ON users USING gin(children_ids);

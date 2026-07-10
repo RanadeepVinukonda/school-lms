@@ -278,7 +278,11 @@ export async function deleteUserService(uid: string) {
   if (!exists) throw new NotFoundError('User not found');
   const { error } = await getSupabaseAdmin().from('users').update({ deleted_at: new Date().toISOString() }).eq('id', uid);
   if (error) throw error;
-  await deleteUser(uid);
+  try {
+    await deleteUser(uid);
+  } catch (err: any) {
+    logger.warn('Failed to delete user from Supabase Auth (non-critical)', { uid, error: err.message });
+  }
   logger.info('User deleted by admin', { uid });
 }
 
