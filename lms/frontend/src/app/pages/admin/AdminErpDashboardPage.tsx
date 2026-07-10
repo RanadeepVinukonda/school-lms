@@ -14,6 +14,7 @@ import { attendanceService } from '@/services/attendanceService';
 import { getAllClasses } from '@/services/dataService';
 import { timetableService } from '@/services/timetableService';
 import { staggerContainer, cardStackReveal } from '@/lib/motion';
+import { cn } from '@/lib/utils';
 
 const QUICK_LINKS = [
   {

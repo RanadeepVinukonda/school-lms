@@ -93,7 +93,7 @@ export default function AdminDashboardPage() {
       const upcomingExamCount = exams.filter((e) => e.startDate && new Date(e.startDate) > new Date()).length;
 
       const atRiskStudents = grades
-        .filter((g) => g.percentage < 70)
+        .filter((g) => g.percentage < 50)
         .map((g) => ({
           id: g.id, studentName: users.find((u) => u.id === g.studentId)?.displayName ?? 'Unknown',
           percentage: g.percentage, subject: g.itemName ?? '',
