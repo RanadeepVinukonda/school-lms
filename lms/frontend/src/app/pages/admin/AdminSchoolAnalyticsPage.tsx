@@ -279,47 +279,38 @@ export default function AdminSchoolAnalyticsPage() {
                         {trendData.length === 0 ? (
                           <p className="text-muted-foreground text-center py-8">No trend data available</p>
                         ) : (
-                          <div className="space-y-6">
-                            <div className="flex items-end gap-3 h-48 overflow-x-auto pb-2 px-2">
-                              {(() => {
-                                const maxVal = Math.max(...trendData.map((x) => x.averageScore), 1);
-                                return trendData.map((t, i) => {
-                                  const height = (t.averageScore / maxVal) * 100;
-                                  const date = new Date(t.month + '-02T00:00:00');
-                                  const label = date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-                                  return (
-                                    <div key={t.month} className="flex-1 flex flex-col items-center gap-1.5 min-w-[56px]">
+                          <div className="space-y-3">
+                            {(() => {
+                              const maxVal = Math.max(...trendData.map((x) => x.averageScore), 1);
+                              return trendData.map((t, i) => {
+                                const date = new Date(t.month + '-02T00:00:00');
+                                const label = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                                const pct = t.averageScore;
+                                return (
+                                  <motion.div
+                                    key={t.month}
+                                    initial={{ opacity: 0, x: -12 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ duration: 0.3, delay: i * 0.06 }}
+                                    className="flex items-center gap-3"
+                                  >
+                                    <span className="text-label-sm font-medium w-24 shrink-0 text-right">{label}</span>
+                                    <div className="flex-1 h-7 rounded-full bg-muted/40 overflow-hidden">
                                       <motion.div
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.4, delay: i * 0.08 }}
-                                        className="text-label-sm font-mono font-bold text-primary"
-                                      >
-                                        {t.averageScore ?? 0}%
-                                      </motion.div>
-                                      <motion.div
-                                        initial={{ height: 0 }}
-                                        animate={{ height: `${height}%` }}
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${(pct / maxVal) * 100}%` }}
                                         transition={{ duration: 0.5, delay: i * 0.08, ease: 'easeOut' }}
-                                        className="w-full max-w-[48px] rounded-lg bg-primary/80 hover:bg-primary transition-colors cursor-pointer relative group"
+                                        className="h-full rounded-full bg-primary flex items-center justify-end pr-2 text-[11px] text-white font-bold"
+                                        style={{ minWidth: pct > 0 ? '2.5rem' : '0' }}
                                       >
-                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-surface border border-border/60 rounded-lg px-2.5 py-1 text-label-xs font-mono whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
-                                          {t.count} record{t.count !== 1 ? 's' : ''}
-                                        </div>
+                                        {pct}%
                                       </motion.div>
-                                      <motion.span
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ duration: 0.3, delay: i * 0.08 }}
-                                        className="text-label-xs text-muted-foreground font-medium"
-                                      >
-                                        {label}
-                                      </motion.span>
                                     </div>
-                                  );
-                                });
-                              })()}
-                            </div>
+                                    <span className="text-label-xs text-muted-foreground w-16 shrink-0">{t.count} records</span>
+                                  </motion.div>
+                                );
+                              });
+                            })()}
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-border/40">
                               {(() => {
                                 const total = trendData.reduce((s, t) => s + t.count, 0);
