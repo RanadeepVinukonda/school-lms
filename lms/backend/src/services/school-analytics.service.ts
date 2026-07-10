@@ -5,8 +5,9 @@ function safePct(value: number): number {
   return Number.isFinite(value) ? value : 0;
 }
 
-async function loadClassNameMap(supabase: any): Promise<Map<string, string>> {
-  const map = new Map<string, string>();
+async function loadClassMeta(supabase: any): Promise<{ nameMap: Map<string, string>; gradeMap: Map<string, string> }> {
+  const nameMap = new Map<string, string>();
+  const gradeMap = new Map<string, string>();
   const { data: fsClasses } = await supabase
     .from('firestore_docs')
     .select('doc_id, data')
@@ -16,15 +17,16 @@ async function loadClassNameMap(supabase: any): Promise<Map<string, string>> {
     const name = d.name || d.className || '';
     const section = d.section ? ` ${d.section}` : '';
     const code = d.code || '';
-    map.set(c.doc_id, `${name}${section}`.trim() || code || c.doc_id);
+    nameMap.set(c.doc_id, `${name}${section}`.trim() || code || c.doc_id);
+    gradeMap.set(c.doc_id, d.grade || d.gradeLevel || '');
   }
-  return map;
+  return { nameMap, gradeMap };
 }
 
 export async function getGradeComparison(schoolId?: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return [];
 
-  const [fsClassNameMap] = await Promise.all([loadClassNameMap(supabase)]);
+  const [{ nameMap }] = await Promise.all([loadClassMeta(supabase)]);
 
   const [quizRes, examRes, assignRes] = await Promise.all([
     supabase.from('firestore_docs').select('doc_id, data').eq('collection', 'quizV2'),
@@ -63,7 +65,7 @@ export async function getGradeComparison(schoolId?: string) {
 
   const gradeMap: Record<string, { totalScore: number; totalPoints: number; count: number; studentCount: number }> = {};
   for (const [classId, data] of Object.entries(classMap)) {
-    const name = fsClassNameMap.get(classId);
+    const name = nameMap.get(classId);
     const gradeKey = name || classId;
     if (!gradeMap[gradeKey]) gradeMap[gradeKey] = { totalScore: 0, totalPoints: 0, count: 0, studentCount: 0 };
     gradeMap[gradeKey].totalScore += data.totalScore;
@@ -141,7 +143,7 @@ export async function getTeacherComparison(schoolId?: string) {
 export async function getClassComparison(schoolId?: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return [];
 
-  const [fsClassNameMap] = await Promise.all([loadClassNameMap(supabase)]);
+  const [{ nameMap, gradeMap }] = await Promise.all([loadClassMeta(supabase)]);
 
   const [quizRes, examRes, assignRes] = await Promise.all([
     supabase.from('firestore_docs').select('doc_id, data').eq('collection', 'quizV2'),
@@ -156,6 +158,9 @@ export async function getClassComparison(schoolId?: string) {
   ]);
 
   const classMap: Record<string, { totalScore: number; totalPoints: number; count: number }> = {};
+  for (const cid of nameMap.keys()) {
+    classMap[cid] = { totalScore: 0, totalPoints: 0, count: 0 };
+  }
 
   function processAttempts(attempts: any[], idField: string, assessments: any[]) {
     const docById = new Map(assessments.map((d: any) => [d.doc_id, d.data]));
@@ -178,11 +183,12 @@ export async function getClassComparison(schoolId?: string) {
   processAttempts(submitRes.data || [], 'assignmentId', assignRes.data || []);
 
   return Object.entries(classMap).map(([classId, data]) => {
-    const name = fsClassNameMap.get(classId);
+    const name = nameMap.get(classId);
+    const grade = gradeMap.get(classId) || '';
     return {
       classId,
       className: name || classId,
-      grade: '',
+      grade,
       averageScore: data.totalPoints > 0 ? safePct(Math.round((data.totalScore / data.totalPoints) * 100)) : 0,
       studentCount: data.count,
     };
