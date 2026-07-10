@@ -522,7 +522,7 @@ export async function getUser(id: string): Promise<UserDoc | null> {
 
 /** Fetch all users from Supabase. */
 export async function getAllUsers(): Promise<UserDoc[]> {
-  const { data, error } = await supabase.from('users').select('*');
+  const { data, error } = await supabase.from('users').select('*').is('deleted_at', null);
   if (error) throw error;
   return (data || []).map(mapUserRowToDoc);
 }
