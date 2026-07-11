@@ -68,26 +68,26 @@ export default function TeacherNoticeBoardPage() {
                         transition={{ duration: 0.3 }}
                       >
                         <Card className="border-border/60 hover:border-border transition-colors">
-                          <CardContent className="p-4">
-                            <div className="flex items-start gap-4">
+                          <CardContent className="p-3 md:p-4">
+                            <div className="flex items-start gap-3 md:gap-4">
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap mb-1">
-                                  <h3 className="text-title-sm font-semibold truncate">{n.title}</h3>
+                                  <h3 className="text-title-sm font-semibold md:truncate">{n.title}</h3>
                                   {priorityBadge(n.priority)}
                                 </div>
                                 <p className="text-body-md text-foreground whitespace-pre-wrap">{n.content}</p>
-                                <div className="flex items-center gap-3 mt-2 text-label-xs text-muted-foreground">
-                                  <span className="flex items-center gap-1">
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-label-xs text-muted-foreground">
+                                  <span className="flex items-center gap-1 whitespace-nowrap">
                                     <Icon name="calendar_today" size={14} />
                                     {new Date(n.created_at).toLocaleDateString()}
                                   </span>
                                   {n.expires_at && (
-                                    <span className="flex items-center gap-1">
+                                    <span className="flex items-center gap-1 whitespace-nowrap">
                                       <Icon name="schedule" size={14} />
                                       {_('Expires')} {new Date(n.expires_at).toLocaleDateString()}
                                     </span>
                                   )}
-                                  {n.created_by_name && <span>{_('by')} {n.created_by_role ? `${n.created_by_role} - ` : ''}{n.created_by_name}</span>}
+                                  {n.created_by_name && <span className="flex items-center gap-1 w-full md:w-auto">{_('by')} {n.created_by_role ? `${n.created_by_role} - ` : ''}{n.created_by_name}</span>}
                                 </div>
                               </div>
                             </div>
