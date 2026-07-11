@@ -203,19 +203,19 @@ export function FilterBar({
 }) {
   const { _ } = useTranslation();
   return (
-    <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+    <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 scrollbar-none">
       {FILTER_TABS.map((tab) => (
         <Button
           key={tab.key}
           variant={active === tab.key ? 'default' : 'secondary'}
           size="sm"
           className={cn(
-            'gap-1.5 whitespace-nowrap transition-all',
+            'gap-1 sm:gap-1.5 whitespace-nowrap transition-all px-2 sm:px-3 text-[11px] sm:text-xs',
             tab.key === 'overdue' && overdueCount > 0 && active !== 'overdue' && 'ring-1 ring-error/30',
           )}
           onClick={() => onChange(tab.key)}
         >
-          <Icon name={tab.icon} size={16} />
+          <Icon name={tab.icon} size={14} />
           {_(tab.label)}
           {tab.key === 'overdue' && overdueCount > 0 && (
             <span className="ml-0.5 tabular-nums">({overdueCount})</span>
@@ -237,40 +237,40 @@ function TaskCard({ item }: { item: TaskItem }) {
       <Card
         className={cn('border-border/60 transition-all duration-300 group', isUrgent && style.containerClass)}
       >
-        <CardContent className="p-5">
-          <div className="flex items-start gap-4">
-            <div className={cn('h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0', iconStyle.bg)}>
-              <Icon name={iconStyle.name} size={24} className={iconStyle.color} />
+        <CardContent className="p-3 sm:p-5">
+          <div className="flex items-center sm:items-start gap-3 sm:gap-4">
+            <div className={cn('h-10 w-10 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center flex-shrink-0', iconStyle.bg)}>
+              <Icon name={iconStyle.name} size={20} className={iconStyle.color} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2">
-                <p className="font-semibold text-title-sm truncate">{item.title}</p>
+              <div className="flex items-center justify-between gap-1.5 sm:gap-2">
+                <p className="font-semibold text-title-sm line-clamp-2 sm:truncate">{item.title}</p>
                 {item.status === 'completed' ? (
-                  <Badge variant="success" className="text-[10px]">{_('Completed')}</Badge>
+                  <Badge variant="success" className="text-[10px] shrink-0">{_('Completed')}</Badge>
                 ) : item.type === 'quiz' ? (
-                  <Badge variant="info" className="text-[10px]">{_('Open')}</Badge>
+                  <Badge variant="info" className="text-[10px] shrink-0">{_('Open')}</Badge>
                 ) : (
-                  <UrgencyBadge urgency={item.urgency} date={item.date} />
+                  <span className="shrink-0"><UrgencyBadge urgency={item.urgency} date={item.date} /></span>
                 )}
               </div>
               <p className="text-body-md text-muted-foreground mt-0.5">{item.subjectName}</p>
-              <p className="text-body-md text-muted-foreground mt-1 line-clamp-1">{item.description}</p>
-              <div className="flex items-center gap-4 mt-2 text-body-md text-muted-foreground flex-wrap">
+              <p className="text-body-md text-muted-foreground mt-1 line-clamp-1 hidden sm:block">{item.description}</p>
+              <div className="flex items-center gap-2 sm:gap-4 mt-1.5 sm:mt-2 text-body-sm sm:text-body-md text-muted-foreground flex-wrap">
                 {item.type === 'assignment' && (
                   <>
                     {item.points !== undefined && (
                       <span className="flex items-center gap-1">
-                        <Icon name="star" size={14} />
-                        {item.points} {_('pts')}
+                        <Icon name="star" size={12} />
+                        <span className="text-[11px] sm:text-body-md">{item.points} {_('pts')}</span>
                       </span>
                     )}
                     {item.status && (
-                      <Badge variant="outline" className="text-[10px]">{item.status}</Badge>
+                      <Badge variant="outline" className="text-[9px] sm:text-[10px]">{item.status}</Badge>
                     )}
                     {item.date && (
                       <span className="flex items-center gap-1">
-                        <Icon name="calendar_today" size={14} />
-                        {formatDate(item.date)}
+                        <Icon name="calendar_today" size={12} />
+                        <span className="text-[11px] sm:text-body-md">{formatDate(item.date)}</span>
                       </span>
                     )}
                   </>
@@ -279,20 +279,20 @@ function TaskCard({ item }: { item: TaskItem }) {
                   <>
                     {item.timeLimit !== undefined && (
                       <span className="flex items-center gap-1">
-                        <Icon name="schedule" size={14} />
-                        {formatTime(item.timeLimit)}
+                        <Icon name="schedule" size={12} />
+                        <span className="text-[11px] sm:text-body-md">{formatTime(item.timeLimit)}</span>
                       </span>
                     )}
                     {item.questionCount !== undefined && (
                       <span className="flex items-center gap-1">
-                        <Icon name="quiz" size={14} />
-                        {item.questionCount} {_('questions')}
+                        <Icon name="quiz" size={12} />
+                        <span className="text-[11px] sm:text-body-md">{item.questionCount} {_('questions')}</span>
                       </span>
                     )}
                     {item.maxAttempts !== undefined && (
                       <span className="flex items-center gap-1">
-                        <Icon name="replay" size={14} />
-                        {Math.max(0, item.maxAttempts - (item.attemptsUsed ?? 0))} {_('attempts left')}
+                        <Icon name="replay" size={12} />
+                        <span className="text-[11px] sm:text-body-md">{Math.max(0, item.maxAttempts - (item.attemptsUsed ?? 0))} {_('attempts left')}</span>
                       </span>
                     )}
                   </>
@@ -301,20 +301,20 @@ function TaskCard({ item }: { item: TaskItem }) {
                   <>
                     {item.duration !== undefined && (
                       <span className="flex items-center gap-1">
-                        <Icon name="schedule" size={14} />
-                        {formatTime(item.duration)}
+                        <Icon name="schedule" size={12} />
+                        <span className="text-[11px] sm:text-body-md">{formatTime(item.duration)}</span>
                       </span>
                     )}
                     {item.questionCount !== undefined && (
                       <span className="flex items-center gap-1">
-                        <Icon name="quiz" size={14} />
-                        {item.questionCount} {_('questions')}
+                        <Icon name="quiz" size={12} />
+                        <span className="text-[11px] sm:text-body-md">{item.questionCount} {_('questions')}</span>
                       </span>
                     )}
                     {item.date && (
                       <span className="flex items-center gap-1">
-                        <Icon name="calendar_today" size={14} />
-                        {formatDate(item.date)}
+                        <Icon name="calendar_today" size={12} />
+                        <span className="text-[11px] sm:text-body-md">{formatDate(item.date)}</span>
                       </span>
                     )}
                   </>
@@ -324,7 +324,7 @@ function TaskCard({ item }: { item: TaskItem }) {
             <Icon
               name="chevron_right"
               size={20}
-              className="text-muted-foreground flex-shrink-0 mt-2 group-hover:translate-x-0.5 transition-transform"
+              className="text-muted-foreground flex-shrink-0 self-center sm:self-start sm:mt-2 group-hover:translate-x-0.5 transition-transform"
             />
           </div>
         </CardContent>
@@ -343,8 +343,8 @@ export function TaskSection({ level, tasks }: { level: UrgencyLevel; tasks: Task
   return (
     <motion.div variants={cardStackReveal} custom={0}>
       <section>
-        <h2 className={cn('text-title-sm font-semibold mb-3 flex items-center gap-2', isNonUrgent && 'text-muted-foreground')}>
-          <Icon name={section.icon} size={20} className={isNonUrgent ? 'text-muted-foreground' : 'text-primary'} />
+        <h2 className={cn('text-title-sm font-semibold mb-2 sm:mb-3 flex items-center gap-1.5 sm:gap-2', isNonUrgent && 'text-muted-foreground')}>
+          <Icon name={section.icon} size={18} className={isNonUrgent ? 'text-muted-foreground' : 'text-primary'} />
           {_(section.title)}
           <span className="text-body-md text-muted-foreground font-normal ml-1">({tasks.length})</span>
         </h2>
@@ -374,7 +374,7 @@ export function EmptyFilterState({ filter }: { filter: FilterTab }) {
 
   return (
     <Card className="border-border/60">
-      <CardContent className="flex flex-col items-center gap-3 py-10">
+      <CardContent className="flex flex-col items-center gap-3 py-8 sm:py-10">
         <Icon name={m.icon} size={40} className="text-muted-foreground/50" />
         <p className="text-body-md text-muted-foreground">{_(m.message)}</p>
       </CardContent>

@@ -149,10 +149,10 @@ export default function StudentTasksPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
+        className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-8 sm:space-y-16"
       >
         <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3 sm:gap-4">
             <div>
               <h1 className="text-headline-sm font-bold flex items-center gap-3">
                 {_('Tasks')}
@@ -165,7 +165,7 @@ export default function StudentTasksPage() {
               <p className="text-body-md text-muted-foreground">{_('Stay on top of your upcoming work')}</p>
             </div>
             {subjectsData && subjectsData.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <div className="flex flex-nowrap sm:flex-wrap items-center gap-1.5 pt-1 overflow-x-auto scrollbar-none">
                 <button
                   onClick={() => setSelectedSubjectId('')}
                   className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border shrink-0 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
