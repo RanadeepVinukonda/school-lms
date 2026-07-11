@@ -10,6 +10,10 @@ describe('CORS configuration', () => {
     // Temporarily set NODE_ENV to production for this test
     const origEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
+    process.env.GEMINI_API_KEY = 'test-key';
+    process.env.CLOUDINARY_CLOUD_NAME = 'test';
+    process.env.CLOUDINARY_API_KEY = 'test';
+    process.env.CLOUDINARY_API_SECRET = 'test';
 
     // Re-import to pick up production env
     jest.resetModules();
@@ -28,6 +32,10 @@ describe('CORS configuration', () => {
   it('allows allowed origins in production', async () => {
     const origEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
+    process.env.GEMINI_API_KEY = 'test-key';
+    process.env.CLOUDINARY_CLOUD_NAME = 'test';
+    process.env.CLOUDINARY_API_KEY = 'test';
+    process.env.CLOUDINARY_API_SECRET = 'test';
 
     jest.resetModules();
     const { corsOptions: prodCors } = await import('../config/cors');
