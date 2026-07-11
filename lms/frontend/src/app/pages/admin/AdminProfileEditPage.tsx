@@ -14,7 +14,7 @@ import { Icon } from '@/components/ui/Icon';
 import { cardStackReveal } from '@/lib/motion';
 import { getInitials } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
-import { uploadProfileImage } from '@/services/cloudinaryService';
+import { uploadProfileImage } from '@/services/avatarService';
 import { getUser, updateUser } from '@/services/dataService';
 import { ROUTES } from '@/lib/constants';
 
@@ -48,7 +48,7 @@ export default function AdminProfileEditPage() {
           bio: userDoc.bio || '',
           address: userDoc.address || '',
         });
-        setAvatarPreview(userDoc.avatar || '');
+        setAvatarPreview(userDoc.photoURL || '');
       }
       return userDoc;
     },
@@ -78,7 +78,7 @@ export default function AdminProfileEditPage() {
     mutationFn: async () => {
       if (!user) throw new Error('Not authenticated');
       const data: Record<string, unknown> = { ...form };
-      if (avatarPreview) data.avatar = avatarPreview;
+      if (avatarPreview) data.photoURL = avatarPreview;
       await updateUser(user.id, data);
       setUser({ ...user, ...data } as typeof user);
     },
