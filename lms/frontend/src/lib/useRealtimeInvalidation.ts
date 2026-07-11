@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/supabase/config';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 type RealtimeConfig = {
   table: string;
