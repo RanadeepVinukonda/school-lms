@@ -14,7 +14,7 @@ import { OptionsSelect } from '@/components/ui/select';
 import { attendanceService } from '@/services/attendanceService';
 import { getStudentsByClass } from '@/services/dataService';
 import { useAuthStore } from '@/store/authStore';
-import { supabase } from '@/supabase/config';
+import api from '@/services/api';
 
 export default function TeacherAttendancePage() {
   const { _ } = useTranslation();
@@ -30,8 +30,15 @@ export default function TeacherAttendancePage() {
   const { data: teacherClasses = [] } = useQuery({
     queryKey: ['teacher-classes', userId],
     queryFn: async () => {
-      const { data } = await supabase.from('classes').select('*').contains('teacherIds', [userId]);
-      return (data || []).map((d: any) => ({ id: d.id, ...d }));
+      const res = await api.get('/teacher-class-subject/my');
+      const assignments = res.data?.data || [];
+      const seen = new Map<string, { id: string; name: string }>();
+      for (const a of assignments) {
+        if (!seen.has(a.classId)) {
+          seen.set(a.classId, { id: a.classId, name: a.className || a.classId });
+        }
+      }
+      return Array.from(seen.values());
     },
     enabled: !!userId,
   });

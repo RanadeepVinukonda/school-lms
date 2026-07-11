@@ -527,8 +527,18 @@ export async function getAllUsers(): Promise<UserDoc[]> {
   return (data || []).map(mapUserRowToDoc);
 }
 
+const EXTRA_USER_FIELDS = ['bio', 'address', 'dateOfBirth'] as const;
+
+function parseDataColumn(row: any): Record<string, unknown> {
+  if (!row || row.data == null) return {};
+  if (typeof row.data === 'object') return row.data as Record<string, unknown>;
+  if (typeof row.data === 'string') try { return JSON.parse(row.data); } catch { return {}; }
+  return {};
+}
+
 /** Map SQL snake_case row to frontend camelCase UserDoc. */
 export function mapUserRowToDoc(row: any): UserDoc {
+  const extras = parseDataColumn(row);
   return {
     ...row,
     displayName: row.display_name || row.displayName,
@@ -543,12 +553,24 @@ export function mapUserRowToDoc(row: any): UserDoc {
     lastActiveDate: row.last_active_date || row.lastActiveDate,
     createdAt: row.created_at || row.createdAt,
     updatedAt: row.updated_at || row.updatedAt,
+    phone: row.phone || row.phone_number || '',
+    bio: (extras.bio as string) || row.bio || '',
+    address: (extras.address as string) || row.address || '',
+    dateOfBirth: (extras.dateOfBirth as string) || row.date_of_birth || row.dateOfBirth || '',
   };
 }
 
 /** Map frontend camelCase UserDoc to SQL snake_case row. */
 export function mapUserDocToRow(doc: Partial<UserDoc>): any {
-  const row: any = { ...doc };
+  const row: any = {};
+  for (const [k, v] of Object.entries(doc)) {
+    if (v === undefined) continue;
+    if (EXTRA_USER_FIELDS.includes(k as any)) {
+      row.data = { ...((row.data as Record<string, unknown>) || {}), [k]: v };
+    } else {
+      row[k] = v;
+    }
+  }
   if (doc.displayName !== undefined) { row.display_name = doc.displayName; delete row.displayName; }
   if (doc.photoURL !== undefined) { row.photo_url = doc.photoURL; delete row.photoURL; }
   if (doc.isActive !== undefined) { row.is_active = doc.isActive; delete row.isActive; }
@@ -559,6 +581,7 @@ export function mapUserDocToRow(doc: Partial<UserDoc>): any {
   if (doc.academicYear !== undefined) { row.academic_year = doc.academicYear; delete row.academicYear; }
   if (doc.childrenIds !== undefined) { row.children_ids = doc.childrenIds; delete row.childrenIds; }
   if (doc.lastActiveDate !== undefined) { row.last_active_date = doc.lastActiveDate; delete row.lastActiveDate; }
+  if (doc.phone !== undefined) { row.phone_number = doc.phone; delete row.phone; }
   return row;
 }
 

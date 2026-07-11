@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import { ROUTES } from '@/lib/constants';
 
 export default function AdminProfileEditPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const [uploading, setUploading] = useState(false);
@@ -35,25 +36,24 @@ export default function AdminProfileEditPage() {
 
   const [avatarPreview, setAvatarPreview] = useState('');
 
-  const { isLoading: loadingProfile } = useQuery({
+  const { data: userDoc, isLoading: loadingProfile } = useQuery({
     queryKey: ['admin-profile-edit', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const userDoc = await getUser(user.id);
-      if (userDoc) {
-        setForm({
-          displayName: userDoc.displayName || '',
-          email: userDoc.email || '',
-          phone: userDoc.phone || '',
-          bio: userDoc.bio || '',
-          address: userDoc.address || '',
-        });
-        setAvatarPreview(userDoc.photoURL || '');
-      }
-      return userDoc;
-    },
+    queryFn: () => (user?.id ? getUser(user.id) : null),
     enabled: !!user?.id,
   });
+
+  useEffect(() => {
+    if (userDoc) {
+      setForm({
+        displayName: userDoc.displayName || '',
+        email: userDoc.email || '',
+        phone: userDoc.phone || '',
+        bio: userDoc.bio || '',
+        address: userDoc.address || '',
+      });
+      setAvatarPreview(userDoc.photoURL || '');
+    }
+  }, [userDoc]);
 
   const handleChange = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -68,7 +68,7 @@ export default function AdminProfileEditPage() {
       setAvatarPreview(url);
       toast.success('Avatar uploaded');
     } catch {
-      toast.error('Avatar upload failed. Check Cloudinary config.');
+      toast.error('Avatar upload failed. Check Supabase Storage bucket.');
     } finally {
       setUploading(false);
     }
@@ -83,6 +83,7 @@ export default function AdminProfileEditPage() {
       setUser({ ...user, ...data } as typeof user);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-profile-edit', user?.id] });
       toast.success('Profile updated');
       navigate(ROUTES.ADMIN_DASHBOARD);
     },
