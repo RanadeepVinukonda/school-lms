@@ -1,5 +1,6 @@
 {
   "$schema": "https://vercel.com/schemas/vercel.json",
+  "rootDirectory": "lms/frontend",
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
