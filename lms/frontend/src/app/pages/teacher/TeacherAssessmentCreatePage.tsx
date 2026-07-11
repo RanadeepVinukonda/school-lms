@@ -1323,9 +1323,9 @@ export default function TeacherAssessmentCreatePage() {
                       <motion.div key={`${assessment.type}-${assessment.id}`} variants={cardStackReveal} custom={0}>
                         <Card className="border-border/60">
                           <CardContent className="p-5">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex items-start gap-3 min-w-0 flex-1">
-                                <div className={`h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                            <div className="flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4 flex">
+                              <div className="flex items-start gap-3 min-w-0 flex-1 w-full md:w-auto">
+                                <div className={`h-10 w-10 rounded-lg hidden md:flex items-center justify-center flex-shrink-0 ${
                                   assessment.type === 'quiz'
                                     ? 'bg-primary/10 text-primary'
                                     : 'bg-secondary/10 text-secondary'
@@ -1348,7 +1348,7 @@ export default function TeacherAssessmentCreatePage() {
                                       {assessment.type}
                                     </Badge>
                                   </div>
-                                  <div className="flex items-center gap-3 mt-1.5 text-label-xs text-muted-foreground flex-wrap">
+                                  <div className="grid grid-cols-2 md:flex md:items-center gap-x-3 gap-y-1 md:gap-3 mt-1.5 text-label-xs text-muted-foreground">
                                     <span>{assessment.attemptCount ?? 0} {_('attempts')}</span>
                                     {assessment.timeLimitMinutes && <span>{assessment.timeLimitMinutes}{_('m')}</span>}
                                     {assessment.totalPoints && <span>{assessment.totalPoints} {_('pts')}</span>}
@@ -1357,7 +1357,7 @@ export default function TeacherAssessmentCreatePage() {
                                   </div>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2 flex-shrink-0">
+                              <div className="flex flex-wrap items-center gap-2 w-full md:w-auto md:flex-shrink-0">
                                 {assessment.type === 'quiz' && assessment.status === 'draft' && (
                                   <>
                                     <label className="flex items-center gap-1 cursor-pointer text-[10px]">
@@ -1389,6 +1389,7 @@ export default function TeacherAssessmentCreatePage() {
                                       disabled={
                                         (assessment.type === 'quiz' ? releaseQuizMutation.isPending : releaseAssignmentMutation.isPending)
                                       }
+                                      className="w-full md:w-auto"
                                     >
                                       {_('Release')}
                                     </Button>
@@ -1406,7 +1407,7 @@ export default function TeacherAssessmentCreatePage() {
                                       size="sm"
                                       onClick={() => republishQuizMutation.mutate(assessment.id)}
                                       disabled={republishQuizMutation.isPending}
-                                      className="text-success border-success/30"
+                                      className="text-success border-success/30 w-full md:w-auto"
                                     >
                                       {_('Republish')}
                                     </Button>
