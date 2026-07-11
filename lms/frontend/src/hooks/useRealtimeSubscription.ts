@@ -42,6 +42,7 @@ export function useRealtimeSubscription({
   callbackRef.current = callback;
 
   useEffect(() => {
+    if (!supabase) return;
     const channelName = `${table}_${event}_${filter ? `${filter.column}_${filter.value}` : 'all'}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
     const realtimeChannel = supabase
@@ -63,14 +64,14 @@ export function useRealtimeSubscription({
     channelRef.current = realtimeChannel;
 
     return () => {
-      supabase.removeChannel(realtimeChannel);
+      if (supabase) supabase.removeChannel(realtimeChannel);
       channelRef.current = null;
     };
   }, [table, event, filter?.column, filter?.value]);
 
   return () => {
     if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
+      if (supabase) supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
   };

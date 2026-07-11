@@ -38,6 +38,7 @@ interface AssessmentInfo {
   questionCount: number;
   showResults: boolean;
   passingScore: number;
+  maxAttempts?: number;
   isRepublished?: boolean;
   questions?: V2Question[];
 }

@@ -417,7 +417,7 @@ export default function AdminDashboardPage() {
                     />
                   </div>
 
-                  <motion.div variants={cardStackReveal} custom={0}>
+                    <motion.div variants={cardStackReveal} custom={0} className="space-y-4">
                     {filteredOversight.length === 0 ? (
                       <Card className="border-border/60">
                         <CardContent className="flex flex-col items-center gap-4 py-16 text-muted-foreground">
@@ -426,59 +426,12 @@ export default function AdminDashboardPage() {
                         </CardContent>
                       </Card>
                     ) : (
-                      <div className="border border-border/60 rounded-xl overflow-x-auto bg-surface">
-                        <table className="w-full">
-                          <thead>
-                            <tr className="border-b border-b-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
-                              <th className="text-left px-4 py-3">{_('Class / Subject')}</th>
-                              <th className="text-left px-4 py-3">{_('Concept')}</th>
-                              <th className="text-left px-4 py-3">{_('Teacher')}</th>
-                              <th className="text-left px-4 py-3">{_('Avg Score')}</th>
-                              <th className="text-left px-4 py-3">{_('Attempts')}</th>
-                              <th className="text-center px-4 py-3">{_('Status')}</th>
-                              <th className="text-right px-4 py-3">{_('Action')}</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-border/40">
-                            {filteredOversight.map((item: any, idx: number) => {
-                              const isLow = item.status === 'low';
-                              return (
-                                <tr key={`${item.classId}-${item.conceptId}-${idx}`} className="hover:bg-muted/20 transition-colors">
-                                  <td className="px-4 py-3">
-                                    <div className="text-title-sm font-bold">{item.className}</div>
-                                    <div className="text-label-sm text-muted-foreground">{item.subjectName}</div>
-                                  </td>
-                                  <td className="px-4 py-3 text-title-sm font-medium max-w-[200px] truncate" title={item.conceptName}>{item.conceptName}</td>
-                                  <td className="px-4 py-3 text-title-sm text-muted-foreground">{item.teacherName}</td>
-                                  <td className="px-4 py-3 font-mono">
-                                    {item.attemptCount > 0 ? (
-                                      <span className={isLow ? 'text-error font-bold' : 'text-success font-bold'}>{item.averageScore}%</span>
-                                    ) : (
-                                      <span className="text-muted-foreground/40">&mdash;</span>
-                                    )}
-                                  </td>
-                                  <td className="px-4 py-3 text-title-sm font-mono text-muted-foreground">{item.attemptCount}</td>
-                                  <td className="px-4 py-3 text-center">
-                                    {item.attemptCount > 0 ? (
-                                      <Badge variant={isLow ? 'destructive' : 'success'} className="text-[10px] uppercase font-bold">{isLow ? 'Alert' : 'Good'}</Badge>
-                                    ) : (
-                                      <Badge variant="secondary" className="text-[10px] uppercase font-bold">{_('Untested')}</Badge>
-                                    )}
-                                  </td>
-                                  <td className="px-4 py-3 text-right">
-                                    <Button size="sm" variant={isLow ? 'destructive' : 'outline'} disabled={!isLow || reTeachMutation.isPending}
-                                      onClick={() => reTeachMutation.mutate({ teacherId: item.teacherId, className: item.className, subjectName: item.subjectName, conceptName: item.conceptName })}
-                                    >
-                                      <Icon name="campaign" size={16} className="mr-1.5" />
-                                      Request Re-teach
-                                    </Button>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
+                      <TeacherGroupCards
+                        items={filteredOversight}
+                        onReTeach={(data: any) => reTeachMutation.mutate(data)}
+                        reTeachPending={reTeachMutation.isPending}
+                        _={_}
+                      />
                     )}
                   </motion.div>
                 </div>
@@ -771,5 +724,106 @@ export default function AdminDashboardPage() {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function TeacherGroupCards({ items, onReTeach, reTeachPending, _ }: { items: any[]; onReTeach: (data: any) => void; reTeachPending: boolean; _: any }) {
+  const [expandedTeachers, setExpandedTeachers] = useState<Record<string, boolean>>({});
+  const groups = useMemo(() => {
+    const g: Record<string, { items: any[]; totalLow: number; totalConcepts: number; teacherName: string }> = {};
+    for (const item of items) {
+      const key = item.teacherId || 'unknown';
+      if (!g[key]) g[key] = { items: [], totalLow: 0, totalConcepts: 0, teacherName: item.teacherName || 'Unknown' };
+      g[key].items.push(item);
+      g[key].totalConcepts++;
+      if (item.status === 'low') g[key].totalLow++;
+    }
+    return g;
+  }, [items]);
+  const toggle = (key: string) => setExpandedTeachers(p => ({ ...p, [key]: !p[key] }));
+  return (
+    <div className="space-y-4">
+      {Object.entries(groups).map(([teacherId, group]) => {
+        const expanded = !!expandedTeachers[teacherId];
+        const hasAlert = group.totalLow > 0;
+        return (
+          <Card key={teacherId} className={`border-border/60 overflow-hidden ${hasAlert ? 'ring-1 ring-error/20' : ''}`}>
+            <button
+              onClick={() => toggle(teacherId)}
+              className="w-full flex items-center justify-between p-4 hover:bg-muted/20 transition-colors text-left"
+            >
+              <div className="flex items-center gap-3">
+                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${hasAlert ? 'bg-error-container text-error' : 'bg-success-container text-success'}`}>
+                  <Icon name={hasAlert ? 'warning' : 'check_circle'} size={20} />
+                </div>
+                <div>
+                  <p className="text-title-sm font-bold">{group.teacherName}</p>
+                  <p className="text-label-sm text-muted-foreground">
+                    {group.totalConcepts} concepts &middot; {group.totalLow} alert{group.totalLow !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {hasAlert && <Badge variant="destructive" className="text-[10px] uppercase font-bold">Alert</Badge>}
+                <Icon name={expanded ? 'expand_less' : 'expand_more'} size={20} className="text-muted-foreground" />
+              </div>
+            </button>
+            {expanded && (
+              <div className="border-t border-border/40 overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-muted/20 text-label-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      <th className="text-left px-4 py-2">{_('Class / Subject')}</th>
+                      <th className="text-left px-4 py-2">{_('Concept')}</th>
+                      <th className="text-left px-4 py-2">{_('Avg Score')}</th>
+                      <th className="text-left px-4 py-2">{_('Attempts')}</th>
+                      <th className="text-center px-4 py-2">{_('Status')}</th>
+                      <th className="text-right px-4 py-2">{_('Action')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/40">
+                    {group.items.map((item: any, idx: number) => {
+                      const isLow = item.status === 'low';
+                      return (
+                        <tr key={`${item.classId}-${item.conceptId}-${idx}`} className="hover:bg-muted/20 transition-colors">
+                          <td className="px-4 py-2.5">
+                            <div className="text-title-sm font-bold">{item.className}</div>
+                            <div className="text-label-sm text-muted-foreground">{item.subjectName}</div>
+                          </td>
+                          <td className="px-4 py-2.5 text-title-sm font-medium max-w-[200px] truncate" title={item.conceptName}>{item.conceptName}</td>
+                          <td className="px-4 py-2.5 font-mono">
+                            {item.attemptCount > 0 ? (
+                              <span className={isLow ? 'text-error font-bold' : 'text-success font-bold'}>{item.averageScore}%</span>
+                            ) : (
+                              <span className="text-muted-foreground/40">&mdash;</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2.5 text-title-sm font-mono text-muted-foreground">{item.attemptCount}</td>
+                          <td className="px-4 py-2.5 text-center">
+                            {item.attemptCount > 0 ? (
+                              <Badge variant={isLow ? 'destructive' : 'success'} className="text-[10px] uppercase font-bold">{isLow ? 'Alert' : 'Good'}</Badge>
+                            ) : (
+                              <Badge variant="secondary" className="text-[10px] uppercase font-bold">{_('Untested')}</Badge>
+                            )}
+                          </td>
+                          <td className="px-4 py-2.5 text-right">
+                            <Button size="sm" variant={isLow ? 'destructive' : 'outline'} disabled={!isLow || reTeachPending}
+                              onClick={() => onReTeach({ teacherId: item.teacherId, className: item.className, subjectName: item.subjectName, conceptName: item.conceptName })}
+                            >
+                              <Icon name="campaign" size={16} className="mr-1.5" />
+                              Request Re-teach
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+        );
+      })}
+    </div>
   );
 }

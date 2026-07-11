@@ -5,37 +5,79 @@ function safePct(value: number): number {
   return Number.isFinite(value) ? value : 0;
 }
 
+async function loadClassMeta(supabase: any): Promise<{ nameMap: Map<string, string>; gradeMap: Map<string, string> }> {
+  const nameMap = new Map<string, string>();
+  const gradeMap = new Map<string, string>();
+  const { data: fsClasses } = await supabase
+    .from('firestore_docs')
+    .select('doc_id, data')
+    .eq('collection', 'classes');
+  for (const c of (fsClasses || [])) {
+    const d = c.data || {};
+    const name = d.name || d.className || '';
+    const section = d.section ? ` ${d.section}` : '';
+    const code = d.code || '';
+    nameMap.set(c.doc_id, `${name}${section}`.trim() || code || c.doc_id);
+    gradeMap.set(c.doc_id, d.grade || d.gradeLevel || '');
+  }
+  return { nameMap, gradeMap };
+}
+
 export async function getGradeComparison(schoolId?: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return [];
 
-  let usersQuery = supabase.from('users').select('*');
-  if (schoolId) usersQuery = usersQuery.eq('school_id', schoolId);
-  const { data: users } = await usersQuery;
+  const [{ nameMap }] = await Promise.all([loadClassMeta(supabase)]);
 
-  let classesQuery = supabase.from('classes').select('*');
-  if (schoolId) classesQuery = classesQuery.eq('school_id', schoolId);
-  const { data: classes } = await classesQuery;
+  const [quizRes, examRes, assignRes] = await Promise.all([
+    supabase.from('firestore_docs').select('doc_id, data').eq('collection', 'quizV2'),
+    supabase.from('firestore_docs').select('doc_id, data').eq('collection', 'examV2'),
+    supabase.from('firestore_docs').select('doc_id, data').eq('collection', 'assignmentV2'),
+  ]);
 
-  const { data: rawGrades } = await supabase.from('grades').select('*');
-  const grades = (rawGrades || []).filter(g => !schoolId || !g.schoolId || g.schoolId === schoolId);
+  const [quizAttemptRes, examAttemptRes, submitRes] = await Promise.all([
+    supabase.from('firestore_docs').select('data').eq('collection', 'quizAttemptV2'),
+    supabase.from('firestore_docs').select('data').eq('collection', 'examAttemptV2'),
+    supabase.from('firestore_docs').select('data').eq('collection', 'assignmentSubmissionV2'),
+  ]);
 
-  const gradeMap: Record<string, { totalScore: number; totalPoints: number; count: number }> = {};
+  const classMap: Record<string, { totalScore: number; totalPoints: number; studentIds: Set<string>; count: number }> = {};
 
-  for (const g of grades) {
-    const student = (users || []).find((u: any) => u.id === g.studentId);
-    if (!student) continue;
-    const cls = (classes || []).find((c: any) => c.id === student.class_id || (student.class_ids && student.class_ids.includes(c.id)));
-    const gradeKey = cls?.grade || 'Unknown';
-    if (!gradeMap[gradeKey]) gradeMap[gradeKey] = { totalScore: 0, totalPoints: 0, count: 0 };
-    gradeMap[gradeKey].totalScore += g.score || 0;
-    gradeMap[gradeKey].totalPoints += g.totalPoints || 0;
-    gradeMap[gradeKey].count++;
+  function processAttempts(attempts: any[], idField: string, assessments: any[]) {
+    const docById = new Map(assessments.map((d: any) => [d.doc_id, d.data]));
+    for (const a of attempts) {
+      const pct = a.data?.percentage;
+      if (pct == null) continue;
+      const doc = docById.get(a.data?.[idField]);
+      if (!doc) continue;
+      const classId = doc.classId || doc.class_id || '';
+      if (!classId) continue;
+      if (!classMap[classId]) classMap[classId] = { totalScore: 0, totalPoints: 0, studentIds: new Set(), count: 0 };
+      classMap[classId].totalScore += pct;
+      classMap[classId].totalPoints += 100;
+      classMap[classId].studentIds.add(a.data?.studentId);
+      classMap[classId].count++;
+    }
+  }
+
+  processAttempts(quizAttemptRes.data || [], 'quizId', quizRes.data || []);
+  processAttempts(examAttemptRes.data || [], 'examId', examRes.data || []);
+  processAttempts(submitRes.data || [], 'assignmentId', assignRes.data || []);
+
+  const gradeMap: Record<string, { totalScore: number; totalPoints: number; count: number; studentCount: number }> = {};
+  for (const [classId, data] of Object.entries(classMap)) {
+    const name = nameMap.get(classId);
+    const gradeKey = name || classId;
+    if (!gradeMap[gradeKey]) gradeMap[gradeKey] = { totalScore: 0, totalPoints: 0, count: 0, studentCount: 0 };
+    gradeMap[gradeKey].totalScore += data.totalScore;
+    gradeMap[gradeKey].totalPoints += data.totalPoints;
+    gradeMap[gradeKey].count += data.count;
+    gradeMap[gradeKey].studentCount += data.studentIds.size;
   }
 
   return Object.entries(gradeMap).map(([grade, data]) => ({
     grade,
     averageScore: data.totalPoints > 0 ? safePct(Math.round((data.totalScore / data.totalPoints) * 100)) : 0,
-    studentCount: data.count,
+    studentCount: data.studentCount,
     totalPoints: data.totalPoints,
   }));
 }
@@ -47,34 +89,44 @@ export async function getTeacherComparison(schoolId?: string) {
   if (schoolId) usersQuery = usersQuery.eq('school_id', schoolId);
   const { data: users } = await usersQuery;
 
-  let classesQuery = supabase.from('classes').select('*');
-  if (schoolId) classesQuery = classesQuery.eq('school_id', schoolId);
-  const { data: classes } = await classesQuery;
+  const [quizRes, examRes, assignRes] = await Promise.all([
+    supabase.from('firestore_docs').select('doc_id, data').eq('collection', 'quizV2'),
+    supabase.from('firestore_docs').select('doc_id, data').eq('collection', 'examV2'),
+    supabase.from('firestore_docs').select('doc_id, data').eq('collection', 'assignmentV2'),
+  ]);
 
-  const { data: rawGrades } = await supabase.from('grades').select('*');
-  const grades = (rawGrades || []).filter(g => !schoolId || !g.schoolId || g.schoolId === schoolId);
+  const [quizAttemptRes, examAttemptRes, submitRes] = await Promise.all([
+    supabase.from('firestore_docs').select('data').eq('collection', 'quizAttemptV2'),
+    supabase.from('firestore_docs').select('data').eq('collection', 'examAttemptV2'),
+    supabase.from('firestore_docs').select('data').eq('collection', 'assignmentSubmissionV2'),
+  ]);
 
   const teacherMap: Record<string, { totalScore: number; totalPoints: number; count: number; classIds: Set<string> }> = {};
-
   const teachers = (users || []).filter((u: any) => u.role === 'teacher');
   for (const t of teachers) {
-    const tClassIds = t.class_ids || (t.class_id ? [t.class_id] : []);
-    if (!teacherMap[t.id]) {
-      teacherMap[t.id] = { totalScore: 0, totalPoints: 0, count: 0, classIds: new Set(tClassIds) };
+    teacherMap[t.id] = { totalScore: 0, totalPoints: 0, count: 0, classIds: new Set() };
+  }
+
+  function processAttempts(attempts: any[], idField: string, assessments: any[]) {
+    const docById = new Map(assessments.map((d: any) => [d.doc_id, d.data]));
+    for (const a of attempts) {
+      const pct = a.data?.percentage;
+      if (pct == null) continue;
+      const doc = docById.get(a.data?.[idField]);
+      if (!doc) continue;
+      const teacherId = doc.teacherId || doc.teacher_id || '';
+      if (!teacherId || !teacherMap[teacherId]) continue;
+      const classId = doc.classId || doc.class_id || '';
+      teacherMap[teacherId].totalScore += pct;
+      teacherMap[teacherId].totalPoints += 100;
+      teacherMap[teacherId].count++;
+      if (classId) teacherMap[teacherId].classIds.add(classId);
     }
   }
 
-  for (const g of grades) {
-    const cls = (classes || []).find((c: any) => c.id === g.classId);
-    if (!cls) continue;
-    for (const [tid, data] of Object.entries(teacherMap)) {
-      if (data.classIds.has(cls.id)) {
-        data.totalScore += g.score || 0;
-        data.totalPoints += g.totalPoints || 0;
-        data.count++;
-      }
-    }
-  }
+  processAttempts(quizAttemptRes.data || [], 'quizId', quizRes.data || []);
+  processAttempts(examAttemptRes.data || [], 'examId', examRes.data || []);
+  processAttempts(submitRes.data || [], 'assignmentId', assignRes.data || []);
 
   return Object.entries(teacherMap).map(([teacherId, data]) => {
     const teacher = (users || []).find((u: any) => u.id === teacherId);
@@ -91,30 +143,52 @@ export async function getTeacherComparison(schoolId?: string) {
 export async function getClassComparison(schoolId?: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return [];
 
-  let classesQuery = supabase.from('classes').select('*');
-  if (schoolId) classesQuery = classesQuery.eq('school_id', schoolId);
-  const { data: classes } = await classesQuery;
+  const [{ nameMap, gradeMap }] = await Promise.all([loadClassMeta(supabase)]);
 
-  const { data: rawGrades } = await supabase.from('grades').select('*');
-  const grades = (rawGrades || []).filter(g => !schoolId || !g.schoolId || g.schoolId === schoolId);
+  const [quizRes, examRes, assignRes] = await Promise.all([
+    supabase.from('firestore_docs').select('doc_id, data').eq('collection', 'quizV2'),
+    supabase.from('firestore_docs').select('doc_id, data').eq('collection', 'examV2'),
+    supabase.from('firestore_docs').select('doc_id, data').eq('collection', 'assignmentV2'),
+  ]);
+
+  const [quizAttemptRes, examAttemptRes, submitRes] = await Promise.all([
+    supabase.from('firestore_docs').select('data').eq('collection', 'quizAttemptV2'),
+    supabase.from('firestore_docs').select('data').eq('collection', 'examAttemptV2'),
+    supabase.from('firestore_docs').select('data').eq('collection', 'assignmentSubmissionV2'),
+  ]);
 
   const classMap: Record<string, { totalScore: number; totalPoints: number; count: number }> = {};
-
-  for (const g of grades) {
-    const clsId = g.classId;
-    if (!clsId) continue;
-    if (!classMap[clsId]) classMap[clsId] = { totalScore: 0, totalPoints: 0, count: 0 };
-    classMap[clsId].totalScore += g.score || 0;
-    classMap[clsId].totalPoints += g.totalPoints || 0;
-    classMap[clsId].count++;
+  for (const cid of nameMap.keys()) {
+    classMap[cid] = { totalScore: 0, totalPoints: 0, count: 0 };
   }
 
+  function processAttempts(attempts: any[], idField: string, assessments: any[]) {
+    const docById = new Map(assessments.map((d: any) => [d.doc_id, d.data]));
+    for (const a of attempts) {
+      const pct = a.data?.percentage;
+      if (pct == null) continue;
+      const doc = docById.get(a.data?.[idField]);
+      if (!doc) continue;
+      const clsId = doc.classId || doc.class_id || '';
+      if (!clsId) continue;
+      if (!classMap[clsId]) classMap[clsId] = { totalScore: 0, totalPoints: 0, count: 0 };
+      classMap[clsId].totalScore += pct;
+      classMap[clsId].totalPoints += 100;
+      classMap[clsId].count++;
+    }
+  }
+
+  processAttempts(quizAttemptRes.data || [], 'quizId', quizRes.data || []);
+  processAttempts(examAttemptRes.data || [], 'examId', examRes.data || []);
+  processAttempts(submitRes.data || [], 'assignmentId', assignRes.data || []);
+
   return Object.entries(classMap).map(([classId, data]) => {
-    const cls = (classes || []).find((c: any) => c.id === classId);
+    const name = nameMap.get(classId);
+    const grade = gradeMap.get(classId) || '';
     return {
       classId,
-      className: cls?.name || 'Unknown',
-      grade: cls?.grade || '',
+      className: name || classId,
+      grade,
       averageScore: data.totalPoints > 0 ? safePct(Math.round((data.totalScore / data.totalPoints) * 100)) : 0,
       studentCount: data.count,
     };
@@ -129,19 +203,26 @@ export async function getSchoolOverview() {
 export async function getPerformanceTrends(schoolId?: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return [];
 
-  const { data: rawGrades } = await supabase.from('grades').select('*');
-  const grades = (rawGrades || []).filter(g => !schoolId || !g.schoolId || g.schoolId === schoolId);
+  const [quizAttemptRes, examAttemptRes, submitRes] = await Promise.all([
+    supabase.from('firestore_docs').select('data').eq('collection', 'quizAttemptV2'),
+    supabase.from('firestore_docs').select('data').eq('collection', 'examAttemptV2'),
+    supabase.from('firestore_docs').select('data').eq('collection', 'assignmentSubmissionV2'),
+  ]);
 
   const monthMap: Record<string, { totalScore: number; totalPoints: number; count: number }> = {};
 
-  for (const g of grades) {
-    const date = g.examDate || g.date || g.createdAt || g.created_at || g.updatedAt;
-    if (!date) continue;
-    const month = date.substring(0, 7);
-    if (!monthMap[month]) monthMap[month] = { totalScore: 0, totalPoints: 0, count: 0 };
-    monthMap[month].totalScore += g.score || 0;
-    monthMap[month].totalPoints += g.totalPoints || 0;
-    monthMap[month].count++;
+  for (const arr of [quizAttemptRes.data || [], examAttemptRes.data || [], submitRes.data || []]) {
+    for (const a of arr) {
+      const pct = a.data?.percentage;
+      if (pct == null) continue;
+      const date = a.data?.createdAt || a.data?.submittedAt || a.data?.examDate || (a as any).created_at;
+      if (!date) continue;
+      const month = date.substring(0, 7);
+      if (!monthMap[month]) monthMap[month] = { totalScore: 0, totalPoints: 0, count: 0 };
+      monthMap[month].totalScore += pct;
+      monthMap[month].totalPoints += 100;
+      monthMap[month].count++;
+    }
   }
 
   return Object.entries(monthMap)
