@@ -22,5 +22,10 @@
       "backgroundColor": "#FAFAF5"
     }
   },
-  "owner": "chandhini2005s-team"
+  "owner": "chandhini2005s-team",
+  "extra": {
+    "eas": {
+      "projectId": "d433cb58-3169-4b2f-ae58-e89c1887ab7d"
+    }
+  }
 }
