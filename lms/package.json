@@ -1,0 +1,9 @@
+{
+  "name": "school-lms",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build:frontend": "npm run --prefix frontend build 2>&1",
+    "build:backend": "npm run --prefix backend build 2>&1"
+  }
+}

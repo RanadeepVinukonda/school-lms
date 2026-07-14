@@ -1,0 +1,49 @@
+node_modules/
+dist/
+**/.env
+**/.env.local
+**/.env.vercel
+*.log
+.DS_Store
+_ignore_this/
+.vercel
+*_env.env
+.vscode/
+.kiro/
+
+# Agent config dirs
+.amazonq/
+.claude/
+.codex/
+.gemini/
+.kilocode/
+.opencode/
+
+# Build artifacts
+coverage/
+coverage-report/
+tsc_out.txt
+
+# Scratch
+scratch/
+
+# Expo native directories
+.expo/
+android/
+ios/
+
+# Custom ignored patterns for repository cleanup
+.agent/
+.kilo/
+graphify-out/
+openspec/
+mempalace.yaml
+entities.json
+lms-flowchart.html
+package-lock.json
+skills-lock.json
+*.md
+**/docs/
+
+
+lms/mobile/

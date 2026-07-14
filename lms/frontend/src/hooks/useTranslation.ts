@@ -1,0 +1,63 @@
+import { useSyncExternalStore } from 'react';
+import { useAuthStore } from '@/store/authStore';
+import { useLanguageStore } from '@/store/languageStore';
+import { translations, LanguageCode, TranslationKeys } from '@/i18n';
+
+function getLang(): LanguageCode {
+  const user = useAuthStore.getState().user;
+  const storeLang = useLanguageStore.getState().language;
+  const userLang = (user?.language as LanguageCode) || storeLang || 'en';
+  return translations[userLang] ? userLang : 'en';
+}
+
+function subscribe(cb: () => void) {
+  const unsub1 = useAuthStore.subscribe(cb);
+  const unsub2 = useLanguageStore.subscribe(cb);
+  return () => { unsub1(); unsub2(); };
+}
+
+type FlatDict = Record<string, string>;
+
+export function useTranslation() {
+  const lang = useSyncExternalStore(subscribe, getLang, getLang);
+  const resource = translations[lang];
+
+  function t(path: string): string {
+    const parts = path.split('.');
+    let current: any = resource;
+    for (const part of parts) {
+      if (current && typeof current === 'object' && part in current) {
+        current = current[part];
+      } else {
+        return path;
+      }
+    }
+    return current;
+  }
+
+  // Flat lookup: English text as key, falls back to English if not found
+  function _(text: string): string {
+    if (lang === 'en') return text;
+    return (resource as any as FlatDict)[text] || text;
+  }
+
+  const changeLanguage = async (newLang: LanguageCode) => {
+    const prevLang = getLang();
+    useLanguageStore.getState().setLanguage(newLang);
+    const user = useAuthStore.getState().user;
+    if (user) {
+      const updatedUser = { ...user, language: newLang };
+      useAuthStore.getState().setUser(updatedUser);
+      try {
+        const { supabase } = await import('@/supabase/config');
+        await supabase.from('users').update({ language: newLang }).eq('id', user.id);
+      } catch {
+        useLanguageStore.getState().setLanguage(prevLang);
+        useAuthStore.getState().setUser(user);
+      }
+    }
+  };
+
+  return { t, _, lang, changeLanguage };
+}
+export default useTranslation;

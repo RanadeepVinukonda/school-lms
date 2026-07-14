@@ -1,0 +1,30 @@
+{
+  "name": "Genesis",
+  "slug": "genesis-app",
+  "version": "1.0.0",
+  "orientation": "portrait",
+  "icon": "./assets/genesis_icon.png",
+  "userInterfaceStyle": "automatic",
+  "splash": {
+    "image": "./assets/genesis_icon.png",
+    "resizeMode": "contain",
+    "backgroundColor": "#FAFAF5"
+  },
+  "assetBundlePatterns": ["**/*"],
+  "ios": {
+    "supportsTablet": true,
+    "bundleIdentifier": "com.genesis.app"
+  },
+  "android": {
+    "package": "com.genesis.app",
+    "adaptiveIcon": {
+      "foregroundImage": "./assets/genesis_icon.png",
+      "backgroundColor": "#FAFAF5"
+    }
+  },
+  "extra": {
+    "eas": {
+      "projectId": "6ada164d-1944-4987-b971-13dd81f8a57d"
+    }
+  }
+}

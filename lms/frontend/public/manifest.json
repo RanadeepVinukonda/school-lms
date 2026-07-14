@@ -1,0 +1,43 @@
+{
+  "name": "Genesis Adaptive Learning Platform",
+  "short_name": "Genesis LMS",
+  "description": "Adaptive learning platform with personalized curriculum, AI tutoring, and offline support for students, teachers, and parents.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3B82F6",
+  "orientation": "portrait-primary",
+  "categories": ["education", "productivity"],
+  "gcm_sender_id": "103953800507",
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/icon-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512x512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your learning dashboard",
+      "url": "/student/dashboard",
+      "icons": [{ "src": "/genesis_icon.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Tasks",
+      "short_name": "Tasks",
+      "description": "View your pending tasks",
+      "url": "/student/tasks",
+      "icons": [{ "src": "/genesis_icon.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Exams",
+      "short_name": "Exams",
+      "description": "View upcoming exams",
+      "url": "/student/exams",
+      "icons": [{ "src": "/genesis_icon.png", "sizes": "192x192" }]
+    }
+  ]
+}

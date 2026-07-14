@@ -1,0 +1,19 @@
+﻿node_modules/
+dist/
+.env
+.env.local
+.vercel
+*.log
+
+# Build/artifact caches
+graphify-out/
+
+# Windows artifacts
+nul
+
+# Local environment overrides
+.env.vercel
+
+# Local tooling
+mempalace.yaml
+nul
