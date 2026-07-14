@@ -10,7 +10,7 @@
       "destination": "https://school-lms-api-b8cn.onrender.com/api/$1"
     },
     {
-      "source": "/((?!.*\\.\\w+).*)",
+      "source": "/([^.]*)",
       "destination": "/"
     }
   ],

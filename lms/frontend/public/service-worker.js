@@ -1,4 +1,4 @@
-const CACHE_NAME = 'genesis-lms-v1';
+const CACHE_NAME = 'genesis-lms-v2';
 const STATIC_ASSETS = ['/', '/index.html'];
 
 self.addEventListener('install', (e) => {
@@ -20,6 +20,18 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
   e.respondWith(
-    caches.match(e.request).then((cached) => cached || fetch(e.request).catch(() => caches.match('/')))
+    caches.match(e.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(e.request).then((res) => {
+        if (res.ok && (e.request.mode === 'navigate' || e.request.destination === 'document')) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
+        }
+        return res;
+      }).catch(() => {
+        if (e.request.mode === 'navigate') return caches.match('/');
+        return new Response('', { status: 503 });
+      });
+    })
   );
 });
