@@ -19,9 +19,9 @@ export default function App() {
     SplashScreen.hideAsync();
   }, []);
 
-  const onError = useCallback(() => {
+  const onError = useCallback((e: any) => {
     setLoading(false);
-    setError('Failed to load. Check your internet connection.');
+    setError(`Failed to load (${e?.code || 'UNKNOWN'}). Check your internet connection.`);
     SplashScreen.hideAsync();
   }, []);
 
@@ -69,6 +69,11 @@ export default function App() {
           mediaPlaybackRequiresUserAction={false}
           sharedCookiesEnabled
           thirdPartyCookiesEnabled
+          allowFileAccess
+          cacheEnabled={false}
+          setSupportMultipleWindows={false}
+          allowUniversalAccessFromFileURLs
+          mixedContentMode="compatibility"
         />
       </SafeAreaView>
     </SafeAreaProvider>
