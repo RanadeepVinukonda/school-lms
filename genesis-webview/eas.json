@@ -5,10 +5,12 @@
   },
   "build": {
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "installCommand": "npm install"
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "installCommand": "npm install"
     }
   },
   "submit": {
