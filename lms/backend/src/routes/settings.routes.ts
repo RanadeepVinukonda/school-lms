@@ -11,7 +11,7 @@ const router = Router();
 const updateSettingsSchema = z.object({}).passthrough();
 const updateSystemSettingsSchema = z.object({}).passthrough();
 
-router.get('/', authenticate, asyncHandler(settingsController.getSettings));
+router.get('/', asyncHandler(settingsController.getSettings));
 router.put('/', authenticate, requireRole('admin'), validate(updateSettingsSchema), asyncHandler(settingsController.updateSettings));
 router.get('/system', authenticate, requireRole('admin'), asyncHandler(settingsController.getSystemSettings));
 router.put('/system', authenticate, requireRole('admin'), validate(updateSystemSettingsSchema), asyncHandler(settingsController.updateSystemSettings));
