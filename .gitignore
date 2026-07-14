@@ -40,6 +40,9 @@ openspec/
 mempalace.yaml
 entities.json
 lms-flowchart.html
+# package-lock.json files are needed for vercel/render builds (npm ci)
+# lms/package-lock.json is a stale monorepo root lock file
+lms/package-lock.json
 package-lock.json
 skills-lock.json
 *.md
