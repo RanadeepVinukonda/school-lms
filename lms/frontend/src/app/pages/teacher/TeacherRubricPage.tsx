@@ -104,7 +104,7 @@ export default function TeacherRubricPage() {
         </motion.div>
 
         <Dialog open={showGenerator} onOpenChange={(o) => { if (!o) setShowGenerator(false); }}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{_('Create AI Rubric')}</DialogTitle>
               <DialogDescription>{_('Select an assignment and generate a grading rubric with AI.')}</DialogDescription>

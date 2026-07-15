@@ -120,7 +120,7 @@ export default function TeacherQuestionPapersPage() {
         </motion.div>
 
         <Dialog open={showCreate} onOpenChange={(o) => { if (!o) resetForm(); setShowCreate(o); }}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{_('Create Question Paper')}</DialogTitle>
               <DialogDescription>{_('Add sections and reference questions by their IDs from the question bank.')}</DialogDescription>

@@ -35,7 +35,7 @@ export function QuestionRenderer({ question }: QuestionProps) {
       return (
         <div className="space-y-4">
           <p className="text-body-md font-semibold text-on-surface">{prompt}</p>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-surface-variant/20 border border-outline-variant/40 rounded-xl p-4">
               <h4 className="text-label-xs font-bold text-primary mb-2 uppercase tracking-wide border-b border-outline-variant/40 pb-2">Column 1</h4>
               <ul className="space-y-3">

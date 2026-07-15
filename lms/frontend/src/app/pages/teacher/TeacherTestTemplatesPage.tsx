@@ -207,7 +207,7 @@ export default function TeacherTestTemplatesPage() {
         </motion.div>
 
         <Dialog open={showCreate} onOpenChange={(o) => { if (!o) resetForm(); setShowCreate(o); }}>
-          <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{_('Create Test Template')}</DialogTitle>
               <DialogDescription>{_('Configure question selection and exam settings.')}</DialogDescription>
@@ -291,7 +291,7 @@ export default function TeacherTestTemplatesPage() {
         </Dialog>
 
         <Dialog open={showPreview} onOpenChange={setShowPreview}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{_('Paper Preview')}: {previewTitle}</DialogTitle>
               <DialogDescription>{_('Review the compiled question paper before scheduling.')}</DialogDescription>

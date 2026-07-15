@@ -209,7 +209,7 @@ export default function TeacherQuestionBankPage() {
         </motion.div>
 
         <Dialog open={showCreate} onOpenChange={(o) => { if (!o) { setShowCreate(false); setEditing(null); } }}>
-          <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{_(editing ? 'Edit Question' : 'Create Question')}</DialogTitle>
               <DialogDescription>{_('Fill in the question details below.')}</DialogDescription>

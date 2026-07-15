@@ -92,7 +92,7 @@ export default function MechanicsLab() {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         <div>
           <label className="text-label-sm text-on-surface-variant">Angle ({angle}°)</label>
           <input type="range" min={5} max={80} value={angle} onChange={(e) => { setAngle(Number(e.target.value)); reset(); }} className="w-full" />

@@ -172,7 +172,7 @@ export function RubricGenerator({ assignments, onRubricSaved }: RubricGeneratorP
             {generatedRubric.criteria.map((criterion, cIdx) => (
               <Card key={cIdx} className="border-border/60 border-l-4 border-l-primary/40">
                 <CardContent className="p-4 space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-label-xs font-medium">Criterion Name</label>
                       <Input value={criterion.name} onChange={(e) => updateCriterion(cIdx, 'name', e.target.value)} className="mt-1" />

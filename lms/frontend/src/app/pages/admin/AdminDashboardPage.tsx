@@ -626,7 +626,7 @@ export default function AdminDashboardPage() {
       </div>
 
       <Dialog open={!!inspectTest} onOpenChange={(open) => { if (!open) setInspectTest(null); }}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between gap-4">
               <div className="flex flex-col gap-1">

@@ -143,7 +143,7 @@ export default function OCRResultDisplay({
                       </div>
                       <p className="text-sm font-medium mb-2">{q.question}</p>
                       {q.options && (
-                        <div className="grid grid-cols-2 gap-1.5 mb-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mb-2">
                           {q.options.map((opt, j) => (
                             <div key={j} className={cn(
                               'px-3 py-1.5 rounded-lg text-xs border',

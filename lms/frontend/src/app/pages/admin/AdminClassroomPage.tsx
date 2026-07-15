@@ -133,7 +133,7 @@ export default function AdminClassroomPage() {
               {loadingCourses ? (
                 <div className="text-center py-8 text-muted-foreground">Loading Classroom courses...</div>
               ) : (
-                <div className="border border-border/60 rounded-2xl overflow-hidden bg-card">
+                <div className="border border-border/60 rounded-2xl overflow-x-auto bg-card">
                   <table className="w-full text-left">
                     <thead>
                       <tr className="border-b border-b-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">

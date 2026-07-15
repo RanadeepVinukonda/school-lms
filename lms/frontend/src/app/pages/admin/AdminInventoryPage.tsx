@@ -294,7 +294,7 @@ export default function AdminInventoryPage() {
 
             <DataFetchWrapper data={items} isLoading={itemsLoading} onRetry={refetchItems} loadingType="table">
               {() => (
-                <div className="border border-border/60 rounded-2xl overflow-hidden bg-card">
+                <div className="border border-border/60 rounded-2xl overflow-x-auto bg-card">
                   <table className="w-full text-left">
                     <thead>
                       <tr className="border-b border-b-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
@@ -406,7 +406,7 @@ export default function AdminInventoryPage() {
 
             <DataFetchWrapper data={categories} isLoading={catsLoading} onRetry={refetchCats} loadingType="table">
               {() => (
-                <div className="border border-border/60 rounded-2xl overflow-hidden bg-card">
+                <div className="border border-border/60 rounded-2xl overflow-x-auto bg-card">
                   <table className="w-full text-left">
                     <thead>
                       <tr className="border-b border-b-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
@@ -505,7 +505,7 @@ export default function AdminInventoryPage() {
 
             <DataFetchWrapper data={suppliers} isLoading={supsLoading} onRetry={refetchSups} loadingType="table">
               {() => (
-                <div className="border border-border/60 rounded-2xl overflow-hidden bg-card">
+                <div className="border border-border/60 rounded-2xl overflow-x-auto bg-card">
                   <table className="w-full text-left">
                     <thead>
                       <tr className="border-b border-b-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">

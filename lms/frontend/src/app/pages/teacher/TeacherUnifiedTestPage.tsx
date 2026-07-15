@@ -310,7 +310,7 @@ export default function TeacherUnifiedTestPage() {
                   <Icon name="category" size={16} className="text-primary" />
                   <span className="text-title-sm">Test Type</span>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {TEST_TYPES.map((tt) => (
                     <button
                       key={tt.value}

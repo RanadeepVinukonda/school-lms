@@ -499,6 +499,19 @@
   }
 }
 
+@media (max-width: 640px) {
+  .table-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .dialog-mobile {
+    max-width: calc(100vw - 2rem) !important;
+  }
+  .mobile-grid-1 {
+    grid-template-columns: repeat(1, 1fr) !important;
+  }
+}
+
 .skip-link {
   position: absolute;
   top: -100%;
