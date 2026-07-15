@@ -47,11 +47,5 @@ export function ProtectedRoute({ children, roles, checkSetup }: ProtectedRoutePr
     return <Navigate to={roleDashboard(user.role)} replace />;
   }
 
-  if (checkSetup) {
-    if (hasAnyRole(user.role, ['student']) && !user.classId) {
-      return <Navigate to={ROUTES.STUDENT_ROLL_NUMBER} replace />;
-    }
-  }
-
   return <>{children}</>;
 }
