@@ -1,6 +1,6 @@
-import React, { useCallback, useRef, useState } from 'react';
-import { StyleSheet, View, Text, ActivityIndicator, TouchableOpacity, StatusBar, Linking } from 'react-native';
-import { WebView } from 'react-native-webview';
+import React, { useCallback, useRef, useState, useMemo } from 'react';
+import { StyleSheet, View, Text, ActivityIndicator, StatusBar } from 'react-native';
+import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 
@@ -8,41 +8,61 @@ SplashScreen.preventAutoHideAsync();
 
 const WEBSITE_URL = 'https://genesis-frontend-teal.vercel.app';
 
+const ERROR_CAPTURE_JS = `
+(function() {
+  var originalOnError = window.onerror;
+  window.onerror = function(msg, url, line, col, error) {
+    var errMsg = (error && error.stack) ? error.stack : msg + ' at ' + url + ':' + line;
+    try {
+      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'jsError', message: errMsg }));
+    } catch(e) {}
+    if (originalOnError) return originalOnError(msg, url, line, col, error);
+    return false;
+  };
+
+  window.addEventListener('unhandledrejection', function(e) {
+    var errMsg = e.reason && e.reason.stack ? e.reason.stack : String(e.reason);
+    try {
+      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'jsError', message: errMsg }));
+    } catch(ex) {}
+  });
+
+  var origConsole = console.error;
+  console.error = function() {
+    try {
+      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'consoleError', message: Array.prototype.map.call(arguments, String).join(' ') }));
+    } catch(e) {}
+    return origConsole.apply(console, arguments);
+  };
+})();
+true;
+`;
+
 export default function App() {
   const webViewRef = useRef<WebView>(null);
   const [loading, setLoading] = useState(true);
-  const [canGoBack, setCanGoBack] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const injectedJs = useMemo(() => ERROR_CAPTURE_JS, []);
 
   const onLoadEnd = useCallback(() => {
     setLoading(false);
     SplashScreen.hideAsync();
   }, []);
 
-  const onError = useCallback((e: any) => {
+  const onError = useCallback(() => {
     setLoading(false);
-    setError(`Failed to load (${e?.code || 'UNKNOWN'}). Check your internet connection.`);
     SplashScreen.hideAsync();
   }, []);
 
-  if (error) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorTitle}>Connection Error</Text>
-        <Text style={styles.errorMessage}>{error}</Text>
-        <TouchableOpacity
-          style={styles.retryBtn}
-          onPress={() => {
-            setError(null);
-            setLoading(true);
-            webViewRef.current?.reload();
-          }}
-        >
-          <Text style={styles.retryText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  const onMessage = useCallback((event: WebViewMessageEvent) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      if (data.type === 'jsError' || data.type === 'consoleError') {
+        setError(data.message);
+      }
+    } catch {}
+  }, []);
 
   return (
     <SafeAreaProvider>
@@ -51,7 +71,11 @@ export default function App() {
         {loading && (
           <View style={styles.loadingOverlay}>
             <ActivityIndicator size="large" color="#2B3D5E" />
-            <Text style={styles.loadingText}>Loading...</Text>
+          </View>
+        )}
+        {error && (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorText} numberOfLines={5}>{error}</Text>
           </View>
         )}
         <WebView
@@ -60,7 +84,8 @@ export default function App() {
           style={styles.webview}
           onLoadEnd={onLoadEnd}
           onError={onError}
-          onNavigationStateChange={(navState) => setCanGoBack(navState.canGoBack)}
+          onMessage={onMessage}
+          injectedJavaScriptBeforeContentLoaded={injectedJs}
           javaScriptEnabled
           domStorageEnabled
           startInLoadingState={false}
@@ -90,13 +115,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 10,
   },
-  loadingText: { marginTop: 12, fontSize: 14, color: '#626670' },
-  errorContainer: {
-    flex: 1, justifyContent: 'center', alignItems: 'center',
-    backgroundColor: '#FAFAF5', padding: 24,
+  errorBanner: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    backgroundColor: '#FFEBEE', padding: 8, zIndex: 20,
   },
-  errorTitle: { fontSize: 20, fontWeight: 'bold', color: '#1C1C1C', marginBottom: 8 },
-  errorMessage: { fontSize: 14, color: '#626670', textAlign: 'center', marginBottom: 24, lineHeight: 20 },
-  retryBtn: { backgroundColor: '#2B3D5E', paddingVertical: 14, paddingHorizontal: 32, borderRadius: 12 },
-  retryText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 },
+  errorText: { color: '#C62828', fontSize: 12, textAlign: 'center' },
 });
