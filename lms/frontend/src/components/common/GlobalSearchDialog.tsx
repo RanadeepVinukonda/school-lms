@@ -14,9 +14,83 @@ import api from '@/services/api';
 import type { Subject } from '@/types';
 import type { AssignmentItem, ExamItem, UserDoc, LessonItem, QuizItem } from '@/services/dataService';
 
-type Cat = 'subjects' | 'assignments' | 'exams' | 'teachers' | 'students' | 'lessons' | 'textbooks' | 'concepts';
+type Cat = 'subjects' | 'assignments' | 'exams' | 'teachers' | 'students' | 'lessons' | 'textbooks' | 'concepts' | 'pages';
 interface Item { id: string; title: string; subtitle: string; icon: string; url: string; category: Cat; }
-interface Results { subjects: Item[]; assignments: Item[]; exams: Item[]; teachers: Item[]; students: Item[]; lessons: Item[]; textbooks: Item[]; concepts: Item[]; }
+interface Results { subjects: Item[]; assignments: Item[]; exams: Item[]; teachers: Item[]; students: Item[]; lessons: Item[]; textbooks: Item[]; concepts: Item[]; pages: Item[]; }
+
+interface PageEntry { id: string; title: string; keywords: string[]; icon: string; url: string; }
+
+const PAGE_INDEX: PageEntry[] = [
+  { id: 'admin-dashboard', title: 'Admin Dashboard', keywords: ['admin', 'dashboard', 'home'], icon: 'dashboard', url: ROUTES.ADMIN_DASHBOARD },
+  { id: 'admin-students', title: 'Students', keywords: ['students', 'student', 'enrollment'], icon: 'people', url: ROUTES.ADMIN_STUDENTS },
+  { id: 'admin-teachers', title: 'Teachers', keywords: ['teachers', 'teacher', 'staff'], icon: 'school', url: ROUTES.ADMIN_TEACHERS },
+  { id: 'admin-classes', title: 'Classes', keywords: ['classes', 'class', 'sections', 'divisions'], icon: 'group', url: ROUTES.ADMIN_CLASSES },
+  { id: 'admin-subjects', title: 'Subjects', keywords: ['subjects', 'subject', 'courses'], icon: 'menu_book', url: ROUTES.ADMIN_SUBJECTS },
+  { id: 'admin-settings', title: 'Settings', keywords: ['settings', 'configuration', 'preferences'], icon: 'settings', url: ROUTES.ADMIN_SETTINGS },
+  { id: 'admin-users', title: 'Users', keywords: ['users', 'user accounts', 'manage users'], icon: 'manage_accounts', url: ROUTES.ADMIN_USERS },
+  { id: 'audit-logs', title: 'Audit Logs', keywords: ['audit', 'logs', 'activity', 'history'], icon: 'history', url: ROUTES.ADMIN_AUDIT_LOGS },
+  { id: 'school-analytics', title: 'School Analytics', keywords: ['analytics', 'reports', 'statistics', 'insights'], icon: 'analytics', url: ROUTES.ADMIN_SCHOOL_ANALYTICS },
+  { id: 'admin-attendance', title: 'Attendance', keywords: ['attendance', 'present', 'absent'], icon: 'fact_check', url: ROUTES.ADMIN_ATTENDANCE },
+  { id: 'admin-fee', title: 'Fee Management', keywords: ['fee', 'fees', 'payments', 'finance', 'billing'], icon: 'payments', url: ROUTES.ADMIN_FEE },
+  { id: 'admin-timetable', title: 'Timetable', keywords: ['timetable', 'schedule', 'periods'], icon: 'calendar_month', url: ROUTES.ADMIN_TIMETABLE },
+  { id: 'admin-noticeboard', title: 'Noticeboard', keywords: ['noticeboard', 'notices', 'announcements', 'circulars'], icon: 'campaign', url: ROUTES.ADMIN_NOTICEBOARD },
+  { id: 'erp-dashboard', title: 'ERP Dashboard', keywords: ['erp', 'enterprise', 'operations'], icon: 'business', url: ROUTES.ADMIN_ERP_DASHBOARD },
+  { id: 'transport', title: 'Transport', keywords: ['transport', 'bus', 'routes', 'stops', 'vehicle'], icon: 'directions_bus', url: '/admin/transport' },
+  { id: 'inventory', title: 'Inventory', keywords: ['inventory', 'stock', 'supplies', 'resources'], icon: 'inventory', url: '/admin/inventory' },
+  { id: 'hr-staff', title: 'HR / Staff', keywords: ['hr', 'human resources', 'staff', 'employees'], icon: 'badge', url: '/admin/hr' },
+  { id: 'payroll', title: 'Payroll', keywords: ['payroll', 'salary', 'compensation'], icon: 'payments', url: '/admin/hr/payroll' },
+  { id: 'leave-management', title: 'Leave Management', keywords: ['leave', 'leaves', 'holiday', 'absence'], icon: 'event', url: '/admin/hr/leaves' },
+  { id: 'classroom', title: 'Classroom', keywords: ['classroom', 'google classroom', 'integration'], icon: 'google', url: '/admin/classroom' },
+  { id: 'lti', title: 'LTI Integration', keywords: ['lti', 'integration', 'tools', 'external'], icon: 'extension', url: '/admin/lti' },
+  { id: 'academic-years', title: 'Academic Years', keywords: ['academic', 'years', 'sessions', 'terms'], icon: 'calendar_today', url: ROUTES.ADMIN_ACADEMIC_YEARS },
+  { id: 'teacher-dashboard', title: 'Teacher Dashboard', keywords: ['teacher dashboard', 'my classes'], icon: 'dashboard', url: ROUTES.TEACHER_DASHBOARD },
+  { id: 'teacher-students', title: 'My Students', keywords: ['my students', 'my pupils'], icon: 'people', url: ROUTES.TEACHER_STUDENTS },
+  { id: 'teacher-exams', title: 'Exams', keywords: ['exams', 'examinations', 'tests', 'assessments'], icon: 'quiz', url: ROUTES.TEACHER_EXAMS },
+  { id: 'teacher-textbooks', title: 'Textbooks', keywords: ['textbooks', 'books', 'chapters'], icon: 'menu_book', url: ROUTES.TEACHER_TEXTBOOKS },
+  { id: 'teacher-profile', title: 'Profile', keywords: ['profile', 'my profile', 'account'], icon: 'person', url: ROUTES.TEACHER_PROFILE },
+  { id: 'teacher-videos', title: 'Video Library', keywords: ['videos', 'video library', 'media'], icon: 'video_library', url: ROUTES.TEACHER_VIDEOS },
+  { id: 'teacher-analytics', title: 'Analytics', keywords: ['analytics', 'performance', 'reports'], icon: 'analytics', url: ROUTES.TEACHER_ANALYTICS },
+  { id: 'question-bank', title: 'Question Bank', keywords: ['question bank', 'questions', 'question paper'], icon: 'question_answer', url: ROUTES.TEACHER_QUESTION_BANK },
+  { id: 'question-papers', title: 'Question Papers', keywords: ['question papers', 'pyq', 'previous year'], icon: 'description', url: ROUTES.TEACHER_QUESTION_PAPERS },
+  { id: 'test-templates', title: 'Test Templates', keywords: ['test templates', 'test patterns', 'rubrics'], icon: 'fact_check', url: ROUTES.TEACHER_TEST_TEMPLATES },
+  { id: 'test-schedule', title: 'Test Schedule', keywords: ['test schedule', 'exam schedule', 'test plan'], icon: 'schedule', url: ROUTES.TEACHER_TEST_SCHEDULE },
+  { id: 'teacher-attendance', title: 'Attendance', keywords: ['attendance', 'mark attendance'], icon: 'fact_check', url: ROUTES.TEACHER_ATTENDANCE },
+  { id: 'teacher-ocr', title: 'OCR Scanner', keywords: ['ocr', 'scan', 'scanner', 'optical character'], icon: 'document_scanner', url: ROUTES.TEACHER_OCR },
+  { id: 'teacher-timetable', title: 'Timetable', keywords: ['timetable', 'schedule', 'periods'], icon: 'calendar_month', url: ROUTES.TEACHER_TIMETABLE },
+  { id: 'nep-questions', title: 'NEP Questions', keywords: ['nep', 'competency', 'competency based'], icon: 'psychology', url: ROUTES.TEACHER_NEP_QUESTIONS },
+  { id: 'rubrics', title: 'Rubrics', keywords: ['rubrics', 'rubric', 'grading criteria'], icon: 'checklist', url: ROUTES.TEACHER_RUBRICS },
+  { id: 'unified-test', title: 'Unified Test Engine', keywords: ['unified test', 'test engine', 'adaptive test'], icon: 'precision_manufacturing', url: ROUTES.TEACHER_UNIFIED_TEST },
+  { id: 'teacher-mindmaps', title: 'Mind Maps', keywords: ['mind maps', 'mindmap', 'concept map'], icon: 'account_tree', url: ROUTES.TEACHER_MIND_MAPS },
+  { id: 'teacher-noticeboard', title: 'Noticeboard', keywords: ['noticeboard', 'notices', 'announcements'], icon: 'campaign', url: ROUTES.TEACHER_NOTICEBOARD },
+  { id: 'teacher-pyq', title: 'Previous Year Questions', keywords: ['pyq', 'previous year', 'past papers'], icon: 'history', url: ROUTES.TEACHER_PYQ },
+  { id: 'teacher-assessments', title: 'Assessments', keywords: ['assessments', 'create assessment'], icon: 'assignment', url: ROUTES.TEACHER_ASSESSMENTS },
+  { id: 'student-dashboard', title: 'Student Dashboard', keywords: ['student dashboard', 'my learning'], icon: 'dashboard', url: ROUTES.STUDENT_DASHBOARD },
+  { id: 'student-subjects', title: 'My Subjects', keywords: ['my subjects', 'courses', 'learning'], icon: 'school', url: ROUTES.STUDENT_SUBJECTS },
+  { id: 'student-exams', title: 'My Exams', keywords: ['my exams', 'my tests'], icon: 'quiz', url: ROUTES.STUDENT_EXAMS },
+  { id: 'student-tasks', title: 'My Tasks', keywords: ['tasks', 'assignments', 'homework', 'to-do'], icon: 'assignment', url: ROUTES.STUDENT_TASKS },
+  { id: 'student-profile', title: 'Profile', keywords: ['profile', 'my profile'], icon: 'person', url: ROUTES.STUDENT_PROFILE },
+  { id: 'ai-tutor', title: 'AI Tutor', keywords: ['ai tutor', 'ai', 'tutor', 'chat', 'assistant'], icon: 'smart_toy', url: ROUTES.STUDENT_AI_TUTOR },
+  { id: 'virtual-labs', title: 'Virtual Labs', keywords: ['labs', 'virtual labs', 'experiments'], icon: 'science', url: ROUTES.STUDENT_LABS },
+  { id: 'coding', title: 'Coding Platform', keywords: ['coding', 'programming', 'code'], icon: 'code', url: ROUTES.STUDENT_CODING },
+  { id: 'mind-maps', title: 'Mind Maps', keywords: ['mind maps', 'mindmap', 'concept map'], icon: 'account_tree', url: ROUTES.STUDENT_MIND_MAPS },
+  { id: 'stream-projects', title: 'Stream Projects', keywords: ['stream', 'projects', 'portfolio'], icon: 'folder', url: ROUTES.STUDENT_STREAM_PROJECTS },
+  { id: 'gamification', title: 'Gamification', keywords: ['gamification', 'badges', 'points', 'rewards', 'leaderboard'], icon: 'emoji_events', url: ROUTES.STUDENT_GAMIFICATION },
+  { id: 'leaderboard', title: 'Leaderboard', keywords: ['leaderboard', 'rankings', 'top students'], icon: 'leaderboard', url: ROUTES.STUDENT_LEADERBOARD },
+  { id: 'student-ocr', title: 'OCR Scan', keywords: ['ocr', 'scan', 'scanner'], icon: 'document_scanner', url: ROUTES.STUDENT_OCR },
+  { id: 'student-noticeboard', title: 'Noticeboard', keywords: ['noticeboard', 'announcements'], icon: 'campaign', url: ROUTES.STUDENT_NOTICEBOARD },
+  { id: 'student-timetable', title: 'Timetable', keywords: ['timetable', 'schedule'], icon: 'calendar_month', url: ROUTES.STUDENT_TIMETABLE },
+  { id: 'parent-dashboard', title: 'Parent Dashboard', keywords: ['parent dashboard', 'my children'], icon: 'dashboard', url: ROUTES.PARENT_DASHBOARD },
+  { id: 'my-children', title: 'My Children', keywords: ['children', 'my children', 'kids', 'wards'], icon: 'child_care', url: ROUTES.PARENT_CHILDREN },
+  { id: 'parent-reports', title: 'Reports', keywords: ['reports', 'progress', 'performance'], icon: 'assessment', url: ROUTES.PARENT_REPORTS },
+  { id: 'parent-profile', title: 'Profile', keywords: ['profile', 'account'], icon: 'person', url: ROUTES.PARENT_PROFILE },
+  { id: 'parent-noticeboard', title: 'Noticeboard', keywords: ['noticeboard', 'announcements', 'updates'], icon: 'campaign', url: ROUTES.PARENT_NOTICEBOARD },
+  { id: 'notifications', title: 'Notifications', keywords: ['notifications', 'alerts', 'updates', 'messages'], icon: 'notifications', url: ROUTES.NOTIFICATIONS },
+  { id: 'about', title: 'About School', keywords: ['about', 'school info', 'information'], icon: 'info', url: ROUTES.ABOUT },
+  { id: 'forgot-password', title: 'Forgot Password', keywords: ['forgot', 'password', 'reset', 'recover'], icon: 'lock_reset', url: ROUTES.FORGOT_PASSWORD },
+  { id: 'privacy', title: 'Privacy Policy', keywords: ['privacy', 'privacy policy', 'data'], icon: 'privacy_tip', url: '/privacy' },
+  { id: 'terms', title: 'Terms & Conditions', keywords: ['terms', 'terms and conditions', 'legal'], icon: 'gavel', url: '/terms' },
+  { id: 'k2', title: 'K2 Learning', keywords: ['k2', 'kindergarten', 'kids', 'tracing', 'phonics'], icon: 'toys', url: ROUTES.K2_DASHBOARD },
+];
 
 const CFG: Record<Cat, { l: string; i: string }> = {
   subjects: { l: 'Subjects', i: 'school' },
@@ -27,10 +101,11 @@ const CFG: Record<Cat, { l: string; i: string }> = {
   lessons: { l: 'Lessons', i: 'book' },
   textbooks: { l: 'Textbooks', i: 'menu_book' },
   concepts: { l: 'Concepts', i: 'psychology' },
+  pages: { l: 'Pages', i: 'explore' },
 };
 
 const CATS = Object.keys(CFG) as Cat[];
-const EMPTY: Results = { subjects: [], assignments: [], exams: [], teachers: [], students: [], lessons: [], textbooks: [], concepts: [] };
+const EMPTY: Results = { subjects: [], assignments: [], exams: [], teachers: [], students: [], lessons: [], textbooks: [], concepts: [], pages: [] };
 
 function link(cat: Cat, id: string, role: string): string {
   const m: Partial<Record<Cat, (i: string) => string>> = {
@@ -81,6 +156,12 @@ export function useSearch(
         .map((l) => ({ id: l.id, title: l.title, subtitle: `Lesson · ${l.contentType}`, icon: 'book', url: '', category: 'lessons' as Cat })),
       textbooks: [],
       concepts: [],
+      pages: PAGE_INDEX.filter((p) => {
+        const q = query.toLowerCase();
+        return p.title.toLowerCase().includes(q) || p.keywords.some((k) => k.toLowerCase().includes(q));
+      }).map((p) => ({
+        id: p.id, title: p.title, subtitle: 'Page', icon: p.icon, url: p.url, category: 'pages' as Cat,
+      })),
     };
   }, [query, sb, as, ex, us, ls]);
 
@@ -177,7 +258,7 @@ export function GlobalSearchDialog({ isOpen, onClose }: Props) {
         items.push({
           ...item,
           cl: CFG[cat].l,
-          url: item.category === 'textbooks' || item.category === 'concepts' ? item.url : link(cat, item.id, role)
+          url: item.category === 'textbooks' || item.category === 'concepts' || item.category === 'pages' ? item.url : link(cat, item.id, role)
         });
       }
     }
@@ -284,7 +365,7 @@ export function GlobalSearchDialog({ isOpen, onClose }: Props) {
                           return (
                             <button key={`${cat}-${item.id}`} data-i={fi}
                               className={cn('w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors', fi === sel ? 'bg-secondary-container' : 'hover:bg-secondary-container/50')}
-                              onClick={() => pick({ ...item, url: item.category === 'textbooks' || item.category === 'concepts' ? item.url : link(cat, item.id, role) })} onMouseEnter={() => setSel(fi)}>
+                              onClick={() => pick({ ...item, url: item.category === 'textbooks' || item.category === 'concepts' || item.category === 'pages' ? item.url : link(cat, item.id, role) })} onMouseEnter={() => setSel(fi)}>
                               <Icon name={icon} size={20} className="text-on-surface-variant shrink-0" />
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-on-surface truncate">{item.title}</p>
