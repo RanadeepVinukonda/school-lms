@@ -97,6 +97,28 @@ export const useAuthStore = create<AuthStore>()(
   initialize: async () => {
     if (initPromise) return initPromise;
     initPromise = (async () => {
+      // If we already have a persisted session, restore it immediately
+      // and only validate in the background — never show login if we have cached auth.
+      if (get().user && get().token) {
+        set({ isLoading: false });
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            set({ token: session.access_token });
+            const res = await api.get(`/auth/me?t=${Date.now()}`, { timeout: 10000 });
+            if (res.data?.data) {
+              const p = res.data.data as Record<string, unknown>;
+              const effectiveRole = await resolveEffectiveRole(p);
+              set({ user: mapProfileToUser(p, effectiveRole), isAuthenticated: true });
+              return;
+            }
+          }
+        } catch {
+          // Background refresh failed — keep persisted state, user stays logged in
+        }
+        return;
+      }
+
       set({ isLoading: true });
 
       try {
@@ -138,7 +160,9 @@ export const useAuthStore = create<AuthStore>()(
         console.warn('[authStore] Auth initialization failed:', e instanceof Error ? e.message : String(e));
       }
 
-      set({ user: null, token: null, isAuthenticated: false, isLoading: false });
+      // ALWAYS keep any persisted session — only clear on explicit logout.
+      // This ensures closing / swiping away the app never forces re-login.
+      set({ isLoading: false });
     })();
     return initPromise;
   },
