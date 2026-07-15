@@ -22,6 +22,8 @@ const ForgotPasswordForm = lazy(() => import('@/features/auth/components/ForgotP
 const ResetPasswordForm = lazy(() => import('@/features/auth/components/ResetPasswordForm'));
 const NotificationsPage = lazy(() => import('@/app/pages/NotificationsPage'));
 const AboutSchoolPage = lazy(() => import('@/app/pages/AboutSchoolPage'));
+const PrivacyPolicyPage = lazy(() => import('@/app/pages/legal/PrivacyPolicyPage'));
+const TermsConditionsPage = lazy(() => import('@/app/pages/legal/TermsConditionsPage'));
 const RollNumberEntryPage = lazy(() => import('@/app/pages/student/RollNumberEntryPage'));
 const ClassSelectionPage = lazy(() => import('@/app/pages/teacher/ClassSelectionPage'));
 
@@ -305,6 +307,14 @@ export const router = createBrowserRouter([
   {
     path: ROUTES.ABOUT,
     element: <Suspense fallback={<PageFallback />}><AboutSchoolPage /></Suspense>,
+  },
+  {
+    path: '/privacy',
+    element: <Suspense fallback={<PageFallback />}><PrivacyPolicyPage /></Suspense>,
+  },
+  {
+    path: '/terms',
+    element: <Suspense fallback={<PageFallback />}><TermsConditionsPage /></Suspense>,
   },
   {
     path: ROUTES.HOME,
