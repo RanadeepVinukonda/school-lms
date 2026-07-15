@@ -126,7 +126,8 @@ export default function TeacherDashboardPage() {
       const awaitingCorrectionCount = allExams.filter((e) => !correctedExamIds.has(e.id)).length;
       const lateAssignmentsCount = allAssignments.filter((a) => a.dueDate && new Date(a.dueDate) < todayDate).length;
 
-      const gradedEntries = allGrades.filter((g) => g.percentage != null);
+      const myStudentIds = new Set(assignedStudents.map(s => s.id));
+      const gradedEntries = allGrades.filter((g) => g.percentage != null && myStudentIds.has(g.studentId));
       const avgScore = gradedEntries.length > 0
         ? Math.round(gradedEntries.reduce((sum, g) => sum + g.percentage, 0) / gradedEntries.length) : 0;
 
