@@ -167,21 +167,31 @@ export default function AdminTimetablePage() {
       <SEOHead title="Timetable Management" description="Manage class timetables and scheduling" />
       <div className="sm:p-6 p-4 max-w-7xl mx-auto pb-32 space-y-8">
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">Timetable Management</h1>
-          <p className="text-body-md text-muted-foreground mt-1">Set up one day at a time — add periods and fill in the details</p>
+          <div className="flex items-center gap-3 mb-1">
+            <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Icon name="calendar_view_week" size={24} className="text-primary" />
+            </div>
+            <div>
+              <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">Timetable Management</h1>
+              <p className="text-body-sm text-muted-foreground">Set up class schedules — add periods, assign subjects and teachers</p>
+            </div>
+          </div>
         </motion.div>
 
-        <Card className="border-border/60">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-title-sm">Select Class</CardTitle>
+        <Card className="border-border/60 shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-title-sm flex items-center gap-2">
+              <Icon name="school" size={18} className="text-primary" />
+              Select Class
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <select
-              className="h-10 px-3 rounded-lg border border-border/60 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary w-full sm:w-80"
+              className="h-11 px-4 rounded-xl border border-border/50 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary w-full sm:w-96 text-sm font-medium cursor-pointer"
               value={selectedClassId}
               onChange={(e) => { setSelectedClassId(e.target.value); setSelectedDay(''); }}
             >
-              <option value="">Select a class to manage timetable</option>
+              <option value="">— Choose a class —</option>
               {classesData.map((c) => {
                 const capName = c.name.split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
                 const label = c.section ? `${capName}-Section ${c.section}` : capName;
@@ -196,11 +206,11 @@ export default function AdminTimetablePage() {
         {selectedClassId && (
           <>
             <Card className="border-border/60">
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-2">
                 <CardTitle className="text-title-sm">Select Day</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
                   {DAYS.map((day) => {
                     const dayEntryCount = allEntries.filter((e) => e.day === day).length;
                     const isActive = selectedDay === day;
@@ -208,15 +218,15 @@ export default function AdminTimetablePage() {
                       <button
                         key={day}
                         onClick={() => setSelectedDay(day)}
-                        className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
+                        className={`flex items-center justify-between gap-1.5 px-4 py-3 rounded-xl border text-sm font-semibold transition-all ${
                           isActive
-                            ? 'bg-primary text-primary-foreground border-primary shadow-sm ring-2 ring-primary/30'
-                            : 'border-border/60 bg-card text-foreground hover:bg-muted/40'
+                            ? 'bg-primary text-primary-foreground border-primary shadow-md ring-2 ring-primary/30 scale-[1.02]'
+                            : 'border-border/50 bg-card text-foreground hover:bg-muted/40 hover:border-primary/30 shadow-sm'
                         }`}
                       >
                         <span>{day}</span>
                         {dayEntryCount > 0 && (
-                          <Badge variant="outline" className={`ml-2 text-[10px] ${isActive ? 'border-primary-foreground/40 text-primary-foreground' : ''}`}>
+                          <Badge variant={isActive ? 'secondary' : 'outline'} className={`text-[10px] shrink-0 ${isActive ? 'bg-primary-foreground/20 text-primary-foreground border-0' : ''}`}>
                             {dayEntryCount}
                           </Badge>
                         )}
@@ -228,14 +238,20 @@ export default function AdminTimetablePage() {
             </Card>
 
             {selectedDay && (
-              <Card className="border-border/60">
-                <CardHeader className="pb-3 flex flex-row items-center justify-between flex-wrap gap-4">
+              <Card className="border-border/60 shadow-sm">
+                <CardHeader className="pb-4 flex flex-row items-center justify-between flex-wrap gap-4 border-b border-border/30">
                   <div className="flex items-center gap-3">
-                    <CardTitle className="text-title-sm">
-                      Editing <span className="font-bold">{selectedDay}</span>
-                    </CardTitle>
+                    <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <Icon name="edit_calendar" size={18} className="text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-title-sm">
+                        Editing <span className="font-bold text-primary">{selectedDay}</span>
+                      </CardTitle>
+                      <p className="text-label-xs text-muted-foreground mt-0.5">Set periods, subjects, teachers, and timings</p>
+                    </div>
                     {saveMutation.isPending && (
-                      <span className="text-label-sm text-muted-foreground animate-pulse">Saving...</span>
+                      <span className="text-label-sm text-muted-foreground animate-pulse ml-2">Saving...</span>
                     )}
                   </div>
                   <div className="flex gap-2">
@@ -253,98 +269,102 @@ export default function AdminTimetablePage() {
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <table className="w-full border-collapse table-fixed">
-                    <thead>
-                      <tr className="border-b border-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
-                        <th className="px-3 py-2.5 text-center w-16">#</th>
-                        <th className="px-3 py-2.5 w-2/6">Subject</th>
-                        <th className="px-3 py-2.5 w-2/6">Teacher</th>
-                        <th className="px-3 py-2.5 w-16">Room</th>
-                        <th className="px-3 py-2.5 w-24">Start</th>
-                        <th className="px-3 py-2.5 w-24">End</th>
-                        <th className="px-3 py-2.5 w-12"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/40">
-                      {rows.map((row) => (
-                        <tr key={row.id} className="hover:bg-muted/10 transition-colors">
-                          <td className="px-2 py-2 text-center">
-                            <select
-                              className="h-9 w-full rounded-lg border border-border/60 bg-surface text-foreground text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary"
-                              value={row.period}
-                              onChange={(e) => updateRow(row.id, 'period', Number(e.target.value))}
-                            >
-                              {Array.from({ length: MAX_PERIODS }, (_, i) => i + 1).map((p) => (
-                                <option key={p} value={p}>{p}</option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="px-3 py-2">
-                            <select
-                              className="h-9 w-full rounded-lg border border-border/60 bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                              value={row.subjectId}
-                              onChange={(e) => updateRow(row.id, 'subjectId', e.target.value)}
-                            >
-                              <option value="">Select subject</option>
-                              {filteredSubjects.map((s) => (
-                                <option key={s.id} value={s.id}>{s.name}</option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="px-3 py-2">
-                            <select
-                              className="h-9 w-full rounded-lg border border-border/60 bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                              value={row.teacherId}
-                              onChange={(e) => updateRow(row.id, 'teacherId', e.target.value)}
-                            >
-                              <option value="">Select teacher</option>
-                              {teachers.map((t) => (
-                                <option key={t.id} value={t.id}>{t.display_name || t.email}</option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="px-3 py-2">
-                            <Input
-                              placeholder="Room"
-                              value={row.room}
-                              onChange={(e) => updateRow(row.id, 'room', e.target.value)}
-                              className="h-9 text-sm"
-                            />
-                          </td>
-                          <td className="px-3 py-2">
-                            <Input
-                              type="time"
-                              value={row.startTime}
-                              onChange={(e) => updateRow(row.id, 'startTime', e.target.value)}
-                              className="h-9 text-sm"
-                            />
-                          </td>
-                          <td className="px-3 py-2">
-                            <Input
-                              type="time"
-                              value={row.endTime}
-                              onChange={(e) => updateRow(row.id, 'endTime', e.target.value)}
-                              className="h-9 text-sm"
-                            />
-                          </td>
-                          <td className="px-3 py-2 text-center">
-                            <button
-                              className="p-1.5 rounded hover:bg-error/10 text-muted-foreground hover:text-error transition-colors"
-                              onClick={() => removeRow(row.id)}
-                              title="Remove period"
-                            >
-                              <Icon name="delete" size={16} />
-                            </button>
-                          </td>
+                <CardContent className="p-0 sm:p-5">
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse min-w-[640px]">
+                      <thead>
+                        <tr className="border-b-2 border-border/60 bg-muted/40 text-label-xs font-bold text-muted-foreground uppercase tracking-wider sticky top-0 z-10">
+                          <th className="px-4 py-3.5 text-center w-16">#</th>
+                          <th className="px-4 py-3.5 w-[22%]">Subject</th>
+                          <th className="px-4 py-3.5 w-[22%]">Teacher</th>
+                          <th className="px-4 py-3.5 w-20">Room</th>
+                          <th className="px-4 py-3.5 w-28">Start</th>
+                          <th className="px-4 py-3.5 w-28">End</th>
+                          <th className="px-4 py-3.5 w-14"></th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-border/30">
+                        {rows.map((row, idx) => (
+                          <tr key={row.id} className="hover:bg-muted/10 transition-colors group">
+                            <td className="px-3 py-3 text-center align-middle">
+                              <select
+                                className="h-10 w-full rounded-lg border border-border/50 bg-surface text-foreground text-sm text-center font-semibold focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary cursor-pointer"
+                                value={row.period}
+                                onChange={(e) => updateRow(row.id, 'period', Number(e.target.value))}
+                              >
+                                {Array.from({ length: MAX_PERIODS }, (_, i) => i + 1).map((p) => (
+                                  <option key={p} value={p}>P{p}</option>
+                                ))}
+                              </select>
+                            </td>
+                            <td className="px-3 py-3 align-middle">
+                              <select
+                                className="h-10 w-full rounded-lg border border-border/50 bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary cursor-pointer"
+                                value={row.subjectId}
+                                onChange={(e) => updateRow(row.id, 'subjectId', e.target.value)}
+                              >
+                                <option value="">— Select subject —</option>
+                                {filteredSubjects.map((s) => (
+                                  <option key={s.id} value={s.id}>{s.name}</option>
+                                ))}
+                              </select>
+                            </td>
+                            <td className="px-3 py-3 align-middle">
+                              <select
+                                className="h-10 w-full rounded-lg border border-border/50 bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary cursor-pointer"
+                                value={row.teacherId}
+                                onChange={(e) => updateRow(row.id, 'teacherId', e.target.value)}
+                              >
+                                <option value="">— Select teacher —</option>
+                                {teachers.map((t) => (
+                                  <option key={t.id} value={t.id}>{t.display_name || t.email}</option>
+                                ))}
+                              </select>
+                            </td>
+                            <td className="px-3 py-3 align-middle">
+                              <Input
+                                placeholder="e.g. 101"
+                                value={row.room}
+                                onChange={(e) => updateRow(row.id, 'room', e.target.value)}
+                                className="h-10 text-sm"
+                              />
+                            </td>
+                            <td className="px-3 py-3 align-middle">
+                              <Input
+                                type="time"
+                                value={row.startTime}
+                                onChange={(e) => updateRow(row.id, 'startTime', e.target.value)}
+                                className="h-10 text-sm"
+                              />
+                            </td>
+                            <td className="px-3 py-3 align-middle">
+                              <Input
+                                type="time"
+                                value={row.endTime}
+                                onChange={(e) => updateRow(row.id, 'endTime', e.target.value)}
+                                className="h-10 text-sm"
+                              />
+                            </td>
+                            <td className="px-3 py-3 text-center align-middle">
+                              <button
+                                className="p-2 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-error/10 text-muted-foreground hover:text-error transition-all focus:opacity-100"
+                                onClick={() => removeRow(row.id)}
+                                title="Remove period"
+                              >
+                                <Icon name="delete" size={18} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                   {rows.length === 0 && (
-                    <div className="py-8 text-center text-muted-foreground">
-                      <p className="text-body-sm">No periods added yet</p>
-                      <Button size="sm" className="mt-2" onClick={addRow}>
+                    <div className="py-12 text-center text-muted-foreground">
+                      <Icon name="schedule" size={48} className="mx-auto text-muted-foreground/20 mb-3" />
+                      <p className="text-title-sm font-semibold">No periods added yet</p>
+                      <p className="text-body-sm text-muted-foreground mt-1">Click "Add Period" to start building the timetable</p>
+                      <Button size="sm" className="mt-4" onClick={addRow}>
                         <Icon name="add" size={16} className="mr-1" />
                         Add First Period
                       </Button>
@@ -354,86 +374,89 @@ export default function AdminTimetablePage() {
               </Card>
             )}
 
-            <Card className="border-border/60">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-title-sm">Week View</CardTitle>
+            <Card className="border-border/60 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-title-sm flex items-center gap-2">
+                  <Icon name="calendar_view_week" size={18} className="text-primary" />
+                  Week View
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                {!hasEntries ? (
-                  <div className="py-12 text-center text-muted-foreground">
-                    <Icon name="calendar_month" size={48} className="mx-auto text-muted-foreground/30 mb-3" />
-                    <p className="text-title-sm font-semibold">No timetable entries yet</p>
-                    <p className="text-body-sm text-muted-foreground mt-1">Select a day above and add periods</p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left min-w-[800px]">
-                      <thead>
-                        <tr className="border-b border-border/60 bg-muted/30">
-                          <th className="px-4 py-3 text-center w-20 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">Period</th>
-                          {DAYS.map((day) => (
-                            <th key={day} className="px-4 py-3 text-center min-w-[140px] text-label-sm font-bold text-muted-foreground uppercase tracking-wider">{DAY_SHORT[day]}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border/40">
-                        {periodNumbers.map((period) => (
-                          <tr key={period} className="hover:bg-muted/5 transition-colors">
-                            <td className="px-4 py-4 text-center font-bold text-muted-foreground text-label-sm align-middle">
-                              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-muted/60 text-foreground font-semibold">
-                                {period}
-                              </span>
-                            </td>
-                            {DAYS.map((day) => {
-                              const entries = entriesByDayPeriod.get(`${day}-${period}`) || [];
-                              return (
-                                <td key={day} className="px-3 py-4 align-top">
-                                  {entries.length === 0 ? (
-                                    <div className="min-h-[72px] flex items-center justify-center rounded-lg border border-dashed border-border/30 bg-muted/5">
-                                      <span className="text-muted-foreground/20 select-none">&mdash;</span>
-                                    </div>
-                                  ) : (
-                                    <div className="space-y-2">
-                                      {entries.map((entry) => (
-                                        <div
-                                          key={entry.id}
-                                          className="p-2.5 rounded-lg border border-border/60 bg-card hover:bg-accent/5 hover:border-primary/20 transition-all shadow-sm flex flex-col gap-1"
-                                        >
-                                          <p className="text-label-sm font-bold text-primary leading-tight truncate">
-                                            {subjectMap.get(entry.subject_id || entry.subjectId || '') || entry.subject_id || entry.subjectId || '—'}
-                                          </p>
-                                          {(entry.teacher_id || entry.teacherId) && (
-                                            <p className="text-[10px] text-muted-foreground leading-none flex items-center gap-1.5 truncate">
-                                              <Icon name="person" size={10} className="text-muted-foreground/60 shrink-0" />
-                                              <span className="truncate">{teacherMap.get(entry.teacher_id || entry.teacherId || '') || entry.teacher_id || entry.teacherId}</span>
-                                            </p>
-                                          )}
-                                          {entry.room && (
-                                            <p className="text-[10px] text-muted-foreground leading-none flex items-center gap-1.5 truncate">
-                                              <Icon name="meeting_room" size={10} className="text-muted-foreground/60 shrink-0" />
-                                              <span className="truncate">{entry.room}</span>
-                                            </p>
-                                          )}
-                                          {(entry.start_time || entry.startTime || entry.end_time || entry.endTime) && (
-                                            <p className="text-[9px] text-muted-foreground/60 font-mono leading-none flex items-center gap-1.5 mt-0.5 border-t border-border/20 pt-1.5">
-                                              <Icon name="schedule" size={10} className="text-muted-foreground/40 shrink-0" />
-                                              <span>{(entry.start_time || entry.startTime || '—').slice(0, 5)} &ndash; {(entry.end_time || entry.endTime || '—').slice(0, 5)}</span>
-                                            </p>
-                                          )}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </td>
-                              );
-                            })}
+                <CardContent className="p-0 sm:p-5">
+                  {!hasEntries ? (
+                    <div className="py-12 text-center text-muted-foreground">
+                      <Icon name="calendar_month" size={48} className="mx-auto text-muted-foreground/20 mb-3" />
+                      <p className="text-title-sm font-semibold">No timetable entries yet</p>
+                      <p className="text-body-sm text-muted-foreground mt-1">Select a day above and add periods</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto overflow-y-auto max-h-[600px]">
+                      <table className="w-full text-left min-w-[700px]">
+                        <thead>
+                          <tr className="border-b-2 border-border/60 bg-muted/40 sticky top-0 z-10">
+                            <th className="px-4 py-3.5 text-center w-20 text-label-xs font-bold text-muted-foreground uppercase tracking-wider">Period</th>
+                            {DAYS.map((day) => (
+                              <th key={day} className="px-4 py-3.5 text-center min-w-[130px] text-label-xs font-bold text-muted-foreground uppercase tracking-wider">{DAY_SHORT[day]}</th>
+                            ))}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </CardContent>
+                        </thead>
+                        <tbody className="divide-y divide-border/30">
+                          {periodNumbers.map((period) => (
+                            <tr key={period} className="hover:bg-muted/5 transition-colors">
+                              <td className="px-4 py-4 text-center align-middle">
+                                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm">
+                                  {period}
+                                </span>
+                              </td>
+                              {DAYS.map((day) => {
+                                const entries = entriesByDayPeriod.get(`${day}-${period}`) || [];
+                                return (
+                                  <td key={day} className="px-2 py-3 align-top">
+                                    {entries.length === 0 ? (
+                                      <div className="min-h-[80px] flex items-center justify-center rounded-xl border border-dashed border-border/20 bg-muted/5">
+                                        <span className="text-muted-foreground/15 select-none text-lg">&mdash;</span>
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-2">
+                                        {entries.map((entry) => (
+                                          <div
+                                            key={entry.id}
+                                            className="p-3 rounded-xl border border-border/50 bg-card hover:bg-accent/5 hover:border-primary/30 transition-all shadow-sm"
+                                          >
+                                            <p className="text-sm font-bold text-primary leading-snug break-words">
+                                              {subjectMap.get(entry.subject_id || entry.subjectId || '') || entry.subject_id || entry.subjectId || '—'}
+                                            </p>
+                                            {(entry.teacher_id || entry.teacherId) && (
+                                              <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
+                                                <Icon name="person" size={12} className="text-muted-foreground/50 shrink-0" />
+                                                <span className="break-words">{teacherMap.get(entry.teacher_id || entry.teacherId || '') || entry.teacher_id || entry.teacherId}</span>
+                                              </p>
+                                            )}
+                                            {entry.room && (
+                                              <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                                                <Icon name="meeting_room" size={12} className="text-muted-foreground/50 shrink-0" />
+                                                <span className="break-words">{entry.room}</span>
+                                              </p>
+                                            )}
+                                            {(entry.start_time || entry.startTime || entry.end_time || entry.endTime) && (
+                                              <p className="text-[11px] text-muted-foreground/60 font-mono mt-2 pt-2 border-t border-border/20 flex items-center gap-1.5">
+                                                <Icon name="schedule" size={11} className="text-muted-foreground/40 shrink-0" />
+                                                <span>{(entry.start_time || entry.startTime || '—').slice(0, 5)} &ndash; {(entry.end_time || entry.endTime || '—').slice(0, 5)}</span>
+                                              </p>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </CardContent>
             </Card>
           </>
         )}
