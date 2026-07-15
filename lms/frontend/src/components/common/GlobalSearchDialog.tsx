@@ -98,6 +98,15 @@ const PAGE_INDEX: PageEntry[] = [
   { id: 'privacy', title: 'Privacy Policy', keywords: ['privacy', 'privacy policy', 'data'], icon: 'privacy_tip', url: '/privacy' },
   { id: 'terms', title: 'Terms & Conditions', keywords: ['terms', 'terms and conditions', 'legal'], icon: 'gavel', url: '/terms' },
   { id: 'k2', title: 'K2 Learning', keywords: ['k2', 'kindergarten', 'kids', 'tracing', 'phonics'], icon: 'toys', url: ROUTES.K2_DASHBOARD },
+  { id: 'k2-tracing', title: 'K2 Letters Tracing', keywords: ['k2', 'tracing', 'letters', 'writing', 'alphabet'], icon: 'edit', url: ROUTES.K2_TRACING },
+  { id: 'k2-phonics', title: 'K2 Phonics', keywords: ['k2', 'phonics', 'sounds', 'reading', 'pronunciation'], icon: 'phonelink_ring', url: ROUTES.K2_PHONICS },
+  { id: 'k2-stories', title: 'K2 Stories', keywords: ['k2', 'stories', 'reading', 'picture books'], icon: 'book', url: ROUTES.K2_STORIES },
+  { id: 'k2-flashcards', title: 'K2 Flashcards', keywords: ['k2', 'flashcards', 'kindergarten', 'learning cards'], icon: 'credit_card', url: ROUTES.K2_FLASHCARDS },
+  { id: 'teacher-exam-create', title: 'Create Exam', keywords: ['create exam', 'new exam', 'teacher exam', 'add exam'], icon: 'note_add', url: ROUTES.TEACHER_EXAM_CREATE },
+  { id: 'teacher-textbook-upload', title: 'Upload Textbook', keywords: ['upload textbook', 'new textbook', 'teacher upload'], icon: 'upload_file', url: ROUTES.TEACHER_TEXTBOOK_UPLOAD },
+  { id: 'teacher-release-grades', title: 'Release Grades', keywords: ['release grades', 'publish results', 'push marks', 'grade release'], icon: 'grading', url: ROUTES.TEACHER_RESULTS_PUSH },
+  { id: 'student-profile-edit', title: 'Edit Profile (Student)', keywords: ['edit profile', 'student profile', 'my account', 'update profile'], icon: 'edit', url: ROUTES.STUDENT_PROFILE_EDIT },
+  { id: 'teacher-profile-edit', title: 'Edit Profile (Teacher)', keywords: ['edit profile', 'teacher profile', 'my account', 'update profile'], icon: 'edit', url: ROUTES.TEACHER_PROFILE_EDIT },
 ];
 
 const CFG: Record<Cat, { l: string; i: string }> = {

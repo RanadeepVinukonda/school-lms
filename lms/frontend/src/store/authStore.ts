@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { supabase } from '@/supabase/config';
 import api from '@/services/api';
 import { hasRole as userHasRole } from '@/lib/roleHelpers';
@@ -71,15 +72,17 @@ async function resolveEffectiveRole(
   }
 }
 
-export const useAuthStore = create<AuthStore>()((set, get) => ({
-  user: null,
-  token: null,
-  isAuthenticated: false,
-  isLoading: true,
-  setUser: (user) =>
-    set({ user, isAuthenticated: !!user }),
-  setToken: (token) => set({ token }),
-  setLoading: (isLoading) => set({ isLoading }),
+export const useAuthStore = create<AuthStore>()(
+  persist(
+    (set, get) => ({
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      isLoading: true,
+      setUser: (user) =>
+        set({ user, isAuthenticated: !!user }),
+      setToken: (token) => set({ token }),
+      setLoading: (isLoading) => set({ isLoading }),
   hasRole: (roles) => {
     const user = get().user;
     if (!user) return false;
@@ -139,4 +142,13 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     })();
     return initPromise;
   },
-}));
+}),
+  {
+    name: 'lms-auth',
+    partialize: (state) => ({
+      user: state.user,
+      token: state.token,
+      isAuthenticated: state.isAuthenticated,
+    }),
+  },
+));
