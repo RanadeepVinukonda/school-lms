@@ -23,85 +23,17 @@ import { ConceptDetailMindMap } from '@/components/teacher/ConceptDetailMindMap'
 import { QuestionRenderer } from '@/components/teacher/QuestionRenderer';
 import type { CachedVideo } from '@/types/textbook';
 
-const YOUTUBE_ID_RE = /^[a-zA-Z0-9_-]{11}$/;
-
-function isValidYoutubeId(id: string): boolean {
-  return YOUTUBE_ID_RE.test(id);
-}
-
 function YouTubePlayer({ video }: { video: CachedVideo }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<YT.Player | null>(null);
-  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
-
-  useEffect(() => {
-    if (!isValidYoutubeId(video.youtubeId)) {
-      setState('error');
-      return;
-    }
-
-    const tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    const first = document.getElementsByTagName('script')[0];
-    first.parentNode?.insertBefore(tag, first);
-
-    let checkInterval: ReturnType<typeof setInterval>;
-
-    const initPlayer = () => {
-      if (!containerRef.current || playerRef.current) return;
-      try {
-        playerRef.current = new YT.Player(containerRef.current, {
-          width: '100%',
-          height: '100%',
-          videoId: video.youtubeId,
-          playerVars: { rel: 0, origin: window.location.origin },
-          events: {
-            onReady: () => setState('ready'),
-            onError: () => setState('error'),
-          },
-        });
-      } catch {
-        setState('error');
-      }
-    };
-
-    if (typeof YT !== 'undefined' && YT.Player) {
-      initPlayer();
-    } else {
-      checkInterval = setInterval(() => {
-        if (typeof YT !== 'undefined' && YT.Player) {
-          clearInterval(checkInterval);
-          initPlayer();
-        }
-      }, 200);
-    }
-
-    return () => {
-      if (checkInterval) clearInterval(checkInterval);
-      if (playerRef.current) {
-        playerRef.current.destroy();
-        playerRef.current = null;
-      }
-    };
-  }, [video.youtubeId]);
-
-  if (state === 'error') {
-    return (
-      <div className="w-full aspect-video rounded-xl overflow-hidden bg-muted flex flex-col items-center justify-center gap-2 text-muted-foreground">
-        <Icon name="videocam_off" className="text-3xl" />
-        <p className="text-sm">Video unavailable</p>
-        <p className="text-label-xs opacity-70">{video.title}</p>
-      </div>
-    );
-  }
-
+  const embedUrl = `https://www.youtube.com/embed/${video.youtubeId}?rel=0`;
   return (
-    <div className="w-full aspect-video rounded-xl overflow-hidden bg-muted" ref={containerRef}>
-      {state === 'loading' && (
-        <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
-          Loading player...
-        </div>
-      )}
+    <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-muted">
+      <iframe
+        src={embedUrl}
+        title={video.title}
+        className="absolute inset-0 w-full h-full"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      />
     </div>
   );
 }

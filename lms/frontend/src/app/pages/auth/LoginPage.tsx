@@ -4,12 +4,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
+import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Icon } from '@/components/ui/Icon';
 import { SEOHead } from '@/components/common/SEOHead';
 import { useLogin } from '@/features/auth/hooks/useLogin';
 import { ROUTES } from '@/lib/constants';
@@ -88,7 +88,7 @@ export default function LoginPage() {
                   tabIndex={-1}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  <Icon name={showPassword ? 'visibility_off' : 'visibility'} size={18} />
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
               {errors.password && (
