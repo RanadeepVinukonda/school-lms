@@ -16,54 +16,7 @@ interface Story {
 export default function K2StoriesPage() {
   const { _ } = useTranslation();
 
-  const sampleStories: Story[] = [
-    {
-      id: '1',
-      title: _('The Brave Little Lion'),
-      pages: [
-        { image: '🦁', text: _('Leo the little lion was very brave. He loved to explore the jungle with his friends.') },
-        { image: '🐒', text: _('One day, his friend Monkey got stuck in a tree. "Help!" cried Monkey.') },
-        { image: '🦁', text: _('Leo climbed the tall tree and saved Monkey. Everyone cheered for the brave lion!') },
-        { image: '⭐', text: _('Leo learned that being brave means helping others. The End.') },
-      ],
-      questions: [
-        { question: _('Who is the main character?'), options: [_('Monkey'), _('Leo'), _('Elephant'), _('Giraffe')], correctIndex: 1 },
-        { question: _('What did Leo do?'), options: [_('Ran away'), _('Climbed a tree'), _('Slept'), _('Ate fruit')], correctIndex: 1 },
-        { question: _('What did Leo learn?'), options: [_('To be mean'), _('To be brave'), _('To be lazy'), _('To be quiet')], correctIndex: 1 },
-      ],
-    },
-    {
-      id: '2',
-      title: _('The Rainbow Friends'),
-      pages: [
-        { image: '🌈', text: _('Once upon a time, there was a beautiful rainbow. It had many colorful friends.') },
-        { image: '🔴', text: _('Red was the color of apples and strawberries. Red loved to be bright and bold!') },
-        { image: '🟡', text: _('Yellow was the color of the sun and bananas. Yellow loved to shine and smile!') },
-        { image: '🔵', text: _('Blue was the color of the sky and ocean. Blue was calm and peaceful.') },
-        { image: '🌈', text: _('Together, all the colors made the world beautiful. The End.') },
-      ],
-      questions: [
-        { question: _('What is Red the color of?'), options: [_('Sky'), _('Apples'), _('Grass'), _('Sun')], correctIndex: 1 },
-        { question: _('What did Yellow love to do?'), options: [_('Sleep'), _('Shine'), _('Swim'), _('Run')], correctIndex: 1 },
-        { question: _('What made the world beautiful?'), options: [_('One color'), _('All colors'), _('Rain'), _('Night')], correctIndex: 1 },
-      ],
-    },
-    {
-      id: '3',
-      title: _('The Counting Adventure'),
-      pages: [
-        { image: '1️⃣', text: _('One little caterpillar sat on a leaf. It was very hungry!') },
-        { image: '2️⃣', text: _('Two juicy apples were on the tree. The caterpillar ate one... and then another!') },
-        { image: '3️⃣', text: _('Three pretty flowers grew in the garden. The caterpillar crawled past them all.') },
-        { image: '🦋', text: _('The caterpillar ate and grew. Soon it became a beautiful butterfly with colorful wings!') },
-      ],
-      questions: [
-        { question: _('How many apples did the caterpillar eat?'), options: [_('One'), _('Two'), _('Three'), _('Four')], correctIndex: 1 },
-        { question: _('How many flowers were in the garden?'), options: [_('One'), _('Two'), _('Three'), _('Four')], correctIndex: 2 },
-        { question: _('What did the caterpillar become?'), options: [_('A bird'), _('A butterfly'), _('A flower'), _('A leaf')], correctIndex: 1 },
-      ],
-    },
-  ];
+  const [stories] = useState<Story[]>([]);
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [showQuestions, setShowQuestions] = useState(false);
@@ -136,22 +89,30 @@ export default function K2StoriesPage() {
       <div className="space-y-4">
         <div className="bg-white rounded-3xl p-4 shadow-lg border-2 border-blue-200">
           <h2 className="text-2xl font-bold text-blue-700 mb-3 flex items-center gap-2"><span>📖</span> {_('Story Time')}</h2>
-          <div className="grid gap-4">
-            {sampleStories.map((story) => (
-              <button
-                key={story.id}
-                onClick={() => {
-                  selectStory(story);
-                  speak(story.title);
-                }}
-                className="bg-gradient-to-r from-blue-400 to-purple-500 text-white rounded-3xl p-6 text-center shadow-lg hover:scale-105 transition-transform active:scale-95"
-              >
-                <span className="text-5xl mb-2 block">{story.pages[0].image}</span>
-                <span className="text-2xl font-bold">{story.title}</span>
-                <span className="block text-sm text-white/80 mt-1">{story.pages.length} {_('pages')}</span>
-              </button>
-            ))}
-          </div>
+          {stories.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              <span className="text-6xl block mb-4">📚</span>
+              <p className="text-xl font-bold">{_('No stories available yet')}</p>
+              <p className="text-sm mt-1">{_('Stories will appear here once created by your teacher.')}</p>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {stories.map((story) => (
+                <button
+                  key={story.id}
+                  onClick={() => {
+                    selectStory(story);
+                    speak(story.title);
+                  }}
+                  className="bg-gradient-to-r from-blue-400 to-purple-500 text-white rounded-3xl p-6 text-center shadow-lg hover:scale-105 transition-transform active:scale-95"
+                >
+                  <span className="text-5xl mb-2 block">{story.pages[0].image}</span>
+                  <span className="text-2xl font-bold">{story.title}</span>
+                  <span className="block text-sm text-white/80 mt-1">{story.pages.length} {_('pages')}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );

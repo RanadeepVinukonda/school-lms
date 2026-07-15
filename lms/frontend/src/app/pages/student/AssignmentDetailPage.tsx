@@ -27,16 +27,7 @@ const submitSchema = z.object({
   notes: z.string().max(500, 'Notes must be under 500 characters').optional(),
 });
 
-const teacherNotes: Record<string, string> = {
-  'Linear Equations Worksheet': 'Show your work step by step. Partial credit for correct methodology even if the final answer is off.',
-  'Systems of Equations Practice': 'Verify solutions by substituting them back into the original equations.',
-  'Triangle Proofs Homework': 'State each theorem used and justify every step in your proof.',
-  "Newton's Law Lab Report": 'Include hypothesis, data tables, and a conclusion tying results to Newton\u2019s laws.',
-  'Essay Draft': 'Build a strong thesis and support it with well-structured paragraphs and textual evidence.',
-  'Polynomial Operations Set': 'Double-check signs when adding, subtracting, and multiplying polynomials.',
-  'Trig Ratios Worksheet': 'Sketch each triangle and label all sides before computing trig ratios.',
-  'Poetry Analysis Paper': 'Select one poem and analyze its imagery, meter, and thematic depth thoroughly.',
-};
+
 
 const STATUS = {
   published: { variant: 'warning' as const, label: 'Open' },
@@ -142,7 +133,7 @@ export default function AssignmentDetailPage() {
     return { label: _('Not Submitted'), variant: overdue ? 'destructive' : 'warning' };
   };
 
-  const mockFiles = ['worksheet.pdf', 'notes.docx', 'reference_guide.pdf'];
+  const assignmentFiles = []; // populated from API when available
 
   const formatRelativeTime = (d: string) => {
     const m = Math.floor((Date.now() - new Date(d).getTime()) / 60000);
@@ -226,15 +217,22 @@ export default function AssignmentDetailPage() {
                   <Card className="border-border/60">
                     <CardHeader className="pb-2"><CardTitle className="text-title-sm flex items-center gap-2"><Icon name="attachment" size={20} />{_('Resources')}</CardTitle></CardHeader>
                     <CardContent className="p-5 space-y-2">
-                      {mockFiles.map((f) => (
-                        <div key={f} className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center"><Icon name="description" size={18} className="text-primary" /></div>
-                            <span className="text-body-md font-medium truncate">{f}</span>
-                          </div>
-                          <Button variant="ghost" size="icon" className="shrink-0"><Icon name="download" size={18} /></Button>
+                      {assignmentFiles.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Icon name="folder_open" size={32} className="mx-auto mb-2 opacity-50" />
+                          <p className="text-body-md">{_('No resources attached')}</p>
                         </div>
-                      ))}
+                      ) : (
+                        assignmentFiles.map((f) => (
+                          <div key={f} className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center"><Icon name="description" size={18} className="text-primary" /></div>
+                              <span className="text-body-md font-medium truncate">{f}</span>
+                            </div>
+                            <Button variant="ghost" size="icon" className="shrink-0"><Icon name="download" size={18} /></Button>
+                          </div>
+                        ))
+                      )}
                     </CardContent>
                   </Card>
                 </motion.div>
@@ -244,7 +242,7 @@ export default function AssignmentDetailPage() {
                     <CardHeader className="pb-2"><CardTitle className="text-title-sm flex items-center gap-2"><Icon name="school" size={20} />{_('Teacher Notes')}</CardTitle></CardHeader>
                     <CardContent className="p-5">
                       <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
-                        <p className="text-body-md italic leading-relaxed text-muted-foreground">&ldquo;{teacherNotes[a.title] || _('Follow the instructions and submit before the deadline. Good luck!')}&rdquo;</p>
+                        <p className="text-body-md italic leading-relaxed text-muted-foreground">&ldquo;{_('Follow the instructions and submit before the deadline. Good luck!')}&rdquo;</p>
                         <p className="text-label-xs text-muted-foreground/60 mt-2">&mdash; {_('Your Teacher')}</p>
                       </div>
                     </CardContent>
