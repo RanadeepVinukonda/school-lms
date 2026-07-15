@@ -109,7 +109,11 @@ export const useAuthStore = create<AuthStore>()(
             if (res.data?.data) {
               const p = res.data.data as Record<string, unknown>;
               const effectiveRole = await resolveEffectiveRole(p);
-              set({ user: mapProfileToUser(p, effectiveRole), isAuthenticated: true });
+              const mapped = mapProfileToUser(p, effectiveRole);
+              const existing = get().user;
+              if (!mapped.classId && existing?.classId) mapped.classId = existing.classId;
+              if (!mapped.studentId && existing?.studentId) mapped.studentId = existing.studentId;
+              set({ user: mapped, isAuthenticated: true });
               return;
             }
           }
@@ -148,8 +152,12 @@ export const useAuthStore = create<AuthStore>()(
           const profile = res.data?.data as Record<string, unknown> | undefined;
           if (profile) {
             const effectiveRole = await resolveEffectiveRole(profile);
+            const mapped = mapProfileToUser(profile, effectiveRole);
+            const existing = get().user;
+            if (!mapped.classId && existing?.classId) mapped.classId = existing.classId;
+            if (!mapped.studentId && existing?.studentId) mapped.studentId = existing.studentId;
             set({
-              user: mapProfileToUser(profile, effectiveRole),
+              user: mapped,
               isAuthenticated: true,
               isLoading: false,
             });
