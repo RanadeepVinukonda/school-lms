@@ -105,21 +105,14 @@ export const useAuthStore = create<AuthStore>()(
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.access_token) {
             set({ token: session.access_token });
-            const res = await api.get(`/auth/me?t=${Date.now()}`, { timeout: 10000 });
-            if (res.data?.data) {
-              const p = res.data.data as Record<string, unknown>;
-              const existing = get().user;
-              const serverRole = p.role as string | undefined;
-              const effectiveRole = serverRole ? await resolveEffectiveRole(p) : (existing?.role || 'student');
-              const mapped = mapProfileToUser(p, effectiveRole);
-              if (!mapped.classId && existing?.classId) mapped.classId = existing.classId;
-              if (!mapped.studentId && existing?.studentId) mapped.studentId = existing.studentId;
-              set({ user: mapped, isAuthenticated: true });
-              return;
-            }
+            // Validate the session is still active — DON'T replace the persisted user
+            // because /auth/me returns a ServiceResult wrapper that doesn't carry all
+            // identity fields (id, displayName, firstName, lastName, teacherId, etc.).
+            // The persisted user from the original login has the COMPLETE profile.
+            await api.post('/auth/verify-token', {}, { timeout: 10000 });
           }
         } catch {
-          // Background refresh failed — keep persisted state, user stays logged in
+          // Background validation failed — keep persisted state, user stays logged in
         }
         return;
       }
@@ -152,7 +145,9 @@ export const useAuthStore = create<AuthStore>()(
         if (session?.access_token) {
           set({ token: session.access_token });
           const res = await api.get(`/auth/me?t=${Date.now()}`, { timeout: 10000 });
-          const profile = res.data?.data as Record<string, unknown> | undefined;
+          const body = res.data?.data as Record<string, unknown> | undefined;
+          // Unwrap ServiceResult if present (backend wraps getUserProfile result)
+          const profile = (body?.data ?? body) as Record<string, unknown> | undefined;
           if (profile) {
             const existing = get().user;
             const serverRole = profile.role as string | undefined;
