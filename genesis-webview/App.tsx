@@ -99,6 +99,8 @@ export default function App() {
           setSupportMultipleWindows={false}
           allowUniversalAccessFromFileURLs
           mixedContentMode="compatibility"
+          setBuiltInZoomControls={false}
+          setDisplayZoomControls={false}
         />
       </SafeAreaView>
     </SafeAreaProvider>
