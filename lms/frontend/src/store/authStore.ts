@@ -108,9 +108,10 @@ export const useAuthStore = create<AuthStore>()(
             const res = await api.get(`/auth/me?t=${Date.now()}`, { timeout: 10000 });
             if (res.data?.data) {
               const p = res.data.data as Record<string, unknown>;
-              const effectiveRole = await resolveEffectiveRole(p);
-              const mapped = mapProfileToUser(p, effectiveRole);
               const existing = get().user;
+              const serverRole = p.role as string | undefined;
+              const effectiveRole = serverRole ? await resolveEffectiveRole(p) : (existing?.role || 'student');
+              const mapped = mapProfileToUser(p, effectiveRole);
               if (!mapped.classId && existing?.classId) mapped.classId = existing.classId;
               if (!mapped.studentId && existing?.studentId) mapped.studentId = existing.studentId;
               set({ user: mapped, isAuthenticated: true });
@@ -131,7 +132,9 @@ export const useAuthStore = create<AuthStore>()(
         const sessionData = res.data?.data;
         if (sessionData?.user) {
           const p = sessionData.user as Record<string, unknown>;
-          const effectiveRole = await resolveEffectiveRole(p);
+          const existing = get().user;
+          const serverRole = p.role as string | undefined;
+          const effectiveRole = serverRole ? await resolveEffectiveRole(p) : (existing?.role || 'student');
           set({
             user: mapProfileToUser(p, effectiveRole),
             isAuthenticated: true,
@@ -151,9 +154,10 @@ export const useAuthStore = create<AuthStore>()(
           const res = await api.get(`/auth/me?t=${Date.now()}`, { timeout: 10000 });
           const profile = res.data?.data as Record<string, unknown> | undefined;
           if (profile) {
-            const effectiveRole = await resolveEffectiveRole(profile);
-            const mapped = mapProfileToUser(profile, effectiveRole);
             const existing = get().user;
+            const serverRole = profile.role as string | undefined;
+            const effectiveRole = serverRole ? await resolveEffectiveRole(profile) : (existing?.role || 'student');
+            const mapped = mapProfileToUser(profile, effectiveRole);
             if (!mapped.classId && existing?.classId) mapped.classId = existing.classId;
             if (!mapped.studentId && existing?.studentId) mapped.studentId = existing.studentId;
             set({
