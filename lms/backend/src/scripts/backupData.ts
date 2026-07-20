@@ -26,9 +26,9 @@ async function backup() {
     console.log('1. Backing up Supabase Auth users...');
     const { data: authUsers } = await supabase.auth.admin.listUsers();
     if (authUsers?.users) {
-      const sanitized = authUsers.users.map(u => ({
+      const sanitized = authUsers.users.map((u: any) => ({
         id: u.id, email: u.email, phone: u.phone,
-        role: u.role, createdAt: u.createdAt,
+        role: u.role, created_at: u.created_at || u.createdAt,
         user_metadata: u.user_metadata,
       }));
       fs.writeFileSync(path.join(DIR, 'supabase-auth-users.json'), JSON.stringify(sanitized, null, 2));

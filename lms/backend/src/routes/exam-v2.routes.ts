@@ -54,7 +54,7 @@ router.post('/', authenticate, requireRole('teacher', 'admin'), (req, _res, next
       console.log('ZOD_ERR', JSON.stringify(e.errors));
       return _res.status(400).json({ success: false, error: { message: 'ZOD: ' + e.errors.map((x: any) => x.path.join('.') + ' ' + x.message).join(', '), code: 'VALIDATION', details: e.errors.map((x: any) => ({ field: x.path.join('.'), message: x.message })) } });
     }
-    next(e);
+    return next(e);
   }
 }, asyncHandler(examV2Controller.createExam));
 router.post('/:examId/release', authenticate, requireRole('teacher', 'admin'), validate(releaseExamSchema), asyncHandler(examV2Controller.releaseExam));

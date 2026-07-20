@@ -453,6 +453,7 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     questionId: string;
     answer: string | string[];
     timeSpent?: number;
+    skipped?: boolean;
   }>;
 }) {
   const supabase = getSupabaseAdmin()!;

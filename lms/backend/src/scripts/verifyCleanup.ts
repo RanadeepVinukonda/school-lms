@@ -26,7 +26,7 @@ async function main() {
   for (const t of tables) {
     try {
       const r = await client.query(`SELECT COUNT(*) as cnt FROM ${t}`);
-      const c = parseInt(r.rows[0].cnt);
+      const c = parseInt(r.rows[0]?.cnt as string);
       if (c > 0) {
         console.log(`  ${t}: ${c} rows REMAINING`);
         tablesWithData++;
