@@ -46,7 +46,9 @@ export function errorHandler(
         message: err.message,
         code: err.code,
         requestId,
-        ...(err.details && { details: err.details }),
+        _hasDetails: !!err.details,
+        _detailType: typeof err.details,
+        details: err.details,
         ...(isDev && { stack: err.stack }),
       },
     });
