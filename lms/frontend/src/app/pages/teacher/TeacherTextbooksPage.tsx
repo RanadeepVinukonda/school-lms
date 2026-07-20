@@ -258,9 +258,9 @@ export default function TeacherTextbooksPage() {
                                 <div className="flex items-start justify-between">
                                   <div
                                     className="h-12 w-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-md"
-                                    style={{ backgroundColor: `${sub.color ?? '#6366f1'}18` }}
+                                    style={{ backgroundColor: `${sub.color ?? 'hsl(var(--accent-default))'}18` }}
                                   >
-                                    <Icon name={sub.icon ?? 'menu_book'} size={24} style={{ color: sub.color ?? '#6366f1' }} />
+                                    <Icon name={sub.icon ?? 'menu_book'} size={24} style={{ color: sub.color ?? 'hsl(var(--accent-default))' }} />
                                   </div>
                                   <Badge variant="secondary" className="text-xs">
                                     {sub.category ?? _('General')}
@@ -328,9 +328,9 @@ export default function TeacherTextbooksPage() {
                                 <div className="flex items-start gap-4">
                                   <div
                                     className="h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm"
-                                    style={{ backgroundColor: `${selectedSubject?.color ?? '#6366f1'}15` }}
+                                    style={{ backgroundColor: `${selectedSubject?.color ?? 'hsl(var(--accent-default))'}15` }}
                                   >
-                                    <Icon name="auto_stories" size={24} style={{ color: selectedSubject?.color ?? '#6366f1' }} />
+                                    <Icon name="auto_stories" size={24} style={{ color: selectedSubject?.color ?? 'hsl(var(--accent-default))' }} />
                                   </div>
                                   <div className="min-w-0 flex-1">
                                     <h4 className="font-bold text-title-sm truncate group-hover:text-primary transition-colors">{tb.title}</h4>

@@ -188,7 +188,7 @@ export default function StudentTasksPage() {
                           ? "text-white shadow-sm"
                           : "bg-surface text-on-surface hover:bg-surface-variant/40 border-border/60"
                       }`}
-                      style={isSelected ? { backgroundColor: sub.color || '#6366f1', borderColor: sub.color || '#6366f1' } : {}}
+                      style={isSelected ? { backgroundColor: sub.color || 'hsl(var(--accent-default))', borderColor: sub.color || 'hsl(var(--accent-default))' } : {}}
                     >
                       <Icon name={sub.icon || 'menu_book'} size={14} style={!isSelected ? { color: sub.color } : undefined} />
                       {sub.name}

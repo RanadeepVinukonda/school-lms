@@ -6,6 +6,7 @@ import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
+import { Brain } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { sendChatMessage, pushQuiz, pushAssignment } from '@/services/ocrService';
@@ -201,6 +202,20 @@ export default function TeacherOCRPage() {
     }
   }, []);
 
+  const handleRepublishQuiz = useCallback(async (quizId: string) => {
+    setMessages((prev) => [...prev, { role: 'assistant', content: `⏳ Republishing quiz as interactive practice...` }]);
+    try {
+      await api.post(`/quizzes-v2/${quizId}/republish`);
+      setMessages((prev) => [...prev, {
+        role: 'assistant',
+        content: `✅ Quiz republished as interactive practice mode! Students can now attempt with immediate feedback.`,
+        data: { action: 'republished' }
+      }]);
+    } catch (err: any) {
+      setMessages((prev) => [...prev, { role: 'assistant', content: `❌ Failed to republish: ${err?.message || 'Unknown error'}` }]);
+    }
+  }, []);
+
   const handlePushQuiz = useCallback(async (data: any, classId: string) => {
     setMessages((prev) => [...prev, { role: 'assistant', content: `⏳ Pushing quiz to class...` }]);
     try {
@@ -239,9 +254,14 @@ export default function TeacherOCRPage() {
       return (
         <div className="space-y-2">
           <LatexRenderer content={msg.content} className="text-sm" />
-          <Button variant="destructive" size="sm" onClick={() => handleDeleteQuiz(msg.data.pushedQuizId)}>
-            <Icon name="delete" size={14} className="mr-1" /> {_('Delete Quiz')}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="text-success border-success/30" onClick={() => handleRepublishQuiz(msg.data.pushedQuizId)}>
+              <Brain className="h-4 w-4 mr-1" /> {_('Republish as Interactive Practice')}
+            </Button>
+            <Button variant="destructive" size="sm" onClick={() => handleDeleteQuiz(msg.data.pushedQuizId)}>
+              <Icon name="delete" size={14} className="mr-1" /> {_('Delete Quiz')}
+            </Button>
+          </div>
         </div>
       );
     }

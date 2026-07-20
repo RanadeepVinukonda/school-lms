@@ -189,7 +189,7 @@ export default function SubjectDetailPage() {
                               <p className="text-body-xs text-muted-foreground">{new Date(d.recentGrade.gradedAt).toLocaleDateString()}</p>
                             </div>
                             <div className="text-right shrink-0 ml-4">
-                              <p className="text-lg font-bold" style={{ color: d.recentGrade.percentage >= 70 ? '#16a34a' : '#dc2626' }}>
+                              <p className={`text-lg font-bold ${d.recentGrade.percentage >= 70 ? 'text-success' : 'text-destructive'}`}>
                                 {d.recentGrade.score}/{d.recentGrade.maxScore}
                               </p>
                               <p className="text-body-xs text-muted-foreground">{d.recentGrade.percentage}%</p>

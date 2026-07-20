@@ -60,7 +60,7 @@ export default function StudentProfilePage() {
         .map((subId) => {
           const s = subjectMap.get(subId);
           if (!s) return null;
-          return { ...s, icon: s.icon || 'school', color: s.color || '#6366f1' };
+          return { ...s, icon: s.icon || 'school', color: s.color || 'hsl(var(--accent-default))' };
         })
         .filter((s): s is NonNullable<typeof s> => s !== null);
 

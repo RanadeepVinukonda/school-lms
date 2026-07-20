@@ -8,6 +8,7 @@ import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
+import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
 import {
@@ -20,6 +21,7 @@ import { teacherClassSubjectService } from '@/services/teacherClassSubjectServic
 import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
+import api from '@/services/api';
 
 interface NeedsAttentionItem {
   icon: string; label: string; count: number;
@@ -180,6 +182,13 @@ export default function TeacherDashboardPage() {
 
   useRealtimeInvalidation([{ table: 'submissions', queryKey: ['teacher-dashboard', user?.id ?? ''] }]);
 
+  const firstClassId = (data as any)?.teaching?.classes?.[0]?.id;
+  const { data: skillDist } = useQuery({
+    queryKey: ['teacher-skill-distribution', firstClassId],
+    queryFn: () => api.get(`/adaptive/skill-distribution/${firstClassId}`).then((r) => r.data.data),
+    enabled: !!firstClassId,
+  });
+
   const teacherName = user?.displayName?.split(' ')[0] ?? _('Teacher');
 
   return (
@@ -251,6 +260,43 @@ export default function TeacherDashboardPage() {
                   ))}
                 </motion.div>
               </section>
+
+              {skillDist && skillDist.total > 0 && (
+                <section>
+                  <SectionTitle label={_('Skills')} title={_('Student skill levels')} />
+                  <motion.div
+                    variants={staggerContainer}
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true, margin: '-60px' }}
+                    className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+                  >
+                    {['beginner', 'intermediate', 'advanced'].map((level) => {
+                      const count = skillDist.distribution?.[level] || 0;
+                      const pct = skillDist.total > 0 ? Math.round((count / skillDist.total) * 100) : 0;
+                      const colors: Record<string, string> = {
+                        beginner: 'bg-warning-container text-warning border-warning/20',
+                        intermediate: 'bg-primary-container text-primary border-primary/20',
+                        advanced: 'bg-success-container text-success border-success/20',
+                      };
+                      return (
+                        <motion.div key={level} variants={cardStackReveal} custom={0}>
+                          <Card className="border-border/60">
+                            <CardContent className="p-5 text-center space-y-2">
+                              <p className={cn('text-display-xs font-bold capitalize', colors[level].split(' ')[1])}>{count}</p>
+                              <p className="text-title-sm font-medium capitalize">{_(level)}</p>
+                              <div className="h-2 rounded-full bg-muted overflow-hidden">
+                                <div className={cn('h-full rounded-full transition-all', level === 'beginner' ? 'bg-warning' : level === 'intermediate' ? 'bg-primary' : 'bg-success')} style={{ width: `${pct}%` }} />
+                              </div>
+                              <p className="text-label-xs text-muted-foreground">{pct}% {_('of class')}</p>
+                            </CardContent>
+                          </Card>
+                        </motion.div>
+                      );
+                    })}
+                  </motion.div>
+                </section>
+              )}
 
               {(d.teaching.classes.length > 0 || d.teaching.textbooks.length > 0 || (d.teaching.subjects?.length ?? 0) > 0) && (
                 <section>

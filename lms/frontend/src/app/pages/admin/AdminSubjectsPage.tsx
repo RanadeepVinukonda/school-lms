@@ -127,7 +127,7 @@ export default function AdminSubjectsPage() {
         name: form.name,
         code,
         icon: form.icon,
-        color: '#6366f1',
+        color: 'hsl(var(--accent-default))',
         category: form.category,
         classId: form.classId,
         isActive: true,

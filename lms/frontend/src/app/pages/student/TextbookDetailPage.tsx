@@ -117,9 +117,9 @@ export default function TextbookDetailPage() {
               {/* Header */}
               <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
                 <Card className="overflow-hidden border-border/60">
-                  <div className="h-36 flex items-end p-6 relative" style={{ backgroundColor: `${d.subject?.color || '#6366f1'}20` }}>
+                  <div className="h-36 flex items-end p-6 relative" style={{ backgroundColor: `${d.subject?.color || 'hsl(var(--accent-default))'}20` }}>
                     <div className="flex items-center gap-4 relative z-10">
-                      <div className="h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: d.subject?.color || '#6366f1' }}>
+                      <div className="h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: d.subject?.color || 'hsl(var(--accent-default))' }}>
                         <Icon name="auto_stories" size={28} className="text-white" />
                       </div>
                       <div className="flex-1">

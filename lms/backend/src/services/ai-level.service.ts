@@ -9,9 +9,19 @@ export function computeLevel(
   avgReactionTimeSec: number,
   complexityHandled: number,
 ): StudentLevel {
-  if (accuracy >= 0.85 && complexityHandled >= 2) return 'advanced';
-  if (accuracy >= 0.70 && complexityHandled >= 1) return 'intermediate';
-  return 'beginner';
+  let level: StudentLevel;
+  if (accuracy >= 0.85 && complexityHandled >= 2) level = 'advanced';
+  else if (accuracy >= 0.70 && complexityHandled >= 1) level = 'intermediate';
+  else level = 'beginner';
+
+  if (level !== 'beginner' && avgReactionTimeSec > 120) {
+    level = level === 'advanced' ? 'intermediate' : 'beginner';
+  }
+  if (level === 'beginner' && accuracy >= 0.85 && avgReactionTimeSec < 30) {
+    level = 'intermediate';
+  }
+
+  return level;
 }
 
 /** Select questions appropriate for the student's level. */

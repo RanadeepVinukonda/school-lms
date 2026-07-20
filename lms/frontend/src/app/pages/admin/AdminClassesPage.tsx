@@ -377,7 +377,7 @@ export default function AdminClassesPage() {
         name: subjectForm.name,
         code,
         icon: subjectForm.icon,
-        color: '#6366f1',
+        color: 'hsl(var(--accent-default))',
         category: subjectForm.category,
         classId: addSubjectClassId,
         isActive: true,

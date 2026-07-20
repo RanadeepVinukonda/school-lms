@@ -124,7 +124,7 @@ export default function StudentQuizzesPage() {
                   return (
                     <button key={sub.id} onClick={() => setSelectedSubjectId(sub.id)}
                       className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border shrink-0 flex items-center gap-1.5 ${isSelected ? 'text-white shadow-sm' : 'bg-surface text-on-surface hover:bg-surface-variant/40 border-border/60'}`}
-                      style={isSelected ? { backgroundColor: sub.color || '#6366f1', borderColor: sub.color || '#6366f1' } : {}}>
+                      style={isSelected ? { backgroundColor: sub.color || 'hsl(var(--accent-default))', borderColor: sub.color || 'hsl(var(--accent-default))' } : {}}>
                       <Icon name={sub.icon || 'menu_book'} size={14} style={!isSelected ? { color: sub.color } : undefined} />
                       {sub.name}
                     </button>
@@ -159,9 +159,9 @@ export default function StudentQuizzesPage() {
                           <CardContent className="p-5">
                             <div className="flex items-start gap-4">
                               <div className="h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                                style={{ backgroundColor: `${quiz.subjectColor || '#6366f1'}20` }}>
+                                style={{ backgroundColor: `${quiz.subjectColor || 'hsl(var(--accent-default))'}20` }}>
                                 <Icon name={quiz.subjectIcon || 'quiz'} size={24}
-                                  style={{ color: quiz.subjectColor || '#6366f1' }} />
+                                  style={{ color: quiz.subjectColor || 'hsl(var(--accent-default))' }} />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">

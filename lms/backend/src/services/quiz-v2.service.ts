@@ -5,7 +5,7 @@ import { logger } from '../utils/logger';
 import { chatCompletion } from './ai.service';
 import { env } from '../config/env';
 import { getTeacherAssignment } from './teacher-class-subject.service';
-import { computeLevel, computeComplexityHandled } from './ai-level.service';
+import { computeLevel, computeComplexityHandled, filterQuestionsByLevel } from './ai-level.service';
 import type { Difficulty, StudentLevel } from './ai-level.service';
 import * as gamificationService from './gamification.service';
 import { deleteDocument } from './document.service';
@@ -409,6 +409,12 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
     : [...questionBank];
   if (available.length === 0) available = [...questionBank];
 
+  if (quizData.isRepublished && studentLevel) {
+    const targetCount = (quizData.questionCount as number) || 0;
+    const leveled = filterQuestionsByLevel(available, studentLevel, targetCount || available.length);
+    if (leveled.length > 0) available = leveled;
+  }
+
   if (quizData.shuffleQuestions !== false) {
     available = [...available].sort(() => Math.random() - 0.5);
   }
@@ -493,6 +499,15 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
       return { questionId: answer.questionId, answer: answer.answer, isCorrect: false, pointsEarned: 0, timeSpent: answer.timeSpent || 0 };
     }
 
+    if (answer.skipped) {
+      return {
+        questionId: answer.questionId, questionText: question.text, answer: answer.answer,
+        isCorrect: false, pointsEarned: 0, timeSpent: answer.timeSpent || 0,
+        correctAnswer: question.correctAnswer, explanation: question.explanation,
+        skipped: true,
+      };
+    }
+
     let isCorrect = false;
     const normalize = (v: unknown) => v?.toString().toLowerCase().trim() || '';
     const qType = question.type as string;
@@ -516,21 +531,35 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     };
   });
 
+  const isRepublished = !!(quizData.isRepublished);
+
   const timeSpent = data.answers.reduce((sum, a) => sum + (a.timeSpent || 0), 0);
-  const totalPoints = (attemptData.totalPoints as number) || 0;
+  let totalPoints = (attemptData.totalPoints as number) || 0;
+
+  if (isRepublished) {
+    const skippedIds = new Set(gradedAnswers.filter((a: any) => a.skipped).map((a: any) => a.questionId));
+    const skippedPointValues = questionBank
+      .filter((q: any) => skippedIds.has(q.id))
+      .reduce((sum: number, q: any) => sum + (POINTS_BY_DIFFICULTY[(q.difficulty as string) || 'medium'] || 1), 0);
+    totalPoints = Math.max(totalPoints - skippedPointValues, 0);
+  }
+
   const percentage = totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0;
   const passingScore = (quizData.passingScore as number) || 50;
   const passed = percentage >= passingScore;
 
+  const activeAnswers = isRepublished
+    ? gradedAnswers.filter((a: any) => !a.skipped)
+    : gradedAnswers;
   const accuracy = totalPoints > 0 ? score / totalPoints : 0;
-  const avgReactionTime = gradedAnswers.length > 0
-    ? gradedAnswers.reduce((sum: number, a: any) => sum + (a.timeSpent || 0), 0) / gradedAnswers.length
+  const avgReactionTime = activeAnswers.length > 0
+    ? activeAnswers.reduce((sum: number, a: any) => sum + (a.timeSpent || 0), 0) / activeAnswers.length
     : 0;
 
   const difficultyMap: Record<string, Difficulty> = {};
   for (const q of questionBank) { difficultyMap[q.id as string] = (q.difficulty as Difficulty) || 'easy'; }
   const complexityHandled = computeComplexityHandled(
-    gradedAnswers.map((a: any) => ({ questionId: a.questionId, correct: a.isCorrect })),
+    activeAnswers.map((a: any) => ({ questionId: a.questionId, correct: a.isCorrect })),
     difficultyMap,
   );
   const newLevel = computeLevel(accuracy, avgReactionTime, complexityHandled);
@@ -641,7 +670,15 @@ export async function getQuizResults(quizId: string, studentId: string) {
       };
     }
     let regradedScore = 0;
+    let regradedTotal = (data.totalPoints as number) || 0;
     const answers = (data.answers || []).map((a: any) => {
+      if (a.skipped) {
+        const pointVal = quizQuestionsMap[a.questionId]
+          ? (POINTS_BY_DIFFICULTY[quizQuestionsMap[a.questionId].difficulty] || 1)
+          : 1;
+        regradedTotal -= pointVal;
+        return { ...a, correctAnswer: a.correctAnswer || quizQuestionsMap[a.questionId]?.correctAnswer || '' };
+      }
       if (!a.correctAnswer && quizQuestionsMap[a.questionId]) {
         const q = quizQuestionsMap[a.questionId];
         const normalize = (v: unknown) => v?.toString().toLowerCase().trim() || '';
@@ -653,7 +690,7 @@ export async function getQuizResults(quizId: string, studentId: string) {
       regradedScore += a.pointsEarned || 0;
       return a;
     });
-    const tp = data.totalPoints || 1;
+    const tp = Math.max(regradedTotal, 1);
     const pct = Math.round((regradedScore / tp) * 100);
     return { ...data, showResults: (quizData.showResults as boolean) ?? false, answers, score: regradedScore, percentage: pct };
   });

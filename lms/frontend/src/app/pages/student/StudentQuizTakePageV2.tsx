@@ -55,6 +55,7 @@ interface V2AnswerPayload {
   questionId: string;
   answer: string;
   timeSpent: number;
+  skipped?: boolean;
 }
 
 interface V2AnswerResult {
@@ -65,6 +66,7 @@ interface V2AnswerResult {
   pointsEarned?: number;
   correctAnswer?: string;
   explanation?: string;
+  skipped?: boolean;
 }
 
 interface V2SubmitResult {
@@ -156,6 +158,7 @@ export default function StudentQuizTakePageV2() {
   const [interactiveCorrect, setInteractiveCorrect] = useState<Record<string, boolean>>({});
   const [interactiveError, setInteractiveError] = useState<Record<string, boolean>>({});
   const [customTextInput, setCustomTextInput] = useState('');
+  const [skippedQuestions, setSkippedQuestions] = useState<Record<string, boolean>>({});
 
   const questionStartTimeRef = useRef<number>(Date.now());
   const questionTimeMapRef = useRef<Record<string, number>>({});
@@ -319,10 +322,12 @@ export default function StudentQuizTakePageV2() {
     const currentQ = attempt.questions[currentIndex];
     if (currentQ) trackTimeOnQuestion(currentQ.id);
 
+    const isRepub = assessmentInfo?.isRepublished;
     const answersPayload: V2AnswerPayload[] = attempt.questions.map((q) => ({
       questionId: q.id,
       answer: answers[q.id] || '',
       timeSpent: questionTimeMapRef.current[q.id] || 0,
+      skipped: isRepub && skippedQuestions[q.id] ? true : undefined,
     }));
 
     try {
@@ -340,7 +345,7 @@ export default function StudentQuizTakePageV2() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [attempt, userId, isSubmitting, currentIndex, answers, basePath, trackTimeOnQuestion]);
+  }, [attempt, userId, isSubmitting, currentIndex, answers, basePath, trackTimeOnQuestion, assessmentInfo, skippedQuestions]);
 
   const handleInteractiveSelect = (optionValue: string) => {
     if (!attempt || !assessmentInfo?.isRepublished) return;
@@ -408,6 +413,18 @@ export default function StudentQuizTakePageV2() {
       toast.error(_('Incorrect. Please check and try again!'));
     }
   };
+
+  const handleSkip = useCallback(() => {
+    if (!attempt) return;
+    const q = attempt.questions[currentIndex];
+    if (!q) return;
+    setSkippedQuestions((prev) => ({ ...prev, [q.id]: true }));
+    if (currentIndex < (attempt.questions?.length ?? 0) - 1) {
+      goToQuestion(currentIndex + 1);
+    } else {
+      setShowConfirm(true);
+    }
+  }, [attempt, currentIndex, goToQuestion]);
 
   const logProctoring = useCallback(async (event: string) => {
     if (!attempt) return;
@@ -740,23 +757,31 @@ export default function StudentQuizTakePageV2() {
                   <CardDescription>{_('Your answers and the correct answers')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {result.answers.map((a, i) => (
-                    <div key={a.questionId} className={cn('p-4 rounded-lg border', a.isCorrect ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-destructive/5 border-destructive/20')}>
+                  {result.answers.map((a, i) => {
+                    const isSkipped = a.skipped;
+                    return (
+                    <div key={a.questionId} className={cn('p-4 rounded-lg border', isSkipped ? 'bg-warning/5 border-warning/20' : a.isCorrect ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-destructive/5 border-destructive/20')}>
                       <div className="flex items-start justify-between gap-2">
                         <p className="font-medium text-sm flex-1">{i + 1}. {a.questionText || _(`Question ${i + 1}`)}</p>
-                        <Badge variant={a.isCorrect ? 'success' : 'destructive'} className="shrink-0">{a.isCorrect ? _('Correct') : _('Incorrect')}</Badge>
+                        <Badge variant={isSkipped ? 'warning' : a.isCorrect ? 'success' : 'destructive'} className="shrink-0">{isSkipped ? _('Skipped') : a.isCorrect ? _('Correct') : _('Incorrect')}</Badge>
                       </div>
+                      {!isSkipped && (
                       <div className="mt-2 text-sm space-y-1">
                         <p><span className="text-muted-foreground">{_('Your answer:')}</span> {a.answer || _('(no answer)')}</p>
                         {!a.isCorrect && a.correctAnswer && (
                           <p><span className="text-emerald-600 font-medium">{_('Correct answer:')}</span> {a.correctAnswer}</p>
                         )}
                       </div>
-                      {a.explanation && (
+                      )}
+                      {isSkipped && (
+                        <p className="mt-2 text-sm text-muted-foreground italic">{_('Question was skipped.')}</p>
+                      )}
+                      {!isSkipped && a.explanation && (
                         <p className="mt-2 text-xs text-muted-foreground italic">{a.explanation}</p>
                       )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </CardContent>
               </Card>
             )}
@@ -958,7 +983,17 @@ export default function StudentQuizTakePageV2() {
                 {_('Previous')}
               </Button>
 
-              {!assessmentInfo.isRepublished && (
+              {assessmentInfo.isRepublished ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSkip}
+                  className="gap-1.5 text-warning border-warning/30"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                  {_('Skip')}
+                </Button>
+              ) : (
                 <Button
                   variant={currentStatus === 'review' ? 'default' : 'outline'}
                   size="sm"
@@ -1064,30 +1099,49 @@ export default function StudentQuizTakePageV2() {
                 <CardTitle className="text-title-sm">{_('Finish Assessment')}</CardTitle>
                 <CardDescription>
                   {_('You answered')} {answeredCount} {_('of')} {totalQuestions} {_('questions.')}
-                  {answeredCount < totalQuestions && ` ${totalQuestions - answeredCount} ${_('remain unanswered.')}`}{' '}
-                  {_('Are you ready to submit and calculate your performance analytics?')}
+                  {answeredCount < totalQuestions && ` ${totalQuestions - answeredCount} ${_('remain unanswered.')}`}
+                  {assessmentInfo.isRepublished && Object.keys(skippedQuestions).length > 0 && (
+                    <> {_('You have')} {Object.keys(skippedQuestions).length} {_('skipped questions.')}</>
+                  )}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-5 flex gap-3">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setShowConfirm(false)}
-                >
-                  {_('Review')}
-                </Button>
-                <Button
-                  className="flex-1 bg-success hover:bg-success/90"
-                  onClick={handleSubmitAttempt}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                  )}
-                  {_('Submit Test')}
-                </Button>
+              <CardContent className="p-5 flex gap-3 flex-col">
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setShowConfirm(false)}
+                  >
+                    {_('Review')}
+                  </Button>
+                  <Button
+                    className="flex-1 bg-success hover:bg-success/90"
+                    onClick={handleSubmitAttempt}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                    )}
+                    {_('Submit Test')}
+                  </Button>
+                </div>
+                {assessmentInfo.isRepublished && Object.keys(skippedQuestions).length > 0 && (
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2 text-warning border-warning/30"
+                    onClick={() => {
+                      setShowConfirm(false);
+                      const firstSkipped = attempt?.questions.findIndex((q) => skippedQuestions[q.id]);
+                      if (firstSkipped !== undefined && firstSkipped >= 0) {
+                        goToQuestion(firstSkipped);
+                      }
+                    }}
+                  >
+                    {_('Review Skipped Questions')}
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </motion.div>

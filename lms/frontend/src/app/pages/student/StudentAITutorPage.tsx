@@ -27,9 +27,9 @@ function formatTime(d: Date | string | undefined) {
 
 function CodeBlock({ language, code }: { language: string; code: string }) {
   return (
-    <div className="my-3 rounded-xl overflow-hidden border border-outline-variant bg-[#0d1117]">
+    <div className="my-3 rounded-xl overflow-hidden border border-outline-variant bg-surface-variant">
       {language && (
-        <div className="flex items-center justify-between px-4 py-2 bg-[#161b22] border-b border-outline-variant">
+        <div className="flex items-center justify-between px-4 py-2 bg-surface border-b border-outline-variant">
           <span className="text-label-sm text-on-surface-variant font-mono">{language}</span>
           <button
             onClick={() => navigator.clipboard.writeText(code)}
@@ -40,7 +40,7 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
         </div>
       )}
       <pre className="p-4 overflow-x-auto">
-        <code className="text-sm font-mono text-[#e6edf3] leading-relaxed whitespace-pre-wrap">{code}</code>
+        <code className="text-sm font-mono text-on-surface leading-relaxed whitespace-pre-wrap">{code}</code>
       </pre>
     </div>
   );
