@@ -318,22 +318,24 @@ export default function TeacherExamsPage() {
   function handleCreate() {
     if (!canCreate()) return;
     const body: Record<string, unknown> = {
-      title,
-      description,
+      title: title.trim(),
+      description: description || '',
       classId: selectedClassId,
-      subjectId: selectedAssignment?.subjectId,
+      subjectId: selectedAssignment?.subjectId || '',
       textbookId: selectedTextbookId,
       chapterId: selectedChapterId,
       teacherId,
       timeLimitMinutes: Number(timeLimitMinutes),
-      selectedModels,
+      selectedModels: [...selectedModels],
       questionCountPerConcept: Number(questionCountPerConcept),
       passingScore: Number(passingScore),
       maxAttempts: Number(maxAttempts),
       shuffleQuestions: true,
       showResults: true,
-      questions: reviewQuestions.length > 0 ? reviewQuestions : undefined,
     };
+    if (reviewQuestions.length > 0) {
+      (body as any).questions = reviewQuestions;
+    }
     createMutation.mutate(body);
   }
 
@@ -341,13 +343,14 @@ export default function TeacherExamsPage() {
     if (!selectedClassId || !selectedTextbookId || !selectedChapterId) return;
     generatePreviewMutation.mutate({
       title: title.trim() || 'Preview',
+      description: description || '',
       classId: selectedClassId,
-      subjectId: selectedAssignment?.subjectId,
+      subjectId: selectedAssignment?.subjectId || '',
       textbookId: selectedTextbookId,
       chapterId: selectedChapterId,
       teacherId,
       timeLimitMinutes: Number(timeLimitMinutes),
-      selectedModels,
+      selectedModels: [...selectedModels],
       questionCountPerConcept: Number(questionCountPerConcept),
       preview: true,
     });
