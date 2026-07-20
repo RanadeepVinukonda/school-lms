@@ -236,10 +236,9 @@ export default function TeacherExamsPage() {
     onError: (err: unknown) => {
       console.log('CREATE_ERR keys:', Object.keys(err as object));
       console.log('CREATE_ERR full:', err);
-      const message = err && typeof err === 'object' && 'message' in err
-        ? (err as Record<string, unknown>).message as string
-        : _('Failed to create exam');
-      toast.error(message);
+      const obj = err as Record<string, unknown>;
+      const raw = JSON.stringify(obj).substring(0, 800);
+      toast.error('ERR: ' + raw);
     },
   });
 
