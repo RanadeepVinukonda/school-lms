@@ -1,0 +1,4290 @@
+[
+  {
+    "collection": "auditLogs",
+    "doc_id": "ccfad9ee-1f1f-4340-a2df-3d37a1c392e6",
+    "data": {
+      "action": "class.create",
+      "summary": "Created class \"1st class\" (G1A)",
+      "newValue": {
+        "code": "G1A",
+        "name": "1st class",
+        "grade": "1",
+        "section": "A",
+        "roomNumber": ""
+      },
+      "oldValue": null,
+      "targetId": "5f411eb1-1ba4-49df-8665-8bb429edb757",
+      "timestamp": "2026-07-10T06:47:57.030Z",
+      "targetName": "1st class",
+      "targetType": "class",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System Admin",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T06:49:30.367Z",
+    "updated_at": "2026-07-10T06:49:30.367Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "33cbf5b7-bbee-4fdb-8f8d-0270b3de0545",
+    "data": {
+      "action": "subject.create",
+      "summary": "Created subject \"Maths\" (MAT)",
+      "newValue": {
+        "code": "MAT",
+        "icon": "calculate",
+        "name": "Maths",
+        "classId": "5f411eb1-1ba4-49df-8665-8bb429edb757",
+        "category": "STEM"
+      },
+      "oldValue": null,
+      "targetId": "2842af98-0303-48ee-8c18-e6603f3c86e5",
+      "timestamp": "2026-07-10T06:48:08.978Z",
+      "targetName": "Maths",
+      "targetType": "subject",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System Admin",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T06:49:42.273Z",
+    "updated_at": "2026-07-10T06:49:42.273Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "75bcf086-e014-4bfe-a755-75080f2086af",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"HI\" (student)",
+      "newValue": {
+        "role": "student",
+        "email": "1a012026@school.edu",
+        "displayName": "HI"
+      },
+      "oldValue": null,
+      "targetId": "a201d517-4cdf-40d4-8b66-58a66c7f3843",
+      "timestamp": "2026-07-10T06:50:05.989Z",
+      "targetName": "HI",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T06:50:06.061Z",
+    "updated_at": "2026-07-10T06:50:06.061Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "19ec46da-a37a-4385-abd1-e5d67ad41fba",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"Teacher\" (teacher)",
+      "newValue": {
+        "role": "teacher",
+        "email": "teacher@school.edu",
+        "displayName": "Teacher"
+      },
+      "oldValue": null,
+      "targetId": "eb06e2d3-dc77-4146-a8b2-2869a28c70ff",
+      "timestamp": "2026-07-10T06:50:22.532Z",
+      "targetName": "Teacher",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T06:50:22.630Z",
+    "updated_at": "2026-07-10T06:50:22.630Z"
+  },
+  {
+    "collection": "mindmaps",
+    "doc_id": "4d9dabc8-3064-4bdf-860b-8f72a35de22e",
+    "data": {
+      "edges": [],
+      "nodes": [],
+      "title": "fff",
+      "ownerId": "eb06e2d3-dc77-4146-a8b2-2869a28c70ff",
+      "createdAt": "2026-07-10T07:53:49.245Z",
+      "updatedAt": "2026-07-10T07:53:49.245Z",
+      "sharedWith": [],
+      "description": ""
+    },
+    "created_at": "2026-07-10T07:53:49.311Z",
+    "updated_at": "2026-07-10T07:53:49.245Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "323a9292-23c4-40a5-874d-0636452d8e02",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"Parent\" (parent)",
+      "newValue": {
+        "role": "parent",
+        "email": "parent@gmail.com",
+        "displayName": "Parent"
+      },
+      "oldValue": null,
+      "targetId": "7eb7a6ca-f7b2-4ef1-a67c-cdf471a63979",
+      "timestamp": "2026-07-10T06:56:00.331Z",
+      "targetName": "Parent",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T06:56:00.405Z",
+    "updated_at": "2026-07-10T06:56:00.405Z"
+  },
+  {
+    "collection": "gamificationProfiles",
+    "doc_id": "a201d517-4cdf-40d4-8b66-58a66c7f3843",
+    "data": {
+      "xp": 0,
+      "coins": 0,
+      "level": 1,
+      "badges": [
+        "level_1"
+      ],
+      "streak": 1,
+      "userId": "a201d517-4cdf-40d4-8b66-58a66c7f3843",
+      "createdAt": "2026-07-10T07:49:01.058Z",
+      "updatedAt": "2026-07-10T07:49:01.465Z",
+      "perfectScores": 0,
+      "lastActiveDate": "2026-07-10",
+      "lessonsCompleted": 0,
+      "highAccuracyCount": 0,
+      "challengesCompleted": 0,
+      "codingProjectsCompleted": 0,
+      "codingChallengesCompleted": 0
+    },
+    "created_at": "2026-07-10T07:49:01.136Z",
+    "updated_at": "2026-07-10T07:49:01.465Z"
+  },
+  {
+    "collection": "mindmaps",
+    "doc_id": "30e76c9e-a7be-40ae-9516-bb9e9556165e",
+    "data": {
+      "edges": [],
+      "nodes": [],
+      "title": "ggg",
+      "ownerId": "eb06e2d3-dc77-4146-a8b2-2869a28c70ff",
+      "createdAt": "2026-07-10T07:53:02.975Z",
+      "updatedAt": "2026-07-10T07:53:02.975Z",
+      "sharedWith": [],
+      "description": ""
+    },
+    "created_at": "2026-07-10T07:53:03.051Z",
+    "updated_at": "2026-07-10T07:53:02.975Z"
+  },
+  {
+    "collection": "gamificationDailyChallenges",
+    "doc_id": "5050a994-791e-4c10-b941-8b67eb11549d",
+    "data": {
+      "id": "5050a994-791e-4c10-b941-8b67eb11549d",
+      "date": "2026-07-10",
+      "type": "concept_quizzes",
+      "title": "Concept Explorer",
+      "target": 5,
+      "userId": "a201d517-4cdf-40d4-8b66-58a66c7f3843",
+      "progress": 0,
+      "xpReward": 35,
+      "completed": false,
+      "createdAt": "2026-07-10T07:54:31.414Z",
+      "coinReward": 15,
+      "description": "Complete 5 concept quizzes"
+    },
+    "created_at": "2026-07-10T07:54:32.271Z",
+    "updated_at": "2026-07-10T07:54:32.197Z"
+  },
+  {
+    "collection": "gamificationDailyChallenges",
+    "doc_id": "4e271a29-cf44-4369-a139-267d26a3dd79",
+    "data": {
+      "id": "4e271a29-cf44-4369-a139-267d26a3dd79",
+      "date": "2026-07-10",
+      "type": "lessons",
+      "title": "Lesson Master",
+      "target": 3,
+      "userId": "a201d517-4cdf-40d4-8b66-58a66c7f3843",
+      "progress": 0,
+      "xpReward": 30,
+      "completed": false,
+      "createdAt": "2026-07-10T07:54:31.414Z",
+      "coinReward": 15,
+      "description": "Complete 3 lessons today"
+    },
+    "created_at": "2026-07-10T07:54:32.439Z",
+    "updated_at": "2026-07-10T07:54:32.197Z"
+  },
+  {
+    "collection": "gamificationDailyChallenges",
+    "doc_id": "3aaf8197-9ebe-4336-9bdc-b1c6dd664fe8",
+    "data": {
+      "id": "3aaf8197-9ebe-4336-9bdc-b1c6dd664fe8",
+      "date": "2026-07-10",
+      "type": "assignments",
+      "title": "Assignment Star",
+      "target": 1,
+      "userId": "a201d517-4cdf-40d4-8b66-58a66c7f3843",
+      "progress": 0,
+      "xpReward": 25,
+      "completed": false,
+      "createdAt": "2026-07-10T07:54:31.414Z",
+      "coinReward": 10,
+      "description": "Complete 1 assignment"
+    },
+    "created_at": "2026-07-10T07:54:32.599Z",
+    "updated_at": "2026-07-10T07:54:32.197Z"
+  },
+  {
+    "collection": "codingProjects",
+    "doc_id": "d368e28c-355b-410c-a8c6-65f287f38b60",
+    "data": {
+      "code": "",
+      "title": "Untitled Project",
+      "ownerId": "a201d517-4cdf-40d4-8b66-58a66c7f3843",
+      "language": "javascript",
+      "createdAt": "2026-07-10T07:55:09.313Z",
+      "updatedAt": "2026-07-10T07:55:09.313Z",
+      "collaborators": []
+    },
+    "created_at": "2026-07-10T07:55:09.313Z",
+    "updated_at": "2026-07-10T07:55:09.313Z"
+  },
+  {
+    "collection": "mindmaps",
+    "doc_id": "abf1d205-6dca-49c3-8b7c-9be6c5bfd890",
+    "data": {
+      "id": "abf1d205-6dca-49c3-8b7c-9be6c5bfd890",
+      "edges": [
+        {
+          "id": "edge_1783670688515_7i41dfp1v",
+          "source": "node_1783670676811_5b33xpobf",
+          "target": "node_1783670682610_87dauuxbc"
+        },
+        {
+          "id": "edge_1783670699579_z6vdrcjas",
+          "source": "node_1783670677252_v023xvj0m",
+          "target": "node_1783670676811_5b33xpobf"
+        }
+      ],
+      "nodes": [
+        {
+          "x": 295,
+          "y": 74,
+          "id": "node_1783670676811_5b33xpobf",
+          "type": "custom",
+          "color": "#14b8a6",
+          "label": "New Node"
+        },
+        {
+          "x": 573.2050807568878,
+          "y": 400,
+          "id": "node_1783670677252_v023xvj0m",
+          "type": "custom",
+          "color": "#f59e0b",
+          "label": "New Node"
+        },
+        {
+          "x": 226.7949192431123,
+          "y": 400.00000000000006,
+          "id": "node_1783670682610_87dauuxbc",
+          "type": "custom",
+          "color": "#8b5cf6",
+          "label": "New Node"
+        }
+      ],
+      "title": "vvv",
+      "ownerId": "eb06e2d3-dc77-4146-a8b2-2869a28c70ff",
+      "createdAt": "2026-07-10T08:05:56.459Z",
+      "updatedAt": "2026-07-10T08:06:37.074Z",
+      "sharedWith": []
+    },
+    "created_at": "2026-07-10T08:05:56.527Z",
+    "updated_at": "2026-07-10T08:06:37.074Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "5af4f6d2-2b43-45ce-836c-a4c39664ca15",
+    "data": {
+      "action": "user.delete",
+      "summary": "user.delete on user \"Parent\"",
+      "newValue": null,
+      "oldValue": null,
+      "targetId": "7eb7a6ca-f7b2-4ef1-a67c-cdf471a63979",
+      "timestamp": "2026-07-10T08:49:38.452Z",
+      "targetName": "Parent",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T08:49:38.729Z",
+    "updated_at": "2026-07-10T08:49:38.729Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "675191cf-ce84-483e-8e1a-ffe2a628b4cd",
+    "data": {
+      "action": "user.delete",
+      "summary": "user.delete on user \"Parent\"",
+      "newValue": null,
+      "oldValue": null,
+      "targetId": "7eb7a6ca-f7b2-4ef1-a67c-cdf471a63979",
+      "timestamp": "2026-07-10T08:55:31.182Z",
+      "targetName": "Parent",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T08:55:31.247Z",
+    "updated_at": "2026-07-10T08:55:31.247Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "8783218b-718a-4300-bbb3-b445139c1b3d",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"Parent2\" (parent)",
+      "newValue": {
+        "role": "parent",
+        "email": "parent2@gmail.com",
+        "displayName": "Parent2"
+      },
+      "oldValue": null,
+      "targetId": "12b4bb92-6f1d-47b5-8ab5-158bf8e4f9c8",
+      "timestamp": "2026-07-10T08:57:55.680Z",
+      "targetName": "Parent2",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T08:57:55.743Z",
+    "updated_at": "2026-07-10T08:57:55.743Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "e762f34b-d7e1-42ee-b84b-95334d18d2f1",
+    "data": {
+      "action": "user.delete",
+      "summary": "user.delete on user \"Parent\"",
+      "newValue": null,
+      "oldValue": null,
+      "targetId": "7eb7a6ca-f7b2-4ef1-a67c-cdf471a63979",
+      "timestamp": "2026-07-10T09:12:44.588Z",
+      "targetName": "Parent",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T09:12:44.654Z",
+    "updated_at": "2026-07-10T09:12:44.654Z"
+  },
+  {
+    "collection": "teacherClassSubject",
+    "doc_id": "e5818e30-358e-4ca4-9e97-ecb8c5bac253",
+    "data": {
+      "classId": "5f411eb1-1ba4-49df-8665-8bb429edb757",
+      "createdAt": "2026-07-10T11:16:32.374Z",
+      "subjectId": "2842af98-0303-48ee-8c18-e6603f3c86e5",
+      "teacherId": "08faa0a8-6999-40d4-84c1-ba60787923df",
+      "updatedAt": "2026-07-10T11:16:32.374Z"
+    },
+    "created_at": "2026-07-10T11:16:32.478Z",
+    "updated_at": "2026-07-10T11:16:32.374Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "c12f9cf5-44cb-498d-982c-4c8db5d50245",
+    "data": {
+      "action": "user.delete",
+      "summary": "user.delete on user \"Parent\"",
+      "newValue": null,
+      "oldValue": null,
+      "targetId": "7eb7a6ca-f7b2-4ef1-a67c-cdf471a63979",
+      "timestamp": "2026-07-10T08:37:07.327Z",
+      "targetName": "Parent",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T08:37:07.392Z",
+    "updated_at": "2026-07-10T08:37:07.392Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "5b051c52-cea9-4f0f-962b-31a90aa2a4e4",
+    "data": {
+      "action": "user.delete",
+      "summary": "user.delete on user \"Parent\"",
+      "newValue": null,
+      "oldValue": null,
+      "targetId": "7eb7a6ca-f7b2-4ef1-a67c-cdf471a63979",
+      "timestamp": "2026-07-10T08:49:22.939Z",
+      "targetName": "Parent",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T08:49:23.004Z",
+    "updated_at": "2026-07-10T08:49:23.004Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "93d6ed4a-775f-4f33-a3b7-4e153990f479",
+    "data": {
+      "action": "user.delete",
+      "summary": "user.delete on user \"Parent\"",
+      "newValue": null,
+      "oldValue": null,
+      "targetId": "7eb7a6ca-f7b2-4ef1-a67c-cdf471a63979",
+      "timestamp": "2026-07-10T09:12:49.495Z",
+      "targetName": "Parent",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T09:12:49.555Z",
+    "updated_at": "2026-07-10T09:12:49.555Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "74e20495-ede0-4c4d-808a-285a51b5717b",
+    "data": {
+      "action": "user.delete",
+      "summary": "user.delete on user \"Parent2\"",
+      "newValue": null,
+      "oldValue": null,
+      "targetId": "12b4bb92-6f1d-47b5-8ab5-158bf8e4f9c8",
+      "timestamp": "2026-07-10T09:13:00.494Z",
+      "targetName": "Parent2",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T09:13:00.552Z",
+    "updated_at": "2026-07-10T09:13:00.552Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "5e9f5f45-eb20-4c3a-83c3-551670ce1638",
+    "data": {
+      "action": "user.delete",
+      "summary": "user.delete on user \"Parent2\"",
+      "newValue": null,
+      "oldValue": null,
+      "targetId": "12b4bb92-6f1d-47b5-8ab5-158bf8e4f9c8",
+      "timestamp": "2026-07-10T09:13:52.891Z",
+      "targetName": "Parent2",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T09:13:52.948Z",
+    "updated_at": "2026-07-10T09:13:52.948Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "2c41b28a-1015-4a38-abf6-6b7bce061a0f",
+    "data": {
+      "action": "user.delete",
+      "summary": "user.delete on user \"Parent\"",
+      "newValue": null,
+      "oldValue": null,
+      "targetId": "7eb7a6ca-f7b2-4ef1-a67c-cdf471a63979",
+      "timestamp": "2026-07-10T09:13:57.169Z",
+      "targetName": "Parent",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T09:13:57.251Z",
+    "updated_at": "2026-07-10T09:13:57.251Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "59dc3b83-c3b7-4156-aace-78a6a1700c05",
+    "data": {
+      "action": "user.delete",
+      "summary": "user.delete on user \"Parent2\"",
+      "newValue": null,
+      "oldValue": null,
+      "targetId": "12b4bb92-6f1d-47b5-8ab5-158bf8e4f9c8",
+      "timestamp": "2026-07-10T09:14:08.546Z",
+      "targetName": "Parent2",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T09:14:08.603Z",
+    "updated_at": "2026-07-10T09:14:08.603Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "28cbc6b1-6e28-404d-ae32-528133f94542",
+    "data": {
+      "action": "user.delete",
+      "summary": "user.delete on user \"Parent\"",
+      "newValue": null,
+      "oldValue": null,
+      "targetId": "7eb7a6ca-f7b2-4ef1-a67c-cdf471a63979",
+      "timestamp": "2026-07-10T09:15:10.552Z",
+      "targetName": "Parent",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T09:15:10.608Z",
+    "updated_at": "2026-07-10T09:15:10.608Z"
+  },
+  {
+    "collection": "teacherClassSubject",
+    "doc_id": "5c519176-b500-449f-b5a7-aa1255a7ffe8",
+    "data": {
+      "classId": "45812194-0f73-47f3-b8ec-e1ea5e588f9c",
+      "createdAt": "2026-07-10T09:58:28.833Z",
+      "subjectId": "e86274f1-8959-438b-b041-d46935a0703a",
+      "teacherId": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "updatedAt": "2026-07-10T09:58:28.833Z"
+    },
+    "created_at": "2026-07-10T09:58:28.943Z",
+    "updated_at": "2026-07-10T09:58:28.833Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "15c2d4d2-a949-40f2-864d-b6774e37fac2",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"Parent\" (parent)",
+      "newValue": {
+        "role": "parent",
+        "email": "parent@gmail.com",
+        "displayName": "Parent"
+      },
+      "oldValue": null,
+      "targetId": "7eb7a6ca-f7b2-4ef1-a67c-cdf471a63979",
+      "timestamp": "2026-07-10T09:21:18.060Z",
+      "targetName": "Parent",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T09:21:18.142Z",
+    "updated_at": "2026-07-10T09:21:18.142Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "01e0d359-66a4-4bbc-aa63-be0a0325139f",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"parent3\" (parent)",
+      "newValue": {
+        "role": "parent",
+        "email": "Parent3@gmail.com",
+        "displayName": "parent3"
+      },
+      "oldValue": null,
+      "targetId": "42b88ad4-5a20-4754-8b49-1e624c5a174c",
+      "timestamp": "2026-07-10T09:36:41.350Z",
+      "targetName": "parent3",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T09:36:41.406Z",
+    "updated_at": "2026-07-10T09:36:41.406Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "09f9148f-88f9-49ee-8d9d-d597be97a6b0",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"parent\" (parent)",
+      "newValue": {
+        "role": "parent",
+        "email": "parent@gmail.com",
+        "displayName": "parent"
+      },
+      "oldValue": null,
+      "targetId": "491c7c60-61d2-454b-9e14-dbb9843c2054",
+      "timestamp": "2026-07-10T09:38:05.180Z",
+      "targetName": "parent",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T09:38:05.238Z",
+    "updated_at": "2026-07-10T09:38:05.238Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "d63fb1f1-ce29-4a29-9273-256ae6d08cc8",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"roll2\" (student)",
+      "newValue": {
+        "role": "student",
+        "email": "1a022026@school.edu",
+        "displayName": "roll2"
+      },
+      "oldValue": null,
+      "targetId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "timestamp": "2026-07-10T09:55:57.851Z",
+      "targetName": "roll2",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T09:55:57.910Z",
+    "updated_at": "2026-07-10T09:55:57.910Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "29dcaf6f-1112-4cfb-86c1-c2aadbb62796",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"teacher1\" (teacher)",
+      "newValue": {
+        "role": "teacher",
+        "email": "teacher1@school.edu",
+        "displayName": "teacher1"
+      },
+      "oldValue": null,
+      "targetId": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "timestamp": "2026-07-10T09:56:20.766Z",
+      "targetName": "teacher1",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T09:56:20.829Z",
+    "updated_at": "2026-07-10T09:56:20.829Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "67086cb4-f5bd-42ff-ab3f-a877dd040514",
+    "data": {
+      "action": "class.create",
+      "summary": "Created class \"2nd class\" (G2B)",
+      "newValue": {
+        "code": "G2B",
+        "name": "2nd class",
+        "grade": "2",
+        "section": "B",
+        "roomNumber": ""
+      },
+      "oldValue": null,
+      "targetId": "279aaf93-91df-4936-bec9-f302f45a8a28",
+      "timestamp": "2026-07-10T09:56:45.108Z",
+      "targetName": "2nd class",
+      "targetType": "class",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System Admin",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T09:56:45.957Z",
+    "updated_at": "2026-07-10T09:56:45.957Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "c0e44833-7391-49d6-8520-09532c372c9b",
+    "data": {
+      "action": "class.create",
+      "summary": "Created class \"1st class\" (G1B)",
+      "newValue": {
+        "code": "G1B",
+        "name": "1st class",
+        "grade": "1",
+        "section": "B",
+        "roomNumber": ""
+      },
+      "oldValue": null,
+      "targetId": "45812194-0f73-47f3-b8ec-e1ea5e588f9c",
+      "timestamp": "2026-07-10T09:56:52.784Z",
+      "targetName": "1st class",
+      "targetType": "class",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System Admin",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T09:56:53.483Z",
+    "updated_at": "2026-07-10T09:56:53.483Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "6bc2c50f-6165-4688-9378-c5e4c2d86b0c",
+    "data": {
+      "action": "subject.create",
+      "summary": "Created subject \"eng\" (ENG)",
+      "newValue": {
+        "code": "ENG",
+        "icon": "language",
+        "name": "eng",
+        "classId": "5f411eb1-1ba4-49df-8665-8bb429edb757",
+        "category": "Languages"
+      },
+      "oldValue": null,
+      "targetId": "",
+      "timestamp": "2026-07-10T09:57:23.426Z",
+      "targetName": "eng",
+      "targetType": "subject",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System Admin",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T09:57:24.138Z",
+    "updated_at": "2026-07-10T09:57:24.138Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "5980dc2a-b8a9-4846-a1b8-4b2538800e6e",
+    "data": {
+      "action": "subject.create",
+      "summary": "Created subject \"eng\" (ENG)",
+      "newValue": {
+        "code": "ENG",
+        "icon": "language",
+        "name": "eng",
+        "classId": "5f411eb1-1ba4-49df-8665-8bb429edb757",
+        "category": "STEM"
+      },
+      "oldValue": null,
+      "targetId": "8fd3cc6a-9b59-42b1-8417-8fc82393122e",
+      "timestamp": "2026-07-10T09:57:54.469Z",
+      "targetName": "eng",
+      "targetType": "subject",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System Admin",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T09:57:55.175Z",
+    "updated_at": "2026-07-10T09:57:55.175Z"
+  },
+  {
+    "collection": "teacherClassSubject",
+    "doc_id": "4fa93967-fdf1-4786-b2d5-09b5f3e5606f",
+    "data": {
+      "classId": "5f411eb1-1ba4-49df-8665-8bb429edb757",
+      "createdAt": "2026-07-10T09:58:02.860Z",
+      "subjectId": "8fd3cc6a-9b59-42b1-8417-8fc82393122e",
+      "teacherId": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "updatedAt": "2026-07-10T09:58:02.860Z"
+    },
+    "created_at": "2026-07-10T09:58:02.956Z",
+    "updated_at": "2026-07-10T09:58:02.860Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "fb82ad8f-6d42-446e-97be-ffcdd4574ed5",
+    "data": {
+      "action": "subject.create",
+      "summary": "Created subject \"eng\" (ENGLISH)",
+      "newValue": {
+        "code": "ENGLISH",
+        "icon": "language",
+        "name": "eng",
+        "classId": "45812194-0f73-47f3-b8ec-e1ea5e588f9c",
+        "category": "Languages"
+      },
+      "oldValue": null,
+      "targetId": "e86274f1-8959-438b-b041-d46935a0703a",
+      "timestamp": "2026-07-10T09:58:20.997Z",
+      "targetName": "eng",
+      "targetType": "subject",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System Admin",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T09:58:21.693Z",
+    "updated_at": "2026-07-10T09:58:21.693Z"
+  },
+  {
+    "collection": "quizV2",
+    "doc_id": "0ab12de9-7e5f-4a3b-83b8-a125abe60f29",
+    "data": {
+      "id": "0ab12de9-7e5f-4a3b-83b8-a125abe60f29",
+      "title": "q1",
+      "classId": "5f411eb1-1ba4-49df-8665-8bb429edb757",
+      "schoolId": "00000000-0000-0000-0000-000000000001",
+      "chapterId": "3e25f235-42ff-4f10-a595-6566d28e6315",
+      "conceptId": "39a112f1-1816-4881-b32a-5421fde93d39",
+      "createdAt": "2026-07-10T11:39:21.720Z",
+      "questions": [
+        {
+          "id": "5a6a1c1a-befb-44ea-8b17-8a5af198332b",
+          "text": "Which of the following is considered a polite way to greet a stranger in a formal business setting?",
+          "type": "mcq",
+          "points": 2,
+          "options": [
+            "Hey, what's up?",
+            "Good morning, it is a pleasure to meet you.",
+            "Yo, how's it going?",
+            "Sup."
+          ],
+          "difficulty": "easy",
+          "explanation": "Formal greetings require respectful language and proper salutations.",
+          "correctAnswer": "Good morning, it is a pleasure to meet you."
+        },
+        {
+          "id": "b3ec2158-057b-4955-a463-349b20faab61",
+          "text": "When meeting someone for the first time, what is a common polite non-verbal gesture in many Western cultures?",
+          "type": "mcq",
+          "points": 2,
+          "options": [
+            "A firm handshake",
+            "Looking at your phone",
+            "Crossing your arms",
+            "Turning your back"
+          ],
+          "difficulty": "easy",
+          "explanation": "A firm handshake is a standard sign of respect and confidence during introductions.",
+          "correctAnswer": "A firm handshake"
+        },
+        {
+          "id": "d0c18e09-aaf1-4ef5-8aea-d66cffc374fc",
+          "text": "If you arrive late to a meeting, what is the most polite way to greet the participants?",
+          "type": "mcq",
+          "points": 2,
+          "options": [
+            "Walk in silently and sit down",
+            "Interrupt the speaker to explain why",
+            "Apologize briefly and quietly take a seat",
+            "Start talking loudly to catch up"
+          ],
+          "difficulty": "medium",
+          "explanation": "Minimizing disruption while acknowledging the delay is the most polite approach.",
+          "correctAnswer": "Apologize briefly and quietly take a seat"
+        },
+        {
+          "id": "6d95492b-f649-4676-b41b-4c1226c6a1cd",
+          "text": "It is considered polite to maintain eye contact while greeting someone.",
+          "type": "true_false",
+          "points": 2,
+          "options": [
+            "True",
+            "False"
+          ],
+          "difficulty": "easy",
+          "explanation": "Eye contact shows engagement and respect for the person you are greeting.",
+          "correctAnswer": "True"
+        },
+        {
+          "id": "a819fa87-328f-484d-87a9-486e27e7ab70",
+          "text": "You should always use a person's first name immediately upon meeting them, regardless of the setting.",
+          "type": "true_false",
+          "points": 2,
+          "options": [
+            "True",
+            "False"
+          ],
+          "difficulty": "medium",
+          "explanation": "In formal settings, it is polite to use titles and surnames until invited to use first names.",
+          "correctAnswer": "False"
+        },
+        {
+          "id": "7ba9e83d-c86b-404e-9542-79d681edee54",
+          "text": "Smiling is a universal non-verbal cue that makes a greeting feel more welcoming.",
+          "type": "true_false",
+          "points": 2,
+          "options": [
+            "True",
+            "False"
+          ],
+          "difficulty": "easy",
+          "explanation": "A smile signals friendliness and openness during social interactions.",
+          "correctAnswer": "True"
+        },
+        {
+          "id": "bb322da0-ef25-4741-89ec-9e68a396a799",
+          "text": "When joining a conversation that is already in progress, what is the most polite way to enter?",
+          "type": "mcq",
+          "points": 2,
+          "options": [
+            "Interrupt loudly to share your opinion immediately.",
+            "Wait for a natural pause, then offer a polite greeting or comment.",
+            "Stand silently in the group until someone notices you.",
+            "Walk away and find a different group."
+          ],
+          "difficulty": "easy",
+          "explanation": "Interrupting is considered rude, while waiting for a pause respects the flow of conversation.",
+          "correctAnswer": "Wait for a natural pause, then offer a polite greeting or comment."
+        },
+        {
+          "id": "3bab2bfd-1a56-4519-a245-45cd3456274e",
+          "text": "Maintaining appropriate eye contact is generally considered a sign of active listening and respect in many cultures.",
+          "type": "true_false",
+          "points": 1,
+          "options": [
+            "True",
+            "False",
+            "Not applicable",
+            "Depends on the volume"
+          ],
+          "difficulty": "easy",
+          "explanation": "Eye contact shows the speaker that you are engaged and paying attention to what they are saying.",
+          "correctAnswer": "True"
+        },
+        {
+          "id": "d147099d-a79d-4ed6-a873-2ac2b5056d55",
+          "text": "Define the concept of 'active listening' in the context of polite social interaction.",
+          "type": "short_answer",
+          "points": 4,
+          "difficulty": "medium",
+          "explanation": "Active listening demonstrates that you value the speaker's perspective and are genuinely interested in the exchange.",
+          "correctAnswer": "Active listening is the practice of fully concentrating on, understanding, responding to, and then remembering what is being said, often involving non-verbal cues like nodding."
+        },
+        {
+          "id": "0c33a7f3-f3b8-45f5-87e5-2f50b24e4943",
+          "text": "If someone accidentally bumps into you in a crowded hallway, what is the most socially appropriate response?",
+          "type": "mcq",
+          "points": 2,
+          "options": [
+            "Bump them back to show you were there first.",
+            "Ignore them completely and keep walking.",
+            "Acknowledge the situation with a polite 'Excuse me' or a nod.",
+            "Complain loudly about their lack of spatial awareness."
+          ],
+          "difficulty": "easy",
+          "explanation": "De-escalating minor accidents through politeness maintains social harmony.",
+          "correctAnswer": "Acknowledge the situation with a polite 'Excuse me' or a nod."
+        }
+      ],
+      "subjectId": "8fd3cc6a-9b59-42b1-8417-8fc82393122e",
+      "teacherId": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "updatedAt": "2026-07-10T12:45:04.907Z",
+      "releasedAt": "2026-07-10T11:40:12.718Z",
+      "textbookId": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+      "description": "",
+      "maxAttempts": 2,
+      "publishedTo": "class",
+      "showResults": true,
+      "totalPoints": 21,
+      "attemptCount": 2,
+      "passingScore": 50,
+      "questionCount": 10,
+      "selectedModels": [
+        "multiple_choice",
+        "true_false",
+        "short_answer"
+      ],
+      "shuffleQuestions": true,
+      "targetStudentIds": [],
+      "timeLimitMinutes": 30
+    },
+    "created_at": "2026-07-10T11:39:21.788Z",
+    "updated_at": "2026-07-10T12:45:05.231Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "c360b495-697f-46b8-8164-85e8e3c203e7",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"oggy\" (student)",
+      "newValue": {
+        "role": "student",
+        "email": "1b052026@school.edu",
+        "displayName": "oggy"
+      },
+      "oldValue": null,
+      "targetId": "4989230d-e454-4f03-9c9a-e87a9279e8ad",
+      "timestamp": "2026-07-10T09:59:06.018Z",
+      "targetName": "oggy",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T09:59:06.076Z",
+    "updated_at": "2026-07-10T09:59:06.076Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "72fd6d5f-a6ba-4361-bf35-a498ff38b2d7",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"jack\" (student)",
+      "newValue": {
+        "role": "student",
+        "email": "1b062026@school.edu",
+        "displayName": "jack"
+      },
+      "oldValue": null,
+      "targetId": "40c3ee54-f5ef-447a-ae2f-c734c98f0ff4",
+      "timestamp": "2026-07-10T09:59:27.344Z",
+      "targetName": "jack",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T09:59:27.401Z",
+    "updated_at": "2026-07-10T09:59:27.401Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "4bc49e5a-5749-4e4c-b914-707c80cdb9b5",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"parent\" (parent)",
+      "newValue": {
+        "role": "parent",
+        "email": "parent@gmail.com",
+        "displayName": "parent"
+      },
+      "oldValue": null,
+      "targetId": "491c7c60-61d2-454b-9e14-dbb9843c2054",
+      "timestamp": "2026-07-10T10:15:41.238Z",
+      "targetName": "parent",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T10:15:41.306Z",
+    "updated_at": "2026-07-10T10:15:41.306Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "de8da1a6-f35a-4235-b07a-717bade1aecb",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"parent2\" (parent)",
+      "newValue": {
+        "role": "parent",
+        "email": "parent2@gmail.com",
+        "displayName": "parent2"
+      },
+      "oldValue": null,
+      "targetId": "c2a0dd2a-fd7a-4dfc-af66-d865946e43a0",
+      "timestamp": "2026-07-10T10:16:50.569Z",
+      "targetName": "parent2",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T10:16:50.628Z",
+    "updated_at": "2026-07-10T10:16:50.628Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "28261235-7175-43a4-9372-6d7c72916ae8",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"alice\" (student)",
+      "newValue": {
+        "role": "student",
+        "email": "2b012026@school.edu",
+        "displayName": "alice"
+      },
+      "oldValue": null,
+      "targetId": "05371cfb-a16c-4a11-95ac-a7b3b4dbb0bb",
+      "timestamp": "2026-07-10T10:00:02.400Z",
+      "targetName": "alice",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T10:00:02.475Z",
+    "updated_at": "2026-07-10T10:00:02.475Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "07cfd6ec-88f0-47f5-a6ec-6b7d573a1e7c",
+    "data": {
+      "action": "subject.create",
+      "summary": "Created subject \"eng\" (ENG)",
+      "newValue": {
+        "code": "ENG",
+        "icon": "language",
+        "name": "eng",
+        "classId": "279aaf93-91df-4936-bec9-f302f45a8a28",
+        "category": "STEM"
+      },
+      "oldValue": null,
+      "targetId": "fb163282-fe49-4c9d-891f-c964e602bfb8",
+      "timestamp": "2026-07-10T10:00:25.898Z",
+      "targetName": "eng",
+      "targetType": "subject",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System Admin",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T10:00:26.639Z",
+    "updated_at": "2026-07-10T10:00:26.639Z"
+  },
+  {
+    "collection": "teacherClassSubject",
+    "doc_id": "aaadb6dc-4566-4452-a45e-c43b9eb15a14",
+    "data": {
+      "classId": "279aaf93-91df-4936-bec9-f302f45a8a28",
+      "createdAt": "2026-07-10T10:00:35.406Z",
+      "subjectId": "fb163282-fe49-4c9d-891f-c964e602bfb8",
+      "teacherId": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "updatedAt": "2026-07-10T10:00:35.406Z"
+    },
+    "created_at": "2026-07-10T10:00:35.503Z",
+    "updated_at": "2026-07-10T10:00:35.406Z"
+  },
+  {
+    "collection": "mindmaps",
+    "doc_id": "2819babe-0d88-4ab8-a376-b0b97cd2be7a",
+    "data": {
+      "id": "2819babe-0d88-4ab8-a376-b0b97cd2be7a",
+      "edges": [
+        {
+          "id": "edge_1783679277240_7dr4ilnme",
+          "source": "node_1783679236637_6ukfw31ra",
+          "target": "node_1783679261092_qhb2fqivc"
+        }
+      ],
+      "nodes": [
+        {
+          "x": 400,
+          "y": 100,
+          "id": "node_1783679236637_6ukfw31ra",
+          "type": "custom",
+          "color": "#6366f1",
+          "label": "add"
+        },
+        {
+          "x": 400,
+          "y": 500,
+          "id": "node_1783679261092_qhb2fqivc",
+          "type": "custom",
+          "color": "#14b8a6",
+          "label": "adding two numbers"
+        }
+      ],
+      "title": "add",
+      "ownerId": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "createdAt": "2026-07-10T10:26:42.519Z",
+      "updatedAt": "2026-07-10T10:28:14.513Z",
+      "sharedWith": []
+    },
+    "created_at": "2026-07-10T10:26:42.677Z",
+    "updated_at": "2026-07-10T10:28:14.513Z"
+  },
+  {
+    "collection": "settings",
+    "doc_id": "general",
+    "data": {
+      "logo": "",
+      "email": "",
+      "phone": "",
+      "address": "",
+      "website": "",
+      "features": {},
+      "semester": "First Semester",
+      "updatedAt": "2026-07-15T10:05:30.757Z",
+      "schoolCode": "",
+      "schoolName": "School LMS",
+      "academicYear": "2026-2027",
+      "gradingSystem": {
+        "type": "percentage",
+        "scale": 100,
+        "passingGrade": "50"
+      },
+      "securitySettings": {
+        "maxLoginAttempts": 5,
+        "requireTwoFactor": false,
+        "passwordMinLength": 8,
+        "sessionTimeoutMinutes": 60
+      },
+      "attendanceSettings": {
+        "enableGeoFencing": false,
+        "gracePeriodMinutes": 15,
+        "autoMarkAbsentAfter": 30
+      },
+      "notificationPreferences": {
+        "sms": false,
+        "push": true,
+        "email": true,
+        "inApp": true
+      },
+      "conceptFlaggingThreshold": 50
+    },
+    "created_at": "2026-07-10T06:34:53.605Z",
+    "updated_at": "2026-07-15T10:05:30.757Z"
+  },
+  {
+    "collection": "quizAttemptV2",
+    "doc_id": "c486e1a5-7736-42f3-a654-48256fbbf583",
+    "data": {
+      "id": "c486e1a5-7736-42f3-a654-48256fbbf583",
+      "level": "beginner",
+      "score": 4,
+      "passed": true,
+      "quizId": "e9c0a9d0-6bc8-4609-a3e6-888e496e4a1d",
+      "status": "completed",
+      "answers": [
+        {
+          "answer": "Cactus:Hot desert|Water Lily:Pond|Pine Tree:Orchard|Apple Tree:Forest",
+          "isCorrect": false,
+          "timeSpent": 23,
+          "questionId": "q3",
+          "explanation": "Different plants are adapted to live in different environments!",
+          "pointsEarned": 0,
+          "questionText": "Match the plant to where it might grow:",
+          "correctAnswer": "Cactus:Hot desert|Water Lily:Pond|Pine Tree:Forest|Apple Tree:Orchard"
+        },
+        {
+          "answer": "Sun:Gives energy|Water:Keeps it hydrated|Soil:Gives a home to grow|Air:Helps it breathe",
+          "isCorrect": true,
+          "timeSpent": 17,
+          "questionId": "q2",
+          "explanation": "Plants need these four things to stay healthy and grow big and strong.",
+          "pointsEarned": 1,
+          "questionText": "Match the item to what a plant needs to grow:",
+          "correctAnswer": "Sun:Gives energy|Water:Keeps it hydrated|Soil:Gives a home to grow|Air:Helps it breathe"
+        },
+        {
+          "answer": "Roots:Drink water from the soil|Leaves:Catch sunlight|Stem:Holds the plant up|Flower:Makes seeds",
+          "isCorrect": true,
+          "timeSpent": 20,
+          "questionId": "q1",
+          "explanation": "Roots act like straws, leaves act like solar panels, the stem is the plant's backbone, and flowers help the plant make new babies!",
+          "pointsEarned": 1,
+          "questionText": "Match the plant part to what it does:",
+          "correctAnswer": "Roots:Drink water from the soil|Leaves:Catch sunlight|Stem:Holds the plant up|Flower:Makes seeds"
+        },
+        {
+          "answer": "Seed:First|Sprout:Second|Small Plant:Third|Big Plant:Fourth",
+          "isCorrect": true,
+          "timeSpent": 19,
+          "questionId": "q5",
+          "explanation": "Plants start as tiny seeds and grow bigger over time.",
+          "pointsEarned": 1,
+          "questionText": "Match the growth stage to the order:",
+          "correctAnswer": "Seed:First|Sprout:Second|Small Plant:Third|Big Plant:Fourth"
+        },
+        {
+          "answer": "Apple:Tree|Carrot:Root|Lettuce:Leaf|Sunflower:Seed",
+          "isCorrect": true,
+          "timeSpent": 29,
+          "questionId": "q4",
+          "explanation": "We eat many different parts of plants, like the roots, leaves, and fruits!",
+          "pointsEarned": 1,
+          "questionText": "Match the plant product to what it comes from:",
+          "correctAnswer": "Apple:Tree|Carrot:Root|Lettuce:Leaf|Sunflower:Seed"
+        }
+      ],
+      "startedAt": "2026-07-10T10:45:36.331Z",
+      "studentId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "timeSpent": 108,
+      "percentage": 80,
+      "showResults": true,
+      "submittedAt": "2026-07-10T10:47:31.073Z",
+      "totalPoints": 5,
+      "selectedModels": [
+        "matching"
+      ]
+    },
+    "created_at": "2026-07-10T10:45:36.391Z",
+    "updated_at": "2026-07-10T10:47:31.445Z"
+  },
+  {
+    "collection": "grades",
+    "doc_id": "a6106a23-8bb9-4e3c-9b0b-a4586f422c92",
+    "data": {
+      "score": 4,
+      "classId": "5f411eb1-1ba4-49df-8665-8bb429edb757",
+      "gradedBy": "auto",
+      "itemName": "Quiz from OCR - 7/10/2026",
+      "createdAt": "2026-07-10T10:47:32.522Z",
+      "studentId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "subjectId": null,
+      "updatedAt": "2026-07-10T10:47:32.522Z",
+      "percentage": 80,
+      "totalPoints": 5
+    },
+    "created_at": "2026-07-10T10:47:33.115Z",
+    "updated_at": "2026-07-10T10:47:33.115Z"
+  },
+  {
+    "collection": "gamificationTransactions",
+    "doc_id": "acd69ce0-3a9c-433f-adef-2a60938a5cf1",
+    "data": {
+      "type": "xp",
+      "amount": 50,
+      "source": "High accuracy (80%) on Quiz from OCR - 7/10/2026",
+      "userId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "createdAt": "2026-07-10T10:47:44.118Z"
+    },
+    "created_at": "2026-07-10T10:47:44.297Z",
+    "updated_at": "2026-07-10T10:47:44.118Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "b5d5b57c-465c-4183-9253-cbd8abb57aa6",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"hello\" (teacher)",
+      "newValue": {
+        "role": "teacher",
+        "email": "hello@school.edu",
+        "displayName": "hello"
+      },
+      "oldValue": null,
+      "targetId": "08faa0a8-6999-40d4-84c1-ba60787923df",
+      "timestamp": "2026-07-10T11:03:50.854Z",
+      "targetName": "hello",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T11:03:50.911Z",
+    "updated_at": "2026-07-10T11:03:50.911Z"
+  },
+  {
+    "collection": "gamificationTransactions",
+    "doc_id": "87e4b524-8eb5-4eb2-80b9-ebbb355af433",
+    "data": {
+      "type": "xp",
+      "amount": 15,
+      "source": "Completed quiz: Quiz from OCR - 7/10/2026",
+      "userId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "createdAt": "2026-07-10T10:47:34.083Z"
+    },
+    "created_at": "2026-07-10T10:47:34.138Z",
+    "updated_at": "2026-07-10T10:47:34.083Z"
+  },
+  {
+    "collection": "gamificationTransactions",
+    "doc_id": "400aefcd-7948-4105-a895-e07848ed7bd1",
+    "data": {
+      "type": "coin",
+      "amount": 3,
+      "source": "Completed quiz: Quiz from OCR - 7/10/2026",
+      "userId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "createdAt": "2026-07-10T10:47:35.417Z"
+    },
+    "created_at": "2026-07-10T10:47:35.479Z",
+    "updated_at": "2026-07-10T10:47:35.418Z"
+  },
+  {
+    "collection": "gamificationTransactions",
+    "doc_id": "714e54e2-bfab-44f8-81e2-21aae008893a",
+    "data": {
+      "type": "coin",
+      "amount": 10,
+      "source": "High accuracy (80%) on Quiz from OCR - 7/10/2026",
+      "userId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "createdAt": "2026-07-10T10:47:58.325Z"
+    },
+    "created_at": "2026-07-10T10:47:58.594Z",
+    "updated_at": "2026-07-10T10:47:58.325Z"
+  },
+  {
+    "collection": "quizAttemptV2",
+    "doc_id": "c7a68230-efc0-4217-af0b-ae67a78ea259",
+    "data": {
+      "id": "c7a68230-efc0-4217-af0b-ae67a78ea259",
+      "level": "beginner",
+      "score": null,
+      "passed": null,
+      "quizId": "e9c0a9d0-6bc8-4609-a3e6-888e496e4a1d",
+      "status": "in_progress",
+      "answers": [],
+      "startedAt": "2026-07-10T10:49:33.158Z",
+      "studentId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "timeSpent": 0,
+      "percentage": null,
+      "submittedAt": null,
+      "totalPoints": 5,
+      "selectedModels": [
+        "matching"
+      ]
+    },
+    "created_at": "2026-07-10T10:49:33.251Z",
+    "updated_at": "2026-07-10T10:49:33.158Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "3e7297f3-2150-487d-a399-871340e95929",
+    "data": {
+      "action": "subject.create",
+      "summary": "Created subject \"science\" (SCIENCE)",
+      "newValue": {
+        "code": "SCIENCE",
+        "icon": "science",
+        "name": "science",
+        "classId": "5f411eb1-1ba4-49df-8665-8bb429edb757",
+        "category": "STEM"
+      },
+      "oldValue": null,
+      "targetId": "012b286e-8c1f-4b30-99f5-931cf8538fa3",
+      "timestamp": "2026-07-10T11:04:19.619Z",
+      "targetName": "science",
+      "targetType": "subject",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System Admin",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T11:04:20.406Z",
+    "updated_at": "2026-07-10T11:04:20.406Z"
+  },
+  {
+    "collection": "teacherClassSubject",
+    "doc_id": "943f95cf-ddc9-4e8b-9be5-33ca4e563e3d",
+    "data": {
+      "classId": "5f411eb1-1ba4-49df-8665-8bb429edb757",
+      "createdAt": "2026-07-10T11:04:26.986Z",
+      "subjectId": "012b286e-8c1f-4b30-99f5-931cf8538fa3",
+      "teacherId": "08faa0a8-6999-40d4-84c1-ba60787923df",
+      "updatedAt": "2026-07-10T11:04:26.986Z"
+    },
+    "created_at": "2026-07-10T11:04:27.279Z",
+    "updated_at": "2026-07-10T11:04:26.986Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "10c9eafd-ef4d-4c6a-9d4f-a764444cd745",
+    "data": {
+      "action": "concept.release",
+      "summary": "Updated release settings for concept fd1759cd-8515-4993-8bf2-fbc6b1eeed57 in textbook c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e for class 5f411eb1-1ba4-49df-8665-8bb429edb757",
+      "newValue": {
+        "mindMapReleased": true,
+        "assignmentsReleased": true,
+        "questionBankReleased": true
+      },
+      "oldValue": null,
+      "targetId": "5f411eb1-1ba4-49df-8665-8bb429edb757_c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e_fd1759cd-8515-4993-8bf2-fbc6b1eeed57",
+      "timestamp": "2026-07-10T11:45:10.156Z",
+      "targetName": "Concept fd1759cd-8515-4993-8bf2-fbc6b1eeed57",
+      "targetType": "conceptRelease",
+      "performedBy": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "performedByName": "teacher1",
+      "performedByRole": "teacher"
+    },
+    "created_at": "2026-07-10T11:45:11.151Z",
+    "updated_at": "2026-07-10T11:45:11.151Z"
+  },
+  {
+    "collection": "quizV2",
+    "doc_id": "910c962b-df27-492a-a7c6-107c98f73886",
+    "data": {
+      "id": "910c962b-df27-492a-a7c6-107c98f73886",
+      "title": "Quiz from OCR - 7/10/2026",
+      "classId": "279aaf93-91df-4936-bec9-f302f45a8a28",
+      "createdAt": "2026-07-10T12:25:49.343Z",
+      "questions": [
+        {
+          "id": "q1",
+          "text": "If you buy 13 apples on Monday, 11 on Tuesday, and 12 on Wednesday, how many do you have in total?",
+          "type": "multiple_choice",
+          "points": 1,
+          "options": [
+            "34",
+            "36",
+            "38",
+            "40"
+          ],
+          "difficulty": "easy",
+          "explanation": "13 + 11 + 12 = 36.",
+          "correctAnswer": "36"
+        },
+        {
+          "id": "q2",
+          "text": "There are 24, 13, and 6 items in three groups. What is the sum?",
+          "type": "short_answer",
+          "points": 1,
+          "difficulty": "medium",
+          "explanation": "24 + 13 + 6 = 43.",
+          "correctAnswer": "43"
+        },
+        {
+          "id": "q3",
+          "text": "Flame has 12, Tyger has 13, and Sally has 10. The total is 35.",
+          "type": "true_false",
+          "points": 1,
+          "difficulty": "easy",
+          "explanation": "12 + 13 + 10 = 35.",
+          "correctAnswer": "True"
+        },
+        {
+          "id": "q4",
+          "text": "A bakery sells 22, 15, and 11 items over three days. How many in total?",
+          "type": "multiple_choice",
+          "points": 1,
+          "options": [
+            "45",
+            "48",
+            "50",
+            "52"
+          ],
+          "difficulty": "medium",
+          "explanation": "22 + 15 + 11 = 48.",
+          "correctAnswer": "48"
+        },
+        {
+          "id": "q5",
+          "text": "Captain has 14, Sally has 12, and Newton has 16. What is the total?",
+          "type": "short_answer",
+          "points": 1,
+          "difficulty": "medium",
+          "explanation": "14 + 12 + 16 = 42.",
+          "correctAnswer": "42"
+        },
+        {
+          "id": "q6",
+          "text": "Match the problem to its correct total:",
+          "type": "matching",
+          "points": 2,
+          "options": [
+            "10+10+10 - 30",
+            "15+5+5 - 25",
+            "20+10+5 - 35",
+            "5+5+5 - 15"
+          ],
+          "difficulty": "medium",
+          "explanation": "Simple addition matching.",
+          "correctAnswer": "10+10+10:30|15+5+5:25|20+10+5:35|5+5+5:15"
+        },
+        {
+          "id": "q7",
+          "text": "If you have 20, 10, and 5, the sum is 30.",
+          "type": "true_false",
+          "points": 1,
+          "difficulty": "easy",
+          "explanation": "20 + 10 + 5 = 35.",
+          "correctAnswer": "False"
+        },
+        {
+          "id": "q8",
+          "text": "What is 18 + 12 + 10?",
+          "type": "multiple_choice",
+          "points": 1,
+          "options": [
+            "30",
+            "40",
+            "50",
+            "60"
+          ],
+          "difficulty": "easy",
+          "explanation": "18 + 12 = 30, and 30 + 10 = 40.",
+          "correctAnswer": "40"
+        },
+        {
+          "id": "q9",
+          "text": "If you have three groups of 11, what is the total?",
+          "type": "short_answer",
+          "points": 1,
+          "difficulty": "medium",
+          "explanation": "11 + 11 + 11 = 33.",
+          "correctAnswer": "33"
+        },
+        {
+          "id": "q10",
+          "text": "The sum of 25, 10, and 5 is 40.",
+          "type": "true_false",
+          "points": 1,
+          "difficulty": "medium",
+          "explanation": "25 + 10 + 5 = 40.",
+          "correctAnswer": "True"
+        }
+      ],
+      "subjectId": null,
+      "teacherId": "unknown",
+      "updatedAt": "2026-07-10T12:25:49.343Z",
+      "releasedAt": "2026-07-10T12:25:49.343Z",
+      "description": "",
+      "maxAttempts": 3,
+      "showResults": true,
+      "totalPoints": 11,
+      "attemptCount": 0,
+      "ocrGenerated": true,
+      "passingScore": 50,
+      "questionCount": 10,
+      "selectedModels": [
+        "multiple_choice",
+        "short_answer",
+        "true_false",
+        "matching"
+      ],
+      "shuffleQuestions": true,
+      "timeLimitMinutes": 30
+    },
+    "created_at": "2026-07-10T12:25:49.406Z",
+    "updated_at": "2026-07-10T12:25:49.406Z"
+  },
+  {
+    "collection": "quizAttemptV2",
+    "doc_id": "3e99449e-75b5-4e7d-b7e9-2506c68e17fc",
+    "data": {
+      "id": "3e99449e-75b5-4e7d-b7e9-2506c68e17fc",
+      "level": "beginner",
+      "score": 8,
+      "passed": true,
+      "quizId": "0ab12de9-7e5f-4a3b-83b8-a125abe60f29",
+      "status": "completed",
+      "answers": [
+        {
+          "answer": "True",
+          "isCorrect": true,
+          "timeSpent": 4,
+          "questionId": "6d95492b-f649-4676-b41b-4c1226c6a1cd",
+          "explanation": "Eye contact shows engagement and respect for the person you are greeting.",
+          "pointsEarned": 1,
+          "questionText": "It is considered polite to maintain eye contact while greeting someone.",
+          "correctAnswer": "True"
+        },
+        {
+          "answer": "False",
+          "isCorrect": false,
+          "timeSpent": 3,
+          "questionId": "7ba9e83d-c86b-404e-9542-79d681edee54",
+          "explanation": "A smile signals friendliness and openness during social interactions.",
+          "pointsEarned": 0,
+          "questionText": "Smiling is a universal non-verbal cue that makes a greeting feel more welcoming.",
+          "correctAnswer": "True"
+        },
+        {
+          "answer": "Apologize briefly and quietly take a seat",
+          "isCorrect": true,
+          "timeSpent": 3,
+          "questionId": "d0c18e09-aaf1-4ef5-8aea-d66cffc374fc",
+          "explanation": "Minimizing disruption while acknowledging the delay is the most polite approach.",
+          "pointsEarned": 2,
+          "questionText": "If you arrive late to a meeting, what is the most polite way to greet the participants?",
+          "correctAnswer": "Apologize briefly and quietly take a seat"
+        },
+        {
+          "answer": "A firm handshake",
+          "isCorrect": true,
+          "timeSpent": 28,
+          "questionId": "b3ec2158-057b-4955-a463-349b20faab61",
+          "explanation": "A firm handshake is a standard sign of respect and confidence during introductions.",
+          "pointsEarned": 1,
+          "questionText": "When meeting someone for the first time, what is a common polite non-verbal gesture in many Western cultures?",
+          "correctAnswer": "A firm handshake"
+        },
+        {
+          "answer": "True",
+          "isCorrect": false,
+          "timeSpent": 13,
+          "questionId": "a819fa87-328f-484d-87a9-486e27e7ab70",
+          "explanation": "In formal settings, it is polite to use titles and surnames until invited to use first names.",
+          "pointsEarned": 0,
+          "questionText": "You should always use a person's first name immediately upon meeting them, regardless of the setting.",
+          "correctAnswer": "False"
+        },
+        {
+          "answer": "",
+          "isCorrect": false,
+          "timeSpent": 4,
+          "questionId": "d147099d-a79d-4ed6-a873-2ac2b5056d55",
+          "explanation": "Active listening demonstrates that you value the speaker's perspective and are genuinely interested in the exchange.",
+          "pointsEarned": 0,
+          "questionText": "Define the concept of 'active listening' in the context of polite social interaction.",
+          "correctAnswer": "Active listening is the practice of fully concentrating on, understanding, responding to, and then remembering what is being said, often involving non-verbal cues like nodding."
+        },
+        {
+          "answer": "True",
+          "isCorrect": true,
+          "timeSpent": 4,
+          "questionId": "3bab2bfd-1a56-4519-a245-45cd3456274e",
+          "explanation": "Eye contact shows the speaker that you are engaged and paying attention to what they are saying.",
+          "pointsEarned": 1,
+          "questionText": "Maintaining appropriate eye contact is generally considered a sign of active listening and respect in many cultures.",
+          "correctAnswer": "True"
+        },
+        {
+          "answer": "Good morning, it is a pleasure to meet you.",
+          "isCorrect": true,
+          "timeSpent": 2,
+          "questionId": "5a6a1c1a-befb-44ea-8b17-8a5af198332b",
+          "explanation": "Formal greetings require respectful language and proper salutations.",
+          "pointsEarned": 1,
+          "questionText": "Which of the following is considered a polite way to greet a stranger in a formal business setting?",
+          "correctAnswer": "Good morning, it is a pleasure to meet you."
+        },
+        {
+          "answer": "Acknowledge the situation with a polite 'Excuse me' or a nod.",
+          "isCorrect": true,
+          "timeSpent": 2,
+          "questionId": "0c33a7f3-f3b8-45f5-87e5-2f50b24e4943",
+          "explanation": "De-escalating minor accidents through politeness maintains social harmony.",
+          "pointsEarned": 1,
+          "questionText": "If someone accidentally bumps into you in a crowded hallway, what is the most socially appropriate response?",
+          "correctAnswer": "Acknowledge the situation with a polite 'Excuse me' or a nod."
+        },
+        {
+          "answer": "Wait for a natural pause, then offer a polite greeting or comment.",
+          "isCorrect": true,
+          "timeSpent": 4,
+          "questionId": "bb322da0-ef25-4741-89ec-9e68a396a799",
+          "explanation": "Interrupting is considered rude, while waiting for a pause respects the flow of conversation.",
+          "pointsEarned": 1,
+          "questionText": "When joining a conversation that is already in progress, what is the most polite way to enter?",
+          "correctAnswer": "Wait for a natural pause, then offer a polite greeting or comment."
+        }
+      ],
+      "startedAt": "2026-07-10T12:40:27.282Z",
+      "studentId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "timeSpent": 67,
+      "percentage": 62,
+      "showResults": true,
+      "submittedAt": "2026-07-10T12:41:42.796Z",
+      "totalPoints": 13,
+      "selectedModels": [
+        "multiple_choice",
+        "true_false",
+        "short_answer"
+      ]
+    },
+    "created_at": "2026-07-10T12:40:27.340Z",
+    "updated_at": "2026-07-10T12:41:43.427Z"
+  },
+  {
+    "collection": "grades",
+    "doc_id": "6b78542b-0aa7-4a37-9ce3-f3212914ca3a",
+    "data": {
+      "score": 8,
+      "classId": "5f411eb1-1ba4-49df-8665-8bb429edb757",
+      "gradedBy": "auto",
+      "itemName": "q1",
+      "createdAt": "2026-07-10T12:41:43.552Z",
+      "studentId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "subjectId": "8fd3cc6a-9b59-42b1-8417-8fc82393122e",
+      "updatedAt": "2026-07-10T12:41:43.552Z",
+      "percentage": 62,
+      "totalPoints": 13
+    },
+    "created_at": "2026-07-10T12:41:43.804Z",
+    "updated_at": "2026-07-10T12:41:43.804Z"
+  },
+  {
+    "collection": "quizAttemptV2",
+    "doc_id": "c65b1253-6cd0-4deb-86db-0fac4c717bde",
+    "data": {
+      "id": "c65b1253-6cd0-4deb-86db-0fac4c717bde",
+      "level": "beginner",
+      "score": 7,
+      "passed": true,
+      "quizId": "0ab12de9-7e5f-4a3b-83b8-a125abe60f29",
+      "status": "completed",
+      "answers": [
+        {
+          "answer": "True",
+          "isCorrect": false,
+          "timeSpent": 15,
+          "questionId": "a819fa87-328f-484d-87a9-486e27e7ab70",
+          "explanation": "In formal settings, it is polite to use titles and surnames until invited to use first names.",
+          "pointsEarned": 0,
+          "questionText": "You should always use a person's first name immediately upon meeting them, regardless of the setting.",
+          "correctAnswer": "False"
+        },
+        {
+          "answer": "Ignore them completely and keep walking.",
+          "isCorrect": false,
+          "timeSpent": 1,
+          "questionId": "0c33a7f3-f3b8-45f5-87e5-2f50b24e4943",
+          "explanation": "De-escalating minor accidents through politeness maintains social harmony.",
+          "pointsEarned": 0,
+          "questionText": "If someone accidentally bumps into you in a crowded hallway, what is the most socially appropriate response?",
+          "correctAnswer": "Acknowledge the situation with a polite 'Excuse me' or a nod."
+        },
+        {
+          "answer": "True",
+          "isCorrect": true,
+          "timeSpent": 1,
+          "questionId": "6d95492b-f649-4676-b41b-4c1226c6a1cd",
+          "explanation": "Eye contact shows engagement and respect for the person you are greeting.",
+          "pointsEarned": 1,
+          "questionText": "It is considered polite to maintain eye contact while greeting someone.",
+          "correctAnswer": "True"
+        },
+        {
+          "answer": "Wait for a natural pause, then offer a polite greeting or comment.",
+          "isCorrect": true,
+          "timeSpent": 1,
+          "questionId": "bb322da0-ef25-4741-89ec-9e68a396a799",
+          "explanation": "Interrupting is considered rude, while waiting for a pause respects the flow of conversation.",
+          "pointsEarned": 1,
+          "questionText": "When joining a conversation that is already in progress, what is the most polite way to enter?",
+          "correctAnswer": "Wait for a natural pause, then offer a polite greeting or comment."
+        },
+        {
+          "answer": "False",
+          "isCorrect": false,
+          "timeSpent": 1,
+          "questionId": "7ba9e83d-c86b-404e-9542-79d681edee54",
+          "explanation": "A smile signals friendliness and openness during social interactions.",
+          "pointsEarned": 0,
+          "questionText": "Smiling is a universal non-verbal cue that makes a greeting feel more welcoming.",
+          "correctAnswer": "True"
+        },
+        {
+          "answer": "Apologize briefly and quietly take a seat",
+          "isCorrect": true,
+          "timeSpent": 2,
+          "questionId": "d0c18e09-aaf1-4ef5-8aea-d66cffc374fc",
+          "explanation": "Minimizing disruption while acknowledging the delay is the most polite approach.",
+          "pointsEarned": 2,
+          "questionText": "If you arrive late to a meeting, what is the most polite way to greet the participants?",
+          "correctAnswer": "Apologize briefly and quietly take a seat"
+        },
+        {
+          "answer": "True",
+          "isCorrect": true,
+          "timeSpent": 1,
+          "questionId": "3bab2bfd-1a56-4519-a245-45cd3456274e",
+          "explanation": "Eye contact shows the speaker that you are engaged and paying attention to what they are saying.",
+          "pointsEarned": 1,
+          "questionText": "Maintaining appropriate eye contact is generally considered a sign of active listening and respect in many cultures.",
+          "correctAnswer": "True"
+        },
+        {
+          "answer": "A firm handshake",
+          "isCorrect": true,
+          "timeSpent": 1,
+          "questionId": "b3ec2158-057b-4955-a463-349b20faab61",
+          "explanation": "A firm handshake is a standard sign of respect and confidence during introductions.",
+          "pointsEarned": 1,
+          "questionText": "When meeting someone for the first time, what is a common polite non-verbal gesture in many Western cultures?",
+          "correctAnswer": "A firm handshake"
+        },
+        {
+          "answer": "Good morning, it is a pleasure to meet you.",
+          "isCorrect": true,
+          "timeSpent": 1,
+          "questionId": "5a6a1c1a-befb-44ea-8b17-8a5af198332b",
+          "explanation": "Formal greetings require respectful language and proper salutations.",
+          "pointsEarned": 1,
+          "questionText": "Which of the following is considered a polite way to greet a stranger in a formal business setting?",
+          "correctAnswer": "Good morning, it is a pleasure to meet you."
+        },
+        {
+          "answer": "",
+          "isCorrect": false,
+          "timeSpent": 1,
+          "questionId": "d147099d-a79d-4ed6-a873-2ac2b5056d55",
+          "explanation": "Active listening demonstrates that you value the speaker's perspective and are genuinely interested in the exchange.",
+          "pointsEarned": 0,
+          "questionText": "Define the concept of 'active listening' in the context of polite social interaction.",
+          "correctAnswer": "Active listening is the practice of fully concentrating on, understanding, responding to, and then remembering what is being said, often involving non-verbal cues like nodding."
+        }
+      ],
+      "startedAt": "2026-07-10T12:45:04.907Z",
+      "studentId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "timeSpent": 25,
+      "percentage": 54,
+      "showResults": true,
+      "submittedAt": "2026-07-10T12:45:38.301Z",
+      "totalPoints": 13,
+      "selectedModels": [
+        "multiple_choice",
+        "true_false",
+        "short_answer"
+      ]
+    },
+    "created_at": "2026-07-10T12:45:05.029Z",
+    "updated_at": "2026-07-10T12:45:38.959Z"
+  },
+  {
+    "collection": "gamificationTransactions",
+    "doc_id": "f8e35ad3-fc0f-49b1-9710-2f5455e374fe",
+    "data": {
+      "type": "xp",
+      "amount": 15,
+      "source": "Completed quiz: q1",
+      "userId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "createdAt": "2026-07-10T12:41:44.473Z"
+    },
+    "created_at": "2026-07-10T12:41:44.723Z",
+    "updated_at": "2026-07-10T12:41:44.473Z"
+  },
+  {
+    "collection": "gamificationTransactions",
+    "doc_id": "49686d58-6efc-485a-a0c8-04964a17ea88",
+    "data": {
+      "type": "coin",
+      "amount": 3,
+      "source": "Completed quiz: q1",
+      "userId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "createdAt": "2026-07-10T12:41:45.147Z"
+    },
+    "created_at": "2026-07-10T12:41:45.208Z",
+    "updated_at": "2026-07-10T12:41:45.147Z"
+  },
+  {
+    "collection": "gamificationDailyChallenges",
+    "doc_id": "0e53f929-a666-4d9d-bfbe-4cb56933e8a1",
+    "data": {
+      "id": "0e53f929-a666-4d9d-bfbe-4cb56933e8a1",
+      "date": "2026-07-10",
+      "type": "lessons",
+      "title": "Lesson Master",
+      "target": 3,
+      "userId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "progress": 0,
+      "xpReward": 30,
+      "completed": false,
+      "createdAt": "2026-07-10T12:45:09.996Z",
+      "coinReward": 15,
+      "description": "Complete 3 lessons today"
+    },
+    "created_at": "2026-07-10T12:45:11.159Z",
+    "updated_at": "2026-07-10T12:45:11.078Z"
+  },
+  {
+    "collection": "gamificationDailyChallenges",
+    "doc_id": "f027ca24-9f91-4ba5-b389-f721c904fa07",
+    "data": {
+      "id": "f027ca24-9f91-4ba5-b389-f721c904fa07",
+      "date": "2026-07-10",
+      "type": "quiz_accuracy",
+      "title": "Quiz Ace",
+      "target": 80,
+      "userId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "progress": 0,
+      "xpReward": 50,
+      "completed": false,
+      "createdAt": "2026-07-10T12:45:09.996Z",
+      "coinReward": 20,
+      "description": "Score 80% or higher on a quiz"
+    },
+    "created_at": "2026-07-10T12:45:11.290Z",
+    "updated_at": "2026-07-10T12:45:11.078Z"
+  },
+  {
+    "collection": "gamificationDailyChallenges",
+    "doc_id": "5ba00a1f-372f-4903-93ab-4c677f8ed7e6",
+    "data": {
+      "id": "5ba00a1f-372f-4903-93ab-4c677f8ed7e6",
+      "date": "2026-07-10",
+      "type": "perfect_score",
+      "title": "Perfect Practice",
+      "target": 1,
+      "userId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "progress": 0,
+      "xpReward": 60,
+      "completed": false,
+      "createdAt": "2026-07-10T12:45:09.996Z",
+      "coinReward": 25,
+      "description": "Get a perfect score on any assessment"
+    },
+    "created_at": "2026-07-10T12:45:11.416Z",
+    "updated_at": "2026-07-10T12:45:11.078Z"
+  },
+  {
+    "collection": "grades",
+    "doc_id": "09c4cc6b-2ade-4566-83f3-28dd110ba619",
+    "data": {
+      "score": 7,
+      "classId": "5f411eb1-1ba4-49df-8665-8bb429edb757",
+      "gradedBy": "auto",
+      "itemName": "q1",
+      "createdAt": "2026-07-10T12:45:39.098Z",
+      "studentId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "subjectId": "8fd3cc6a-9b59-42b1-8417-8fc82393122e",
+      "updatedAt": "2026-07-10T12:45:39.098Z",
+      "percentage": 54,
+      "totalPoints": 13
+    },
+    "created_at": "2026-07-10T12:45:39.374Z",
+    "updated_at": "2026-07-10T12:45:39.374Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "c0cd0f2b-8e1f-46dc-a23f-a2ac2d6b7202",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"tom\" (parent)",
+      "newValue": {
+        "role": "parent",
+        "email": "tom@gmail.com",
+        "displayName": "tom"
+      },
+      "oldValue": null,
+      "targetId": "f2bab732-e6cc-4e5e-9f8c-2ec9b7c7b7ad",
+      "timestamp": "2026-07-10T13:08:24.261Z",
+      "targetName": "tom",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T13:08:24.324Z",
+    "updated_at": "2026-07-10T13:08:24.324Z"
+  },
+  {
+    "collection": "gamificationTransactions",
+    "doc_id": "7fd6e9fe-4b3f-4d52-b2d1-96d9b0c30759",
+    "data": {
+      "type": "xp",
+      "amount": 15,
+      "source": "Completed quiz: q1",
+      "userId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "createdAt": "2026-07-10T12:45:40.106Z"
+    },
+    "created_at": "2026-07-10T12:45:40.171Z",
+    "updated_at": "2026-07-10T12:45:40.106Z"
+  },
+  {
+    "collection": "gamificationProfiles",
+    "doc_id": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+    "data": {
+      "xp": 110,
+      "coins": 22,
+      "level": 2,
+      "badges": [
+        "level_1",
+        "level_2"
+      ],
+      "streak": 1,
+      "userId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "createdAt": "2026-07-10T10:47:33.300Z",
+      "updatedAt": "2026-07-10T12:55:52.746Z",
+      "perfectScores": 0,
+      "lastActiveDate": "2026-07-10",
+      "lessonsCompleted": 0,
+      "highAccuracyCount": 0,
+      "challengesCompleted": 0,
+      "codingProjectsCompleted": 0,
+      "codingChallengesCompleted": 0
+    },
+    "created_at": "2026-07-10T10:47:33.359Z",
+    "updated_at": "2026-07-10T12:55:52.746Z"
+  },
+  {
+    "collection": "gamificationTransactions",
+    "doc_id": "1a1b296e-e271-4670-ba79-18f50e366b69",
+    "data": {
+      "type": "coin",
+      "amount": 3,
+      "source": "Completed quiz: q1",
+      "userId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "createdAt": "2026-07-10T12:45:40.622Z"
+    },
+    "created_at": "2026-07-10T12:45:40.685Z",
+    "updated_at": "2026-07-10T12:45:40.622Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "ef2e7f40-708c-4df6-bb09-03905ebe2248",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"tim\" (parent)",
+      "newValue": {
+        "role": "parent",
+        "email": "tim@gmail.com",
+        "displayName": "tim"
+      },
+      "oldValue": null,
+      "targetId": "5ce5984c-2ebb-4c4b-9b3f-d62c9f2f4a6a",
+      "timestamp": "2026-07-10T13:13:16.758Z",
+      "targetName": "tim",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T13:13:16.825Z",
+    "updated_at": "2026-07-10T13:13:16.825Z"
+  },
+  {
+    "collection": "quizAttemptV2",
+    "doc_id": "4b6126f2-2443-4c9c-b1cf-e53d65ff31f4",
+    "data": {
+      "id": "4b6126f2-2443-4c9c-b1cf-e53d65ff31f4",
+      "level": "beginner",
+      "score": 2,
+      "passed": false,
+      "quizId": "e9c0a9d0-6bc8-4609-a3e6-888e496e4a1d",
+      "status": "completed",
+      "answers": [
+        {
+          "answer": "Sun:Gives energy|Water:Keeps it hydrated|Soil:Gives a home to grow|Air:Helps it breathe",
+          "isCorrect": true,
+          "timeSpent": 15,
+          "questionId": "q2",
+          "explanation": "Plants need these four things to stay healthy and grow big and strong.",
+          "pointsEarned": 1,
+          "questionText": "Match the item to what a plant needs to grow:",
+          "correctAnswer": "Sun:Gives energy|Water:Keeps it hydrated|Soil:Gives a home to grow|Air:Helps it breathe"
+        },
+        {
+          "answer": "Apple:Tree|Carrot:Root|Lettuce:Leaf|Sunflower:Seed",
+          "isCorrect": true,
+          "timeSpent": 31,
+          "questionId": "q4",
+          "explanation": "We eat many different parts of plants, like the roots, leaves, and fruits!",
+          "pointsEarned": 1,
+          "questionText": "Match the plant product to what it comes from:",
+          "correctAnswer": "Apple:Tree|Carrot:Root|Lettuce:Leaf|Sunflower:Seed"
+        },
+        {
+          "answer": "Roots:Drink water from the soil|Leaves:Catch sunlight|Stem:Makes seeds|Flower:Holds the plant up",
+          "isCorrect": false,
+          "timeSpent": 43,
+          "questionId": "q1",
+          "explanation": "Roots act like straws, leaves act like solar panels, the stem is the plant's backbone, and flowers help the plant make new babies!",
+          "pointsEarned": 0,
+          "questionText": "Match the plant part to what it does:",
+          "correctAnswer": "Roots:Drink water from the soil|Leaves:Catch sunlight|Stem:Holds the plant up|Flower:Makes seeds"
+        },
+        {
+          "answer": "Seed:First|Sprout:Fourth|Small Plant:Second|Big Plant:First",
+          "isCorrect": false,
+          "timeSpent": 10,
+          "questionId": "q5",
+          "explanation": "Plants start as tiny seeds and grow bigger over time.",
+          "pointsEarned": 0,
+          "questionText": "Match the growth stage to the order:",
+          "correctAnswer": "Seed:First|Sprout:Second|Small Plant:Third|Big Plant:Fourth"
+        },
+        {
+          "answer": "Cactus:Hot desert|Water Lily:Pond|Pine Tree:Orchard|Apple Tree:Forest",
+          "isCorrect": false,
+          "timeSpent": 14,
+          "questionId": "q3",
+          "explanation": "Different plants are adapted to live in different environments!",
+          "pointsEarned": 0,
+          "questionText": "Match the plant to where it might grow:",
+          "correctAnswer": "Cactus:Hot desert|Water Lily:Pond|Pine Tree:Forest|Apple Tree:Orchard"
+        }
+      ],
+      "startedAt": "2026-07-10T12:53:52.223Z",
+      "studentId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "timeSpent": 113,
+      "percentage": 40,
+      "showResults": true,
+      "submittedAt": "2026-07-10T12:55:50.446Z",
+      "totalPoints": 5,
+      "selectedModels": [
+        "matching"
+      ]
+    },
+    "created_at": "2026-07-10T12:53:52.552Z",
+    "updated_at": "2026-07-10T12:55:51.106Z"
+  },
+  {
+    "collection": "grades",
+    "doc_id": "28d4f5f3-efc1-44f1-b556-5283a9d77634",
+    "data": {
+      "score": 2,
+      "classId": "5f411eb1-1ba4-49df-8665-8bb429edb757",
+      "gradedBy": "auto",
+      "itemName": "Quiz from OCR - 7/10/2026",
+      "createdAt": "2026-07-10T12:55:51.245Z",
+      "studentId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "subjectId": null,
+      "updatedAt": "2026-07-10T12:55:51.245Z",
+      "percentage": 40,
+      "totalPoints": 5
+    },
+    "created_at": "2026-07-10T12:55:51.311Z",
+    "updated_at": "2026-07-10T12:55:51.311Z"
+  },
+  {
+    "collection": "gamificationTransactions",
+    "doc_id": "02d38dba-8cdf-439e-a597-4f35faa669c0",
+    "data": {
+      "type": "xp",
+      "amount": 15,
+      "source": "Completed quiz: Quiz from OCR - 7/10/2026",
+      "userId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "createdAt": "2026-07-10T12:55:52.041Z"
+    },
+    "created_at": "2026-07-10T12:55:52.105Z",
+    "updated_at": "2026-07-10T12:55:52.041Z"
+  },
+  {
+    "collection": "gamificationTransactions",
+    "doc_id": "86b5e9b1-0367-4a69-ac46-574196a10c72",
+    "data": {
+      "type": "coin",
+      "amount": 3,
+      "source": "Completed quiz: Quiz from OCR - 7/10/2026",
+      "userId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "createdAt": "2026-07-10T12:55:52.882Z"
+    },
+    "created_at": "2026-07-10T12:55:52.943Z",
+    "updated_at": "2026-07-10T12:55:52.882Z"
+  },
+  {
+    "collection": "quizAttemptV2",
+    "doc_id": "d8f346a2-b41a-48bc-8890-29a0495d1dbd",
+    "data": {
+      "id": "d8f346a2-b41a-48bc-8890-29a0495d1dbd",
+      "level": "beginner",
+      "score": null,
+      "passed": null,
+      "quizId": "e9c0a9d0-6bc8-4609-a3e6-888e496e4a1d",
+      "status": "in_progress",
+      "answers": [],
+      "startedAt": "2026-07-10T12:56:14.053Z",
+      "studentId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "timeSpent": 0,
+      "percentage": null,
+      "submittedAt": null,
+      "totalPoints": 5,
+      "selectedModels": [
+        "matching"
+      ]
+    },
+    "created_at": "2026-07-10T12:56:14.171Z",
+    "updated_at": "2026-07-10T12:56:14.053Z"
+  },
+  {
+    "collection": "quizAttemptV2",
+    "doc_id": "f3be5245-c776-44de-9ccc-4defaf2f1a61",
+    "data": {
+      "id": "f3be5245-c776-44de-9ccc-4defaf2f1a61",
+      "level": "beginner",
+      "score": null,
+      "passed": null,
+      "quizId": "e9c0a9d0-6bc8-4609-a3e6-888e496e4a1d",
+      "status": "in_progress",
+      "answers": [],
+      "startedAt": "2026-07-10T13:02:55.761Z",
+      "studentId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "timeSpent": 0,
+      "percentage": null,
+      "submittedAt": null,
+      "totalPoints": 5,
+      "selectedModels": [
+        "matching"
+      ]
+    },
+    "created_at": "2026-07-10T13:02:55.901Z",
+    "updated_at": "2026-07-10T13:02:55.761Z"
+  },
+  {
+    "collection": "quizV2",
+    "doc_id": "e9c0a9d0-6bc8-4609-a3e6-888e496e4a1d",
+    "data": {
+      "id": "e9c0a9d0-6bc8-4609-a3e6-888e496e4a1d",
+      "title": "Quiz from OCR - 7/10/2026",
+      "classId": "5f411eb1-1ba4-49df-8665-8bb429edb757",
+      "createdAt": "2026-07-10T10:37:47.541Z",
+      "questions": [
+        {
+          "id": "q1",
+          "text": "Match the plant part to what it does:",
+          "type": "matching",
+          "points": 2,
+          "options": [
+            "Roots - Drink water from the soil",
+            "Leaves - Catch sunlight",
+            "Stem - Holds the plant up",
+            "Flower - Makes seeds"
+          ],
+          "difficulty": "easy",
+          "explanation": "Roots act like straws, leaves act like solar panels, the stem is the plant's backbone, and flowers help the plant make new babies!",
+          "correctAnswer": "Roots:Drink water from the soil|Leaves:Catch sunlight|Stem:Holds the plant up|Flower:Makes seeds"
+        },
+        {
+          "id": "q2",
+          "text": "Match the item to what a plant needs to grow:",
+          "type": "matching",
+          "points": 2,
+          "options": [
+            "Sun - Gives energy",
+            "Water - Keeps it hydrated",
+            "Soil - Gives a home to grow",
+            "Air - Helps it breathe"
+          ],
+          "difficulty": "easy",
+          "explanation": "Plants need these four things to stay healthy and grow big and strong.",
+          "correctAnswer": "Sun:Gives energy|Water:Keeps it hydrated|Soil:Gives a home to grow|Air:Helps it breathe"
+        },
+        {
+          "id": "q3",
+          "text": "Match the plant to where it might grow:",
+          "type": "matching",
+          "points": 2,
+          "options": [
+            "Cactus - Hot desert",
+            "Water Lily - Pond",
+            "Pine Tree - Forest",
+            "Apple Tree - Orchard"
+          ],
+          "difficulty": "easy",
+          "explanation": "Different plants are adapted to live in different environments!",
+          "correctAnswer": "Cactus:Hot desert|Water Lily:Pond|Pine Tree:Forest|Apple Tree:Orchard"
+        },
+        {
+          "id": "q4",
+          "text": "Match the plant product to what it comes from:",
+          "type": "matching",
+          "points": 2,
+          "options": [
+            "Apple - Tree",
+            "Carrot - Root",
+            "Lettuce - Leaf",
+            "Sunflower - Seed"
+          ],
+          "difficulty": "easy",
+          "explanation": "We eat many different parts of plants, like the roots, leaves, and fruits!",
+          "correctAnswer": "Apple:Tree|Carrot:Root|Lettuce:Leaf|Sunflower:Seed"
+        },
+        {
+          "id": "q5",
+          "text": "Match the growth stage to the order:",
+          "type": "matching",
+          "points": 2,
+          "options": [
+            "Seed - First",
+            "Sprout - Second",
+            "Small Plant - Third",
+            "Big Plant - Fourth"
+          ],
+          "difficulty": "easy",
+          "explanation": "Plants start as tiny seeds and grow bigger over time.",
+          "correctAnswer": "Seed:First|Sprout:Second|Small Plant:Third|Big Plant:Fourth"
+        }
+      ],
+      "subjectId": null,
+      "teacherId": "unknown",
+      "updatedAt": "2026-07-10T13:02:55.761Z",
+      "releasedAt": "2026-07-10T10:37:47.541Z",
+      "description": "",
+      "maxAttempts": 3,
+      "showResults": true,
+      "totalPoints": 10,
+      "attemptCount": 5,
+      "ocrGenerated": true,
+      "passingScore": 50,
+      "questionCount": 5,
+      "selectedModels": [
+        "matching"
+      ],
+      "shuffleQuestions": true,
+      "timeLimitMinutes": 30
+    },
+    "created_at": "2026-07-10T10:37:47.598Z",
+    "updated_at": "2026-07-10T13:02:56.090Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "5dcec8f5-7b36-498e-a60c-687320a98cf2",
+    "data": {
+      "action": "subject.create",
+      "summary": "Created subject \"maths\" (MATHS)",
+      "newValue": {
+        "code": "MATHS",
+        "icon": "menu_book",
+        "name": "maths",
+        "classId": "45812194-0f73-47f3-b8ec-e1ea5e588f9c",
+        "category": "STEM"
+      },
+      "oldValue": null,
+      "targetId": "1c12b7d1-e005-4401-9745-5a346fb1b435",
+      "timestamp": "2026-07-10T13:05:20.068Z",
+      "targetName": "maths",
+      "targetType": "subject",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System Admin",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T13:05:21.058Z",
+    "updated_at": "2026-07-10T13:05:21.058Z"
+  },
+  {
+    "collection": "teacherClassSubject",
+    "doc_id": "b25c7a0a-963f-40c4-9a38-521472260495",
+    "data": {
+      "classId": "45812194-0f73-47f3-b8ec-e1ea5e588f9c",
+      "createdAt": "2026-07-10T13:05:27.773Z",
+      "subjectId": "1c12b7d1-e005-4401-9745-5a346fb1b435",
+      "teacherId": "08faa0a8-6999-40d4-84c1-ba60787923df",
+      "updatedAt": "2026-07-10T13:05:27.773Z"
+    },
+    "created_at": "2026-07-10T13:05:27.870Z",
+    "updated_at": "2026-07-10T13:05:27.773Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "83e8be27-1041-4ee2-9dc8-c8c1a643f2f1",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"dingdong\" (student)",
+      "newValue": {
+        "role": "student",
+        "email": "2b022026@school.edu",
+        "displayName": "dingdong"
+      },
+      "oldValue": null,
+      "targetId": "75ac95c3-cd22-4cbc-9fa9-1ee3eabca398",
+      "timestamp": "2026-07-10T13:05:59.336Z",
+      "targetName": "dingdong",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T13:05:59.397Z",
+    "updated_at": "2026-07-10T13:05:59.397Z"
+  },
+  {
+    "collection": "codingProjects",
+    "doc_id": "5e7702b0-c4f2-4e0a-a582-1b1dffffd644",
+    "data": {
+      "code": "let a = 10;\nlet b = 20;\nlet sum = a + b;\n\nconsole.log(\"Sum =\", sum);",
+      "title": "Untitled Project1",
+      "ownerId": "f5eb6f2c-50ee-45eb-b382-abc60c16db7e",
+      "language": "javascript",
+      "createdAt": "2026-07-10T12:59:51.647Z",
+      "updatedAt": "2026-07-10T13:06:50.675Z",
+      "collaborators": []
+    },
+    "created_at": "2026-07-10T12:59:51.647Z",
+    "updated_at": "2026-07-10T13:06:50.675Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "794e38dc-aae4-4aa0-99f3-c1a6bf15f791",
+    "data": {
+      "action": "user.update",
+      "summary": "Updated user \"tim\"",
+      "newValue": {
+        "id": "5ce5984c-2ebb-4c4b-9b3f-d62c9f2f4a6a",
+        "uid": "5ce5984c-2ebb-4c4b-9b3f-d62c9f2f4a6a",
+        "role": "parent",
+        "email": "tim@gmail.com",
+        "gender": null,
+        "classIds": [],
+        "isActive": true,
+        "language": null,
+        "photoURL": "",
+        "schoolId": "00000000-0000-0000-0000-000000000001",
+        "createdAt": "2026-07-10T13:13:16.458+00:00",
+        "updatedAt": "2026-07-10T13:16:37.201+00:00",
+        "childrenIds": [
+          "a201d517-4cdf-40d4-8b66-58a66c7f3843",
+          "f5eb6f2c-50ee-45eb-b382-abc60c16db7e"
+        ],
+        "displayName": "tim",
+        "phoneNumber": "",
+        "streakCount": 0,
+        "tutorialSeen": false
+      },
+      "oldValue": {
+        "id": "5ce5984c-2ebb-4c4b-9b3f-d62c9f2f4a6a",
+        "uid": "5ce5984c-2ebb-4c4b-9b3f-d62c9f2f4a6a",
+        "role": "parent",
+        "email": "tim@gmail.com",
+        "gender": null,
+        "classIds": [],
+        "isActive": true,
+        "language": null,
+        "photoURL": "",
+        "schoolId": "00000000-0000-0000-0000-000000000001",
+        "createdAt": "2026-07-10T13:13:16.458+00:00",
+        "updatedAt": "2026-07-10T13:13:16.458+00:00",
+        "childrenIds": [
+          "a201d517-4cdf-40d4-8b66-58a66c7f3843"
+        ],
+        "displayName": "tim",
+        "phoneNumber": "",
+        "streakCount": 0,
+        "tutorialSeen": false
+      },
+      "targetId": "5ce5984c-2ebb-4c4b-9b3f-d62c9f2f4a6a",
+      "timestamp": "2026-07-10T13:16:37.655Z",
+      "targetName": "tim",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T13:16:37.944Z",
+    "updated_at": "2026-07-10T13:16:37.944Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "570d859a-c8e4-45ba-b2c0-be9cee33e28d",
+    "data": {
+      "action": "subject.create",
+      "summary": "Created subject \"grammar\" (HH)",
+      "newValue": {
+        "code": "HH",
+        "icon": "menu_book",
+        "name": "grammar",
+        "classId": "45812194-0f73-47f3-b8ec-e1ea5e588f9c",
+        "category": "STEM"
+      },
+      "oldValue": null,
+      "targetId": "837e6896-c8b0-49ce-889f-ed754693bd82",
+      "timestamp": "2026-07-10T15:08:42.308Z",
+      "targetName": "grammar",
+      "targetType": "subject",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System Admin",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-10T15:10:16.571Z",
+    "updated_at": "2026-07-10T15:10:16.571Z"
+  },
+  {
+    "collection": "gamificationDailyChallenges",
+    "doc_id": "b51a03aa-4697-4aaa-bb44-39200b1b373c",
+    "data": {
+      "id": "b51a03aa-4697-4aaa-bb44-39200b1b373c",
+      "date": "2026-07-11",
+      "type": "study_time",
+      "title": "Streak Keeper",
+      "target": 20,
+      "userId": "05371cfb-a16c-4a11-95ac-a7b3b4dbb0bb",
+      "progress": 0,
+      "xpReward": 20,
+      "completed": false,
+      "createdAt": "2026-07-11T14:50:05.978Z",
+      "coinReward": 10,
+      "description": "Study for 20 minutes"
+    },
+    "created_at": "2026-07-11T14:50:06.842Z",
+    "updated_at": "2026-07-11T14:50:06.776Z"
+  },
+  {
+    "collection": "mindmaps",
+    "doc_id": "aa16d524-a6a8-4144-b4f2-e15067ffdb73",
+    "data": {
+      "edges": [],
+      "nodes": [],
+      "title": "sub",
+      "ownerId": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "createdAt": "2026-07-11T13:31:47.280Z",
+      "updatedAt": "2026-07-11T13:31:47.280Z",
+      "sharedWith": [],
+      "description": ""
+    },
+    "created_at": "2026-07-11T13:31:48.132Z",
+    "updated_at": "2026-07-11T13:31:47.282Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "023e067f-3b9d-49f0-88f6-15679052ce6a",
+    "data": {
+      "action": "profile.update",
+      "summary": "Updated profile for user 7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "newValue": {
+        "bio": "hiii",
+        "email": "teacher1@school.edu",
+        "phone": "",
+        "address": "",
+        "displayName": "teacher1"
+      },
+      "oldValue": null,
+      "targetId": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "timestamp": "2026-07-11T14:38:18.664Z",
+      "targetName": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "targetType": "user",
+      "performedBy": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "performedByName": "teacher1",
+      "performedByRole": "teacher"
+    },
+    "created_at": "2026-07-11T14:38:19.646Z",
+    "updated_at": "2026-07-11T14:38:19.646Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "5fbf5abc-a45d-4f83-bc31-00423163a715",
+    "data": {
+      "action": "profile.update",
+      "summary": "Updated profile for user 7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "newValue": {
+        "bio": "hello",
+        "email": "teacher@school.edu",
+        "phone": "",
+        "address": "",
+        "displayName": "teacher1"
+      },
+      "oldValue": null,
+      "targetId": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "timestamp": "2026-07-11T14:38:51.257Z",
+      "targetName": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "targetType": "user",
+      "performedBy": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "performedByName": "teacher1",
+      "performedByRole": "teacher"
+    },
+    "created_at": "2026-07-11T14:38:52.276Z",
+    "updated_at": "2026-07-11T14:38:52.276Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "9ecb48f0-ec26-4aa9-b3e7-3e9a65225938",
+    "data": {
+      "action": "profile.update",
+      "summary": "Updated profile for user 7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "newValue": {
+        "bio": "",
+        "email": "teacher1@school.edu",
+        "phone": "1234567890",
+        "address": "",
+        "displayName": "teacher1"
+      },
+      "oldValue": null,
+      "targetId": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "timestamp": "2026-07-11T14:39:10.830Z",
+      "targetName": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "targetType": "user",
+      "performedBy": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "performedByName": "teacher1",
+      "performedByRole": "teacher"
+    },
+    "created_at": "2026-07-11T14:39:11.733Z",
+    "updated_at": "2026-07-11T14:39:11.733Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "94cf992e-cc02-4316-8d0b-6af3eb99f246",
+    "data": {
+      "action": "profile.update",
+      "summary": "Updated profile for user 7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "newValue": {
+        "bio": "hiiiiiiiiiiii",
+        "email": "teacher1@school.edu",
+        "phone": "",
+        "address": "",
+        "displayName": "teacher1"
+      },
+      "oldValue": null,
+      "targetId": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "timestamp": "2026-07-11T14:43:28.574Z",
+      "targetName": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "targetType": "user",
+      "performedBy": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "performedByName": "teacher1",
+      "performedByRole": "teacher"
+    },
+    "created_at": "2026-07-11T14:43:29.498Z",
+    "updated_at": "2026-07-11T14:43:29.498Z"
+  },
+  {
+    "collection": "quizV2",
+    "doc_id": "d34666b2-716f-4040-8a8d-bcd956e7a1be",
+    "data": {
+      "id": "d34666b2-716f-4040-8a8d-bcd956e7a1be",
+      "title": "Quizzzzzzzzzz",
+      "classId": "279aaf93-91df-4936-bec9-f302f45a8a28",
+      "schoolId": "00000000-0000-0000-0000-000000000001",
+      "chapterId": "72335eb9-6d97-462e-8b26-0644b51b6da6",
+      "conceptId": "e8dc42bf-bbd1-4313-a8f4-454652144fae",
+      "createdAt": "2026-07-11T09:55:59.496Z",
+      "questions": [
+        {
+          "id": "cbe60486-b844-48ee-9a54-9a3df1654999",
+          "text": "Which action involves moving by springing on one foot?",
+          "type": "mcq",
+          "points": 2,
+          "options": [
+            "Hop",
+            "Stamp",
+            "Yawn",
+            "Sleep"
+          ],
+          "difficulty": "easy",
+          "explanation": "Hopping is defined as jumping on one foot.",
+          "correctAnswer": "Hop"
+        },
+        {
+          "id": "ad710240-9aa6-498b-9991-e2946229ef72",
+          "text": "If you are feeling very tired and ready for bed, which action do you perform?",
+          "type": "mcq",
+          "points": 2,
+          "options": [
+            "Dance",
+            "Sleep",
+            "Twist",
+            "Skip"
+          ],
+          "difficulty": "easy",
+          "explanation": "Sleep is the action associated with resting when tired.",
+          "correctAnswer": "Sleep"
+        },
+        {
+          "id": "b8835d9b-5161-4550-93b2-e7a6b53bce79",
+          "text": "Which action involves moving your body rhythmically to music?",
+          "type": "mcq",
+          "points": 2,
+          "options": [
+            "Tap",
+            "Shake",
+            "Dance",
+            "Jump"
+          ],
+          "difficulty": "easy",
+          "explanation": "Dancing is the act of moving rhythmically to music.",
+          "correctAnswer": "Dance"
+        },
+        {
+          "id": "487e0c05-1358-40e8-b006-2371b6137a62",
+          "text": "True or False: 'Stamp' means to bring your foot down heavily on the ground.",
+          "type": "true_false",
+          "points": 2,
+          "options": [
+            "True",
+            "False"
+          ],
+          "difficulty": "easy",
+          "explanation": "Stamping involves a heavy downward movement of the foot.",
+          "correctAnswer": "True"
+        },
+        {
+          "id": "5cedee28-4c6e-48b8-abd7-be89c00b7729",
+          "text": "True or False: 'Yawn' is an action you perform when you are full of energy.",
+          "type": "true_false",
+          "points": 2,
+          "options": [
+            "True",
+            "False"
+          ],
+          "difficulty": "easy",
+          "explanation": "Yawning is typically associated with being tired or bored.",
+          "correctAnswer": "False"
+        },
+        {
+          "id": "98d087c3-cd60-4c28-b531-a67bea4aae5a",
+          "text": "True or False: 'Twist' involves rotating your body or a part of your body.",
+          "type": "true_false",
+          "points": 2,
+          "options": [
+            "True",
+            "False"
+          ],
+          "difficulty": "easy",
+          "explanation": "Twisting is the act of rotating or turning.",
+          "correctAnswer": "True"
+        },
+        {
+          "id": "3fe55319-078f-4207-8bb3-963f8ebcf15d",
+          "text": "When you are bored or tired, you might _________.",
+          "type": "fill_blank",
+          "points": 2,
+          "options": [
+            "yawn",
+            "jump",
+            "danceeeeeee",
+            "stamp"
+          ],
+          "difficulty": "easy",
+          "explanation": "Yawning is a common reaction to tiredness or boredom.",
+          "correctAnswer": "yawn"
+        },
+        {
+          "id": "0a6381b5-b2d6-4760-95da-c82c9f1efa2d",
+          "text": "To _________ means to move lightly by taking short, quick jumps.",
+          "type": "fill_blank",
+          "points": 2,
+          "options": [
+            "skip",
+            "sleep",
+            "shake",
+            "tap"
+          ],
+          "difficulty": "easy",
+          "explanation": "Skipping is a light, springy movement.",
+          "correctAnswer": "skip"
+        },
+        {
+          "id": "89d41081-c85b-49e2-8cb6-cf119a174d16",
+          "text": "You _________ your feet to make a quick, light sound on the floor.",
+          "type": "fill_blank",
+          "points": 2,
+          "options": [
+            "tap",
+            "sleep",
+            "jump",
+            "twist"
+          ],
+          "difficulty": "easy",
+          "explanation": "Tapping involves light, rhythmic contact with a surface.",
+          "correctAnswer": "tap"
+        },
+        {
+          "id": "20ff4f32-b61a-4e20-98c8-a1e282befdb7",
+          "text": "Which action word describes moving by springing off the ground with both feet?",
+          "type": "mcq",
+          "points": 1,
+          "options": [
+            "hop",
+            "jump",
+            "tap",
+            "yawn"
+          ],
+          "difficulty": "easy",
+          "explanation": "To jump means to push oneself off the ground with both feet.",
+          "correctAnswer": "jump"
+        },
+        {
+          "id": "296a6906-0065-41ee-a04b-2dd43477ff5d",
+          "text": "True or False: 'Sleep' is an example of an action vocabulary word.",
+          "type": "true_false",
+          "points": 1,
+          "options": [
+            "True",
+            "False",
+            null,
+            null
+          ],
+          "difficulty": "easy",
+          "explanation": "Sleep is a state of rest, but it is categorized as an action verb in this vocabulary set.",
+          "correctAnswer": "True"
+        },
+        {
+          "id": "1682e1c8-1f3e-496c-a884-bf9e8cb872a2",
+          "text": "When you are tired and open your mouth wide, you ________.",
+          "type": "fill_blank",
+          "points": 2,
+          "options": [
+            "dance",
+            "yawn",
+            "stamp",
+            "skip"
+          ],
+          "difficulty": "medium",
+          "explanation": "A yawn is an involuntary action often associated with being tired.",
+          "correctAnswer": "yawn"
+        },
+        {
+          "id": "3e324031-4ab5-439e-92ae-f3aa97d12bee",
+          "text": "Which action involves moving your body in a rhythmic way to music?",
+          "type": "mcq",
+          "points": 1,
+          "options": [
+            "twist",
+            "dance",
+            "shake",
+            "hop"
+          ],
+          "difficulty": "easy",
+          "explanation": "Dancing is the act of moving rhythmically to music.",
+          "correctAnswer": "dance"
+        },
+        {
+          "id": "df4dd60c-9458-459b-91a9-bf86ad05e49a",
+          "text": "To ________ means to hit your foot hard against the ground.",
+          "type": "fill_blank",
+          "points": 2,
+          "options": [
+            "tap",
+            "stamp",
+            "skip",
+            "shake"
+          ],
+          "difficulty": "medium",
+          "explanation": "Stamping involves bringing the foot down heavily and noisily.",
+          "correctAnswer": "stamp"
+        },
+        {
+          "id": "379c0efc-0855-499e-ab2b-bcdd70f6d376",
+          "text": "True or False: 'Tap' and 'Stamp' describe the exact same force and movement.",
+          "type": "true_false",
+          "points": 3,
+          "options": [
+            "True",
+            "False",
+            null,
+            null
+          ],
+          "difficulty": "hard",
+          "explanation": "A tap is usually light and quick, while a stamp is heavy and forceful.",
+          "correctAnswer": "False"
+        }
+      ],
+      "subjectId": "fb163282-fe49-4c9d-891f-c964e602bfb8",
+      "teacherId": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "updatedAt": "2026-07-11T14:46:40.718Z",
+      "releasedAt": "2026-07-11T09:56:47.852Z",
+      "textbookId": "2a1c4e58-070f-44cd-9a13-22f4001dbd7a",
+      "description": "",
+      "maxAttempts": 2,
+      "publishedTo": "students",
+      "showResults": true,
+      "totalPoints": 28,
+      "attemptCount": 1,
+      "passingScore": 50,
+      "questionCount": 15,
+      "selectedModels": [
+        "multiple_choice",
+        "true_false",
+        "fill_blank"
+      ],
+      "shuffleQuestions": true,
+      "targetStudentIds": [
+        "05371cfb-a16c-4a11-95ac-a7b3b4dbb0bb"
+      ],
+      "timeLimitMinutes": 30
+    },
+    "created_at": "2026-07-11T09:55:59.554Z",
+    "updated_at": "2026-07-11T14:46:41.201Z"
+  },
+  {
+    "collection": "quizAttemptV2",
+    "doc_id": "edeadd4f-411a-4267-b10e-be27663da148",
+    "data": {
+      "id": "edeadd4f-411a-4267-b10e-be27663da148",
+      "level": "beginner",
+      "score": 14,
+      "passed": true,
+      "quizId": "d34666b2-716f-4040-8a8d-bcd956e7a1be",
+      "status": "completed",
+      "answers": [
+        {
+          "answer": "Stamp",
+          "isCorrect": false,
+          "timeSpent": 14,
+          "questionId": "cbe60486-b844-48ee-9a54-9a3df1654999",
+          "explanation": "Hopping is defined as jumping on one foot.",
+          "pointsEarned": 0,
+          "questionText": "Which action involves moving by springing on one foot?",
+          "correctAnswer": "Hop"
+        },
+        {
+          "answer": "Sleep",
+          "isCorrect": true,
+          "timeSpent": 6,
+          "questionId": "ad710240-9aa6-498b-9991-e2946229ef72",
+          "explanation": "Sleep is the action associated with resting when tired.",
+          "pointsEarned": 1,
+          "questionText": "If you are feeling very tired and ready for bed, which action do you perform?",
+          "correctAnswer": "Sleep"
+        },
+        {
+          "answer": "Stamp",
+          "isCorrect": true,
+          "timeSpent": 17,
+          "questionId": "df4dd60c-9458-459b-91a9-bf86ad05e49a",
+          "explanation": "Stamping involves bringing the foot down heavily and noisily.",
+          "pointsEarned": 2,
+          "questionText": "To ________ means to hit your foot hard against the ground.",
+          "correctAnswer": "stamp"
+        },
+        {
+          "answer": "Eat",
+          "isCorrect": false,
+          "timeSpent": 9,
+          "questionId": "1682e1c8-1f3e-496c-a884-bf9e8cb872a2",
+          "explanation": "A yawn is an involuntary action often associated with being tired.",
+          "pointsEarned": 0,
+          "questionText": "When you are tired and open your mouth wide, you ________.",
+          "correctAnswer": "yawn"
+        },
+        {
+          "answer": "Dance",
+          "isCorrect": true,
+          "timeSpent": 9,
+          "questionId": "b8835d9b-5161-4550-93b2-e7a6b53bce79",
+          "explanation": "Dancing is the act of moving rhythmically to music.",
+          "pointsEarned": 1,
+          "questionText": "Which action involves moving your body rhythmically to music?",
+          "correctAnswer": "Dance"
+        },
+        {
+          "answer": "Tap",
+          "isCorrect": true,
+          "timeSpent": 16,
+          "questionId": "89d41081-c85b-49e2-8cb6-cf119a174d16",
+          "explanation": "Tapping involves light, rhythmic contact with a surface.",
+          "pointsEarned": 1,
+          "questionText": "You _________ your feet to make a quick, light sound on the floor.",
+          "correctAnswer": "tap"
+        },
+        {
+          "answer": "Sleep",
+          "isCorrect": false,
+          "timeSpent": 6,
+          "questionId": "3fe55319-078f-4207-8bb3-963f8ebcf15d",
+          "explanation": "Yawning is a common reaction to tiredness or boredom.",
+          "pointsEarned": 0,
+          "questionText": "When you are bored or tired, you might _________.",
+          "correctAnswer": "yawn"
+        },
+        {
+          "answer": "True",
+          "isCorrect": true,
+          "timeSpent": 17,
+          "questionId": "487e0c05-1358-40e8-b006-2371b6137a62",
+          "explanation": "Stamping involves a heavy downward movement of the foot.",
+          "pointsEarned": 1,
+          "questionText": "True or False: 'Stamp' means to bring your foot down heavily on the ground.",
+          "correctAnswer": "True"
+        },
+        {
+          "answer": "dance",
+          "isCorrect": true,
+          "timeSpent": 7,
+          "questionId": "3e324031-4ab5-439e-92ae-f3aa97d12bee",
+          "explanation": "Dancing is the act of moving rhythmically to music.",
+          "pointsEarned": 1,
+          "questionText": "Which action involves moving your body in a rhythmic way to music?",
+          "correctAnswer": "dance"
+        },
+        {
+          "answer": "False",
+          "isCorrect": true,
+          "timeSpent": 4,
+          "questionId": "5cedee28-4c6e-48b8-abd7-be89c00b7729",
+          "explanation": "Yawning is typically associated with being tired or bored.",
+          "pointsEarned": 1,
+          "questionText": "True or False: 'Yawn' is an action you perform when you are full of energy.",
+          "correctAnswer": "False"
+        },
+        {
+          "answer": "Jump",
+          "isCorrect": false,
+          "timeSpent": 8,
+          "questionId": "0a6381b5-b2d6-4760-95da-c82c9f1efa2d",
+          "explanation": "Skipping is a light, springy movement.",
+          "pointsEarned": 0,
+          "questionText": "To _________ means to move lightly by taking short, quick jumps.",
+          "correctAnswer": "skip"
+        },
+        {
+          "answer": "True",
+          "isCorrect": true,
+          "timeSpent": 5,
+          "questionId": "296a6906-0065-41ee-a04b-2dd43477ff5d",
+          "explanation": "Sleep is a state of rest, but it is categorized as an action verb in this vocabulary set.",
+          "pointsEarned": 1,
+          "questionText": "True or False: 'Sleep' is an example of an action vocabulary word.",
+          "correctAnswer": "True"
+        },
+        {
+          "answer": "False",
+          "isCorrect": true,
+          "timeSpent": 5,
+          "questionId": "379c0efc-0855-499e-ab2b-bcdd70f6d376",
+          "explanation": "A tap is usually light and quick, while a stamp is heavy and forceful.",
+          "pointsEarned": 3,
+          "questionText": "True or False: 'Tap' and 'Stamp' describe the exact same force and movement.",
+          "correctAnswer": "False"
+        },
+        {
+          "answer": "True",
+          "isCorrect": true,
+          "timeSpent": 2,
+          "questionId": "98d087c3-cd60-4c28-b531-a67bea4aae5a",
+          "explanation": "Twisting is the act of rotating or turning.",
+          "pointsEarned": 1,
+          "questionText": "True or False: 'Twist' involves rotating your body or a part of your body.",
+          "correctAnswer": "True"
+        },
+        {
+          "answer": "jump",
+          "isCorrect": true,
+          "timeSpent": 12,
+          "questionId": "20ff4f32-b61a-4e20-98c8-a1e282befdb7",
+          "explanation": "To jump means to push oneself off the ground with both feet.",
+          "pointsEarned": 1,
+          "questionText": "Which action word describes moving by springing off the ground with both feet?",
+          "correctAnswer": "jump"
+        }
+      ],
+      "startedAt": "2026-07-11T14:46:40.718Z",
+      "studentId": "05371cfb-a16c-4a11-95ac-a7b3b4dbb0bb",
+      "timeSpent": 137,
+      "percentage": 74,
+      "showResults": true,
+      "submittedAt": "2026-07-11T14:49:10.738Z",
+      "totalPoints": 19,
+      "selectedModels": [
+        "multiple_choice",
+        "true_false",
+        "fill_blank"
+      ]
+    },
+    "created_at": "2026-07-11T14:46:40.780Z",
+    "updated_at": "2026-07-11T14:49:11.424Z"
+  },
+  {
+    "collection": "grades",
+    "doc_id": "fb1f71b8-fd29-4644-aeaa-67549b9890dc",
+    "data": {
+      "score": 14,
+      "classId": "279aaf93-91df-4936-bec9-f302f45a8a28",
+      "gradedBy": "auto",
+      "itemName": "Quizzzzzzzzzz",
+      "createdAt": "2026-07-11T14:49:11.559Z",
+      "studentId": "05371cfb-a16c-4a11-95ac-a7b3b4dbb0bb",
+      "subjectId": "fb163282-fe49-4c9d-891f-c964e602bfb8",
+      "updatedAt": "2026-07-11T14:49:11.559Z",
+      "percentage": 74,
+      "totalPoints": 19
+    },
+    "created_at": "2026-07-11T14:49:11.840Z",
+    "updated_at": "2026-07-11T14:49:11.840Z"
+  },
+  {
+    "collection": "gamificationTransactions",
+    "doc_id": "31e52cec-2753-4737-ac7e-f82ec716359e",
+    "data": {
+      "type": "xp",
+      "amount": 15,
+      "source": "Completed quiz: Quizzzzzzzzzz",
+      "userId": "05371cfb-a16c-4a11-95ac-a7b3b4dbb0bb",
+      "createdAt": "2026-07-11T14:49:13.439Z"
+    },
+    "created_at": "2026-07-11T14:49:13.556Z",
+    "updated_at": "2026-07-11T14:49:13.439Z"
+  },
+  {
+    "collection": "gamificationTransactions",
+    "doc_id": "39dcaaab-eb0c-4d39-adce-5dd2afc16f6a",
+    "data": {
+      "type": "coin",
+      "amount": 3,
+      "source": "Completed quiz: Quizzzzzzzzzz",
+      "userId": "05371cfb-a16c-4a11-95ac-a7b3b4dbb0bb",
+      "createdAt": "2026-07-11T14:49:14.026Z"
+    },
+    "created_at": "2026-07-11T14:49:14.093Z",
+    "updated_at": "2026-07-11T14:49:14.026Z"
+  },
+  {
+    "collection": "gamificationDailyChallenges",
+    "doc_id": "9e4c6313-7ee2-404c-9a38-2c2e9c8bb007",
+    "data": {
+      "id": "9e4c6313-7ee2-404c-9a38-2c2e9c8bb007",
+      "date": "2026-07-11",
+      "type": "perfect_score",
+      "title": "Perfect Practice",
+      "target": 1,
+      "userId": "05371cfb-a16c-4a11-95ac-a7b3b4dbb0bb",
+      "progress": 0,
+      "xpReward": 60,
+      "completed": false,
+      "createdAt": "2026-07-11T14:50:05.978Z",
+      "coinReward": 25,
+      "description": "Get a perfect score on any assessment"
+    },
+    "created_at": "2026-07-11T14:50:06.975Z",
+    "updated_at": "2026-07-11T14:50:06.776Z"
+  },
+  {
+    "collection": "gamificationDailyChallenges",
+    "doc_id": "e6af9a90-f38e-4f54-b71d-911b16d104cd",
+    "data": {
+      "id": "e6af9a90-f38e-4f54-b71d-911b16d104cd",
+      "date": "2026-07-11",
+      "type": "quiz_accuracy",
+      "title": "Quiz Ace",
+      "target": 80,
+      "userId": "05371cfb-a16c-4a11-95ac-a7b3b4dbb0bb",
+      "progress": 0,
+      "xpReward": 50,
+      "completed": false,
+      "createdAt": "2026-07-11T14:50:05.978Z",
+      "coinReward": 20,
+      "description": "Score 80% or higher on a quiz"
+    },
+    "created_at": "2026-07-11T14:50:07.100Z",
+    "updated_at": "2026-07-11T14:50:06.776Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "5fb3fe2c-545b-441a-b731-f00a6069be6a",
+    "data": {
+      "action": "profile.update",
+      "summary": "Updated profile for user 7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "newValue": {
+        "bio": "",
+        "email": "teacher1@school.edu",
+        "phone": "",
+        "address": "",
+        "displayName": "teacher1"
+      },
+      "oldValue": null,
+      "targetId": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "timestamp": "2026-07-11T14:50:59.210Z",
+      "targetName": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "targetType": "user",
+      "performedBy": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "performedByName": "teacher1",
+      "performedByRole": "teacher"
+    },
+    "created_at": "2026-07-11T14:51:00.139Z",
+    "updated_at": "2026-07-11T14:51:00.139Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "8d0da5ec-fcd0-46a2-a484-88c00c418a28",
+    "data": {
+      "action": "profile.update",
+      "summary": "Updated profile for user 7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "newValue": {
+        "bio": "hiiiiiiiiiiiii",
+        "email": "teacher1@school.edu",
+        "phone": "",
+        "address": "1-2-3/3",
+        "displayName": "teacher1"
+      },
+      "oldValue": null,
+      "targetId": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "timestamp": "2026-07-11T14:51:50.205Z",
+      "targetName": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "targetType": "user",
+      "performedBy": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "performedByName": "teacher1",
+      "performedByRole": "teacher"
+    },
+    "created_at": "2026-07-11T14:51:51.114Z",
+    "updated_at": "2026-07-11T14:51:51.114Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "719f27a3-32d4-4ed8-b0b6-d796e84dc960",
+    "data": {
+      "action": "profile.update",
+      "summary": "Updated profile for user 7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "newValue": {
+        "bio": "Hiiii",
+        "email": "teacher1@school.edu",
+        "phone": "",
+        "address": "",
+        "displayName": "teacher1"
+      },
+      "oldValue": null,
+      "targetId": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "timestamp": "2026-07-11T14:56:28.061Z",
+      "targetName": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "targetType": "user",
+      "performedBy": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "performedByName": "teacher1",
+      "performedByRole": "teacher"
+    },
+    "created_at": "2026-07-11T14:56:28.997Z",
+    "updated_at": "2026-07-11T14:56:28.997Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "9d21c81d-3be8-4fe8-ba10-a8983c911be4",
+    "data": {
+      "action": "profile.update",
+      "summary": "Updated profile for user 7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "newValue": {
+        "bio": "hii",
+        "email": "teacher1@school.edu",
+        "phone": "",
+        "address": "5-3-56/a",
+        "displayName": "teacher1"
+      },
+      "oldValue": null,
+      "targetId": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "timestamp": "2026-07-11T14:59:49.349Z",
+      "targetName": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "targetType": "user",
+      "performedBy": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "performedByName": "teacher1",
+      "performedByRole": "teacher"
+    },
+    "created_at": "2026-07-11T14:59:50.421Z",
+    "updated_at": "2026-07-11T14:59:50.421Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "223ade12-7e6d-4afe-8998-98e7bc2e6e58",
+    "data": {
+      "action": "profile.update",
+      "summary": "Updated profile for user 7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "newValue": {
+        "bio": "hello all",
+        "email": "teacher1@school.edu",
+        "phone": "",
+        "address": "5-5-5/5",
+        "displayName": "teacher1"
+      },
+      "oldValue": null,
+      "targetId": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "timestamp": "2026-07-11T15:03:32.248Z",
+      "targetName": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "targetType": "user",
+      "performedBy": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "performedByName": "teacher1",
+      "performedByRole": "teacher"
+    },
+    "created_at": "2026-07-11T15:03:33.182Z",
+    "updated_at": "2026-07-11T15:03:33.182Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "8866a573-6a1b-41a7-a2f6-3c3d63fbc690",
+    "data": {
+      "action": "user.update",
+      "summary": "Updated user \"tom\"",
+      "newValue": {
+        "id": "f2bab732-e6cc-4e5e-9f8c-2ec9b7c7b7ad",
+        "uid": "f2bab732-e6cc-4e5e-9f8c-2ec9b7c7b7ad",
+        "role": "parent",
+        "email": "tom@gmail.com",
+        "gender": null,
+        "classIds": [],
+        "isActive": true,
+        "language": null,
+        "photoURL": "",
+        "schoolId": "00000000-0000-0000-0000-000000000001",
+        "createdAt": "2026-07-10T13:08:23.979+00:00",
+        "updatedAt": "2026-07-11T15:08:10.354+00:00",
+        "childrenIds": [
+          "75ac95c3-cd22-4cbc-9fa9-1ee3eabca398",
+          "05371cfb-a16c-4a11-95ac-a7b3b4dbb0bb"
+        ],
+        "displayName": "tom",
+        "phoneNumber": "",
+        "streakCount": 0,
+        "tutorialSeen": false
+      },
+      "oldValue": {
+        "id": "f2bab732-e6cc-4e5e-9f8c-2ec9b7c7b7ad",
+        "uid": "f2bab732-e6cc-4e5e-9f8c-2ec9b7c7b7ad",
+        "role": "parent",
+        "email": "tom@gmail.com",
+        "gender": null,
+        "classIds": [],
+        "isActive": true,
+        "language": null,
+        "photoURL": "",
+        "schoolId": "00000000-0000-0000-0000-000000000001",
+        "createdAt": "2026-07-10T13:08:23.979+00:00",
+        "updatedAt": "2026-07-10T13:08:23.979+00:00",
+        "childrenIds": [
+          "75ac95c3-cd22-4cbc-9fa9-1ee3eabca398"
+        ],
+        "displayName": "tom",
+        "phoneNumber": "",
+        "streakCount": 0,
+        "tutorialSeen": false
+      },
+      "targetId": "f2bab732-e6cc-4e5e-9f8c-2ec9b7c7b7ad",
+      "timestamp": "2026-07-11T15:08:11.173Z",
+      "targetName": "tom",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-11T15:08:11.252Z",
+    "updated_at": "2026-07-11T15:08:11.252Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "02b1466a-a4a1-4540-a6cb-1f07fb2d5288",
+    "data": {
+      "action": "profile.update",
+      "summary": "Updated profile for user 7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "newValue": {
+        "bio": "hellooooooo",
+        "email": "teacher1@school.edu",
+        "phone": "",
+        "address": "5-5-5",
+        "displayName": "teacher1"
+      },
+      "oldValue": null,
+      "targetId": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "timestamp": "2026-07-11T15:23:02.468Z",
+      "targetName": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "targetType": "user",
+      "performedBy": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "performedByName": "teacher1",
+      "performedByRole": "teacher"
+    },
+    "created_at": "2026-07-11T15:23:03.428Z",
+    "updated_at": "2026-07-11T15:23:03.428Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "37c98a08-e96f-4745-9318-7408fb750c27",
+    "data": {
+      "action": "concept.release",
+      "summary": "Updated release settings for concept d03ef2c2-9608-4e3e-9e2e-7955432ffe40 in textbook 617b91b4-9067-4f22-9fc6-d6363a5f4e3e for class 45812194-0f73-47f3-b8ec-e1ea5e588f9c",
+      "newValue": {
+        "mindMapReleased": true,
+        "assignmentsReleased": true,
+        "questionBankReleased": true
+      },
+      "oldValue": null,
+      "targetId": "45812194-0f73-47f3-b8ec-e1ea5e588f9c_617b91b4-9067-4f22-9fc6-d6363a5f4e3e_d03ef2c2-9608-4e3e-9e2e-7955432ffe40",
+      "timestamp": "2026-07-11T18:27:01.786Z",
+      "targetName": "Concept d03ef2c2-9608-4e3e-9e2e-7955432ffe40",
+      "targetType": "conceptRelease",
+      "performedBy": "7da8b74e-3822-412e-b8d4-1facd41df9b6",
+      "performedByName": "teacher1",
+      "performedByRole": "teacher"
+    },
+    "created_at": "2026-07-11T18:28:37.399Z",
+    "updated_at": "2026-07-11T18:28:37.399Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "b3cb21bc-a911-44d6-ae55-14a9303145bf",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"jim\" (student)",
+      "newValue": {
+        "role": "student",
+        "email": "2b032026@school.edu",
+        "displayName": "jim"
+      },
+      "oldValue": null,
+      "targetId": "606aae4e-8944-432b-a641-5364536a4bb8",
+      "timestamp": "2026-07-15T05:14:14.037Z",
+      "targetName": "jim",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-15T05:14:14.097Z",
+    "updated_at": "2026-07-15T05:14:14.097Z"
+  },
+  {
+    "collection": "teacherClassSubject",
+    "doc_id": "d8aee1a6-fc37-4d54-b454-05ae6c246440",
+    "data": {
+      "classId": "45812194-0f73-47f3-b8ec-e1ea5e588f9c",
+      "createdAt": "2026-07-15T05:31:30.304Z",
+      "subjectId": "837e6896-c8b0-49ce-889f-ed754693bd82",
+      "teacherId": "08faa0a8-6999-40d4-84c1-ba60787923df",
+      "updatedAt": "2026-07-15T05:31:30.304Z"
+    },
+    "created_at": "2026-07-15T05:31:30.417Z",
+    "updated_at": "2026-07-15T05:31:30.304Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "73b98053-5168-492b-8bea-c2fb00bc01bd",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"Jack\" (student)",
+      "newValue": {
+        "role": "student",
+        "email": "1b072026@school.edu",
+        "displayName": "Jack"
+      },
+      "oldValue": null,
+      "targetId": "77877c1d-1faf-4dc6-aa8e-c280af23524b",
+      "timestamp": "2026-07-15T05:31:49.505Z",
+      "targetName": "Jack",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-15T05:31:49.564Z",
+    "updated_at": "2026-07-15T05:31:49.564Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "ad447e45-8bc7-4f69-88a6-41d9f0fd8b82",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"Jameson \" (student)",
+      "newValue": {
+        "role": "student",
+        "email": "1a032026@school.edu",
+        "displayName": "Jameson "
+      },
+      "oldValue": null,
+      "targetId": "18092a43-7d5c-4bc5-a35e-af0ab20f5bd6",
+      "timestamp": "2026-07-15T10:05:33.627Z",
+      "targetName": "Jameson ",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-15T10:05:33.717Z",
+    "updated_at": "2026-07-15T10:05:33.717Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "11e8ea2f-375a-471f-94f7-129ac25918f1",
+    "data": {
+      "action": "subject.create",
+      "summary": "Created subject \"Social\" (SOC)",
+      "newValue": {
+        "code": "SOC",
+        "icon": "menu_book",
+        "name": "Social",
+        "classId": "5f411eb1-1ba4-49df-8665-8bb429edb757",
+        "category": "STEM"
+      },
+      "oldValue": null,
+      "targetId": "0c77f815-fbf4-434c-a252-629c437d0e03",
+      "timestamp": "2026-07-15T10:05:50.482Z",
+      "targetName": "Social",
+      "targetType": "subject",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System Admin",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-15T10:05:51.320Z",
+    "updated_at": "2026-07-15T10:05:51.320Z"
+  },
+  {
+    "collection": "teacherClassSubject",
+    "doc_id": "27d0ba38-c080-4dfe-9403-8f1623cad03c",
+    "data": {
+      "classId": "5f411eb1-1ba4-49df-8665-8bb429edb757",
+      "createdAt": "2026-07-15T10:06:03.503Z",
+      "subjectId": "0c77f815-fbf4-434c-a252-629c437d0e03",
+      "teacherId": "08faa0a8-6999-40d4-84c1-ba60787923df",
+      "updatedAt": "2026-07-15T10:06:03.503Z"
+    },
+    "created_at": "2026-07-15T10:06:03.595Z",
+    "updated_at": "2026-07-15T10:06:03.503Z"
+  },
+  {
+    "collection": "gamificationProfiles",
+    "doc_id": "05371cfb-a16c-4a11-95ac-a7b3b4dbb0bb",
+    "data": {
+      "xp": 15,
+      "coins": 3,
+      "level": 1,
+      "badges": [
+        "level_1"
+      ],
+      "streak": 1,
+      "userId": "05371cfb-a16c-4a11-95ac-a7b3b4dbb0bb",
+      "createdAt": "2026-07-11T14:49:12.026Z",
+      "updatedAt": "2026-07-15T12:54:22.114Z",
+      "perfectScores": 0,
+      "lastActiveDate": "2026-07-15",
+      "lessonsCompleted": 0,
+      "highAccuracyCount": 0,
+      "challengesCompleted": 0,
+      "codingProjectsCompleted": 0,
+      "codingChallengesCompleted": 0
+    },
+    "created_at": "2026-07-11T14:49:12.293Z",
+    "updated_at": "2026-07-15T12:54:22.114Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "7cc83963-2662-40d7-913a-1f5d7aa1fb74",
+    "data": {
+      "action": "class.create",
+      "summary": "Created class \"5th class\" (G5)",
+      "newValue": {
+        "code": "G5",
+        "name": "5th class",
+        "grade": "5",
+        "section": "",
+        "roomNumber": ""
+      },
+      "oldValue": null,
+      "targetId": "5a402059-0722-4eca-8a64-ab826090e2e4",
+      "timestamp": "2026-07-15T13:03:04.797Z",
+      "targetName": "5th class",
+      "targetType": "class",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System Admin",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-15T13:03:04.932Z",
+    "updated_at": "2026-07-15T13:03:04.932Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "66aa063e-d6ae-4580-8670-4401d070473b",
+    "data": {
+      "action": "class.delete",
+      "summary": "Permanently deleted class \"3rd class\" along with its students and related data.",
+      "newValue": null,
+      "oldValue": null,
+      "targetId": "0d13cd49-458a-4e5f-aa2b-6301ce025d10",
+      "timestamp": "2026-07-15T14:56:15.675Z",
+      "targetName": "3rd class",
+      "targetType": "class",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System Admin",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-15T14:56:16.489Z",
+    "updated_at": "2026-07-15T14:56:16.489Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "5ba29416-1179-4ccd-adb3-100662543022",
+    "data": {
+      "action": "subject.create",
+      "summary": "Created subject \"Maths\" (MAT)",
+      "newValue": {
+        "code": "MAT",
+        "icon": "calculate",
+        "name": "Maths",
+        "classId": "5a402059-0722-4eca-8a64-ab826090e2e4",
+        "category": "STEM"
+      },
+      "oldValue": null,
+      "targetId": "f05e6e5f-4052-4157-93d5-7768e3f92d23",
+      "timestamp": "2026-07-15T13:03:23.249Z",
+      "targetName": "Maths",
+      "targetType": "subject",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System Admin",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-15T13:03:23.326Z",
+    "updated_at": "2026-07-15T13:03:23.326Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "ab43938b-101d-48b2-83c6-fa8fa45531e4",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"Rana\" (teacher)",
+      "newValue": {
+        "role": "teacher",
+        "email": "viranadeep@gmail.com",
+        "displayName": "Rana"
+      },
+      "oldValue": null,
+      "targetId": "3ad9fa00-6ae4-454a-8d03-724c02cb1b00",
+      "timestamp": "2026-07-15T13:03:47.601Z",
+      "targetName": "Rana",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-15T13:03:47.680Z",
+    "updated_at": "2026-07-15T13:03:47.680Z"
+  },
+  {
+    "collection": "teacherClassSubject",
+    "doc_id": "e41741e6-8803-4e5c-8dc9-7c3f3b36ed6b",
+    "data": {
+      "classId": "5a402059-0722-4eca-8a64-ab826090e2e4",
+      "createdAt": "2026-07-15T13:04:10.440Z",
+      "subjectId": "f05e6e5f-4052-4157-93d5-7768e3f92d23",
+      "teacherId": "3ad9fa00-6ae4-454a-8d03-724c02cb1b00",
+      "updatedAt": "2026-07-15T13:04:10.440Z"
+    },
+    "created_at": "2026-07-15T13:04:10.562Z",
+    "updated_at": "2026-07-15T13:04:10.440Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "0d81dd88-671c-4c3d-a72a-909e9f20c0e7",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"Doe\" (student)",
+      "newValue": {
+        "role": "student",
+        "email": "5012026@school.edu",
+        "displayName": "Doe"
+      },
+      "oldValue": null,
+      "targetId": "41d827a7-4de8-4c32-9471-317b798b4b06",
+      "timestamp": "2026-07-15T13:04:30.812Z",
+      "targetName": "Doe",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-15T13:04:30.880Z",
+    "updated_at": "2026-07-15T13:04:30.880Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "02c9344b-45b5-4549-bc61-dba3bd292fd9",
+    "data": {
+      "action": "class.create",
+      "summary": "Created class \"3rd class\" (G3A)",
+      "newValue": {
+        "code": "G3A",
+        "name": "3rd class",
+        "grade": "3",
+        "section": "A",
+        "roomNumber": ""
+      },
+      "oldValue": null,
+      "targetId": "0d13cd49-458a-4e5f-aa2b-6301ce025d10",
+      "timestamp": "2026-07-15T13:10:45.381Z",
+      "targetName": "3rd class",
+      "targetType": "class",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System Admin",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-15T13:10:46.218Z",
+    "updated_at": "2026-07-15T13:10:46.218Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "b4ab368f-4a2c-4597-b23d-b863f0f3ba0a",
+    "data": {
+      "action": "class.delete",
+      "summary": "Permanently deleted class \"5th class\" along with its students and related data.",
+      "newValue": null,
+      "oldValue": null,
+      "targetId": "5a402059-0722-4eca-8a64-ab826090e2e4",
+      "timestamp": "2026-07-15T14:56:10.885Z",
+      "targetName": "5th class",
+      "targetType": "class",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System Admin",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-15T14:56:11.680Z",
+    "updated_at": "2026-07-15T14:56:11.680Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "abda6e1c-5572-47bd-ac64-7b3623229805",
+    "data": {
+      "action": "subject.create",
+      "summary": "Created subject \"Eng\" (ENG)",
+      "newValue": {
+        "code": "ENG",
+        "icon": "menu_book",
+        "name": "Eng",
+        "classId": "0d13cd49-458a-4e5f-aa2b-6301ce025d10",
+        "category": "STEM"
+      },
+      "oldValue": null,
+      "targetId": "82225234-1344-4910-b8ef-a75b0268dae8",
+      "timestamp": "2026-07-15T13:10:58.513Z",
+      "targetName": "Eng",
+      "targetType": "subject",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System Admin",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-15T13:10:59.320Z",
+    "updated_at": "2026-07-15T13:10:59.320Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "0ba82e8b-7643-4ef8-a24c-0ce7472a3fbd",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"Tim\" (teacher)",
+      "newValue": {
+        "role": "teacher",
+        "email": "tim@school.edu",
+        "displayName": "Tim"
+      },
+      "oldValue": null,
+      "targetId": "5a504045-c28f-456c-881c-a977817a5128",
+      "timestamp": "2026-07-15T13:11:36.182Z",
+      "targetName": "Tim",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-15T13:11:36.253Z",
+    "updated_at": "2026-07-15T13:11:36.253Z"
+  },
+  {
+    "collection": "teacherClassSubject",
+    "doc_id": "b5dda2d4-012e-48dc-b8ca-7a1beeea4a49",
+    "data": {
+      "classId": "0d13cd49-458a-4e5f-aa2b-6301ce025d10",
+      "createdAt": "2026-07-15T13:12:14.403Z",
+      "subjectId": "82225234-1344-4910-b8ef-a75b0268dae8",
+      "teacherId": "5a504045-c28f-456c-881c-a977817a5128",
+      "updatedAt": "2026-07-15T13:12:14.403Z"
+    },
+    "created_at": "2026-07-15T13:12:14.522Z",
+    "updated_at": "2026-07-15T13:12:14.403Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "f9c46820-bcff-4dba-b326-d244c8320dcf",
+    "data": {
+      "action": "user.create",
+      "summary": "Created user \"Julie\" (student)",
+      "newValue": {
+        "role": "student",
+        "email": "3a012026@school.edu",
+        "displayName": "Julie"
+      },
+      "oldValue": null,
+      "targetId": "b1b7a56b-ac23-4b35-801a-f8405e1d3dca",
+      "timestamp": "2026-07-15T13:12:32.501Z",
+      "targetName": "Julie",
+      "targetType": "user",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-15T13:12:32.564Z",
+    "updated_at": "2026-07-15T13:12:32.564Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "bfb006bd-fc0e-4f1c-9101-85c2b9b1c818",
+    "data": {
+      "action": "class.delete",
+      "summary": "Permanently deleted class \"1st class\" along with its students and related data.",
+      "newValue": null,
+      "oldValue": null,
+      "targetId": "5f411eb1-1ba4-49df-8665-8bb429edb757",
+      "timestamp": "2026-07-15T14:55:58.043Z",
+      "targetName": "1st class",
+      "targetType": "class",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System Admin",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-15T14:55:58.919Z",
+    "updated_at": "2026-07-15T14:55:58.919Z"
+  },
+  {
+    "collection": "gamificationTransactions",
+    "doc_id": "e2db5cf3-7e1b-4f37-8e28-ef50174db3f5",
+    "data": {
+      "type": "xp",
+      "amount": 15,
+      "source": "Completed quiz: Q1",
+      "userId": "b1b7a56b-ac23-4b35-801a-f8405e1d3dca",
+      "createdAt": "2026-07-15T14:05:54.042Z"
+    },
+    "created_at": "2026-07-15T14:05:54.113Z",
+    "updated_at": "2026-07-15T14:05:54.042Z"
+  },
+  {
+    "collection": "gamificationTransactions",
+    "doc_id": "fcd3d678-1a99-4d16-922a-e5a6d0e4d877",
+    "data": {
+      "type": "coin",
+      "amount": 10,
+      "source": "High accuracy (92%) on Q1",
+      "userId": "b1b7a56b-ac23-4b35-801a-f8405e1d3dca",
+      "createdAt": "2026-07-15T14:05:55.653Z"
+    },
+    "created_at": "2026-07-15T14:05:55.720Z",
+    "updated_at": "2026-07-15T14:05:55.653Z"
+  },
+  {
+    "collection": "gamificationTransactions",
+    "doc_id": "319493d0-7d1e-4a09-be23-9dab41718bfe",
+    "data": {
+      "type": "coin",
+      "amount": 3,
+      "source": "Completed quiz: Q1",
+      "userId": "b1b7a56b-ac23-4b35-801a-f8405e1d3dca",
+      "createdAt": "2026-07-15T14:05:54.548Z"
+    },
+    "created_at": "2026-07-15T14:05:54.641Z",
+    "updated_at": "2026-07-15T14:05:54.548Z"
+  },
+  {
+    "collection": "quizV2",
+    "doc_id": "89b74cbb-10c5-444b-933a-59d64fb13c1f",
+    "data": {
+      "id": "89b74cbb-10c5-444b-933a-59d64fb13c1f",
+      "title": "Q1",
+      "classId": "0d13cd49-458a-4e5f-aa2b-6301ce025d10",
+      "schoolId": "00000000-0000-0000-0000-000000000001",
+      "chapterId": "4dd37f29-0d5e-475a-bfcb-138f29720747",
+      "conceptId": "c110b281-01c6-4bc5-98f3-e1f2dfbfdf8d",
+      "createdAt": "2026-07-15T14:02:26.681Z",
+      "questions": [
+        {
+          "id": "a4c902dd-8895-4849-9ad2-7aec3990e328",
+          "text": "Which greeting is most appropriate to use at 9:00 AM?",
+          "type": "mcq",
+          "points": 2,
+          "options": [
+            "Good morning",
+            "Good afternoon",
+            "Good evening",
+            "Good night"
+          ],
+          "difficulty": "easy",
+          "explanation": "Good morning is used from sunrise until noon.",
+          "correctAnswer": "Good morning"
+        },
+        {
+          "id": "5c739ca9-2305-44d9-addd-af873b0cf688",
+          "text": "If you meet someone at 3:00 PM, what is the correct greeting?",
+          "type": "mcq",
+          "points": 2,
+          "options": [
+            "Good morning",
+            "Good afternoon",
+            "Good evening",
+            "Good night"
+          ],
+          "difficulty": "easy",
+          "explanation": "Good afternoon is used between noon and sunset.",
+          "correctAnswer": "Good afternoon"
+        },
+        {
+          "id": "19f710e8-1c96-4a37-aeb8-e58d7cb681fe",
+          "text": "Which greeting is typically used when arriving at a dinner party at 7:00 PM?",
+          "type": "mcq",
+          "points": 2,
+          "options": [
+            "Good morning",
+            "Good afternoon",
+            "Good evening",
+            "Good night"
+          ],
+          "difficulty": "easy",
+          "explanation": "Good evening is used from sunset until bedtime.",
+          "correctAnswer": "Good evening"
+        },
+        {
+          "id": "3aa7b27f-d2d8-4432-8b02-d4b893e7749a",
+          "text": "True or False: 'Good night' is a greeting used when you arrive at a friend's house at 10:00 PM.",
+          "type": "true_false",
+          "points": 2,
+          "options": [
+            "True",
+            "False"
+          ],
+          "difficulty": "medium",
+          "explanation": "'Good night' is used as a farewell, not a greeting.",
+          "correctAnswer": "False"
+        },
+        {
+          "id": "1ff03867-6884-4eef-aaf4-f2aa3c2194fa",
+          "text": "True or False: 'Good morning' is appropriate to use until 12:00 PM.",
+          "type": "true_false",
+          "points": 2,
+          "options": [
+            "True",
+            "False"
+          ],
+          "difficulty": "easy",
+          "explanation": "Morning transitions to afternoon at exactly noon.",
+          "correctAnswer": "True"
+        },
+        {
+          "id": "bd73fb71-cdcf-4a10-b81c-1aa9446759d7",
+          "text": "True or False: You should use 'Good afternoon' if you meet someone at 11:00 AM.",
+          "type": "true_false",
+          "points": 2,
+          "options": [
+            "True",
+            "False"
+          ],
+          "difficulty": "easy",
+          "explanation": "11:00 AM is still considered morning.",
+          "correctAnswer": "False"
+        },
+        {
+          "id": "8f495a96-bd0c-4848-aaa0-afdb865a29c2",
+          "text": "Which greeting is most appropriate to use at 9:00 AM?",
+          "type": "mcq",
+          "points": 1,
+          "options": [
+            "Good morning",
+            "Good afternoon",
+            "Good evening",
+            "Good night"
+          ],
+          "difficulty": "easy",
+          "explanation": "Good morning is used from sunrise until noon.",
+          "correctAnswer": "Good morning"
+        },
+        {
+          "id": "ec9b4043-a732-462a-a986-2f2a589d95ca",
+          "text": "You should use 'Good afternoon' when meeting someone at 3:00 PM.",
+          "type": "true_false",
+          "points": 1,
+          "options": [
+            "True",
+            "False",
+            null,
+            null
+          ],
+          "difficulty": "easy",
+          "explanation": "Good afternoon is typically used between 12:00 PM and 5:00 PM.",
+          "correctAnswer": "True"
+        },
+        {
+          "id": "0316ea99-ac16-40b4-b435-b6572468f041",
+          "text": "If you are leaving a friend's house at 10:00 PM, which phrase is the most natural to say?",
+          "type": "mcq",
+          "points": 2,
+          "options": [
+            "Good morning",
+            "Good afternoon",
+            "Good evening",
+            "Good night"
+          ],
+          "difficulty": "medium",
+          "explanation": "Good night is used as a farewell when leaving or going to sleep, especially late in the evening.",
+          "correctAnswer": "Good night"
+        },
+        {
+          "id": "9eebb927-fb0c-445f-9f21-f6f4d45defa9",
+          "text": "'Good evening' is a common greeting used when arriving at a dinner party at 7:00 PM.",
+          "type": "true_false",
+          "points": 2,
+          "options": [
+            "True",
+            "False",
+            null,
+            null
+          ],
+          "difficulty": "medium",
+          "explanation": "Good evening is the standard greeting used after sunset or during the evening hours.",
+          "correctAnswer": "True"
+        }
+      ],
+      "subjectId": "82225234-1344-4910-b8ef-a75b0268dae8",
+      "teacherId": "5a504045-c28f-456c-881c-a977817a5128",
+      "updatedAt": "2026-07-15T14:04:48.051Z",
+      "releasedAt": "2026-07-15T14:02:35.364Z",
+      "textbookId": "7ed94542-a0cb-471b-b746-8c8b2bced5f3",
+      "description": "",
+      "maxAttempts": 2,
+      "publishedTo": "class",
+      "showResults": true,
+      "totalPoints": 18,
+      "attemptCount": 1,
+      "passingScore": 50,
+      "questionCount": 10,
+      "selectedModels": [
+        "multiple_choice",
+        "true_false"
+      ],
+      "shuffleQuestions": true,
+      "targetStudentIds": [],
+      "timeLimitMinutes": 30
+    },
+    "created_at": "2026-07-15T14:02:26.747Z",
+    "updated_at": "2026-07-15T14:04:48.302Z"
+  },
+  {
+    "collection": "quizAttemptV2",
+    "doc_id": "1f5d1847-73a2-403a-9269-e8e5d7d1e54f",
+    "data": {
+      "id": "1f5d1847-73a2-403a-9269-e8e5d7d1e54f",
+      "level": "beginner",
+      "score": 12,
+      "passed": true,
+      "quizId": "89b74cbb-10c5-444b-933a-59d64fb13c1f",
+      "status": "completed",
+      "answers": [
+        {
+          "answer": "Good evening",
+          "isCorrect": true,
+          "timeSpent": 14,
+          "questionId": "19f710e8-1c96-4a37-aeb8-e58d7cb681fe",
+          "explanation": "Good evening is used from sunset until bedtime.",
+          "pointsEarned": 1,
+          "questionText": "Which greeting is typically used when arriving at a dinner party at 7:00 PM?",
+          "correctAnswer": "Good evening"
+        },
+        {
+          "answer": "Good afternoon",
+          "isCorrect": true,
+          "timeSpent": 7,
+          "questionId": "5c739ca9-2305-44d9-addd-af873b0cf688",
+          "explanation": "Good afternoon is used between noon and sunset.",
+          "pointsEarned": 1,
+          "questionText": "If you meet someone at 3:00 PM, what is the correct greeting?",
+          "correctAnswer": "Good afternoon"
+        },
+        {
+          "answer": "False",
+          "isCorrect": false,
+          "timeSpent": 3,
+          "questionId": "1ff03867-6884-4eef-aaf4-f2aa3c2194fa",
+          "explanation": "Morning transitions to afternoon at exactly noon.",
+          "pointsEarned": 0,
+          "questionText": "True or False: 'Good morning' is appropriate to use until 12:00 PM.",
+          "correctAnswer": "True"
+        },
+        {
+          "answer": "Good morning",
+          "isCorrect": true,
+          "timeSpent": 3,
+          "questionId": "a4c902dd-8895-4849-9ad2-7aec3990e328",
+          "explanation": "Good morning is used from sunrise until noon.",
+          "pointsEarned": 1,
+          "questionText": "Which greeting is most appropriate to use at 9:00 AM?",
+          "correctAnswer": "Good morning"
+        },
+        {
+          "answer": "False",
+          "isCorrect": true,
+          "timeSpent": 6,
+          "questionId": "3aa7b27f-d2d8-4432-8b02-d4b893e7749a",
+          "explanation": "'Good night' is used as a farewell, not a greeting.",
+          "pointsEarned": 2,
+          "questionText": "True or False: 'Good night' is a greeting used when you arrive at a friend's house at 10:00 PM.",
+          "correctAnswer": "False"
+        },
+        {
+          "answer": "Good night",
+          "isCorrect": true,
+          "timeSpent": 6,
+          "questionId": "0316ea99-ac16-40b4-b435-b6572468f041",
+          "explanation": "Good night is used as a farewell when leaving or going to sleep, especially late in the evening.",
+          "pointsEarned": 2,
+          "questionText": "If you are leaving a friend's house at 10:00 PM, which phrase is the most natural to say?",
+          "correctAnswer": "Good night"
+        },
+        {
+          "answer": "False",
+          "isCorrect": true,
+          "timeSpent": 5,
+          "questionId": "bd73fb71-cdcf-4a10-b81c-1aa9446759d7",
+          "explanation": "11:00 AM is still considered morning.",
+          "pointsEarned": 1,
+          "questionText": "True or False: You should use 'Good afternoon' if you meet someone at 11:00 AM.",
+          "correctAnswer": "False"
+        },
+        {
+          "answer": "True",
+          "isCorrect": true,
+          "timeSpent": 2,
+          "questionId": "ec9b4043-a732-462a-a986-2f2a589d95ca",
+          "explanation": "Good afternoon is typically used between 12:00 PM and 5:00 PM.",
+          "pointsEarned": 1,
+          "questionText": "You should use 'Good afternoon' when meeting someone at 3:00 PM.",
+          "correctAnswer": "True"
+        },
+        {
+          "answer": "True",
+          "isCorrect": true,
+          "timeSpent": 6,
+          "questionId": "9eebb927-fb0c-445f-9f21-f6f4d45defa9",
+          "explanation": "Good evening is the standard greeting used after sunset or during the evening hours.",
+          "pointsEarned": 2,
+          "questionText": "'Good evening' is a common greeting used when arriving at a dinner party at 7:00 PM.",
+          "correctAnswer": "True"
+        },
+        {
+          "answer": "Good morning",
+          "isCorrect": true,
+          "timeSpent": 6,
+          "questionId": "8f495a96-bd0c-4848-aaa0-afdb865a29c2",
+          "explanation": "Good morning is used from sunrise until noon.",
+          "pointsEarned": 1,
+          "questionText": "Which greeting is most appropriate to use at 9:00 AM?",
+          "correctAnswer": "Good morning"
+        }
+      ],
+      "startedAt": "2026-07-15T14:04:48.051Z",
+      "studentId": "b1b7a56b-ac23-4b35-801a-f8405e1d3dca",
+      "timeSpent": 58,
+      "percentage": 92,
+      "showResults": true,
+      "submittedAt": "2026-07-15T14:05:52.226Z",
+      "totalPoints": 13,
+      "selectedModels": [
+        "multiple_choice",
+        "true_false"
+      ]
+    },
+    "created_at": "2026-07-15T14:04:48.116Z",
+    "updated_at": "2026-07-15T14:05:52.776Z"
+  },
+  {
+    "collection": "grades",
+    "doc_id": "1a464eae-47a1-4325-849a-a13b6ffabe8f",
+    "data": {
+      "score": 12,
+      "classId": "0d13cd49-458a-4e5f-aa2b-6301ce025d10",
+      "gradedBy": "auto",
+      "itemName": "Q1",
+      "createdAt": "2026-07-15T14:05:52.923Z",
+      "studentId": "b1b7a56b-ac23-4b35-801a-f8405e1d3dca",
+      "subjectId": "82225234-1344-4910-b8ef-a75b0268dae8",
+      "updatedAt": "2026-07-15T14:05:52.923Z",
+      "percentage": 92,
+      "totalPoints": 13
+    },
+    "created_at": "2026-07-15T14:05:53.003Z",
+    "updated_at": "2026-07-15T14:05:53.003Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "5bd13b4e-1dd8-40fa-b2fe-7c806b76684e",
+    "data": {
+      "action": "class.delete",
+      "summary": "Permanently deleted class \"1st class\" along with its students and related data.",
+      "newValue": null,
+      "oldValue": null,
+      "targetId": "45812194-0f73-47f3-b8ec-e1ea5e588f9c",
+      "timestamp": "2026-07-15T14:56:02.754Z",
+      "targetName": "1st class",
+      "targetType": "class",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System Admin",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-15T14:56:03.561Z",
+    "updated_at": "2026-07-15T14:56:03.561Z"
+  },
+  {
+    "collection": "gamificationProfiles",
+    "doc_id": "b1b7a56b-ac23-4b35-801a-f8405e1d3dca",
+    "data": {
+      "xp": 65,
+      "coins": 13,
+      "level": 1,
+      "badges": [
+        "level_1"
+      ],
+      "streak": 1,
+      "userId": "b1b7a56b-ac23-4b35-801a-f8405e1d3dca",
+      "createdAt": "2026-07-15T14:05:53.191Z",
+      "updatedAt": "2026-07-15T14:05:56.032Z",
+      "perfectScores": 0,
+      "lastActiveDate": "2026-07-15",
+      "lessonsCompleted": 0,
+      "highAccuracyCount": 1,
+      "challengesCompleted": 0,
+      "codingProjectsCompleted": 0,
+      "codingChallengesCompleted": 0
+    },
+    "created_at": "2026-07-15T14:05:53.303Z",
+    "updated_at": "2026-07-15T14:05:56.032Z"
+  },
+  {
+    "collection": "gamificationTransactions",
+    "doc_id": "2df138ea-8279-411c-9519-a986439911fb",
+    "data": {
+      "type": "xp",
+      "amount": 50,
+      "source": "High accuracy (92%) on Q1",
+      "userId": "b1b7a56b-ac23-4b35-801a-f8405e1d3dca",
+      "createdAt": "2026-07-15T14:05:55.091Z"
+    },
+    "created_at": "2026-07-15T14:05:55.159Z",
+    "updated_at": "2026-07-15T14:05:55.091Z"
+  },
+  {
+    "collection": "auditLogs",
+    "doc_id": "314336f8-3263-4926-b5a5-e80b2142230f",
+    "data": {
+      "action": "class.delete",
+      "summary": "Permanently deleted class \"2nd class\" along with its students and related data.",
+      "newValue": null,
+      "oldValue": null,
+      "targetId": "279aaf93-91df-4936-bec9-f302f45a8a28",
+      "timestamp": "2026-07-15T14:56:06.891Z",
+      "targetName": "2nd class",
+      "targetType": "class",
+      "performedBy": "c686d7ba-067d-4b66-9ce8-3d3803f28ce7",
+      "performedByName": "System Admin",
+      "performedByRole": "admin"
+    },
+    "created_at": "2026-07-15T14:56:07.683Z",
+    "updated_at": "2026-07-15T14:56:07.683Z"
+  }
+]

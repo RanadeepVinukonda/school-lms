@@ -1,0 +1,3350 @@
+[
+  {
+    "id": "fd1759cd-8515-4993-8bf2-fbc6b1eeed57",
+    "chapter_id": "87be86f6-cd51-4f11-bf12-78462a75d9e8",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Personal hygiene (washing hands)",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/IisgnbMfKvI"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "49a70e6d-16f2-4e32-9672-5f9e6ce3db2b",
+    "chapter_id": "ecc1e67e-f5c2-43b3-ae6b-f7a718affc2a",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Head, shoulders, knees, and toes",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/cz0XVEavZok"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "1d67f3a9-5be7-4134-96d7-dac5d0c58a01",
+    "chapter_id": "87be86f6-cd51-4f11-bf12-78462a75d9e8",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Body parts vocabulary",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/gNAo43v7QYs"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "dd7a930b-24f5-425d-a1a1-59410bd97d95",
+    "chapter_id": "87be86f6-cd51-4f11-bf12-78462a75d9e8",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Sensory functions",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/T08PmnRiGCo"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "c0d0f48a-fd2b-4a72-95e2-6e5caa801e45",
+    "chapter_id": "87be86f6-cd51-4f11-bf12-78462a75d9e8",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Alphabet song and phonics",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/tKsIi1MH4lw"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "73322dcd-5b7c-4470-bf7f-178a2e40b272",
+    "chapter_id": "ecc1e67e-f5c2-43b3-ae6b-f7a718affc2a",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Body part identification",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/T5S8rO3AmWI"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "a847c1f1-77b7-4b23-a6e4-38da7ef4f02a",
+    "chapter_id": "ecc1e67e-f5c2-43b3-ae6b-f7a718affc2a",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Interactive singing and movement",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/hs0yqhKPOi8"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "0a21b2c6-3aff-42f0-a34a-26868e550d11",
+    "chapter_id": "ecc1e67e-f5c2-43b3-ae6b-f7a718affc2a",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Vocabulary reinforcement",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/38JeYKqOZ_g"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "b5c46571-73d0-43d6-ad8c-05baacb4e37d",
+    "chapter_id": "c5fa5c34-f0e1-4d15-9f5c-6726afd0b78c",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Animal and bird identification",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/BTW4xA-iAds"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "aae689eb-a597-466a-9fcc-a4d459608d6a",
+    "chapter_id": "969565c9-e0de-4947-97f1-8bb2f89ba15c",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Body parts vocabulary",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/SUt8q0EKbms"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "6c847f83-e32e-4c5c-9a89-bde84ada51e7",
+    "chapter_id": "c5fa5c34-f0e1-4d15-9f5c-6726afd0b78c",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Visual observation skills",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/XDLJAfDR4fM"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "dadc86bf-3be4-41c0-8298-5d23f8305caa",
+    "chapter_id": "969565c9-e0de-4947-97f1-8bb2f89ba15c",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Action verbs related to body movement",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/wSrPSzduXNI"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "640a15a8-34cb-4578-8b57-362b6b54ffab",
+    "chapter_id": "c5fa5c34-f0e1-4d15-9f5c-6726afd0b78c",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "English naming conventions for animals",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/slbYHtp9pZ8"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "f24544b9-d51f-4ccb-a50a-4b68ddd4212c",
+    "chapter_id": "969565c9-e0de-4947-97f1-8bb2f89ba15c",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Alphabet phonics and letter tracing",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/xg4_gWt8N_Q"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "12155189-2b60-466d-8f14-06b466999522",
+    "chapter_id": "c5fa5c34-f0e1-4d15-9f5c-6726afd0b78c",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Descriptive language",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/IwQlR2uyMJg"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "333cc94a-e354-43b3-8cb1-a6229ccfa46d",
+    "chapter_id": "969565c9-e0de-4947-97f1-8bb2f89ba15c",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Personal hygiene practice (washing hands)",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/T98gqC-yanU"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "0a34c25a-bca4-4428-9ac3-267b7c548fe5",
+    "chapter_id": "3e25f235-42ff-4f10-a595-6566d28e6315",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Morning, afternoon, and evening greetings",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/sQQzFYStPC0"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "39a112f1-1816-4881-b32a-5421fde93d39",
+    "chapter_id": "3e25f235-42ff-4f10-a595-6566d28e6315",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Polite social interaction",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/StUvWxYzAbC"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "22c79203-d50b-484f-b5c2-5e6f4aee0314",
+    "chapter_id": "3e25f235-42ff-4f10-a595-6566d28e6315",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Action words (combing, eating, walking)",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/_DiJsdGC2U8"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "72d449ba-5f83-4e4f-b442-b656146b946f",
+    "chapter_id": "3e25f235-42ff-4f10-a595-6566d28e6315",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Alphabet writing practice",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/lMnOpQrStUv"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "6b0ccbb3-4551-44b1-8d94-76c8077b1d33",
+    "chapter_id": "59eeeed7-24f0-434b-9704-57a833b44b25",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Family member vocabulary",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/24GWC1dDyUM"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "7637c9f5-d787-41d0-aaa6-a56b7bba836a",
+    "chapter_id": "59eeeed7-24f0-434b-9704-57a833b44b25",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Sparrow family story",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/wTukAYMh6hM"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "1b971bda-7353-4366-92ba-af2d2391bbb5",
+    "chapter_id": "59eeeed7-24f0-434b-9704-57a833b44b25",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Puppet making and storytelling",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/LSCJPCFz1ts"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "32292ad8-8612-425a-aa48-6f1efa1f15fd",
+    "chapter_id": "995c7ac1-7af3-4bb1-972d-fa9f0ec2f87b",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Story sequencing",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/qPXiDCuLOvo"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "4e867c11-2221-4ca8-b121-445596cf9774",
+    "chapter_id": "995c7ac1-7af3-4bb1-972d-fa9f0ec2f87b",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Initial sound identification",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/O3_Tuls-AD0"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "f29bdd04-da14-45eb-963f-e51f97703ed8",
+    "chapter_id": "995c7ac1-7af3-4bb1-972d-fa9f0ec2f87b",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Alphabet and word formation",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/chTTFr5M_aE"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "4a806e00-30fc-4f49-8dae-829840e12880",
+    "chapter_id": "72537571-ca01-4afc-b7af-7d048be03d04",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Rhythmic clapping and speaking",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/A2s-S2hpKJo"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "f6c02b52-a650-4178-b658-91ec8b1abcb7",
+    "chapter_id": "72537571-ca01-4afc-b7af-7d048be03d04",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Syllable counting",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/3PHezrjobKI"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "f8949ee9-f190-4958-947d-a856350457ab",
+    "chapter_id": "72537571-ca01-4afc-b7af-7d048be03d04",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Vocabulary building",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/y0em7H1JIh4"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "91d6ec62-d91c-42a1-80f6-5ae17f8e61b2",
+    "chapter_id": "dc7befb9-dd7a-423b-a834-035eb99c7452",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Action verbs",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/Ek2bm6qnpAo"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "a35e187a-b3c8-4d69-b438-b4ba8b2cacc3",
+    "chapter_id": "dc7befb9-dd7a-423b-a834-035eb99c7452",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Mask making and role-play",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/s0JALrSp7ss"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "f197d670-049d-44de-b116-da86635fa1ad",
+    "chapter_id": "dc7befb9-dd7a-423b-a834-035eb99c7452",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Listening and following instructions",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/t2z9mdX1j4A"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "7252c517-684b-49aa-b3df-b20feddbad75",
+    "chapter_id": "a89e282b-1aea-4a46-b116-104d790eb322",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Animal sounds",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/DFuYcjBqyHg"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "b8939d52-5920-4ed5-8d51-e560ebbe7ddd",
+    "chapter_id": "a89e282b-1aea-4a46-b116-104d790eb322",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Descriptive colors and features",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/Jq9juAScEdg"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "fbd472ac-1bc8-40bc-9911-2603a0cb164b",
+    "chapter_id": "b30046ce-e770-43f9-895f-e2c69a19ed9a",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Head, shoulders, knees, and toes song",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/ZanHgPprl-0"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "4eccd120-51d2-4f1d-be47-78fe0d8b41be",
+    "chapter_id": "b30046ce-e770-43f9-895f-e2c69a19ed9a",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Sensory functions of body parts",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/K33PTcSP6rc"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "9f0412b3-91ab-4076-801f-9570534dd5ac",
+    "chapter_id": "b30046ce-e770-43f9-895f-e2c69a19ed9a",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Interactive pair work for identification",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/E7vSszxvf4c"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "01b8ca3c-28bb-44d2-be11-7d0a36d99a00",
+    "chapter_id": "b30046ce-e770-43f9-895f-e2c69a19ed9a",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Matching body parts to images",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/8TE5msds6Bc"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "d4f0bfcf-0ffd-4cdd-bda3-0981f857ca8c",
+    "chapter_id": "59eeeed7-24f0-434b-9704-57a833b44b25",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Family roles and helping",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/834SHnlSLRc"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "875853eb-0ca5-465d-b3ba-5f6f23b3aab5",
+    "chapter_id": "cbe17873-3b09-4829-b769-adbf9cb850ef",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Animal identification",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/tm-Z0gCWsgI"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "e50ab1bb-e2e7-48f6-9ef5-366d25fb14bf",
+    "chapter_id": "cbe17873-3b09-4829-b769-adbf9cb850ef",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Habitat discussion",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/oOczBXfbxbU"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "5f025d76-2385-440b-8879-a680c0b237b1",
+    "chapter_id": "cbe17873-3b09-4829-b769-adbf9cb850ef",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Counting and number rhymes",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/Nh1QeH7PL5Y"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "34829406-0002-4741-8af5-4115fd71e458",
+    "chapter_id": "cbe17873-3b09-4829-b769-adbf9cb850ef",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Alphabetical order and drawing",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/z9tqxFdmx5k"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "abc605b5-c4d3-481a-bf23-cc30aaa2fe24",
+    "chapter_id": "995c7ac1-7af3-4bb1-972d-fa9f0ec2f87b",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Reading comprehension",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/8Y8Mb2RuvDM"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "f4a9092e-0bd7-4d12-ad26-d07fd58578e0",
+    "chapter_id": "7724c95f-3200-4c19-8936-cd190ec9eff8",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Time-based greetings (Good morning, afternoon, evening, night)",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/RKv_SyxN3UQ"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "b974150d-d55f-4b72-bdf3-ef168898f3eb",
+    "chapter_id": "7724c95f-3200-4c19-8936-cd190ec9eff8",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Action words (combing, eating, walking)",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/4c6FyuetSVo"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "207ade4e-e004-42b3-83f4-b0858ee2ecb4",
+    "chapter_id": "7724c95f-3200-4c19-8936-cd190ec9eff8",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Letter writing and initial sound practice",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/hdrrourl_6s"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "70243cde-d965-4cd8-9983-a1f4fa0ce5ee",
+    "chapter_id": "72537571-ca01-4afc-b7af-7d048be03d04",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Spatial concepts (up, down, in, out)",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/2UXmsAE5D7E"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "b7ebff91-03bc-4f4f-84b1-034b848eb81f",
+    "chapter_id": "7724c95f-3200-4c19-8936-cd190ec9eff8",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Phonics and letter recognition",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/StUvWxYzAbC"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "611683ac-0b3a-48d6-b666-9b2d6c0a03f6",
+    "chapter_id": "0622174b-7543-47ad-9a0d-a51065e9c241",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Animal sounds and farm vocabulary",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/q1w2e3r4t5y"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "12e0c8c0-4b93-4cf2-a474-055315478cec",
+    "chapter_id": "0622174b-7543-47ad-9a0d-a51065e9c241",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Domestic vs. wild animals",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/DrqdJm53eUw"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "f72f49d9-be10-4430-bdbc-a2c7fea6f68f",
+    "chapter_id": "0622174b-7543-47ad-9a0d-a51065e9c241",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Descriptive colors and features",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/Jq9juAScEdg"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "51762bd8-1870-4a26-9aab-7ea55c7b8f59",
+    "chapter_id": "0622174b-7543-47ad-9a0d-a51065e9c241",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Speaking practice and conversation skills",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/wXyZ1234567"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "b46f4af0-4474-4e90-a33b-07f7663de276",
+    "chapter_id": "dc7befb9-dd7a-423b-a834-035eb99c7452",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Reading fluency",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/ZCwnjs1xyac"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "f83a071f-01db-47b4-928d-548cfcb0f0be",
+    "chapter_id": "97d10bd4-6344-40e7-8137-d590a36ff3c5",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Story narration and sequencing",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/5wk45xED2Dk"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "7c1bc50a-831f-429c-9975-9788c80d237e",
+    "chapter_id": "97d10bd4-6344-40e7-8137-d590a36ff3c5",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Initial sound identification",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/O3_Tuls-AD0"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "7962054e-9452-4628-a2ab-e91497825380",
+    "chapter_id": "97d10bd4-6344-40e7-8137-d590a36ff3c5",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Vocabulary building",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/y0em7H1JIh4"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "f1dfaab1-48ac-4934-8205-bfb80c1795d2",
+    "chapter_id": "a89e282b-1aea-4a46-b116-104d790eb322",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Farm animal vocabulary",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/9GvwTbUMD5M"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "1aee18a3-7257-4b61-9bbd-23486df45da4",
+    "chapter_id": "97d10bd4-6344-40e7-8137-d590a36ff3c5",
+    "textbook_id": "3f666978-35c4-4344-ab8d-61c957b35f71",
+    "title": "Creative mask making and enactment",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/aS4dF7gH9jK"
+    ],
+    "created_at": "2026-07-10T10:31:43.734Z",
+    "updated_at": "2026-07-10T10:31:43.734Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "f17d4cef-3127-4696-9ab2-884c96ba9c7c",
+    "chapter_id": "a2f92e99-34ba-4303-a90d-15a90727a46b",
+    "textbook_id": "394f1687-f9f3-4862-98f6-411d6d30fc3e",
+    "title": "Identifying long vs. round objects",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/szhxocOkim4"
+    ],
+    "created_at": "2026-07-10T11:57:12.931Z",
+    "updated_at": "2026-07-10T11:57:12.931Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "dc1c60ea-455c-4a99-8f1b-6d1e985f82a0",
+    "chapter_id": "a2f92e99-34ba-4303-a90d-15a90727a46b",
+    "textbook_id": "394f1687-f9f3-4862-98f6-411d6d30fc3e",
+    "title": "Observation skills in the classroom environment",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/sc1_obs_005"
+    ],
+    "created_at": "2026-07-10T11:57:12.931Z",
+    "updated_at": "2026-07-10T11:57:12.931Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "9948220e-6db2-4d49-9cf3-7127a9d566d3",
+    "chapter_id": "85892156-af4f-4590-8a56-9ff2334cf0ba",
+    "textbook_id": "394f1687-f9f3-4862-98f6-411d6d30fc3e",
+    "title": "Storytelling and enactment",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/eaoknkwStK4"
+    ],
+    "created_at": "2026-07-10T11:57:12.931Z",
+    "updated_at": "2026-07-10T11:57:12.931Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "91c0c145-35e7-4f57-a848-226220163d9b",
+    "chapter_id": "85892156-af4f-4590-8a56-9ff2334cf0ba",
+    "textbook_id": "394f1687-f9f3-4862-98f6-411d6d30fc3e",
+    "title": "Understanding rolling motion",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/mUucmIDCeC8"
+    ],
+    "created_at": "2026-07-10T11:57:12.931Z",
+    "updated_at": "2026-07-10T11:57:12.931Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "86845ef7-8d7a-4b6e-a1d4-378f80818d89",
+    "chapter_id": "c0d7a8d6-efa0-47e5-afbe-8ab8a5fbaf36",
+    "textbook_id": "394f1687-f9f3-4862-98f6-411d6d30fc3e",
+    "title": "Differentiating between rolling and sliding",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/qo9NO88KTMo"
+    ],
+    "created_at": "2026-07-10T11:57:12.931Z",
+    "updated_at": "2026-07-10T11:57:12.931Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "5d775cb3-6f5b-442d-848f-260d21d8f802",
+    "chapter_id": "c0d7a8d6-efa0-47e5-afbe-8ab8a5fbaf36",
+    "textbook_id": "394f1687-f9f3-4862-98f6-411d6d30fc3e",
+    "title": "Experimental observation of object movement",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/Tmzl-AroinI"
+    ],
+    "created_at": "2026-07-10T11:57:12.931Z",
+    "updated_at": "2026-07-10T11:57:12.931Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "83d3ca74-5031-494c-aa12-cd2cdf8fb1e5",
+    "chapter_id": "c0d7a8d6-efa0-47e5-afbe-8ab8a5fbaf36",
+    "textbook_id": "394f1687-f9f3-4862-98f6-411d6d30fc3e",
+    "title": "Identifying objects that exhibit both rolling and sliding behaviors",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/yQM4Ancahjw"
+    ],
+    "created_at": "2026-07-10T11:57:12.931Z",
+    "updated_at": "2026-07-10T11:57:12.931Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "44f784e0-30f8-43ab-a2df-32a3c93cb3c7",
+    "chapter_id": "8343799e-1ce6-41e8-93a8-fe1c434b7638",
+    "textbook_id": "394f1687-f9f3-4862-98f6-411d6d30fc3e",
+    "title": "Structural stability in tower building",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/tf_yJj4bemk"
+    ],
+    "created_at": "2026-07-10T11:57:12.931Z",
+    "updated_at": "2026-07-10T11:57:12.931Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "797fce61-791e-453d-bc18-6428857fbc1b",
+    "chapter_id": "8343799e-1ce6-41e8-93a8-fe1c434b7638",
+    "textbook_id": "394f1687-f9f3-4862-98f6-411d6d30fc3e",
+    "title": "Clay modeling and shape creation",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/-FTHLh_u_zA"
+    ],
+    "created_at": "2026-07-10T11:57:12.931Z",
+    "updated_at": "2026-07-10T11:57:12.931Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "1994f9ff-319f-4f4e-b81e-e014d586d3e7",
+    "chapter_id": "cf0a341f-bb02-41cf-a94f-75dd250c7aac",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Before and after sequences",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/MmAjMmzn58A"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "4e452cbf-cd4b-4e88-8345-f944b1fa8be4",
+    "chapter_id": "cf0a341f-bb02-41cf-a94f-75dd250c7aac",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Chain formation",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/0T0QrHO56qg"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "9daf275f-f706-46da-8e7c-68f6cc6e34eb",
+    "chapter_id": "cf0a341f-bb02-41cf-a94f-75dd250c7aac",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Creative construction",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/bEZR_brQqCQ"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "01a1e94e-d9a2-4135-8ae5-b0a3556d4525",
+    "chapter_id": "c29e7347-06ec-40c9-a457-965395635e65",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Relative positioning",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/qgL8in1YxmI"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "95ef80c5-914b-4e76-9763-151d02732c98",
+    "chapter_id": "c29e7347-06ec-40c9-a457-965395635e65",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Social interaction",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/qWeRtYuIoPa"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "b26e7ebc-d87b-4bec-8051-d1a8d0e19293",
+    "chapter_id": "c29e7347-06ec-40c9-a457-965395635e65",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Sequence identification",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/lMnOpQrStUv"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "4eaba508-61f0-4398-a5f8-19f6e52c6639",
+    "chapter_id": "a89e282b-1aea-4a46-b116-104d790eb322",
+    "textbook_id": "c3ae43ae-5b93-414c-ac28-4b25f6ef3f4e",
+    "title": "Domestic vs. wild animals",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/DrqdJm53eUw"
+    ],
+    "created_at": "2026-07-10T10:26:14.418Z",
+    "updated_at": "2026-07-10T10:26:14.418Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "12ded550-b0d5-4b2a-8966-4d6c3632ae29",
+    "chapter_id": "316ad0fd-9748-4761-90dd-bd557eac759a",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Positional word identification",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/0YtJUIcxYss"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "d0a0db4d-089b-44f8-9d34-2ce395e39d98",
+    "chapter_id": "316ad0fd-9748-4761-90dd-bd557eac759a",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Group-based search games",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/YxloMTk3lZs"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "b5e96223-fbfa-4daa-96c5-dd452a71ff1f",
+    "chapter_id": "4165dccd-a9c4-419d-93de-037fbfbcacc9",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Kinesthetic learning",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/my1Ntox4JHY"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "55678dc2-3a4d-4ec2-a5ed-ded4b6851825",
+    "chapter_id": "4165dccd-a9c4-419d-93de-037fbfbcacc9",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "In vs Out differentiation",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/ilSD_PuffI8"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "a218f76a-fba9-45b8-a86e-89b6743c9873",
+    "chapter_id": "4165dccd-a9c4-419d-93de-037fbfbcacc9",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Inclusive activity design",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/7G_PuCIpaaM"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "a53df2fa-a698-437d-be22-9beff9c76458",
+    "chapter_id": "953245c9-e6fa-43b8-8d68-b20408849e1e",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Visual comprehension",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/G--C_wmRUEk"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "b67959a1-65e5-4fe1-9fd3-34688fa4b043",
+    "chapter_id": "953245c9-e6fa-43b8-8d68-b20408849e1e",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Drawing based on spatial cues",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/SdLegfoMXNA"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "658f3b73-3898-46c7-818e-fae6ca6082de",
+    "chapter_id": "953245c9-e6fa-43b8-8d68-b20408849e1e",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Positional assessment",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/BL6pGhnBdj8"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "cb68aa4c-7060-48de-ac41-82f8c3b686cd",
+    "chapter_id": "6dcf9241-b730-436d-9d7b-fc70dd57f908",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Positional analysis of flag colors",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/riFGQB4x-qI"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "20dad765-36ce-48aa-81dd-adfc55e16e2b",
+    "chapter_id": "df71dfb8-39b0-47d2-a0d8-bb9d3ace3c7f",
+    "textbook_id": "3da9c3af-7a59-42f7-9c8f-69e4566353ea",
+    "title": "Positional words (above, below, on, under, inside, outside)",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/CKFgzyHIYIU"
+    ],
+    "created_at": "2026-07-10T11:57:38.601Z",
+    "updated_at": "2026-07-10T11:57:38.601Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "edefe6e0-1906-4fdb-afc5-02dc1772278f",
+    "chapter_id": "df71dfb8-39b0-47d2-a0d8-bb9d3ace3c7f",
+    "textbook_id": "3da9c3af-7a59-42f7-9c8f-69e4566353ea",
+    "title": "Reading and recitation practice",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/OgcuIyoOo2g"
+    ],
+    "created_at": "2026-07-10T11:57:38.601Z",
+    "updated_at": "2026-07-10T11:57:38.601Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "f370209b-2304-44b3-adbf-1653028359dd",
+    "chapter_id": "df71dfb8-39b0-47d2-a0d8-bb9d3ace3c7f",
+    "textbook_id": "3da9c3af-7a59-42f7-9c8f-69e4566353ea",
+    "title": "Spatial relationship identification",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/rR08Mlkbv4U"
+    ],
+    "created_at": "2026-07-10T11:57:38.601Z",
+    "updated_at": "2026-07-10T11:57:38.601Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "048e43b8-f5dc-4c29-9c3d-d916b9bcb57f",
+    "chapter_id": "14285d9c-8624-4e91-8648-6a04905717a3",
+    "textbook_id": "3da9c3af-7a59-42f7-9c8f-69e4566353ea",
+    "title": "Verbal instruction following",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/7z1lpZdNrnc"
+    ],
+    "created_at": "2026-07-10T11:57:38.601Z",
+    "updated_at": "2026-07-10T11:57:38.601Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "39f0a258-f21d-4d1e-a9bb-24dfe45e0f74",
+    "chapter_id": "14285d9c-8624-4e91-8648-6a04905717a3",
+    "textbook_id": "3da9c3af-7a59-42f7-9c8f-69e4566353ea",
+    "title": "Positional word application",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/0YtJUIcxYss"
+    ],
+    "created_at": "2026-07-10T11:57:38.601Z",
+    "updated_at": "2026-07-10T11:57:38.601Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "53855e6b-4553-4908-85d8-7d320cf5cd35",
+    "chapter_id": "14285d9c-8624-4e91-8648-6a04905717a3",
+    "textbook_id": "3da9c3af-7a59-42f7-9c8f-69e4566353ea",
+    "title": "Critical thinking and answering",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/D-wpp64brLk"
+    ],
+    "created_at": "2026-07-10T11:57:38.601Z",
+    "updated_at": "2026-07-10T11:57:38.601Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "296f6eb9-be04-4c2d-9672-1c887f77abe0",
+    "chapter_id": "706756e0-53c4-4632-a3ae-7ed5733a6a29",
+    "textbook_id": "3da9c3af-7a59-42f7-9c8f-69e4566353ea",
+    "title": "Kinesthetic learning",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/my1Ntox4JHY"
+    ],
+    "created_at": "2026-07-10T11:57:38.601Z",
+    "updated_at": "2026-07-10T11:57:38.601Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "a4c10e3b-c8e7-4ac6-a13b-83b970cf4c37",
+    "chapter_id": "706756e0-53c4-4632-a3ae-7ed5733a6a29",
+    "textbook_id": "3da9c3af-7a59-42f7-9c8f-69e4566353ea",
+    "title": "Sensory engagement",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/TAzTFgPSPiU"
+    ],
+    "created_at": "2026-07-10T11:57:38.601Z",
+    "updated_at": "2026-07-10T11:57:38.601Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "c61f4b8f-efea-4ef4-a127-780e88a177d5",
+    "chapter_id": "706756e0-53c4-4632-a3ae-7ed5733a6a29",
+    "textbook_id": "3da9c3af-7a59-42f7-9c8f-69e4566353ea",
+    "title": "Categorization of objects",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/szhxocOkim4"
+    ],
+    "created_at": "2026-07-10T11:57:38.601Z",
+    "updated_at": "2026-07-10T11:57:38.601Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "5a1a8956-c810-4358-b173-b6a1b72b2c56",
+    "chapter_id": "75b851c1-7478-4bca-8f0c-f417854da951",
+    "textbook_id": "3da9c3af-7a59-42f7-9c8f-69e4566353ea",
+    "title": "Visual position identification",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/M-Zy1ExrusA"
+    ],
+    "created_at": "2026-07-10T11:57:38.601Z",
+    "updated_at": "2026-07-10T11:57:38.601Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "6201f2fe-46de-47e1-b48d-b569261eb3a6",
+    "chapter_id": "75b851c1-7478-4bca-8f0c-f417854da951",
+    "textbook_id": "3da9c3af-7a59-42f7-9c8f-69e4566353ea",
+    "title": "National Flag (Tiranga) color and position study",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/z9xQQ92hC-k"
+    ],
+    "created_at": "2026-07-10T11:57:38.601Z",
+    "updated_at": "2026-07-10T11:57:38.601Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "d36bd37f-430f-4225-8a39-339127fb872f",
+    "chapter_id": "6dcf9241-b730-436d-9d7b-fc70dd57f908",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Civic education",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/wQ1s9d8f7g6"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "d87124ec-cd93-44f4-91cc-cc4254777586",
+    "chapter_id": "6dcf9241-b730-436d-9d7b-fc70dd57f908",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "National symbols",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/eVm063xmnow"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "53dff92d-5c1b-4717-9bff-55a79b06798b",
+    "chapter_id": "75b851c1-7478-4bca-8f0c-f417854da951",
+    "textbook_id": "3da9c3af-7a59-42f7-9c8f-69e4566353ea",
+    "title": "Civic awareness and national symbols",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/pkhHothp6NI"
+    ],
+    "created_at": "2026-07-10T11:57:38.601Z",
+    "updated_at": "2026-07-10T11:57:38.601Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "2e224a0e-0e2f-439f-83ae-446753d9bf6c",
+    "chapter_id": "8f6074fc-87de-4746-aab3-4e7145bf2012",
+    "textbook_id": "3da9c3af-7a59-42f7-9c8f-69e4566353ea",
+    "title": "Sequence (before and after)",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/uoYWyCK0JSA"
+    ],
+    "created_at": "2026-07-10T11:57:38.601Z",
+    "updated_at": "2026-07-10T11:57:38.601Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "44a2d9c8-330d-41da-87e3-76b9cd02ff5d",
+    "chapter_id": "d1f1f346-2d27-4778-9c17-88158445a954",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Positional vocabulary",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/uEUcYn1ViHI"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "02bd3565-c043-4b05-b7c2-f60a0b7f453d",
+    "chapter_id": "d1f1f346-2d27-4778-9c17-88158445a954",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Reading and recitation",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/pBxBNBKqm4c"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "c5fc3401-8afb-4110-8791-f1e15e27c38b",
+    "chapter_id": "d1f1f346-2d27-4778-9c17-88158445a954",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Spatial awareness activities",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/gpawixAoMdo"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "1592ac3f-e76f-4744-a905-64d55c2f4e21",
+    "chapter_id": "316ad0fd-9748-4761-90dd-bd557eac759a",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Verbal instructions",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/qoIh13VzwVc"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "d03ef2c2-9608-4e3e-9e2e-7955432ffe40",
+    "chapter_id": "90f48ca1-6431-462f-ae8f-a970213fe974",
+    "textbook_id": "617b91b4-9067-4f22-9fc6-d6363a5f4e3e",
+    "title": "Morning, afternoon, and evening greetings",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/sQQzFYStPC0"
+    ],
+    "created_at": "2026-07-10T11:20:52.679Z",
+    "updated_at": "2026-07-10T11:20:52.679Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "0b300380-7032-44c4-a0ec-86670ee6c022",
+    "chapter_id": "90f48ca1-6431-462f-ae8f-a970213fe974",
+    "textbook_id": "617b91b4-9067-4f22-9fc6-d6363a5f4e3e",
+    "title": "Bedtime phrases",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/aBcDeFgHiJk"
+    ],
+    "created_at": "2026-07-10T11:20:52.679Z",
+    "updated_at": "2026-07-10T11:20:52.679Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "14574255-7274-4f46-bc0e-a559b8286f62",
+    "chapter_id": "90f48ca1-6431-462f-ae8f-a970213fe974",
+    "textbook_id": "617b91b4-9067-4f22-9fc6-d6363a5f4e3e",
+    "title": "Cultural greeting variations",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/Sfq99s_SV2M"
+    ],
+    "created_at": "2026-07-10T11:20:52.679Z",
+    "updated_at": "2026-07-10T11:20:52.679Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "b579ab71-e7a3-4f65-8b11-e71f2a94a8e0",
+    "chapter_id": "90f48ca1-6431-462f-ae8f-a970213fe974",
+    "textbook_id": "617b91b4-9067-4f22-9fc6-d6363a5f4e3e",
+    "title": "Key vocabulary",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/SIojtnMplHc"
+    ],
+    "created_at": "2026-07-10T11:20:52.679Z",
+    "updated_at": "2026-07-10T11:20:52.679Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "f8290ac3-00ee-48ed-b3b5-23e0206610ab",
+    "chapter_id": "d8cd63e6-0ffb-4c0e-a21c-ff78ab9273c8",
+    "textbook_id": "617b91b4-9067-4f22-9fc6-d6363a5f4e3e",
+    "title": "Action verbs (combing, eating, seeing, saying, hearing)",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/TOBrnsnDNEU"
+    ],
+    "created_at": "2026-07-10T11:20:52.679Z",
+    "updated_at": "2026-07-10T11:20:52.679Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "374a097b-5aaa-4e43-89e7-b65169ffe7bb",
+    "chapter_id": "d8cd63e6-0ffb-4c0e-a21c-ff78ab9273c8",
+    "textbook_id": "617b91b4-9067-4f22-9fc6-d6363a5f4e3e",
+    "title": "Matching pictures to sentences",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/q6mq0ZSeJUI"
+    ],
+    "created_at": "2026-07-10T11:20:52.679Z",
+    "updated_at": "2026-07-10T11:20:52.679Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "e85644f0-b21a-4e6a-9222-d839fe9bdb03",
+    "chapter_id": "d8cd63e6-0ffb-4c0e-a21c-ff78ab9273c8",
+    "textbook_id": "617b91b4-9067-4f22-9fc6-d6363a5f4e3e",
+    "title": "Reading practice",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/kPreg6VR_vA"
+    ],
+    "created_at": "2026-07-10T11:20:52.679Z",
+    "updated_at": "2026-07-10T11:20:52.679Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "55d656dc-9e81-4ef5-a130-bdc2ccaa102b",
+    "chapter_id": "35f5379c-e868-4697-8c49-b5d05300aef8",
+    "textbook_id": "617b91b4-9067-4f22-9fc6-d6363a5f4e3e",
+    "title": "Letter tracing and writing",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/vWxY3456ZaB"
+    ],
+    "created_at": "2026-07-10T11:20:52.679Z",
+    "updated_at": "2026-07-10T11:20:52.679Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "f1a366ec-a0e9-4a0c-99cf-b6b4748cb590",
+    "chapter_id": "35f5379c-e868-4697-8c49-b5d05300aef8",
+    "textbook_id": "617b91b4-9067-4f22-9fc6-d6363a5f4e3e",
+    "title": "Initial letter sounds (f, g, j, h, i, k, l, o, m, n, p, q, t, r, s, u, v, w, x, y, z)",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/pdSZHssIUzc"
+    ],
+    "created_at": "2026-07-10T11:20:52.679Z",
+    "updated_at": "2026-07-10T11:20:52.679Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "d25f74e8-c5f9-456b-9d4d-8b97bcceac24",
+    "chapter_id": "35f5379c-e868-4697-8c49-b5d05300aef8",
+    "textbook_id": "617b91b4-9067-4f22-9fc6-d6363a5f4e3e",
+    "title": "Phonemic awareness exercises",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/niLY96R_Xi0"
+    ],
+    "created_at": "2026-07-10T11:20:52.679Z",
+    "updated_at": "2026-07-10T11:20:52.679Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "f87abd1e-76fc-497f-82b0-549973cd5477",
+    "chapter_id": "35f5379c-e868-4697-8c49-b5d05300aef8",
+    "textbook_id": "617b91b4-9067-4f22-9fc6-d6363a5f4e3e",
+    "title": "Odd one out identification",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/DrRll4T9INM"
+    ],
+    "created_at": "2026-07-10T11:20:52.679Z",
+    "updated_at": "2026-07-10T11:20:52.679Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "7c69f5cb-b5c5-44e0-a387-2e2e0ff4781f",
+    "chapter_id": "87a6a9ce-4eea-4e5d-9673-0dc55f482d4f",
+    "textbook_id": "617b91b4-9067-4f22-9fc6-d6363a5f4e3e",
+    "title": "Action vocabulary (hop, jump, stamp, skip, tap, dance, twist, shake, yawn, sleep)",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/rPDxXfL8Qg4"
+    ],
+    "created_at": "2026-07-10T11:20:52.679Z",
+    "updated_at": "2026-07-10T11:20:52.679Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "20671df9-0f4f-4a50-8c78-b3363e4d3f12",
+    "chapter_id": "87a6a9ce-4eea-4e5d-9673-0dc55f482d4f",
+    "textbook_id": "617b91b4-9067-4f22-9fc6-d6363a5f4e3e",
+    "title": "Rhyme recitation",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/jbg_T4v6zSQ"
+    ],
+    "created_at": "2026-07-10T11:20:52.679Z",
+    "updated_at": "2026-07-10T11:20:52.679Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "e0548dbd-ad55-40a5-ade5-340c82771b51",
+    "chapter_id": "87a6a9ce-4eea-4e5d-9673-0dc55f482d4f",
+    "textbook_id": "617b91b4-9067-4f22-9fc6-d6363a5f4e3e",
+    "title": "Hopscotch game instructions",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/msiX-xky6Ac"
+    ],
+    "created_at": "2026-07-10T11:20:52.679Z",
+    "updated_at": "2026-07-10T11:20:52.679Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "750eaa27-53cf-493d-ace9-7dc6aa98dac0",
+    "chapter_id": "87a6a9ce-4eea-4e5d-9673-0dc55f482d4f",
+    "textbook_id": "617b91b4-9067-4f22-9fc6-d6363a5f4e3e",
+    "title": "Discussion questions",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/X7uVcRuxN6k"
+    ],
+    "created_at": "2026-07-10T11:20:52.679Z",
+    "updated_at": "2026-07-10T11:20:52.679Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "763db5e7-a3bc-4295-9dff-fa075aacfbf5",
+    "chapter_id": "38f42850-ed5b-4aae-8ccb-0abae6cb0035",
+    "textbook_id": "617b91b4-9067-4f22-9fc6-d6363a5f4e3e",
+    "title": "Family member terminology",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/uqNzV213Wc8"
+    ],
+    "created_at": "2026-07-10T11:20:52.679Z",
+    "updated_at": "2026-07-10T11:20:52.679Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "e3baf5b6-37f0-44ce-bccf-06dacb2cf9f9",
+    "chapter_id": "38f42850-ed5b-4aae-8ccb-0abae6cb0035",
+    "textbook_id": "617b91b4-9067-4f22-9fc6-d6363a5f4e3e",
+    "title": "Reading comprehension (The Sparrow Family)",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/_w-poRSh_QA"
+    ],
+    "created_at": "2026-07-10T11:20:52.679Z",
+    "updated_at": "2026-07-10T11:20:52.679Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "24df0841-54b7-40ea-8aa2-a77ef4415d40",
+    "chapter_id": "5cd0cc60-ed86-41bf-9198-ce097972bafd",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Object sorting",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/vpg--e0pCdE"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "b6a70ccb-62d0-4d9a-bc20-663f66213baf",
+    "chapter_id": "38f42850-ed5b-4aae-8ccb-0abae6cb0035",
+    "textbook_id": "617b91b4-9067-4f22-9fc6-d6363a5f4e3e",
+    "title": "Sight words",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/G0fA4Nn93mQ"
+    ],
+    "created_at": "2026-07-10T11:20:52.679Z",
+    "updated_at": "2026-07-10T11:20:52.679Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "ffb44d5c-ccc5-4879-9c4a-f5e235301460",
+    "chapter_id": "5cd0cc60-ed86-41bf-9198-ce097972bafd",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Classification skills",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/j-JCcwxbURQ"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "1a2b7d54-7aef-4558-b73f-213519114ae4",
+    "chapter_id": "38f42850-ed5b-4aae-8ccb-0abae6cb0035",
+    "textbook_id": "617b91b4-9067-4f22-9fc6-d6363a5f4e3e",
+    "title": "Creative drawing and puppet making",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/_6C1GgwjZW4"
+    ],
+    "created_at": "2026-07-10T11:20:52.679Z",
+    "updated_at": "2026-07-10T11:20:52.679Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "45d966bf-942d-44dc-9218-51a4e9d95325",
+    "chapter_id": "5cd0cc60-ed86-41bf-9198-ce097972bafd",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Grouping strategies",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/OTxiodEyGFw"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "ed00f8ff-803e-49bd-80f2-aec7bc840905",
+    "chapter_id": "5256caec-7c86-4ca9-a54f-0725f409a5ae",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Advanced sorting",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/RfXt_qHDEPw"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "5c44bf90-8d67-4b33-89f5-679b1045ea75",
+    "chapter_id": "5256caec-7c86-4ca9-a54f-0725f409a5ae",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Classroom organization",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/oKE0kLRoFu8"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "1c7c1ff3-e4a5-4f67-8641-02505fa85318",
+    "chapter_id": "5256caec-7c86-4ca9-a54f-0725f409a5ae",
+    "textbook_id": "3641a116-37dc-4aa8-a69f-9a730c200c4c",
+    "title": "Practical application of spatial vocabulary",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/2UXmsAE5D7E"
+    ],
+    "created_at": "2026-07-10T11:17:26.472Z",
+    "updated_at": "2026-07-10T11:17:26.472Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "122b1287-1911-4eec-b5d6-e0d0688a1db6",
+    "chapter_id": "a2f92e99-34ba-4303-a90d-15a90727a46b",
+    "textbook_id": "394f1687-f9f3-4862-98f6-411d6d30fc3e",
+    "title": "Logical reasoning for shape classification",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/890AbCdEfGh"
+    ],
+    "created_at": "2026-07-10T11:57:12.931Z",
+    "updated_at": "2026-07-10T11:57:12.931Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "71b7656a-2e6d-4717-b406-4c31906f55ab",
+    "chapter_id": "85892156-af4f-4590-8a56-9ff2334cf0ba",
+    "textbook_id": "394f1687-f9f3-4862-98f6-411d6d30fc3e",
+    "title": "Analyzing surface inclination and shape properties",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    ],
+    "created_at": "2026-07-10T11:57:12.931Z",
+    "updated_at": "2026-07-10T11:57:12.931Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "ef3fe816-fdd2-43e3-901b-240570ff02d8",
+    "chapter_id": "8343799e-1ce6-41e8-93a8-fe1c434b7638",
+    "textbook_id": "394f1687-f9f3-4862-98f6-411d6d30fc3e",
+    "title": "Puppet making and performance",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/kP2mN8vC4fR"
+    ],
+    "created_at": "2026-07-10T11:57:12.931Z",
+    "updated_at": "2026-07-10T11:57:12.931Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "3e8a9d3f-b4aa-4425-90ef-c93d31f5e09b",
+    "chapter_id": "8f6074fc-87de-4746-aab3-4e7145bf2012",
+    "textbook_id": "3da9c3af-7a59-42f7-9c8f-69e4566353ea",
+    "title": "Object sorting and classification",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/1TmNxaQgSus"
+    ],
+    "created_at": "2026-07-10T11:57:38.601Z",
+    "updated_at": "2026-07-10T11:57:38.601Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "c9793e25-a6d4-4cc1-a55f-2a33bb1040ec",
+    "chapter_id": "8f6074fc-87de-4746-aab3-4e7145bf2012",
+    "textbook_id": "3da9c3af-7a59-42f7-9c8f-69e4566353ea",
+    "title": "Creative project work",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/cP9_i8sll20"
+    ],
+    "created_at": "2026-07-10T11:57:38.601Z",
+    "updated_at": "2026-07-10T11:57:38.601Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "536a5083-1695-4d88-962c-5b966bf8f8c7",
+    "chapter_id": "902a4e9d-81b8-4132-a703-2fdd9e5e15f0",
+    "textbook_id": "eb1fdccd-26bc-42cc-8d04-78536df03314",
+    "title": "Visual observation skills",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/RvmF9OWrXWA"
+    ],
+    "created_at": "2026-07-10T12:15:35.560Z",
+    "updated_at": "2026-07-10T12:15:35.560Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "0383289d-999a-4328-b8b2-be3ad62cdd32",
+    "chapter_id": "902a4e9d-81b8-4132-a703-2fdd9e5e15f0",
+    "textbook_id": "eb1fdccd-26bc-42cc-8d04-78536df03314",
+    "title": "Counting and quantity recognition",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/xoZp0KTEJj0"
+    ],
+    "created_at": "2026-07-10T12:15:35.560Z",
+    "updated_at": "2026-07-10T12:15:35.560Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "33715e0e-9a58-43df-a944-b2aa4a1b4b0a",
+    "chapter_id": "ffbaaf4d-d248-4983-aa7d-2585885395df",
+    "textbook_id": "eb1fdccd-26bc-42cc-8d04-78536df03314",
+    "title": "Number recognition (1-10)",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/FiW_cDEmnCI"
+    ],
+    "created_at": "2026-07-10T12:15:35.560Z",
+    "updated_at": "2026-07-10T12:15:35.560Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "6bf729c2-d711-4d52-94d1-b6bd60d8db16",
+    "chapter_id": "ffbaaf4d-d248-4983-aa7d-2585885395df",
+    "textbook_id": "eb1fdccd-26bc-42cc-8d04-78536df03314",
+    "title": "Alphabetical order",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/oWNelUdqmfQ"
+    ],
+    "created_at": "2026-07-10T12:15:35.560Z",
+    "updated_at": "2026-07-10T12:15:35.560Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "3deff312-92e5-4827-9c2b-b9869800a421",
+    "chapter_id": "902a4e9d-81b8-4132-a703-2fdd9e5e15f0",
+    "textbook_id": "eb1fdccd-26bc-42cc-8d04-78536df03314",
+    "title": "Animal identification",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/Pkd7AvAPiO4"
+    ],
+    "created_at": "2026-07-10T12:15:35.560Z",
+    "updated_at": "2026-07-10T12:15:35.560Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "4c03d9fa-299d-441c-8ec0-f2467d385cee",
+    "chapter_id": "902a4e9d-81b8-4132-a703-2fdd9e5e15f0",
+    "textbook_id": "eb1fdccd-26bc-42cc-8d04-78536df03314",
+    "title": "English vocabulary for animals",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/CA6Mofzh7jo"
+    ],
+    "created_at": "2026-07-10T12:15:35.560Z",
+    "updated_at": "2026-07-10T12:15:35.560Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "11ec866c-2bbb-4328-94ca-0b9d260aa74e",
+    "chapter_id": "ffbaaf4d-d248-4983-aa7d-2585885395df",
+    "textbook_id": "eb1fdccd-26bc-42cc-8d04-78536df03314",
+    "title": "Fish-related vocabulary",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/vwSXt3j3_jA"
+    ],
+    "created_at": "2026-07-10T12:15:35.560Z",
+    "updated_at": "2026-07-10T12:15:35.560Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "ef0e0121-28a7-472b-a40b-d2563d3dcc44",
+    "chapter_id": "ffbaaf4d-d248-4983-aa7d-2585885395df",
+    "textbook_id": "eb1fdccd-26bc-42cc-8d04-78536df03314",
+    "title": "Color identification",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/fQczp0wtZQQ"
+    ],
+    "created_at": "2026-07-10T12:15:35.560Z",
+    "updated_at": "2026-07-10T12:15:35.560Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "96e76d54-42d1-4d08-876e-e635c990d5f9",
+    "chapter_id": "58b179dc-2e25-47a9-b04f-303cb7c439a1",
+    "textbook_id": "eb1fdccd-26bc-42cc-8d04-78536df03314",
+    "title": "Sight word recognition",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/dRuuvC-vmU4"
+    ],
+    "created_at": "2026-07-10T12:15:35.560Z",
+    "updated_at": "2026-07-10T12:15:35.560Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "33d42f2a-00ca-4ba8-a0f5-e0ae5967dad3",
+    "chapter_id": "58b179dc-2e25-47a9-b04f-303cb7c439a1",
+    "textbook_id": "eb1fdccd-26bc-42cc-8d04-78536df03314",
+    "title": "Rhyming words",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/4PW3_LErVZk"
+    ],
+    "created_at": "2026-07-10T12:15:35.560Z",
+    "updated_at": "2026-07-10T12:15:35.560Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "b4499738-97b5-4e33-a194-c3dd52b2a24a",
+    "chapter_id": "58b179dc-2e25-47a9-b04f-303cb7c439a1",
+    "textbook_id": "eb1fdccd-26bc-42cc-8d04-78536df03314",
+    "title": "Repetitive sentence structure",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/gBT6uQK6u28"
+    ],
+    "created_at": "2026-07-10T12:15:35.560Z",
+    "updated_at": "2026-07-10T12:15:35.560Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "0ee22817-1a6f-41a5-b597-32759541c1bb",
+    "chapter_id": "58b179dc-2e25-47a9-b04f-303cb7c439a1",
+    "textbook_id": "eb1fdccd-26bc-42cc-8d04-78536df03314",
+    "title": "Reading comprehension",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/8Y8Mb2RuvDM"
+    ],
+    "created_at": "2026-07-10T12:15:35.560Z",
+    "updated_at": "2026-07-10T12:15:35.560Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "d064c85d-57de-432d-a0b7-1f29b02b5753",
+    "chapter_id": "5317551c-feb2-454b-bc83-3a625ae9e7b6",
+    "textbook_id": "eb1fdccd-26bc-42cc-8d04-78536df03314",
+    "title": "Word building (rhyming patterns)",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/4PW3_LErVZk"
+    ],
+    "created_at": "2026-07-10T12:15:35.560Z",
+    "updated_at": "2026-07-10T12:15:35.560Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "82f02435-7f7c-41b3-a475-ee0c03afc389",
+    "chapter_id": "5317551c-feb2-454b-bc83-3a625ae9e7b6",
+    "textbook_id": "eb1fdccd-26bc-42cc-8d04-78536df03314",
+    "title": "Matching animals to names",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/gEPmWVGaodk"
+    ],
+    "created_at": "2026-07-10T12:15:35.560Z",
+    "updated_at": "2026-07-10T12:15:35.560Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "63526b7d-c815-4ca3-9454-6e95d56dd55a",
+    "chapter_id": "5317551c-feb2-454b-bc83-3a625ae9e7b6",
+    "textbook_id": "eb1fdccd-26bc-42cc-8d04-78536df03314",
+    "title": "Phonetic word practice",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/ugppjNn8uIE"
+    ],
+    "created_at": "2026-07-10T12:15:35.560Z",
+    "updated_at": "2026-07-10T12:15:35.560Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "9267d977-680e-4b8b-a8f7-aaf1185904f9",
+    "chapter_id": "5317551c-feb2-454b-bc83-3a625ae9e7b6",
+    "textbook_id": "eb1fdccd-26bc-42cc-8d04-78536df03314",
+    "title": "Cultural sharing of rhymes",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/KonFYpKy194"
+    ],
+    "created_at": "2026-07-10T12:15:35.560Z",
+    "updated_at": "2026-07-10T12:15:35.560Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "327736d3-0894-4c85-b1dc-4d286ecaf5c8",
+    "chapter_id": "2bfb8ef9-8b22-4b7c-a36a-8d694ad636fb",
+    "textbook_id": "2a1c4e58-070f-44cd-9a13-22f4001dbd7a",
+    "title": "Morning, afternoon, and evening greetings",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/sQQzFYStPC0"
+    ],
+    "created_at": "2026-07-11T09:28:41.604Z",
+    "updated_at": "2026-07-11T09:28:41.604Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "4c5394d6-f8d0-44e9-8af2-3871ada31299",
+    "chapter_id": "2bfb8ef9-8b22-4b7c-a36a-8d694ad636fb",
+    "textbook_id": "2a1c4e58-070f-44cd-9a13-22f4001dbd7a",
+    "title": "Bedtime phrases",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/KmNgxjvoKH0"
+    ],
+    "created_at": "2026-07-11T09:28:41.604Z",
+    "updated_at": "2026-07-11T09:28:41.604Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "c91fa2a8-7c14-4ab2-999d-c2c139a7a375",
+    "chapter_id": "2bfb8ef9-8b22-4b7c-a36a-8d694ad636fb",
+    "textbook_id": "2a1c4e58-070f-44cd-9a13-22f4001dbd7a",
+    "title": "Cultural greeting variations",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/XBop3DIjkwY"
+    ],
+    "created_at": "2026-07-11T09:28:41.604Z",
+    "updated_at": "2026-07-11T09:28:41.604Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "4a0f5ba3-7601-4705-8e1f-cf5a05f3487e",
+    "chapter_id": "6b71993f-fb66-4f30-a61b-324c892e3512",
+    "textbook_id": "2a1c4e58-070f-44cd-9a13-22f4001dbd7a",
+    "title": "Action verbs (combing, eating, seeing, hearing, walking, playing)",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/B2UQWzufNNg"
+    ],
+    "created_at": "2026-07-11T09:28:41.604Z",
+    "updated_at": "2026-07-11T09:28:41.604Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "80f8e917-2c1b-4948-9ead-908287a20e48",
+    "chapter_id": "6b71993f-fb66-4f30-a61b-324c892e3512",
+    "textbook_id": "2a1c4e58-070f-44cd-9a13-22f4001dbd7a",
+    "title": "Alphabet writing and tracing",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/l51sWH7W82s"
+    ],
+    "created_at": "2026-07-11T09:28:41.604Z",
+    "updated_at": "2026-07-11T09:28:41.604Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "4f28d6d0-c176-4612-9e32-9695e8746311",
+    "chapter_id": "6b71993f-fb66-4f30-a61b-324c892e3512",
+    "textbook_id": "2a1c4e58-070f-44cd-9a13-22f4001dbd7a",
+    "title": "Letter flash card practice",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/mzCEJVtED0U"
+    ],
+    "created_at": "2026-07-11T09:28:41.604Z",
+    "updated_at": "2026-07-11T09:28:41.604Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "1f09c985-3475-4087-9c7b-dddb11f7d215",
+    "chapter_id": "58540c72-9e0d-4279-b9e9-dd8949167bf9",
+    "textbook_id": "2a1c4e58-070f-44cd-9a13-22f4001dbd7a",
+    "title": "Initial sound identification (f, g, j, h, i)",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/MG86EvVPFHs"
+    ],
+    "created_at": "2026-07-11T09:28:41.604Z",
+    "updated_at": "2026-07-11T09:28:41.604Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "880f7355-49bd-462a-b3e7-95eb9c99c63c",
+    "chapter_id": "58540c72-9e0d-4279-b9e9-dd8949167bf9",
+    "textbook_id": "2a1c4e58-070f-44cd-9a13-22f4001dbd7a",
+    "title": "Phonetic word practice",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/uw1G9Un997Y"
+    ],
+    "created_at": "2026-07-11T09:28:41.604Z",
+    "updated_at": "2026-07-11T09:28:41.604Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "3d505a94-01ed-4602-a60b-d67f48d480de",
+    "chapter_id": "58540c72-9e0d-4279-b9e9-dd8949167bf9",
+    "textbook_id": "2a1c4e58-070f-44cd-9a13-22f4001dbd7a",
+    "title": "Auditory discrimination exercises",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/vcGYjx4bbO0"
+    ],
+    "created_at": "2026-07-11T09:28:41.604Z",
+    "updated_at": "2026-07-11T09:28:41.604Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "e8dc42bf-bbd1-4313-a8f4-454652144fae",
+    "chapter_id": "72335eb9-6d97-462e-8b26-0644b51b6da6",
+    "textbook_id": "2a1c4e58-070f-44cd-9a13-22f4001dbd7a",
+    "title": "Action vocabulary (hop, jump, stamp, skip, tap, dance, twist, shake, yawn, sleep)",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/rPDxXfL8Qg4"
+    ],
+    "created_at": "2026-07-11T09:28:41.604Z",
+    "updated_at": "2026-07-11T09:28:41.604Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "a9cc94ef-f184-4b54-bdfd-7e1d187c10d4",
+    "chapter_id": "72335eb9-6d97-462e-8b26-0644b51b6da6",
+    "textbook_id": "2a1c4e58-070f-44cd-9a13-22f4001dbd7a",
+    "title": "Picture talk and observation skills",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/EW0R1KfZf4A"
+    ],
+    "created_at": "2026-07-11T09:28:41.604Z",
+    "updated_at": "2026-07-11T09:28:41.604Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "02bffe9c-23c0-4387-82a5-b172f9608802",
+    "chapter_id": "72335eb9-6d97-462e-8b26-0644b51b6da6",
+    "textbook_id": "2a1c4e58-070f-44cd-9a13-22f4001dbd7a",
+    "title": "Hopscotch game and counting",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/s3j2timxyvc"
+    ],
+    "created_at": "2026-07-11T09:28:41.604Z",
+    "updated_at": "2026-07-11T09:28:41.604Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "b1fcd40f-7f8f-4269-ad07-ad11f2d3822f",
+    "chapter_id": "d91d8a0e-bee6-4b11-a887-0ecaabec4093",
+    "textbook_id": "2a1c4e58-070f-44cd-9a13-22f4001dbd7a",
+    "title": "Family member vocabulary",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/24GWC1dDyUM"
+    ],
+    "created_at": "2026-07-11T09:28:41.604Z",
+    "updated_at": "2026-07-11T09:28:41.604Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "d8811185-9344-412b-883a-c11416e28922",
+    "chapter_id": "d91d8a0e-bee6-4b11-a887-0ecaabec4093",
+    "textbook_id": "2a1c4e58-070f-44cd-9a13-22f4001dbd7a",
+    "title": "Reading comprehension (The Sparrow Family)",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/TsPDYIo3dGE"
+    ],
+    "created_at": "2026-07-11T09:28:41.604Z",
+    "updated_at": "2026-07-11T09:28:41.604Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "41a9c83d-70f8-4e68-81a1-26a019577b4e",
+    "chapter_id": "d91d8a0e-bee6-4b11-a887-0ecaabec4093",
+    "textbook_id": "2a1c4e58-070f-44cd-9a13-22f4001dbd7a",
+    "title": "Sight words",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/G0fA4Nn93mQ"
+    ],
+    "created_at": "2026-07-11T09:28:41.604Z",
+    "updated_at": "2026-07-11T09:28:41.604Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "bb82f3e0-5e86-48c0-914c-64615dbea0be",
+    "chapter_id": "d91d8a0e-bee6-4b11-a887-0ecaabec4093",
+    "textbook_id": "2a1c4e58-070f-44cd-9a13-22f4001dbd7a",
+    "title": "Creative expression through drawing and puppet making",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/LSCJPCFz1ts"
+    ],
+    "created_at": "2026-07-11T09:28:41.604Z",
+    "updated_at": "2026-07-11T09:28:41.604Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "941b4fc5-c5e9-4f8c-915f-4c1abe408ddf",
+    "chapter_id": "4dd37f29-0d5e-475a-bfcb-138f29720747",
+    "textbook_id": "7ed94542-a0cb-471b-b746-8c8b2bced5f3",
+    "title": "Cultural greeting practices",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/qC3wrquxLVE"
+    ],
+    "created_at": "2026-07-15T13:15:21.514Z",
+    "updated_at": "2026-07-15T13:15:21.514Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "4a1f1dbd-13e7-45e8-a52a-8fb31b3c2e23",
+    "chapter_id": "4dd37f29-0d5e-475a-bfcb-138f29720747",
+    "textbook_id": "7ed94542-a0cb-471b-b746-8c8b2bced5f3",
+    "title": "Key Vocabulary",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/CiNggzdWkIo"
+    ],
+    "created_at": "2026-07-15T13:15:21.514Z",
+    "updated_at": "2026-07-15T13:15:21.514Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "cf2217df-fda4-4fba-97fb-eb2e67d6b691",
+    "chapter_id": "7e945d91-105c-4c19-84af-6941a2e5a89d",
+    "textbook_id": "7ed94542-a0cb-471b-b746-8c8b2bced5f3",
+    "title": "Action verbs (combing, eating, seeing, hearing, walking, playing)",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/rPDxXfL8Qg4"
+    ],
+    "created_at": "2026-07-15T13:15:21.514Z",
+    "updated_at": "2026-07-15T13:15:21.514Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "903cb8ed-949b-4f22-9803-2d363e44984f",
+    "chapter_id": "7e945d91-105c-4c19-84af-6941a2e5a89d",
+    "textbook_id": "7ed94542-a0cb-471b-b746-8c8b2bced5f3",
+    "title": "Matching pictures to sentences",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/q6mq0ZSeJUI"
+    ],
+    "created_at": "2026-07-15T13:15:21.514Z",
+    "updated_at": "2026-07-15T13:15:21.514Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "16fc2c1b-83af-40ce-9097-aa3d5ced1813",
+    "chapter_id": "7e945d91-105c-4c19-84af-6941a2e5a89d",
+    "textbook_id": "7ed94542-a0cb-471b-b746-8c8b2bced5f3",
+    "title": "Writing practice",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/gFXE9n7hrOI"
+    ],
+    "created_at": "2026-07-15T13:15:21.514Z",
+    "updated_at": "2026-07-15T13:15:21.514Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "0e3de5cc-5902-489f-95d6-7e18d31741ad",
+    "chapter_id": "749ea488-71c0-43f5-b28c-847ec837fb2a",
+    "textbook_id": "7ed94542-a0cb-471b-b746-8c8b2bced5f3",
+    "title": "Initial sound identification (f, g, j, h, i)",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/RxFKiuSvijY"
+    ],
+    "created_at": "2026-07-15T13:15:21.514Z",
+    "updated_at": "2026-07-15T13:15:21.514Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "c110b281-01c6-4bc5-98f3-e1f2dfbfdf8d",
+    "chapter_id": "4dd37f29-0d5e-475a-bfcb-138f29720747",
+    "textbook_id": "7ed94542-a0cb-471b-b746-8c8b2bced5f3",
+    "title": "Time-based greetings (Good morning, afternoon, evening, night)",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/RKv_SyxN3UQ"
+    ],
+    "created_at": "2026-07-15T13:15:21.514Z",
+    "updated_at": "2026-07-15T13:15:21.514Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "0ebaeaee-68d6-458c-83b1-b846fcbe8721",
+    "chapter_id": "4dd37f29-0d5e-475a-bfcb-138f29720747",
+    "textbook_id": "7ed94542-a0cb-471b-b746-8c8b2bced5f3",
+    "title": "Discussion Questions",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/wD_xnzH7Ye0"
+    ],
+    "created_at": "2026-07-15T13:15:21.514Z",
+    "updated_at": "2026-07-15T13:15:21.514Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "e9b123db-5f7e-4609-88a9-52ddac7075ba",
+    "chapter_id": "7e945d91-105c-4c19-84af-6941a2e5a89d",
+    "textbook_id": "7ed94542-a0cb-471b-b746-8c8b2bced5f3",
+    "title": "Reading Practice",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/8Y8Mb2RuvDM"
+    ],
+    "created_at": "2026-07-15T13:15:21.514Z",
+    "updated_at": "2026-07-15T13:15:21.514Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "1a8d4756-ab04-4bb0-9425-75ae92cb9c03",
+    "chapter_id": "749ea488-71c0-43f5-b28c-847ec837fb2a",
+    "textbook_id": "7ed94542-a0cb-471b-b746-8c8b2bced5f3",
+    "title": "Alphabet tracing and writing",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/gP2WbhbBkoY"
+    ],
+    "created_at": "2026-07-15T13:15:21.514Z",
+    "updated_at": "2026-07-15T13:15:21.514Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "6ab74d0c-600d-4d65-b9b0-877c2a453406",
+    "chapter_id": "749ea488-71c0-43f5-b28c-847ec837fb2a",
+    "textbook_id": "7ed94542-a0cb-471b-b746-8c8b2bced5f3",
+    "title": "Letter flash cards",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/HqRC2oAO-9k"
+    ],
+    "created_at": "2026-07-15T13:15:21.514Z",
+    "updated_at": "2026-07-15T13:15:21.514Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "b1d6ef64-fef3-49b3-9df3-a8eb5c07f428",
+    "chapter_id": "749ea488-71c0-43f5-b28c-847ec837fb2a",
+    "textbook_id": "7ed94542-a0cb-471b-b746-8c8b2bced5f3",
+    "title": "Key Vocabulary",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/CiNggzdWkIo"
+    ],
+    "created_at": "2026-07-15T13:15:21.514Z",
+    "updated_at": "2026-07-15T13:15:21.514Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "efb77f5d-75a4-4c1b-9c5c-dbdf7575ad11",
+    "chapter_id": "d141d34c-31d4-473d-986b-8b28e2ba547e",
+    "textbook_id": "7ed94542-a0cb-471b-b746-8c8b2bced5f3",
+    "title": "Action words (hop, jump, stamp, skip, tap, dance, twist, shake, yawn, sleep)",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/QBs1FWn_4DA"
+    ],
+    "created_at": "2026-07-15T13:15:21.514Z",
+    "updated_at": "2026-07-15T13:15:21.514Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "19a5fe3f-c797-4d10-b3fe-420f6114c1c3",
+    "chapter_id": "d141d34c-31d4-473d-986b-8b28e2ba547e",
+    "textbook_id": "7ed94542-a0cb-471b-b746-8c8b2bced5f3",
+    "title": "Picture talk and observation",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/GxGfms7D930"
+    ],
+    "created_at": "2026-07-15T13:15:21.514Z",
+    "updated_at": "2026-07-15T13:15:21.514Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "e1812fed-c549-48ae-8ebc-eb579802bfba",
+    "chapter_id": "d141d34c-31d4-473d-986b-8b28e2ba547e",
+    "textbook_id": "7ed94542-a0cb-471b-b746-8c8b2bced5f3",
+    "title": "Hopscotch game",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/a5LKOY1-EGQ"
+    ],
+    "created_at": "2026-07-15T13:15:21.514Z",
+    "updated_at": "2026-07-15T13:15:21.514Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "9c1f580d-be1a-4676-8c6f-ed66b5f787f1",
+    "chapter_id": "d141d34c-31d4-473d-986b-8b28e2ba547e",
+    "textbook_id": "7ed94542-a0cb-471b-b746-8c8b2bced5f3",
+    "title": "Key Vocabulary",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/CiNggzdWkIo"
+    ],
+    "created_at": "2026-07-15T13:15:21.514Z",
+    "updated_at": "2026-07-15T13:15:21.514Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "993fd0a6-0598-403b-8d8e-a6e99250926a",
+    "chapter_id": "cdd9c8df-08a5-4cbe-acb7-df48a84329b8",
+    "textbook_id": "7ed94542-a0cb-471b-b746-8c8b2bced5f3",
+    "title": "Family member terminology",
+    "order": 1,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/-vyYBH0vQrI"
+    ],
+    "created_at": "2026-07-15T13:15:21.514Z",
+    "updated_at": "2026-07-15T13:15:21.514Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "e5f8b150-7a13-498b-9972-f0df8e535069",
+    "chapter_id": "cdd9c8df-08a5-4cbe-acb7-df48a84329b8",
+    "textbook_id": "7ed94542-a0cb-471b-b746-8c8b2bced5f3",
+    "title": "The Sparrow Family story",
+    "order": 2,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/wTukAYMh6hM"
+    ],
+    "created_at": "2026-07-15T13:15:21.514Z",
+    "updated_at": "2026-07-15T13:15:21.514Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "07fd0ea2-62df-43db-8435-73f138106d67",
+    "chapter_id": "cdd9c8df-08a5-4cbe-acb7-df48a84329b8",
+    "textbook_id": "7ed94542-a0cb-471b-b746-8c8b2bced5f3",
+    "title": "Sight words",
+    "order": 3,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/G0fA4Nn93mQ"
+    ],
+    "created_at": "2026-07-15T13:15:21.514Z",
+    "updated_at": "2026-07-15T13:15:21.514Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "2578b53d-7bf6-4597-81dd-37626b4655fa",
+    "chapter_id": "cdd9c8df-08a5-4cbe-acb7-df48a84329b8",
+    "textbook_id": "7ed94542-a0cb-471b-b746-8c8b2bced5f3",
+    "title": "Drawing and speaking about family",
+    "order": 4,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/lK6HkU0a3mY"
+    ],
+    "created_at": "2026-07-15T13:15:21.514Z",
+    "updated_at": "2026-07-15T13:15:21.514Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  },
+  {
+    "id": "56e33124-ba8c-4023-81cc-8f1e8b756dcd",
+    "chapter_id": "cdd9c8df-08a5-4cbe-acb7-df48a84329b8",
+    "textbook_id": "7ed94542-a0cb-471b-b746-8c8b2bced5f3",
+    "title": "Initial sound practice (f and m sounds)",
+    "order": 5,
+    "notes": null,
+    "video_links": [
+      "https://www.youtube.com/embed/X1zTIJfTmCs"
+    ],
+    "created_at": "2026-07-15T13:15:21.514Z",
+    "updated_at": "2026-07-15T13:15:21.514Z",
+    "data": {},
+    "status": "active",
+    "archived_at": null,
+    "deleted_at": null,
+    "school_id": null
+  }
+]
