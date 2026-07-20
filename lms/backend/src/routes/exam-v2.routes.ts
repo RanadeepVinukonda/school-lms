@@ -11,9 +11,18 @@ const router = Router();
 const createExamSchema = z.object({
   title: z.string().min(1),
   classId: z.string().min(1),
-  subjectId: z.string().min(1),
-  duration: z.number().positive(),
-  totalMarks: z.number().positive().optional(),
+  textbookId: z.string().min(1),
+  chapterId: z.string().min(1),
+  timeLimitMinutes: z.number().positive(),
+  selectedModels: z.array(z.string()).min(1),
+  questionCountPerConcept: z.number().positive(),
+  description: z.string().optional(),
+  subjectId: z.string().optional(),
+  passingScore: z.number().min(0).optional(),
+  maxAttempts: z.number().positive().optional(),
+  shuffleQuestions: z.boolean().optional(),
+  showResults: z.boolean().optional(),
+  preview: z.boolean().optional(),
 }).passthrough();
 
 const releaseExamSchema = z.object({

@@ -81,6 +81,8 @@ export async function createExam(data: {
   startDate?: string;
   endDate?: string;
   schoolId?: string;
+  questions?: any[];
+  preview?: boolean;
 }) {
   const assignment = await getTeacherAssignment(data.teacherId, data.classId);
   if (!assignment) {
@@ -93,11 +95,51 @@ export async function createExam(data: {
   }
 
   let totalPoints = 0;
-  for (const c of concepts) {
-    const questions = await getQuestionsForConcept(c.id);
-    const filtered = questions.filter((q: any) => data.selectedModels.includes(q.type));
-    const selected = filtered.slice(0, Math.min(data.questionCountPerConcept, filtered.length));
-    totalPoints += selected.reduce((sum: number, q: any) => sum + (q.points || POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1), 0);
+  let allSelectedQuestions: Array<Record<string, unknown>> = [];
+
+  if (data.questions && data.questions.length > 0) {
+    allSelectedQuestions = data.questions.map((q: any) => ({
+      id: q.id || uuidv4(),
+      type: q.type || 'mcq',
+      text: q.text || q.question || '',
+      options: q.options || null,
+      correctAnswer: q.correctAnswer || q.answer || '',
+      explanation: q.explanation || '',
+      difficulty: q.difficulty || 'medium',
+      points: q.points || POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1,
+      conceptId: q.conceptId || concepts[0]?.id || '',
+    }));
+    totalPoints = allSelectedQuestions.reduce((sum, q) => sum + (q.points as number), 0);
+  } else {
+    for (const c of concepts) {
+      const questions = await getQuestionsForConcept(c.id);
+      const filtered = questions.filter((q: any) => data.selectedModels.includes(q.type));
+      const selected = filtered.slice(0, Math.min(data.questionCountPerConcept, filtered.length));
+      totalPoints += selected.reduce((sum: number, q: any) => sum + (q.points || POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1), 0);
+      for (const q of selected) {
+        allSelectedQuestions.push({
+          id: q.id,
+          type: q.type,
+          text: q.text || q.question,
+          options: q.options,
+          correctAnswer: q.correct_answer || q.correctAnswer || '',
+          explanation: q.explanation,
+          difficulty: q.difficulty || 'medium',
+          points: q.points || POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1,
+          conceptId: c.id,
+        });
+      }
+    }
+  }
+
+  if (data.preview) {
+    return {
+      questions: allSelectedQuestions,
+      totalPoints,
+      questionCount: allSelectedQuestions.length,
+      aiGeneratedCount: 0,
+      preview: true,
+    };
   }
 
   const examId = uuidv4();
