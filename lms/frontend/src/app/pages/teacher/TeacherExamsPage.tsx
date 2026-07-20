@@ -228,9 +228,12 @@ export default function TeacherExamsPage() {
       queryClient.invalidateQueries({ queryKey: ['exams-v2-teacher', teacherId] });
     },
     onError: (err: unknown) => {
-      const message = err && typeof err === 'object' && 'message' in err
-        ? (err as { message: string }).message
-        : _('Failed to create exam');
+      const axiosErr = err as { response?: { data?: { error?: { message: string; details?: Array<{ field: string; message: string }> } } }; message?: string };
+      const details = axiosErr?.response?.data?.error?.details;
+      let message = axiosErr?.response?.data?.error?.message || axiosErr?.message || _('Failed to create exam');
+      if (details && details.length > 0) {
+        message += ': ' + details.map((d) => d.field + ' ' + d.message).join(', ');
+      }
       toast.error(message);
     },
   });
@@ -249,9 +252,12 @@ export default function TeacherExamsPage() {
       }
     },
     onError: (err: unknown) => {
-      const message = err && typeof err === 'object' && 'message' in err
-        ? (err as { message: string }).message
-        : _('Failed to generate preview');
+      const axiosErr = err as { response?: { data?: { error?: { message: string; details?: Array<{ field: string; message: string }> } } }; message?: string };
+      const details = axiosErr?.response?.data?.error?.details;
+      let message = axiosErr?.response?.data?.error?.message || axiosErr?.message || _('Failed to generate preview');
+      if (details && details.length > 0) {
+        message += ': ' + details.map((d) => d.field + ' ' + d.message).join(', ');
+      }
       toast.error(message);
     },
   });
