@@ -40,14 +40,26 @@ export function errorHandler(
       requestId,
     });
 
+    console.log('ERROR_DBG', JSON.stringify({
+      name: err.constructor?.name,
+      message: err.message,
+      hasDetails: err.details !== undefined,
+      detailsType: typeof err.details,
+      detailsIsArray: Array.isArray(err.details),
+      detailsLen: Array.isArray(err.details) ? err.details.length : -1,
+      code: err.code,
+    }));
+
     res.status(err.statusCode).json({
       success: false,
       error: {
         message: err.message,
         code: err.code,
         requestId,
-        _hasDetails: !!err.details,
+        _src: err.constructor?.name,
+        _hasDetails: err.details !== undefined,
         _detailType: typeof err.details,
+        _detailLen: Array.isArray(err.details) ? err.details.length : -1,
         details: err.details,
         ...(isDev && { stack: err.stack }),
       },
