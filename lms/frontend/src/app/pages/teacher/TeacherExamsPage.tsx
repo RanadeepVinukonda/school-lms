@@ -789,8 +789,8 @@ export default function TeacherExamsPage() {
               <TabsTrigger value="all" className="gap-2">
                 <Icon name="fact_check" size={16} />
                 {_('All Exams')}
-                {examsList.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 text-label-xs px-1.5">{examsList.length}</Badge>
+                {teacherExams.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 text-label-xs px-1.5">{teacherExams.length}</Badge>
                 )}
               </TabsTrigger>
               <TabsTrigger value="correct" className="gap-2">
