@@ -413,7 +413,7 @@ export default function TeacherExamsPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="questions-per-concept">{_('Questions Per Concept')}</Label>
+                  <Label htmlFor="questions-per-concept">{_('Total Questions')}</Label>
                   <Input
                     id="questions-per-concept"
                     type="number"
@@ -492,7 +492,7 @@ export default function TeacherExamsPage() {
                 {generatePreviewMutation.isPending ? (
                   <><span className="animate-spin">⟳</span> {_('Generating...')}</>
                 ) : (
-                  <><Icon name="visibility" size={16} /> {_('Generate Preview')} ({questionCountPerConcept} {_('per concept')})</>
+                  <><Icon name="visibility" size={16} /> {_('Generate Preview')} ({questionCountPerConcept} {_('questions')})</>
                 )}
               </Button>
             )}

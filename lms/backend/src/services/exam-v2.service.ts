@@ -94,6 +94,8 @@ export async function createExam(data: {
     throw new NotFoundError('No concepts found in this chapter');
   }
 
+  const perConcept = Math.ceil(data.questionCountPerConcept / concepts.length);
+
   let totalPoints = 0;
   let allSelectedQuestions: Array<Record<string, unknown>> = [];
 
@@ -111,10 +113,13 @@ export async function createExam(data: {
     }));
     totalPoints = allSelectedQuestions.reduce((sum, q) => sum + (q.points as number), 0);
   } else {
+    let remaining = data.questionCountPerConcept;
     for (const c of concepts) {
       const questions = await getQuestionsForConcept(c.id);
       const filtered = questions.filter((q: any) => data.selectedModels.includes(q.type));
-      const selected = filtered.slice(0, Math.min(data.questionCountPerConcept, filtered.length));
+      const take = Math.min(perConcept, remaining, filtered.length);
+      const selected = filtered.slice(0, take);
+      remaining -= selected.length;
       totalPoints += selected.reduce((sum: number, q: any) => sum + (q.points || POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1), 0);
       for (const q of selected) {
         allSelectedQuestions.push({
@@ -155,7 +160,7 @@ export async function createExam(data: {
     teacherId: data.teacherId,
     timeLimitMinutes: data.timeLimitMinutes,
     selectedModels: data.selectedModels,
-    questionCountPerConcept: data.questionCountPerConcept,
+    questionCountPerConcept: perConcept,
     totalPoints,
     passingScore: data.passingScore ?? 50,
     maxAttempts: data.maxAttempts ?? 1,

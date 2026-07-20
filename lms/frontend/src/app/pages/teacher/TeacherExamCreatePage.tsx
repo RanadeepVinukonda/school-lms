@@ -550,7 +550,7 @@ export default function TeacherExamCreatePage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="questions-per-concept">{_('Questions Per Concept')}</Label>
+                  <Label htmlFor="questions-per-concept">{_('Total Questions')}</Label>
                   <Input
                     id="questions-per-concept"
                     type="number"
