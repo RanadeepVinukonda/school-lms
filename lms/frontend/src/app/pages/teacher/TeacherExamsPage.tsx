@@ -212,8 +212,14 @@ export default function TeacherExamsPage() {
 
   const createMutation = useMutation({
     mutationFn: async (body: Record<string, unknown>) => {
-      const res = await api.post('/exams-v2', body);
-      return res.data.data;
+      try {
+        const res = await api.post('/exams-v2', body);
+        return res.data.data;
+      } catch (err: unknown) {
+        const axErr = err as { response?: { data?: { error?: unknown }; status?: number }; message?: string };
+        console.log('RAW_CREATE_ERR', 'status:', axErr?.response?.status, 'body:', JSON.stringify(axErr?.response?.data?.error).substring(0, 500), 'msg:', axErr?.message);
+        throw err;
+      }
     },
     onSuccess: () => {
       toast.success(_('Exam created successfully'));
@@ -228,13 +234,11 @@ export default function TeacherExamsPage() {
       queryClient.invalidateQueries({ queryKey: ['exams-v2-teacher', teacherId] });
     },
     onError: (err: unknown) => {
-      const axiosErr = err as { response?: { data?: { error?: { message: string; details?: Array<{ field: string; message: string }> } } }; message?: string };
-      const details = axiosErr?.response?.data?.error?.details;
-      let message = axiosErr?.response?.data?.error?.message || axiosErr?.message || _('Failed to create exam');
-      if (details && details.length > 0) {
-        message += ': ' + details.map((d) => d.field + ' ' + d.message).join(', ');
-      }
-      toast.error(message);
+      console.log('CREATE_ERR', err);
+      const e = err as Record<string, unknown>;
+      let message = (e?.message as string) || _('Failed to create exam');
+      const raw = JSON.stringify(e).substring(0, 300);
+      toast.error(message + ' | raw=' + raw);
     },
   });
 
@@ -252,13 +256,11 @@ export default function TeacherExamsPage() {
       }
     },
     onError: (err: unknown) => {
-      const axiosErr = err as { response?: { data?: { error?: { message: string; details?: Array<{ field: string; message: string }> } } }; message?: string };
-      const details = axiosErr?.response?.data?.error?.details;
-      let message = axiosErr?.response?.data?.error?.message || axiosErr?.message || _('Failed to generate preview');
-      if (details && details.length > 0) {
-        message += ': ' + details.map((d) => d.field + ' ' + d.message).join(', ');
-      }
-      toast.error(message);
+      console.log('PREVIEW_ERR', err);
+      const e = err as Record<string, unknown>;
+      let message = (e?.message as string) || _('Failed to generate preview');
+      const raw = JSON.stringify(e).substring(0, 300);
+      toast.error(message + ' | raw=' + raw);
     },
   });
 
