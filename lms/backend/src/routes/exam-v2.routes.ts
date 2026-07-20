@@ -44,7 +44,7 @@ const releaseGradesSchema = z.object({
   grades: z.record(z.number().min(0)),
 }).passthrough();
 
-router.post('/', authenticate, requireRole('teacher', 'admin'), validate(createExamSchema), asyncHandler(examV2Controller.createExam));
+router.post('/', authenticate, requireRole('teacher', 'admin'), (req, _res, next) => { console.log('EXAM_BODY', JSON.stringify(req.body).substring(0, 500)); next(); }, validate(createExamSchema), asyncHandler(examV2Controller.createExam));
 router.post('/:examId/release', authenticate, requireRole('teacher', 'admin'), validate(releaseExamSchema), asyncHandler(examV2Controller.releaseExam));
 router.post('/:examId/start', authenticate, requireRole('student'), validate(startAttemptSchema), asyncHandler(examV2Controller.startAttempt));
 router.post('/attempts/:attemptId/submit', authenticate, validate(submitAttemptSchema), asyncHandler(examV2Controller.submitAttempt));

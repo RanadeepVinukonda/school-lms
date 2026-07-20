@@ -16,6 +16,7 @@ export function validate(schema: ZodSchema, target: ValidationTarget = 'body') {
           field: e.path.join('.'),
           message: e.code === 'invalid_string' && e.message === 'Invalid' ? 'Invalid format' : e.message,
         }));
+        console.log('VALIDATE_ZOD', JSON.stringify({ errors: error.errors, details }));
         next(new ValidationError('Validation failed', details));
       } else {
         console.log('VALIDATE_DBG: non-Zod error in validate', error instanceof Error ? error.message : String(error), typeof error, error?.constructor?.name);
