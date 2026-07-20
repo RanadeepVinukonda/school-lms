@@ -216,8 +216,8 @@ export default function TeacherExamsPage() {
         const res = await api.post('/exams-v2', body);
         return res.data.data;
       } catch (err: unknown) {
-        const axErr = err as { response?: { data?: { error?: unknown }; status?: number }; message?: string };
-        console.log('RAW_CREATE_ERR', 'status:', axErr?.response?.status, 'body:', JSON.stringify(axErr?.response?.data?.error).substring(0, 500), 'msg:', axErr?.message);
+        const axErr = err as { response?: { data?: { error?: { message?: string; details?: unknown } }; status?: number }; message?: string };
+        console.log('RAW_CREATE_ERR', 'response:', JSON.stringify(axErr?.response?.data?.error), 'msg:', axErr?.message);
         throw err;
       }
     },
@@ -234,12 +234,11 @@ export default function TeacherExamsPage() {
       queryClient.invalidateQueries({ queryKey: ['exams-v2-teacher', teacherId] });
     },
     onError: (err: unknown) => {
-      console.log('CREATE_ERR', err);
-      const e = err as { message: string; details?: Array<{ field: string; message: string }> };
-      let message = e?.message || _('Failed to create exam');
-      if (e?.details?.length) {
-        message += ': ' + e.details.map((d) => d.field + ' ' + d.message).join(', ');
-      }
+      console.log('CREATE_ERR keys:', Object.keys(err as object));
+      console.log('CREATE_ERR full:', err);
+      const message = err && typeof err === 'object' && 'message' in err
+        ? (err as Record<string, unknown>).message as string
+        : _('Failed to create exam');
       toast.error(message);
     },
   });
