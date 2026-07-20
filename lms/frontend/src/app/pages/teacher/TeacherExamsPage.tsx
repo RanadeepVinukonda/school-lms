@@ -235,10 +235,12 @@ export default function TeacherExamsPage() {
     },
     onError: (err: unknown) => {
       console.log('CREATE_ERR', err);
-      const e = err as Record<string, unknown>;
-      let message = (e?.message as string) || _('Failed to create exam');
-      const raw = JSON.stringify(e).substring(0, 300);
-      toast.error(message + ' | raw=' + raw);
+      const e = err as { message: string; details?: Array<{ field: string; message: string }> };
+      let message = e?.message || _('Failed to create exam');
+      if (e?.details?.length) {
+        message += ': ' + e.details.map((d) => d.field + ' ' + d.message).join(', ');
+      }
+      toast.error(message);
     },
   });
 
@@ -257,10 +259,12 @@ export default function TeacherExamsPage() {
     },
     onError: (err: unknown) => {
       console.log('PREVIEW_ERR', err);
-      const e = err as Record<string, unknown>;
-      let message = (e?.message as string) || _('Failed to generate preview');
-      const raw = JSON.stringify(e).substring(0, 300);
-      toast.error(message + ' | raw=' + raw);
+      const e = err as { message: string; details?: Array<{ field: string; message: string }> };
+      let message = e?.message || _('Failed to generate preview');
+      if (e?.details?.length) {
+        message += ': ' + e.details.map((d) => d.field + ' ' + d.message).join(', ');
+      }
+      toast.error(message);
     },
   });
 

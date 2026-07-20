@@ -214,6 +214,7 @@ api.interceptors.response.use(
       message: message || 'An unexpected error occurred',
       code: errData?.error?.code || errData?.code,
       status: error.response?.status,
+      details: errData?.error?.details,
     };
     return Promise.reject(apiError);
   },

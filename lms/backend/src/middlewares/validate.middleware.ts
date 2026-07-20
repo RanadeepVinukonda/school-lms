@@ -18,6 +18,7 @@ export function validate(schema: ZodSchema, target: ValidationTarget = 'body') {
         }));
         next(new ValidationError('Validation failed', details));
       } else {
+        console.log('VALIDATE_DBG: non-Zod error in validate', error instanceof Error ? error.message : String(error), typeof error, error?.constructor?.name);
         next(error);
       }
     }
