@@ -246,6 +246,10 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
     }
   }
 
+  if (questionCount > 0 && matchingQuestions.length > questionCount) {
+    matchingQuestions = matchingQuestions.slice(0, questionCount);
+  }
+
   if (data.preview) {
     const previewQuestions = matchingQuestions.map((q: any) => {
       const rawQuestion = q.question;
