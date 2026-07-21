@@ -127,7 +127,7 @@ export async function createExam(data: {
           type: q.type,
           text: q.text || q.question,
           options: q.options,
-          correctAnswer: q.correct_answer || q.correctAnswer || '',
+          correctAnswer: q.correct_answer || q.correctAnswer || q.answer || '',
           explanation: q.explanation,
           difficulty: q.difficulty || 'medium',
           points: q.points || POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1,
@@ -237,7 +237,7 @@ export async function startExamAttempt(examId: string, studentId: string, select
       difficulty: q.difficulty as Difficulty | undefined,
       text: q.text || q.question,
       options: q.options as string[] | undefined,
-      correctAnswer: q.correct_answer || q.correctAnswer || '',
+      correctAnswer: q.correct_answer || q.correctAnswer || q.answer || '',
       explanation: q.explanation,
       points: q.points || 1,
     }));
@@ -337,7 +337,7 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
         id: q.id,
         type: q.type,
         difficulty: q.difficulty,
-        correctAnswer: q.correct_answer || q.correctAnswer || '',
+        correctAnswer: q.correct_answer || q.correctAnswer || q.answer || '',
         points: q.points || 1,
       });
     }
