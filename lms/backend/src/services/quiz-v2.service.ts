@@ -376,7 +376,7 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
   const attempts = await nosqlQuery(QAV2, { quizId, studentId });
   const totalAttempts = attempts.length;
   const maxAttempts = (quizData.maxAttempts as number) || 3;
-  if (totalAttempts >= maxAttempts) throw new ForbiddenError('Maximum attempts reached');
+  if (!quizData.isRepublished && totalAttempts >= maxAttempts) throw new ForbiddenError('Maximum attempts reached');
 
   const { data: userRow } = await supabase.from('users').select('data').eq('id', studentId).maybeSingle();
   const studentLevel: StudentLevel = ((userRow?.data as any)?.level as StudentLevel) || 'beginner';
@@ -445,8 +445,10 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
 
   await nosqlSet(QAV2, attemptId, attempt);
 
-  const curCount = (quizData.attemptCount as number) || 0;
-  await nosqlUpdate(QV2, quizId, { attemptCount: curCount + 1, updatedAt: now });
+  if (!quizData.isRepublished) {
+    const curCount = (quizData.attemptCount as number) || 0;
+    await nosqlUpdate(QV2, quizId, { attemptCount: curCount + 1, updatedAt: now });
+  }
 
   logger.info('Quiz V2 attempt started', { quizId, studentId, attemptId });
   return { ...attempt, questions: questionsForStudent };

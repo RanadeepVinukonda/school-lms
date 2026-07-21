@@ -195,7 +195,10 @@ export default function StudentQuizTakePageV2() {
 
   const attemptsUsed = pastAttempts.length;
   const maxAttempts = assessmentInfo?.maxAttempts ?? (assessmentType === 'exam' ? 1 : 3);
-  const isAttemptsExceeded = attemptsUsed >= maxAttempts;
+  const isAttemptsExceeded = !assessmentInfo?.isRepublished && attemptsUsed >= maxAttempts;
+  const bestScore = pastAttempts.length > 0
+    ? Math.max(...pastAttempts.map((a: any) => a.percentage ?? 0))
+    : null;
 
   const startMutation = useMutation({
     mutationFn: async (models: QuestionModel[]) => {
@@ -580,7 +583,7 @@ export default function StudentQuizTakePageV2() {
                 {assessmentInfo.title}
                 {assessmentInfo.isRepublished && (
                   <Badge variant="success" className="text-[10px] tracking-wider font-bold">
-                    {_('INTERACTIVE PRACTICE')}
+                    {_('REVISION PRACTICE')}
                   </Badge>
                 )}
               </h1>
@@ -603,8 +606,17 @@ export default function StudentQuizTakePageV2() {
                 <p className="text-label-xs text-muted-foreground">{_('Points')}</p>
               </div>
               <div className="bg-muted rounded-xl p-3 text-center">
-                <p className="text-display-xs font-bold">{attemptsUsed} / {maxAttempts}</p>
-                <p className="text-label-xs text-muted-foreground">{_('Attempts Used')}</p>
+                {assessmentInfo.isRepublished ? (
+                  <>
+                    <p className="text-display-xs font-bold">{bestScore ?? '--'}%</p>
+                    <p className="text-label-xs text-muted-foreground">{_('Previous Score')}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-display-xs font-bold">{attemptsUsed} / {maxAttempts}</p>
+                    <p className="text-label-xs text-muted-foreground">{_('Attempts Used')}</p>
+                  </>
+                )}
               </div>
             </div>
 
@@ -612,11 +624,16 @@ export default function StudentQuizTakePageV2() {
               <div className="bg-success-container/10 border border-success/30 rounded-xl p-4 text-body-md space-y-2">
                 <div className="flex items-center gap-2 font-bold text-success">
                   <Brain className="h-[18px] w-[18px]" />
-                  <span>{_('Interactive Practice Mode Active')}</span>
+                  <span>{_('Revision Practice Mode')}</span>
                 </div>
                 <p className="text-on-surface-variant">
-                  {_('This test has been republished as interactive homework. Selecting correct options triggers immediate visual ticks and chime audio, automatically advancing you to the next question. Wrong selections trigger audio buzzers and red crosses, prompting you to try again.')}
+                  {_('Your teacher has republished this assessment for revision and practice.')}
                 </p>
+                <ul className="text-on-surface-variant list-disc list-inside space-y-1">
+                  <li>{_('Your previous attempts have already been recorded.')}</li>
+                  <li>{_('This mode helps you improve by answering each question correctly before moving on.')}</li>
+                  <li>{_('Immediate feedback is provided after each answer.')}</li>
+                </ul>
               </div>
             )}
 
