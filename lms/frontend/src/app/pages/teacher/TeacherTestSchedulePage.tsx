@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
+import { ReleaseRepublishModal } from '@/components/common/ReleaseRepublishModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -62,6 +63,14 @@ export default function TeacherTestSchedulePage() {
     enabled: !!selectedClassId,
   });
 
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{
+    type: 'release' | 'republish';
+    assessmentType: 'exam' | 'quiz' | 'assignment';
+    id: string;
+    title: string;
+  } | null>(null);
+
   function onError(msg: string) {
     return (err: unknown) => {
       const message = err && typeof err === 'object' && 'message' in err
@@ -70,15 +79,6 @@ export default function TeacherTestSchedulePage() {
       toast.error(message);
     };
   }
-
-  const releaseMutation = useMutation({
-    mutationFn: (examId: string) => api.post(`/exams-v2/${examId}/release`),
-    onSuccess: () => {
-      toast.success(_('Exam released to students'));
-      queryClient.invalidateQueries({ queryKey: ['exams-v2-class'] });
-    },
-    onError: onError(_('Failed to release exam')),
-  });
 
   const toggleGradesMutation = useMutation({
     mutationFn: (examId: string) => api.put(`/exams-v2/${examId}/grades`),
@@ -89,24 +89,6 @@ export default function TeacherTestSchedulePage() {
     onError: onError(_('Failed to update grades visibility')),
   });
 
-  const releaseQuizMutation = useMutation({
-    mutationFn: (quizId: string) => api.post(`/quizzes-v2/${quizId}/release`).then((r) => r.data.data),
-    onSuccess: () => {
-      toast.success(_('Quiz released to students'));
-      queryClient.invalidateQueries({ queryKey: ['quizzes-v2-class', selectedClassId] });
-    },
-    onError: onError(_('Failed to release quiz')),
-  });
-
-  const republishQuizMutation = useMutation({
-    mutationFn: (quizId: string) => api.post(`/quizzes-v2/${quizId}/republish`).then((r) => r.data.data),
-    onSuccess: () => {
-      toast.success(_('Quiz republished as practice mode'));
-      queryClient.invalidateQueries({ queryKey: ['quizzes-v2-class', selectedClassId] });
-    },
-    onError: onError(_('Failed to republish quiz')),
-  });
-
   const toggleQuizGradesMutation = useMutation({
     mutationFn: ({ id, showResults }: { id: string; showResults: boolean }) =>
       api.put(`/quizzes-v2/${id}/grades`, { showResults }).then((r) => r.data.data),
@@ -115,6 +97,34 @@ export default function TeacherTestSchedulePage() {
       queryClient.invalidateQueries({ queryKey: ['quizzes-v2-class', selectedClassId] });
     },
     onError: onError(_('Failed to update grades visibility')),
+  });
+
+  const releaseWithGradesMutation = useMutation({
+    mutationFn: async ({
+      type, id, showResults, action,
+    }: {
+      type: 'exam' | 'quiz' | 'assignment';
+      id: string;
+      showResults: boolean;
+      action: 'release' | 'republish';
+    }) => {
+      if (action === 'release') {
+        if (type === 'exam') await api.post(`/exams-v2/${id}/release`);
+        else if (type === 'quiz') await api.post(`/quizzes-v2/${id}/release`);
+        else await api.post(`/assignments-v2/${id}/release`);
+      } else {
+        await api.post(`/quizzes-v2/${id}/republish`);
+      }
+      await api.put(`/${type === 'exam' ? 'exams-v2' : type === 'quiz' ? 'quizzes-v2' : 'assignments-v2'}/${id}/grades`, { showResults });
+    },
+    onSuccess: (_data, vars) => {
+      const actionLabel = vars.action === 'republish' ? _('Republished') : _('Released');
+      const typeLabel = vars.type === 'exam' ? _('Exam') : vars.type === 'quiz' ? _('Quiz') : _('Assignment');
+      toast.success(`${typeLabel} ${actionLabel}`);
+      const key = vars.type === 'exam' ? 'exams-v2-class' : vars.type === 'quiz' ? 'quizzes-v2-class' : 'assignments-v2-class';
+      queryClient.invalidateQueries({ queryKey: [key] });
+    },
+    onError: onError(_('Failed to complete action')),
   });
 
   const examList: any[] = exams ?? [];
@@ -217,7 +227,7 @@ export default function TeacherTestSchedulePage() {
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                               {!exam.releasedAt && (
-                                <Button size="sm" onClick={() => releaseMutation.mutate(exam.id)} loading={releaseMutation.isPending && releaseMutation.variables === exam.id} className="gap-1">
+                                <Button size="sm" onClick={() => { setModalConfig({ type: 'release', assessmentType: 'exam', id: exam.id, title: exam.title }); setModalOpen(true); }} className="gap-1">
                                   <Icon name="publish" size={15} />{_('Release')}
                                 </Button>
                               )}
@@ -276,12 +286,12 @@ export default function TeacherTestSchedulePage() {
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                               {isDraft && (
-                                <Button size="sm" onClick={() => releaseQuizMutation.mutate(quiz.id)} loading={releaseQuizMutation.isPending && releaseQuizMutation.variables === quiz.id} className="gap-1">
+                                <Button size="sm" onClick={() => { setModalConfig({ type: 'release', assessmentType: 'quiz', id: quiz.id, title: quiz.title }); setModalOpen(true); }} className="gap-1">
                                   <Icon name="publish" size={15} />{_('Release')}
                                 </Button>
                               )}
                               {isReleased && (
-                                <Button size="sm" variant="outline" onClick={() => republishQuizMutation.mutate(quiz.id)} loading={republishQuizMutation.isPending && republishQuizMutation.variables === quiz.id} className="gap-1">
+                                <Button size="sm" variant="outline" onClick={() => { setModalConfig({ type: 'republish', assessmentType: 'quiz', id: quiz.id, title: quiz.title }); setModalOpen(true); }} className="gap-1">
                                   <Icon name="autorenew" size={15} />{_('Republish')}
                                 </Button>
                               )}
@@ -317,8 +327,8 @@ export default function TeacherTestSchedulePage() {
                       <Card key={as.id} className="border-border/60">
                         <CardContent className="p-4">
                           <div className="flex items-start gap-3">
-                            <div className="h-10 w-10 rounded-lg bg-secondary-container flex items-center justify-center shrink-0">
-                              <Icon name="assignment" size={20} className="text-on-secondary-container" />
+                            <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${as.releasedAt ? 'bg-success-container' : 'bg-secondary-container'}`}>
+                              <Icon name="assignment" size={20} className={as.releasedAt ? 'text-on-success-container' : 'text-on-secondary-container'} />
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-0.5">
@@ -333,6 +343,13 @@ export default function TeacherTestSchedulePage() {
                                 <span className="flex items-center gap-1"><Icon name="people" size={14} />{as.submissionCount ?? as.attemptCount ?? 0} {_('submissions')}</span>
                                 <span>{formatDate(as.createdAt)}</span>
                               </div>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {!as.releasedAt && (
+                                <Button size="sm" onClick={() => { setModalConfig({ type: 'release', assessmentType: 'assignment', id: as.id, title: as.title }); setModalOpen(true); }} className="gap-1">
+                                  <Icon name="publish" size={15} />{_('Release')}
+                                </Button>
+                              )}
                             </div>
                           </div>
                         </CardContent>
@@ -354,6 +371,26 @@ export default function TeacherTestSchedulePage() {
           </Card>
         )}
       </motion.div>
+
+      {modalConfig && (
+        <ReleaseRepublishModal
+          open={modalOpen}
+          onOpenChange={(open) => { setModalOpen(open); if (!open) setModalConfig(null); }}
+          type={modalConfig.type}
+          assessmentType={modalConfig.assessmentType}
+          title={modalConfig.title}
+          onConfirm={(showResults) => {
+            releaseWithGradesMutation.mutate({
+              type: modalConfig.assessmentType,
+              id: modalConfig.id,
+              showResults,
+              action: modalConfig.type,
+            });
+            setModalConfig(null);
+          }}
+          loading={releaseWithGradesMutation.isPending}
+        />
+      )}
     </>
   );
 }

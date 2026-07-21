@@ -28,8 +28,8 @@ const submitAssignmentSchema = z.object({
 }).passthrough();
 
 const releaseGradesSchema = z.object({
-  grades: z.record(z.number().min(0)),
-}).passthrough();
+  showResults: z.boolean(),
+});
 
 router.post('/', authenticate, requireRole('teacher', 'admin'), validate(createAssignmentSchema), asyncHandler(assignmentV2Controller.createAssignment));
 router.get('/', authenticate, asyncHandler(assignmentV2Controller.listForTeacher));

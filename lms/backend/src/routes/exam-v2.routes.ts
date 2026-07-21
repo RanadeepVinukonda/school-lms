@@ -41,8 +41,8 @@ const logProctoringSchema = z.object({
 }).passthrough();
 
 const releaseGradesSchema = z.object({
-  grades: z.record(z.number().min(0)),
-}).passthrough();
+  showResults: z.boolean().optional(),
+});
 
 router.post('/', authenticate, requireRole('teacher', 'admin'), (req, _res, next) => {
   console.log('EXAM_BODY', JSON.stringify(req.body).substring(0, 1000));
