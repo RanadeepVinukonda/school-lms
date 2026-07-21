@@ -37,23 +37,6 @@ interface AssignmentQuestion {
   correctAnswer: string;
 }
 
-interface AssessmentItem {
-  id: string;
-  title: string;
-  status: 'draft' | 'released';
-  type: 'quiz' | 'assignment';
-  attemptCount?: number;
-  showResults: boolean;
-  createdAt: string;
-  conceptId?: string;
-  isRepublished?: boolean;
-  shuffleQuestions?: boolean;
-  passingScore?: number;
-  maxAttempts?: number;
-  timeLimitMinutes?: number;
-  totalPoints?: number;
-}
-
 let questionIdCounter = 0;
 function freshQuestionId(): string {
   questionIdCounter += 1;
@@ -179,49 +162,6 @@ export default function TeacherAssessmentCreatePage() {
     })
     .slice(0, questionCount || allConceptQuestions.length);
 
-  const { data: quizzesData, isLoading: quizzesLoading } = useQuery({
-    queryKey: ['assessments-quizzes', selectedClassId],
-    queryFn: () => api.get(`/quizzes-v2/class/${selectedClassId}`).then((r) => r.data.data ?? []),
-    enabled: !!selectedClassId,
-  });
-
-  const { data: assignmentsData, isLoading: assignmentsDataLoading } = useQuery({
-    queryKey: ['assessments-assignments', selectedClassId],
-    queryFn: () => api.get(`/assignments-v2/class/${selectedClassId}`).then((r) => (r.data.data?.items ?? []) as any[]),
-    enabled: !!selectedClassId,
-  });
-
-  const quizzesList: AssessmentItem[] = (Array.isArray(quizzesData) ? quizzesData : []).map((q: Record<string, unknown>) => ({
-    id: q.id as string,
-    title: q.title as string,
-    status: (q.releasedAt ? 'released' : 'draft') as 'draft' | 'released',
-    type: 'quiz',
-    attemptCount: q.attemptCount as number | undefined,
-    showResults: !!q.showResults,
-    createdAt: q.createdAt as string,
-    conceptId: q.conceptId as string | undefined,
-    isRepublished: !!q.isRepublished,
-    shuffleQuestions: q.shuffleQuestions as boolean | undefined,
-    passingScore: q.passingScore as number | undefined,
-    maxAttempts: q.maxAttempts as number | undefined,
-    timeLimitMinutes: q.timeLimitMinutes as number | undefined,
-  }));
-
-  const assignmentsListItem: AssessmentItem[] = (Array.isArray(assignmentsData) ? assignmentsData : []).map((a: Record<string, unknown>) => ({
-    id: a.id as string,
-    title: a.title as string,
-    status: a.releasedAt ? 'released' as const : 'draft' as const,
-    type: 'assignment' as const,
-    attemptCount: (a.attemptCount as number) ?? 0,
-    showResults: (a.showResults as boolean) ?? false,
-    createdAt: (a.createdAt as string) ?? '',
-    conceptId: a.conceptId as string,
-  }));
-
-  const allAssessments: AssessmentItem[] = [...quizzesList, ...assignmentsListItem].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  );
-
   const [reviewQuestions, setReviewQuestions] = useState<any[]>([]);
   const [reviewTitle, setReviewTitle] = useState('');
   const [generatingPreview, setGeneratingPreview] = useState(false);
@@ -230,7 +170,7 @@ export default function TeacherAssessmentCreatePage() {
     mutationFn: (body: Record<string, unknown>) => api.post('/quizzes-v2', body).then((r) => r.data.data),
     onSuccess: () => {
       toast.success(_('Quiz created successfully'));
-      queryClient.invalidateQueries({ queryKey: ['assessments-quizzes', selectedClassId] });
+      queryClient.invalidateQueries({ queryKey: ['quizzes-v2-class', selectedClassId] });
       setReviewQuestions([]);
       setQuizTitle('');
       setTimeLimitMinutes(30);
@@ -271,7 +211,7 @@ export default function TeacherAssessmentCreatePage() {
     mutationFn: (body: Record<string, unknown>) => api.post('/assignments-v2', body).then((r) => r.data.data),
     onSuccess: () => {
       toast.success(_('Assignment created successfully'));
-      queryClient.invalidateQueries({ queryKey: ['assessments-assignments', selectedClassId] });
+      queryClient.invalidateQueries({ queryKey: ['assignments-v2-class', selectedClassId] });
       setAssignmentTitle('');
       setAssignmentDescription('');
       setAssignmentQuestions([createEmptyQuestion()]);
@@ -280,84 +220,6 @@ export default function TeacherAssessmentCreatePage() {
       const message = err && typeof err === 'object' && 'message' in err
         ? (err as { message: string }).message
         : _('Failed to create assignment');
-      toast.error(message);
-    },
-  });
-
-  const releaseQuizMutation = useMutation({
-    mutationFn: (id: string) => api.post(`/quizzes-v2/${id}/release`).then((r) => r.data.data),
-    onSuccess: () => {
-      toast.success(_('Quiz released to students'));
-      queryClient.invalidateQueries({ queryKey: ['assessments-quizzes', selectedClassId] });
-    },
-    onError: (err: unknown) => {
-      const message = err && typeof err === 'object' && 'message' in err
-        ? (err as { message: string }).message
-        : _('Failed to release quiz');
-      toast.error(message);
-    },
-  });
-
-  const releaseAssignmentMutation = useMutation({
-    mutationFn: (id: string) => api.post(`/assignments-v2/${id}/release`).then((r) => r.data.data),
-    onSuccess: () => {
-      toast.success(_('Assignment released to students'));
-      queryClient.invalidateQueries({ queryKey: ['assessments-assignments', selectedClassId] });
-    },
-    onError: (err: unknown) => {
-      const message = err && typeof err === 'object' && 'message' in err
-        ? (err as { message: string }).message
-        : _('Failed to release assignment');
-      toast.error(message);
-    },
-  });
-
-  const updateQuizMutation = useMutation({
-    mutationFn: ({ quizId, data }: { quizId: string; data: Record<string, unknown> }) =>
-      api.patch(`/quizzes-v2/${quizId}`, data).then((r) => r.data.data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['assessments-quizzes', selectedClassId] });
-    },
-  });
-
-  const toggleQuizGradesMutation = useMutation({
-    mutationFn: ({ id, showResults }: { id: string; showResults: boolean }) =>
-      api.put(`/quizzes-v2/${id}/grades`, { showResults }).then((r) => r.data.data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['assessments-quizzes', selectedClassId] });
-    },
-    onError: (err: unknown) => {
-      const message = err && typeof err === 'object' && 'message' in err
-        ? (err as { message: string }).message
-        : _('Failed to update grade visibility');
-      toast.error(message);
-    },
-  });
-
-  const republishQuizMutation = useMutation({
-    mutationFn: (id: string) => api.post(`/quizzes-v2/${id}/republish`).then((r) => r.data.data),
-    onSuccess: () => {
-      toast.success(_('Quiz republished as interactive practice mode'));
-      queryClient.invalidateQueries({ queryKey: ['assessments-quizzes', selectedClassId] });
-    },
-    onError: (err: unknown) => {
-      const message = err && typeof err === 'object' && 'message' in err
-        ? (err as { message: string }).message
-        : _('Failed to republish quiz');
-      toast.error(message);
-    },
-  });
-
-  const toggleAssignmentGradesMutation = useMutation({
-    mutationFn: ({ id, showResults }: { id: string; showResults: boolean }) =>
-      api.put(`/assignments-v2/${id}/grades`, { showResults }).then((r) => r.data.data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['assessments-assignments', selectedClassId] });
-    },
-    onError: (err: unknown) => {
-      const message = err && typeof err === 'object' && 'message' in err
-        ? (err as { message: string }).message
-        : _('Failed to update grade visibility');
       toast.error(message);
     },
   });
@@ -1304,159 +1166,7 @@ export default function TeacherAssessmentCreatePage() {
           </Card>
         </motion.div>
 
-        {selectedClassId && (
-          <motion.div variants={cardStackReveal} custom={0}>
-            <Card className="border-border/60">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-title-sm flex items-center gap-2">
-                  <Icon name="list_alt" size={18} className="text-muted-foreground" />
-                  {_('Existing Assessments')}
-                </CardTitle>
-                <CardDescription>
-                  {_('Quizzes and assignments for the selected class')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-5">
-                {quizzesLoading || assignmentsDataLoading ? (
-                  <div className="space-y-3">
-                    <Skeleton className="h-20 w-full" />
-                    <Skeleton className="h-20 w-full" />
-                  </div>
-                ) : allAssessments.length === 0 ? (
-                  <div className="py-8 text-center">
-                    <Icon name="inbox" size={40} className="text-muted-foreground/30 mx-auto mb-3" />
-                    <p className="text-sm text-muted-foreground">
-                      {_('No assessments created yet for this class.')}
-                    </p>
-                  </div>
-                ) : (
-                  <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3">
-                    {allAssessments.map((assessment) => (
-                      <motion.div key={`${assessment.type}-${assessment.id}`} variants={cardStackReveal} custom={0}>
-                        <Card className="border-border/60">
-                          <CardContent className="p-5">
-                            <div className="flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4 flex">
-                              <div className="flex items-start gap-3 min-w-0 flex-1 w-full md:w-auto">
-                                <div className={`h-10 w-10 rounded-lg hidden md:flex items-center justify-center flex-shrink-0 ${
-                                  assessment.type === 'quiz'
-                                    ? 'bg-primary/10 text-primary'
-                                    : 'bg-secondary/10 text-secondary'
-                                }`}>
-                                  <Icon
-                                    name={assessment.type === 'quiz' ? 'quiz' : 'note_alt'}
-                                    size={18}
-                                  />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="font-medium text-sm truncate">{assessment.title || _('Untitled')}</span>
-                                    <Badge
-                                      variant={assessment.status === 'released' ? 'success' : 'outline'}
-                                      className="text-[10px] capitalize"
-                                    >
-                                      {assessment.status}
-                                    </Badge>
-                                    <Badge variant="secondary" className="text-[10px] capitalize">
-                                      {assessment.type}
-                                    </Badge>
-                                  </div>
-                                  <div className="grid grid-cols-2 md:flex md:items-center gap-x-3 gap-y-1 md:gap-3 mt-1.5 text-label-xs text-muted-foreground">
-                                    <span>{assessment.attemptCount ?? 0} {_('attempts')}</span>
-                                    {assessment.timeLimitMinutes && <span>{assessment.timeLimitMinutes}{_('m')}</span>}
-                                    {assessment.totalPoints && <span>{assessment.totalPoints} {_('pts')}</span>}
-                                    <span>{_('Pass')} {assessment.passingScore ?? 50}%</span>
-                                    <span>{_('Max')} {assessment.maxAttempts ?? 3}</span>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex flex-wrap items-center gap-2 w-full md:w-auto md:flex-shrink-0">
-                                {assessment.type === 'quiz' && assessment.status === 'draft' && (
-                                  <>
-                                    <label className="flex items-center gap-1 cursor-pointer text-[10px]">
-                                      <Switch
-                                        checked={assessment.shuffleQuestions ?? true}
-                                        onCheckedChange={(v) => updateQuizMutation.mutate({ quizId: assessment.id, data: { shuffleQuestions: v } })}
-                                        className="scale-[0.6]"
-                                      />
-                                      {_('Shuffle')}
-                                    </label>
-                                    <label className="flex items-center gap-1 cursor-pointer text-[10px]">
-                                      <Switch
-                                        checked={assessment.showResults ?? false}
-                                        onCheckedChange={(v) => updateQuizMutation.mutate({ quizId: assessment.id, data: { showResults: v } })}
-                                        className="scale-[0.6]"
-                                      />
-                                      {_('Results')}
-                                    </label>
-                                    <Button
-                                      variant="default"
-                                      size="sm"
-                                      onClick={() => {
-                                        if (assessment.type === 'quiz') {
-                                          releaseQuizMutation.mutate(assessment.id);
-                                        } else {
-                                          releaseAssignmentMutation.mutate(assessment.id);
-                                        }
-                                      }}
-                                      disabled={
-                                        (assessment.type === 'quiz' ? releaseQuizMutation.isPending : releaseAssignmentMutation.isPending)
-                                      }
-                                      className="w-full md:w-auto"
-                                    >
-                                      {_('Release')}
-                                    </Button>
-                                  </>
-                                )}
-                                {assessment.type === 'quiz' && assessment.status === 'released' && (
-                                  assessment.isRepublished ? (
-                                    <Badge variant="success" className="text-[10px] gap-1 py-1">
-                                      <Icon name="check" size={10} />
-                                      {_('Republished')}
-                                    </Badge>
-                                  ) : (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => republishQuizMutation.mutate(assessment.id)}
-                                      disabled={republishQuizMutation.isPending}
-                                      className="text-success border-success/30 w-full md:w-auto"
-                                    >
-                                      {_('Republish')}
-                                    </Button>
-                                  )
-                                )}
-                                {assessment.status === 'released' && (
-                                  <label className="flex items-center gap-1 cursor-pointer text-[10px]">
-                                    <Switch
-                                      checked={assessment.showResults}
-                                      onCheckedChange={(checked) => {
-                                        if (assessment.type === 'quiz') {
-                                          toggleQuizGradesMutation.mutate({ id: assessment.id, showResults: checked });
-                                        } else {
-                                          toggleAssignmentGradesMutation.mutate({ id: assessment.id, showResults: checked });
-                                        }
-                                      }}
-                                      disabled={
-                                        (assessment.type === 'quiz' && toggleQuizGradesMutation.isPending) ||
-                                        (assessment.type === 'assignment' && toggleAssignmentGradesMutation.isPending)
-                                      }
-                                      className="scale-[0.6]"
-                                    />
-                                    {_('Grades')}
-                                  </label>
-                                )}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
+
       </motion.div>
     </>
   );
