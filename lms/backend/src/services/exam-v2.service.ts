@@ -479,14 +479,27 @@ export async function getExamById(examId: string) {
   const { exists, data } = await nosqlGet(EV2, examId);
   if (!exists || !data) throw new NotFoundError('Exam not found');
   const exam: any = { id: examId, ...data };
-  if (!exam.questionCount && exam.questions?.length) {
-    exam.questionCount = exam.questions.length;
+  if (!exam.questionCount) {
+    if (exam.questions?.length) {
+      exam.questionCount = exam.questions.length;
+    } else if (exam.questionCountPerConcept && exam.textbookId && exam.chapterId) {
+      const concepts = await getConceptsForChapter(exam.textbookId, exam.chapterId);
+      exam.questionCount = (exam.questionCountPerConcept as number) * concepts.length;
+    }
   }
   return exam;
 }
 
 export async function listExamsForClass(classId: string, _schoolId?: string): Promise<any[]> {
   const items = await nosqlQuery(EV2, { classId });
+  for (const exam of items as any[]) {
+    if (!exam.questionCount && exam.questionCountPerConcept && exam.textbookId && exam.chapterId) {
+      try {
+        const concepts = await getConceptsForChapter(exam.textbookId, exam.chapterId);
+        exam.questionCount = (exam.questionCountPerConcept as number) * concepts.length;
+      } catch { /* skip */ }
+    }
+  }
   return items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
