@@ -80,6 +80,34 @@ export default function TeacherTestSchedulePage() {
     onError: () => toast.error(_('Failed to update grades visibility')),
   });
 
+  const releaseQuizMutation = useMutation({
+    mutationFn: (quizId: string) => api.post(`/quizzes-v2/${quizId}/release`).then((r) => r.data.data),
+    onSuccess: () => {
+      toast.success(_('Quiz released to students'));
+      queryClient.invalidateQueries({ queryKey: ['quizzes-v2-class', selectedClassId] });
+    },
+    onError: () => toast.error(_('Failed to release quiz')),
+  });
+
+  const republishQuizMutation = useMutation({
+    mutationFn: (quizId: string) => api.post(`/quizzes-v2/${quizId}/republish`).then((r) => r.data.data),
+    onSuccess: () => {
+      toast.success(_('Quiz republished as practice mode'));
+      queryClient.invalidateQueries({ queryKey: ['quizzes-v2-class', selectedClassId] });
+    },
+    onError: () => toast.error(_('Failed to republish quiz')),
+  });
+
+  const toggleQuizGradesMutation = useMutation({
+    mutationFn: ({ id, showResults }: { id: string; showResults: boolean }) =>
+      api.put(`/quizzes-v2/${id}/grades`, { showResults }).then((r) => r.data.data),
+    onSuccess: () => {
+      toast.success(_('Grades visibility updated'));
+      queryClient.invalidateQueries({ queryKey: ['quizzes-v2-class', selectedClassId] });
+    },
+    onError: () => toast.error(_('Failed to update grades visibility')),
+  });
+
   const examList: any[] = exams ?? [];
   const quizList: any[] = quizzes ?? [];
   const assignmentItems: any[] = assignmentsData ?? [];
@@ -211,18 +239,22 @@ export default function TeacherTestSchedulePage() {
               >
                 {() => (
                   <div className="space-y-3">
-                    {quizList.map((quiz: any) => (
+                    {quizList.map((quiz: any) => {
+                      const isDraft = !quiz.releasedAt;
+                      const isReleased = !!quiz.releasedAt && !quiz.isRepublished;
+                      const isRepublished = !!quiz.releasedAt && !!quiz.isRepublished;
+                      return (
                       <Card key={quiz.id} className="border-border/60">
                         <CardContent className="p-4">
                           <div className="flex items-start gap-3">
-                            <div className="h-10 w-10 rounded-lg bg-secondary-container flex items-center justify-center shrink-0">
-                              <Icon name="quiz" size={20} className="text-on-secondary-container" />
+                            <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${isReleased || isRepublished ? 'bg-success-container' : 'bg-secondary-container'}`}>
+                              <Icon name="quiz" size={20} className={isReleased || isRepublished ? 'text-on-success-container' : 'text-on-secondary-container'} />
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-0.5">
                                 <p className="font-semibold truncate">{quiz.title}</p>
-                                <Badge variant={quiz.releasedAt ? 'success' : 'secondary'} className="text-[10px] shrink-0 capitalize">
-                                  {quiz.releasedAt ? _('Released') : _('Draft')}
+                                <Badge variant={isRepublished ? 'success' : isReleased ? 'success' : 'secondary'} className="text-[10px] shrink-0 capitalize">
+                                  {isRepublished ? _('Republished') : isReleased ? _('Released') : _('Draft')}
                                 </Badge>
                               </div>
                               <p className="text-label-xs text-muted-foreground line-clamp-1">{quiz.description}</p>
@@ -233,10 +265,29 @@ export default function TeacherTestSchedulePage() {
                                 <span>{formatDate(quiz.createdAt)}</span>
                               </div>
                             </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {isDraft && (
+                                <Button size="sm" onClick={() => releaseQuizMutation.mutate(quiz.id)} loading={releaseQuizMutation.isPending && releaseQuizMutation.variables === quiz.id} className="gap-1">
+                                  <Icon name="publish" size={15} />{_('Release')}
+                                </Button>
+                              )}
+                              {isReleased && (
+                                <Button size="sm" variant="outline" onClick={() => republishQuizMutation.mutate(quiz.id)} loading={republishQuizMutation.isPending && republishQuizMutation.variables === quiz.id} className="gap-1">
+                                  <Icon name="autorenew" size={15} />{_('Republish')}
+                                </Button>
+                              )}
+                              {isRepublished && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-label-xs text-muted-foreground">{_('Grades')}</span>
+                                  <Switch checked={quiz.showResults} onCheckedChange={(checked) => toggleQuizGradesMutation.mutate({ id: quiz.id, showResults: checked })} disabled={toggleQuizGradesMutation.isPending && toggleQuizGradesMutation.variables?.id === quiz.id} />
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </DataFetchWrapper>
