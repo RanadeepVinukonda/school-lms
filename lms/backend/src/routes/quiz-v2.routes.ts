@@ -32,8 +32,8 @@ const submitAttemptSchema = z.object({
 }).passthrough();
 
 const releaseGradesSchema = z.object({
-  grades: z.record(z.number().min(0)),
-}).passthrough();
+  showResults: z.boolean(),
+});
 
 router.post('/', authenticate, requireRole('teacher', 'admin'), validate(createQuizSchema), asyncHandler(quizV2Controller.createQuiz));
 router.patch('/:quizId', authenticate, requireRole('teacher', 'admin'), validate(updateQuizSchema), asyncHandler(quizV2Controller.updateQuiz));

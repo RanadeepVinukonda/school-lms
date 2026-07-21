@@ -62,13 +62,22 @@ export default function TeacherTestSchedulePage() {
     enabled: !!selectedClassId,
   });
 
+  function onError(msg: string) {
+    return (err: unknown) => {
+      const message = err && typeof err === 'object' && 'message' in err
+        ? (err as { message: string }).message
+        : msg;
+      toast.error(message);
+    };
+  }
+
   const releaseMutation = useMutation({
     mutationFn: (examId: string) => api.post(`/exams-v2/${examId}/release`),
     onSuccess: () => {
       toast.success(_('Exam released to students'));
       queryClient.invalidateQueries({ queryKey: ['exams-v2-class'] });
     },
-    onError: () => toast.error(_('Failed to release exam')),
+    onError: onError(_('Failed to release exam')),
   });
 
   const toggleGradesMutation = useMutation({
@@ -77,7 +86,7 @@ export default function TeacherTestSchedulePage() {
       toast.success(_('Grades visibility updated'));
       queryClient.invalidateQueries({ queryKey: ['exams-v2-class'] });
     },
-    onError: () => toast.error(_('Failed to update grades visibility')),
+    onError: onError(_('Failed to update grades visibility')),
   });
 
   const releaseQuizMutation = useMutation({
@@ -86,7 +95,7 @@ export default function TeacherTestSchedulePage() {
       toast.success(_('Quiz released to students'));
       queryClient.invalidateQueries({ queryKey: ['quizzes-v2-class', selectedClassId] });
     },
-    onError: () => toast.error(_('Failed to release quiz')),
+    onError: onError(_('Failed to release quiz')),
   });
 
   const republishQuizMutation = useMutation({
@@ -95,7 +104,7 @@ export default function TeacherTestSchedulePage() {
       toast.success(_('Quiz republished as practice mode'));
       queryClient.invalidateQueries({ queryKey: ['quizzes-v2-class', selectedClassId] });
     },
-    onError: () => toast.error(_('Failed to republish quiz')),
+    onError: onError(_('Failed to republish quiz')),
   });
 
   const toggleQuizGradesMutation = useMutation({
@@ -105,7 +114,7 @@ export default function TeacherTestSchedulePage() {
       toast.success(_('Grades visibility updated'));
       queryClient.invalidateQueries({ queryKey: ['quizzes-v2-class', selectedClassId] });
     },
-    onError: () => toast.error(_('Failed to update grades visibility')),
+    onError: onError(_('Failed to update grades visibility')),
   });
 
   const examList: any[] = exams ?? [];
