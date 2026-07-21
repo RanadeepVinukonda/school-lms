@@ -1,46 +1,53 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouteError, isRouteErrorResponse } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
+import { isChunkError } from '@/lib/lazyRetry';
 
-function isChunkError(error: unknown): boolean {
-  if (!(error instanceof Error)) return false;
-  const msg = error.message || '';
-  return (
-    msg.includes('Failed to fetch dynamically imported module') ||
-    msg.includes('Loading chunk') ||
-    msg.includes('ChunkLoadError') ||
-    msg.includes('dynamically imported')
-  );
-}
+const SESSION_KEY = 'opencode-chunk-retry';
 
 export function RouteErrorFallback() {
   const error = useRouteError();
+  const reloaded = useRef(false);
   let title = 'Unexpected Error';
   let message = 'Something went wrong while loading this page.';
+
+  const chunkError = isChunkError(error);
 
   if (isRouteErrorResponse(error)) {
     title = `${error.status} ${error.statusText}`;
     message = error.data?.message || message;
   } else if (error instanceof Error) {
-    title = 'Application Error';
-    message = error.message || message;
+    title = chunkError ? 'Updating application...' : 'Application Error';
+    message = chunkError
+      ? 'A new version is being loaded. Please wait...'
+      : error.message || message;
   }
 
   useEffect(() => {
-    if (isChunkError(error)) {
-      window.location.reload();
+    if (chunkError && !reloaded.current) {
+      reloaded.current = true;
+      if (!sessionStorage.getItem(SESSION_KEY)) {
+        sessionStorage.setItem(SESSION_KEY, '1');
+        window.location.reload();
+      }
     }
-  }, [error]);
+  }, [chunkError]);
 
-  if (isChunkError(error)) {
+  if (chunkError) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center">
         <div className="mb-5 rounded-full bg-warning-container p-4">
-          <Icon name="sync" size={32} className="text-on-warning-container" />
+          <Icon name="sync" size={32} className="text-on-warning-container animate-spin" />
         </div>
-        <h2 className="text-headline-sm mb-2">{'Reloading...'}</h2>
-        <p className="text-body-md text-on-surface-variant max-w-md mb-6">{'A new version is available. Reloading automatically.'}</p>
+        <h2 className="text-headline-sm mb-2">{title}</h2>
+        <p className="text-body-md text-on-surface-variant max-w-md mb-6">{message}</p>
+        <div className="flex gap-3">
+          <Button variant="tonal" onClick={() => window.location.reload()} className="gap-2">
+            <Icon name="refresh" size={18} />
+            Retry
+          </Button>
+        </div>
       </div>
     );
   }
