@@ -75,10 +75,20 @@ function QuestionForm({ initial, onSave, loading }: { initial?: any; onSave: (da
           </select>
         </div>
       </div>
-      {(type === 'multiple_choice' || type === 'matching') && (
+      {type === 'multiple_choice' && (
         <div>
           <label className="text-sm font-medium">{_('Options (one per line)')}</label>
           <textarea value={options} onChange={(e) => setOptions(e.target.value)} rows={4} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1" placeholder={_('Option A\nOption B\nOption C\nOption D')} />
+        </div>
+      )}
+      {type === 'matching' && (
+        <div>
+          <label className="text-sm font-medium">{_('Matching Pairs')}</label>
+          <p className="text-xs text-muted-foreground mt-0.5 mb-2">{_('Enter one pair per line using Left - Right format:')}</p>
+          <textarea value={options} onChange={(e) => setOptions(e.target.value)} rows={4} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1 font-mono" placeholder={_('Combing - Hair care\nEating - Consuming food\nPlaying - Having fun')} />
+          <p className="text-xs text-muted-foreground mt-1">
+            {_('Correct Answer format (e.g., Combing:Hair care|Eating:Consuming food|Playing:Having fun)')}
+          </p>
         </div>
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

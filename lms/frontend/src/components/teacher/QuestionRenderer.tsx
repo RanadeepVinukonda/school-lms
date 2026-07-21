@@ -15,26 +15,22 @@ export function QuestionRenderer({ question }: QuestionProps) {
   const { type, text } = question;
 
   const renderMatching = () => {
-    // Attempt to parse standard matching formats
-    // e.g., "Match the term... : 1. Term 1, 2. Term 2. A: Desc A, B: Desc B."
-    
-    // Simple regex to find where lists start
-    const matchNumber1 = text.indexOf('1.');
-    const matchLetterA = text.indexOf('A:') !== -1 ? text.indexOf('A:') : text.indexOf('A.');
+    const { options } = question;
 
-    if (matchNumber1 !== -1 && matchLetterA !== -1 && matchNumber1 < matchLetterA) {
-      const prompt = text.substring(0, matchNumber1).trim();
-      const leftPart = text.substring(matchNumber1, matchLetterA).trim();
-      const rightPart = text.substring(matchLetterA).trim();
-
-      // Split left parts by "2.", "3.", etc.
-      const leftItems = leftPart.split(/\d+\./).filter(s => s.trim().length > 0).map(s => s.replace(/,$/, '').trim());
-      // Split right parts by "B:", "C:" or "B.", "C." etc.
-      const rightItems = rightPart.split(/[A-Z][:.]/).filter(s => s.trim().length > 0).map(s => s.replace(/,$/, '').trim());
+    if (options && options.length > 0) {
+      const pairs = options.map((opt) => {
+        const sep = opt.includes(' - ') ? ' - ' : opt.includes(': ') ? ': ' : '|';
+        const idx = opt.indexOf(sep);
+        return idx > 0
+          ? { left: opt.slice(0, idx).trim(), right: opt.slice(idx + sep.length).trim() }
+          : { left: opt, right: '' };
+      });
+      const leftItems = pairs.map((p) => p.left);
+      const rightItems = [...new Set(pairs.map((p) => p.right))];
 
       return (
         <div className="space-y-4">
-          <p className="text-body-md font-semibold text-on-surface">{prompt}</p>
+          <p className="text-body-md font-semibold text-on-surface">{text}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-surface-variant/20 border border-outline-variant/40 rounded-xl p-4">
               <h4 className="text-label-xs font-bold text-primary mb-2 uppercase tracking-wide border-b border-outline-variant/40 pb-2">Column 1</h4>
@@ -62,8 +58,7 @@ export function QuestionRenderer({ question }: QuestionProps) {
         </div>
       );
     }
-    
-    // Fallback if parsing fails
+
     return <p className="text-body-md font-semibold text-on-surface leading-snug">{text}</p>;
   };
 

@@ -15,6 +15,7 @@ import { getAllSubjects, getClass, getExamsBySubject, getCorrectionsByStudent } 
 import { useAuthStore } from '@/store/authStore';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
+import api from '@/services/api';
 import type { ExamItem, CorrectionItem } from '@/services/dataService';
 
 function Countdown({ endDate }: { endDate: string }) {
@@ -82,15 +83,42 @@ export default function StudentExamsPage() {
       }
 
       const subjects = allSubjects.filter((s) => studentClass.subjectIds!.includes(s.id));
-      const examPromises = subjects.map((s) => getExamsBySubject(s.id));
-      const examResults = await Promise.all(examPromises);
-      const allExams = examResults.flat();
+
+      // Fetch V2 exams released to this class
+      const examsResponse = user?.classId
+        ? await api.get(`/exams-v2/class/${user.classId}`).then((r) => r.data.data ?? [])
+        : [];
+      const releasedExams = examsResponse.filter((e: any) => !!e.releasedAt);
+
+      const upcoming: ExamWithSubject[] = releasedExams.map((exam: any) => ({
+        id: exam.id,
+        title: exam.title,
+        description: exam.description,
+        duration: exam.timeLimitMinutes,
+        totalPoints: exam.totalPoints,
+        passingScore: exam.passingScore,
+        questions: exam.questions,
+        showResults: exam.showResults,
+        shuffleQuestions: exam.shuffleQuestions,
+        subjectId: subjects[0]?.id,
+        startDate: exam.releasedAt,
+        endDate: undefined,
+        createdAt: exam.createdAt,
+        updatedAt: exam.updatedAt,
+        subject: subjects.length > 0
+          ? { id: subjects[0].id, name: subjects[0].name, code: subjects[0].code, icon: subjects[0].icon, color: subjects[0].color, category: subjects[0].category }
+          : null,
+      }));
+
+      // Legacy exams for past results
+      const legacyExamPromises = subjects.map((s) => getExamsBySubject(s.id));
+      const legacyExamResults = await Promise.all(legacyExamPromises);
+      const allLegacyExams = legacyExamResults.flat();
 
       const now = new Date();
-      const upcoming: ExamWithSubject[] = [];
       const past: PastExamResult[] = [];
 
-      for (const exam of allExams) {
+      for (const exam of allLegacyExams) {
         const subject = subjects.find((s) => s.id === exam.subjectId) ?? null;
         const subjectData = subject
           ? { id: subject.id, name: subject.name, code: subject.code, icon: subject.icon, color: subject.color, category: subject.category }
@@ -109,8 +137,6 @@ export default function StudentExamsPage() {
             : null;
 
           past.push({ ...exam, subject: subjectData, correction, percentage });
-        } else if (examStart && examStart > now) {
-          upcoming.push({ ...exam, subject: subjectData });
         }
       }
 
@@ -221,7 +247,7 @@ export default function StudentExamsPage() {
                     >
                       {filteredUpcoming.map((exam) => (
                         <motion.div key={exam.id} variants={cardStackReveal} custom={0}>
-                          <Link to={`/exams/${exam.id}`}>
+                          <Link to={`/student/assessments/${exam.id}/take?type=exam`}>
                             <Card className="border-border/60 transition-all duration-300 group">
                               <CardContent className="p-5">
                                 <div className="flex items-start gap-4">
