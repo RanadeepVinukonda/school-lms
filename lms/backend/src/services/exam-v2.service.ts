@@ -184,6 +184,7 @@ export async function createExam(data: {
     timeLimitMinutes: data.timeLimitMinutes,
     selectedModels: data.selectedModels,
     questionCountPerConcept: perConcept,
+    questionCount: allSelectedQuestions.length,
     totalPoints,
     passingScore: data.passingScore ?? 50,
     maxAttempts: data.maxAttempts ?? 1,
@@ -477,7 +478,11 @@ export async function getExamResults(examId: string, studentId: string) {
 export async function getExamById(examId: string) {
   const { exists, data } = await nosqlGet(EV2, examId);
   if (!exists || !data) throw new NotFoundError('Exam not found');
-  return { id: examId, ...data };
+  const exam: any = { id: examId, ...data };
+  if (!exam.questionCount && exam.questions?.length) {
+    exam.questionCount = exam.questions.length;
+  }
+  return exam;
 }
 
 export async function listExamsForClass(classId: string, _schoolId?: string): Promise<any[]> {
