@@ -158,7 +158,6 @@ export default function StudentQuizTakePageV2() {
   const [interactiveCorrect, setInteractiveCorrect] = useState<Record<string, boolean>>({});
   const [interactiveError, setInteractiveError] = useState<Record<string, boolean>>({});
   const [customTextInput, setCustomTextInput] = useState('');
-  const [skippedQuestions, setSkippedQuestions] = useState<Record<string, boolean>>({});
 
   const questionStartTimeRef = useRef<number>(Date.now());
   const questionTimeMapRef = useRef<Record<string, number>>({});
@@ -325,12 +324,10 @@ export default function StudentQuizTakePageV2() {
     const currentQ = attempt.questions[currentIndex];
     if (currentQ) trackTimeOnQuestion(currentQ.id);
 
-    const isRepub = assessmentInfo?.isRepublished;
     const answersPayload: V2AnswerPayload[] = attempt.questions.map((q) => ({
       questionId: q.id,
       answer: answers[q.id] || '',
       timeSpent: questionTimeMapRef.current[q.id] || 0,
-      skipped: isRepub && skippedQuestions[q.id] ? true : undefined,
     }));
 
     try {
@@ -348,7 +345,7 @@ export default function StudentQuizTakePageV2() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [attempt, userId, isSubmitting, currentIndex, answers, basePath, trackTimeOnQuestion, assessmentInfo, skippedQuestions]);
+  }, [attempt, userId, isSubmitting, currentIndex, answers, basePath, trackTimeOnQuestion]);
 
   const handleInteractiveSelect = (optionValue: string) => {
     if (!attempt || !assessmentInfo?.isRepublished) return;
@@ -419,9 +416,6 @@ export default function StudentQuizTakePageV2() {
 
   const handleSkip = useCallback(() => {
     if (!attempt) return;
-    const q = attempt.questions[currentIndex];
-    if (!q) return;
-    setSkippedQuestions((prev) => ({ ...prev, [q.id]: true }));
     if (currentIndex < (attempt.questions?.length ?? 0) - 1) {
       goToQuestion(currentIndex + 1);
     } else {
@@ -818,9 +812,12 @@ export default function StudentQuizTakePageV2() {
     questions = assessmentInfo.questions;
   }
   const currentQuestion = questions[currentIndex];
-  const answeredCount = Object.keys(answers).length;
+  const isRepubMode = assessmentInfo?.isRepublished;
+  const completedCount = Object.keys(interactiveCorrect).length;
+  const answeredCount = isRepubMode ? completedCount : Object.keys(answers).length;
   const totalQuestions = questions.length;
   const progress = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
+  const allCompleted = totalQuestions > 0 && completedCount >= totalQuestions;
   const warn = timeLeft > 0 && timeLeft <= 180;
 
   if (!currentQuestion) {
@@ -840,8 +837,12 @@ export default function StudentQuizTakePageV2() {
 
   const currentStatus = questionStatuses[currentQuestion.id] || 'unvisited';
 
-  const getStatusColor = (status: 'unvisited' | 'visited' | 'attempted' | 'review', isCurrent: boolean) => {
+  const getStatusColor = (status: 'unvisited' | 'visited' | 'attempted' | 'review', isCurrent: boolean, qId?: string) => {
     if (isCurrent) return 'ring-2 ring-primary scale-110 font-bold bg-primary text-primary-foreground';
+    if (isRepubMode && qId) {
+      if (interactiveCorrect[qId]) return 'bg-success text-success-foreground font-semibold';
+      if (interactiveError[qId]) return 'bg-destructive text-destructive-foreground font-semibold';
+    }
     switch (status) {
       case 'attempted': return 'bg-success text-success-foreground font-semibold';
       case 'review': return 'bg-info text-info-foreground font-semibold';
@@ -872,7 +873,7 @@ export default function StudentQuizTakePageV2() {
               </div>
               {assessmentInfo.isRepublished && (
                 <Badge variant="success" className="text-[10px] tracking-wider uppercase font-extrabold animate-pulse">
-                  {_('Interactive Mode')}
+                  {_('Re-Conduct Mode')}
                 </Badge>
               )}
             </div>
@@ -1034,30 +1035,34 @@ export default function StudentQuizTakePageV2() {
                 <Button
                   onClick={() => setShowConfirm(true)}
                   className="gap-1.5 bg-success hover:bg-success/90"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || (isRepubMode && !allCompleted)}
                 >
                   {isSubmitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : isRepubMode && !allCompleted ? (
+                    <>
+                      <CheckCircle className="h-4 w-4" />
+                      {completedCount}/{totalQuestions}
+                    </>
                   ) : (
                     <Send className="h-4 w-4" />
                   )}
-                  {_('Finish & Submit')}
+                  {isSubmitting ? '' : isRepubMode && !allCompleted ? '' : _('Finish & Submit')}
                 </Button>
               )}
             </div>
           </div>
         </div>
 
-        {/* FLOATING SIDEBAR PALETTE FOR NORMAL MODE */}
-        {!assessmentInfo.isRepublished && (
-          <div className="w-full md:w-64 border-t md:border-t-0 md:border-l border-outline-variant bg-card flex flex-col shrink-0 overflow-y-auto max-h-[40vh] md:max-h-none">
+        {/* FLOATING SIDEBAR PALETTE */}
+        <div className="w-full md:w-64 border-t md:border-t-0 md:border-l border-outline-variant bg-card flex flex-col shrink-0 overflow-y-auto max-h-[40vh] md:max-h-none">
             <div className="p-4 border-b border-outline-variant">
               <h3 className="font-bold text-title-sm flex items-center gap-1.5 text-on-surface">
                 <Brain className="h-4 w-4 text-primary" />
                 {_('Question Navigator')}
               </h3>
               <p className="text-label-xs text-on-surface-variant mt-0.5">
-                {answeredCount} {_('of')} {totalQuestions} {_('answered')}
+                {answeredCount} {_('of')} {totalQuestions} {isRepubMode ? _('completed') : _('answered')}
               </p>
             </div>
 
@@ -1090,7 +1095,7 @@ export default function StudentQuizTakePageV2() {
                     onClick={() => goToQuestion(i)}
                     className={cn(
                       'h-9 w-9 rounded-lg text-label-xs font-bold transition-all flex items-center justify-center shadow-sm hover:scale-105',
-                      getStatusColor(status, isCurrent)
+                      getStatusColor(status, isCurrent, q.id)
                     )}
                   >
                     {i + 1}
@@ -1099,7 +1104,6 @@ export default function StudentQuizTakePageV2() {
               })}
             </div>
           </div>
-        )}
       </div>
 
       {/* CONFIRMATION DIALOG */}
@@ -1115,11 +1119,9 @@ export default function StudentQuizTakePageV2() {
               <CardHeader>
                 <CardTitle className="text-title-sm">{_('Finish Assessment')}</CardTitle>
                 <CardDescription>
-                  {_('You answered')} {answeredCount} {_('of')} {totalQuestions} {_('questions.')}
-                  {answeredCount < totalQuestions && ` ${totalQuestions - answeredCount} ${_('remain unanswered.')}`}
-                  {assessmentInfo.isRepublished && Object.keys(skippedQuestions).length > 0 && (
-                    <> {_('You have')} {Object.keys(skippedQuestions).length} {_('skipped questions.')}</>
-                  )}
+                  {isRepubMode
+                    ? _('You have completed all questions correctly. Submit your answers?')
+                    : `${_('You answered')} ${answeredCount} ${_('of')} ${totalQuestions} ${_('questions.')}${answeredCount < totalQuestions ? ` ${totalQuestions - answeredCount} ${_('remain unanswered.')}` : ''}`}
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-5 flex gap-3 flex-col">
@@ -1144,21 +1146,6 @@ export default function StudentQuizTakePageV2() {
                     {_('Submit Test')}
                   </Button>
                 </div>
-                {assessmentInfo.isRepublished && Object.keys(skippedQuestions).length > 0 && (
-                  <Button
-                    variant="outline"
-                    className="w-full gap-2 text-warning border-warning/30"
-                    onClick={() => {
-                      setShowConfirm(false);
-                      const firstSkipped = attempt?.questions.findIndex((q) => skippedQuestions[q.id]);
-                      if (firstSkipped !== undefined && firstSkipped >= 0) {
-                        goToQuestion(firstSkipped);
-                      }
-                    }}
-                  >
-                    {_('Review Skipped Questions')}
-                  </Button>
-                )}
               </CardContent>
             </Card>
           </motion.div>
