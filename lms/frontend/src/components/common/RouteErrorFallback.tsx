@@ -1,6 +1,18 @@
+import { useEffect } from 'react';
 import { useRouteError, isRouteErrorResponse } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
+
+function isChunkError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const msg = error.message || '';
+  return (
+    msg.includes('Failed to fetch dynamically imported module') ||
+    msg.includes('Loading chunk') ||
+    msg.includes('ChunkLoadError') ||
+    msg.includes('dynamically imported')
+  );
+}
 
 export function RouteErrorFallback() {
   const error = useRouteError();
@@ -13,6 +25,24 @@ export function RouteErrorFallback() {
   } else if (error instanceof Error) {
     title = 'Application Error';
     message = error.message || message;
+  }
+
+  useEffect(() => {
+    if (isChunkError(error)) {
+      window.location.reload();
+    }
+  }, [error]);
+
+  if (isChunkError(error)) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center">
+        <div className="mb-5 rounded-full bg-warning-container p-4">
+          <Icon name="sync" size={32} className="text-on-warning-container" />
+        </div>
+        <h2 className="text-headline-sm mb-2">{'Reloading...'}</h2>
+        <p className="text-body-md text-on-surface-variant max-w-md mb-6">{'A new version is available. Reloading automatically.'}</p>
+      </div>
+    );
   }
 
   return (
