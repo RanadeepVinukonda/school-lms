@@ -68,6 +68,16 @@ export async function logProctoringEvent(req: Request, res: Response) {
   sendSuccess(res, result, 'Proctoring event logged');
 }
 
+export async function getAvailableTypesForConcept(req: Request, res: Response) {
+  const result = await examV2Service.getAvailableTypesForConcept(req.params.conceptId);
+  sendSuccess(res, result);
+}
+
+export async function getAvailableTypes(req: Request, res: Response) {
+  const result = await examV2Service.getAvailableTypesForChapter(req.params.textbookId, req.params.chapterId);
+  sendSuccess(res, result);
+}
+
 export async function getExam(req: Request, res: Response) {
   const result = await examV2Service.getExamById(req.params.examId);
   sendSuccess(res, result);

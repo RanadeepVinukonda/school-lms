@@ -157,6 +157,18 @@ export default function TeacherAssessmentCreatePage() {
 
   const conceptList = concepts ?? [];
 
+  const { data: availableTypes = [] } = useQuery({
+    queryKey: ['available-question-types', selectedConceptId],
+    queryFn: () => api.get(`/exams-v2/concept/${selectedConceptId}/types`).then((r) => r.data.data),
+    enabled: !!selectedConceptId,
+  });
+
+  useEffect(() => {
+    if (availableTypes.length > 0) {
+      setSelectedModels(availableTypes);
+    }
+  }, [availableTypes]);
+
   const selectedConcept = conceptList.find((c: any) => c.id === selectedConceptId);
   const allConceptQuestions: any[] = (selectedConcept as any)?.questionBank ?? [];
   const TYPE_MAP: Record<string, string[]> = { multiple_choice: ['mcq', 'multiple_choice'] };

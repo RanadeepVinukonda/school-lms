@@ -66,6 +66,8 @@ router.get('/attempts/:attemptId/logs', authenticate, asyncHandler(examV2Control
 router.put('/:examId/grades', authenticate, requireRole('teacher', 'admin'), validate(releaseGradesSchema), asyncHandler(examV2Controller.releaseGrades));
 router.get('/:examId/results', authenticate, asyncHandler(examV2Controller.getResults));
 router.get('/class/:classId', authenticate, asyncHandler(examV2Controller.listForClass));
+router.get('/concept/:conceptId/types', authenticate, asyncHandler(examV2Controller.getAvailableTypesForConcept));
+router.get('/chapter/:textbookId/:chapterId/types', authenticate, asyncHandler(examV2Controller.getAvailableTypes));
 router.get('/my', authenticate, asyncHandler(examV2Controller.listForTeacher));
 router.get('/:examId', authenticate, asyncHandler(examV2Controller.getExam));
 

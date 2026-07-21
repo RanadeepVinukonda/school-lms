@@ -88,6 +88,18 @@ export default function TeacherExamsPage() {
     enabled: !!selectedTextbookId,
   });
 
+  const { data: availableTypes = [] } = useQuery({
+    queryKey: ['available-question-types', selectedTextbookId, selectedChapterId],
+    queryFn: () => api.get(`/exams-v2/chapter/${selectedTextbookId}/${selectedChapterId}/types`).then((r) => r.data.data),
+    enabled: !!selectedTextbookId && !!selectedChapterId,
+  });
+
+  useEffect(() => {
+    if (availableTypes.length > 0) {
+      setSelectedModels(availableTypes);
+    }
+  }, [availableTypes]);
+
   const createMutation = useMutation({
     mutationFn: async (body: Record<string, unknown>) => {
       try {

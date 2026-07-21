@@ -64,6 +64,29 @@ async function getQuestionsForConcept(conceptId: string) {
   return rows || [];
 }
 
+export async function getAvailableTypesForChapter(textbookId: string, chapterId: string) {
+  const concepts = await getConceptsForChapter(textbookId, chapterId);
+  const conceptIds = concepts.map((c: any) => c.id);
+  if (conceptIds.length === 0) return [];
+  const { data: rows, error } = await getSupabaseAdmin()
+    .from('concept_questions')
+    .select('type')
+    .in('concept_id', conceptIds);
+  if (error) throw error;
+  const types = new Set((rows || []).map((r: any) => r.type));
+  return Array.from(types);
+}
+
+export async function getAvailableTypesForConcept(conceptId: string) {
+  const { data: rows, error } = await getSupabaseAdmin()
+    .from('concept_questions')
+    .select('type')
+    .eq('concept_id', conceptId);
+  if (error) throw error;
+  const types = new Set((rows || []).map((r: any) => r.type));
+  return Array.from(types);
+}
+
 export async function createExam(data: {
   title: string;
   description?: string;
