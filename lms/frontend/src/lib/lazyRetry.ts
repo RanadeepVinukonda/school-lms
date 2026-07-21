@@ -9,12 +9,14 @@ export function lazyRetry<T extends React.ComponentType<any>>(
     for (let i = 0; i <= retries; i++) {
       try {
         return await importFn();
-      } catch (e) {
-        if (i === retries) throw e;
-        await new Promise((r) => setTimeout(r, delay));
+      } catch {
+        if (i < retries) {
+          await new Promise((r) => setTimeout(r, delay));
+        }
       }
     }
-    throw new Error('Failed to load module after retries');
+    window.location.reload();
+    return new Promise<{ default: T }>(() => {});
   });
 }
 
