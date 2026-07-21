@@ -5,10 +5,13 @@ import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from 'sonner';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { ActiveAcademicYearProvider } from '@/context/ActiveAcademicYearContext';
+import { setupChunkReload } from '@/lib/lazyRetry';
 import App from './app/App';
 import './index.css';
 import './lib/motion.css';
 import 'katex/dist/katex.min.css';
+
+setupChunkReload();
 
 // ── PWA / Service Worker ──
 if ('serviceWorker' in navigator) {
