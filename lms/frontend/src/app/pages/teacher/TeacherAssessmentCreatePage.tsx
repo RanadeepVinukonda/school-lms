@@ -948,7 +948,7 @@ export default function TeacherAssessmentCreatePage() {
                               <span className="text-xs font-mono text-muted-foreground">#{i + 1}</span>
                               <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{q.type}</span>
                               <input
-                                className="w-16 rounded border border-border px-1 py-0.5 text-xs text-center"
+                                className="w-16 rounded border border-border bg-background px-1 py-0.5 text-xs text-center"
                                 value={q.points}
                                 onChange={(e) => {
                                   const updated = [...reviewQuestions];
