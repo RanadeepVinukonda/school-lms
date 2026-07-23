@@ -395,9 +395,11 @@ export default function TeacherAssessmentCreatePage() {
     }));
   };
 
-  const quizDistributionTotal = Object.values(quizDistribution).reduce(
-    (sum, types) => sum + Object.values(types).reduce((s, v) => s + v, 0), 0,
-  );
+  const quizDistributionTotal = ['easy', 'medium', 'hard', 'hots'].reduce((sum, diff) =>
+    sum + QUESTION_MODELS.filter(m => selectedModels.includes(m.value)).reduce((s, m) => {
+      const t = m.value === 'multiple_choice' ? 'mcq' : m.value;
+      return s + (quizDistribution[diff]?.[t] ?? 0);
+    }, 0), 0);
 
   const generateAssignmentPaperMutation = useMutation({
     mutationFn: async () => {
@@ -465,9 +467,11 @@ export default function TeacherAssessmentCreatePage() {
     }));
   };
 
-  const assignmentDistributionTotal = Object.values(assignmentDistribution).reduce(
-    (sum, types) => sum + Object.values(types).reduce((s, v) => s + v, 0), 0,
-  );
+  const assignmentDistributionTotal = ['easy', 'medium', 'hard', 'hots'].reduce((sum, diff) =>
+    sum + ASSIGNMENT_QUESTION_TYPES.filter(m => selectedModels.includes(m.value)).reduce((s, m) => {
+      const t = m.value === 'multiple_choice' ? 'mcq' : m.value;
+      return s + (assignmentDistribution[diff]?.[t] ?? 0);
+    }, 0), 0);
 
   const resetQuizForm = useCallback(() => {
     setQuizTitle('');

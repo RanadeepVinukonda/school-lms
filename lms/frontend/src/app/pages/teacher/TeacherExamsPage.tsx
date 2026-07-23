@@ -543,9 +543,11 @@ export default function TeacherExamsPage() {
               <CardContent className="space-y-3">
                 {(() => {
                   const activeTypes = QUESTION_MODEL_OPTIONS.filter(m => selectedModels.includes(m.value));
-                  const distTotal = Object.values(distribution).reduce(
-                    (sum: number, types: Record<string, number>) => sum + Object.values(types).reduce((s: number, v: number) => s + v, 0), 0,
-                  );
+                  const distTotal = ['easy', 'medium', 'hard', 'hots'].reduce((sum, diff) =>
+                    sum + activeTypes.reduce((s, m) => {
+                      const t = m.value === 'multiple_choice' ? 'mcq' : m.value;
+                      return s + (distribution[diff]?.[t] ?? 0);
+                    }, 0), 0);
                   return (
                     <>
                       <div className="flex items-center justify-between">

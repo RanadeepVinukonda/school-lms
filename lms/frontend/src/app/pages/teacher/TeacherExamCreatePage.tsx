@@ -377,10 +377,13 @@ export default function TeacherExamCreatePage() {
     }));
   };
 
-  const distributionTotal = Object.values(distribution).reduce(
-    (sum, types) => sum + Object.values(types).reduce((s, v) => s + v, 0), 0,
-  );
   const activeTypes = QUESTION_MODELS.filter(m => selectedModels.includes(m.value));
+  const distributionTotal = ['easy', 'medium', 'hard', 'hots'].reduce((sum, diff) =>
+    sum + activeTypes.reduce((s, m) => {
+      const t = m.value === 'multiple_choice' ? 'mcq' : m.value;
+      return s + (distribution[diff]?.[t] ?? 0);
+    }, 0), 0);
+
 
   const releaseMutation = useMutation({
     mutationFn: async (examId: string) => {
