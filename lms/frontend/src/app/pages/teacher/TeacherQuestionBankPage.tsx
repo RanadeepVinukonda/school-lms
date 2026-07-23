@@ -26,6 +26,7 @@ const QUESTION_TYPES = [
 ];
 
 const DIFFICULTIES = ['easy', 'medium', 'hard'];
+const BLOOM_LEVELS = ['Remember', 'Understand', 'Apply', 'Analyze', 'Evaluate', 'Create'];
 
 function QuestionForm({ initial, onSave, loading }: { initial?: any; onSave: (data: any) => void; loading: boolean }) {
   const { _ } = useTranslation();
@@ -36,6 +37,9 @@ function QuestionForm({ initial, onSave, loading }: { initial?: any; onSave: (da
   const [correctAnswer, setCorrectAnswer] = useState(initial?.correctAnswer || '');
   const [points, setPoints] = useState(initial?.points || 1);
   const [explanation, setExplanation] = useState(initial?.explanation || '');
+  const [bloomLevel, setBloomLevel] = useState(initial?.bloomLevel || '');
+  const [hots, setHots] = useState(initial?.hots === true);
+  const [source, setSource] = useState(initial?.source || 'Manual');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +53,9 @@ function QuestionForm({ initial, onSave, loading }: { initial?: any; onSave: (da
       correctAnswer,
       points: Number(points),
       explanation: explanation || undefined,
+      bloomLevel: bloomLevel || undefined,
+      hots,
+      source,
       tags: [],
       classId: '',
       subjectId: '',
@@ -101,6 +108,26 @@ function QuestionForm({ initial, onSave, loading }: { initial?: any; onSave: (da
           <Input type="number" value={points} onChange={(e) => setPoints(e.target.value)} min={1} />
         </div>
       </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+          <label className="text-sm font-medium">{_('Bloom\'s Level')}</label>
+          <select value={bloomLevel} onChange={(e) => setBloomLevel(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1">
+            <option value="">{_('None')}</option>
+            {BLOOM_LEVELS.map((l) => <option key={l} value={l}>{_(l)}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="text-sm font-medium">{_('HOTS')}</label>
+          <div className="flex items-center gap-2 mt-2">
+            <input type="checkbox" checked={hots} onChange={(e) => setHots(e.target.checked)} className="rounded" />
+            <span className="text-sm">{_('Higher Order Thinking')}</span>
+          </div>
+        </div>
+        <div>
+          <label className="text-sm font-medium">{_('Source')}</label>
+          <input value={source} onChange={(e) => setSource(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1" placeholder={_('e.g. Manual, AI Upload')} />
+        </div>
+      </div>
       <div>
         <label className="text-sm font-medium">{_('Explanation (optional)')}</label>
         <textarea value={explanation} onChange={(e) => setExplanation(e.target.value)} rows={2} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1" placeholder={_('Explain the answer...')} />
@@ -117,6 +144,9 @@ export default function TeacherQuestionBankPage() {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [diffFilter, setDiffFilter] = useState('');
+  const [bloomFilter, setBloomFilter] = useState('');
+  const [hotsFilter, setHotsFilter] = useState('');
+  const [sourceFilter, setSourceFilter] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<any>(null);
 
@@ -138,7 +168,14 @@ export default function TeacherQuestionBankPage() {
     onError: () => toast.error(_('Failed to delete question')),
   });
 
-  const items: any[] = (data?.items || []).filter((q: any) => !search || q.text.toLowerCase().includes(search.toLowerCase()));
+  const items: any[] = (data?.items || []).filter((q: any) => {
+    if (search && !q.text?.toLowerCase().includes(search.toLowerCase())) return false;
+    if (bloomFilter && q.bloomLevel !== bloomFilter) return false;
+    if (hotsFilter === 'true' && q.hots !== true) return false;
+    if (hotsFilter === 'false' && q.hots === true) return false;
+    if (sourceFilter && q.source !== sourceFilter) return false;
+    return true;
+  });
 
   const typeColors: Record<string, string> = { multiple_choice: 'bg-blue-500', true_false: 'bg-purple-500', short_answer: 'bg-amber-500', fill_blank: 'bg-emerald-500', matching: 'bg-rose-500', essay: 'bg-sky-500' };
   const diffColors: Record<string, string> = { easy: 'bg-green-100 text-green-800', medium: 'bg-yellow-100 text-yellow-800', hard: 'bg-red-100 text-red-800' };
@@ -175,6 +212,22 @@ export default function TeacherQuestionBankPage() {
               <option value="">{_('All Difficulties')}</option>
               {DIFFICULTIES.map((d) => <option key={d} value={d}>{_(d.charAt(0).toUpperCase() + d.slice(1))}</option>)}
             </select>
+            <select value={bloomFilter} onChange={(e) => setBloomFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background">
+              <option value="">{_('All Bloom Levels')}</option>
+              {BLOOM_LEVELS.map((l) => <option key={l} value={l}>{_(l)}</option>)}
+            </select>
+            <select value={hotsFilter} onChange={(e) => setHotsFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background">
+              <option value="">{_('All HOTS')}</option>
+              <option value="true">{_('HOTS Only')}</option>
+              <option value="false">{_('Non-HOTS')}</option>
+            </select>
+            <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background">
+              <option value="">{_('All Sources')}</option>
+              <option value="Manual">{_('Manual')}</option>
+              <option value="AI Textbook Upload">{_('AI Textbook Upload')}</option>
+              <option value="AI Quiz Generation">{_('AI Quiz Generation')}</option>
+              <option value="Imported from Concept">{_('Imported from Concept')}</option>
+            </select>
           </div>
         </motion.div>
 
@@ -195,9 +248,12 @@ export default function TeacherQuestionBankPage() {
                       <CardContent className="p-5">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
                               <Badge variant="outline" className={`text-label-xs ${typeColors[q.type] || 'bg-gray-500'} text-white`}>{q.type.replace('_', ' ')}</Badge>
                               <Badge variant="outline" className={`text-label-xs ${diffColors[q.difficulty] || ''}`}>{q.difficulty}</Badge>
+                              {q.bloomLevel && <Badge variant="secondary" className="text-label-xs">{q.bloomLevel}</Badge>}
+                              {q.hots === true && <Badge variant="secondary" className="text-label-xs bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">HOTS</Badge>}
+                              {q.source && <Badge variant="outline" className="text-label-xs text-muted-foreground">{q.source}</Badge>}
                               {q.isPreviousYear && <Badge variant="secondary" className="text-label-xs">PYQ {q.year || ''}</Badge>}
                             </div>
                             <QuestionRenderer question={{ type: q.type, text: q.text }} />

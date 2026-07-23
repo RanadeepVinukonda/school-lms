@@ -119,6 +119,11 @@ export async function saveChapters(textbookId: string, chapters: Chapter[]): Pro
             difficulty: q.difficulty,
             answer: q.correctAnswer,
             explanation: q.explanation || '',
+            points: q.points || 2,
+            bloom_level: q.bloomLevel || null,
+            hots: q.hots === true || false,
+            topic: q.topic || null,
+            source: q.source || 'AI Textbook Upload',
             created_at: new Date().toISOString(),
           }, { onConflict: 'id', ignoreDuplicates: false });
           if (qErr) throw new Error(`Failed to save question: ${qErr.message}`);
@@ -220,7 +225,11 @@ export async function getConceptsForChapter(textbookId: string, chapterId: strin
     
     concept.questionBank = (questionsRes.data || []).map((q: any) => ({
       ...q,
-      text: q.question || q.text, // Map backend 'question' to frontend 'text'
+      text: q.question || q.text,
+      bloomLevel: q.bloom_level || q.data?.bloomLevel || null,
+      hots: q.hots === true || q.hots === 'true' || q.data?.hots === true || false,
+      topic: q.topic || q.data?.topic || null,
+      source: q.source || q.data?.source || 'AI Textbook Upload',
     })) as GeneratedQuestion[];
     
     if (notesRes.data) {

@@ -12,12 +12,16 @@ export interface OCRResult {
 
 export interface GeneratedQuestion {
   id: string;
-  type: 'mcq' | 'true_false' | 'short_answer' | 'fill_blank';
+  type: 'mcq' | 'true_false' | 'short_answer' | 'fill_blank' | 'matching' | 'descriptive';
   question: string;
   options?: string[];
   correctAnswer: string;
   explanation: string;
   difficulty: 'easy' | 'medium' | 'hard';
+  points?: number;
+  bloomLevel?: string;
+  hots?: boolean;
+  source?: string;
 }
 
 export interface OCRMappingResult {

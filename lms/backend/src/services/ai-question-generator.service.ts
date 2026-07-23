@@ -15,6 +15,10 @@ export interface GeneratedQuestion {
   points: number;
   aiGenerated: boolean;
   source: 'ai';
+  bloomLevel?: string;
+  hots?: boolean;
+  topic?: string;
+  chapter?: string;
 }
 
 const QUESTION_TYPE_INSTRUCTIONS: Record<string, string> = {
@@ -93,6 +97,10 @@ export async function generateQuestionsForConcept(params: {
       points: q.points || 2,
       aiGenerated: true,
       source: 'ai' as const,
+      bloomLevel: q.bloomLevel || q.bloom_level || 'Understand',
+      hots: q.hots === true || q.hots === 'true' || false,
+      topic: q.topic || '',
+      chapter: q.chapter || '',
     }));
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
@@ -201,6 +209,10 @@ export async function saveAiQuestions(questions: GeneratedQuestion[], conceptId:
     explanation: q.explanation,
     points: q.points,
     ai_generated: true,
+    bloom_level: q.bloomLevel || null,
+    hots: q.hots === true || false,
+    topic: q.topic || null,
+    source: 'AI Textbook Upload',
     created_at: now,
     updated_at: now,
   }));
@@ -244,6 +256,9 @@ IMPORTANT RULES:
 - For True/False, provide options ["True", "False"]
 - For matching, use format: "Left1:Right1||Left2:Right2"
 - Include a clear explanation for each answer
+- Assign a Bloom's Taxonomy level: Remember, Understand, Apply, Analyze, Evaluate, Create
+- Mark questions as HOTS (Higher Order Thinking Skill) when they require analysis, evaluation, or creation
+- Assign a relevant topic name based on the concept
 
 Return ONLY valid JSON in this exact format:
 {
@@ -255,7 +270,10 @@ Return ONLY valid JSON in this exact format:
       "options": ["option1", "option2", "option3", "option4"] or null,
       "answer": "correct answer",
       "explanation": "explanation of answer",
-      "points": 2
+      "points": 2,
+      "bloomLevel": "Remember | Understand | Apply | Analyze | Evaluate | Create",
+      "hots": true | false,
+      "topic": "topic name related to the concept"
     }
   ]
 }

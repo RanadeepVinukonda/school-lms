@@ -20,6 +20,10 @@ interface CreateQuestionData {
   conceptId?: string;
   isPreviousYear?: boolean;
   year?: string;
+  source?: string;
+  bloomLevel?: string;
+  hots?: boolean;
+  topic?: string;
 }
 
 const QB = 'questionBank';
@@ -37,6 +41,10 @@ export async function createQuestion(data: CreateQuestionData & { createdBy: str
     chapterId: data.chapterId || null,
     conceptId: data.conceptId || null,
     explanation: data.explanation || null,
+    source: data.source || 'Manual',
+    bloomLevel: data.bloomLevel || null,
+    hots: data.hots === true || false,
+    topic: data.topic || null,
     createdAt: now,
     updatedAt: now,
   };
@@ -198,13 +206,17 @@ export async function importFromConcept(textbookId: string, chapterId: string, c
       type: mapType(q.type),
       difficulty: q.difficulty || 'medium',
       options: q.options,
-      correctAnswer: q.correctAnswer || '',
+      correctAnswer: q.correctAnswer || q.answer || '',
       explanation: q.explanation,
       points: q.points || 1,
       tags: [q.category].filter(Boolean),
       classId: '',
       subjectId: '',
       conceptId,
+      source: q.source || q.data?.source || 'Imported from Concept',
+      bloomLevel: q.bloom_level || q.data?.bloomLevel || null,
+      hots: q.hots === true || q.hots === 'true' || q.data?.hots === true || false,
+      topic: q.topic || q.data?.topic || null,
       createdBy: userId,
     });
     imported++;

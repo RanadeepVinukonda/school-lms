@@ -101,6 +101,10 @@ async function upsertQuestions(questions: Array<Record<string, unknown>>, concep
       explanation: q.explanation || null,
       difficulty: (q.difficulty as string) || 'medium',
       points: (q.points as number) || 1,
+      bloom_level: (q.bloomLevel as string) || null,
+      hots: q.hots === true || q.hots === 'true' || false,
+      topic: (q.topic as string) || null,
+      source: (q.source as string) || 'AI Quiz Generation',
       data: q,
     }, { onConflict: 'id' });
     if (error) throw error;

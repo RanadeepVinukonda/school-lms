@@ -146,6 +146,19 @@ export default function TeacherAssessmentCreatePage() {
     enabled: !!selectedConceptId,
   });
 
+  const { data: breakdown } = useQuery({
+    queryKey: ['question-breakdown', selectedTextbookId, selectedChapterId],
+    queryFn: () => api.get(`/exams-v2/breakdown/${selectedTextbookId}/${selectedChapterId}`).then((r) => r.data.data),
+    enabled: !!selectedTextbookId && !!selectedChapterId,
+  });
+
+  const typeCountMap: Record<string, number> = {};
+  const diffCountMap: Record<string, number> = {};
+  if (breakdown) {
+    for (const t of breakdown.types || []) typeCountMap[t.type] = t.count;
+    for (const d of breakdown.difficulties || []) diffCountMap[d.difficulty] = d.count;
+  }
+
   useEffect(() => {
     if (availableTypes.length > 0) {
       setSelectedModels(availableTypes);
@@ -727,27 +740,53 @@ export default function TeacherAssessmentCreatePage() {
                   </div>
 
                   <div>
-                    <Label className="mb-2 block">{_('Question Models')}</Label>
+                    <Label className="mb-2 block">{_('Available Question Types')}</Label>
+                    {selectedChapterId && (
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {Object.entries(diffCountMap).map(([d, c]) => (
+                          <span key={d} className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                            {d.charAt(0).toUpperCase() + d.slice(1)}: {c}
+                          </span>
+                        ))}
+                        {breakdown?.hotsCount > 0 && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                            HOTS: {breakdown.hotsCount}
+                          </span>
+                        )}
+                        {breakdown?.total > 0 && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                            Total: {breakdown.total}
+                          </span>
+                        )}
+                      </div>
+                    )}
                     <p className="text-label-xs text-muted-foreground mb-3">
-                      {_('Select which question types to pull from the concept\'s question bank')}
+                      {_('Select which question types to pull from the question bank')}
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {QUESTION_MODELS.map((model) => (
-                        <label
-                          key={model.value}
-                          className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors ${
-                            selectedModels.includes(model.value)
-                              ? 'border-primary bg-primary/5'
-                              : 'border-border hover:border-muted-foreground/30'
-                          }`}
-                        >
-                          <Checkbox
-                            checked={selectedModels.includes(model.value)}
-                            onCheckedChange={() => handleModelToggle(model.value)}
-                          />
-                          <span className="text-sm">{model.label}</span>
-                        </label>
-                      ))}
+                      {QUESTION_MODELS.map((model) => {
+                        const mappedType = model.value === 'multiple_choice' ? 'mcq' : model.value;
+                        const available = typeCountMap[mappedType] || 0;
+                        return (
+                          <label
+                            key={model.value}
+                            className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors ${
+                              selectedModels.includes(model.value)
+                                ? 'border-primary bg-primary/5'
+                                : 'border-border hover:border-muted-foreground/30'
+                            }`}
+                          >
+                            <Checkbox
+                              checked={selectedModels.includes(model.value)}
+                              onCheckedChange={() => handleModelToggle(model.value)}
+                            />
+                            <span className="text-sm">{model.label}</span>
+                            {selectedChapterId && (
+                              <span className="ml-auto text-xs text-muted-foreground">{available > 0 ? `(${available})` : ''}</span>
+                            )}
+                          </label>
+                        );
+                      })}
                     </div>
                   </div>
 

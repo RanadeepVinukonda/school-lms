@@ -73,6 +73,10 @@ export interface GeneratedQuestion {
   correctAnswer: string | string[];
   explanation: string;
   points: number;
+  bloomLevel?: string;
+  hots?: boolean;
+  topic?: string;
+  source?: string;
 }
 
 export interface GeneratedAssignment {

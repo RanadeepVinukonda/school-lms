@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as examV2Service from '../services/exam-v2.service';
+import { getQuestionTypeBreakdown } from '../services/concept-questions.service';
 import { sendSuccess, sendCreated } from '../utils/response';
 
 export async function createExam(req: Request, res: Response) {
@@ -91,4 +92,17 @@ export async function getStudentAttempt(req: Request, res: Response) {
 export async function getProctoringLogs(req: Request, res: Response) {
   const result = await examV2Service.getProctoringLogs(req.params.attemptId);
   sendSuccess(res, result);
+}
+
+export async function getQuestionBreakdown(req: Request, res: Response) {
+  const result = await getQuestionTypeBreakdown(req.params.textbookId, req.params.chapterId);
+  sendSuccess(res, result);
+}
+
+export async function generatePaper(req: Request, res: Response) {
+  const result = await examV2Service.generateQuestionPaper({
+    ...req.body,
+    teacherId: req.user!.uid,
+  });
+  sendSuccess(res, result, 'Question paper generated');
 }

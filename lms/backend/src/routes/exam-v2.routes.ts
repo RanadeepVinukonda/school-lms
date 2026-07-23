@@ -70,5 +70,7 @@ router.get('/concept/:conceptId/types', authenticate, asyncHandler(examV2Control
 router.get('/chapter/:textbookId/:chapterId/types', authenticate, asyncHandler(examV2Controller.getAvailableTypes));
 router.get('/my', authenticate, asyncHandler(examV2Controller.listForTeacher));
 router.get('/:examId', authenticate, asyncHandler(examV2Controller.getExam));
+router.get('/breakdown/:textbookId/:chapterId', authenticate, asyncHandler(examV2Controller.getQuestionBreakdown));
+router.post('/generate-paper', authenticate, requireRole('teacher', 'admin'), asyncHandler(examV2Controller.generatePaper));
 
 export default router;

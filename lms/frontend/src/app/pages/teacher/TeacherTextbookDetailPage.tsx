@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -24,6 +24,7 @@ import { ConceptMindMap } from '@/components/teacher/ConceptMindMap';
 import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { getTextbook, getChaptersForTextbook, getConceptsForChapter, reprocessTextbook, deleteTextbook } from '@/services/textbookService';
 import { getSubject } from '@/services/dataService';
+import api from '@/services/api';
 import type { Chapter, Concept } from '@/types/textbook';
 
 interface ChapterWithConcepts extends Chapter {
@@ -111,6 +112,116 @@ export default function TeacherTextbookDetailPage() {
   });
 
   const allConcepts = (chaptersQuery.data ?? []).flatMap((ch) => ch.conceptsList);
+
+  const breakdownQuery = useQuery({
+    queryKey: ['question-breakdown', textbookId],
+    queryFn: async () => {
+      if (!textbookId) return null;
+      const data = await api.get(`/exams-v2/breakdown/${textbookId}/_all`).then((r) => r.data.data);
+      return data;
+    },
+    enabled: !!textbookId && textbookQuery.data?.status === 'ready',
+  });
+
+  const questionSummary = useMemo(() => {
+    if (!breakdownQuery.data) return null;
+    const { types, difficulties, total, hotsCount } = breakdownQuery.data;
+    const typeMap: Record<string, string> = {
+      mcq: 'MCQ', true_false: 'True/False', fill_blank: 'Fill in the Blanks',
+      matching: 'Match the Following', short_answer: 'Short Answer', long_answer: 'Long Answer',
+      descriptive: 'Descriptive', numerical: 'Numerical', passage: 'Passage',
+      assertion_reason: 'Assertion & Reason', case_study: 'Case Study',
+      application_based: 'Application Based', hots: 'HOTS',
+    };
+    const typeList = (types || []).map((t: any) => ({
+      label: typeMap[t.type] || t.type,
+      count: t.count,
+    }));
+    const difficultyList = (difficulties || []).map((d: any) => ({
+      label: d.difficulty.charAt(0).toUpperCase() + d.difficulty.slice(1),
+      count: d.count,
+    }));
+    return { typeList, difficultyList, total, hotsCount };
+  }, [breakdownQuery.data]);
+
+  const renderSummaryDashboard = () => {
+    if (!questionSummary) return null;
+    const { typeList, difficultyList, total, hotsCount } = questionSummary;
+    const totalQuestions = total || 0;
+    const totalDifficulties = difficultyList.reduce((s: number, d: any) => s + d.count, 0);
+
+    return (
+      <motion.div variants={cardStackReveal} custom={0} className="space-y-6">
+        <Card className="border-border/60">
+          <CardHeader>
+            <CardTitle className="text-title-sm flex items-center gap-2">
+              <Icon name="quiz" size={18} className="text-primary" />
+              Generated Questions Summary
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {typeList.map((t: any) => (
+                <div key={t.label} className="rounded-lg border border-border/60 p-3 text-center hover:bg-muted/30 transition-colors">
+                  <p className="text-2xl font-bold text-primary">{t.count}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t.label}</p>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border/60 text-sm">
+              <span className="font-semibold">Total Questions: {totalQuestions}</span>
+              <span className="text-muted-foreground">|</span>
+              <span className="text-xs text-muted-foreground">HOTS: {hotsCount}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60">
+          <CardHeader>
+            <CardTitle className="text-title-sm flex items-center gap-2">
+              <Icon name="equalizer" size={18} className="text-primary" />
+              Difficulty Distribution
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {difficultyList.map((d: any) => (
+                <div key={d.label} className="rounded-lg border border-border/60 p-3 text-center">
+                  <p className="text-2xl font-bold" style={{ color: d.label === 'Easy' ? 'var(--success)' : d.label === 'Medium' ? 'var(--warning)' : 'var(--destructive)' }}>
+                    {d.count}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{d.label}</p>
+                </div>
+              ))}
+              {hotsCount > 0 && (
+                <div className="rounded-lg border border-purple-200 dark:border-purple-800 p-3 text-center">
+                  <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{hotsCount}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">HOTS</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60">
+          <CardContent className="p-5">
+            <div className="flex flex-wrap gap-3">
+              <Button asChild className="gap-2">
+                <Link to={`/teacher/exams/create?textbookId=${textbookId}`}>
+                  <Icon name="fact_check" size={16} /> Create Exam
+                </Link>
+              </Button>
+              <Button asChild variant="secondary" className="gap-2">
+                <Link to={`/teacher/assessments/create?textbookId=${textbookId}`}>
+                  <Icon name="quiz" size={16} /> Create Quiz
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  };
 
   const renderProgressTracker = (tb: any) => {
     const isFailed = tb.status === 'failed';
@@ -312,8 +423,12 @@ export default function TeacherTextbookDetailPage() {
                 ) : (
                   <DataFetchWrapper data={chaptersQuery.data} isLoading={chaptersQuery.isLoading} error={chaptersQuery.error} loadingType="list">
                     {(chapters) => (
-                      <Tabs defaultValue="chapters">
+                      <Tabs defaultValue="summary">
                         <TabsList className="w-full overflow-x-auto inline-flex">
+                          <TabsTrigger value="summary">
+                            <Icon name="quiz" size={14} className="mr-1" />
+                            Question Bank
+                          </TabsTrigger>
                           <TabsTrigger value="chapters">
                             <Icon name="list" size={14} className="mr-1" />
                             {_('Chapters')}
@@ -323,6 +438,12 @@ export default function TeacherTextbookDetailPage() {
                             {_('Mind Map')}
                           </TabsTrigger>
                         </TabsList>
+
+                        <TabsContent value="summary">
+                          <DataFetchWrapper data={breakdownQuery.data} isLoading={breakdownQuery.isLoading}>
+                            {() => renderSummaryDashboard()}
+                          </DataFetchWrapper>
+                        </TabsContent>
 
                         <TabsContent value="chapters">
                           <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3 mt-4">
