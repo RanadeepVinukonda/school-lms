@@ -50,7 +50,6 @@ const PAGE_INDEX: PageEntry[] = [
   { id: 'teacher-profile', title: 'Profile', keywords: ['profile', 'my profile', 'account'], icon: 'person', url: ROUTES.TEACHER_PROFILE },
   { id: 'teacher-videos', title: 'Video Library', keywords: ['videos', 'video library', 'media'], icon: 'video_library', url: ROUTES.TEACHER_VIDEOS },
   { id: 'teacher-analytics', title: 'Analytics', keywords: ['analytics', 'performance', 'reports'], icon: 'analytics', url: ROUTES.TEACHER_ANALYTICS },
-  { id: 'question-bank', title: 'Question Bank', keywords: ['question bank', 'questions', 'question paper'], icon: 'question_answer', url: ROUTES.TEACHER_QUESTION_BANK },
   { id: 'question-papers', title: 'Question Papers', keywords: ['question papers', 'pyq', 'previous year'], icon: 'description', url: ROUTES.TEACHER_QUESTION_PAPERS },
   { id: 'test-templates', title: 'Test Templates', keywords: ['test templates', 'test patterns', 'rubrics'], icon: 'fact_check', url: ROUTES.TEACHER_TEST_TEMPLATES },
   { id: 'test-schedule', title: 'Test Schedule', keywords: ['test schedule', 'exam schedule', 'test plan'], icon: 'schedule', url: ROUTES.TEACHER_TEST_SCHEDULE },

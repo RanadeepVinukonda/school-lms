@@ -82,7 +82,6 @@ const TeacherProfileEditPage = lazyRetry(() => import('@/app/pages/teacher/Teach
 const TeacherVideoLibraryPage = lazyRetry(() => import('@/app/pages/teacher/TeacherVideoLibraryPage'));
 const TeacherAnalyticsPage = lazyRetry(() => import('@/app/pages/teacher/TeacherAnalyticsPage'));
 const TeacherResultsPushPage = lazyRetry(() => import('@/app/pages/teacher/TeacherResultsPushPage'));
-const TeacherQuestionBankPage = lazyRetry(() => import('@/app/pages/teacher/TeacherQuestionBankPage'));
 const TeacherQuestionPapersPage = lazyRetry(() => import('@/app/pages/teacher/TeacherQuestionPapersPage'));
 const TeacherTestTemplatesPage = lazyRetry(() => import('@/app/pages/teacher/TeacherTestTemplatesPage'));
 const TeacherTestSchedulePage = lazyRetry(() => import('@/app/pages/teacher/TeacherTestSchedulePage'));
@@ -215,7 +214,6 @@ export const router = createBrowserRouter([
       { path: ROUTES.TEACHER_VIDEOS, element: <Suspense fallback={<PageFallback />}><TeacherVideoLibraryPage /></Suspense> },
       { path: ROUTES.TEACHER_ANALYTICS, element: <Suspense fallback={<PageFallback />}><TeacherAnalyticsPage /></Suspense> },
       { path: ROUTES.TEACHER_RESULTS_PUSH, element: <Suspense fallback={<PageFallback />}><TeacherResultsPushPage /></Suspense> },
-      { path: ROUTES.TEACHER_QUESTION_BANK, element: <Suspense fallback={<PageFallback />}><TeacherQuestionBankPage /></Suspense> },
       { path: ROUTES.TEACHER_QUESTION_PAPERS, element: <Suspense fallback={<PageFallback />}><TeacherQuestionPapersPage /></Suspense> },
       { path: ROUTES.TEACHER_TEST_TEMPLATES, element: <Suspense fallback={<PageFallback />}><TeacherTestTemplatesPage /></Suspense> },
       { path: ROUTES.TEACHER_TEST_SCHEDULE, element: <Suspense fallback={<PageFallback />}><TeacherTestSchedulePage /></Suspense> },

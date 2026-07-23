@@ -87,11 +87,11 @@ export default function TeacherAssessmentCreatePage() {
   const [quizPassingScore, setQuizPassingScore] = useState(50);
   const [quizMaxAttempts, setQuizMaxAttempts] = useState(3);
   const [quizShuffle, setQuizShuffle] = useState(true);
-  const [showQuizSmartSelection, setShowQuizSmartSelection] = useState(false);
   const [quizDistribution, setQuizDistribution] = useState<Record<string, Record<string, number>>>({
     easy: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
     medium: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
     hard: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
+    hots: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
   });
   const [quizGeneratedPaper, setQuizGeneratedPaper] = useState<any[] | null>(null);
 
@@ -102,11 +102,11 @@ export default function TeacherAssessmentCreatePage() {
   const [assignmentPassingScore, setAssignmentPassingScore] = useState(50);
   const [assignmentMaxAttempts, setAssignmentMaxAttempts] = useState(3);
   const [assignmentShuffle, setAssignmentShuffle] = useState(true);
-  const [showAssignmentSmartSelection, setShowAssignmentSmartSelection] = useState(false);
   const [assignmentDistribution, setAssignmentDistribution] = useState<Record<string, Record<string, number>>>({
     easy: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
     medium: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
     hard: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
+    hots: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
   });
   const [assignmentGeneratedPaper, setAssignmentGeneratedPaper] = useState<any[] | null>(null);
 
@@ -179,9 +179,41 @@ export default function TeacherAssessmentCreatePage() {
     }
   }, [availableTypes]);
 
+  const TYPE_MAP: Record<string, string[]> = { multiple_choice: ['mcq', 'multiple_choice'] };
+
+  useEffect(() => {
+    if (selectedModels.length === 0 || questionCount === 0) {
+      const empty = { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 };
+      setQuizDistribution({ easy: { ...empty }, medium: { ...empty }, hard: { ...empty }, hots: { ...empty } });
+      return;
+    }
+    const backendTypes = selectedModels.map((m: string) => (TYPE_MAP[m] || [m])[0]);
+    const numTypes = backendTypes.length;
+    const numDiffs = 4;
+    const perCell = Math.floor(questionCount / (numTypes * numDiffs));
+    const remainder = questionCount - perCell * numTypes * numDiffs;
+    const newDist: Record<string, Record<string, number>> = {
+      easy: {}, medium: {}, hard: {}, hots: {},
+    };
+    const diffs = ['easy', 'medium', 'hard', 'hots'];
+    let rem = remainder;
+    for (const bt of backendTypes) {
+      for (const d of diffs) {
+        let val = perCell;
+        if (rem > 0) { val += 1; rem -= 1; }
+        newDist[d][bt] = val;
+      }
+    }
+    for (const d of diffs) {
+      for (const bt of backendTypes) {
+        if (newDist[d][bt] === undefined) newDist[d][bt] = 0;
+      }
+    }
+    setQuizDistribution(newDist);
+  }, [questionCount, selectedModels]);
+
   const selectedConcept = conceptList.find((c: any) => c.id === selectedConceptId);
   const allConceptQuestions: any[] = (selectedConcept as any)?.questionBank ?? [];
-  const TYPE_MAP: Record<string, string[]> = { multiple_choice: ['mcq', 'multiple_choice'] };
   const previewQuestions: any[] = allConceptQuestions
     .filter((q: any) => {
       if (selectedModels.length === 0) return true;
@@ -296,7 +328,6 @@ export default function TeacherAssessmentCreatePage() {
     onSuccess: () => {
       toast.success(_('Quiz created from paper'));
       setQuizGeneratedPaper(null);
-      setShowQuizSmartSelection(false);
       queryClient.invalidateQueries({ queryKey: ['quizzes-v2-class', selectedClassId] });
     },
     onError: (err: unknown) => {
@@ -367,7 +398,6 @@ export default function TeacherAssessmentCreatePage() {
     onSuccess: () => {
       toast.success(_('Assignment created from paper'));
       setAssignmentGeneratedPaper(null);
-      setShowAssignmentSmartSelection(false);
       queryClient.invalidateQueries({ queryKey: ['assignments-v2-class', selectedClassId] });
     },
     onError: (err: unknown) => {
@@ -1100,99 +1130,87 @@ export default function TeacherAssessmentCreatePage() {
 
                   {selectedChapterId && (
                     <div className="border-t border-border/60 pt-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowQuizSmartSelection(!showQuizSmartSelection)}
-                        className="gap-2 mb-3"
-                      >
-                        <Icon name="auto_awesome" size={16} />
-                        {showQuizSmartSelection ? 'Hide Smart Selection' : 'Smart Question Selection'}
-                      </Button>
-
-                      {showQuizSmartSelection && (
-                        <div className="space-y-3 p-4 rounded-lg border border-border/60 bg-muted/20 mb-4">
+                      <div className="space-y-3 p-4 rounded-lg border border-border/60 bg-muted/20 mb-4">
+                        <div className="flex items-center justify-between">
                           <p className="text-xs text-muted-foreground">
-                            Set how many questions per difficulty and type. System auto-selects matching questions.
+                            Auto-distributed equally across difficulties. Adjust cells manually as needed.
                           </p>
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-xs">
-                              <thead>
-                                <tr className="border-b border-border/60">
-                                  <th className="text-left py-2 pr-3">Difficulty</th>
-                                  {QUESTION_MODELS.map((m) => (
-                                    <th key={m.value} className="text-center px-2 py-2">{m.label}</th>
-                                  ))}
-                                  <th className="text-center px-2 py-2">Total</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {['easy', 'medium', 'hard'].map((diff) => (
-                                  <tr key={diff} className="border-b border-border/40">
-                                    <td className="py-2 pr-3 font-medium capitalize">{diff}</td>
-                                    {QUESTION_MODELS.map((m) => {
-                                      const mappedType = m.value === 'multiple_choice' ? 'mcq' : m.value;
-                                      const avail = typeCountMap[mappedType] || 0;
-                                      return (
-                                        <td key={m.value} className="text-center px-1 py-1">
-                                          <input
-                                            type="number"
-                                            min={0}
-                                            max={avail}
-                                            value={quizDistribution[diff]?.[mappedType] ?? 0}
-                                            onChange={(e) => setQuizDist(diff, mappedType, parseInt(e.target.value) || 0)}
-                                            className="w-14 text-center rounded border border-border bg-background px-1 py-1 text-xs"
-                                          />
-                                          <div className="text-[10px] text-muted-foreground">/ {avail}</div>
-                                        </td>
-                                      );
-                                    })}
-                                    <td className="text-center px-2 py-2 font-semibold">
-                                      {Object.values(quizDistribution[diff] || {}).reduce((s: number, v: any) => s + (v || 0), 0)}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-
-                          <div className="flex items-center justify-between">
-                            <p className="text-xs font-semibold">Total selected: {quizDistributionTotal} questions</p>
-                            <div className="flex gap-2">
-                              {quizGeneratedPaper && (
-                                <Button size="sm" variant="outline" onClick={() => setQuizGeneratedPaper(null)}>
-                                  Clear Preview
-                                </Button>
-                              )}
-                              <Button
-                                size="sm"
-                                onClick={() => generateQuizPaperMutation.mutate()}
-                                loading={generateQuizPaperMutation.isPending}
-                                disabled={quizDistributionTotal === 0}
-                                className="gap-1"
-                              >
-                                <Icon name="auto_awesome" size={14} />
-                                {quizGeneratedPaper ? 'Regenerate' : 'Generate Paper'}
-                              </Button>
-                            </div>
-                          </div>
-
-                          {quizGeneratedPaper && (
-                            <div className="border rounded-lg p-3 bg-background space-y-2 max-h-60 overflow-y-auto">
-                              <p className="text-xs font-semibold text-primary">Preview ({quizGeneratedPaper.length} questions)</p>
-                              {quizGeneratedPaper.map((q: any, i: number) => (
-                                <div key={q.id || i} className="flex items-center gap-2 text-xs border-b border-border/40 pb-1">
-                                  <span className="text-muted-foreground">#{i + 1}</span>
-                                  <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary">{q.type}</span>
-                                  <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{q.difficulty}</span>
-                                  <span className="truncate flex-1">{q.text}</span>
-                                  {q.hots && <span className="text-purple-500">HOTS</span>}
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                          <p className="text-xs font-semibold">Total: {quizDistributionTotal} questions</p>
                         </div>
-                      )}
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="border-b border-border/60">
+                                <th className="text-left py-2 pr-3">Difficulty</th>
+                                {QUESTION_MODELS.map((m) => (
+                                  <th key={m.value} className="text-center px-2 py-2">{m.label}</th>
+                                ))}
+                                <th className="text-center px-2 py-2">Total</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {['easy', 'medium', 'hard', 'hots'].map((diff) => (
+                                <tr key={diff} className="border-b border-border/40">
+                                  <td className={`py-2 pr-3 font-medium capitalize ${diff === 'hots' ? 'text-purple-600' : ''}`}>{diff}</td>
+                                  {QUESTION_MODELS.map((m) => {
+                                    const mappedType = m.value === 'multiple_choice' ? 'mcq' : m.value;
+                                    const avail = typeCountMap[mappedType] || 0;
+                                    return (
+                                      <td key={m.value} className="text-center px-1 py-1">
+                                        <input
+                                          type="number"
+                                          min={0}
+                                          max={avail}
+                                          value={quizDistribution[diff]?.[mappedType] ?? 0}
+                                          onChange={(e) => setQuizDist(diff, mappedType, parseInt(e.target.value) || 0)}
+                                          className="w-14 text-center rounded border border-border bg-background px-1 py-1 text-xs"
+                                        />
+                                        <div className="text-[10px] text-muted-foreground">/ {avail}</div>
+                                      </td>
+                                    );
+                                  })}
+                                  <td className="text-center px-2 py-2 font-semibold">
+                                    {Object.values(quizDistribution[diff] || {}).reduce((s: number, v: any) => s + (v || 0), 0)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2">
+                          {quizGeneratedPaper && (
+                            <Button size="sm" variant="outline" onClick={() => setQuizGeneratedPaper(null)}>
+                              Clear Preview
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            onClick={() => generateQuizPaperMutation.mutate()}
+                            loading={generateQuizPaperMutation.isPending}
+                            disabled={quizDistributionTotal === 0}
+                            className="gap-1"
+                          >
+                            <Icon name="auto_awesome" size={14} />
+                            {quizGeneratedPaper ? 'Regenerate' : 'Generate Paper'}
+                          </Button>
+                        </div>
+
+                        {quizGeneratedPaper && (
+                          <div className="border rounded-lg p-3 bg-background space-y-2 max-h-60 overflow-y-auto">
+                            <p className="text-xs font-semibold text-primary">Preview ({quizGeneratedPaper.length} questions)</p>
+                            {quizGeneratedPaper.map((q: any, i: number) => (
+                              <div key={q.id || i} className="flex items-center gap-2 text-xs border-b border-border/40 pb-1">
+                                <span className="text-muted-foreground">#{i + 1}</span>
+                                <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary">{q.type}</span>
+                                <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{q.difficulty}</span>
+                                <span className="truncate flex-1">{q.text}</span>
+                                {q.hots && <span className="text-purple-500">HOTS</span>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
 
@@ -1438,99 +1456,87 @@ export default function TeacherAssessmentCreatePage() {
 
                   {selectedChapterId && (
                     <div className="border-t border-border/60 pt-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowAssignmentSmartSelection(!showAssignmentSmartSelection)}
-                        className="gap-2 mb-3"
-                      >
-                        <Icon name="auto_awesome" size={16} />
-                        {showAssignmentSmartSelection ? 'Hide Smart Selection' : 'Auto-Generate from Question Bank'}
-                      </Button>
-
-                      {showAssignmentSmartSelection && (
-                        <div className="space-y-3 p-4 rounded-lg border border-border/60 bg-muted/20 mb-4">
+                      <div className="space-y-3 p-4 rounded-lg border border-border/60 bg-muted/20 mb-4">
+                        <div className="flex items-center justify-between">
                           <p className="text-xs text-muted-foreground">
-                            Auto-generate assignment questions from the question bank by difficulty and type.
+                            Auto-distributed equally across difficulties. Adjust cells manually as needed.
                           </p>
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-xs">
-                              <thead>
-                                <tr className="border-b border-border/60">
-                                  <th className="text-left py-2 pr-3">Difficulty</th>
-                                  {QUESTION_MODELS.map((m) => (
-                                    <th key={m.value} className="text-center px-2 py-2">{m.label}</th>
-                                  ))}
-                                  <th className="text-center px-2 py-2">Total</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {['easy', 'medium', 'hard'].map((diff) => (
-                                  <tr key={diff} className="border-b border-border/40">
-                                    <td className="py-2 pr-3 font-medium capitalize">{diff}</td>
-                                    {QUESTION_MODELS.map((m) => {
-                                      const mappedType = m.value === 'multiple_choice' ? 'mcq' : m.value;
-                                      const avail = typeCountMap[mappedType] || 0;
-                                      return (
-                                        <td key={m.value} className="text-center px-1 py-1">
-                                          <input
-                                            type="number"
-                                            min={0}
-                                            max={avail}
-                                            value={assignmentDistribution[diff]?.[mappedType] ?? 0}
-                                            onChange={(e) => setAssignmentDist(diff, mappedType, parseInt(e.target.value) || 0)}
-                                            className="w-14 text-center rounded border border-border bg-background px-1 py-1 text-xs"
-                                          />
-                                          <div className="text-[10px] text-muted-foreground">/ {avail}</div>
-                                        </td>
-                                      );
-                                    })}
-                                    <td className="text-center px-2 py-2 font-semibold">
-                                      {Object.values(assignmentDistribution[diff] || {}).reduce((s: number, v: any) => s + (v || 0), 0)}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-
-                          <div className="flex items-center justify-between">
-                            <p className="text-xs font-semibold">Total selected: {assignmentDistributionTotal} questions</p>
-                            <div className="flex gap-2">
-                              {assignmentGeneratedPaper && (
-                                <Button size="sm" variant="outline" onClick={() => setAssignmentGeneratedPaper(null)}>
-                                  Clear Preview
-                                </Button>
-                              )}
-                              <Button
-                                size="sm"
-                                onClick={() => generateAssignmentPaperMutation.mutate()}
-                                loading={generateAssignmentPaperMutation.isPending}
-                                disabled={assignmentDistributionTotal === 0}
-                                className="gap-1"
-                              >
-                                <Icon name="auto_awesome" size={14} />
-                                {assignmentGeneratedPaper ? 'Regenerate' : 'Generate Paper'}
-                              </Button>
-                            </div>
-                          </div>
-
-                          {assignmentGeneratedPaper && (
-                            <div className="border rounded-lg p-3 bg-background space-y-2 max-h-60 overflow-y-auto">
-                              <p className="text-xs font-semibold text-primary">Preview ({assignmentGeneratedPaper.length} questions)</p>
-                              {assignmentGeneratedPaper.map((q: any, i: number) => (
-                                <div key={q.id || i} className="flex items-center gap-2 text-xs border-b border-border/40 pb-1">
-                                  <span className="text-muted-foreground">#{i + 1}</span>
-                                  <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary">{q.type}</span>
-                                  <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{q.difficulty}</span>
-                                  <span className="truncate flex-1">{q.text}</span>
-                                  {q.hots && <span className="text-purple-500">HOTS</span>}
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                          <p className="text-xs font-semibold">Total: {assignmentDistributionTotal} questions</p>
                         </div>
-                      )}
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="border-b border-border/60">
+                                <th className="text-left py-2 pr-3">Difficulty</th>
+                                {QUESTION_MODELS.map((m) => (
+                                  <th key={m.value} className="text-center px-2 py-2">{m.label}</th>
+                                ))}
+                                <th className="text-center px-2 py-2">Total</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {['easy', 'medium', 'hard', 'hots'].map((diff) => (
+                                <tr key={diff} className="border-b border-border/40">
+                                  <td className={`py-2 pr-3 font-medium capitalize ${diff === 'hots' ? 'text-purple-600' : ''}`}>{diff}</td>
+                                  {QUESTION_MODELS.map((m) => {
+                                    const mappedType = m.value === 'multiple_choice' ? 'mcq' : m.value;
+                                    const avail = typeCountMap[mappedType] || 0;
+                                    return (
+                                      <td key={m.value} className="text-center px-1 py-1">
+                                        <input
+                                          type="number"
+                                          min={0}
+                                          max={avail}
+                                          value={assignmentDistribution[diff]?.[mappedType] ?? 0}
+                                          onChange={(e) => setAssignmentDist(diff, mappedType, parseInt(e.target.value) || 0)}
+                                          className="w-14 text-center rounded border border-border bg-background px-1 py-1 text-xs"
+                                        />
+                                        <div className="text-[10px] text-muted-foreground">/ {avail}</div>
+                                      </td>
+                                    );
+                                  })}
+                                  <td className="text-center px-2 py-2 font-semibold">
+                                    {Object.values(assignmentDistribution[diff] || {}).reduce((s: number, v: any) => s + (v || 0), 0)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2">
+                          {assignmentGeneratedPaper && (
+                            <Button size="sm" variant="outline" onClick={() => setAssignmentGeneratedPaper(null)}>
+                              Clear Preview
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            onClick={() => generateAssignmentPaperMutation.mutate()}
+                            loading={generateAssignmentPaperMutation.isPending}
+                            disabled={assignmentDistributionTotal === 0}
+                            className="gap-1"
+                          >
+                            <Icon name="auto_awesome" size={14} />
+                            {assignmentGeneratedPaper ? 'Regenerate' : 'Generate Paper'}
+                          </Button>
+                        </div>
+
+                        {assignmentGeneratedPaper && (
+                          <div className="border rounded-lg p-3 bg-background space-y-2 max-h-60 overflow-y-auto">
+                            <p className="text-xs font-semibold text-primary">Preview ({assignmentGeneratedPaper.length} questions)</p>
+                            {assignmentGeneratedPaper.map((q: any, i: number) => (
+                              <div key={q.id || i} className="flex items-center gap-2 text-xs border-b border-border/40 pb-1">
+                                <span className="text-muted-foreground">#{i + 1}</span>
+                                <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary">{q.type}</span>
+                                <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{q.difficulty}</span>
+                                <span className="truncate flex-1">{q.text}</span>
+                                {q.hots && <span className="text-purple-500">HOTS</span>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
 
