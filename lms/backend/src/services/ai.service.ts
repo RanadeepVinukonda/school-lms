@@ -129,9 +129,11 @@ async function geminiChatCompletion(
     body.systemInstruction = systemInstruction;
   }
 
+  const timeoutMs = Math.max(60000, max_tokens * 8);
+
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 10000);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
       const res = await fetch(url, {
@@ -224,6 +226,8 @@ async function openaiChatCompletion(
   let useResponseFormat = jsonMode;
   let lastError: string | null = null;
 
+  const timeoutMs = Math.max(60000, max_tokens * 8);
+
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const payload: Record<string, unknown> = {
       model,
@@ -236,7 +240,7 @@ async function openaiChatCompletion(
     }
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 10000);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     
     try {
       const res = await fetch(env.AI_BASE_URL, {
@@ -344,13 +348,14 @@ export async function textbookChatCompletion(params: ChatRequest): Promise<strin
 
   let useResponseFormat = jsonMode;
   let lastError: string | null = null;
+  const timeoutMs = Math.max(60000, max_tokens * 8);
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const payload: Record<string, unknown> = { model, messages, temperature, max_tokens };
     if (useResponseFormat) payload.response_format = { type: 'json_object' };
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 10000);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
       const res = await fetch(baseUrl, {

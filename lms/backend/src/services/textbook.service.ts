@@ -124,8 +124,8 @@ export async function reprocessTextbook(textbookId: string, requestingTeacherId:
   if (requestingTeacherRole !== 'admin' && doc.teacher_id !== requestingTeacherId) {
     throw new ForbiddenError('You do not own this textbook');
   }
-  if (doc.status !== 'failed' && doc.status !== 'ready') {
-    throw new ConflictError(`Cannot reprocess textbook with status "${doc.status}". Only "failed" or "ready" textbooks can be reprocessed.`);
+  if (doc.status !== 'failed' && doc.status !== 'ready' && doc.status !== 'processing') {
+    throw new ConflictError(`Cannot reprocess textbook with status "${doc.status}". Only "failed", "processing", or "ready" textbooks can be reprocessed.`);
   }
   if (!doc.storage_path) {
     throw new ConflictError('Textbook has no storagePath — cannot reprocess without an uploaded PDF.');
