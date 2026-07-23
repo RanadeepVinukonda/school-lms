@@ -297,7 +297,7 @@ export default function TeacherAssessmentCreatePage() {
     mutationFn: (body: Record<string, unknown>) => api.post('/quizzes-v2', body).then((r) => r.data.data),
     onSuccess: (data) => {
       if (data.questions?.length) {
-        console.log('[Preview] questions from API:', data.questions.map((q: any) => ({ id: q.id, type: q.type, text: q.text, textLen: q.text?.length })));
+        setQuizGeneratedPaper(data.questions);
         setReviewQuestions(data.questions);
         if (data.aiErrorMessage) {
           toast.error(_('AI Error') + `: ${data.aiErrorMessage}`);
