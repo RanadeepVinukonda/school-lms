@@ -139,7 +139,7 @@ export default function AdminDashboardPage() {
   });
 
   const reTeachMutation = useMutation({
-    mutationFn: (data: { teacherId: string; className: string; subjectName: string; conceptName: string }) =>
+    mutationFn: (data: { teacherId: string; className: string; subjectName: string; conceptName: string; section?: string; affectedStudents?: number; averageScore?: number; suggestedReason?: string }) =>
       analyticsService.requestReTeach(data),
     onSuccess: () => { toast.success('Re-teach notification sent to teacher'); },
     onError: (err: any) => { toast.error(err.message || 'Failed to send notification'); },
@@ -775,8 +775,10 @@ function TeacherGroupCards({ items, onReTeach, reTeachPending, _ }: { items: any
                     <tr className="bg-muted/20 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
                       <th className="text-left px-4 py-3">{_('Class / Subject')}</th>
                       <th className="text-left px-4 py-3">{_('Concept')}</th>
-                      <th className="text-left px-4 py-3">{_('Avg Score')}</th>
-                      <th className="text-left px-4 py-3">{_('Attempts')}</th>
+                      <th className="text-center px-4 py-3">{_('Quiz')}</th>
+                      <th className="text-center px-4 py-3">{_('Task')}</th>
+                      <th className="text-center px-4 py-3">{_('Avg Score')}</th>
+                      <th className="text-center px-4 py-3">{_('Attempts')}</th>
                       <th className="text-center px-4 py-3">{_('Status')}</th>
                       <th className="text-right px-4 py-3">{_('Action')}</th>
                     </tr>
@@ -791,14 +793,16 @@ function TeacherGroupCards({ items, onReTeach, reTeachPending, _ }: { items: any
                             <div className="text-title-sm text-muted-foreground">{item.subjectName}</div>
                           </td>
                           <td className="px-4 py-3 text-body-sm font-medium max-w-[220px] truncate" title={item.conceptName}>{item.conceptName}</td>
-                          <td className="px-4 py-3 font-mono text-body-sm">
+                          <td className="px-4 py-3 text-body-sm font-mono text-center">{item.quizCount ?? 0}</td>
+                          <td className="px-4 py-3 text-body-sm font-mono text-center">{item.taskCount ?? 0}</td>
+                          <td className="px-4 py-3 font-mono text-body-sm text-center">
                             {item.attemptCount > 0 ? (
                               <span className={isLow ? 'text-error font-bold' : 'text-success font-bold'}>{item.averageScore}%</span>
                             ) : (
                               <span className="text-muted-foreground/40">&mdash;</span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-body-sm font-mono text-muted-foreground">{item.attemptCount}</td>
+                          <td className="px-4 py-3 text-body-sm font-mono text-muted-foreground text-center">{item.attemptCount}</td>
                           <td className="px-4 py-3 text-center">
                             {item.attemptCount > 0 ? (
                               <Badge variant={isLow ? 'destructive' : 'success'} className="text-xs uppercase font-bold px-2 py-0.5">{isLow ? 'Alert' : 'Good'}</Badge>
@@ -808,7 +812,16 @@ function TeacherGroupCards({ items, onReTeach, reTeachPending, _ }: { items: any
                           </td>
                           <td className="px-4 py-3 text-right">
                             <Button size="sm" variant={isLow ? 'destructive' : 'outline'} disabled={!isLow || reTeachPending}
-                              onClick={() => onReTeach({ teacherId: item.teacherId, className: item.className, subjectName: item.subjectName, conceptName: item.conceptName })}
+                              onClick={() => onReTeach({
+                                teacherId: item.teacherId,
+                                className: item.className,
+                                subjectName: item.subjectName,
+                                conceptName: item.conceptName,
+                                section: item.section || '',
+                                affectedStudents: item.attemptCount || 0,
+                                averageScore: item.averageScore || 0,
+                                suggestedReason: `Average score ${item.averageScore}% is below the ${item.threshold}% threshold.`,
+                              })}
                             >
                               <Icon name="campaign" size={16} className="mr-1.5" />
                               Request Re-teach

@@ -10,6 +10,9 @@ function safePct(value: number): number {
 /** Get a student's dashboard summary: total enrolled courses, unread notifications, overall grade, and stats. */
 export async function getStudentDashboard(studentId: string) {
   const supabase = getSupabaseAdmin()!;
+
+  const currentYear = await getCurrentAcademicYear();
+  const yearStart = currentYear?.startDate ? new Date(currentYear.startDate as string) : null;
   
   const { data: enrollments, error: enrollmentsErr } = await supabase
     .from('enrollments')
@@ -27,10 +30,14 @@ export async function getStudentDashboard(studentId: string) {
     .eq('user_id', studentId)
     .eq('read', false);
 
-  const { data: grades, error: gradesErr } = await supabase
+  let gradeQuery = supabase
     .from('grades')
-    .select('score, totalPoints, percentage')
+    .select('score, totalPoints, percentage, createdAt')
     .eq('studentId', studentId);
+  if (yearStart) {
+    gradeQuery = gradeQuery.gte('createdAt', yearStart.toISOString());
+  }
+  const { data: grades, error: gradesErr } = await gradeQuery;
   if (gradesErr) throw new Error(gradesErr.message);
 
   const gradesList = grades || [];
@@ -54,8 +61,8 @@ export async function getStudentDashboard(studentId: string) {
 
   const allPercentages: number[] = [];
   for (const g of gradesList) { if (g.percentage > 0) allPercentages.push(g.percentage); }
-  for (const a of (quizAttempts || [])) { const pct = (a.data as any)?.percentage; if (pct > 0) allPercentages.push(pct); }
-  for (const a of (assignAttempts || [])) { const pct = (a.data as any)?.percentage; if (pct > 0) allPercentages.push(pct); }
+  for (const a of (quizAttempts || [])) { const pct = (a.data as any)?.percentage; const subDate = (a.data as any)?.submittedAt; if (pct > 0 && (!yearStart || !subDate || new Date(subDate) >= yearStart)) allPercentages.push(pct); }
+  for (const a of (assignAttempts || [])) { const pct = (a.data as any)?.percentage; const subDate = (a.data as any)?.submittedAt; if (pct > 0 && (!yearStart || !subDate || new Date(subDate) >= yearStart)) allPercentages.push(pct); }
 
   const totalAssessments = gradesList.length + (quizAttempts?.length || 0) + (assignAttempts?.length || 0);
   const avgGrade = allPercentages.length > 0
@@ -703,8 +710,11 @@ export async function getConceptOversight() {
           subjectName: subjectMap.get(assignment.subjectId) || 'Unknown Subject',
           conceptId: concept.id,
           conceptName: concept.title || 'Unknown Concept',
+          section: assignment.section || '',
           averageScore,
           attemptCount,
+          quizCount: quizIds.length,
+          taskCount: assignIds.length,
           teacherName: teacherMap.get(assignment.teacherId) || 'Unknown Teacher',
           teacherId: assignment.teacherId,
           status: (attemptCount > 0 && averageScore < threshold) ? 'low' : 'normal',

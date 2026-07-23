@@ -150,43 +150,39 @@ export default function AdminSettingsPage() {
     return 'text-success';
   };
 
-  // -------------------------------------------------------------
-  // TAB 2: ADMIN USERS
-  // -------------------------------------------------------------
-  const [adminSearch, setAdminSearch] = useState('');
-  const [showCreateAdmin, setShowCreateAdmin] = useState(false);
-  const [createAdminForm, setCreateAdminForm] = useState({ displayName: '', email: '', password: '', role: 'admin' });
-
-  const adminUsers = useMemo(() => {
-    return users.filter((u) => u.role === 'admin' || u.role === 'super_admin');
-  }, [users]);
-
-  const filteredAdminUsers = useMemo(() => {
-    const q = adminSearch.toLowerCase();
-    return adminUsers.filter((u) => (u.displayName || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q));
-  }, [adminUsers, adminSearch]);
-
-  const createAdminMutation = useMutation({
-    mutationFn: () =>
-      userService.create({
-        displayName: createAdminForm.displayName,
-        email: createAdminForm.email,
-        password: createAdminForm.password,
-        role: createAdminForm.role as any,
-      }),
-    onSuccess: () => {
-      toast.success('Administrator account created');
-      setShowCreateAdmin(false);
-      setCreateAdminForm({ displayName: '', email: '', password: '', role: 'admin' });
-      queryClient.invalidateQueries({ queryKey: ['admin-users-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-users-list'] });
-    },
-    onError: (err: Error) => toast.error(err.message || 'Failed to create admin'),
-  });
-
   // Parent Registration
   const [showCreateParent, setShowCreateParent] = useState(false);
-  const [parentForm, setParentForm] = useState({ displayName: '', email: '', password: '', childrenIds: '' as string });
+  const [parentForm, setParentForm] = useState({
+    displayName: '',
+    email: '',
+    password: '',
+    phone: '',
+    address: '',
+    relationship: '',
+    selectedStudentIds: [] as string[],
+  });
+  const [studentSearchQuery, setStudentSearchQuery] = useState('');
+
+  const filteredStudents = useMemo(() => {
+    const studentUsers = users.filter((u: any) => u.role === 'student');
+    if (!studentSearchQuery) return studentUsers.slice(0, 20);
+    const q = studentSearchQuery.toLowerCase();
+    return studentUsers.filter((u: any) =>
+      (u.displayName || '').toLowerCase().includes(q) ||
+      (u.email || '').toLowerCase().includes(q) ||
+      (u.studentId || '').toLowerCase().includes(q)
+    ).slice(0, 20);
+  }, [users, studentSearchQuery]);
+
+  const toggleStudentSelection = (id: string) => {
+    setParentForm((f) => ({
+      ...f,
+      selectedStudentIds: f.selectedStudentIds.includes(id)
+        ? f.selectedStudentIds.filter((x) => x !== id)
+        : [...f.selectedStudentIds, id],
+    }));
+  };
+
   const createParentMutation = useMutation({
     mutationFn: () =>
       api.post('/auth/users', {
@@ -194,12 +190,15 @@ export default function AdminSettingsPage() {
         email: parentForm.email,
         password: parentForm.password,
         role: 'parent',
-        childrenIds: parentForm.childrenIds.split(',').map((s) => s.trim()).filter(Boolean),
+        phone: parentForm.phone,
+        address: parentForm.address,
+        relationship: parentForm.relationship,
+        childrenIds: parentForm.selectedStudentIds,
       }),
     onSuccess: () => {
       toast.success('Parent account created');
       setShowCreateParent(false);
-      setParentForm({ displayName: '', email: '', password: '', childrenIds: '' });
+      setParentForm({ displayName: '', email: '', password: '', phone: '', address: '', relationship: '', selectedStudentIds: [] });
       queryClient.invalidateQueries({ queryKey: ['admin-users-stats'] });
     },
     onError: (err: any) => toast.error(err.message || 'Failed to create parent'),
@@ -226,45 +225,7 @@ export default function AdminSettingsPage() {
     return parentUsers.filter((u) => (u.displayName || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q));
   }, [parentUsers, parentSearch]);
 
-  const [adminDeleteTarget, setAdminDeleteTarget] = useState<UserDoc | null>(null);
-  const [adminDeleteLoading, setAdminDeleteLoading] = useState(false);
-  const [adminDependencyReport, setAdminDependencyReport] = useState<DependencyReport | null>(null);
-  const [showAdminDependencyDialog, setShowAdminDependencyDialog] = useState(false);
-
-  const deleteAdminMutation = useMutation({
-    mutationFn: (id: string) => userService.delete(id),
-    onSuccess: () => {
-      logAudit({
-        action: 'user.delete',
-        targetId: adminDeleteTarget?.id || '',
-        targetType: 'user',
-        targetName: adminDeleteTarget?.displayName || 'Unknown',
-        summary: `Permanently deleted user "${adminDeleteTarget?.displayName}"`,
-      });
-      toast.success('Administrator account deleted');
-      queryClient.invalidateQueries({ queryKey: ['admin-users-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-users-list'] });
-      setShowAdminDependencyDialog(false);
-      setAdminDeleteTarget(null);
-    },
-    onError: (err: Error) => toast.error(err.message || 'Failed to delete user'),
-  });
-
-  const handleDeleteAdminClick = async (user: any) => {
-    setAdminDeleteTarget(user);
-    setAdminDeleteLoading(true);
-    setAdminDependencyReport(null);
-    setShowAdminDependencyDialog(true);
-    try {
-      const report = await getUserDependencies(user.id);
-      setAdminDependencyReport(report);
-    } catch {
-      setAdminDependencyReport(null);
-    }
-    setAdminDeleteLoading(false);
-  };
-
-  const toggleAdminMutation = useMutation({
+  const toggleUserStatusMutation = useMutation({
     mutationFn: (id: string) => userService.toggleActive(id),
     onSuccess: () => {
       toast.success('User active status updated');
@@ -353,7 +314,6 @@ export default function AdminSettingsPage() {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full max-w-md inline-flex overflow-x-auto">
               <TabsTrigger value="general">General Settings</TabsTrigger>
-              <TabsTrigger value="admins">Admin Users</TabsTrigger>
               <TabsTrigger value="parents">Parents</TabsTrigger>
               <TabsTrigger value="audit">Audit Logs</TabsTrigger>
             </TabsList>
@@ -474,91 +434,6 @@ export default function AdminSettingsPage() {
             </TabsContent>
 
             {/* -------------------------------------------------------------
-                TAB CONTENT: ADMIN USERS
-               ------------------------------------------------------------- */}
-            <TabsContent value="admins" className="mt-4 space-y-6">
-              <div className="flex items-center justify-between flex-wrap gap-3">
-                <div className="relative max-w-sm flex-1">
-                  <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                  <Input
-                    placeholder="Search administrators..."
-                    className="pl-10 border-border/60 placeholder:text-muted-foreground"
-                    value={adminSearch}
-                    onChange={(e) => setAdminSearch(e.target.value)}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button onClick={() => setShowCreateAdmin(true)}>
-                    <Icon name="add" size={16} className="mr-2" />
-                    Add Admin
-                  </Button>
-                </div>
-              </div>
-
-              {filteredAdminUsers.length === 0 ? (
-                <Card className="border-border/60">
-                  <CardContent className="flex flex-col items-center gap-4 py-16">
-                    <Icon name="groups" size={48} className="text-muted-foreground/50" />
-                    <p className="text-title-sm font-medium">No admin users found</p>
-                    <Button variant="outline" size="sm" onClick={() => setAdminSearch('')}>Clear Search</Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="border border-border/60 rounded-xl overflow-x-auto bg-surface">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
-                        <th className="text-left px-4 py-3">User</th>
-                        <th className="text-left px-4 py-3">Email</th>
-                        <th className="text-left px-4 py-3">Role</th>
-                        <th className="text-left px-4 py-3">Status</th>
-                        <th className="text-right px-4 py-3">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/40">
-                      {filteredAdminUsers.map((u) => (
-                        <tr key={u.id} className="hover:bg-muted/20 transition-colors text-body-md">
-                          <td className="px-4 py-3 flex items-center gap-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarFallback className="text-xs">{getInitials(u.displayName)}</AvatarFallback>
-                            </Avatar>
-                            <span className="font-semibold">{u.displayName}</span>
-                          </td>
-                          <td className="px-4 py-3 font-mono text-sm select-all">{u.email}</td>
-                          <td className="px-4 py-3 uppercase text-label-xs font-bold text-primary">{u.role.replace('_', ' ')}</td>
-                          <td className="px-4 py-3">
-                            <Badge variant={u.isActive === false ? 'destructive' : 'success'} className="text-[10px]">
-                              {u.isActive === false ? 'Inactive' : 'Active'}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-3 text-right flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              onClick={() => toggleAdminMutation.mutate(u.id)}
-                              title={u.isActive === false ? 'Enable user login' : 'Disable user login'}
-                            >
-                              <Icon name={u.isActive === false ? 'toggle_off' : 'toggle_on'} size={18} />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              className="text-error hover:bg-error/10"
-                              onClick={() => handleDeleteAdminClick(u)}
-                              title="Delete administrator account"
-                            >
-                              <Icon name="delete" size={16} />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </TabsContent>
-
-            {/* -------------------------------------------------------------
                 TAB CONTENT: PARENTS
                ------------------------------------------------------------- */}
             <TabsContent value="parents" className="mt-4 space-y-6">
@@ -631,7 +506,7 @@ export default function AdminSettingsPage() {
                             <Button
                               variant="ghost"
                               size="icon-sm"
-                              onClick={() => toggleAdminMutation.mutate(u.id)}
+                              onClick={() => toggleUserStatusMutation.mutate(u.id)}
                               title={u.isActive === false ? 'Enable user login' : 'Disable user login'}
                             >
                               <Icon name={u.isActive === false ? 'toggle_off' : 'toggle_on'} size={18} />
@@ -769,91 +644,89 @@ export default function AdminSettingsPage() {
       </motion.div>
 
       {/* -------------------------------------------------------------
-          SHARED DIALOGS (TAB 2)
+          PARENT DIALOGS
          ------------------------------------------------------------- */}
-
-      {/* REGISTER ADMIN DIALOG */}
-      <Dialog open={showCreateAdmin} onOpenChange={setShowCreateAdmin}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Administrator</DialogTitle>
-            <DialogDescription>Create a new administrative user with custom password access.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Full Name</Label>
-              <Input
-                placeholder="John Doe"
-                value={createAdminForm.displayName}
-                onChange={(e) => setCreateAdminForm((f) => ({ ...f, displayName: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <Input
-                type="email"
-                placeholder="john@school.edu"
-                value={createAdminForm.email}
-                onChange={(e) => setCreateAdminForm((f) => ({ ...f, email: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Password</Label>
-              <Input
-                type="password"
-                placeholder="Min 8 chars, mixed case, numbers, special"
-                value={createAdminForm.password}
-                onChange={(e) => setCreateAdminForm((f) => ({ ...f, password: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Admin Level Role</Label>
-              <OptionsSelect
-                options={[
-                  { value: 'admin', label: 'Standard Admin' },
-                  { value: 'super_admin', label: 'Super Admin' },
-                ]}
-                value={createAdminForm.role}
-                onChange={(v: string) => setCreateAdminForm((f) => ({ ...f, role: v }))}
-              />
-            </div>
-            <Button
-              className="w-full mt-2"
-              onClick={() => createAdminMutation.mutate()}
-              disabled={!createAdminForm.displayName || !createAdminForm.email || !createAdminForm.password || createAdminMutation.isPending}
-            >
-              {createAdminMutation.isPending ? 'Registering...' : 'Create Admin'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* REGISTER PARENT DIALOG */}
       <Dialog open={showCreateParent} onOpenChange={setShowCreateParent}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[550px]">
           <DialogHeader>
             <DialogTitle>Register Parent</DialogTitle>
             <DialogDescription>Create a parent account linked to student(s).</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
             <div className="space-y-2">
-              <Label>Full Name</Label>
+              <Label>Full Name *</Label>
               <Input placeholder="Parent Name" value={parentForm.displayName} onChange={(e) => setParentForm((f) => ({ ...f, displayName: e.target.value }))} />
             </div>
             <div className="space-y-2">
-              <Label>Email</Label>
+              <Label>Email *</Label>
               <Input type="email" placeholder="parent@school.edu" value={parentForm.email} onChange={(e) => setParentForm((f) => ({ ...f, email: e.target.value }))} />
             </div>
             <div className="space-y-2">
-              <Label>Password</Label>
+              <Label>Password *</Label>
               <Input type="password" placeholder="Min 8 characters" value={parentForm.password} onChange={(e) => setParentForm((f) => ({ ...f, password: e.target.value }))} />
             </div>
             <div className="space-y-2">
-              <Label>Children (student IDs - comma separated)</Label>
-              <Input placeholder="e.g. 1a012025, 1a022025" value={parentForm.childrenIds} onChange={(e) => setParentForm((f) => ({ ...f, childrenIds: e.target.value }))} />
-              <p className="text-label-xs text-muted-foreground">Use student IDs like 1a012025 (not Firebase UIDs)</p>
+              <Label>Phone Number</Label>
+              <Input type="tel" placeholder="+1 555-123-4567" value={parentForm.phone} onChange={(e) => setParentForm((f) => ({ ...f, phone: e.target.value }))} />
             </div>
-            <Button className="w-full mt-2" onClick={() => createParentMutation.mutate()} disabled={!parentForm.displayName || !parentForm.email || !parentForm.password || createParentMutation.isPending}>
+            <div className="space-y-2">
+              <Label>Address</Label>
+              <Input placeholder="123 School St, City, State" value={parentForm.address} onChange={(e) => setParentForm((f) => ({ ...f, address: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Relationship</Label>
+              <select
+                className="w-full h-10 px-3 rounded-lg border border-border/60 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
+                value={parentForm.relationship}
+                onChange={(e) => setParentForm((f) => ({ ...f, relationship: e.target.value }))}
+              >
+                <option value="">Select relationship...</option>
+                <option value="father">Father</option>
+                <option value="mother">Mother</option>
+                <option value="guardian">Guardian</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Student Mapping *</Label>
+              <Input
+                placeholder="Search students by name or ID..."
+                value={studentSearchQuery}
+                onChange={(e) => setStudentSearchQuery(e.target.value)}
+              />
+              <div className="max-h-[150px] overflow-y-auto space-y-1 border rounded-lg p-2">
+                {filteredStudents.length === 0 ? (
+                  <p className="text-label-sm text-muted-foreground text-center py-2">No students found</p>
+                ) : (
+                  filteredStudents.map((s: any) => {
+                    const selected = parentForm.selectedStudentIds.includes(s.id);
+                    return (
+                      <div
+                        key={s.id}
+                        className={`flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-muted/30 ${selected ? 'bg-primary/10' : ''}`}
+                        onClick={() => toggleStudentSelection(s.id)}
+                      >
+                        <div>
+                          <p className="text-sm font-medium">{s.displayName || s.email}</p>
+                          <p className="text-label-xs text-muted-foreground">{s.studentId || s.id?.slice(0, 8)}</p>
+                        </div>
+                        {selected ? (
+                          <Icon name="check_circle" size={18} className="text-primary" />
+                        ) : (
+                          <Icon name="add_circle_outline" size={18} className="text-muted-foreground" />
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+              {parentForm.selectedStudentIds.length > 0 && (
+                <p className="text-label-xs text-muted-foreground">{parentForm.selectedStudentIds.length} student(s) selected</p>
+              )}
+            </div>
+            <Button className="w-full mt-2" onClick={() => createParentMutation.mutate()} disabled={!parentForm.displayName || !parentForm.email || !parentForm.password || parentForm.selectedStudentIds.length === 0 || createParentMutation.isPending}>
               {createParentMutation.isPending ? 'Registering...' : 'Register Parent'}
             </Button>
           </div>
@@ -988,65 +861,7 @@ export default function AdminSettingsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ADMIN DEPENDENCY & DELETE DIALOG */}
-      <Dialog open={showAdminDependencyDialog} onOpenChange={(open) => { if (!open) { setShowAdminDependencyDialog(false); setAdminDeleteTarget(null); } }}>
-        <DialogContent className="sm:max-w-[480px]">
-          <DialogHeader>
-            <DialogTitle>Delete Administrator: {adminDeleteTarget?.displayName}</DialogTitle>
-            <DialogDescription>
-              {adminDeleteLoading ? (
-                <span className="flex items-center gap-2">
-                  <Icon name="sync" size={16} className="animate-spin" />
-                  Checking dependencies...
-                </span>
-              ) : adminDependencyReport && adminDependencyReport.totalDependents > 0 ? (
-                <span className="text-destructive font-medium">
-                  {adminDependencyReport.totalDependents} active dependencies found. Deactivating is recommended.
-                </span>
-              ) : (
-                <span className="text-success font-medium">No dependencies found. Safe to delete.</span>
-              )}
-            </DialogDescription>
-          </DialogHeader>
 
-          {adminDependencyReport && adminDependencyReport.categories.length > 0 && (
-            <div className="space-y-2 rounded-lg border border-border p-4">
-              <p className="text-label-sm font-medium text-muted-foreground uppercase tracking-wider font-semibold">Impact Summary</p>
-              {adminDependencyReport.categories.map((cat) => (
-                <div key={cat.label} className="flex items-center justify-between text-body-md font-medium">
-                  <span>{cat.label}</span>
-                  <Badge variant="outline">{cat.count}</Badge>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="flex flex-col gap-2 pt-2">
-            <Button
-              variant="tonal"
-              className="w-full justify-start"
-              onClick={() => { if (adminDeleteTarget) { toggleAdminMutation.mutate(adminDeleteTarget.id); setShowAdminDependencyDialog(false); } }}
-            >
-              <Icon name="toggle_off" size={16} className="mr-2" />
-              Toggle Active Status (Recommended)
-              <span className="ml-auto text-label-xs text-muted-foreground">Preserves administrative logs</span>
-            </Button>
-            <Button
-              variant="destructive"
-              className="w-full justify-start"
-              onClick={() => { if (adminDeleteTarget) deleteAdminMutation.mutate(adminDeleteTarget.id); }}
-              disabled={adminDeleteLoading || (adminDependencyReport?.totalDependents ?? 0) > 0}
-            >
-              <Icon name="delete_forever" size={16} className="mr-2" />
-              Permanently Delete
-              <span className="ml-auto text-label-xs text-muted-foreground">
-                {(adminDependencyReport?.totalDependents ?? 0) > 0 ? 'Disabled (has dependencies)' : 'Irreversible'}
-              </span>
-            </Button>
-            <Button variant="ghost" className="w-full" onClick={() => { setShowAdminDependencyDialog(false); setAdminDeleteTarget(null); }}>Cancel</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

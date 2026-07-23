@@ -16,6 +16,10 @@ const reTeachSchema = z.object({
   className: z.string().min(1),
   subjectName: z.string().min(1),
   conceptName: z.string().min(1),
+  section: z.string().optional(),
+  affectedStudents: z.number().optional(),
+  averageScore: z.number().optional(),
+  suggestedReason: z.string().optional(),
 }).passthrough();
 
 // v1 routes
@@ -30,12 +34,16 @@ router.get('/oversight', authenticate, requireRole('teacher', 'admin'), asyncHan
   sendSuccess(res, result);
 }));
 router.post('/re-teach', authenticate, requireRole('teacher', 'admin'), validate(reTeachSchema), asyncHandler(async (req: Request, res: Response) => {
-  const { teacherId, className, subjectName, conceptName } = req.body;
+  const { teacherId, className, subjectName, conceptName, section, affectedStudents, averageScore, suggestedReason } = req.body;
+  const sectionText = section ? ` (${section})` : '';
+  const affectedText = affectedStudents != null ? `\nAffected Students: ${affectedStudents}` : '';
+  const scoreText = averageScore != null ? `\nAverage Score: ${averageScore}%` : '';
+  const reasonText = suggestedReason ? `\nSuggested Reason: ${suggestedReason}` : '';
   await createNotification({
     userId: teacherId,
     type: 're_teach',
     title: 'Action Required: Re-teach Concept',
-    body: `The administrator has requested that you re-teach the concept "${conceptName}" in "${className}" for the subject "${subjectName}" due to student performance dropping below the flagging threshold.`,
+    body: `The administrator has requested that you re-teach the concept "${conceptName}" in "${className}"${sectionText} for the subject "${subjectName}".${affectedText}${scoreText}${reasonText}`,
     priority: 'high',
   });
   sendSuccess(res, null, 'Teacher notified to re-teach concept');
