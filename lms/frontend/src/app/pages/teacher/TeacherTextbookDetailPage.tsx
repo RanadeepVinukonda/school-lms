@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -338,23 +339,41 @@ export default function TeacherTextbookDetailPage() {
                                         <p className="text-xs text-muted-foreground mt-1">{ch.description}</p>
                                       </div>
                                     </div>
-                                    <div className="mt-3 space-y-2">
+                                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                       {ch.conceptsList.map((cp) => (
-                                        <div key={cp.id} className="flex items-center gap-2 py-1.5 px-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group">
-                                          <Link
-                                            to={`/teacher/textbooks/${textbookId}/chapters/${ch.id}/concepts/${cp.id}`}
-                                            className="flex items-center gap-2 flex-1"
-                                          >
-                                            <span className="w-1.5 h-1.5 rounded-full bg-primary/50 flex-shrink-0" />
-                                            <span className="text-sm font-medium">{cp.title}</span>
-                                          </Link>
-                                          <Link
-                                            to={`/teacher/assessments/create?textbookId=${textbookId}&chapterId=${ch.id}&conceptId=${cp.id}`}
-                                            className="text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity"
-                                          >
-                                            <Icon name="arrow_forward" size={14} />
-                                          </Link>
-                                        </div>
+                                        <Link
+                                          key={cp.id}
+                                          to={`/teacher/textbooks/${textbookId}/chapters/${ch.id}/concepts/${cp.id}`}
+                                          className="block group"
+                                        >
+                                          <div className="border border-border/60 rounded-xl p-4 hover:border-primary/40 hover:shadow-sm transition-all bg-surface relative h-full">
+                                            <div className="flex items-start justify-between mb-2">
+                                              <h4 className="text-sm font-semibold group-hover:text-primary transition-colors line-clamp-2">{cp.title}</h4>
+                                              <span className="text-muted-foreground group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100 ml-1 shrink-0">
+                                                <Icon name="chevron_right" size={16} />
+                                              </span>
+                                            </div>
+                                            <div className="flex flex-wrap gap-1.5 mb-2">
+                                              {cp.difficulty && (
+                                                <Badge variant="outline" className="text-[10px] capitalize">{cp.difficulty}</Badge>
+                                              )}
+                                            </div>
+                                            <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{cp.summary}</p>
+                                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                              <span className="flex items-center gap-1"><Icon name="smart_display" size={12} />{cp.videos?.length || 0}</span>
+                                              <span className="flex items-center gap-1"><Icon name="quiz" size={12} />{cp.questionBank?.length || 0}</span>
+                                              {cp.estimatedMinutes ? <span className="flex items-center gap-1"><Icon name="schedule" size={12} />{cp.estimatedMinutes}m</span> : null}
+                                            </div>
+                                            <Link
+                                              to={`/teacher/assessments/create?textbookId=${textbookId}&chapterId=${ch.id}&conceptId=${cp.id}`}
+                                              className="absolute top-2 right-2 text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                                              onClick={(e) => e.stopPropagation()}
+                                              title="Create assessment"
+                                            >
+                                              <Icon name="add_circle" size={18} />
+                                            </Link>
+                                          </div>
+                                        </Link>
                                       ))}
                                     </div>
                                   </CardContent>

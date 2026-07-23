@@ -188,6 +188,7 @@ export default function TeacherExamCreatePage() {
   const [searchParams] = useSearchParams();
   const urlTextbookId = searchParams.get('textbookId');
   const urlChapterId = searchParams.get('chapterId');
+  const urlConceptId = searchParams.get('conceptId');
 
   const { data: assignments, isLoading: assignmentsLoading, error: assignmentsError } = useQuery({
     queryKey: ['teacher-assignments', user?.id],

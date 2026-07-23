@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,11 +9,14 @@ interface ConceptNode {
   title: string;
   summary?: string;
   notes?: string;
+  order?: number;
   videos?: { id: string; title: string; youtubeId: string; channelName?: string; duration?: string }[];
   questionBank?: any[];
   difficulty?: string;
   learningObjectives?: string[];
   keywords?: string[];
+  prerequisites?: string[];
+  estimatedMinutes?: number;
 }
 
 interface ConceptMindMapProps {
@@ -23,42 +26,173 @@ interface ConceptMindMapProps {
   selectedConceptId?: string;
 }
 
-type LayoutNode = ConceptNode & {
+interface TreeNode {
+  id: string;
+  title: string;
+  node: ConceptNode;
+  children: TreeNode[];
+  depth: number;
   x: number;
   y: number;
-  connections: string[];
-};
+  collapsed: boolean;
+}
 
-function radialLayout(concepts: ConceptNode[], centerX: number, centerY: number, radius: number): LayoutNode[] {
-  return concepts.map((c, i) => {
-    const angle = (2 * Math.PI * i) / concepts.length - Math.PI / 2;
-    const prereqIds = (c as any).prerequisites
-      ? (c as any).prerequisites
-          .map((p: string) => concepts.find((o) => o.title.toLowerCase() === p.toLowerCase())?.id)
-          .filter(Boolean)
-      : [];
-    return {
-      ...c,
-      x: centerX + radius * Math.cos(angle),
-      y: centerY + radius * Math.sin(angle),
-      connections: prereqIds as string[],
-    };
-  });
+const NODE_WIDTH = 160;
+const NODE_HEIGHT = 60;
+const LEVEL_GAP = 100;
+const SIBLING_GAP = 20;
+
+function buildTree(concepts: ConceptNode[]): TreeNode[] {
+  const nodeMap = new Map<string, TreeNode>();
+  const childMap = new Map<string, string[]>();
+
+  for (const c of concepts) {
+    nodeMap.set(c.id, {
+      id: c.id,
+      title: c.title,
+      node: c,
+      children: [],
+      depth: 0,
+      x: 0,
+      y: 0,
+      collapsed: false,
+    });
+  }
+
+  const rootIds = new Set(nodeMap.keys());
+
+  for (const c of concepts) {
+    if (c.prerequisites && c.prerequisites.length > 0) {
+      for (const prereqTitle of c.prerequisites) {
+        const prereq = concepts.find((o) => o.title.toLowerCase() === prereqTitle.toLowerCase());
+        if (prereq && nodeMap.has(prereq.id)) {
+          rootIds.delete(c.id);
+          if (!childMap.has(prereq.id)) childMap.set(prereq.id, []);
+          childMap.get(prereq.id)!.push(c.id);
+        }
+      }
+    }
+  }
+
+  function assignDepths(ids: string[], depth: number) {
+    for (const id of ids) {
+      const node = nodeMap.get(id);
+      if (!node) continue;
+      node.depth = Math.max(node.depth, depth);
+      const children = childMap.get(id) || [];
+      assignDepths(children, depth + 1);
+    }
+  }
+
+  assignDepths([...rootIds], 0);
+
+  for (const c of concepts) {
+    const children = childMap.get(c.id) || [];
+    for (const childId of children) {
+      const child = nodeMap.get(childId);
+      if (child) nodeMap.get(c.id)!.children.push(child);
+    }
+  }
+
+  const roots = [...rootIds].map((id) => nodeMap.get(id)!).sort((a, b) => (a.node.order ?? 0) - (b.node.order ?? 0));
+
+  function layoutSubtree(node: TreeNode, x: number, y: number): number {
+    node.x = x;
+    node.y = y;
+    if (node.collapsed || node.children.length === 0) return 1;
+    let childX = x - ((node.children.length - 1) * SIBLING_GAP) / 2;
+    for (const child of node.children) {
+      const count = layoutSubtree(child, childX, y + LEVEL_GAP);
+      childX += count * SIBLING_GAP;
+    }
+    return node.children.reduce((sum, ch) => sum + (ch.collapsed || ch.children.length === 0 ? 1 : ch.children.length), 0);
+  }
+
+  let startX = -(roots.length - 1) * SIBLING_GAP / 2;
+  for (const root of roots) {
+    layoutSubtree(root, startX * SIBLING_GAP, 0);
+    startX += 1;
+  }
+
+  return roots;
+}
+
+function getAllVisibleNodes(roots: TreeNode[]): TreeNode[] {
+  const result: TreeNode[] = [];
+  function walk(node: TreeNode) {
+    result.push(node);
+    if (!node.collapsed) {
+      for (const child of node.children) walk(child);
+    }
+  }
+  for (const root of roots) walk(root);
+  return result;
 }
 
 export function ConceptMindMap({ concepts, chapterTitle, onSelectConcept, selectedConceptId }: ConceptMindMapProps) {
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(selectedConceptId ?? null);
+  const [tree, setTree] = useState<TreeNode[]>([]);
+  const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const svgRef = useRef<SVGSVGElement>(null);
 
-  const centerX = 400;
-  const centerY = 250;
-  const radius = 180;
-  const layoutNodes = useMemo(() => radialLayout(concepts, centerX, centerY, radius), [concepts]);
+  useEffect(() => {
+    const roots = buildTree(concepts);
+    setTree(roots);
+  }, [concepts]);
 
-  const handleSelect = (id: string) => {
+  const visibleNodes = useMemo(() => getAllVisibleNodes(tree), [tree]);
+
+  const toggleCollapse = useCallback((id: string) => {
+    setTree((prev) => {
+      function walk(nodes: TreeNode[]): TreeNode[] {
+        return nodes.map((n) => {
+          if (n.id === id) return { ...n, collapsed: !n.collapsed };
+          return { ...n, children: walk(n.children) };
+        });
+      }
+      return walk(prev);
+    });
+  }, []);
+
+  const handleSelect = useCallback((id: string) => {
     setSelectedId(id);
     onSelectConcept?.(id);
-  };
+  }, [onSelectConcept]);
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    setTransform((prev) => ({
+      ...prev,
+      scale: Math.min(3, Math.max(0.3, prev.scale * delta)),
+    }));
+  }, []);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.target === svgRef.current || (e.target as SVGElement).tagName === 'svg') {
+      setIsPanning(true);
+      setPanStart({ x: e.clientX - transform.x, y: e.clientY - transform.y });
+    }
+  }, [transform]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isPanning) return;
+    setTransform((prev) => ({ ...prev, x: e.clientX - panStart.x, y: e.clientY - panStart.y }));
+  }, [isPanning, panStart]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsPanning(false);
+  }, []);
+
+  const minX = useMemo(() => Math.min(...visibleNodes.map((n) => n.x)), [visibleNodes]);
+  const minY = useMemo(() => Math.min(...visibleNodes.map((n) => n.y)), [visibleNodes]);
+  const maxX = useMemo(() => Math.max(...visibleNodes.map((n) => n.x + NODE_WIDTH)), [visibleNodes]);
+  const maxY = useMemo(() => Math.max(...visibleNodes.map((n) => n.y + NODE_HEIGHT)), [visibleNodes]);
+
+  const viewBoxWidth = Math.max(800, maxX - minX + 200);
+  const viewBoxHeight = Math.max(400, maxY - minY + 200);
 
   const selected = concepts.find((c) => c.id === selectedId);
 
@@ -78,103 +212,116 @@ export function ConceptMindMap({ concepts, chapterTitle, onSelectConcept, select
       <div className="lg:col-span-2">
         <Card>
           <CardContent className="p-4">
-            {chapterTitle && (
-              <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-sm flex items-center gap-2">
                 <Icon name="account_tree" size={16} className="text-primary" />
-                {chapterTitle} — Concept Map
+                {chapterTitle || 'Concept Map'}
               </h3>
-            )}
-            <svg viewBox="0 0 800 500" className="w-full h-auto max-h-[500px]">
-              {/* Connection lines */}
-              {layoutNodes.map((node) =>
-                node.connections.map((targetId) => {
-                  const target = layoutNodes.find((n) => n.id === targetId);
-                  if (!target) return null;
-                  const active = hoveredId === node.id || hoveredId === target.id;
+              <span className="text-[10px] text-muted-foreground">Scroll to zoom &middot; Drag to pan &middot; Click to expand/collapse</span>
+            </div>
+            <svg
+              ref={svgRef}
+              viewBox={`${minX - 100} ${minY - 60} ${viewBoxWidth} ${viewBoxHeight}`}
+              className="w-full h-auto max-h-[500px] border border-border/40 rounded-lg bg-muted/10"
+              style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
+              onWheel={handleWheel}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+            >
+              <g transform={`scale(${transform.scale}) translate(${transform.x / transform.scale}, ${transform.y / transform.scale})`}>
+                {/* Connection lines */}
+                {tree.map((root) => (
+                  <Connections key={`conn-${root.id}`} node={root} />
+                ))}
+
+                {/* Node groups */}
+                {visibleNodes.map((node) => {
+                  const isSelected = selectedId === node.id;
+                  const hasChildren = node.children.length > 0;
+                  const fill = isSelected ? 'hsl(var(--primary))' : 'hsl(var(--background))';
+                  const stroke = isSelected ? 'hsl(var(--primary))' : 'hsl(var(--border))';
+                  const textFill = isSelected ? 'white' : 'hsl(var(--foreground))';
+
                   return (
-                    <line
-                      key={`${node.id}-${targetId}`}
-                      x1={node.x}
-                      y1={node.y}
-                      x2={target.x}
-                      y2={target.y}
-                      stroke={active ? 'hsl(var(--primary))' : 'hsl(var(--border))'}
-                      strokeWidth={active ? 2 : 1}
-                      strokeOpacity={active ? 0.6 : 0.3}
-                      strokeDasharray={active ? 'none' : '6 3'}
-                    />
+                    <g
+                      key={node.id}
+                      onClick={() => handleSelect(node.id)}
+                      className="cursor-pointer"
+                    >
+                      <rect
+                        x={node.x}
+                        y={node.y}
+                        width={NODE_WIDTH}
+                        height={NODE_HEIGHT}
+                        rx={8}
+                        fill={fill}
+                        stroke={stroke}
+                        strokeWidth={isSelected ? 2 : 1}
+                      />
+                      <text
+                        x={node.x + NODE_WIDTH / 2}
+                        y={node.y + NODE_HEIGHT / 2}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fill={textFill}
+                        fontSize={11}
+                        fontWeight={isSelected ? 'bold' : 'normal'}
+                        className="select-none pointer-events-none"
+                      >
+                        {node.title.length > 18 ? node.title.slice(0, 16) + '…' : node.title}
+                      </text>
+                      {/* Collapse/expand toggle */}
+                      {hasChildren && (
+                        <g
+                          onClick={(e) => { e.stopPropagation(); toggleCollapse(node.id); }}
+                          className="cursor-pointer"
+                        >
+                          <circle
+                            cx={node.x + NODE_WIDTH - 12}
+                            cy={node.y + NODE_HEIGHT - 12}
+                            r={8}
+                            fill="hsl(var(--primary) / 0.15)"
+                            stroke="hsl(var(--primary))"
+                            strokeWidth={1}
+                          />
+                          <text
+                            x={node.x + NODE_WIDTH - 12}
+                            y={node.y + NODE_HEIGHT - 12}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                            fill="hsl(var(--primary))"
+                            fontSize={10}
+                            className="select-none pointer-events-none"
+                          >
+                            {node.collapsed ? '+' : '−'}
+                          </text>
+                        </g>
+                      )}
+                      {/* Difficulty indicator */}
+                      {node.node.difficulty && (
+                        <circle
+                          cx={node.x + 8}
+                          cy={node.y + 8}
+                          r={4}
+                          fill={
+                            node.node.difficulty === 'beginner' ? 'hsl(var(--success))' :
+                            node.node.difficulty === 'intermediate' ? 'hsl(var(--warning))' :
+                            'hsl(var(--error))'
+                          }
+                        />
+                      )}
+                    </g>
                   );
-                })
-              )}
-
-              {/* Center node (chapter) */}
-              <circle cx={centerX} cy={centerY} r={40} fill="hsl(var(--primary) / 0.1)" stroke="hsl(var(--primary))" strokeWidth={2} />
-              <text x={centerX} y={centerY} textAnchor="middle" dominantBaseline="middle" fill="hsl(var(--primary))" fontSize={12} fontWeight="bold" className="select-none">
-                {(chapterTitle || 'Chapter').split(' ').slice(0, 2).join('\n')}
-              </text>
-
-              {/* Concept nodes */}
-              {layoutNodes.map((node, i) => {
-                const isSelected = selectedId === node.id;
-                const isHovered = hoveredId === node.id;
-                const fill = isSelected ? 'hsl(var(--primary))' : isHovered ? 'hsl(var(--primary) / 0.15)' : 'hsl(var(--background))';
-                const stroke = isSelected ? 'hsl(var(--primary))' : isHovered ? 'hsl(var(--primary))' : 'hsl(var(--border))';
-                const textFill = isSelected ? 'white' : 'hsl(var(--foreground))';
-                const label = node.title.length > 20 ? node.title.slice(0, 18) + '…' : node.title;
-
-                return (
-                  <g
-                    key={node.id}
-                    onMouseEnter={() => setHoveredId(node.id)}
-                    onMouseLeave={() => setHoveredId(null)}
-                    onClick={() => handleSelect(node.id)}
-                    className="cursor-pointer"
-                  >
-                    <circle cx={node.x} cy={node.y} r={32} fill={fill} stroke={stroke} strokeWidth={isSelected ? 3 : 1.5} />
-                    <text
-                      x={node.x}
-                      y={node.y}
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      fill={textFill}
-                      fontSize={10}
-                      fontWeight={isSelected ? 'bold' : 'normal'}
-                      className="select-none pointer-events-none"
-                    >
-                      {label}
-                    </text>
-                    {/* Mini indicators */}
-                    {node.videos && node.videos.length > 0 && (
-                      <g transform={`translate(${node.x + 24}, ${node.y - 24})`}>
-                        <circle r={10} fill="hsl(var(--primary))" />
-                        <text textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={8}>▶</text>
-                      </g>
-                    )}
-                    {node.questionBank && node.questionBank.length > 0 && (
-                      <g transform={`translate(${node.x + 24}, ${node.y + 24})`}>
-                        <circle r={10} fill="hsl(var(--secondary))" />
-                        <text textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={8}>?</text>
-                      </g>
-                    )}
-                    <text
-                      x={node.x}
-                      y={node.y + 44}
-                      textAnchor="middle"
-                      fill="hsl(var(--muted-foreground))"
-                      fontSize={8}
-                      className="select-none"
-                    >
-                      {node.videos?.length || 0} vid · {node.questionBank?.length || 0} q
-                    </text>
-                  </g>
-                );
-              })}
+                })}
+              </g>
             </svg>
           </CardContent>
         </Card>
       </div>
 
-      {/* Selected concept detail panel */}
+      {/* Detail panel */}
       <div className="lg:col-span-1">
         {selected ? (
           <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
@@ -182,7 +329,8 @@ export function ConceptMindMap({ concepts, chapterTitle, onSelectConcept, select
               <CardContent className="p-4">
                 <h3 className="font-semibold text-sm mb-1">{selected.title}</h3>
                 {selected.difficulty && <Badge variant="outline" className="text-[10px] capitalize mb-2">{selected.difficulty}</Badge>}
-                <p className="text-xs text-muted-foreground leading-relaxed">{selected.summary || 'No summary'}</p>
+                {selected.estimatedMinutes && <span className="text-[10px] text-muted-foreground ml-1">{selected.estimatedMinutes} min</span>}
+                <p className="text-xs text-muted-foreground leading-relaxed mt-1">{selected.summary || 'No summary'}</p>
               </CardContent>
             </Card>
 
@@ -253,5 +401,53 @@ export function ConceptMindMap({ concepts, chapterTitle, onSelectConcept, select
         )}
       </div>
     </div>
+  );
+}
+
+function Connections({ node }: { node: TreeNode }) {
+  if (node.collapsed || node.children.length === 0) return null;
+  return (
+    <>
+      {node.children.map((child) => {
+        const parentCenterX = node.x + NODE_WIDTH / 2;
+        const parentBottom = node.y + NODE_HEIGHT;
+        const childCenterX = child.x + NODE_WIDTH / 2;
+        const childTop = child.y;
+        return (
+          <g key={`line-${node.id}-${child.id}`}>
+            <line
+              x1={parentCenterX}
+              y1={parentBottom}
+              x2={parentCenterX}
+              y2={parentBottom + (childTop - parentBottom) / 2}
+              stroke="hsl(var(--border))"
+              strokeWidth={1.5}
+              strokeOpacity={0.5}
+            />
+            <line
+              x1={parentCenterX}
+              y1={parentBottom + (childTop - parentBottom) / 2}
+              x2={childCenterX}
+              y2={parentBottom + (childTop - parentBottom) / 2}
+              stroke="hsl(var(--border))"
+              strokeWidth={1.5}
+              strokeOpacity={0.5}
+            />
+            <line
+              x1={childCenterX}
+              y1={parentBottom + (childTop - parentBottom) / 2}
+              x2={childCenterX}
+              y2={childTop}
+              stroke="hsl(var(--border))"
+              strokeWidth={1.5}
+              strokeOpacity={0.5}
+            />
+          </g>
+        );
+      })}
+      {node.children.map((child) => (
+        <Connections key={`sub-${child.id}`} node={child} />
+      ))}
+    </>
   );
 }
