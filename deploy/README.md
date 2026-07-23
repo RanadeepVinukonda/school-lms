@@ -1,5 +1,7 @@
 # School LMS — Deployment Guide
 
+[![Render](https://img.shields.io/badge/Render-Deployed-46E3B7?logo=render&logoColor=white)](https://dashboard.render.com)
+
 ## Architecture
 
 ```
@@ -26,6 +28,34 @@
 - **Frontend**: Vite React SPA served by nginx (Docker, port 80)
 - **Database**: Supabase PostgreSQL (managed — not self-hosted)
 - **CI/CD**: GitHub Actions → build Docker images → push to GHCR → SSH deploy to VPS
+
+---
+
+## Render Deployment (Backend)
+
+The backend is deployed on **Render** (Web Service). GitHub Actions triggers a deploy on every push to `main` that touches `lms/backend/`.
+
+### GitHub Secrets for Render
+
+Add these to **GitHub → Settings → Secrets and variables → Actions**:
+
+| Secret | Description |
+|---|---|
+| `RENDER_DEPLOY_HOOK` | Deploy hook URL from Render Dashboard → Backend Service → Deploy Hooks |
+| `RENDER_API_KEY` | Render API key (Account Settings → API Keys) |
+| `RENDER_SERVICE_ID` | Backend service ID (from Render dashboard URL: `/services/srv-XXXXX`) |
+
+### Set Up Deploy Hook
+
+1. Go to **Render Dashboard** → **genesis-backend** service
+2. Click **Deploy Hooks** → **Create Deploy Hook**
+3. Copy the generated URL
+4. Add it as `RENDER_DEPLOY_HOOK` in GitHub Secrets
+
+Every push to `main` with backend changes will now:
+1. Call the deploy hook → Render starts a new deploy
+2. Wait for the deploy to finish
+3. Report status back to GitHub (✅/❌ on the commit)
 
 ---
 

@@ -195,10 +195,20 @@ Context Text:\n${contextText.slice(0, 15000)}`;
     })(),
     (async () => {
       const prompt = `Generate a comprehensive question bank for the concept "${conceptTitle}" (from chapter "${chapterTitle}").
-Generate exactly 3 questions for EACH type: mcq, true_false, fill_blank, matching, numerical, descriptive.
-The "question" field MUST contain the full question text — do not leave it empty.
+For EACH type (mcq, true_false, fill_blank, matching, numerical, descriptive, short_answer), generate exactly 4 questions — one Easy, one Medium, one Hard, and one HOTS (Higher Order Thinking Skill).
+This means every type gets the SAME number of questions at each difficulty level.
+Requirements:
+- Easy questions: difficulty="easy", hots=false, bloomLevel="Remember" or "Understand"
+- Medium questions: difficulty="medium", hots=false, bloomLevel="Apply" or "Analyze"
+- Hard questions: difficulty="hard", hots=false, bloomLevel="Analyze" or "Evaluate"
+- HOTS questions: difficulty="hard", hots=true, bloomLevel="Evaluate" or "Create"
+- The "question" field MUST contain the full question text — do not leave it empty.
+- For mcq, provide exactly 4 options with one correct answer.
+- For true_false, provide options ["True", "False"].
+- For matching, provide options as array of "Left - Right" format pairs.
+- Include bloomLevel, hots (true/false), and topic fields for EVERY question.
 Return ONLY valid JSON matching this schema (no markdown, no formatting):
-{ "questions": [{ "question": "What is the question text?", "type": "mcq", "difficulty": "easy", "options": ["Option A", "Option B", "Option C", "Option D"], "answer": "Correct answer", "explanation": "Brief explanation", "passageText": null }] }
+{ "questions": [{ "question": "Full question text", "type": "mcq", "difficulty": "easy", "options": ["A", "B", "C", "D"], "answer": "Correct answer", "explanation": "Brief explanation", "bloomLevel": "Understand", "hots": false, "topic": "sub-topic name", "passageText": null }] }
 Concept context: ${conceptTitle} Chapter: ${chapterTitle} Source: ${contextText.slice(0, 8000)}`;
       const raw = await chatCompletion({ messages: [{ role: 'system', content: 'You respond in clean JSON only.' }, { role: 'user', content: prompt }], temperature: 0.4, max_tokens: 16384, jsonMode: true });
       let cleaned = raw.trim();
@@ -230,6 +240,8 @@ Concept context: ${conceptTitle} Chapter: ${chapterTitle} Source: ${contextText.
       question: q.question, type: q.type || 'mcq', difficulty: q.difficulty || 'medium',
       options: Array.isArray(q.options) ? q.options : null, answer: q.answer || '',
       explanation: q.explanation || '', passage_text: q.passageText || null,
+      bloom_level: q.bloomLevel || null, hots: q.hots === true || q.hots === 'true' || false,
+      topic: q.topic || null, source: 'AI Textbook Upload',
       created_at: new Date().toISOString(),
     }));
     await supabase.from('concept_questions').insert(questionRows);

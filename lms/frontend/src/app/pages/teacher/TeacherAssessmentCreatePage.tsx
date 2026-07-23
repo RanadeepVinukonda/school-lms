@@ -87,6 +87,13 @@ export default function TeacherAssessmentCreatePage() {
   const [quizPassingScore, setQuizPassingScore] = useState(50);
   const [quizMaxAttempts, setQuizMaxAttempts] = useState(3);
   const [quizShuffle, setQuizShuffle] = useState(true);
+  const [showQuizSmartSelection, setShowQuizSmartSelection] = useState(false);
+  const [quizDistribution, setQuizDistribution] = useState<Record<string, Record<string, number>>>({
+    easy: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
+    medium: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
+    hard: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
+  });
+  const [quizGeneratedPaper, setQuizGeneratedPaper] = useState<any[] | null>(null);
 
   const [assignmentTitle, setAssignmentTitle] = useState('');
   const [assignmentDescription, setAssignmentDescription] = useState('');
@@ -95,6 +102,13 @@ export default function TeacherAssessmentCreatePage() {
   const [assignmentPassingScore, setAssignmentPassingScore] = useState(50);
   const [assignmentMaxAttempts, setAssignmentMaxAttempts] = useState(3);
   const [assignmentShuffle, setAssignmentShuffle] = useState(true);
+  const [showAssignmentSmartSelection, setShowAssignmentSmartSelection] = useState(false);
+  const [assignmentDistribution, setAssignmentDistribution] = useState<Record<string, Record<string, number>>>({
+    easy: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
+    medium: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
+    hard: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
+  });
+  const [assignmentGeneratedPaper, setAssignmentGeneratedPaper] = useState<any[] | null>(null);
 
   const [publishScope, setPublishScope] = useState<'class' | 'students'>('class');
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
@@ -236,6 +250,144 @@ export default function TeacherAssessmentCreatePage() {
       toast.error(message);
     },
   });
+
+  const generateQuizPaperMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post('/exams-v2/generate-paper', {
+        textbookId: selectedTextbookId,
+        chapterId: selectedChapterId,
+        classId: selectedClassId,
+        distribution: quizDistribution,
+      });
+      return res.data.data;
+    },
+    onSuccess: (data) => {
+      toast.success(`Paper generated: ${data.questionCount} questions`);
+      setQuizGeneratedPaper(data.questions);
+    },
+    onError: (err: unknown) => {
+      const msg = err && typeof err === 'object' && 'message' in err
+        ? (err as { message: string }).message
+        : 'Failed to generate paper';
+      toast.error(msg);
+    },
+  });
+
+  const createQuizFromPaperMutation = useMutation({
+    mutationFn: async () => {
+      const body: Record<string, unknown> = {
+        title: quizTitle.trim(),
+        classId: selectedClassId,
+        subjectId: selectedAssignment?.subjectId,
+        textbookId: selectedTextbookId,
+        chapterId: selectedChapterId,
+        conceptId: selectedConceptId,
+        teacherId: user?.id ?? '',
+        timeLimitMinutes,
+        selectedModels,
+        questionCount: (quizGeneratedPaper || []).length,
+        passingScore: quizPassingScore,
+        maxAttempts: quizMaxAttempts,
+        shuffleQuestions: quizShuffle,
+        questions: quizGeneratedPaper,
+      };
+      return api.post('/quizzes-v2', body).then((r) => r.data.data);
+    },
+    onSuccess: () => {
+      toast.success(_('Quiz created from paper'));
+      setQuizGeneratedPaper(null);
+      setShowQuizSmartSelection(false);
+      queryClient.invalidateQueries({ queryKey: ['quizzes-v2-class', selectedClassId] });
+    },
+    onError: (err: unknown) => {
+      const msg = err && typeof err === 'object' && 'message' in err
+        ? (err as { message: string }).message
+        : 'Failed to create quiz';
+      toast.error(msg);
+    },
+  });
+
+  const setQuizDist = (difficulty: string, type: string, value: number) => {
+    setQuizDistribution((prev) => ({
+      ...prev,
+      [difficulty]: { ...prev[difficulty], [type]: Math.max(0, value || 0) },
+    }));
+  };
+
+  const quizDistributionTotal = Object.values(quizDistribution).reduce(
+    (sum, types) => sum + Object.values(types).reduce((s, v) => s + v, 0), 0,
+  );
+
+  const generateAssignmentPaperMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post('/exams-v2/generate-paper', {
+        textbookId: selectedTextbookId,
+        chapterId: selectedChapterId,
+        classId: selectedClassId,
+        distribution: assignmentDistribution,
+      });
+      return res.data.data;
+    },
+    onSuccess: (data) => {
+      toast.success(`Assignment paper generated: ${data.questionCount} questions`);
+      setAssignmentGeneratedPaper(data.questions);
+    },
+    onError: (err: unknown) => {
+      const msg = err && typeof err === 'object' && 'message' in err
+        ? (err as { message: string }).message
+        : 'Failed to generate paper';
+      toast.error(msg);
+    },
+  });
+
+  const createAssignmentFromPaperMutation = useMutation({
+    mutationFn: async () => {
+      const questionsPayload = (assignmentGeneratedPaper || []).map((q: any) => ({
+        text: q.text || q.question,
+        type: q.type === 'mcq' ? 'multiple_choice' : q.type === 'true_false' ? 'true_false' : q.type === 'fill_blank' ? 'fill_blank' : q.type === 'short_answer' ? 'short_answer' : q.type === 'matching' ? 'matching' : 'short_answer',
+        points: q.points || 2,
+        options: q.type === 'mcq' || q.type === 'multiple_choice' ? q.options : undefined,
+        correctAnswer: q.correctAnswer || q.answer || '',
+      }));
+      return api.post('/assignments-v2', {
+        title: assignmentTitle.trim(),
+        description: assignmentDescription.trim(),
+        classId: selectedClassId,
+        textbookId: selectedTextbookId,
+        chapterId: selectedChapterId,
+        conceptId: selectedConceptId,
+        teacherId: user?.id ?? '',
+        timeLimitMinutes: assignmentTimeLimit,
+        questions: questionsPayload,
+        passingScore: assignmentPassingScore,
+        maxAttempts: assignmentMaxAttempts,
+        shuffleQuestions: assignmentShuffle,
+      }).then((r) => r.data.data);
+    },
+    onSuccess: () => {
+      toast.success(_('Assignment created from paper'));
+      setAssignmentGeneratedPaper(null);
+      setShowAssignmentSmartSelection(false);
+      queryClient.invalidateQueries({ queryKey: ['assignments-v2-class', selectedClassId] });
+    },
+    onError: (err: unknown) => {
+      const msg = err && typeof err === 'object' && 'message' in err
+        ? (err as { message: string }).message
+        : 'Failed to create assignment';
+      toast.error(msg);
+    },
+  });
+
+  const setAssignmentDist = (difficulty: string, type: string, value: number) => {
+    setAssignmentDistribution((prev) => ({
+      ...prev,
+      [difficulty]: { ...prev[difficulty], [type]: Math.max(0, value || 0) },
+    }));
+  };
+
+  const assignmentDistributionTotal = Object.values(assignmentDistribution).reduce(
+    (sum, types) => sum + Object.values(types).reduce((s, v) => s + v, 0), 0,
+  );
 
   const resetQuizForm = useCallback(() => {
     setQuizTitle('');
@@ -946,31 +1098,141 @@ export default function TeacherAssessmentCreatePage() {
                     </Button>
                   ) : null}
 
-                  <Button
-                    className="w-full gap-2"
-                    size="lg"
-                    onClick={handleCreateQuiz}
-                    disabled={
-                      createQuizMutation.isPending ||
-                      !selectedClassId ||
-                      !selectedTextbookId ||
-                      !selectedChapterId ||
-                      !selectedConceptId ||
-                      !quizTitle.trim()
-                    }
-                  >
-                    {createQuizMutation.isPending ? (
-                      <>
-                        <Icon name="hourglass_top" size={18} className="animate-spin" />
-                        {_('Creating Quiz...')}
-                      </>
-                    ) : (
-                      <>
-                        <Icon name="quiz" size={18} />
-                        {_('Create Quiz')}
-                      </>
-                    )}
-                  </Button>
+                  {selectedChapterId && (
+                    <div className="border-t border-border/60 pt-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowQuizSmartSelection(!showQuizSmartSelection)}
+                        className="gap-2 mb-3"
+                      >
+                        <Icon name="auto_awesome" size={16} />
+                        {showQuizSmartSelection ? 'Hide Smart Selection' : 'Smart Question Selection'}
+                      </Button>
+
+                      {showQuizSmartSelection && (
+                        <div className="space-y-3 p-4 rounded-lg border border-border/60 bg-muted/20 mb-4">
+                          <p className="text-xs text-muted-foreground">
+                            Set how many questions per difficulty and type. System auto-selects matching questions.
+                          </p>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="border-b border-border/60">
+                                  <th className="text-left py-2 pr-3">Difficulty</th>
+                                  {QUESTION_MODELS.map((m) => (
+                                    <th key={m.value} className="text-center px-2 py-2">{m.label}</th>
+                                  ))}
+                                  <th className="text-center px-2 py-2">Total</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {['easy', 'medium', 'hard'].map((diff) => (
+                                  <tr key={diff} className="border-b border-border/40">
+                                    <td className="py-2 pr-3 font-medium capitalize">{diff}</td>
+                                    {QUESTION_MODELS.map((m) => {
+                                      const mappedType = m.value === 'multiple_choice' ? 'mcq' : m.value;
+                                      const avail = typeCountMap[mappedType] || 0;
+                                      return (
+                                        <td key={m.value} className="text-center px-1 py-1">
+                                          <input
+                                            type="number"
+                                            min={0}
+                                            max={avail}
+                                            value={quizDistribution[diff]?.[mappedType] ?? 0}
+                                            onChange={(e) => setQuizDist(diff, mappedType, parseInt(e.target.value) || 0)}
+                                            className="w-14 text-center rounded border border-border bg-background px-1 py-1 text-xs"
+                                          />
+                                          <div className="text-[10px] text-muted-foreground">/ {avail}</div>
+                                        </td>
+                                      );
+                                    })}
+                                    <td className="text-center px-2 py-2 font-semibold">
+                                      {Object.values(quizDistribution[diff] || {}).reduce((s: number, v: any) => s + (v || 0), 0)}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs font-semibold">Total selected: {quizDistributionTotal} questions</p>
+                            <div className="flex gap-2">
+                              {quizGeneratedPaper && (
+                                <Button size="sm" variant="outline" onClick={() => setQuizGeneratedPaper(null)}>
+                                  Clear Preview
+                                </Button>
+                              )}
+                              <Button
+                                size="sm"
+                                onClick={() => generateQuizPaperMutation.mutate()}
+                                loading={generateQuizPaperMutation.isPending}
+                                disabled={quizDistributionTotal === 0}
+                                className="gap-1"
+                              >
+                                <Icon name="auto_awesome" size={14} />
+                                {quizGeneratedPaper ? 'Regenerate' : 'Generate Paper'}
+                              </Button>
+                            </div>
+                          </div>
+
+                          {quizGeneratedPaper && (
+                            <div className="border rounded-lg p-3 bg-background space-y-2 max-h-60 overflow-y-auto">
+                              <p className="text-xs font-semibold text-primary">Preview ({quizGeneratedPaper.length} questions)</p>
+                              {quizGeneratedPaper.map((q: any, i: number) => (
+                                <div key={q.id || i} className="flex items-center gap-2 text-xs border-b border-border/40 pb-1">
+                                  <span className="text-muted-foreground">#{i + 1}</span>
+                                  <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary">{q.type}</span>
+                                  <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{q.difficulty}</span>
+                                  <span className="truncate flex-1">{q.text}</span>
+                                  {q.hots && <span className="text-purple-500">HOTS</span>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {quizGeneratedPaper ? (
+                    <Button
+                      className="w-full gap-2"
+                      size="lg"
+                      onClick={() => createQuizFromPaperMutation.mutate()}
+                      loading={createQuizFromPaperMutation.isPending}
+                    >
+                      <Icon name="quiz" size={18} />
+                      Create Quiz from Paper
+                    </Button>
+                  ) : (
+                    <Button
+                      className="w-full gap-2"
+                      size="lg"
+                      onClick={handleCreateQuiz}
+                      disabled={
+                        createQuizMutation.isPending ||
+                        !selectedClassId ||
+                        !selectedTextbookId ||
+                        !selectedChapterId ||
+                        !selectedConceptId ||
+                        !quizTitle.trim()
+                      }
+                    >
+                      {createQuizMutation.isPending ? (
+                        <>
+                          <Icon name="hourglass_top" size={18} className="animate-spin" />
+                          {_('Creating Quiz...')}
+                        </>
+                      ) : (
+                        <>
+                          <Icon name="quiz" size={18} />
+                          {_('Create Quiz')}
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-5">
@@ -1174,31 +1436,141 @@ export default function TeacherAssessmentCreatePage() {
                     </div>
                   </div>
 
-                  <Button
-                    className="w-full gap-2"
-                    size="lg"
-                    onClick={handleCreateAssignment}
-                    disabled={
-                      createAssignmentMutation.isPending ||
-                      !selectedClassId ||
-                      !selectedTextbookId ||
-                      !selectedChapterId ||
-                      !selectedConceptId ||
-                      !assignmentTitle.trim()
-                    }
-                  >
-                    {createAssignmentMutation.isPending ? (
-                      <>
-                        <Icon name="hourglass_top" size={18} className="animate-spin" />
-                        {_('Creating Assignment...')}
-                      </>
-                    ) : (
-                      <>
-                        <Icon name="note_alt" size={18} />
-                        {_('Create Assignment')}
-                      </>
-                    )}
-                  </Button>
+                  {selectedChapterId && (
+                    <div className="border-t border-border/60 pt-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowAssignmentSmartSelection(!showAssignmentSmartSelection)}
+                        className="gap-2 mb-3"
+                      >
+                        <Icon name="auto_awesome" size={16} />
+                        {showAssignmentSmartSelection ? 'Hide Smart Selection' : 'Auto-Generate from Question Bank'}
+                      </Button>
+
+                      {showAssignmentSmartSelection && (
+                        <div className="space-y-3 p-4 rounded-lg border border-border/60 bg-muted/20 mb-4">
+                          <p className="text-xs text-muted-foreground">
+                            Auto-generate assignment questions from the question bank by difficulty and type.
+                          </p>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="border-b border-border/60">
+                                  <th className="text-left py-2 pr-3">Difficulty</th>
+                                  {QUESTION_MODELS.map((m) => (
+                                    <th key={m.value} className="text-center px-2 py-2">{m.label}</th>
+                                  ))}
+                                  <th className="text-center px-2 py-2">Total</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {['easy', 'medium', 'hard'].map((diff) => (
+                                  <tr key={diff} className="border-b border-border/40">
+                                    <td className="py-2 pr-3 font-medium capitalize">{diff}</td>
+                                    {QUESTION_MODELS.map((m) => {
+                                      const mappedType = m.value === 'multiple_choice' ? 'mcq' : m.value;
+                                      const avail = typeCountMap[mappedType] || 0;
+                                      return (
+                                        <td key={m.value} className="text-center px-1 py-1">
+                                          <input
+                                            type="number"
+                                            min={0}
+                                            max={avail}
+                                            value={assignmentDistribution[diff]?.[mappedType] ?? 0}
+                                            onChange={(e) => setAssignmentDist(diff, mappedType, parseInt(e.target.value) || 0)}
+                                            className="w-14 text-center rounded border border-border bg-background px-1 py-1 text-xs"
+                                          />
+                                          <div className="text-[10px] text-muted-foreground">/ {avail}</div>
+                                        </td>
+                                      );
+                                    })}
+                                    <td className="text-center px-2 py-2 font-semibold">
+                                      {Object.values(assignmentDistribution[diff] || {}).reduce((s: number, v: any) => s + (v || 0), 0)}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs font-semibold">Total selected: {assignmentDistributionTotal} questions</p>
+                            <div className="flex gap-2">
+                              {assignmentGeneratedPaper && (
+                                <Button size="sm" variant="outline" onClick={() => setAssignmentGeneratedPaper(null)}>
+                                  Clear Preview
+                                </Button>
+                              )}
+                              <Button
+                                size="sm"
+                                onClick={() => generateAssignmentPaperMutation.mutate()}
+                                loading={generateAssignmentPaperMutation.isPending}
+                                disabled={assignmentDistributionTotal === 0}
+                                className="gap-1"
+                              >
+                                <Icon name="auto_awesome" size={14} />
+                                {assignmentGeneratedPaper ? 'Regenerate' : 'Generate Paper'}
+                              </Button>
+                            </div>
+                          </div>
+
+                          {assignmentGeneratedPaper && (
+                            <div className="border rounded-lg p-3 bg-background space-y-2 max-h-60 overflow-y-auto">
+                              <p className="text-xs font-semibold text-primary">Preview ({assignmentGeneratedPaper.length} questions)</p>
+                              {assignmentGeneratedPaper.map((q: any, i: number) => (
+                                <div key={q.id || i} className="flex items-center gap-2 text-xs border-b border-border/40 pb-1">
+                                  <span className="text-muted-foreground">#{i + 1}</span>
+                                  <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary">{q.type}</span>
+                                  <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{q.difficulty}</span>
+                                  <span className="truncate flex-1">{q.text}</span>
+                                  {q.hots && <span className="text-purple-500">HOTS</span>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {assignmentGeneratedPaper ? (
+                    <Button
+                      className="w-full gap-2"
+                      size="lg"
+                      onClick={() => createAssignmentFromPaperMutation.mutate()}
+                      loading={createAssignmentFromPaperMutation.isPending}
+                    >
+                      <Icon name="note_alt" size={18} />
+                      Create Assignment from Paper
+                    </Button>
+                  ) : (
+                    <Button
+                      className="w-full gap-2"
+                      size="lg"
+                      onClick={handleCreateAssignment}
+                      disabled={
+                        createAssignmentMutation.isPending ||
+                        !selectedClassId ||
+                        !selectedTextbookId ||
+                        !selectedChapterId ||
+                        !selectedConceptId ||
+                        !assignmentTitle.trim()
+                      }
+                    >
+                      {createAssignmentMutation.isPending ? (
+                        <>
+                          <Icon name="hourglass_top" size={18} className="animate-spin" />
+                          {_('Creating Assignment...')}
+                        </>
+                      ) : (
+                        <>
+                          <Icon name="note_alt" size={18} />
+                          {_('Create Assignment')}
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               )}
             </CardContent>
