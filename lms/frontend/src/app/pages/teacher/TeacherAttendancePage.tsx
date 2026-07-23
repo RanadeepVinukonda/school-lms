@@ -70,7 +70,7 @@ export default function TeacherAttendancePage() {
   const { data: reportData, isLoading: reportLoading, isError: reportError, refetch: refetchReport } = useQuery({
     queryKey: ['teacher-attendance-report', selectedClass],
     queryFn: () => attendanceService.getAttendanceReport(selectedClass).then((r) => r.data),
-    enabled: !!selectedClass && tab === 'report',
+    enabled: !!selectedClass,
   });
 
   const markMutation = useMutation({
@@ -196,6 +196,8 @@ export default function TeacherAttendancePage() {
                           {classStudents.map((s: any, idx: number) => {
                             const alreadyMarked = alreadyMarkedIds.has(s.id);
                             const status = studentAttendanceStatus[s.id];
+                            const studentSummary = reportData?.summary?.[s.id];
+                            const pct = studentSummary?.percentage ?? (studentSummary && studentSummary.total > 0 ? Math.round((studentSummary.present / studentSummary.total) * 100) : null);
                             return (
                               <tr key={s.id} className={`hover:bg-muted/20 transition-colors ${alreadyMarked ? 'bg-muted/30' : selectedStudentIds.includes(s.id) ? 'bg-primary/5' : ''}`}>
                                 <td className="px-4 py-3 text-muted-foreground">{idx + 1}</td>
@@ -220,8 +222,24 @@ export default function TeacherAttendancePage() {
                                     />
                                   )}
                                 </td>
-                                <td className="px-4 py-3 text-center text-label-sm text-muted-foreground">&mdash;</td>
-                                <td className="px-4 py-3 text-center text-label-sm text-muted-foreground">&mdash;</td>
+                                <td className="px-4 py-3 text-center text-label-sm text-muted-foreground">
+                                  {studentSummary ? (
+                                    <span className="text-[10px]">
+                                      P:{studentSummary.present} A:{studentSummary.absent} L:{studentSummary.late} H:{studentSummary.holiday}
+                                    </span>
+                                  ) : (
+                                    <span>&mdash;</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-center text-label-sm font-mono">
+                                  {pct !== null ? (
+                                    <span className={`font-bold ${pct >= 75 ? 'text-success' : pct >= 50 ? 'text-warning' : 'text-error'}`}>
+                                      {pct}%
+                                    </span>
+                                  ) : (
+                                    <span className="text-muted-foreground">&mdash;</span>
+                                  )}
+                                </td>
                               </tr>
                             );
                           })}
