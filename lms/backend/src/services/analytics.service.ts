@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from './supabase';
 import { logger } from '../utils/logger';
 import { getSettings } from './settings.service';
+import { getCurrentAcademicYear } from './academic-year.service';
 
 function safePct(value: number): number {
   return Number.isFinite(value) ? value : 0;
@@ -305,6 +306,9 @@ async function getAssessmentData(type: 'quiz' | 'assignment' | 'exam') {
 export async function getClassPerformance(classId: string) {
   const supabase = getSupabaseAdmin()!;
 
+  const currentYear = await getCurrentAcademicYear();
+  const yearStart = currentYear?.startDate ? new Date(currentYear.startDate as string) : null;
+
   const { data: students, error: getCpStudentsErr } = await supabase
     .from('users')
     .select('id, data')
@@ -337,7 +341,7 @@ export async function getClassPerformance(classId: string) {
         .filter('data->>' + idField, 'eq', a.id);
       if (getCpAttemptsErr) throw new Error(getCpAttemptsErr.message);
 
-      const attemptData = (attempts || []).map((d: any) => d.data);
+      const attemptData = (attempts || []).map((d: any) => d.data).filter((at: any) => !yearStart || !at.submittedAt || new Date(at.submittedAt) >= yearStart);
       const scored = attemptData.filter((at: any) => at.percentage != null);
       const avgScore = scored.length > 0
         ? safePct(Math.round(scored.reduce((s: number, at: any) => s + at.percentage, 0) / scored.length))
@@ -384,6 +388,9 @@ export async function getClassPerformance(classId: string) {
 export async function getStudentPerformance(studentId: string) {
   const supabase = getSupabaseAdmin()!;
 
+  const currentYear = await getCurrentAcademicYear();
+  const yearStart = currentYear?.startDate ? new Date(currentYear.startDate as string) : null;
+
   const { data: userDoc, error: userDocErr } = await supabase
     .from('users')
     .select('data')
@@ -422,12 +429,14 @@ export async function getStudentPerformance(studentId: string) {
         if (parent) title = (parent.data as any)?.title || title;
       }
 
+      const subDate = at.submittedAt || at.startedAt;
+      if (yearStart && subDate && new Date(subDate) < yearStart) continue;
       allAttempts.push({
         type,
         title,
         percentage: at.percentage ?? 0,
         passed: at.passed ?? false,
-        submittedAt: at.submittedAt || at.startedAt,
+        submittedAt: subDate,
         level: at.level || 'beginner',
       });
     }

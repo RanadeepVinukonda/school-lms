@@ -772,13 +772,13 @@ function TeacherGroupCards({ items, onReTeach, reTeachPending, _ }: { items: any
               <div className="border-t border-border/40 overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-muted/20 text-label-xs font-bold text-muted-foreground uppercase tracking-wider">
-                      <th className="text-left px-4 py-2">{_('Class / Subject')}</th>
-                      <th className="text-left px-4 py-2">{_('Concept')}</th>
-                      <th className="text-left px-4 py-2">{_('Avg Score')}</th>
-                      <th className="text-left px-4 py-2">{_('Attempts')}</th>
-                      <th className="text-center px-4 py-2">{_('Status')}</th>
-                      <th className="text-right px-4 py-2">{_('Action')}</th>
+                    <tr className="bg-muted/20 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
+                      <th className="text-left px-4 py-3">{_('Class / Subject')}</th>
+                      <th className="text-left px-4 py-3">{_('Concept')}</th>
+                      <th className="text-left px-4 py-3">{_('Avg Score')}</th>
+                      <th className="text-left px-4 py-3">{_('Attempts')}</th>
+                      <th className="text-center px-4 py-3">{_('Status')}</th>
+                      <th className="text-right px-4 py-3">{_('Action')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/40">
@@ -786,27 +786,27 @@ function TeacherGroupCards({ items, onReTeach, reTeachPending, _ }: { items: any
                       const isLow = item.status === 'low';
                       return (
                         <tr key={`${item.classId}-${item.conceptId}-${idx}`} className="hover:bg-muted/20 transition-colors">
-                          <td className="px-4 py-2.5">
-                            <div className="text-title-sm font-bold">{item.className}</div>
-                            <div className="text-label-sm text-muted-foreground">{item.subjectName}</div>
+                          <td className="px-4 py-3">
+                            <div className="text-body-sm font-bold">{item.className}</div>
+                            <div className="text-title-sm text-muted-foreground">{item.subjectName}</div>
                           </td>
-                          <td className="px-4 py-2.5 text-title-sm font-medium max-w-[200px] truncate" title={item.conceptName}>{item.conceptName}</td>
-                          <td className="px-4 py-2.5 font-mono">
+                          <td className="px-4 py-3 text-body-sm font-medium max-w-[220px] truncate" title={item.conceptName}>{item.conceptName}</td>
+                          <td className="px-4 py-3 font-mono text-body-sm">
                             {item.attemptCount > 0 ? (
                               <span className={isLow ? 'text-error font-bold' : 'text-success font-bold'}>{item.averageScore}%</span>
                             ) : (
                               <span className="text-muted-foreground/40">&mdash;</span>
                             )}
                           </td>
-                          <td className="px-4 py-2.5 text-title-sm font-mono text-muted-foreground">{item.attemptCount}</td>
-                          <td className="px-4 py-2.5 text-center">
+                          <td className="px-4 py-3 text-body-sm font-mono text-muted-foreground">{item.attemptCount}</td>
+                          <td className="px-4 py-3 text-center">
                             {item.attemptCount > 0 ? (
-                              <Badge variant={isLow ? 'destructive' : 'success'} className="text-[10px] uppercase font-bold">{isLow ? 'Alert' : 'Good'}</Badge>
+                              <Badge variant={isLow ? 'destructive' : 'success'} className="text-xs uppercase font-bold px-2 py-0.5">{isLow ? 'Alert' : 'Good'}</Badge>
                             ) : (
-                              <Badge variant="secondary" className="text-[10px] uppercase font-bold">{_('Untested')}</Badge>
+                              <Badge variant="secondary" className="text-xs uppercase font-bold px-2 py-0.5">{_('Untested')}</Badge>
                             )}
                           </td>
-                          <td className="px-4 py-2.5 text-right">
+                          <td className="px-4 py-3 text-right">
                             <Button size="sm" variant={isLow ? 'destructive' : 'outline'} disabled={!isLow || reTeachPending}
                               onClick={() => onReTeach({ teacherId: item.teacherId, className: item.className, subjectName: item.subjectName, conceptName: item.conceptName })}
                             >

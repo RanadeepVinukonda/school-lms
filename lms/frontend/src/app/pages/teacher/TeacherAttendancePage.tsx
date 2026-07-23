@@ -49,12 +49,6 @@ export default function TeacherAttendancePage() {
     enabled: !!selectedClass,
   });
 
-  const { data: attendanceData, isLoading: attLoading, isError: attError, refetch: refetchAtt } = useQuery({
-    queryKey: ['teacher-attendance', selectedClass, selectedDate],
-    queryFn: () => attendanceService.getClassAttendance(selectedClass, selectedDate).then((r) => r.data),
-    enabled: !!selectedClass && tab === 'overview',
-  });
-
   const { data: reportData, isLoading: reportLoading, isError: reportError, refetch: refetchReport } = useQuery({
     queryKey: ['teacher-attendance-report', selectedClass],
     queryFn: () => attendanceService.getAttendanceReport(selectedClass).then((r) => r.data),
@@ -95,13 +89,6 @@ export default function TeacherAttendancePage() {
     markMutation.mutate({ studentIds: ids, classId: selectedClass, date: selectedDate, status, markedBy: userId });
   };
 
-  const todayAttendance = useMemo(() => {
-    if (!attendanceData) return { present: 0, absent: 0, late: 0, holiday: 0 };
-    return (attendanceData as any[]).reduce((acc: any, r: any) => {
-      acc[r.status] = (acc[r.status] || 0) + 1;
-      return acc;
-    }, { present: 0, absent: 0, late: 0, holiday: 0 });
-  }, [attendanceData]);
 
   return (
     <>
@@ -128,7 +115,6 @@ export default function TeacherAttendancePage() {
           <Tabs value={tab} onValueChange={setTab}>
             <TabsList className="w-full overflow-x-auto inline-flex">
               <TabsTrigger value="mark">{_('Mark')}</TabsTrigger>
-              <TabsTrigger value="overview">{_('Overview')}</TabsTrigger>
               <TabsTrigger value="report">{_('Report')}</TabsTrigger>
             </TabsList>
 
@@ -203,61 +189,6 @@ export default function TeacherAttendancePage() {
                   )}
                 </CardContent>
               </Card>
-            </TabsContent>
-
-            <TabsContent value="overview" className="space-y-6">
-              <DataFetchWrapper data={attendanceData} isLoading={attLoading} error={attError ? new Error('Failed to load') : null} onRetry={refetchAtt} loadingType="card">
-                {() => (
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                      {Object.entries(todayAttendance).map(([status, count]) => (
-                        <Card key={status} className="border-border/60">
-                          <CardContent className="p-4 text-center">
-                            <p className="text-label-sm text-muted-foreground capitalize">{status}</p>
-                            <p className="text-display-xs font-bold mt-1">{count as number}</p>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                    <Card className="border-border/60">
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-title-sm">{_('Records for')} {selectedDate}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {(attendanceData as any[])?.length === 0 ? (
-                          <p className="text-muted-foreground text-center py-8">{_('No records for this date')}</p>
-                        ) : (
-                          <div className="border border-border/60 rounded-xl overflow-x-auto">
-                            <table className="w-full text-left">
-                              <thead>
-                                <tr className="border-b border-b-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
-                                  <th className="px-4 py-3">{_('Student')}</th>
-                                  <th className="px-4 py-3">{_('Status')}</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-border/40 text-title-sm">
-                                {(attendanceData as any[])?.map((r: any) => (
-                                  <tr key={r.id} className="hover:bg-muted/20">
-                                    <td className="px-4 py-3 font-semibold">{r.studentId?.slice(0, 8)}</td>
-                                    <td className="px-4 py-3">
-                                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${
-                                        r.status === 'present' ? 'bg-success-container text-success' :
-                                        r.status === 'absent' ? 'bg-error-container text-error' :
-                                        r.status === 'late' ? 'bg-warning-container text-warning' :
-                                        'bg-muted text-muted-foreground'
-                                      }`}>{r.status}</span>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-              </DataFetchWrapper>
             </TabsContent>
 
             <TabsContent value="report" className="space-y-6">

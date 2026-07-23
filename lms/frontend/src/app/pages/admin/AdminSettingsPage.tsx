@@ -492,10 +492,6 @@ export default function AdminSettingsPage() {
                     <Icon name="add" size={16} className="mr-2" />
                     Add Admin
                   </Button>
-                  <Button variant="outline" onClick={() => setShowCreateParent(true)}>
-                    <Icon name="add" size={16} className="mr-2" />
-                    Register Parent
-                  </Button>
                 </div>
               </div>
 
@@ -576,6 +572,10 @@ export default function AdminSettingsPage() {
                     onChange={(e) => setParentSearch(e.target.value)}
                   />
                 </div>
+                <Button onClick={() => setShowCreateParent(true)}>
+                  <Icon name="add" size={16} className="mr-2" />
+                  Register Parent
+                </Button>
               </div>
 
               {filteredParentUsers.length === 0 ? (
@@ -583,7 +583,6 @@ export default function AdminSettingsPage() {
                   <CardContent className="flex flex-col items-center gap-4 py-16">
                     <Icon name="family_link" size={48} className="text-muted-foreground/50" />
                     <p className="text-title-sm font-medium">No parents registered yet</p>
-                    <p className="text-body-md text-muted-foreground">Use the Register Parent button in the Admin Users tab to add parents.</p>
                   </CardContent>
                 </Card>
               ) : (
