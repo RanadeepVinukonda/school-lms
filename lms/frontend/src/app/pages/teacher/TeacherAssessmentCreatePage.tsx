@@ -116,6 +116,8 @@ export default function TeacherAssessmentCreatePage() {
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
 
   const [searchParams] = useSearchParams();
+  const urlClassId = searchParams.get('classId');
+  const urlSubjectId = searchParams.get('subjectId');
   const urlTextbookId = searchParams.get('textbookId');
   const urlChapterId = searchParams.get('chapterId');
   const urlConceptId = searchParams.get('conceptId');
@@ -197,17 +199,17 @@ export default function TeacherAssessmentCreatePage() {
     const backendTypes = selectedModels.map((m: string) => (TYPE_MAP[m] || [m])[0]);
     const numTypes = backendTypes.length;
     const numDiffs = 4;
-    const perCell = Math.floor(questionCount / (numTypes * numDiffs));
-    const remainder = questionCount - perCell * numTypes * numDiffs;
+    const totalCells = numTypes * numDiffs;
+    const perCell = Math.floor(questionCount / totalCells);
+    let remainder = questionCount - perCell * totalCells;
     const newDist: Record<string, Record<string, number>> = {
       easy: {}, medium: {}, hard: {}, hots: {},
     };
     const diffs = ['easy', 'medium', 'hard', 'hots'];
-    let rem = remainder;
-    for (const bt of backendTypes) {
-      for (const d of diffs) {
+    for (const d of diffs) {
+      for (const bt of backendTypes) {
         let val = perCell;
-        if (rem > 0) { val += 1; rem -= 1; }
+        if (remainder > 0) { val += 1; remainder -= 1; }
         newDist[d][bt] = val;
       }
     }
@@ -218,6 +220,20 @@ export default function TeacherAssessmentCreatePage() {
     }
     setQuizDistribution(newDist);
   }, [questionCount, selectedModels]);
+
+  useEffect(() => {
+    if (urlClassId && assignmentList.length > 0 && !selectedClassId) {
+      const found = assignmentList.find((a) => a.classId === urlClassId);
+      if (found) setSelectedClassId(urlClassId);
+    }
+  }, [urlClassId, assignmentList]);
+
+  useEffect(() => {
+    if (urlSubjectId && classAssignments.length > 0 && !selectedSubjectId) {
+      const found = classAssignments.find((a) => a.subjectId === urlSubjectId);
+      if (found) setSelectedSubjectId(urlSubjectId);
+    }
+  }, [urlSubjectId, classAssignments]);
 
   useEffect(() => {
     if (urlTextbookId && textbookList.length > 0) {
@@ -1080,7 +1096,38 @@ export default function TeacherAssessmentCreatePage() {
                           <p className="text-xs text-muted-foreground">
                             Auto-distributed equally across difficulties. Adjust cells manually as needed.
                           </p>
-                          <p className="text-xs font-semibold">Total: {quizDistributionTotal} questions</p>
+                          <div className="flex items-center gap-2">
+                            <p className={`text-xs font-semibold ${quizDistributionTotal !== questionCount ? 'text-destructive' : ''}`}>
+                              Total: {quizDistributionTotal} / {questionCount} questions
+                            </p>
+                            {quizDistributionTotal !== questionCount && selectedModels.length > 0 && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  if (selectedModels.length === 0 || questionCount === 0) return;
+                                  const backendTypes = selectedModels.map((m: string) => (TYPE_MAP[m] || [m])[0]);
+                                  const numTypes = backendTypes.length;
+                                  const totalCells = numTypes * 4;
+                                  const perCell = Math.floor(questionCount / totalCells);
+                                  let rem = questionCount - perCell * totalCells;
+                                  const newDist: Record<string, Record<string, number>> = { easy: {}, medium: {}, hard: {}, hots: {} };
+                                  for (const d of ['easy', 'medium', 'hard', 'hots']) {
+                                    for (const bt of backendTypes) {
+                                      let val = perCell;
+                                      if (rem > 0) { val += 1; rem -= 1; }
+                                      newDist[d][bt] = val;
+                                    }
+                                  }
+                                  setQuizDistribution(newDist);
+                                }}
+                                className="gap-1 h-6 text-[10px]"
+                              >
+                                <Icon name="sync" size={12} />
+                                Sync
+                              </Button>
+                            )}
+                          </div>
                         </div>
                         <div className="overflow-x-auto">
                           {(() => {
@@ -1141,15 +1188,32 @@ export default function TeacherAssessmentCreatePage() {
                         </div>
 
                         {quizGeneratedPaper && (
-                          <div className="border rounded-lg p-3 bg-background space-y-2 max-h-60 overflow-y-auto">
-                            <p className="text-xs font-semibold text-primary">Preview ({quizGeneratedPaper.length} questions)</p>
+                          <div className="border rounded-lg p-3 bg-background space-y-3 max-h-80 overflow-y-auto">
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs font-semibold text-primary">Preview ({quizGeneratedPaper.length} questions)</p>
+                              {quizGeneratedPaper.length < questionCount && (
+                                <p className="text-[10px] text-amber-600">Warning: fewer questions than requested</p>
+                              )}
+                            </div>
                             {quizGeneratedPaper.map((q: any, i: number) => (
-                              <div key={q.id || i} className="flex items-center gap-2 text-xs border-b border-border/40 pb-1">
-                                <span className="text-muted-foreground">#{i + 1}</span>
-                                <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary">{q.type}</span>
-                                <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{q.difficulty}</span>
-                                <span className="truncate flex-1">{q.text}</span>
-                                {q.hots && <span className="text-purple-500">HOTS</span>}
+                              <div key={q.id || i} className="rounded-lg border border-border/60 p-3 space-y-1.5">
+                                <div className="flex items-center gap-2 text-xs">
+                                  <span className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">{i + 1}</span>
+                                  <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-medium">{q.type?.replace(/_/g, ' ')}</span>
+                                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${q.difficulty === 'easy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : q.difficulty === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : q.difficulty === 'hard' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'}`}>{q.difficulty}</span>
+                                  {q.hots && <span className="px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[10px] font-bold">HOTS</span>}
+                                </div>
+                                <p className="text-xs text-foreground leading-relaxed">{q.text}</p>
+                                {q.options && q.options.length > 0 && (
+                                  <div className="flex flex-wrap gap-1.5 pt-0.5">
+                                    {q.options.map((opt: string, oi: number) => (
+                                      <span key={oi} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{String.fromCharCode(65 + oi)}. {opt}</span>
+                                    ))}
+                                  </div>
+                                )}
+                                {q.correctAnswer && (
+                                  <p className="text-[10px] text-green-600 dark:text-green-400 font-medium">Answer: {Array.isArray(q.correctAnswer) ? q.correctAnswer.join(', ') : q.correctAnswer}</p>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -1497,15 +1561,32 @@ export default function TeacherAssessmentCreatePage() {
                         </div>
 
                         {assignmentGeneratedPaper && (
-                          <div className="border rounded-lg p-3 bg-background space-y-2 max-h-60 overflow-y-auto">
-                            <p className="text-xs font-semibold text-primary">Preview ({assignmentGeneratedPaper.length} questions)</p>
+                          <div className="border rounded-lg p-3 bg-background space-y-3 max-h-80 overflow-y-auto">
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs font-semibold text-primary">Preview ({assignmentGeneratedPaper.length} questions)</p>
+                              {assignmentGeneratedPaper.length < questionCount && (
+                                <p className="text-[10px] text-amber-600">Warning: fewer questions than requested</p>
+                              )}
+                            </div>
                             {assignmentGeneratedPaper.map((q: any, i: number) => (
-                              <div key={q.id || i} className="flex items-center gap-2 text-xs border-b border-border/40 pb-1">
-                                <span className="text-muted-foreground">#{i + 1}</span>
-                                <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary">{q.type}</span>
-                                <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{q.difficulty}</span>
-                                <span className="truncate flex-1">{q.text}</span>
-                                {q.hots && <span className="text-purple-500">HOTS</span>}
+                              <div key={q.id || i} className="rounded-lg border border-border/60 p-3 space-y-1.5">
+                                <div className="flex items-center gap-2 text-xs">
+                                  <span className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">{i + 1}</span>
+                                  <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-medium">{q.type?.replace(/_/g, ' ')}</span>
+                                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${q.difficulty === 'easy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : q.difficulty === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : q.difficulty === 'hard' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'}`}>{q.difficulty}</span>
+                                  {q.hots && <span className="px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[10px] font-bold">HOTS</span>}
+                                </div>
+                                <p className="text-xs text-foreground leading-relaxed">{q.text}</p>
+                                {q.options && q.options.length > 0 && (
+                                  <div className="flex flex-wrap gap-1.5 pt-0.5">
+                                    {q.options.map((opt: string, oi: number) => (
+                                      <span key={oi} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{String.fromCharCode(65 + oi)}. {opt}</span>
+                                    ))}
+                                  </div>
+                                )}
+                                {q.correctAnswer && (
+                                  <p className="text-[10px] text-green-600 dark:text-green-400 font-medium">Answer: {Array.isArray(q.correctAnswer) ? q.correctAnswer.join(', ') : q.correctAnswer}</p>
+                                )}
                               </div>
                             ))}
                           </div>

@@ -42,7 +42,7 @@ interface ExamV2 {
   teacherId: string;
   timeLimitMinutes: number;
   selectedModels: string[];
-  questionCountPerConcept: number;
+  questionCount: number;
   passingScore: number;
   maxAttempts: number;
   shuffleQuestions: boolean;
@@ -174,7 +174,7 @@ export default function TeacherExamCreatePage() {
   const [description, setDescription] = useState('');
   const [timeLimitMinutes, setTimeLimitMinutes] = useState('60');
   const [selectedModels, setSelectedModels] = useState<string[]>(['multiple_choice', 'true_false']);
-  const [questionCountPerConcept, setQuestionCountPerConcept] = useState('5');
+  const [questionCount, setQuestionCount] = useState('5');
   const [passingScore, setPassingScore] = useState('50');
   const [maxAttempts, setMaxAttempts] = useState('1');
   const [distribution, setDistribution] = useState<Record<string, Record<string, number>>>({
@@ -259,7 +259,7 @@ export default function TeacherExamCreatePage() {
         teacherId,
         timeLimitMinutes: Number(timeLimitMinutes),
         selectedModels,
-        questionCountPerConcept: Number(questionCountPerConcept),
+        questionCount: Number(questionCount),
         passingScore: Number(passingScore),
         maxAttempts: Number(maxAttempts),
         shuffleQuestions: true,
@@ -274,7 +274,7 @@ export default function TeacherExamCreatePage() {
       setDescription('');
       setTimeLimitMinutes('60');
       setSelectedModels(['multiple_choice', 'true_false']);
-      setQuestionCountPerConcept('5');
+      setQuestionCount('5');
       setPassingScore('50');
       setMaxAttempts('1');
       queryClient.invalidateQueries({ queryKey: ['exams-v2-class', selectedClassId] });
@@ -320,7 +320,7 @@ export default function TeacherExamCreatePage() {
         teacherId,
         timeLimitMinutes: Number(timeLimitMinutes),
         selectedModels,
-        questionCountPerConcept: (generatedPaper || []).length,
+        questionCount: (generatedPaper || []).length,
         passingScore: Number(passingScore),
         maxAttempts: Number(maxAttempts),
         shuffleQuestions: true,
@@ -347,12 +347,12 @@ export default function TeacherExamCreatePage() {
   const EXAM_TYPE_MAP: Record<string, string[]> = { multiple_choice: ['mcq', 'multiple_choice'] };
 
   useEffect(() => {
-    if (selectedModels.length === 0 || !questionCountPerConcept || Number(questionCountPerConcept) === 0) {
+    if (selectedModels.length === 0 || !questionCount || Number(questionCount) === 0) {
       const empty = { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 };
       setDistribution({ easy: { ...empty }, medium: { ...empty }, hard: { ...empty }, hots: { ...empty } });
       return;
     }
-    const qc = Number(questionCountPerConcept);
+    const qc = Number(questionCount);
     const backendTypes = selectedModels.map((m: string) => (EXAM_TYPE_MAP[m] || [m])[0]);
     const perCell = Math.floor(qc / (backendTypes.length * 4));
     const remainder = qc - perCell * backendTypes.length * 4;
@@ -367,7 +367,7 @@ export default function TeacherExamCreatePage() {
       }
     }
     setDistribution(newDist);
-  }, [selectedModels, questionCountPerConcept]);
+  }, [selectedModels, questionCount]);
 
   const setDist = (difficulty: string, type: string, value: number) => {
     setDistribution((prev) => ({
@@ -427,10 +427,10 @@ export default function TeacherExamCreatePage() {
       !!selectedChapterId &&
       selectedModels.length > 0 &&
       Number(timeLimitMinutes) > 0 &&
-      Number(questionCountPerConcept) > 0 &&
+      Number(questionCount) > 0 &&
       Number(passingScore) >= 0 &&
       Number(maxAttempts) > 0 &&
-      distributionTotal <= Number(questionCountPerConcept) &&
+      distributionTotal <= Number(questionCount) &&
       !createMutation.isPending
     );
   }
@@ -683,8 +683,8 @@ export default function TeacherExamCreatePage() {
                     type="number"
                     min={1}
                     placeholder="5"
-                    value={questionCountPerConcept}
-                    onChange={(e) => setQuestionCountPerConcept(e.target.value)}
+                    value={questionCount}
+                    onChange={(e) => setQuestionCount(e.target.value)}
                   />
                 </div>
               </div>
@@ -772,11 +772,39 @@ export default function TeacherExamCreatePage() {
                     <p className="text-xs text-muted-foreground">
                       Set how many questions per difficulty and type. System auto-selects matching questions.
                     </p>
-                    <p className="text-xs font-semibold">Total: {distributionTotal} questions</p>
+                    <div className="flex items-center gap-2">
+                      <p className={`text-xs font-semibold ${distributionTotal !== Number(questionCount) ? 'text-destructive' : ''}`}>
+                        Total: {distributionTotal} / {questionCount} questions
+                      </p>
+                      {distributionTotal !== Number(questionCount) && selectedModels.length > 0 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            if (selectedModels.length === 0 || !questionCount || Number(questionCount) === 0) return;
+                            const qc = Number(questionCount);
+                            const backendTypes = selectedModels.map((m: string) => (EXAM_TYPE_MAP[m] || [m])[0]);
+                            const perCell = Math.floor(qc / (backendTypes.length * 4));
+                            let rem = qc - perCell * backendTypes.length * 4;
+                            const diffs = ['easy', 'medium', 'hard', 'hots'];
+                            const newDist: Record<string, Record<string, number>> = { easy: {}, medium: {}, hard: {}, hots: {} };
+                            for (const bt of backendTypes) {
+                              for (const d of diffs) {
+                                let val = perCell;
+                                if (rem > 0) { val += 1; rem -= 1; }
+                                newDist[d][bt] = val;
+                              }
+                            }
+                            setDistribution(newDist);
+                          }}
+                          className="gap-1 h-6 text-[10px]"
+                        >
+                          <Icon name="sync" size={12} />
+                          Sync
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  {distributionTotal > Number(questionCountPerConcept) && (
-                    <p className="text-xs text-red-500">Total exceeds question count by {distributionTotal - Number(questionCountPerConcept)}</p>
-                  )}
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs">
                       <thead>
@@ -823,8 +851,8 @@ export default function TeacherExamCreatePage() {
                       size="sm"
                       variant="outline"
                       onClick={() => {
-                        if (selectedModels.length === 0 || !questionCountPerConcept || Number(questionCountPerConcept) === 0) return;
-                        const qc = Number(questionCountPerConcept);
+                        if (selectedModels.length === 0 || !questionCount || Number(questionCount) === 0) return;
+                        const qc = Number(questionCount);
                         const backendTypes = selectedModels.map((m: string) => (EXAM_TYPE_MAP[m] || [m])[0]);
                         const perCell = Math.floor(qc / (backendTypes.length * 4));
                         const remainder = qc - perCell * backendTypes.length * 4;
@@ -858,15 +886,32 @@ export default function TeacherExamCreatePage() {
                   </div>
 
                   {generatedPaper && (
-                    <div className="border rounded-lg p-3 bg-background space-y-2 max-h-60 overflow-y-auto">
-                      <p className="text-xs font-semibold text-primary">Preview ({generatedPaper.length} questions)</p>
-                      {generatedPaper.map((q, i) => (
-                        <div key={q.id || i} className="flex items-center gap-2 text-xs border-b border-border/40 pb-1">
-                          <span className="text-muted-foreground">#{i + 1}</span>
-                          <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary">{q.type}</span>
-                          <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{q.difficulty}</span>
-                          <span className="truncate flex-1">{q.text}</span>
-                          {q.hots && <span className="text-purple-500">HOTS</span>}
+                    <div className="border rounded-lg p-3 bg-background space-y-3 max-h-80 overflow-y-auto">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-semibold text-primary">Preview ({generatedPaper.length} questions)</p>
+                        {generatedPaper.length < Number(questionCount) && (
+                          <p className="text-[10px] text-amber-600">Warning: fewer questions than requested</p>
+                        )}
+                      </div>
+                      {generatedPaper.map((q: any, i: number) => (
+                        <div key={q.id || i} className="rounded-lg border border-border/60 p-3 space-y-1.5">
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">{i + 1}</span>
+                            <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-medium">{q.type?.replace(/_/g, ' ')}</span>
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${q.difficulty === 'easy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : q.difficulty === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : q.difficulty === 'hard' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'}`}>{q.difficulty}</span>
+                            {q.hots && <span className="px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[10px] font-bold">HOTS</span>}
+                          </div>
+                          <p className="text-xs text-foreground leading-relaxed">{q.text}</p>
+                          {q.options && q.options.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 pt-0.5">
+                              {q.options.map((opt: string, oi: number) => (
+                                <span key={oi} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{String.fromCharCode(65 + oi)}. {opt}</span>
+                              ))}
+                            </div>
+                          )}
+                          {q.correctAnswer && (
+                            <p className="text-[10px] text-green-600 dark:text-green-400 font-medium">Answer: {Array.isArray(q.correctAnswer) ? q.correctAnswer.join(', ') : q.correctAnswer}</p>
+                          )}
                         </div>
                       ))}
                     </div>

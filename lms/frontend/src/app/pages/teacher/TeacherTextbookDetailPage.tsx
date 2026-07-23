@@ -326,18 +326,6 @@ export default function TeacherTextbookDetailPage() {
 
                           <TabsContent value="chapters">
                           <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3 mt-4">
-                            <div className="flex flex-wrap gap-2 mb-4">
-                              <Button asChild size="sm" className="gap-1.5">
-                                <Link to={`/teacher/assessments/create?textbookId=${textbookId}`}>
-                                  <Icon name="quiz" size={15} /> Create Quiz / Task
-                                </Link>
-                              </Button>
-                              <Button asChild size="sm" variant="secondary" className="gap-1.5">
-                                <Link to={`/teacher/exams/create?textbookId=${textbookId}`}>
-                                  <Icon name="fact_check" size={15} /> Create Exam
-                                </Link>
-                              </Button>
-                            </div>
                             {chapters.map((ch) => (
                               <motion.div key={ch.id} variants={scrollReveal}>
                                 <Card className="border-border/60">
@@ -348,18 +336,6 @@ export default function TeacherTextbookDetailPage() {
                                           {ch.order}. {ch.title}
                                         </h3>
                                         <p className="text-xs text-muted-foreground mt-1">{ch.description}</p>
-                                      </div>
-                                      <div className="flex gap-1.5 ml-3 shrink-0">
-                                        <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-xs">
-                                          <Link to={`/teacher/assessments/create?textbookId=${textbookId}&chapterId=${ch.id}`}>
-                                            Quiz
-                                          </Link>
-                                        </Button>
-                                        <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-xs">
-                                          <Link to={`/teacher/exams/create?textbookId=${textbookId}&chapterId=${ch.id}`}>
-                                            Exam
-                                          </Link>
-                                        </Button>
                                       </div>
                                     </div>
                                     <div className="mt-3 space-y-2">

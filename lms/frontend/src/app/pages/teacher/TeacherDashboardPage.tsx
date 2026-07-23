@@ -81,8 +81,6 @@ export default function TeacherDashboardPage() {
   const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const QUICK_ACTIONS = [
-    { icon: 'add_circle', label: _('Create Exam'), link: '/teacher/exams/create', bg: 'bg-primary-container', color: 'text-primary' },
-    { icon: 'note_add', label: _('Create Quiz/Task'), link: '/teacher/assessments', bg: 'bg-secondary-container', color: 'text-secondary' },
     { icon: 'group', label: _('View Students'), link: '/teacher/students', bg: 'bg-success-container', color: 'text-success' },
     { icon: 'analytics', label: _('View Analytics'), link: '/teacher/analytics', bg: 'bg-warning-container', color: 'text-warning' },
   ] as const;

@@ -51,7 +51,7 @@ export default function TeacherExamsPage() {
   const [description, setDescription] = useState('');
   const [timeLimitMinutes, setTimeLimitMinutes] = useState('60');
   const [selectedModels, setSelectedModels] = useState<string[]>(['multiple_choice', 'true_false']);
-  const [questionCountPerConcept, setQuestionCountPerConcept] = useState('5');
+  const [questionCount, setQuestionCount] = useState('5');
   const [passingScore, setPassingScore] = useState('50');
   const [maxAttempts, setMaxAttempts] = useState('1');
 
@@ -117,7 +117,7 @@ export default function TeacherExamsPage() {
       setDescription('');
       setTimeLimitMinutes('60');
       setSelectedModels(['multiple_choice', 'true_false']);
-      setQuestionCountPerConcept('5');
+      setQuestionCount('5');
       setPassingScore('50');
       setMaxAttempts('1');
       setReviewQuestions([]);
@@ -169,7 +169,7 @@ export default function TeacherExamsPage() {
       !!selectedChapterId &&
       selectedModels.length > 0 &&
       Number(timeLimitMinutes) > 0 &&
-      Number(questionCountPerConcept) > 0 &&
+      Number(questionCount) > 0 &&
       Number(passingScore) >= 0 &&
       Number(maxAttempts) > 0 &&
       !createMutation.isPending
@@ -188,7 +188,7 @@ export default function TeacherExamsPage() {
       teacherId,
       timeLimitMinutes: Number(timeLimitMinutes),
       selectedModels: [...selectedModels],
-      questionCountPerConcept: Number(questionCountPerConcept),
+      questionCount: Number(questionCount),
       passingScore: Number(passingScore),
       maxAttempts: Number(maxAttempts),
       shuffleQuestions: true,
@@ -212,7 +212,7 @@ export default function TeacherExamsPage() {
       teacherId,
       timeLimitMinutes: Number(timeLimitMinutes),
       selectedModels: [...selectedModels],
-      questionCountPerConcept: Number(questionCountPerConcept),
+      questionCount: Number(questionCount),
       preview: true,
     });
   }
@@ -351,7 +351,7 @@ export default function TeacherExamsPage() {
                     <option value="">{_('Select a textbook...')}</option>
                     {textbooks.map((tb: Textbook) => (
                       <option key={tb.id} value={tb.id}>
-                        {tb.title || tb.name || tb.id}
+                        {tb.title || tb.id}
                       </option>
                     ))}
                   </select>
@@ -374,7 +374,7 @@ export default function TeacherExamsPage() {
                     <option value="">{_('Select a chapter...')}</option>
                     {chapters.map((ch: Chapter) => (
                       <option key={ch.id} value={ch.id}>
-                        {ch.title || ch.name || ch.id}
+                        {ch.title || ch.id}
                       </option>
                     ))}
                   </select>
@@ -429,8 +429,8 @@ export default function TeacherExamsPage() {
                   <Input
                     id="questions-per-concept"
                     type="number"
-                    value={questionCountPerConcept}
-                    onChange={(e) => setQuestionCountPerConcept(e.target.value)}
+                    value={questionCount}
+                    onChange={(e) => setQuestionCount(e.target.value)}
                     className="mt-1.5"
                     min={1}
                   />
@@ -504,7 +504,7 @@ export default function TeacherExamsPage() {
                 {generatePreviewMutation.isPending ? (
                   <><span className="animate-spin">⟳</span> {_('Generating...')}</>
                 ) : (
-                  <><Icon name="visibility" size={16} /> {_('Generate Preview')} ({questionCountPerConcept} {_('questions')})</>
+                  <><Icon name="visibility" size={16} /> {_('Generate Preview')} ({questionCount} {_('questions')})</>
                 )}
               </Button>
             )}
