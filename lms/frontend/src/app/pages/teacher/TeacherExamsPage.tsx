@@ -51,9 +51,47 @@ export default function TeacherExamsPage() {
   const [description, setDescription] = useState('');
   const [timeLimitMinutes, setTimeLimitMinutes] = useState('60');
   const [selectedModels, setSelectedModels] = useState<string[]>(['multiple_choice', 'true_false']);
-  const [questionCount, setQuestionCount] = useState('5');
+  const [questionCount, setQuestionCount] = useState('10');
   const [passingScore, setPassingScore] = useState('50');
   const [maxAttempts, setMaxAttempts] = useState('1');
+
+  const EXAM_TYPE_MAP: Record<string, string[]> = { multiple_choice: ['mcq', 'multiple_choice'] };
+
+  const [distribution, setDistribution] = useState<Record<string, Record<string, number>>>({
+    easy: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
+    medium: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
+    hard: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
+    hots: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
+  });
+
+  useEffect(() => {
+    if (selectedModels.length === 0 || Number(questionCount) === 0) {
+      const empty = { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 };
+      setDistribution({ easy: { ...empty }, medium: { ...empty }, hard: { ...empty }, hots: { ...empty } });
+      return;
+    }
+    const backendTypes = selectedModels.map((m: string) => (EXAM_TYPE_MAP[m] || [m])[0]);
+    const numTypes = backendTypes.length;
+    const numDiffs = 4;
+    const totalCells = numTypes * numDiffs;
+    const qc = Number(questionCount);
+    const perCell = Math.floor(qc / totalCells);
+    let remainder = qc - perCell * totalCells;
+    const newDist: Record<string, Record<string, number>> = { easy: {}, medium: {}, hard: {}, hots: {} };
+    for (const d of ['easy', 'medium', 'hard', 'hots']) {
+      for (const bt of backendTypes) {
+        let val = perCell;
+        if (remainder > 0) { val += 1; remainder -= 1; }
+        newDist[d][bt] = val;
+      }
+    }
+    for (const d of ['easy', 'medium', 'hard', 'hots']) {
+      for (const bt of backendTypes) {
+        if (newDist[d][bt] === undefined) newDist[d][bt] = 0;
+      }
+    }
+    setDistribution(newDist);
+  }, [questionCount, selectedModels]);
 
   const [reviewQuestions, setReviewQuestions] = useState<any[]>([]);
 
@@ -117,10 +155,12 @@ export default function TeacherExamsPage() {
       setDescription('');
       setTimeLimitMinutes('60');
       setSelectedModels(['multiple_choice', 'true_false']);
-      setQuestionCount('5');
+      setQuestionCount('10');
       setPassingScore('50');
       setMaxAttempts('1');
       setReviewQuestions([]);
+      const empty = { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 };
+      setDistribution({ easy: { ...empty }, medium: { ...empty }, hard: { ...empty }, hots: { ...empty } });
     },
     onError: (err: unknown) => {
       console.log('CREATE_ERR keys:', Object.keys(err as object));
@@ -191,6 +231,7 @@ export default function TeacherExamsPage() {
       questionCount: Number(questionCount),
       passingScore: Number(passingScore),
       maxAttempts: Number(maxAttempts),
+      distribution,
       shuffleQuestions: true,
       showResults: true,
     };
@@ -213,6 +254,7 @@ export default function TeacherExamsPage() {
       timeLimitMinutes: Number(timeLimitMinutes),
       selectedModels: [...selectedModels],
       questionCount: Number(questionCount),
+      distribution,
       preview: true,
     });
   }
@@ -491,6 +533,105 @@ export default function TeacherExamsPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Difficulty Distribution */}
+          {selectedModels.length > 0 && Number(questionCount) > 0 && (
+            <Card className="border-border/60">
+              <CardHeader>
+                <CardTitle className="text-title-sm">{_('Question Distribution')}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {(() => {
+                  const activeTypes = QUESTION_MODEL_OPTIONS.filter(m => selectedModels.includes(m.value));
+                  const distTotal = Object.values(distribution).reduce(
+                    (sum: number, types: Record<string, number>) => sum + Object.values(types).reduce((s: number, v: number) => s + v, 0), 0,
+                  );
+                  return (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-muted-foreground">
+                          {_('Auto-distributed equally across difficulties. Adjust cells manually as needed.')}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className={`text-xs font-semibold ${distTotal !== Number(questionCount) ? 'text-destructive' : ''}`}>
+                            Total: {distTotal} / {questionCount} {_('questions')}
+                          </p>
+                          {distTotal !== Number(questionCount) && selectedModels.length > 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                if (selectedModels.length === 0 || Number(questionCount) === 0) return;
+                                const backendTypes = selectedModels.map((m: string) => (EXAM_TYPE_MAP[m] || [m])[0]);
+                                const numTypes = backendTypes.length;
+                                const totalCells = numTypes * 4;
+                                const perCell = Math.floor(Number(questionCount) / totalCells);
+                                let rem = Number(questionCount) - perCell * totalCells;
+                                const newDist: Record<string, Record<string, number>> = { easy: {}, medium: {}, hard: {}, hots: {} };
+                                for (const d of ['easy', 'medium', 'hard', 'hots']) {
+                                  for (const bt of backendTypes) {
+                                    let val = perCell;
+                                    if (rem > 0) { val += 1; rem -= 1; }
+                                    newDist[d][bt] = val;
+                                  }
+                                }
+                                setDistribution(newDist);
+                              }}
+                              className="gap-1 h-6 text-[10px]"
+                            >
+                              <Icon name="sync" size={12} />
+                              Sync
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="border-b border-border/60">
+                              <th className="text-left py-2 pr-3">{_('Difficulty')}</th>
+                              {activeTypes.map((m) => (
+                                <th key={m.value} className="text-center px-2 py-2">{m.label}</th>
+                              ))}
+                              <th className="text-center px-2 py-2">{_('Total')}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {['easy', 'medium', 'hard', 'hots'].map((diff) => (
+                              <tr key={diff} className="border-b border-border/40">
+                                <td className={`py-2 pr-3 font-medium capitalize ${diff === 'hots' ? 'text-purple-600' : ''}`}>{diff}</td>
+                                {activeTypes.map((m) => {
+                                  const mappedType = m.value === 'multiple_choice' ? 'mcq' : m.value;
+                                  return (
+                                    <td key={m.value} className="text-center px-1 py-1">
+                                      <input
+                                        type="number"
+                                        min={0}
+                                        value={distribution[diff]?.[mappedType] ?? 0}
+                                        onChange={(e) => {
+                                          const newDist = { ...distribution };
+                                          newDist[diff] = { ...newDist[diff], [mappedType]: parseInt(e.target.value) || 0 };
+                                          setDistribution(newDist);
+                                        }}
+                                        className="w-14 text-center rounded border border-border bg-background px-1 py-1 text-xs"
+                                      />
+                                    </td>
+                                  );
+                                })}
+                                <td className="text-center px-2 py-2 font-semibold">
+                                  {Object.values(distribution[diff] || {}).reduce((s: number, v: any) => s + (v || 0), 0)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Preview & Create */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
