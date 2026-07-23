@@ -199,7 +199,7 @@ export default function TeacherAttendancePage() {
                             return (
                               <tr key={s.id} className={`hover:bg-muted/20 transition-colors ${alreadyMarked ? 'bg-muted/30' : selectedStudentIds.includes(s.id) ? 'bg-primary/5' : ''}`}>
                                 <td className="px-4 py-3 text-muted-foreground">{idx + 1}</td>
-                                <td className="px-4 py-3 font-mono text-muted-foreground">{s.rollNo || '-'}</td>
+                                <td className="px-4 py-3 font-mono text-muted-foreground">{s.rollNo ?? '-'}</td>
                                 <td className="px-4 py-3 font-semibold">{s.displayName || s.email}</td>
                                 <td className="px-4 py-3 text-center">
                                   {alreadyMarked ? (

@@ -116,7 +116,7 @@ export async function getSubject(id: string): Promise<Subject | null> {
 export async function getStudentsByClass(classId: string): Promise<UserDoc[]> {
   const { data, error } = await supabase.from('users').select('*').eq('class_id', classId);
   if (error) throw error;
-  return (data || []) as UserDoc[];
+  return (data || []).map(mapUserRowToDoc);
 }
 
 /** Create an enrollment linking a student to a course (subject). */
