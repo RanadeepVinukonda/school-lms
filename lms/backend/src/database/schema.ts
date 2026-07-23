@@ -32,6 +32,7 @@ export const TYPED_TABLES: Record<string, Set<string>> = {
   auditlogs: new Set(['id','action','targetId','targetType','targetName','performedBy','performedByName','performedByRole','oldValue','newValue','summary','timestamp']),
   auditLogs: new Set(['id','action','targetId','targetType','targetName','performedBy','performedByName','performedByRole','oldValue','newValue','summary','timestamp']),
   concept_releases: new Set(['id','class_id','textbook_id','chapter_id','concept_id','teacher_id','question_bank_released','assignments_released','mind_map_released','updated_at','completed','notes_released','lecture_released','test_released','school_id']),
+  report_feedback: new Set(['id','user_id','user_name','user_role','class_name','title','description','category','priority','status','assigned_to','assigned_teacher_name','remarks','resolved_at','created_at','updated_at']),
 };
 
 export function isTyped(c: string): boolean { return c in TYPED_TABLES; }

@@ -30,6 +30,7 @@ const navItems: NavItem[] = [
   { label: 'Fee Management', href: ROUTES.ADMIN_FEE, icon: 'payments' },
   { label: 'Timetable', href: ROUTES.ADMIN_TIMETABLE, icon: 'calendar_view_week' },
   { label: 'Notice Board', href: ROUTES.ADMIN_NOTICEBOARD, icon: 'campaign' },
+  { label: 'Reports & Suggestions', href: ROUTES.ADMIN_REPORTS, icon: 'feedback' },
   { label: 'ERP Dashboard', href: ROUTES.ADMIN_ERP_DASHBOARD, icon: 'business' },
   { label: 'Settings', href: ROUTES.ADMIN_SETTINGS, icon: 'settings' },
 ];

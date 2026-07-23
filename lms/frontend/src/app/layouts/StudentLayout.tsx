@@ -33,6 +33,7 @@ const navItems: NavItem[] = [
   { label: 'Virtual Labs', href: ROUTES.STUDENT_LABS, icon: 'science' },
   { label: 'Mind Maps', href: ROUTES.STUDENT_MIND_MAPS, icon: 'psychology' },
   { label: 'Coding', href: ROUTES.STUDENT_CODING, icon: 'code' },
+  { label: 'Report & Suggestion', href: ROUTES.STUDENT_REPORT, icon: 'feedback' },
 
   { label: 'Notice Board', href: ROUTES.STUDENT_NOTICEBOARD, icon: 'campaign' },
   { label: 'Timetable', href: ROUTES.STUDENT_TIMETABLE, icon: 'calendar_view_week' },

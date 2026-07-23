@@ -43,6 +43,7 @@ const navGroups: NavGroup[] = [
       { label: 'Attendance', href: ROUTES.TEACHER_ATTENDANCE, icon: 'checklist' },
       { label: 'Timetable', href: ROUTES.TEACHER_TIMETABLE, icon: 'calendar_view_week' },
       { label: 'Notice Board', href: ROUTES.TEACHER_NOTICEBOARD, icon: 'campaign' },
+      { label: 'Report & Suggestion', href: ROUTES.TEACHER_REPORT, icon: 'feedback' },
     ],
   },
 ];

@@ -37,6 +37,7 @@ import messageRoutes from '../message.routes';
 import notificationRoutes from '../notification.routes';
 import noticeRoutes from '../notice.routes';
 import ltiRoutes from '../lti.routes';
+import reportFeedbackRoutes from '../report-feedback.routes';
 
 const router = Router();
 
@@ -79,5 +80,6 @@ router.use('/messages', messageRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/notices', noticeRoutes);
 router.use('/lti', ltiRoutes);
+router.use('/report-feedback', reportFeedbackRoutes);
 
 export default router;

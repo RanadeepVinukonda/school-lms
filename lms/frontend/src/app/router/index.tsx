@@ -58,6 +58,7 @@ const StudentQuizzesPage = lazyRetry(() => import('@/app/pages/student/StudentQu
 const AdaptiveQuizPage = lazyRetry(() => import('@/app/pages/student/AdaptiveQuizPage'));
 const StudentNoticeBoardPage = lazyRetry(() => import('@/app/pages/student/StudentNoticeBoardPage'));
 const StudentTimetablePage = lazyRetry(() => import('@/app/pages/student/StudentTimetablePage'));
+const StudentReportPage = lazyRetry(() => import('@/app/pages/student/StudentReportPage'));
 const K2DashboardPage = lazyRetry(() => import('@/app/pages/student/K2DashboardPage'));
 const K2TracingPage = lazyRetry(() => import('@/app/pages/student/K2TracingPage'));
 const K2PhonicsPage = lazyRetry(() => import('@/app/pages/student/K2PhonicsPage'));
@@ -95,6 +96,7 @@ const TeacherNoticeBoardPage = lazyRetry(() => import('@/app/pages/teacher/Teach
 const TeacherTimetablePage = lazyRetry(() => import('@/app/pages/teacher/TeacherTimetablePage'));
 const TeacherOCRPage = lazyRetry(() => import('@/app/pages/teacher/TeacherOCRPage'));
 const TeacherRewardsPage = lazyRetry(() => import('@/app/pages/teacher/TeacherRewardsPage'));
+const TeacherReportPage = lazyRetry(() => import('@/app/pages/teacher/TeacherReportPage'));
 const TeacherUnifiedTestPage = lazyRetry(() => import('@/app/pages/teacher/TeacherUnifiedTestPage'));
 
 const AdminDashboardPage = lazyRetry(() => import('@/app/pages/admin/AdminDashboardPage'));
@@ -116,6 +118,7 @@ const AdminLeavePage = lazyRetry(() => import('@/app/pages/admin/AdminLeavePage'
 const AdminPayrollPage = lazyRetry(() => import('@/app/pages/admin/AdminPayrollPage'));
 const AdminClassroomPage = lazyRetry(() => import('@/app/pages/admin/AdminClassroomPage'));
 const AdminLtiPage = lazyRetry(() => import('@/app/pages/admin/AdminLtiPage'));
+const AdminReportsPage = lazyRetry(() => import('@/app/pages/admin/AdminReportsPage'));
 
 const ParentDashboardPage = lazyRetry(() => import('@/app/pages/parent/ParentDashboardPage'));
 const ParentChildrenPage = lazyRetry(() => import('@/app/pages/parent/ParentChildrenPage'));
@@ -123,6 +126,7 @@ const ParentChildDetailPage = lazyRetry(() => import('@/app/pages/parent/ParentC
 const ParentReportsPage = lazyRetry(() => import('@/app/pages/parent/ParentReportsPage'));
 const ParentProfilePage = lazyRetry(() => import('@/app/pages/parent/ParentProfilePage'));
 const ParentNoticeBoardPage = lazyRetry(() => import('@/app/pages/parent/ParentNoticeBoardPage'));
+const ParentReportPage = lazyRetry(() => import('@/app/pages/parent/ParentReportPage'));
 
 export const router = createBrowserRouter([
   {
@@ -186,6 +190,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.STUDENT_ADAPTIVE_QUIZ(':conceptId'), element: <Suspense fallback={<PageFallback />}><AdaptiveQuizPage /></Suspense> },
       { path: ROUTES.STUDENT_NOTICEBOARD, element: <Suspense fallback={<PageFallback />}><StudentNoticeBoardPage /></Suspense> },
       { path: ROUTES.STUDENT_TIMETABLE, element: <Suspense fallback={<PageFallback />}><StudentTimetablePage /></Suspense> },
+      { path: ROUTES.STUDENT_REPORT, element: <Suspense fallback={<PageFallback />}><StudentReportPage /></Suspense> },
     ],
   },
 
@@ -229,6 +234,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.TEACHER_NOTICEBOARD, element: <Suspense fallback={<PageFallback />}><TeacherNoticeBoardPage /></Suspense> },
       { path: ROUTES.TEACHER_TIMETABLE, element: <Suspense fallback={<PageFallback />}><TeacherTimetablePage /></Suspense> },
       { path: ROUTES.TEACHER_REWARDS, element: <Suspense fallback={<PageFallback />}><TeacherRewardsPage /></Suspense> },
+      { path: ROUTES.TEACHER_REPORT, element: <Suspense fallback={<PageFallback />}><TeacherReportPage /></Suspense> },
     ],
   },
 
@@ -264,6 +270,7 @@ export const router = createBrowserRouter([
       { path: '/admin/hr/payroll', element: <Suspense fallback={<PageFallback />}><AdminPayrollPage /></Suspense> },
       { path: '/admin/classroom', element: <Suspense fallback={<PageFallback />}><AdminClassroomPage /></Suspense> },
       { path: '/admin/lti', element: <Suspense fallback={<PageFallback />}><AdminLtiPage /></Suspense> },
+      { path: '/admin/reports', element: <Suspense fallback={<PageFallback />}><AdminReportsPage /></Suspense> },
     ],
   },
 
@@ -281,6 +288,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.PARENT_REPORTS, element: <Suspense fallback={<PageFallback />}><ParentReportsPage /></Suspense> },
       { path: ROUTES.PARENT_PROFILE, element: <Suspense fallback={<PageFallback />}><ParentProfilePage /></Suspense> },
       { path: ROUTES.PARENT_NOTICEBOARD, element: <Suspense fallback={<PageFallback />}><ParentNoticeBoardPage /></Suspense> },
+      { path: ROUTES.PARENT_REPORT, element: <Suspense fallback={<PageFallback />}><ParentReportPage /></Suspense> },
     ],
   },
 

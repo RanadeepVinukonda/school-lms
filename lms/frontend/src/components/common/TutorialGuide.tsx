@@ -11,55 +11,104 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
-const steps: Record<string, { title: string; body: string }[]> = {
+const steps: Record<string, { title: string; body: string; target?: string }[]> = {
   student: [
     {
       title: 'Your Dashboard',
-      body: 'Your home screen shows upcoming tasks, recent grades, and quick links to your subjects.',
+      body: 'Your home screen shows upcoming tasks, recent grades, and quick links to your subjects. Use the sidebar to navigate between sections.',
     },
     {
       title: 'Subjects & Textbooks',
-      body: 'Browse your subjects and access digital textbooks with interactive chapters and concepts.',
+      body: 'Browse your subjects and access digital textbooks with interactive chapters and concepts. Click any subject card to dive in.',
     },
     {
       title: 'Tasks & Exams',
-      body: 'View and submit assignments, take quizzes, and track your exam schedule.',
+      body: 'View and submit assignments, take quizzes, and track your exam schedule. Check the "Tasks & Assessments" tab for everything.',
     },
     {
       title: 'Notifications',
-      body: 'Stay updated with notifications about new content, grades, and announcements.',
+      body: 'Stay updated with notifications about new content, grades, and announcements. The bell icon in the top bar shows your latest alerts.',
+    },
+    {
+      title: 'Report & Suggestion',
+      body: 'Found an issue or have an idea? Use the Report & Suggestion form to share feedback directly with your school administration.',
+      target: 'SIDEBAR_ITEM_Report & Suggestion',
     },
   ],
   teacher: [
     {
       title: 'Your Dashboard',
-      body: 'Your home screen shows an overview of your class activity and quick actions.',
+      body: 'Your home screen shows an overview of your class activity, recent submissions, and quick actions to manage your day.',
     },
     {
       title: 'Students',
-      body: 'View and manage your students, track their progress and performance.',
+      body: 'View and manage your students, track their progress and performance across subjects and assessments.',
     },
     {
       title: 'Content Management',
-      body: 'Upload textbooks, create exams, assignments, and quizzes for your class.',
+      body: 'Upload textbooks, create exams, assignments, and quizzes for your class. Use the "Manage Tests" page to organize assessments.',
+    },
+    {
+      title: 'Coding Lab',
+      body: 'The Coding tab lets you create and evaluate programming assignments in Java, C/C++, JavaScript, Python, and HTML.',
+    },
+    {
+      title: 'My Rewards',
+      body: 'Track your achievements and rewards earned through platform activity and student feedback.',
+    },
+    {
+      title: 'Timetable',
+      body: 'View your class schedule. Your timetable only shows the classes you are assigned to teach.',
     },
     {
       title: 'Notifications',
-      body: 'Receive notifications when students submit work or when new features are available.',
+      body: 'Receive notifications when students submit work, when new features are available, or when admin sends announcements.',
     },
   ],
   admin: [
     {
       title: 'Admin Dashboard',
-      body: 'Manage classes, users, subjects, and system settings from one place.',
+      body: 'Manage classes, users, subjects, and system settings from one central place. Use the sidebar to navigate between sections.',
     },
     {
       title: 'User Management',
-      body: 'View and manage all students and teachers registered in the system.',
+      body: 'View and manage all students, teachers, and parents registered in the system. Create, edit, or deactivate accounts as needed.',
     },
     {
       title: 'Classes & Subjects',
-      body: 'Create and manage classes and assign subjects.',
+      body: 'Create and manage classes, assign subjects, and set up academic years. Organize your school structure here.',
+    },
+    {
+      title: 'Reports & Suggestions',
+      body: 'Review user-submitted reports, feedback, and suggestions. Filter by status, category, or priority. Assign items to teachers and track resolution.',
+      target: 'SIDEBAR_ITEM_Reports & Suggestions',
+    },
+    {
+      title: 'Analytics & Attendance',
+      body: 'Access school-wide analytics, attendance reports, and fee management dashboards to monitor school performance.',
+    },
+  ],
+  parent: [
+    {
+      title: 'Your Dashboard',
+      body: 'Your home screen shows summaries of your children\'s progress, recent grades, and upcoming events.',
+    },
+    {
+      title: 'My Children',
+      body: 'View each child\'s profile, academic performance, attendance, and teacher feedback in one place.',
+    },
+    {
+      title: 'Reports',
+      body: 'Access detailed academic reports and progress summaries for each of your children.',
+    },
+    {
+      title: 'Notifications',
+      body: 'Receive notifications about your children\'s grades, attendance, and school announcements.',
+    },
+    {
+      title: 'Report & Suggestion',
+      body: 'Share your feedback, suggestions, or concerns with the school administration through the Report & Suggestion form.',
+      target: 'SIDEBAR_ITEM_Report & Suggestion',
     },
   ],
 };
