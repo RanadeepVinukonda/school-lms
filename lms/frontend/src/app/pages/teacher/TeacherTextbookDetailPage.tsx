@@ -324,26 +324,61 @@ export default function TeacherTextbookDetailPage() {
                           </TabsTrigger>
                         </TabsList>
 
-                        <TabsContent value="chapters">
+                          <TabsContent value="chapters">
                           <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3 mt-4">
+                            <div className="flex flex-wrap gap-2 mb-4">
+                              <Button asChild size="sm" className="gap-1.5">
+                                <Link to={`/teacher/assessments/create?textbookId=${textbookId}`}>
+                                  <Icon name="quiz" size={15} /> Create Quiz / Task
+                                </Link>
+                              </Button>
+                              <Button asChild size="sm" variant="secondary" className="gap-1.5">
+                                <Link to={`/teacher/exams/create?textbookId=${textbookId}`}>
+                                  <Icon name="fact_check" size={15} /> Create Exam
+                                </Link>
+                              </Button>
+                            </div>
                             {chapters.map((ch) => (
                               <motion.div key={ch.id} variants={scrollReveal}>
                                 <Card className="border-border/60">
                                   <CardContent className="p-5">
-                                    <h3 className="font-semibold">
-                                      {ch.order}. {ch.title}
-                                    </h3>
-                                    <p className="text-xs text-muted-foreground mt-1">{ch.description}</p>
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex-1">
+                                        <h3 className="font-semibold">
+                                          {ch.order}. {ch.title}
+                                        </h3>
+                                        <p className="text-xs text-muted-foreground mt-1">{ch.description}</p>
+                                      </div>
+                                      <div className="flex gap-1.5 ml-3 shrink-0">
+                                        <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                                          <Link to={`/teacher/assessments/create?textbookId=${textbookId}&chapterId=${ch.id}`}>
+                                            Quiz
+                                          </Link>
+                                        </Button>
+                                        <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                                          <Link to={`/teacher/exams/create?textbookId=${textbookId}&chapterId=${ch.id}`}>
+                                            Exam
+                                          </Link>
+                                        </Button>
+                                      </div>
+                                    </div>
                                     <div className="mt-3 space-y-2">
                                       {ch.conceptsList.map((cp) => (
-                                        <Link
-                                          key={cp.id}
-                                          to={`/teacher/textbooks/${textbookId}/chapters/${ch.id}/concepts/${cp.id}`}
-                                          className="flex items-center gap-2 py-1.5 px-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-                                        >
-                                          <span className="w-1.5 h-1.5 rounded-full bg-primary/50 flex-shrink-0" />
-                                          <span className="text-sm font-medium">{cp.title}</span>
-                                        </Link>
+                                        <div key={cp.id} className="flex items-center gap-2 py-1.5 px-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group">
+                                          <Link
+                                            to={`/teacher/textbooks/${textbookId}/chapters/${ch.id}/concepts/${cp.id}`}
+                                            className="flex items-center gap-2 flex-1"
+                                          >
+                                            <span className="w-1.5 h-1.5 rounded-full bg-primary/50 flex-shrink-0" />
+                                            <span className="text-sm font-medium">{cp.title}</span>
+                                          </Link>
+                                          <Link
+                                            to={`/teacher/assessments/create?textbookId=${textbookId}&chapterId=${ch.id}&conceptId=${cp.id}`}
+                                            className="text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                                          >
+                                            <Icon name="arrow_forward" size={14} />
+                                          </Link>
+                                        </div>
                                       ))}
                                     </div>
                                   </CardContent>

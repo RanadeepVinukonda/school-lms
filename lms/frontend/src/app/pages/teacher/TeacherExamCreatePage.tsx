@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -184,6 +185,10 @@ export default function TeacherExamCreatePage() {
   });
   const [generatedPaper, setGeneratedPaper] = useState<any[] | null>(null);
 
+  const [searchParams] = useSearchParams();
+  const urlTextbookId = searchParams.get('textbookId');
+  const urlChapterId = searchParams.get('chapterId');
+
   const { data: assignments, isLoading: assignmentsLoading, error: assignmentsError } = useQuery({
     queryKey: ['teacher-assignments', user?.id],
     queryFn: () => api.get('/teacher-class-subject/my').then((r) => r.data.data),
@@ -202,6 +207,13 @@ export default function TeacherExamCreatePage() {
       setSelectedSubjectId('');
     }
   }, [selectedClassId, classAssignments]);
+
+  useEffect(() => {
+    if (assignments && urlTextbookId && urlChapterId) {
+      setSelectedTextbookId(urlTextbookId);
+      setSelectedChapterId(urlChapterId);
+    }
+  }, [assignments, urlTextbookId, urlChapterId]);
 
   const { data: textbooks = [], isLoading: textbooksLoading } = useQuery({
     queryKey: ['textbooks-by-subject', selectedAssignment?.subjectId],
@@ -332,6 +344,31 @@ export default function TeacherExamCreatePage() {
     },
   });
 
+  const EXAM_TYPE_MAP: Record<string, string[]> = { multiple_choice: ['mcq', 'multiple_choice'] };
+
+  useEffect(() => {
+    if (selectedModels.length === 0 || !questionCountPerConcept || Number(questionCountPerConcept) === 0) {
+      const empty = { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 };
+      setDistribution({ easy: { ...empty }, medium: { ...empty }, hard: { ...empty }, hots: { ...empty } });
+      return;
+    }
+    const qc = Number(questionCountPerConcept);
+    const backendTypes = selectedModels.map((m: string) => (EXAM_TYPE_MAP[m] || [m])[0]);
+    const perCell = Math.floor(qc / (backendTypes.length * 4));
+    const remainder = qc - perCell * backendTypes.length * 4;
+    const diffs = ['easy', 'medium', 'hard', 'hots'];
+    const newDist: Record<string, Record<string, number>> = { easy: {}, medium: {}, hard: {}, hots: {} };
+    let rem = remainder;
+    for (const bt of backendTypes) {
+      for (const d of diffs) {
+        let val = perCell;
+        if (rem > 0) { val += 1; rem -= 1; }
+        newDist[d][bt] = val;
+      }
+    }
+    setDistribution(newDist);
+  }, [selectedModels, questionCountPerConcept]);
+
   const setDist = (difficulty: string, type: string, value: number) => {
     setDistribution((prev) => ({
       ...prev,
@@ -342,6 +379,7 @@ export default function TeacherExamCreatePage() {
   const distributionTotal = Object.values(distribution).reduce(
     (sum, types) => sum + Object.values(types).reduce((s, v) => s + v, 0), 0,
   );
+  const activeTypes = QUESTION_MODELS.filter(m => selectedModels.includes(m.value));
 
   const releaseMutation = useMutation({
     mutationFn: async (examId: string) => {
@@ -392,6 +430,7 @@ export default function TeacherExamCreatePage() {
       Number(questionCountPerConcept) > 0 &&
       Number(passingScore) >= 0 &&
       Number(maxAttempts) > 0 &&
+      distributionTotal <= Number(questionCountPerConcept) &&
       !createMutation.isPending
     );
   }
@@ -727,129 +766,124 @@ export default function TeacherExamCreatePage() {
                 )}
               </div>
 
-              {selectedChapterId && (
-                <div className="border-t border-border/60 pt-4 mt-4">
-                  <div className="space-y-3 p-4 rounded-lg border border-border/60 bg-muted/20">
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs text-muted-foreground">
-                        Set how many questions per difficulty and type. System auto-selects matching questions.
-                      </p>
-                      <p className="text-xs font-semibold">Total: {distributionTotal} questions</p>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="border-b border-border/60">
-                            <th className="text-left py-2 pr-3">Difficulty</th>
-                            {QUESTION_MODELS.map((m) => (
-                              <th key={m.value} className="text-center px-2 py-2">{m.label}</th>
-                            ))}
-                            <th className="text-center px-2 py-2">Total</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {['easy', 'medium', 'hard', 'hots'].map((diff) => (
-                            <tr key={diff} className="border-b border-border/40">
-                              <td className={`py-2 pr-3 font-medium capitalize ${diff === 'hots' ? 'text-purple-600' : ''}`}>{diff}</td>
-                              {QUESTION_MODELS.map((m) => {
-                                const mappedType = m.value === 'multiple_choice' ? 'mcq' : m.value;
-                                const avail = typeCountMap[mappedType] || 0;
-                                return (
-                                  <td key={m.value} className="text-center px-1 py-1">
-                                    <input
-                                      type="number"
-                                      min={0}
-                                      max={avail}
-                                      value={distribution[diff]?.[mappedType] ?? 0}
-                                      onChange={(e) => setDist(diff, mappedType, parseInt(e.target.value) || 0)}
-                                      className="w-14 text-center rounded border border-border bg-background px-1 py-1 text-xs"
-                                    />
-                                    <div className="text-[10px] text-muted-foreground">/ {avail}</div>
-                                  </td>
-                                );
-                              })}
-                              <td className="text-center px-2 py-2 font-semibold">
-                                {Object.values(distribution[diff] || {}).reduce((s: number, v: any) => s + (v || 0), 0)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <div className="flex items-center justify-end gap-2">
-                      {generatedPaper && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setGeneratedPaper(null)}
-                        >
-                          Clear Preview
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        onClick={() => generatePaperMutation.mutate()}
-                        loading={generatePaperMutation.isPending}
-                        disabled={distributionTotal === 0}
-                        className="gap-1"
-                      >
-                        <Icon name="auto_awesome" size={14} />
-                        {generatedPaper ? 'Regenerate' : 'Generate Paper'}
-                      </Button>
-                    </div>
-
-                    {generatedPaper && (
-                      <div className="border rounded-lg p-3 bg-background space-y-2 max-h-60 overflow-y-auto">
-                        <p className="text-xs font-semibold text-primary">Preview ({generatedPaper.length} questions)</p>
-                        {generatedPaper.map((q, i) => (
-                          <div key={q.id || i} className="flex items-center gap-2 text-xs border-b border-border/40 pb-1">
-                            <span className="text-muted-foreground">#{i + 1}</span>
-                            <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary">{q.type}</span>
-                            <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{q.difficulty}</span>
-                            <span className="truncate flex-1">{q.text}</span>
-                            {q.hots && <span className="text-purple-500">HOTS</span>}
-                          </div>
-                        ))}
-                      </div>
-                    )}
+              <div className="border-t border-border/60 pt-4 mt-4">
+                <div className="space-y-3 p-4 rounded-lg border border-border/60 bg-muted/20">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground">
+                      Set how many questions per difficulty and type. System auto-selects matching questions.
+                    </p>
+                    <p className="text-xs font-semibold">Total: {distributionTotal} questions</p>
                   </div>
-                </div>
-              )}
+                  {distributionTotal > Number(questionCountPerConcept) && (
+                    <p className="text-xs text-red-500">Total exceeds question count by {distributionTotal - Number(questionCountPerConcept)}</p>
+                  )}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-border/60">
+                          <th className="text-left py-2 pr-3">Difficulty</th>
+                          {activeTypes.map((m) => (
+                            <th key={m.value} className="text-center px-2 py-2">{m.label}</th>
+                          ))}
+                          <th className="text-center px-2 py-2">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {['easy', 'medium', 'hard', 'hots'].map((diff) => (
+                          <tr key={diff} className="border-b border-border/40">
+                            <td className={`py-2 pr-3 font-medium capitalize ${diff === 'hots' ? 'text-purple-600' : ''}`}>{diff}</td>
+                            {activeTypes.map((m) => {
+                              const mappedType = m.value === 'multiple_choice' ? 'mcq' : m.value;
+                              const avail = typeCountMap[mappedType] || 0;
+                              return (
+                                <td key={m.value} className="text-center px-1 py-1">
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    max={avail}
+                                    value={distribution[diff]?.[mappedType] ?? 0}
+                                    onChange={(e) => setDist(diff, mappedType, parseInt(e.target.value) || 0)}
+                                    className="w-14 text-center rounded border border-border bg-background px-1 py-1 text-xs"
+                                  />
+                                  <div className="text-[10px] text-muted-foreground">/ {avail}</div>
+                                </td>
+                              );
+                            })}
+                            <td className="text-center px-2 py-2 font-semibold">
+                              {Object.values(distribution[diff] || {}).reduce((s: number, v: any) => s + (v || 0), 0)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
 
-              {generatedPaper ? (
-                <div className="flex gap-3">
-                  <Button
-                    className="flex-1 gap-2"
-                    size="lg"
-                    onClick={() => createFromPaperMutation.mutate()}
-                    loading={createFromPaperMutation.isPending}
-                  >
-                    <Icon name="fact_check" size={18} />
-                    Create Exam from Paper
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={handleCreate}
-                    className="gap-2"
-                  >
-                    <Icon name="add" size={18} />
-                    Simple Create
-                  </Button>
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        if (selectedModels.length === 0 || !questionCountPerConcept || Number(questionCountPerConcept) === 0) return;
+                        const qc = Number(questionCountPerConcept);
+                        const backendTypes = selectedModels.map((m: string) => (EXAM_TYPE_MAP[m] || [m])[0]);
+                        const perCell = Math.floor(qc / (backendTypes.length * 4));
+                        const remainder = qc - perCell * backendTypes.length * 4;
+                        const diffs = ['easy', 'medium', 'hard', 'hots'];
+                        const newDist: Record<string, Record<string, number>> = { easy: {}, medium: {}, hard: {}, hots: {} };
+                        let rem = remainder;
+                        for (const bt of backendTypes) {
+                          for (const d of diffs) {
+                            let val = perCell;
+                            if (rem > 0) { val += 1; rem -= 1; }
+                            newDist[d][bt] = val;
+                          }
+                        }
+                        setDistribution(newDist);
+                      }}
+                      className="gap-1"
+                    >
+                      <Icon name="auto_awesome" size={14} />
+                      Auto-Distribute
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => generatePaperMutation.mutate()}
+                      loading={generatePaperMutation.isPending}
+                      disabled={distributionTotal === 0}
+                      className="gap-1"
+                    >
+                      <Icon name="visibility" size={14} />
+                      Preview
+                    </Button>
+                  </div>
+
+                  {generatedPaper && (
+                    <div className="border rounded-lg p-3 bg-background space-y-2 max-h-60 overflow-y-auto">
+                      <p className="text-xs font-semibold text-primary">Preview ({generatedPaper.length} questions)</p>
+                      {generatedPaper.map((q, i) => (
+                        <div key={q.id || i} className="flex items-center gap-2 text-xs border-b border-border/40 pb-1">
+                          <span className="text-muted-foreground">#{i + 1}</span>
+                          <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary">{q.type}</span>
+                          <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{q.difficulty}</span>
+                          <span className="truncate flex-1">{q.text}</span>
+                          {q.hots && <span className="text-purple-500">HOTS</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <Button
-                  className="w-full gap-2"
-                  size="lg"
-                  onClick={handleCreate}
-                  disabled={!canCreate()}
-                  loading={createMutation.isPending}
-                >
-                  <Icon name="add" size={18} />
-                  {_('Create Exam')}
-                </Button>
-              )}
+              </div>
+
+              <Button
+                className="w-full gap-2"
+                size="lg"
+                onClick={handleCreate}
+                disabled={!canCreate()}
+                loading={createMutation.isPending}
+              >
+                <Icon name="add" size={18} />
+                {_('Create Exam')}
+              </Button>
             </CardContent>
           </Card>
         </motion.div>

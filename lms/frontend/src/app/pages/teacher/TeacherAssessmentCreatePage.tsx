@@ -19,6 +19,7 @@ import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
 import { getTextbooksBySubject, getChaptersForTextbook, getConceptsForChapter } from '@/services/textbookService';
 import { getStudentsByClass } from '@/services/dataService';
+import { useSearchParams } from 'react-router-dom';
 
 interface TeacherAssignment {
   id: string;
@@ -81,6 +82,7 @@ export default function TeacherAssessmentCreatePage() {
   const [selectedConceptId, setSelectedConceptId] = useState('');
 
   const [quizTitle, setQuizTitle] = useState('');
+  const [quizDescription, setQuizDescription] = useState('');
   const [selectedModels, setSelectedModels] = useState<string[]>(['multiple_choice', 'true_false']);
   const [timeLimitMinutes, setTimeLimitMinutes] = useState(30);
   const [questionCount, setQuestionCount] = useState(10);
@@ -112,6 +114,11 @@ export default function TeacherAssessmentCreatePage() {
 
   const [publishScope, setPublishScope] = useState<'class' | 'students'>('class');
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+
+  const [searchParams] = useSearchParams();
+  const urlTextbookId = searchParams.get('textbookId');
+  const urlChapterId = searchParams.get('chapterId');
+  const urlConceptId = searchParams.get('conceptId');
 
   const { data: classStudents } = useQuery({
     queryKey: ['teacher-class-students', selectedClassId],
@@ -211,6 +218,33 @@ export default function TeacherAssessmentCreatePage() {
     }
     setQuizDistribution(newDist);
   }, [questionCount, selectedModels]);
+
+  useEffect(() => {
+    if (urlTextbookId && textbookList.length > 0) {
+      const found = textbookList.find((tb: any) => tb.id === urlTextbookId);
+      if (found) {
+        setSelectedTextbookId(urlTextbookId);
+      }
+    }
+  }, [urlTextbookId, textbookList]);
+
+  useEffect(() => {
+    if (urlChapterId && chapterList.length > 0) {
+      const found = chapterList.find((ch: any) => ch.id === urlChapterId);
+      if (found) {
+        setSelectedChapterId(urlChapterId);
+      }
+    }
+  }, [urlChapterId, chapterList]);
+
+  useEffect(() => {
+    if (urlConceptId && conceptList.length > 0) {
+      const found = conceptList.find((c: any) => c.id === urlConceptId);
+      if (found) {
+        setSelectedConceptId(urlConceptId);
+      }
+    }
+  }, [urlConceptId, conceptList]);
 
   const selectedConcept = conceptList.find((c: any) => c.id === selectedConceptId);
   const allConceptQuestions: any[] = (selectedConcept as any)?.questionBank ?? [];
@@ -421,6 +455,7 @@ export default function TeacherAssessmentCreatePage() {
 
   const resetQuizForm = useCallback(() => {
     setQuizTitle('');
+    setQuizDescription('');
     setSelectedModels(['multiple_choice', 'true_false']);
     setTimeLimitMinutes(30);
     setQuestionCount(10);
@@ -459,6 +494,7 @@ export default function TeacherAssessmentCreatePage() {
 
     const body: Record<string, unknown> = {
       title: quizTitle.trim(),
+      description: quizDescription.trim(),
       classId: selectedClassId,
       subjectId: selectedAssignment?.subjectId,
       textbookId: selectedTextbookId,
@@ -922,6 +958,71 @@ export default function TeacherAssessmentCreatePage() {
                   </div>
 
                   <div>
+                    <Label htmlFor="quiz-description" className="mb-2 block">{_('Description')}</Label>
+                    <Textarea
+                      id="quiz-description"
+                      value={quizDescription}
+                      onChange={(e) => setQuizDescription(e.target.value)}
+                      placeholder={_('Provide instructions or context for this quiz')}
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="quiz-time-limit" className="mb-2 block">{_('Time Limit (minutes)')}</Label>
+                      <Input
+                        id="quiz-time-limit"
+                        type="number"
+                        min={1}
+                        value={timeLimitMinutes}
+                        onChange={(e) => setTimeLimitMinutes(Number(e.target.value))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="quiz-question-count" className="mb-2 block">{_('Question Count')}</Label>
+                      <Input
+                        id="quiz-question-count"
+                        type="number"
+                        min={1}
+                        value={questionCount}
+                        onChange={(e) => setQuestionCount(Number(e.target.value))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="quiz-passing-score" className="mb-2 block">{_('Passing Score (%)')}</Label>
+                      <Input
+                        id="quiz-passing-score"
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={quizPassingScore}
+                        onChange={(e) => setQuizPassingScore(Number(e.target.value))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="quiz-max-attempts" className="mb-2 block">{_('Max Attempts')}</Label>
+                      <Input
+                        id="quiz-max-attempts"
+                        type="number"
+                        min={1}
+                        value={quizMaxAttempts}
+                        onChange={(e) => setQuizMaxAttempts(Number(e.target.value))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-end pb-2">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <Switch checked={quizShuffle} onCheckedChange={setQuizShuffle} />
+                      <div>
+                        <span className="text-sm font-medium">{_('Shuffle Questions')}</span>
+                        <p className="text-label-xs text-muted-foreground">{_('Randomize question order for each student')}</p>
+                      </div>
+                    </label>
+                  </div>
+
+                  <div>
                     <Label className="mb-2 block">{_('Available Question Types')}</Label>
                     {selectedChapterId && (
                       <div className="flex flex-wrap gap-2 mb-3">
@@ -972,162 +1073,6 @@ export default function TeacherAssessmentCreatePage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="quiz-time-limit" className="mb-2 block">{_('Time Limit (minutes)')}</Label>
-                      <Input
-                        id="quiz-time-limit"
-                        type="number"
-                        min={1}
-                        value={timeLimitMinutes}
-                        onChange={(e) => setTimeLimitMinutes(Number(e.target.value))}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="quiz-question-count" className="mb-2 block">{_('Question Count')}</Label>
-                      <Input
-                        id="quiz-question-count"
-                        type="number"
-                        min={1}
-                        value={questionCount}
-                        onChange={(e) => setQuestionCount(Number(e.target.value))}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="quiz-passing-score" className="mb-2 block">{_('Passing Score (%)')}</Label>
-                      <Input
-                        id="quiz-passing-score"
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={quizPassingScore}
-                        onChange={(e) => setQuizPassingScore(Number(e.target.value))}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="quiz-max-attempts" className="mb-2 block">{_('Max Attempts')}</Label>
-                      <Input
-                        id="quiz-max-attempts"
-                        type="number"
-                        min={1}
-                        value={quizMaxAttempts}
-                        onChange={(e) => setQuizMaxAttempts(Number(e.target.value))}
-                      />
-                    </div>
-                    <div className="flex items-end pb-2">
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <Switch checked={quizShuffle} onCheckedChange={setQuizShuffle} />
-                        <div>
-                          <span className="text-sm font-medium">{_('Shuffle Questions')}</span>
-                          <p className="text-label-xs text-muted-foreground">{_('Randomize question order for each student')}</p>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Editable preview — shown after Generate AI Preview is clicked */}
-                  {reviewQuestions.length > 0 ? (
-                    <div className="mt-3 space-y-3">
-                      <p className="text-sm font-medium text-primary flex items-center gap-1">
-                        <Icon name="visibility" size={14} />
-                        {_('All Questions')} — {reviewQuestions.length} {_('total')}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{_('Edit any question below, then click Create Quiz to save')}</p>
-                      <div className="space-y-3 max-h-96 overflow-y-auto border rounded-lg p-3 bg-muted/10">
-                        {reviewQuestions.map((q: any, i: number) => (
-                          <div key={q.id || i} className="border rounded-lg p-3 space-y-2 bg-background">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-mono text-muted-foreground">#{i + 1}</span>
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{q.type}</span>
-                              <input
-                                className="w-16 rounded border border-border bg-background px-1 py-0.5 text-xs text-center"
-                                value={q.points}
-                                onChange={(e) => {
-                                  const updated = [...reviewQuestions];
-                                  updated[i] = { ...updated[i], points: Number(e.target.value) };
-                                  setReviewQuestions(updated);
-                                }}
-                              />
-                              <span className="text-xs text-muted-foreground">{q.difficulty}</span>
-                            </div>
-                            <input
-                              className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
-                              value={q.text}
-                              onChange={(e) => {
-                                const updated = [...reviewQuestions];
-                                updated[i] = { ...updated[i], text: e.target.value };
-                                setReviewQuestions(updated);
-                              }}
-                            />
-                            {q.options && (
-                              <div className="space-y-1 pl-2 border-l-2 border-border">
-                                {q.options.map((opt: string, oi: number) => (
-                                  <div key={oi} className="flex items-center gap-2">
-                                    <span className="text-xs text-muted-foreground w-4">{String.fromCharCode(65 + oi)}.</span>
-                                    <input
-                                      className="flex-1 rounded border border-border bg-background px-2 py-1 text-sm"
-                                      value={opt}
-                                      onChange={(e) => {
-                                        const updated = [...reviewQuestions];
-                                        const newOpts = [...updated[i].options];
-                                        newOpts[oi] = e.target.value;
-                                        updated[i] = { ...updated[i], options: newOpts };
-                                        setReviewQuestions(updated);
-                                      }}
-                                    />
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-muted-foreground">{_('Answer:')}</span>
-                              <input
-                                className="flex-1 rounded border border-border bg-background px-2 py-1 text-sm font-medium text-green-700"
-                                value={q.correctAnswer}
-                                onChange={(e) => {
-                                  const updated = [...reviewQuestions];
-                                  updated[i] = { ...updated[i], correctAnswer: e.target.value };
-                                  setReviewQuestions(updated);
-                                }}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : selectedConceptId ? (
-                    /* Generate AI Preview button */
-                    <Button
-                      variant="outline"
-                      className="w-full mt-3 gap-2"
-                      onClick={() => {
-                        generatePreviewMutation.mutate({
-                          title: quizTitle.trim() || 'Preview',
-                          classId: selectedClassId,
-                          subjectId: selectedAssignment?.subjectId,
-                          textbookId: selectedTextbookId,
-                          chapterId: selectedChapterId,
-                          conceptId: selectedConceptId,
-                          teacherId: user?.id ?? '',
-                          timeLimitMinutes,
-                          selectedModels,
-                          questionCount,
-                          preview: true,
-                        });
-                      }}
-                      disabled={generatePreviewMutation.isPending || !quizTitle.trim()}
-                    >
-                      {generatePreviewMutation.isPending ? (
-                        <>{_('Generating...')}</>
-                      ) : (
-                        <>{_('Generate AI Preview')} ({questionCount} {_('questions')})</>
-                      )}
-                    </Button>
-                  ) : null}
-
                   {selectedChapterId && (
                     <div className="border-t border-border/60 pt-4">
                       <div className="space-y-3 p-4 rounded-lg border border-border/60 bg-muted/20 mb-4">
@@ -1138,45 +1083,54 @@ export default function TeacherAssessmentCreatePage() {
                           <p className="text-xs font-semibold">Total: {quizDistributionTotal} questions</p>
                         </div>
                         <div className="overflow-x-auto">
-                          <table className="w-full text-xs">
-                            <thead>
-                              <tr className="border-b border-border/60">
-                                <th className="text-left py-2 pr-3">Difficulty</th>
-                                {QUESTION_MODELS.map((m) => (
-                                  <th key={m.value} className="text-center px-2 py-2">{m.label}</th>
-                                ))}
-                                <th className="text-center px-2 py-2">Total</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {['easy', 'medium', 'hard', 'hots'].map((diff) => (
-                                <tr key={diff} className="border-b border-border/40">
-                                  <td className={`py-2 pr-3 font-medium capitalize ${diff === 'hots' ? 'text-purple-600' : ''}`}>{diff}</td>
-                                  {QUESTION_MODELS.map((m) => {
-                                    const mappedType = m.value === 'multiple_choice' ? 'mcq' : m.value;
-                                    const avail = typeCountMap[mappedType] || 0;
-                                    return (
-                                      <td key={m.value} className="text-center px-1 py-1">
-                                        <input
-                                          type="number"
-                                          min={0}
-                                          max={avail}
-                                          value={quizDistribution[diff]?.[mappedType] ?? 0}
-                                          onChange={(e) => setQuizDist(diff, mappedType, parseInt(e.target.value) || 0)}
-                                          className="w-14 text-center rounded border border-border bg-background px-1 py-1 text-xs"
-                                        />
-                                        <div className="text-[10px] text-muted-foreground">/ {avail}</div>
+                          {(() => {
+                            const quizActiveTypes = QUESTION_MODELS.filter(m => selectedModels.includes(m.value));
+                            return (
+                              <table className="w-full text-xs">
+                                <thead>
+                                  <tr className="border-b border-border/60">
+                                    <th className="text-left py-2 pr-3">Difficulty</th>
+                                    {quizActiveTypes.map((m) => (
+                                      <th key={m.value} className="text-center px-2 py-2">{m.label}</th>
+                                    ))}
+                                    <th className="text-center px-2 py-2">Total</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {['easy', 'medium', 'hard', 'hots'].map((diff) => (
+                                    <tr key={diff} className="border-b border-border/40">
+                                      <td className={`py-2 pr-3 font-medium capitalize ${diff === 'hots' ? 'text-purple-600' : ''}`}>{diff}</td>
+                                      {quizActiveTypes.map((m) => {
+                                        const mappedType = m.value === 'multiple_choice' ? 'mcq' : m.value;
+                                        const avail = typeCountMap[mappedType] || 0;
+                                        return (
+                                          <td key={m.value} className="text-center px-1 py-1">
+                                            <input
+                                              type="number"
+                                              min={0}
+                                              max={avail}
+                                              value={quizDistribution[diff]?.[mappedType] ?? 0}
+                                              onChange={(e) => setQuizDist(diff, mappedType, parseInt(e.target.value) || 0)}
+                                              className="w-14 text-center rounded border border-border bg-background px-1 py-1 text-xs"
+                                            />
+                                            <div className="text-[10px] text-muted-foreground">/ {avail}</div>
+                                          </td>
+                                        );
+                                      })}
+                                      <td className="text-center px-2 py-2 font-semibold">
+                                        {Object.values(quizDistribution[diff] || {}).reduce((s: number, v: any) => s + (v || 0), 0)}
                                       </td>
-                                    );
-                                  })}
-                                  <td className="text-center px-2 py-2 font-semibold">
-                                    {Object.values(quizDistribution[diff] || {}).reduce((s: number, v: any) => s + (v || 0), 0)}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            );
+                          })()}
                         </div>
+
+                        {quizDistributionTotal > questionCount && (
+                          <p className="text-xs text-red-500">Total exceeds question count by {quizDistributionTotal - questionCount}</p>
+                        )}
 
                         <div className="flex items-center justify-end gap-2">
                           {quizGeneratedPaper && (
@@ -1184,16 +1138,6 @@ export default function TeacherAssessmentCreatePage() {
                               Clear Preview
                             </Button>
                           )}
-                          <Button
-                            size="sm"
-                            onClick={() => generateQuizPaperMutation.mutate()}
-                            loading={generateQuizPaperMutation.isPending}
-                            disabled={quizDistributionTotal === 0}
-                            className="gap-1"
-                          >
-                            <Icon name="auto_awesome" size={14} />
-                            {quizGeneratedPaper ? 'Regenerate' : 'Generate Paper'}
-                          </Button>
                         </div>
 
                         {quizGeneratedPaper && (
@@ -1214,19 +1158,40 @@ export default function TeacherAssessmentCreatePage() {
                     </div>
                   )}
 
-                  {quizGeneratedPaper ? (
+                  <div className="flex gap-3">
                     <Button
-                      className="w-full gap-2"
+                      variant="outline"
+                      className="flex-1 gap-2"
                       size="lg"
-                      onClick={() => createQuizFromPaperMutation.mutate()}
-                      loading={createQuizFromPaperMutation.isPending}
+                      onClick={() => {
+                        if (!selectedConceptId) {
+                          toast.error(_('Please select a concept first'));
+                          return;
+                        }
+                        generatePreviewMutation.mutate({
+                          title: quizTitle.trim() || 'Preview',
+                          classId: selectedClassId,
+                          subjectId: selectedAssignment?.subjectId,
+                          textbookId: selectedTextbookId,
+                          chapterId: selectedChapterId,
+                          conceptId: selectedConceptId,
+                          teacherId: user?.id ?? '',
+                          timeLimitMinutes,
+                          selectedModels,
+                          questionCount,
+                          preview: true,
+                        });
+                      }}
+                      disabled={generatePreviewMutation.isPending || !quizTitle.trim()}
                     >
-                      <Icon name="quiz" size={18} />
-                      Create Quiz from Paper
+                      {generatePreviewMutation.isPending ? (
+                        <>{_('Generating...')}</>
+                      ) : (
+                        <><Icon name="visibility" size={18} />{_('Preview')}</>
+                      )}
                     </Button>
-                  ) : (
                     <Button
-                      className="w-full gap-2"
+                      className="flex-1 gap-2"
                       size="lg"
                       onClick={handleCreateQuiz}
                       disabled={
@@ -1250,7 +1215,7 @@ export default function TeacherAssessmentCreatePage() {
                         </>
                       )}
                     </Button>
-                  )}
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-5">
@@ -1464,45 +1429,54 @@ export default function TeacherAssessmentCreatePage() {
                           <p className="text-xs font-semibold">Total: {assignmentDistributionTotal} questions</p>
                         </div>
                         <div className="overflow-x-auto">
-                          <table className="w-full text-xs">
-                            <thead>
-                              <tr className="border-b border-border/60">
-                                <th className="text-left py-2 pr-3">Difficulty</th>
-                                {QUESTION_MODELS.map((m) => (
-                                  <th key={m.value} className="text-center px-2 py-2">{m.label}</th>
-                                ))}
-                                <th className="text-center px-2 py-2">Total</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {['easy', 'medium', 'hard', 'hots'].map((diff) => (
-                                <tr key={diff} className="border-b border-border/40">
-                                  <td className={`py-2 pr-3 font-medium capitalize ${diff === 'hots' ? 'text-purple-600' : ''}`}>{diff}</td>
-                                  {QUESTION_MODELS.map((m) => {
-                                    const mappedType = m.value === 'multiple_choice' ? 'mcq' : m.value;
-                                    const avail = typeCountMap[mappedType] || 0;
-                                    return (
-                                      <td key={m.value} className="text-center px-1 py-1">
-                                        <input
-                                          type="number"
-                                          min={0}
-                                          max={avail}
-                                          value={assignmentDistribution[diff]?.[mappedType] ?? 0}
-                                          onChange={(e) => setAssignmentDist(diff, mappedType, parseInt(e.target.value) || 0)}
-                                          className="w-14 text-center rounded border border-border bg-background px-1 py-1 text-xs"
-                                        />
-                                        <div className="text-[10px] text-muted-foreground">/ {avail}</div>
+                          {(() => {
+                            const assignActiveTypes = ASSIGNMENT_QUESTION_TYPES.filter(m => selectedModels.includes(m.value));
+                            return (
+                              <table className="w-full text-xs">
+                                <thead>
+                                  <tr className="border-b border-border/60">
+                                    <th className="text-left py-2 pr-3">Difficulty</th>
+                                    {assignActiveTypes.map((m) => (
+                                      <th key={m.value} className="text-center px-2 py-2">{m.label}</th>
+                                    ))}
+                                    <th className="text-center px-2 py-2">Total</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {['easy', 'medium', 'hard', 'hots'].map((diff) => (
+                                    <tr key={diff} className="border-b border-border/40">
+                                      <td className={`py-2 pr-3 font-medium capitalize ${diff === 'hots' ? 'text-purple-600' : ''}`}>{diff}</td>
+                                      {assignActiveTypes.map((m) => {
+                                        const mappedType = m.value === 'multiple_choice' ? 'mcq' : m.value;
+                                        const avail = typeCountMap[mappedType] || 0;
+                                        return (
+                                          <td key={m.value} className="text-center px-1 py-1">
+                                            <input
+                                              type="number"
+                                              min={0}
+                                              max={avail}
+                                              value={assignmentDistribution[diff]?.[mappedType] ?? 0}
+                                              onChange={(e) => setAssignmentDist(diff, mappedType, parseInt(e.target.value) || 0)}
+                                              className="w-14 text-center rounded border border-border bg-background px-1 py-1 text-xs"
+                                            />
+                                            <div className="text-[10px] text-muted-foreground">/ {avail}</div>
+                                          </td>
+                                        );
+                                      })}
+                                      <td className="text-center px-2 py-2 font-semibold">
+                                        {Object.values(assignmentDistribution[diff] || {}).reduce((s: number, v: any) => s + (v || 0), 0)}
                                       </td>
-                                    );
-                                  })}
-                                  <td className="text-center px-2 py-2 font-semibold">
-                                    {Object.values(assignmentDistribution[diff] || {}).reduce((s: number, v: any) => s + (v || 0), 0)}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            );
+                          })()}
                         </div>
+
+                        {assignmentDistributionTotal > questionCount && (
+                          <p className="text-xs text-red-500">Total exceeds question count by {assignmentDistributionTotal - questionCount}</p>
+                        )}
 
                         <div className="flex items-center justify-end gap-2">
                           {assignmentGeneratedPaper && (
