@@ -1,7 +1,9 @@
+export type CodingLanguage = 'javascript' | 'python' | 'html' | 'java' | 'c' | 'cpp';
+
 export interface CodingProject {
   id: string;
   title: string;
-  language: 'javascript' | 'python' | 'html';
+  language: CodingLanguage;
   code: string;
   ownerId: string;
   collaborators: string[];

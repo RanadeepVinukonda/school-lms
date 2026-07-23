@@ -1,9 +1,10 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
+import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +20,7 @@ import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
 import { getTextbooksBySubject, getChaptersForTextbook, getConceptsForChapter } from '@/services/textbookService';
 import { getStudentsByClass } from '@/services/dataService';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 interface TeacherAssignment {
   id: string;
@@ -73,6 +74,11 @@ export default function TeacherAssessmentCreatePage() {
     { value: 'matching', label: _('Matching') },
   ];
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const [viewMode, setViewMode] = useState<'list' | 'create'>('list');
+  const [listTab, setListTab] = useState<'quizzes' | 'assignments' | 'exams'>('quizzes');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [assessmentType, setAssessmentType] = useState<'quiz' | 'assignment'>('quiz');
   const [selectedClassId, setSelectedClassId] = useState('');
@@ -138,6 +144,24 @@ export default function TeacherAssessmentCreatePage() {
   const classAssignments = assignmentList.filter((a) => a.classId === selectedClassId);
   const effectiveSubjectId = selectedSubjectId || classAssignments[0]?.subjectId || '';
   const selectedAssignment = classAssignments.find((a) => a.subjectId === effectiveSubjectId);
+
+  const { data: listingQuizzes, isLoading: listingQuizzesLoading } = useQuery({
+    queryKey: ['teacher-all-quizzes'],
+    queryFn: () => api.get('/quizzes-v2/my').then((r) => r.data.data),
+    enabled: viewMode === 'list' && listTab === 'quizzes' && !!user?.id,
+  });
+
+  const { data: listingAssignments, isLoading: listingAssignmentsLoading } = useQuery({
+    queryKey: ['teacher-all-assignments'],
+    queryFn: () => api.get('/assignments-v2/my').then((r) => r.data.data),
+    enabled: viewMode === 'list' && listTab === 'assignments' && !!user?.id,
+  });
+
+  const { data: listingExams, isLoading: listingExamsLoading } = useQuery({
+    queryKey: ['teacher-all-exams'],
+    queryFn: () => api.get('/exams-v2/my').then((r) => r.data.data),
+    enabled: viewMode === 'list' && listTab === 'exams' && !!user?.id,
+  });
 
   const { data: textbooks, isLoading: textbooksLoading } = useQuery({
     queryKey: ['teacher-textbooks', selectedAssignment?.subjectId],
@@ -716,23 +740,138 @@ export default function TeacherAssessmentCreatePage() {
     );
   }
 
+  const filteredItems = useMemo(() => {
+    let items: any[] = [];
+    if (listTab === 'quizzes') items = listingQuizzes ?? [];
+    else if (listTab === 'assignments') items = listingAssignments ?? [];
+    else items = listingExams ?? [];
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      items = items.filter((i: any) => (i.title || '').toLowerCase().includes(q));
+    }
+    return items;
+  }, [listTab, searchQuery, listingQuizzes, listingAssignments, listingExams]);
+
+  const isListLoading = (listTab === 'quizzes' && listingQuizzesLoading) ||
+    (listTab === 'assignments' && listingAssignmentsLoading) ||
+    (listTab === 'exams' && listingExamsLoading);
+
+  const getStatusBadge = (item: any) => {
+    if (!!item.isRepublished) return { label: _('Republished'), variant: 'success' as const };
+    if (!!item.releasedAt) return { label: _('Released'), variant: 'success' as const };
+    return { label: _('Draft'), variant: 'secondary' as const };
+  };
+
   return (
     <>
-      <SEOHead title="Create Assessment" description="Create quizzes and assignments for your class" canonical="/teacher/assessments/create" />
+      <SEOHead title="Quizzes & Tasks" description="Create and manage quizzes, assignments, and exams" />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-4xl mx-auto pb-32 space-y-16"
+        className="p-6 max-w-6xl mx-auto pb-32 space-y-6"
       >
-        <motion.div variants={cardStackReveal} custom={0}>
-          <Button variant="ghost" size="sm" onClick={() => window.history.back()} className="mb-2">
-            <Icon name="arrow_back" size={16} className="mr-1" />
-            Back
+        <motion.div variants={cardStackReveal} custom={0} className="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-headline-sm">{_('Quizzes & Tasks')}</h1>
+            <p className="text-body-md text-muted-foreground">{_('Create and manage assessments')}</p>
+          </div>
+          <Button
+            onClick={() => setViewMode(viewMode === 'list' ? 'create' : 'list')}
+            className="gap-2"
+          >
+            <Icon name={viewMode === 'list' ? 'add' : 'list'} size={18} />
+            {viewMode === 'list' ? _('Create New') : _('View All')}
           </Button>
-          <h1 className="text-headline-sm">Create Assessment</h1>
-          <p className="text-body-md text-muted-foreground">Create quizzes and assignments for your class</p>
         </motion.div>
+
+        {viewMode === 'list' ? (
+          <>
+            <div className="border-b border-border/60">
+              <div className="flex gap-0 -mb-px">
+                {[
+                  { key: 'quizzes', label: _('Quizzes'), icon: 'quiz' },
+                  { key: 'assignments', label: _('Assignments'), icon: 'assignment' },
+                  { key: 'exams', label: _('Exams'), icon: 'fact_check' },
+                ].map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setListTab(tab.key as typeof listTab)}
+                    className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+                      listTab === tab.key
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Icon name={tab.icon} size={18} />
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative">
+              <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={_('Search by title...')}
+                className="pl-10"
+              />
+            </div>
+
+            <DataFetchWrapper
+              data={filteredItems}
+              isLoading={isListLoading}
+              error={null}
+              loadingType="list"
+              emptyMessage={_('No items found')}
+              emptyIcon={<Icon name="quiz" size={40} className="text-muted-foreground/50" />}
+            >
+              {() => (
+                <div className="space-y-3">
+                  {filteredItems.map((item: any) => {
+                    const status = getStatusBadge(item);
+                    return (
+                      <Card key={item.id} className="border-border/60 hover:border-primary/20 transition-colors cursor-pointer">
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-3">
+                            <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${status.variant === 'success' ? 'bg-success-container' : 'bg-secondary-container'}`}>
+                              <Icon name={listTab === 'quizzes' ? 'quiz' : listTab === 'assignments' ? 'assignment' : 'fact_check'} size={20}
+                                className={status.variant === 'success' ? 'text-on-success-container' : 'text-on-secondary-container'} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-0.5">
+                                <p className="font-semibold truncate">{item.title}</p>
+                                <Badge variant={status.variant} className="text-[10px] shrink-0 capitalize">{status.label}</Badge>
+                              </div>
+                              <p className="text-label-xs text-muted-foreground line-clamp-1">{item.description}</p>
+                              <div className="flex items-center gap-3 mt-1.5 text-label-xs text-muted-foreground flex-wrap">
+                                {item.timeLimitMinutes && (
+                                  <span className="flex items-center gap-1"><Icon name="schedule" size={14} />{item.timeLimitMinutes} {_('min')}</span>
+                                )}
+                                {item.passingScore && (
+                                  <span className="flex items-center gap-1"><Icon name="percent" size={14} />{_('Pass')}: {item.passingScore}%</span>
+                                )}
+                                {item.attemptCount !== undefined && (
+                                  <span className="flex items-center gap-1"><Icon name="people" size={14} />{item.attemptCount} {_('attempts')}</span>
+                                )}
+                                {item.questionCount && (
+                                  <span className="flex items-center gap-1"><Icon name="quiz" size={14} />{item.questionCount} {_('questions')}</span>
+                                )}
+                                <span>{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '-'}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </DataFetchWrapper>
+          </>
+        ) : (<>
 
         <motion.div variants={cardStackReveal} custom={0}>
           <Card className="border-border/60">
@@ -1648,6 +1787,7 @@ export default function TeacherAssessmentCreatePage() {
           </Card>
         </motion.div>
 
+        </>)}
 
       </motion.div>
     </>

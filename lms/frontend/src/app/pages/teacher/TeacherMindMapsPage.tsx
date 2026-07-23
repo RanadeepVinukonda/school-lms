@@ -41,7 +41,7 @@ export default function TeacherMindMapsPage() {
       setShowCreate(false);
       setNewTitle('');
       setNewDesc('');
-      navigate(ROUTES.TEACHER_MIND_MAP_EDITOR(data.id));
+      navigate(ROUTES.TEACHER_DASHBOARD);
     },
   });
 
@@ -134,7 +134,7 @@ export default function TeacherMindMapsPage() {
             >
               {filteredMaps.map((map, idx) => (
                 <motion.div key={map.id} variants={cardStackReveal} custom={idx}>
-                  <Link to={ROUTES.TEACHER_MIND_MAP_EDITOR(map.id)} className="block h-full">
+                  <Link to={ROUTES.TEACHER_DASHBOARD} className="block h-full">
                     <Card className="border-border/60 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 h-full flex flex-col justify-between group">
                       <CardContent className="p-6">
                         <div className="flex items-start gap-4">
@@ -178,7 +178,7 @@ export default function TeacherMindMapsPage() {
             <h2 className="text-title-md font-bold tracking-tight">{_('Shared with Me')}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {sharedMaps.map((map) => (
-                <Link key={map.id} to={ROUTES.TEACHER_MIND_MAP_EDITOR(map.id)} className="block h-full">
+                <Link key={map.id} to={ROUTES.TEACHER_DASHBOARD} className="block h-full">
                   <Card className="border-border/60 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 h-full flex flex-col justify-between group border-dashed">
                     <CardContent className="p-6">
                       <div className="flex items-start gap-4">

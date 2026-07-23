@@ -11,7 +11,7 @@ import { Icon } from '@/components/ui/Icon';
 import { ErrorState } from '@/components/common/ErrorState';
 import type { CodingLanguage } from '@/types/coding';
 
-export default function StudentCodingEditorPage() {
+export default function TeacherCodingEditorPage() {
   const { _ } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -24,7 +24,7 @@ export default function StudentCodingEditorPage() {
   const [dirty, setDirty] = useState(false);
 
   const { data: project, isLoading, error } = useQuery({
-    queryKey: ['coding-project', id],
+    queryKey: ['teacher-coding-project', id],
     queryFn: async () => {
       if (!id) throw new Error('No project ID');
       const p = await codingService.getProjectById(id);
@@ -44,7 +44,7 @@ export default function StudentCodingEditorPage() {
     onSuccess: () => {
       setSaved(true);
       setDirty(false);
-      queryClient.invalidateQueries({ queryKey: ['coding-project', id] });
+      queryClient.invalidateQueries({ queryKey: ['teacher-coding-project', id] });
       setTimeout(() => setSaved(false), 2000);
       toast.success(_('Project saved'));
     },
@@ -102,7 +102,7 @@ export default function StudentCodingEditorPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate(ROUTES.STUDENT_CODING)}
+            onClick={() => navigate(ROUTES.TEACHER_CODING)}
             className="flex items-center gap-1 text-label-sm text-on-surface-variant hover:text-on-surface transition-colors"
           >
             <Icon name="arrow_back" size={16} />
@@ -132,10 +132,6 @@ export default function StudentCodingEditorPage() {
           >
             <Icon name={saved ? 'check' : 'save'} size={16} />
             {saveMutation.isPending ? _('Saving...') : saved ? _('Saved!') : _('Save')}
-          </button>
-          <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-surface-variant text-on-surface-variant hover:bg-surface-variant/70 transition-colors">
-            <Icon name="share" size={16} />
-            {_('Share')}
           </button>
         </div>
       </div>

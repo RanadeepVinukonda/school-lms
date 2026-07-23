@@ -73,6 +73,9 @@ export const ROUTES = {
   ADMIN_NOTICEBOARD: '/admin/noticeboard',
   ADMIN_ERP_DASHBOARD: '/admin/erp',
   TEACHER_TIMETABLE: '/teacher/timetable',
+  TEACHER_REWARDS: '/teacher/rewards',
+  TEACHER_CODING: '/teacher/coding',
+  TEACHER_CODING_EDITOR: (id: string) => `/teacher/coding/${id}`,
   TEACHER_NOTICEBOARD: '/teacher/noticeboard',
   STUDENT_NOTICEBOARD: '/student/noticeboard',
 
@@ -104,8 +107,6 @@ export const ROUTES = {
   STUDENT_STREAM_PROJECTS: '/student/stream-projects',
   STUDENT_OCR: '/student/ocr',
   STUDENT_ADAPTIVE_QUIZ: (conceptId: string) => `/student/concepts/${conceptId}/adaptive-quiz`,
-  TEACHER_MIND_MAPS: '/teacher/mindmaps',
-  TEACHER_MIND_MAP_EDITOR: (id: string) => `/teacher/mindmaps/${id}`,
   TEACHER_NEP_QUESTIONS: '/teacher/nep-questions',
   TEACHER_RUBRICS: '/teacher/rubrics',
   K2_DASHBOARD: '/k2/dashboard',

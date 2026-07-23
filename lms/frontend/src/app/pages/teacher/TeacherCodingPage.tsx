@@ -5,7 +5,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '@/hooks/useTranslation';
 import { codingService } from '@/services/codingService';
 import { useAuthStore } from '@/store/authStore';
-import type { CodingProject, CodingLanguage } from '@/types/coding';
 import { ROUTES } from '@/lib/constants';
 import { Icon } from '@/components/ui/Icon';
 import { LoadingSkeleton } from '@/components/common/LoadingSkeleton';
@@ -18,15 +17,14 @@ const LANGUAGE_BADGES: Record<string, string> = {
   html: 'bg-orange-100 text-orange-700',
 };
 
-export default function StudentCodingPage() {
+export default function TeacherCodingPage() {
   const { _ } = useTranslation();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'projects' | 'stream'>('projects');
 
   const { data: projects = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['student-coding-projects', user?.id],
+    queryKey: ['teacher-coding-projects', user?.id],
     queryFn: () => codingService.getAllProjects(),
     enabled: !!user?.id,
   });
@@ -34,7 +32,7 @@ export default function StudentCodingPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => codingService.deleteProject(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['student-coding-projects', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['teacher-coding-projects', user?.id] });
       toast.success(_('Project deleted'));
     },
     onError: () => toast.error(_('Failed to delete project')),
@@ -43,12 +41,12 @@ export default function StudentCodingPage() {
   const createMutation = useMutation({
     mutationFn: () => codingService.createProject({
       title: 'Untitled Project',
-      language: 'javascript' as CodingLanguage,
+      language: 'javascript',
       code: '',
       ownerId: user!.id,
     }),
     onSuccess: (project) => {
-      navigate(ROUTES.STUDENT_CODING_EDITOR(project.id));
+      navigate(ROUTES.TEACHER_CODING + '/' + project.id);
     },
     onError: () => toast.error(_('Failed to create project')),
   });
@@ -63,7 +61,7 @@ export default function StudentCodingPage() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold text-on-surface">{_('Coding Workspace')}</h1>
-          <p className="text-on-surface-variant mt-1">{_('Write, run, and collaborate on code projects')}</p>
+          <p className="text-on-surface-variant mt-1">{_('Create and manage coding projects')}</p>
         </div>
         <button
           onClick={() => createMutation.mutate()}
@@ -75,28 +73,7 @@ export default function StudentCodingPage() {
         </button>
       </div>
 
-      <div className="flex gap-2 border-b border-outline-variant">
-        {[
-          { key: 'projects', label: _('My Projects'), icon: 'code' },
-          { key: 'stream', label: _('STREAM Projects'), icon: 'school' },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => {
-              setActiveTab(tab.key as 'projects' | 'stream');
-              if (tab.key === 'stream') navigate(ROUTES.STUDENT_STREAM_PROJECTS);
-            }}
-            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === tab.key
-                ? 'border-primary text-primary'
-                : 'border-transparent text-on-surface-variant hover:text-on-surface'
-            }`}
-          >
-            <Icon name={tab.icon} size={18} />
-            {tab.label}
-          </button>
-        ))}
-      </div>              {isLoading ? (
+      {isLoading ? (
         <LoadingSkeleton type="card" />
       ) : error ? (
         <ErrorState title={_('Failed to load projects')} message={_('Could not fetch coding projects')} onRetry={() => refetch()} />
@@ -107,11 +84,11 @@ export default function StudentCodingPage() {
           <p className="text-label-sm text-on-surface-variant/60 mt-1">{_('Create your first project to get started')}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {projects.map((project) => (
             <div
               key={project.id}
-              onClick={() => navigate(ROUTES.STUDENT_CODING_EDITOR(project.id))}
+              onClick={() => navigate(ROUTES.TEACHER_CODING + '/' + project.id)}
               className="p-5 rounded-xl border border-outline-variant bg-surface hover:shadow-md hover:border-primary/30 transition-all cursor-pointer group"
             >
               <div className="flex items-start justify-between mb-3">
@@ -129,7 +106,7 @@ export default function StudentCodingPage() {
               <p className="text-label-xs text-on-surface-variant mt-2">
                 Updated {new Date(project.updatedAt).toLocaleDateString()}
               </p>
-              {project.collaborators.length > 0 && (
+              {project.collaborators?.length > 0 && (
                 <div className="flex items-center gap-1 mt-2 text-label-xs text-on-surface-variant">
                   <Icon name="group" size={12} />
                   <span>{project.collaborators.length} collaborator{project.collaborators.length !== 1 ? 's' : ''}</span>

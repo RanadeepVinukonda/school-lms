@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -8,6 +8,7 @@ import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { ReleaseRepublishModal } from '@/components/common/ReleaseRepublishModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Icon } from '@/components/ui/Icon';
@@ -32,6 +33,8 @@ export default function TeacherTestSchedulePage() {
   const queryClient = useQueryClient();
   const [selectedClassId, setSelectedClassId] = useState('');
   const [activeTab, setActiveTab] = useState('exams');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [subjectFilter, setSubjectFilter] = useState('');
 
   const { data: assignments, isLoading: assignmentsLoading } = useQuery({
     queryKey: ['teacher-assignments', user?.id],
@@ -44,6 +47,18 @@ export default function TeacherTestSchedulePage() {
     if (!acc.find((x) => x.classId === a.classId)) acc.push(a);
     return acc;
   }, []);
+
+  const uniqueSubjects = useMemo(() => {
+    const map = new Map<string, string>();
+    assignmentList.forEach(a => { if (!map.has(a.subjectId)) map.set(a.subjectId, a.subjectName); });
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }, [assignmentList]);
+
+  const subjectMap = useMemo(() => {
+    const m = new Map<string, string>();
+    assignmentList.forEach(a => m.set(a.subjectId, a.subjectName));
+    return m;
+  }, [assignmentList]);
 
   const { data: exams, isLoading: examsLoading } = useQuery({
     queryKey: ['exams-v2-class', selectedClassId],
@@ -131,6 +146,25 @@ export default function TeacherTestSchedulePage() {
   const quizList: any[] = quizzes ?? [];
   const assignmentItems: any[] = assignmentsData ?? [];
 
+  const filteredExamList = useMemo(() => {
+    if (!searchQuery && !subjectFilter) return examList;
+    return examList.filter((e: any) => {
+      const matchTitle = !searchQuery || (e.title || '').toLowerCase().includes(searchQuery.toLowerCase());
+      const matchSubject = !subjectFilter || e.subjectId === subjectFilter || e.subject_id === subjectFilter;
+      return matchTitle && matchSubject;
+    });
+  }, [examList, searchQuery, subjectFilter]);
+
+  const filteredQuizList = useMemo(() => {
+    if (!searchQuery) return quizList;
+    return quizList.filter((q: any) => (q.title || '').toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [quizList, searchQuery]);
+
+  const filteredAssignmentList = useMemo(() => {
+    if (!searchQuery) return assignmentItems;
+    return assignmentItems.filter((a: any) => (a.title || '').toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [assignmentItems, searchQuery]);
+
   function formatDate(d: string) {
     if (!d) return '-';
     try { return new Date(d).toLocaleDateString(); } catch { return d; }
@@ -173,6 +207,30 @@ export default function TeacherTestSchedulePage() {
         </motion.div>
 
         {selectedClassId && (
+          <>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={_('Search by title...')}
+                className="pl-10"
+              />
+            </div>
+            {activeTab === 'exams' && (
+              <select
+                value={subjectFilter}
+                onChange={(e) => setSubjectFilter(e.target.value)}
+                className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              >
+                <option value="">{_('All Subjects')}</option>
+                {uniqueSubjects.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            )}
+          </div>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full overflow-x-auto inline-flex">
               <TabsTrigger value="exams" className="gap-2">
@@ -203,7 +261,7 @@ export default function TeacherTestSchedulePage() {
               >
                 {() => (
                   <div className="space-y-3">
-                    {examList.map((exam: any) => (
+                    {(filteredExamList.length > 0 ? filteredExamList : examList).map((exam: any) => (
                       <Card key={exam.id} className="border-border/60">
                         <CardContent className="p-4">
                           <div className="flex items-start gap-3">
@@ -258,7 +316,7 @@ export default function TeacherTestSchedulePage() {
               >
                 {() => (
                   <div className="space-y-3">
-                    {quizList.map((quiz: any) => {
+                    {(filteredQuizList.length > 0 ? filteredQuizList : quizList).map((quiz: any) => {
                       const isDraft = !quiz.releasedAt;
                       const isReleased = !!quiz.releasedAt && !quiz.isRepublished;
                       const isRepublished = !!quiz.releasedAt && !!quiz.isRepublished;
@@ -323,7 +381,7 @@ export default function TeacherTestSchedulePage() {
               >
                 {() => (
                   <div className="space-y-3">
-                    {assignmentItems.map((as: any) => (
+                    {(filteredAssignmentList.length > 0 ? filteredAssignmentList : assignmentItems).map((as: any) => (
                       <Card key={as.id} className="border-border/60">
                         <CardContent className="p-4">
                           <div className="flex items-start gap-3">
@@ -360,6 +418,7 @@ export default function TeacherTestSchedulePage() {
               </DataFetchWrapper>
             </TabsContent>
           </Tabs>
+          </>
         )}
 
         {!selectedClassId && (

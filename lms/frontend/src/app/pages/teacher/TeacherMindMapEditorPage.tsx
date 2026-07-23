@@ -103,7 +103,7 @@ export default function TeacherMindMapEditorPage() {
             <>
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <Button variant="ghost" size="icon-sm" onClick={() => navigate(ROUTES.TEACHER_MIND_MAPS)}>
+                  <Button variant="ghost" size="icon-sm" onClick={() => navigate(ROUTES.TEACHER_DASHBOARD)}>
                     <Icon name="arrow_back" size={20} />
                   </Button>
                   <input

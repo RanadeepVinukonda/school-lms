@@ -4,25 +4,31 @@ import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { OptionsSelect } from '@/components/ui/select';
+import { Card, CardContent } from '@/components/ui/card';
 import { Icon } from '@/components/ui/Icon';
+import { useAuthStore } from '@/store/authStore';
 import { timetableService } from '@/services/timetableService';
-import { getAllClasses, getAllSubjects, getAllTeachers } from '@/services/dataService';
+import { getAllSubjects, getAllTeachers } from '@/services/dataService';
+import api from '@/services/api';
+
+interface TeacherAssignment {
+  id: string;
+  classId: string;
+  className: string;
+  subjectId: string;
+  subjectName: string;
+  teacherId: string;
+}
 
 export default function TeacherTimetablePage() {
   const { _ } = useTranslation();
+  const user = useAuthStore((s) => s.user);
   const DAYS = [_('Monday'), _('Tuesday'), _('Wednesday'), _('Thursday'), _('Friday'), _('Saturday')];
   const DAY_SHORT: Record<string, string> = {
     [_('Monday')]: _('Mon'), [_('Tuesday')]: _('Tue'), [_('Wednesday')]: _('Wed'),
     [_('Thursday')]: _('Thu'), [_('Friday')]: _('Fri'), [_('Saturday')]: _('Sat'),
   };
   const [selectedClassId, setSelectedClassId] = useState('');
-
-  const { data: classesData = [] } = useQuery({
-    queryKey: ['teacher-classes'],
-    queryFn: getAllClasses,
-  });
 
   const { data: subjects = [] } = useQuery({
     queryKey: ['all-subjects'],
@@ -34,7 +40,21 @@ export default function TeacherTimetablePage() {
     queryFn: getAllTeachers,
   });
 
+  const { data: assignments } = useQuery({
+    queryKey: ['teacher-assignments', user?.id],
+    queryFn: () => api.get('/teacher-class-subject/my').then((r) => r.data.data),
+    enabled: !!user?.id,
+  });
+
   const teachers = useMemo(() => teachersData || [], [teachersData]);
+  const assignmentList: TeacherAssignment[] = assignments ?? [];
+  const uniqueClasses = useMemo(() => {
+    const map = new Map<string, { id: string; className: string }>();
+    assignmentList.forEach(a => {
+      if (!map.has(a.classId)) map.set(a.classId, { id: a.classId, className: a.className });
+    });
+    return Array.from(map.values());
+  }, [assignmentList]);
 
   const { data: timetableRes, isLoading, error, refetch } = useQuery({
     queryKey: ['teacher-timetable', selectedClassId],
@@ -43,15 +63,6 @@ export default function TeacherTimetablePage() {
   });
 
   const timetableEntries = ((timetableRes as any)?.data || []) as any[];
-
-  const classOptions = useMemo(
-    () => classesData.map((c) => {
-      const capName = c.name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-      const label = c.section ? `${capName}-Section ${c.section}` : capName;
-      return { value: c.id, label };
-    }),
-    [classesData],
-  );
 
   const subjectMap = useMemo(() => {
     const m = new Map<string, string>();
@@ -65,12 +76,19 @@ export default function TeacherTimetablePage() {
     return m;
   }, [teachers]);
 
+  const myEntries = useMemo(() => {
+    if (!user?.id || !timetableEntries.length) return timetableEntries;
+    return timetableEntries.filter((e: any) =>
+      e.teacher_id === user.id || e.teacherId === user.id
+    );
+  }, [timetableEntries, user?.id]);
+
   const grid = useMemo(() => {
     const map: Record<string, Record<number, any[]>> = {};
     for (const day of DAYS) {
       map[day] = {};
     }
-    for (const entry of timetableEntries) {
+    for (const entry of myEntries) {
       const day = entry.day?.[0]?.toUpperCase() + entry.day?.slice(1)?.toLowerCase();
       if (map[day]) {
         const p = entry.period || 1;
@@ -79,52 +97,55 @@ export default function TeacherTimetablePage() {
       }
     }
     return map;
-  }, [timetableEntries]);
+  }, [myEntries]);
 
   const periodNumbers = useMemo(() => {
     const nums = new Set<number>();
-    for (const entry of timetableEntries) nums.add(entry.period || 1);
+    for (const entry of myEntries) nums.add(entry.period || 1);
     return Array.from(nums).sort((a, b) => a - b);
-  }, [timetableEntries]);
+  }, [myEntries]);
 
   return (
     <>
-      <SEOHead title={_('Timetable')} description={_('View class timetable by period and day')} />
+      <SEOHead title={_('My Timetable')} description={_('View your class schedule by period and day')} />
       <div className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-8">
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">{_('Class Timetable')}</h1>
-          <p className="text-body-md text-muted-foreground mt-1">{_('View timetable by class, period, and day')}</p>
+          <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">{_('My Timetable')}</h1>
+          <p className="text-body-md text-muted-foreground mt-1">{_('View your assigned class schedule')}</p>
         </motion.div>
 
-        <Card className="border-border/60">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-title-sm">{_('Select Class')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <OptionsSelect
-              options={classOptions}
-              placeholder={_('Choose a class...')}
-              value={selectedClassId}
-              onValueChange={setSelectedClassId}
-              className="w-full sm:w-64"
-            />
-          </CardContent>
-        </Card>
+        {uniqueClasses.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {uniqueClasses.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setSelectedClassId(c.id)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
+                  selectedClassId === c.id
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-surface text-on-surface border-border hover:border-primary/50'
+                }`}
+              >
+                {c.className}
+              </button>
+            ))}
+          </div>
+        )}
 
         {!selectedClassId ? (
           <div className="flex flex-col items-center py-16 text-muted-foreground">
             <Icon name="calendar_month" size={64} className="text-muted-foreground/30 mb-3" />
-            <p className="text-title-sm font-semibold">{_('Select a class to view timetable')}</p>
-            <p className="text-body-sm text-muted-foreground mt-1">{_('Choose a class from the dropdown above')}</p>
+            <p className="text-title-sm font-semibold">{_('Select a class to view your timetable')}</p>
+            <p className="text-body-sm text-muted-foreground mt-1">{_('Choose a class from the buttons above')}</p>
           </div>
         ) : (
           <DataFetchWrapper
-            data={timetableEntries}
+            data={myEntries}
             isLoading={isLoading}
             error={error ? new Error(_('Failed to load timetable')) : null}
             onRetry={refetch}
             loadingType="table"
-            emptyMessage={_('No timetable entries for this class')}
+            emptyMessage={_('No timetable entries found for your classes')}
           >
             {() => (
               <div className="border border-border/60 rounded-xl bg-surface overflow-hidden shadow-sm">
@@ -164,12 +185,10 @@ export default function TeacherTimetablePage() {
                                         <p className="text-label-sm font-bold text-primary leading-tight truncate">
                                           {subjectMap.get(entry.subject_id || entry.subjectId || '') || entry.subject_id || entry.subjectId || _('Subject')}
                                         </p>
-                                        {(entry.teacher_id || entry.teacherId) && (
-                                          <p className="text-[10px] text-muted-foreground leading-none flex items-center gap-1.5 truncate">
-                                            <Icon name="person" size={10} className="text-muted-foreground/60 shrink-0" />
-                                            <span className="truncate">{teacherMap.get(entry.teacher_id || entry.teacherId || '') || entry.teacher_id || entry.teacherId}</span>
-                                          </p>
-                                        )}
+                                        <p className="text-[10px] text-muted-foreground leading-none flex items-center gap-1.5 truncate">
+                                          <Icon name="person" size={10} className="text-muted-foreground/60 shrink-0" />
+                                          {_('You')}
+                                        </p>
                                         {entry.room && (
                                           <p className="text-[10px] text-muted-foreground leading-none flex items-center gap-1.5 truncate">
                                             <Icon name="meeting_room" size={10} className="text-muted-foreground/60 shrink-0" />

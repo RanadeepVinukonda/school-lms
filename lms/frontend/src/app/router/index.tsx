@@ -86,14 +86,15 @@ const TeacherQuestionPapersPage = lazyRetry(() => import('@/app/pages/teacher/Te
 const TeacherTestTemplatesPage = lazyRetry(() => import('@/app/pages/teacher/TeacherTestTemplatesPage'));
 const TeacherTestSchedulePage = lazyRetry(() => import('@/app/pages/teacher/TeacherTestSchedulePage'));
 const TeacherPreviousYearQPage = lazyRetry(() => import('@/app/pages/teacher/TeacherPreviousYearQPage'));
-const TeacherMindMapsPage = lazyRetry(() => import('@/app/pages/teacher/TeacherMindMapsPage'));
-const TeacherMindMapEditorPage = lazyRetry(() => import('@/app/pages/teacher/TeacherMindMapEditorPage'));
+const TeacherCodingPage = lazyRetry(() => import('@/app/pages/teacher/TeacherCodingPage'));
+const TeacherCodingEditorPage = lazyRetry(() => import('@/app/pages/teacher/TeacherCodingEditorPage'));
 const TeacherAttendancePage = lazyRetry(() => import('@/app/pages/teacher/TeacherAttendancePage'));
 const TeacherNEPQuestionsPage = lazyRetry(() => import('@/app/pages/teacher/TeacherNEPQuestionsPage'));
 const TeacherRubricPage = lazyRetry(() => import('@/app/pages/teacher/TeacherRubricPage'));
 const TeacherNoticeBoardPage = lazyRetry(() => import('@/app/pages/teacher/TeacherNoticeBoardPage'));
 const TeacherTimetablePage = lazyRetry(() => import('@/app/pages/teacher/TeacherTimetablePage'));
 const TeacherOCRPage = lazyRetry(() => import('@/app/pages/teacher/TeacherOCRPage'));
+const TeacherRewardsPage = lazyRetry(() => import('@/app/pages/teacher/TeacherRewardsPage'));
 const TeacherUnifiedTestPage = lazyRetry(() => import('@/app/pages/teacher/TeacherUnifiedTestPage'));
 
 const AdminDashboardPage = lazyRetry(() => import('@/app/pages/admin/AdminDashboardPage'));
@@ -219,14 +220,15 @@ export const router = createBrowserRouter([
       { path: ROUTES.TEACHER_TEST_SCHEDULE, element: <Suspense fallback={<PageFallback />}><TeacherTestSchedulePage /></Suspense> },
       { path: ROUTES.TEACHER_PYQ, element: <Suspense fallback={<PageFallback />}><TeacherPreviousYearQPage /></Suspense> },
       { path: ROUTES.TEACHER_ATTENDANCE, element: <Suspense fallback={<PageFallback />}><TeacherAttendancePage /></Suspense> },
-      { path: ROUTES.TEACHER_MIND_MAPS, element: <Suspense fallback={<PageFallback />}><TeacherMindMapsPage /></Suspense> },
-      { path: ROUTES.TEACHER_MIND_MAP_EDITOR(':id'), element: <Suspense fallback={<PageFallback />}><TeacherMindMapEditorPage /></Suspense> },
+      { path: ROUTES.TEACHER_CODING, element: <Suspense fallback={<PageFallback />}><TeacherCodingPage /></Suspense> },
+      { path: ROUTES.TEACHER_CODING_EDITOR(':id'), element: <Suspense fallback={<PageFallback />}><TeacherCodingEditorPage /></Suspense> },
       { path: ROUTES.TEACHER_NEP_QUESTIONS, element: <Suspense fallback={<PageFallback />}><TeacherNEPQuestionsPage /></Suspense> },
       { path: ROUTES.TEACHER_RUBRICS, element: <Suspense fallback={<PageFallback />}><TeacherRubricPage /></Suspense> },
       { path: ROUTES.TEACHER_OCR, element: <Suspense fallback={<PageFallback />}><TeacherOCRPage /></Suspense> },
       { path: ROUTES.TEACHER_UNIFIED_TEST, element: <Suspense fallback={<PageFallback />}><TeacherUnifiedTestPage /></Suspense> },
       { path: ROUTES.TEACHER_NOTICEBOARD, element: <Suspense fallback={<PageFallback />}><TeacherNoticeBoardPage /></Suspense> },
       { path: ROUTES.TEACHER_TIMETABLE, element: <Suspense fallback={<PageFallback />}><TeacherTimetablePage /></Suspense> },
+      { path: ROUTES.TEACHER_REWARDS, element: <Suspense fallback={<PageFallback />}><TeacherRewardsPage /></Suspense> },
     ],
   },
 
