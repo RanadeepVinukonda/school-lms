@@ -40,6 +40,7 @@ function MarkerCanvas() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [color, setColor] = useState('#000000');
   const [lineWidth, setLineWidth] = useState(3);
+  const [drawingEnabled, setDrawingEnabled] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -56,6 +57,8 @@ function MarkerCanvas() {
   }, [color, lineWidth]);
 
   const startDrawing = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    if (!drawingEnabled) return;
+    e.preventDefault();
     setIsDrawing(true);
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -66,10 +69,11 @@ function MarkerCanvas() {
     const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
     ctx.beginPath();
     ctx.moveTo(x, y);
-  }, []);
+  }, [drawingEnabled]);
 
   const draw = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDrawing) return;
+    if (!isDrawing || !drawingEnabled) return;
+    e.preventDefault();
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -79,7 +83,7 @@ function MarkerCanvas() {
     const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
     ctx.lineTo(x, y);
     ctx.stroke();
-  }, [isDrawing]);
+  }, [isDrawing, drawingEnabled]);
 
   const stopDrawing = useCallback(() => {
     setIsDrawing(false);
@@ -101,32 +105,47 @@ function MarkerCanvas() {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 flex-wrap">
-        <div className="flex items-center gap-1">
-          {colors.map((c) => (
-            <button
-              key={c}
-              className={`w-6 h-6 rounded-full border-2 ${color === c ? 'border-primary' : 'border-transparent'}`}
-              style={{ backgroundColor: c }}
-              onClick={() => setColor(c)}
-            />
-          ))}
-        </div>
-        <select
-          value={lineWidth}
-          onChange={(e) => setLineWidth(Number(e.target.value))}
-          className="border rounded px-2 py-1 text-xs bg-background"
+        <button
+          onClick={() => setDrawingEnabled((prev) => !prev)}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+            drawingEnabled
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted text-muted-foreground'
+          }`}
         >
-          <option value={2}>Thin</option>
-          <option value={4}>Medium</option>
-          <option value={8}>Thick</option>
-        </select>
-        <Button variant="outline" size="sm" onClick={clearCanvas}>
-          <Icon name="delete" size={14} className="mr-1" /> Clear
-        </Button>
+          <Icon name={drawingEnabled ? 'draw' : 'pan_tool'} size={14} className="mr-1" />
+          {drawingEnabled ? 'Drawing On' : 'Activate Drawing'}
+        </button>
+        {drawingEnabled && (
+          <>
+            <div className="flex items-center gap-1">
+              {colors.map((c) => (
+                <button
+                  key={c}
+                  className={`w-6 h-6 rounded-full border-2 ${color === c ? 'border-primary' : 'border-transparent'}`}
+                  style={{ backgroundColor: c }}
+                  onClick={() => setColor(c)}
+                />
+              ))}
+            </div>
+            <select
+              value={lineWidth}
+              onChange={(e) => setLineWidth(Number(e.target.value))}
+              className="border rounded px-2 py-1 text-xs bg-background"
+            >
+              <option value={2}>Thin</option>
+              <option value={4}>Medium</option>
+              <option value={8}>Thick</option>
+            </select>
+            <Button variant="outline" size="sm" onClick={clearCanvas}>
+              <Icon name="delete" size={14} className="mr-1" /> Clear
+            </Button>
+          </>
+        )}
       </div>
       <canvas
         ref={canvasRef}
-        className="w-full h-[400px] border rounded-xl bg-white cursor-crosshair"
+        className={`w-full h-[400px] border rounded-xl bg-white ${drawingEnabled ? 'cursor-crosshair' : 'cursor-default'}`}
         onMouseDown={startDrawing}
         onMouseMove={draw}
         onMouseUp={stopDrawing}

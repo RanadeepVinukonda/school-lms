@@ -49,6 +49,24 @@ export default function TeacherAttendancePage() {
     enabled: !!selectedClass,
   });
 
+  const { data: todayAttendanceRecords = [] } = useQuery({
+    queryKey: ['teacher-today-attendance', selectedClass, selectedDate],
+    queryFn: async () => {
+      const res = await attendanceService.getClassAttendance(selectedClass, selectedDate);
+      return res.data || [];
+    },
+    enabled: !!selectedClass && !!selectedDate && tab === 'mark',
+  });
+
+  const alreadyMarkedIds = useMemo(() => new Set(todayAttendanceRecords.map((r: any) => r.studentId)), [todayAttendanceRecords]);
+  const studentAttendanceStatus = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const r of todayAttendanceRecords) {
+      map[r.studentId] = r.status;
+    }
+    return map;
+  }, [todayAttendanceRecords]);
+
   const { data: reportData, isLoading: reportLoading, isError: reportError, refetch: refetchReport } = useQuery({
     queryKey: ['teacher-attendance-report', selectedClass],
     queryFn: () => attendanceService.getAttendanceReport(selectedClass).then((r) => r.data),
@@ -58,9 +76,15 @@ export default function TeacherAttendancePage() {
   const markMutation = useMutation({
     mutationFn: (data: { studentIds: string[]; classId: string; date: string; status: 'present' | 'absent' | 'late' | 'holiday'; markedBy: string }) =>
       attendanceService.markAttendance(data),
-    onSuccess: () => {
-      toast.success(_('Attendance marked'));
+    onSuccess: (res: any) => {
+      if (res?.skipped) {
+        toast.info(_('Attendance already recorded for selected students'));
+      } else {
+        toast.success(_('Attendance marked'));
+      }
       setSelectedStudentIds([]);
+      queryClient.invalidateQueries({ queryKey: ['teacher-today-attendance', selectedClass, selectedDate] });
+      queryClient.invalidateQueries({ queryKey: ['teacher-attendance-report'] });
       queryClient.invalidateQueries({ queryKey: ['teacher-attendance'] });
     },
     onError: (err: any) => toast.error(err.message || _('Failed to mark attendance')),
@@ -75,18 +99,23 @@ export default function TeacherAttendancePage() {
       toast.error(_('Select a class and date'));
       return;
     }
-    if (selectedStudentIds.length === 0) {
-      toast.error(_('Select students'));
+    const newIds = selectedStudentIds.filter((id) => !alreadyMarkedIds.has(id));
+    if (newIds.length === 0) {
+      toast.info(_('Attendance already recorded for all selected students'));
       return;
     }
-    markMutation.mutate({ studentIds: selectedStudentIds, classId: selectedClass, date: selectedDate, status: attendanceStatus, markedBy: userId });
+    markMutation.mutate({ studentIds: newIds, classId: selectedClass, date: selectedDate, status: attendanceStatus, markedBy: userId });
   };
 
   const handleMarkAll = (status: 'present' | 'absent' | 'late' | 'holiday') => {
     if (!selectedClass || !selectedDate) return;
     const ids = classStudents.map((s: any) => s.id).filter(Boolean);
-    if (ids.length === 0) return;
-    markMutation.mutate({ studentIds: ids, classId: selectedClass, date: selectedDate, status, markedBy: userId });
+    const newIds = ids.filter((id: string) => !alreadyMarkedIds.has(id));
+    if (newIds.length === 0) {
+      toast.info(_('Attendance already recorded for all students'));
+      return;
+    }
+    markMutation.mutate({ studentIds: newIds, classId: selectedClass, date: selectedDate, status, markedBy: userId });
   };
 
 
@@ -155,34 +184,47 @@ export default function TeacherAttendancePage() {
                       <table className="w-full text-left">
                         <thead>
                           <tr className="border-b border-b-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
-                            <th className="px-4 py-3 w-10">
-                              <input
-                                type="checkbox"
-                                className="rounded border-border"
-                                checked={selectedStudentIds.length === classStudents.length}
-                                onChange={() => {
-                                  if (selectedStudentIds.length === classStudents.length) {
-                                    setSelectedStudentIds([]);
-                                  } else {
-                                    setSelectedStudentIds(classStudents.map((s: any) => s.id).filter(Boolean));
-                                  }
-                                }}
-                              />
-                            </th>
-                            <th className="px-4 py-3">{_('Student Name')}</th>
+                            <th className="px-4 py-3 w-10">#</th>
                             <th className="px-4 py-3">{_('Roll No')}</th>
+                            <th className="px-4 py-3">{_('Student Name')}</th>
+                            <th className="px-4 py-3 text-center">{_('Daily')}</th>
+                            <th className="px-4 py-3 text-center">{_('Monthly')}</th>
+                            <th className="px-4 py-3 text-center">%</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-border/40 text-title-sm">
-                          {classStudents.map((s: any) => (
-                            <tr key={s.id} className={`hover:bg-muted/20 transition-colors ${selectedStudentIds.includes(s.id) ? 'bg-primary/5' : ''}`}>
-                              <td className="px-4 py-3">
-                                <input type="checkbox" className="rounded border-border" checked={selectedStudentIds.includes(s.id)} onChange={() => toggleStudent(s.id)} />
-                              </td>
-                              <td className="px-4 py-3 font-semibold">{s.displayName || s.email}</td>
-                              <td className="px-4 py-3 text-muted-foreground font-mono">{s.rollNo || '-'}</td>
-                            </tr>
-                          ))}
+                          {classStudents.map((s: any, idx: number) => {
+                            const alreadyMarked = alreadyMarkedIds.has(s.id);
+                            const status = studentAttendanceStatus[s.id];
+                            return (
+                              <tr key={s.id} className={`hover:bg-muted/20 transition-colors ${alreadyMarked ? 'bg-muted/30' : selectedStudentIds.includes(s.id) ? 'bg-primary/5' : ''}`}>
+                                <td className="px-4 py-3 text-muted-foreground">{idx + 1}</td>
+                                <td className="px-4 py-3 font-mono text-muted-foreground">{s.rollNo || '-'}</td>
+                                <td className="px-4 py-3 font-semibold">{s.displayName || s.email}</td>
+                                <td className="px-4 py-3 text-center">
+                                  {alreadyMarked ? (
+                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                      status === 'present' ? 'bg-success-container text-success' :
+                                      status === 'absent' ? 'bg-error-container text-error' :
+                                      status === 'late' ? 'bg-warning-container text-warning' :
+                                      'bg-muted text-muted-foreground'
+                                    }`}>
+                                      {status}
+                                    </span>
+                                  ) : (
+                                    <input
+                                      type="checkbox"
+                                      className="rounded border-border"
+                                      checked={selectedStudentIds.includes(s.id)}
+                                      onChange={() => toggleStudent(s.id)}
+                                    />
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-center text-label-sm text-muted-foreground">&mdash;</td>
+                                <td className="px-4 py-3 text-center text-label-sm text-muted-foreground">&mdash;</td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -196,7 +238,14 @@ export default function TeacherAttendancePage() {
                 {() => (
                   <Card className="border-border/60">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-title-sm">{_('Attendance Summary')}</CardTitle>
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <CardTitle className="text-title-sm">{_('Attendance Summary')}</CardTitle>
+                        {reportData?.yearStart && (
+                          <span className="text-label-sm text-muted-foreground">
+                            {_('From')} {new Date(reportData.yearStart).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
                     </CardHeader>
                     <CardContent>
                       {(!reportData?.summary || Object.keys(reportData.summary).length === 0) ? (
@@ -206,6 +255,7 @@ export default function TeacherAttendancePage() {
                           <table className="w-full text-left">
                             <thead>
                               <tr className="border-b border-b-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
+                                <th className="px-4 py-3">#</th>
                                 <th className="px-4 py-3">{_('Student')}</th>
                                 <th className="px-4 py-3 text-center">{_('Present')}</th>
                                 <th className="px-4 py-3 text-center">{_('Absent')}</th>
@@ -216,10 +266,11 @@ export default function TeacherAttendancePage() {
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-border/40 text-title-sm">
-                              {Object.entries(reportData.summary).map(([studentId, data]: [string, any]) => {
-                                const pct = data.total > 0 ? Math.round((data.present / data.total) * 100) : 0;
+                              {Object.entries(reportData.summary).map(([studentId, data]: [string, any], idx: number) => {
+                                const pct = data.percentage ?? (data.total > 0 ? Math.round((data.present / data.total) * 100) : 0);
                                 return (
                                   <tr key={studentId} className="hover:bg-muted/20">
+                                    <td className="px-4 py-3 text-muted-foreground">{idx + 1}</td>
                                     <td className="px-4 py-3 font-semibold">{studentId.slice(0, 8)}</td>
                                     <td className="px-4 py-3 text-center font-mono text-success">{data.present}</td>
                                     <td className="px-4 py-3 text-center font-mono text-error">{data.absent}</td>

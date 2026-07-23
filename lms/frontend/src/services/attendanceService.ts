@@ -14,7 +14,8 @@ export interface AttendanceRecord {
 
 export interface AttendanceReport {
   records: AttendanceRecord[];
-  summary: Record<string, { present: number; absent: number; late: number; holiday: number; total: number }>;
+  summary: Record<string, { present: number; absent: number; late: number; holiday: number; total: number; percentage?: number }>;
+  yearStart: string | null;
 }
 
 export const attendanceService = {

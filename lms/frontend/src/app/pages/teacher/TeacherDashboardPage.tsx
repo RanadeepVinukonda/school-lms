@@ -1,10 +1,11 @@
-import { useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Link } from 'react-router-dom';
 import { motion, useInView } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
@@ -22,6 +23,7 @@ import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
 import api from '@/services/api';
+import { attendanceService } from '@/services/attendanceService';
 
 interface NeedsAttentionItem {
   icon: string; label: string; count: number;
@@ -37,6 +39,7 @@ interface DashboardData {
     studentCount: number;
     subjects?: { id: string; name: string }[];
   };
+  assignedStudents: { id: string; classId: string; displayName?: string }[];
 }
 
 function SectionTitle({ label, title }: { label: string; title: string }) {
@@ -80,6 +83,7 @@ function NeedsAttentionCard({ item }: { item: NeedsAttentionItem }) {
 export default function TeacherDashboardPage() {
   const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
+  const [selectedClassFilter, setSelectedClassFilter] = useState('');
   const QUICK_ACTIONS = [
     { icon: 'group', label: _('View Students'), link: '/teacher/students', bg: 'bg-success-container', color: 'text-success' },
     { icon: 'analytics', label: _('View Analytics'), link: '/teacher/analytics', bg: 'bg-warning-container', color: 'text-warning' },
@@ -127,7 +131,7 @@ export default function TeacherDashboardPage() {
       const lateAssignmentsCount = allAssignments.filter((a) => a.dueDate && new Date(a.dueDate) < todayDate).length;
 
       const assignedStudents = students.filter(
-        (s) => s.classId && myClassIds.includes(s.classId)
+        (s): s is typeof s & { classId: string } => !!s.classId && myClassIds.includes(s.classId)
       );
       const myStudentIds = new Set(assignedStudents.map(s => s.id));
       const gradedEntries = allGrades.filter((g) => g.percentage != null && myStudentIds.has(g.studentId));
@@ -157,6 +161,7 @@ export default function TeacherDashboardPage() {
           studentCount: teachingStudentCount,
           subjects: allSubjects.filter(s => subjectIds.includes(s.id)).map(s => ({ id: s.id, name: s.name })),
         },
+        assignedStudents: assignedStudents.map((s) => ({ id: s.id, classId: s.classId!, displayName: s.displayName })),
       };
     },
   });
@@ -185,6 +190,26 @@ export default function TeacherDashboardPage() {
     queryKey: ['teacher-skill-distribution', firstClassId],
     queryFn: () => api.get(`/adaptive/skill-distribution/${firstClassId}`).then((r) => r.data.data),
     enabled: !!firstClassId,
+  });
+
+  const { data: todayAttendanceByClass = {} } = useQuery({
+    queryKey: ['teacher-today-attendance', data?.teaching.classes.map((c: any) => c.id)],
+    queryFn: async () => {
+      const result: Record<string, any> = {};
+      const today = new Date().toISOString().slice(0, 10);
+      for (const cls of (data?.teaching.classes || [])) {
+        try {
+          const res = await attendanceService.getClassAttendance(cls.id, today);
+          const records = res.data || [];
+          result[cls.id] = records.reduce((acc: any, r: any) => {
+            acc[r.status] = (acc[r.status] || 0) + 1;
+            return acc;
+          }, { present: 0, absent: 0, late: 0, holiday: 0 });
+        } catch { result[cls.id] = { present: 0, absent: 0, late: 0, holiday: 0 }; }
+      }
+      return result;
+    },
+    enabled: !!data?.teaching.classes?.length,
   });
 
   const teacherName = user?.displayName?.split(' ')[0] ?? _('Teacher');
@@ -296,79 +321,74 @@ export default function TeacherDashboardPage() {
                 </section>
               )}
 
-              {(d.teaching.classes.length > 0 || d.teaching.textbooks.length > 0 || (d.teaching.subjects?.length ?? 0) > 0) && (
-                <section>
-                  <SectionTitle label={_('Teaching')} title={_('Your classes & resources')} />
-                  <motion.div
-                    variants={staggerContainer}
-                    initial="hidden"
-                    whileInView="show"
-                    viewport={{ once: true, margin: '-60px' }}
-                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+              <section>
+                <SectionTitle label={_('My Students')} title={_('Student overview by class')} />
+                <div className="flex gap-3 items-center flex-wrap mb-6">
+                  <select
+                    className="h-10 flex-1 min-w-[200px] px-3 rounded-lg border border-border/60 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
+                    value={selectedClassFilter}
+                    onChange={(e) => setSelectedClassFilter(e.target.value)}
                   >
-                    {d.teaching.classes.map((cls) => (
-                      <motion.div key={cls.id} variants={cardStackReveal} custom={0}>
-                        <Link
-                          to={ROUTES.TEACHER_CLASS(cls.id)}
-                          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl block"
-                        >
-                          <Card className="hover:shadow-md transition-shadow cursor-pointer h-full border-border/60">
-                            <CardContent className="p-5">
-                              <div className="flex items-start gap-4">
-                                <div className="h-12 w-12 rounded-xl bg-primary-container flex items-center justify-center shrink-0">
-                                  <Icon name="school" size={22} className="text-primary" />
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="text-title-sm font-bold">{cls.name}</p>
-                                  <p className="text-label-sm text-muted-foreground mt-1">{_('View subjects')} &rarr;</p>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </Link>
-                      </motion.div>
+                    <option value="">{_('All Classes')}</option>
+                    {d.teaching.classes.map((cls: any) => (
+                      <option key={cls.id} value={cls.id}>{cls.name}</option>
                     ))}
-                    {d.teaching.textbooks.length > 0 && (
-                      <motion.div variants={cardStackReveal} custom={0}>
-                        <Link to={ROUTES.TEACHER_TEXTBOOKS} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl block">
-                          <Card className="hover:shadow-md transition-shadow cursor-pointer h-full border-border/60">
-                            <CardContent className="p-5">
-                              <div className="flex items-start gap-4">
-                                <div className="h-12 w-12 rounded-xl bg-secondary-container flex items-center justify-center shrink-0">
-                                  <Icon name="menu_book" size={22} className="text-secondary" />
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="text-title-sm font-bold">{_('All Textbooks')}</p>
-                                  <p className="text-label-sm text-muted-foreground mt-1">{d.teaching.textbooks.length} {_('textbook')}{d.teaching.textbooks.length > 1 ? _('s') : ''}</p>
-                                </div>
+                  </select>
+                </div>
+                <motion.div
+                  variants={staggerContainer}
+                  initial="hidden"
+                  whileInView="show"
+                  viewport={{ once: true, margin: '-60px' }}
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                >
+                  {d.teaching.classes.filter((cls: any) => !selectedClassFilter || cls.id === selectedClassFilter).map((cls: any) => {
+                    const classStudents = d.assignedStudents.filter((s: any) => s.classId === cls.id);
+                    const totalStudents = classStudents.length;
+                    const presentCount = todayAttendanceByClass[cls.id]?.present ?? 0;
+                    const absentCount = todayAttendanceByClass[cls.id]?.absent ?? 0;
+                    return (
+                      <motion.div key={cls.id} variants={cardStackReveal} custom={0}>
+                        <Card className="border-border/60 hover:shadow-md transition-shadow">
+                          <CardContent className="p-5">
+                            <div className="flex items-start gap-4">
+                              <div className="h-12 w-12 rounded-xl bg-primary-container flex items-center justify-center shrink-0">
+                                <Icon name="school" size={22} className="text-primary" />
                               </div>
-                            </CardContent>
-                          </Card>
-                        </Link>
-                      </motion.div>
-                    )}
-                    {d.teaching.studentCount > 0 && (
-                      <motion.div variants={cardStackReveal} custom={0}>
-                        <Link to={ROUTES.TEACHER_STUDENTS} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl block">
-                          <Card className="hover:shadow-md transition-shadow cursor-pointer h-full border-border/60">
-                            <CardContent className="p-5">
-                              <div className="flex items-start gap-4">
-                                <div className="h-12 w-12 rounded-xl bg-success-container flex items-center justify-center shrink-0">
-                                  <Icon name="group" size={22} className="text-success" />
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="text-title-sm font-bold">{_('My Students')}</p>
-                                  <p className="text-label-sm text-muted-foreground mt-1">{d.teaching.studentCount} {_('student')}{d.teaching.studentCount > 1 ? _('s') : ''}</p>
-                                </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-title-sm font-bold">{cls.name}</p>
+                                <p className="text-label-sm text-muted-foreground">{totalStudents} students</p>
                               </div>
-                            </CardContent>
-                          </Card>
-                        </Link>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 mt-4">
+                              <div className="p-3 rounded-lg bg-success-container/30 text-center">
+                                <p className="text-display-xs font-bold text-success">{presentCount}</p>
+                                <p className="text-label-xs text-muted-foreground">Present</p>
+                              </div>
+                              <div className="p-3 rounded-lg bg-error-container/30 text-center">
+                                <p className="text-display-xs font-bold text-error">{absentCount}</p>
+                                <p className="text-label-xs text-muted-foreground">Absent</p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2 mt-4">
+                              <Link to={`/teacher/students?classId=${cls.id}`} className="flex-1">
+                                <Button variant="outline" size="sm" className="w-full">
+                                  <Icon name="group" size={14} className="mr-1" /> View Students
+                                </Button>
+                              </Link>
+                              <Link to={`/teacher/analytics?classId=${cls.id}`} className="flex-1">
+                                <Button variant="outline" size="sm" className="w-full">
+                                  <Icon name="analytics" size={14} className="mr-1" /> Analytics
+                                </Button>
+                              </Link>
+                            </div>
+                          </CardContent>
+                        </Card>
                       </motion.div>
-                    )}
-                  </motion.div>
-                </section>
-              )}
+                    );
+                  })}
+                </motion.div>
+              </section>
 
               <section>
                 <SectionTitle label={_('Actions')} title={_('Quick tasks')} />

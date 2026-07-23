@@ -117,6 +117,7 @@ export default function TeacherOCRPage() {
   const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const userId = user?.id || 'anonymous';
+  const [useTextInput, setUseTextInput] = useState(false);
   
   const emptyMessages = useMemo(() => [] as ChatMsg[], []);
   const messages = useChatStore((s) => s.teacherOcrMessages[userId] || emptyMessages);
@@ -310,7 +311,7 @@ export default function TeacherOCRPage() {
           </CardContent>
 
           <div className="border-t border-border/60 p-4 bg-muted/20">
-            {pendingImages.length > 0 && (
+            {!useTextInput && pendingImages.length > 0 && (
               <div className="flex gap-2 mb-3 flex-wrap">
                 {pendingImages.map((url, i) => (
                   <div key={i} className="relative group">
@@ -320,23 +321,51 @@ export default function TeacherOCRPage() {
                 ))}
               </div>
             )}
-            <div className="flex items-center gap-2">
-              <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileSelect} />
-              <Button variant="outline" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
-                <Icon name="image" size={18} />
-              </Button>
-              <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder={_('Type your request or upload images first...')}
-                disabled={isLoading}
-                className="flex-1"
-              />
-              <Button onClick={handleSend} loading={isLoading} disabled={isLoading || (!input.trim() && pendingFiles.length === 0)}>
-                <Icon name="send" size={18} />
-              </Button>
+            <div className="flex items-center gap-2 mb-2">
+              <button
+                onClick={() => setUseTextInput((p) => !p)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${useTextInput ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+              >
+                <Icon name={useTextInput ? 'edit_note' : 'image'} size={14} className="mr-1" />
+                {useTextInput ? _('Text Mode') : _('Image Mode')}
+              </button>
             </div>
+            {useTextInput ? (
+              <div className="space-y-2">
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={_('e.g. "Generate 20 questions on Polynomials" or "Create 10 MCQs on Photosynthesis"')}
+                  disabled={isLoading}
+                  rows={4}
+                  className="w-full px-3 py-2 rounded-lg border border-border/60 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                />
+                <div className="flex gap-2">
+                  <Button onClick={handleSend} loading={isLoading} disabled={isLoading || !input.trim()} className="flex-1">
+                    <Icon name="auto_awesome" size={16} className="mr-1.5" />
+                    {_('Generate')}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileSelect} />
+                <Button variant="outline" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
+                  <Icon name="image" size={18} />
+                </Button>
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                  placeholder={_('Type your request or upload images first...')}
+                  disabled={isLoading}
+                  className="flex-1"
+                />
+                <Button onClick={handleSend} loading={isLoading} disabled={isLoading || (!input.trim() && pendingFiles.length === 0)}>
+                  <Icon name="send" size={18} />
+                </Button>
+              </div>
+            )}
           </div>
         </Card>
       </div>

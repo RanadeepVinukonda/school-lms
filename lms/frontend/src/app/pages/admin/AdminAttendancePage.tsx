@@ -94,7 +94,14 @@ export default function AdminAttendancePage() {
 
                 <Card className="border-border/60">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-title-sm">Attendance Summary</CardTitle>
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <CardTitle className="text-title-sm">Attendance Summary</CardTitle>
+                      {reportData?.yearStart && (
+                        <span className="text-label-sm text-muted-foreground">
+                          Filtered from {new Date(reportData.yearStart).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
                   </CardHeader>
                   <CardContent>
                     {(!reportData?.summary || Object.keys(reportData.summary).length === 0) ? (
@@ -104,6 +111,7 @@ export default function AdminAttendancePage() {
                         <table className="w-full text-left">
                           <thead>
                             <tr className="border-b border-b-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
+                              <th className="px-4 py-3">#</th>
                               <th className="px-4 py-3">Student</th>
                               <th className="px-4 py-3 text-center">Present</th>
                               <th className="px-4 py-3 text-center">Absent</th>
@@ -114,11 +122,12 @@ export default function AdminAttendancePage() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-border/40 text-title-sm">
-                            {Object.entries(reportData.summary).map(([studentId, data]: [string, any]) => {
+                            {Object.entries(reportData.summary).map(([studentId, data]: [string, any], idx: number) => {
                               const student = usersData.find((u) => u.id === studentId);
-                              const pct = data.total > 0 ? Math.round((data.present / data.total) * 100) : 0;
+                              const pct = data.percentage ?? (data.total > 0 ? Math.round((data.present / data.total) * 100) : 0);
                               return (
                                 <tr key={studentId} className="hover:bg-muted/20">
+                                  <td className="px-4 py-3 text-muted-foreground">{idx + 1}</td>
                                   <td className="px-4 py-3 font-semibold">{student?.displayName || studentId}</td>
                                   <td className="px-4 py-3 text-center font-mono text-success">{data.present}</td>
                                   <td className="px-4 py-3 text-center font-mono text-error">{data.absent}</td>

@@ -3,10 +3,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from './supabase';
 import { logger } from '../utils/logger';
 import { createBulkNotifications } from './notification.service';
+import { getCurrentAcademicYear } from './academic-year.service';
 
 // ── Public API ───────────────────────────────────────────
 
-/** Mark attendance for multiple students with upsert logic and parent notifications. */
+/** Mark attendance for multiple students with duplicate rejection and parent notifications. */
 export async function markAttendance(data: {
   studentIds: string[];
   classId: string;
@@ -30,23 +31,24 @@ export async function markAttendance(data: {
 
   for (const studentId of data.studentIds) {
     if (existingStudentIds.has(studentId)) {
-      const { error: updateError } = await supabase
-        .from('attendance')
-        .update({ status: data.status, marked_by: data.markedBy, note: data.note || '', marked_at: now, updated_at: now })
-        .eq('student_id', studentId).eq('class_id', data.classId).eq('date', data.date);
-      if (updateError) throw updateError;
-    } else {
-      const { error: insertError } = await supabase.from('attendance').insert({
-        id: uuidv4(), student_id: studentId, class_id: data.classId,
-        date: data.date, status: data.status, marked_by: data.markedBy,
-        note: data.note || '', marked_at: now, created_at: now, updated_at: now,
-      });
-      if (insertError) throw insertError;
+      // Skip — attendance already recorded for this student on this date
+      logger.info('Duplicate attendance skipped', { studentId, classId: data.classId, date: data.date });
+      continue;
     }
+    const { error: insertError } = await supabase.from('attendance').insert({
+      id: uuidv4(), student_id: studentId, class_id: data.classId,
+      date: data.date, status: data.status, marked_by: data.markedBy,
+      note: data.note || '', marked_at: now, created_at: now, updated_at: now,
+    });
+    if (insertError) throw insertError;
     records.push({ studentId, classId: data.classId, date: data.date, status: data.status, markedBy: data.markedBy });
   }
 
   logger.info('Attendance marked', { classId: data.classId, date: data.date, count: records.length });
+
+  if (records.length === 0) {
+    return { skipped: true, message: 'Attendance already recorded for all selected students' };
+  }
 
   // Send attendance notification to parents (non-blocking)
   try {
@@ -96,17 +98,30 @@ export async function getStudentAttendance(studentId: string) {
   return records;
 }
 
-/** Get summary report for a class. */
+/** Get summary report for a class, filtered by academic year start date. */
 export async function getAttendanceReport(classId: string) {
   const records = await getClassAttendance(classId);
-  const summary: Record<string, { present: number; absent: number; late: number; holiday: number; total: number }> = {};
-  for (const r of records) {
+
+  const currentYear = await getCurrentAcademicYear();
+  const yearStart = currentYear?.startDate ? new Date(currentYear.startDate as string) : null;
+
+  const filteredRecords = yearStart
+    ? records.filter((r: any) => !r.date || new Date(r.date) >= yearStart)
+    : records;
+
+  const summary: Record<string, { present: number; absent: number; late: number; holiday: number; total: number; percentage: number }> = {};
+  for (const r of filteredRecords) {
     const sid = r.studentId;
-    if (!summary[sid]) summary[sid] = { present: 0, absent: 0, late: 0, holiday: 0, total: 0 };
+    if (!summary[sid]) summary[sid] = { present: 0, absent: 0, late: 0, holiday: 0, total: 0, percentage: 0 };
     summary[sid][r.status as 'present' | 'absent' | 'late' | 'holiday']++;
     summary[sid].total++;
   }
-  return { records, summary };
+  for (const sid of Object.keys(summary)) {
+    const s = summary[sid];
+    s.percentage = s.total > 0 ? Math.round((s.present / s.total) * 100) : 0;
+  }
+
+  return { records: filteredRecords, summary, yearStart: yearStart?.toISOString() || null };
 }
 
 /** Export attendance as CSV. */
