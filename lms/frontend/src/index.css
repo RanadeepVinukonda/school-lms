@@ -266,6 +266,11 @@
   html {
     scroll-behavior: smooth;
     touch-action: pan-x pan-y;
+    color-scheme: light;
+  }
+
+  .dark {
+    color-scheme: dark;
   }
 
   body {

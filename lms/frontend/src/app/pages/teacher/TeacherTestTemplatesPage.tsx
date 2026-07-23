@@ -219,14 +219,14 @@ export default function TeacherTestTemplatesPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm font-medium">{_('Class')}</label>
-                  <select value={classId} onChange={(e) => { setClassId(e.target.value); setSubjectId(''); setTextbookId(''); setChapterId(''); }} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1">
+                  <select value={classId} onChange={(e) => { setClassId(e.target.value); setSubjectId(''); setTextbookId(''); setChapterId(''); }} className="w-full border rounded-lg px-3 py-2 text-sm bg-background text-foreground mt-1">
                     <option value="">{_('Select class...')}</option>
                     {classOptions.map((c: any) => <option key={c.id} value={c.id}>{c.name}{c.section ? ` - ${c.section}` : ''}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-sm font-medium">{_('Subject')}</label>
-                  <select value={subjectId} onChange={(e) => { setSubjectId(e.target.value); setTextbookId(''); setChapterId(''); }} disabled={!classId} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1">
+                  <select value={subjectId} onChange={(e) => { setSubjectId(e.target.value); setTextbookId(''); setChapterId(''); }} disabled={!classId} className="w-full border rounded-lg px-3 py-2 text-sm bg-background text-foreground mt-1">
                     <option value="">{_('Select subject...')}</option>
                     {subjectOptions.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
@@ -236,14 +236,14 @@ export default function TeacherTestTemplatesPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm font-medium">{_('Textbook (optional)')}</label>
-                  <select value={textbookId} onChange={(e) => { setTextbookId(e.target.value); setChapterId(''); }} disabled={!subjectId} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1">
+                  <select value={textbookId} onChange={(e) => { setTextbookId(e.target.value); setChapterId(''); }} disabled={!subjectId} className="w-full border rounded-lg px-3 py-2 text-sm bg-background text-foreground mt-1">
                     <option value="">{_('All textbooks')}</option>
                     {(textbooks ?? []).map((t: any) => <option key={t.id} value={t.id}>{t.title}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-sm font-medium">{_('Chapter (optional)')}</label>
-                  <select value={chapterId} onChange={(e) => setChapterId(e.target.value)} disabled={!textbookId} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1">
+                  <select value={chapterId} onChange={(e) => setChapterId(e.target.value)} disabled={!textbookId} className="w-full border rounded-lg px-3 py-2 text-sm bg-background text-foreground mt-1">
                     <option value="">{_('All chapters')}</option>
                     {(chapters ?? []).map((ch: any) => <option key={ch.id} value={ch.id}>{_('Chapter')} {ch.order}: {ch.title}</option>)}
                   </select>

@@ -8,6 +8,8 @@ import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Icon } from '@/components/ui/Icon';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
@@ -86,19 +88,17 @@ export default function StudentMindMapsPage() {
                   <DialogTitle>{_('Create New Mind Map')}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 pt-4">
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">{_('Title')}</label>
-                    <input
-                      className="w-full px-3 py-2 border rounded-lg text-sm"
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium block">{_('Title')}</label>
+                    <Input
                       placeholder={_('Enter title...')}
                       value={newTitle}
                       onChange={(e) => setNewTitle(e.target.value)}
                     />
                   </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">{_('Description (optional)')}</label>
-                    <textarea
-                      className="w-full px-3 py-2 border rounded-lg text-sm"
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium block">{_('Description (optional)')}</label>
+                    <Textarea
                       placeholder={_('Enter description...')}
                       rows={3}
                       value={newDesc}
@@ -120,9 +120,9 @@ export default function StudentMindMapsPage() {
         </motion.div>
 
         <div className="relative max-w-md">
-          <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input
-            className="w-full pl-10 pr-4 py-2 border rounded-lg text-sm"
+          <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground z-10" />
+          <Input
+            className="pl-10"
             placeholder={_('Search mind maps...')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}

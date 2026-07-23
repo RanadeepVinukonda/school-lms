@@ -639,7 +639,7 @@ export default function TeacherUnifiedTestPage() {
                                 updated[i] = { ...updated[i], difficulty: e.target.value };
                                 setReviewQuestions(updated);
                               }}
-                              className="text-[10px] border rounded px-1 py-0.5 bg-background"
+                              className="text-[10px] border rounded px-1 py-0.5 bg-background text-foreground"
                             >
                               <option value="easy">Easy</option>
                               <option value="medium">Medium</option>
@@ -653,7 +653,7 @@ export default function TeacherUnifiedTestPage() {
                                 updated[i] = { ...updated[i], points: Number(e.target.value) };
                                 setReviewQuestions(updated);
                               }}
-                              className="text-[10px] border rounded px-1 py-0.5 w-12 bg-background"
+                              className="text-[10px] border rounded px-1 py-0.5 w-12 bg-background text-foreground"
                               min={1}
                             />
                             <span className="text-[10px] text-muted-foreground">pts</span>
@@ -691,7 +691,7 @@ export default function TeacherUnifiedTestPage() {
                                       updated[i] = { ...updated[i], options: newOpts };
                                       setReviewQuestions(updated);
                                     }}
-                                    className="text-xs border rounded px-1 py-0.5 flex-1 bg-background"
+                                    className="text-xs border rounded px-1 py-0.5 flex-1 bg-background text-foreground"
                                   />
                                   <button
                                     onClick={() => {
@@ -727,7 +727,7 @@ export default function TeacherUnifiedTestPage() {
                                 updated[i] = { ...updated[i], correctAnswer: e.target.value };
                                 setReviewQuestions(updated);
                               }}
-                              className="text-xs border rounded px-1 py-0.5 flex-1 bg-background"
+                              className="text-xs border rounded px-1 py-0.5 flex-1 bg-background text-foreground"
                               placeholder="Correct answer"
                             />
                           </div>

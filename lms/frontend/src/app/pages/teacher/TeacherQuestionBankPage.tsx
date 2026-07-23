@@ -66,18 +66,18 @@ function QuestionForm({ initial, onSave, loading }: { initial?: any; onSave: (da
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="text-sm font-medium">{_('Question Text')}</label>
-        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1" placeholder={_('Enter question text...')} />
+        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} className="w-full border rounded-lg px-3 py-2 text-sm bg-background text-foreground mt-1" placeholder={_('Enter question text...')} />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="text-sm font-medium">{_('Type')}</label>
-          <select value={type} onChange={(e) => setType(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1">
+          <select value={type} onChange={(e) => setType(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm bg-background text-foreground mt-1">
             {QUESTION_TYPES.map((t) => <option key={t.value} value={t.value}>{_(t.label)}</option>)}
           </select>
         </div>
         <div>
           <label className="text-sm font-medium">{_('Difficulty')}</label>
-          <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1">
+          <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm bg-background text-foreground mt-1">
             {DIFFICULTIES.map((d) => <option key={d} value={d}>{_(d.charAt(0).toUpperCase() + d.slice(1))}</option>)}
           </select>
         </div>
@@ -85,14 +85,14 @@ function QuestionForm({ initial, onSave, loading }: { initial?: any; onSave: (da
       {type === 'multiple_choice' && (
         <div>
           <label className="text-sm font-medium">{_('Options (one per line)')}</label>
-          <textarea value={options} onChange={(e) => setOptions(e.target.value)} rows={4} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1" placeholder={_('Option A\nOption B\nOption C\nOption D')} />
+          <textarea value={options} onChange={(e) => setOptions(e.target.value)} rows={4} className="w-full border rounded-lg px-3 py-2 text-sm bg-background text-foreground mt-1" placeholder={_('Option A\nOption B\nOption C\nOption D')} />
         </div>
       )}
       {type === 'matching' && (
         <div>
           <label className="text-sm font-medium">{_('Matching Pairs')}</label>
           <p className="text-xs text-muted-foreground mt-0.5 mb-2">{_('Enter one pair per line using Left - Right format:')}</p>
-          <textarea value={options} onChange={(e) => setOptions(e.target.value)} rows={4} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1 font-mono" placeholder={_('Combing - Hair care\nEating - Consuming food\nPlaying - Having fun')} />
+          <textarea value={options} onChange={(e) => setOptions(e.target.value)} rows={4} className="w-full border rounded-lg px-3 py-2 text-sm bg-background text-foreground mt-1 font-mono" placeholder={_('Combing - Hair care\nEating - Consuming food\nPlaying - Having fun')} />
           <p className="text-xs text-muted-foreground mt-1">
             {_('Correct Answer format (e.g., Combing:Hair care|Eating:Consuming food|Playing:Having fun)')}
           </p>
@@ -111,7 +111,7 @@ function QuestionForm({ initial, onSave, loading }: { initial?: any; onSave: (da
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div>
           <label className="text-sm font-medium">{_('Bloom\'s Level')}</label>
-          <select value={bloomLevel} onChange={(e) => setBloomLevel(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1">
+          <select value={bloomLevel} onChange={(e) => setBloomLevel(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm bg-background text-foreground mt-1">
             <option value="">{_('None')}</option>
             {BLOOM_LEVELS.map((l) => <option key={l} value={l}>{_(l)}</option>)}
           </select>
@@ -125,12 +125,12 @@ function QuestionForm({ initial, onSave, loading }: { initial?: any; onSave: (da
         </div>
         <div>
           <label className="text-sm font-medium">{_('Source')}</label>
-          <input value={source} onChange={(e) => setSource(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1" placeholder={_('e.g. Manual, AI Upload')} />
+          <input value={source} onChange={(e) => setSource(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm bg-background text-foreground mt-1" placeholder={_('e.g. Manual, AI Upload')} />
         </div>
       </div>
       <div>
         <label className="text-sm font-medium">{_('Explanation (optional)')}</label>
-        <textarea value={explanation} onChange={(e) => setExplanation(e.target.value)} rows={2} className="w-full border rounded-lg px-3 py-2 text-sm bg-background mt-1" placeholder={_('Explain the answer...')} />
+        <textarea value={explanation} onChange={(e) => setExplanation(e.target.value)} rows={2} className="w-full border rounded-lg px-3 py-2 text-sm bg-background text-foreground mt-1" placeholder={_('Explain the answer...')} />
       </div>
       <Button type="submit" disabled={loading}>{_(initial ? 'Update' : 'Create')} {_('Question')}</Button>
     </form>
@@ -204,24 +204,25 @@ export default function TeacherQuestionBankPage() {
         <motion.div variants={cardStackReveal} custom={0}>
           <div className="flex flex-wrap gap-2">
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={_('Search questions...')} className="max-w-xs" />
-            <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background">
+            <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background text-foreground">
               <option value="">{_('All Types')}</option>
               {QUESTION_TYPES.map((t) => <option key={t.value} value={t.value}>{_(t.label)}</option>)}
             </select>
-            <select value={diffFilter} onChange={(e) => setDiffFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background">
+            <select value={diffFilter} onChange={(e) => setDiffFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background text-foreground">
               <option value="">{_('All Difficulties')}</option>
               {DIFFICULTIES.map((d) => <option key={d} value={d}>{_(d.charAt(0).toUpperCase() + d.slice(1))}</option>)}
             </select>
-            <select value={bloomFilter} onChange={(e) => setBloomFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background">
+            <select value={bloomFilter} onChange={(e) => setBloomFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background text-foreground">
               <option value="">{_('All Bloom Levels')}</option>
               {BLOOM_LEVELS.map((l) => <option key={l} value={l}>{_(l)}</option>)}
             </select>
-            <select value={hotsFilter} onChange={(e) => setHotsFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background">
-              <option value="">{_('All HOTS')}</option>
-              <option value="true">{_('HOTS Only')}</option>
-              <option value="false">{_('Non-HOTS')}</option>
+            <select value={hotsFilter} onChange={(e) => setHotsFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background text-foreground">
+              <option value="">{_('HOTS Filter')}</option>
+              <option value="all">{_('All')}</option>
+              <option value="hots">{_('HOTS')}</option>
+              <option value="non-hots">{_('Non-HOTS')}</option>
             </select>
-            <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background">
+            <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background text-foreground">
               <option value="">{_('All Sources')}</option>
               <option value="Manual">{_('Manual')}</option>
               <option value="AI Textbook Upload">{_('AI Textbook Upload')}</option>

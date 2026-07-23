@@ -107,7 +107,7 @@ export default function TeacherMindMapEditorPage() {
                     <Icon name="arrow_back" size={20} />
                   </Button>
                   <input
-                    className="text-headline-sm font-bold bg-transparent border-none outline-none flex-1 min-w-0"
+                    className="text-headline-sm font-bold text-foreground bg-transparent border-none outline-none flex-1 min-w-0"
                     value={title}
                     onChange={(e) => { setTitle(e.target.value); setDirty(true); }}
                   />
@@ -128,7 +128,7 @@ export default function TeacherMindMapEditorPage() {
                         <div>
                           <label className="text-sm font-medium mb-1 block">{_('Node ID')}</label>
                           <select
-                            className="w-full px-3 py-2 border rounded-lg text-sm"
+                            className="w-full px-3 py-2 border rounded-lg text-sm bg-background text-foreground"
                             value={pinNodeId}
                             onChange={(e) => setPinNodeId(e.target.value)}
                           >
@@ -141,7 +141,7 @@ export default function TeacherMindMapEditorPage() {
                         <div>
                           <label className="text-sm font-medium mb-1 block">{_('Resource ID')}</label>
                           <input
-                            className="w-full px-3 py-2 border rounded-lg text-sm"
+                            className="w-full px-3 py-2 border rounded-lg text-sm bg-background text-foreground"
                             placeholder={_('Enter resource ID...')}
                             value={pinResourceId}
                             onChange={(e) => setPinResourceId(e.target.value)}
@@ -150,7 +150,7 @@ export default function TeacherMindMapEditorPage() {
                         <div>
                           <label className="text-sm font-medium mb-1 block">{_('Resource Type')}</label>
                           <select
-                            className="w-full px-3 py-2 border rounded-lg text-sm"
+                            className="w-full px-3 py-2 border rounded-lg text-sm bg-background text-foreground"
                             value={pinResourceType}
                             onChange={(e) => setPinResourceType(e.target.value as any)}
                           >
@@ -185,7 +185,7 @@ export default function TeacherMindMapEditorPage() {
                         <div>
                           <label className="text-sm font-medium mb-1 block">{_('Share with (user IDs)')}</label>
                           <input
-                            className="w-full px-3 py-2 border rounded-lg text-sm"
+                            className="w-full px-3 py-2 border rounded-lg text-sm bg-background text-foreground"
                             placeholder={_('Enter IDs, comma separated')}
                             value={shareInput}
                             onChange={(e) => setShareInput(e.target.value)}

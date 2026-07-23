@@ -71,7 +71,7 @@ export default function TeacherResultsPushPage() {
               <select
                 value={selectedClassId}
                 onChange={(e) => setSelectedClassId(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 text-sm bg-background"
+                className="w-full border rounded-lg px-3 py-2 text-sm bg-background text-foreground"
               >
                 <option value="">{_('Choose a class...')}</option>
                 {classes.map((c: any) => (

@@ -130,7 +130,7 @@ export default function TeacherAnalyticsPage() {
               <select
                 value={selectedClassId}
                 onChange={(e) => setSelectedClassId(e.target.value)}
-                className="border rounded-lg px-3 py-2 text-sm bg-background"
+                className="border rounded-lg px-3 py-2 text-sm bg-background text-foreground"
               >
                 <option value="">{_('Select a class...')}</option>
                 {classes.map((c: any) => (

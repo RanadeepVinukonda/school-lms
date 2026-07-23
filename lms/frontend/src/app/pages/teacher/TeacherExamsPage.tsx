@@ -680,7 +680,7 @@ export default function TeacherExamsPage() {
                           Q{i + 1}
                         </span>
                         <input
-                          className="flex-1 bg-background border border-border rounded px-2 py-1 text-sm"
+                          className="flex-1 bg-background text-foreground border border-border rounded px-2 py-1 text-sm"
                           value={q.text || q.question || ''}
                           onChange={(e) => {
                             const updated = [...reviewQuestions];
@@ -699,7 +699,7 @@ export default function TeacherExamsPage() {
                             <div key={oi} className="flex items-center gap-2">
                               <span className="text-label-xs text-muted-foreground w-4">{String.fromCharCode(65 + oi)}.</span>
                               <input
-                                className="flex-1 bg-background border border-border rounded px-2 py-1 text-sm"
+                                className="flex-1 bg-background text-foreground border border-border rounded px-2 py-1 text-sm"
                                 value={opt}
                                 onChange={(e) => {
                                   const updated = [...reviewQuestions];
@@ -719,7 +719,7 @@ export default function TeacherExamsPage() {
                           <span className="text-label-xs text-muted-foreground">{_('Points')}:</span>
                           <input
                             type="number"
-                            className="w-16 bg-background border border-border rounded px-2 py-1 text-sm"
+                            className="w-16 bg-background text-foreground border border-border rounded px-2 py-1 text-sm"
                             value={q.points ?? 1}
                             onChange={(e) => {
                               const updated = [...reviewQuestions];
@@ -731,7 +731,7 @@ export default function TeacherExamsPage() {
                         <div className="flex items-center gap-2 flex-1">
                           <span className="text-label-xs text-muted-foreground">{_('Answer')}:</span>
                           <input
-                            className="flex-1 bg-background border border-border rounded px-2 py-1 text-sm"
+                            className="flex-1 bg-background text-foreground border border-border rounded px-2 py-1 text-sm"
                             value={q.correctAnswer || q.answer || ''}
                             onChange={(e) => {
                               const updated = [...reviewQuestions];

@@ -131,7 +131,7 @@ function MarkerCanvas() {
             <select
               value={lineWidth}
               onChange={(e) => setLineWidth(Number(e.target.value))}
-              className="border rounded px-2 py-1 text-xs bg-background"
+              className="border rounded px-2 py-1 text-xs bg-background text-foreground"
             >
               <option value={2}>Thin</option>
               <option value={4}>Medium</option>

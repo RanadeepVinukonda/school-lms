@@ -49,11 +49,11 @@ export default function TeacherPreviousYearQPage() {
         <motion.div variants={cardStackReveal} custom={0}>
           <div className="flex flex-wrap gap-2">
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={_('Search PYQs...')} className="max-w-xs" />
-            <select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background">
+            <select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background text-foreground">
               <option value="">{_('All Years')}</option>
               {years.map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
-            <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background">
+            <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-background text-foreground">
               <option value="">{_('All Types')}</option>
               <option value="multiple_choice">{_('Multiple Choice')}</option>
               <option value="true_false">{_('True/False')}</option>
