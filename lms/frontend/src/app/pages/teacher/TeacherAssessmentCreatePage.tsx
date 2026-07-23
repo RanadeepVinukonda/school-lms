@@ -1165,7 +1165,10 @@ export default function TeacherAssessmentCreatePage() {
                                         );
                                       })}
                                       <td className="text-center px-2 py-2 font-semibold">
-                                        {Object.values(quizDistribution[diff] || {}).reduce((s: number, v: any) => s + (v || 0), 0)}
+                                        {quizActiveTypes.reduce((sum, m) => {
+                                          const t = m.value === 'multiple_choice' ? 'mcq' : m.value;
+                                          return sum + (quizDistribution[diff]?.[t] ?? 0);
+                                        }, 0)}
                                       </td>
                                     </tr>
                                   ))}
@@ -1528,7 +1531,10 @@ export default function TeacherAssessmentCreatePage() {
                                         );
                                       })}
                                       <td className="text-center px-2 py-2 font-semibold">
-                                        {Object.values(assignmentDistribution[diff] || {}).reduce((s: number, v: any) => s + (v || 0), 0)}
+                                        {assignActiveTypes.reduce((sum, m) => {
+                                          const t = m.value === 'multiple_choice' ? 'mcq' : m.value;
+                                          return sum + (assignmentDistribution[diff]?.[t] ?? 0);
+                                        }, 0)}
                                       </td>
                                     </tr>
                                   ))}

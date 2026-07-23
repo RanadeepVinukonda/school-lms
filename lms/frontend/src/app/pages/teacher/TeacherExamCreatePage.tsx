@@ -839,7 +839,10 @@ export default function TeacherExamCreatePage() {
                               );
                             })}
                             <td className="text-center px-2 py-2 font-semibold">
-                              {Object.values(distribution[diff] || {}).reduce((s: number, v: any) => s + (v || 0), 0)}
+                              {activeTypes.reduce((sum, m) => {
+                                const t = m.value === 'multiple_choice' ? 'mcq' : m.value;
+                                return sum + (distribution[diff]?.[t] ?? 0);
+                              }, 0)}
                             </td>
                           </tr>
                         ))}
