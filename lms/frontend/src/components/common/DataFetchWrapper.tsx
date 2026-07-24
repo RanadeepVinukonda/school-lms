@@ -15,6 +15,36 @@ interface DataFetchWrapperProps<T> {
   children: (data: NonNullable<T>) => React.ReactNode;
 }
 
+function categorizeError(error: Error): { title: string; message: string } {
+  const msg = error.message || '';
+  const statusMatch = msg.match(/\b(\d{3})\b/);
+  const status = statusMatch ? parseInt(statusMatch[1], 10) : 0;
+
+  if (msg.includes('Network Error') || msg.includes('ERR_NETWORK') || msg.includes('ERR_CONNECTION')) {
+    return { title: 'Server Unavailable', message: 'Cannot connect to the server. Check your internet connection.' };
+  }
+  if (msg.includes('timeout') || msg.includes('TIMEOUT') || msg.includes('ERR_TIMEOUT')) {
+    return { title: 'Request Timeout', message: 'The server took too long to respond. Please try again.' };
+  }
+  if (msg.includes('CORS') || msg.includes('not allowed by CORS')) {
+    return { title: 'Access Blocked', message: 'Request blocked by security policy. Contact support.' };
+  }
+  if (status === 401 || msg.includes('Unauthorized') || msg.includes('SESSION_EXPIRED')) {
+    return { title: 'Authentication Failed', message: 'Your session has expired. Please sign in again.' };
+  }
+  if (status === 403 || msg.includes('Forbidden')) {
+    return { title: 'Access Denied', message: 'You do not have permission to access this resource.' };
+  }
+  if (status === 404 || msg.includes('not found') || msg.includes('Not Found')) {
+    return { title: 'Not Found', message: 'The requested resource was not found.' };
+  }
+  if (status >= 500 || msg.includes('Internal Server Error') || msg.includes('Database')) {
+    return { title: 'Server Error', message: 'The server encountered an error. Please try again later.' };
+  }
+
+  return { title: 'Failed to load data', message: msg || 'An unexpected error occurred' };
+}
+
 export function DataFetchWrapper<T>({
   data,
   isLoading,
@@ -32,10 +62,11 @@ export function DataFetchWrapper<T>({
   }
 
   if (error) {
+    const categorized = categorizeError(error);
     return (
       <ErrorState
-        title={errorTitle || 'Failed to load data'}
-        message={error.message || 'An unexpected error occurred'}
+        title={errorTitle || categorized.title}
+        message={error.message || categorized.message}
         onRetry={onRetry}
       />
     );
