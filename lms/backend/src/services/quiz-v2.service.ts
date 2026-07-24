@@ -745,6 +745,25 @@ export async function listQuizzesForClass(classId: string, _schoolId?: string, s
     })
   );
 
+  const chapterIds = [...new Set(resolvedItems.map((q: any) => q.chapterId).filter(Boolean))];
+  const conceptIds = [...new Set(resolvedItems.map((q: any) => q.conceptId).filter(Boolean))];
+  const chapterMap = new Map<string, string>();
+  const conceptMap = new Map<string, string>();
+
+  if (chapterIds.length > 0) {
+    const { data } = await supabase.from('chapters').select('id, title').in('id', chapterIds);
+    (data || []).forEach((r: any) => chapterMap.set(r.id, r.title));
+  }
+  if (conceptIds.length > 0) {
+    const { data } = await supabase.from('concepts').select('id, title').in('id', conceptIds);
+    (data || []).forEach((r: any) => conceptMap.set(r.id, r.title));
+  }
+
+  for (const q of resolvedItems) {
+    if (q.chapterId && chapterMap.has(q.chapterId)) q.chapterTitle = chapterMap.get(q.chapterId);
+    if (q.conceptId && conceptMap.has(q.conceptId)) q.conceptTitle = conceptMap.get(q.conceptId);
+  }
+
   return resolvedItems.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 

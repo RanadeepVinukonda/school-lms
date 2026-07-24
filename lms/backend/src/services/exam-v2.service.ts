@@ -491,6 +491,7 @@ export async function getExamById(examId: string) {
 }
 
 export async function listExamsForClass(classId: string, _schoolId?: string): Promise<any[]> {
+  const supabase = getSupabaseAdmin();
   const items = await nosqlQuery(EV2, { classId });
   for (const exam of items as any[]) {
     if (!exam.questionCount && exam.questionCountPerConcept && exam.textbookId && exam.chapterId) {
@@ -500,6 +501,26 @@ export async function listExamsForClass(classId: string, _schoolId?: string): Pr
       } catch { /* skip */ }
     }
   }
+
+  const chapterIds = [...new Set((items as any[]).map((e: any) => e.chapterId).filter(Boolean))];
+  const conceptIds = [...new Set((items as any[]).map((e: any) => e.conceptId).filter(Boolean))];
+  const chapterMap = new Map<string, string>();
+  const conceptMap = new Map<string, string>();
+
+  if (chapterIds.length > 0) {
+    const { data } = await supabase.from('chapters').select('id, title').in('id', chapterIds);
+    (data || []).forEach((r: any) => chapterMap.set(r.id, r.title));
+  }
+  if (conceptIds.length > 0) {
+    const { data } = await supabase.from('concepts').select('id, title').in('id', conceptIds);
+    (data || []).forEach((r: any) => conceptMap.set(r.id, r.title));
+  }
+
+  for (const exam of items as any[]) {
+    if (exam.chapterId && chapterMap.has(exam.chapterId)) exam.chapterTitle = chapterMap.get(exam.chapterId);
+    if (exam.conceptId && conceptMap.has(exam.conceptId)) exam.conceptTitle = conceptMap.get(exam.conceptId);
+  }
+
   return items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 

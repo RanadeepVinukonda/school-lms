@@ -296,6 +296,7 @@ export async function getResults(assignmentId: string, studentId: string) {
 }
 
 export async function listAssignmentsForClass(classId: string, studentId?: string): Promise<any[]> {
+  const supabase = getSupabaseAdmin()!;
   const items = await nosqlQuery(ASSIGNMENT_V2, [{ field: 'classId', value: classId }]);
 
   let filtered = items;
@@ -305,6 +306,25 @@ export async function listAssignmentsForClass(classId: string, studentId?: strin
       if (a.publishedTo === 'students') return (a.targetStudentIds || []).includes(studentId);
       return true;
     });
+  }
+
+  const chapterIds = [...new Set((filtered as any[]).map((a: any) => a.chapterId).filter(Boolean))];
+  const conceptIds = [...new Set((filtered as any[]).map((a: any) => a.conceptId).filter(Boolean))];
+  const chapterMap = new Map<string, string>();
+  const conceptMap = new Map<string, string>();
+
+  if (chapterIds.length > 0) {
+    const { data } = await supabase.from('chapters').select('id, title').in('id', chapterIds);
+    (data || []).forEach((r: any) => chapterMap.set(r.id, r.title));
+  }
+  if (conceptIds.length > 0) {
+    const { data } = await supabase.from('concepts').select('id, title').in('id', conceptIds);
+    (data || []).forEach((r: any) => conceptMap.set(r.id, r.title));
+  }
+
+  for (const a of filtered as any[]) {
+    if (a.chapterId && chapterMap.has(a.chapterId)) a.chapterTitle = chapterMap.get(a.chapterId);
+    if (a.conceptId && conceptMap.has(a.conceptId)) a.conceptTitle = conceptMap.get(a.conceptId);
   }
 
   return filtered.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
