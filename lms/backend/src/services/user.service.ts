@@ -150,7 +150,7 @@ export async function createUser(data: {
         class_ids: finalClassIds, class_id: studentClassId || null,
         student_id: studentId || null, roll_no: data.rollNo || null,
         academic_year: deriveAcademicYear(), gender: data.gender || null,
-        children_ids: resolvedChildrenIds, is_active: true, school_id: data.schoolId || '',
+        children_ids: resolvedChildrenIds, is_active: true, school_id: data.schoolId || null,
         created_at: now2, updated_at: now2,
       };
       const { error } = await supabase.from('users').upsert(userData2, { onConflict: 'id' });
@@ -189,7 +189,7 @@ export async function createUser(data: {
           class_ids: finalClassIds, class_id: studentClassId || null,
           student_id: studentId || null, roll_no: data.rollNo || null,
           academic_year: deriveAcademicYear(), gender: data.gender || null,
-          children_ids: resolvedChildrenIds, is_active: true, school_id: data.schoolId || '',
+          children_ids: resolvedChildrenIds, is_active: true, school_id: data.schoolId || null,
           created_at: now, updated_at: now,
         };
         const { error: upsertErr } = await supabase.from('users').upsert(userData, { onConflict: 'id' });
@@ -212,7 +212,7 @@ export async function createUser(data: {
     class_ids: finalClassIds, class_id: studentClassId || null,
     student_id: studentId || null, roll_no: data.rollNo || null,
     academic_year: deriveAcademicYear(), gender: data.gender || null,
-    children_ids: resolvedChildrenIds, is_active: true, school_id: data.schoolId || '',
+    children_ids: resolvedChildrenIds, is_active: true, school_id: data.schoolId || null,
     created_at: now, updated_at: now,
   };
   const { error } = await supabase.from('users').upsert(userData, { onConflict: 'id' });
