@@ -1,22 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/common/SEOHead';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
 import { getTextbooksBySubject, getChaptersForTextbook } from '@/services/textbookService';
+import { getStudentsByClass } from '@/services/dataService';
 import type { Textbook, Chapter } from '@/types/textbook';
 
 interface TeacherAssignment {
@@ -36,6 +38,8 @@ const QUESTION_MODEL_OPTIONS = [
   { value: 'matching', label: 'Matching' },
 ];
 
+const EXAM_TYPE_MAP: Record<string, string[]> = { multiple_choice: ['mcq', 'multiple_choice'] };
+
 export default function TeacherExamsPage() {
   const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
@@ -49,13 +53,15 @@ export default function TeacherExamsPage() {
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [timeLimitMinutes, setTimeLimitMinutes] = useState('60');
+  const [timeLimitMinutes, setTimeLimitMinutes] = useState(60);
   const [selectedModels, setSelectedModels] = useState<string[]>(['multiple_choice', 'true_false']);
-  const [questionCount, setQuestionCount] = useState('10');
-  const [passingScore, setPassingScore] = useState('50');
-  const [maxAttempts, setMaxAttempts] = useState('1');
+  const [questionCount, setQuestionCount] = useState(10);
+  const [passingScore, setPassingScore] = useState(50);
+  const [maxAttempts, setMaxAttempts] = useState(1);
+  const [shuffleQuestions, setShuffleQuestions] = useState(true);
 
-  const EXAM_TYPE_MAP: Record<string, string[]> = { multiple_choice: ['mcq', 'multiple_choice'] };
+  const [publishScope, setPublishScope] = useState<'class' | 'students'>('class');
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
 
   const [distribution, setDistribution] = useState<Record<string, Record<string, number>>>({
     easy: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
@@ -63,35 +69,6 @@ export default function TeacherExamsPage() {
     hard: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
     hots: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
   });
-
-  useEffect(() => {
-    if (selectedModels.length === 0 || Number(questionCount) === 0) {
-      const empty = { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 };
-      setDistribution({ easy: { ...empty }, medium: { ...empty }, hard: { ...empty }, hots: { ...empty } });
-      return;
-    }
-    const backendTypes = selectedModels.map((m: string) => (EXAM_TYPE_MAP[m] || [m])[0]);
-    const numTypes = backendTypes.length;
-    const numDiffs = 4;
-    const totalCells = numTypes * numDiffs;
-    const qc = Number(questionCount);
-    const perCell = Math.floor(qc / totalCells);
-    let remainder = qc - perCell * totalCells;
-    const newDist: Record<string, Record<string, number>> = { easy: {}, medium: {}, hard: {}, hots: {} };
-    for (const d of ['easy', 'medium', 'hard', 'hots']) {
-      for (const bt of backendTypes) {
-        let val = perCell;
-        if (remainder > 0) { val += 1; remainder -= 1; }
-        newDist[d][bt] = val;
-      }
-    }
-    for (const d of ['easy', 'medium', 'hard', 'hots']) {
-      for (const bt of backendTypes) {
-        if (newDist[d][bt] === undefined) newDist[d][bt] = 0;
-      }
-    }
-    setDistribution(newDist);
-  }, [questionCount, selectedModels]);
 
   const [reviewQuestions, setReviewQuestions] = useState<any[]>([]);
 
@@ -126,36 +103,75 @@ export default function TeacherExamsPage() {
     enabled: !!selectedTextbookId,
   });
 
-  const { data: availableTypes = [] } = useQuery({
-    queryKey: ['available-question-types', selectedTextbookId, selectedChapterId],
-    queryFn: () => api.get(`/exams-v2/chapter/${selectedTextbookId}/${selectedChapterId}/types`).then((r) => r.data.data),
+  const { data: breakdown } = useQuery({
+    queryKey: ['question-breakdown', selectedTextbookId, selectedChapterId],
+    queryFn: () => api.get(`/exams-v2/breakdown/${selectedTextbookId}/${selectedChapterId}`).then((r) => r.data.data),
     enabled: !!selectedTextbookId && !!selectedChapterId,
   });
 
+  const typeCountMap: Record<string, number> = {};
+  const diffCountMap: Record<string, number> = {};
+  if (breakdown) {
+    for (const t of breakdown.types || []) typeCountMap[t.type] = t.count;
+    for (const d of breakdown.difficulties || []) diffCountMap[d.difficulty] = d.count;
+  }
+
+  const { data: classStudents } = useQuery({
+    queryKey: ['teacher-class-students', selectedClassId],
+    queryFn: () => getStudentsByClass(selectedClassId),
+    enabled: !!selectedClassId && publishScope === 'students',
+  });
+
   useEffect(() => {
-    if (availableTypes.length > 0) {
-      setSelectedModels(availableTypes);
+    if (selectedModels.length === 0 || questionCount === 0) {
+      const empty = { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 };
+      setDistribution({ easy: { ...empty }, medium: { ...empty }, hard: { ...empty }, hots: { ...empty } });
+      return;
     }
-  }, [availableTypes]);
+    const backendTypes = selectedModels.map((m: string) => (EXAM_TYPE_MAP[m] || [m])[0]);
+    const numTypes = backendTypes.length;
+    const totalCells = numTypes * 4;
+    const perCell = Math.floor(questionCount / totalCells);
+    let remainder = questionCount - perCell * totalCells;
+    const newDist: Record<string, Record<string, number>> = { easy: {}, medium: {}, hard: {}, hots: {} };
+    for (const d of ['easy', 'medium', 'hard', 'hots']) {
+      for (const bt of backendTypes) {
+        let val = perCell;
+        if (remainder > 0) { val += 1; remainder -= 1; }
+        newDist[d][bt] = val;
+      }
+    }
+    for (const d of ['easy', 'medium', 'hard', 'hots']) {
+      for (const bt of backendTypes) {
+        if (newDist[d][bt] === undefined) newDist[d][bt] = 0;
+      }
+    }
+    setDistribution(newDist);
+  }, [questionCount, selectedModels]);
+
+  const distTotal = useMemo(() => {
+    const activeTypes = QUESTION_MODEL_OPTIONS.filter(m => selectedModels.includes(m.value));
+    return ['easy', 'medium', 'hard', 'hots'].reduce((sum, diff) =>
+      sum + activeTypes.reduce((s, m) => {
+        const t = m.value === 'multiple_choice' ? 'mcq' : m.value;
+        return s + (distribution[diff]?.[t] ?? 0);
+      }, 0), 0);
+  }, [distribution, selectedModels]);
 
   const createMutation = useMutation({
     mutationFn: async (body: Record<string, unknown>) => {
-      try {
-        const res = await api.post('/exams-v2', body);
-        return res.data.data;
-      } catch (err: unknown) {
-        throw err;
-      }
+      const res = await api.post('/exams-v2', body);
+      return res.data.data;
     },
     onSuccess: () => {
       toast.success(_('Exam created successfully'));
       setTitle('');
       setDescription('');
-      setTimeLimitMinutes('60');
+      setTimeLimitMinutes(60);
       setSelectedModels(['multiple_choice', 'true_false']);
-      setQuestionCount('10');
-      setPassingScore('50');
-      setMaxAttempts('1');
+      setQuestionCount(10);
+      setPassingScore(50);
+      setMaxAttempts(1);
       setReviewQuestions([]);
       const empty = { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 };
       setDistribution({ easy: { ...empty }, medium: { ...empty }, hard: { ...empty }, hots: { ...empty } });
@@ -196,6 +212,13 @@ export default function TeacherExamsPage() {
     );
   }
 
+  function setDist(diff: string, type: string, val: number) {
+    setDistribution((prev) => {
+      const next = { ...prev, [diff]: { ...prev[diff], [type]: val } };
+      return next;
+    });
+  }
+
   function canCreate(): boolean {
     return (
       !!title.trim() &&
@@ -203,10 +226,10 @@ export default function TeacherExamsPage() {
       !!selectedTextbookId &&
       !!selectedChapterId &&
       selectedModels.length > 0 &&
-      Number(timeLimitMinutes) > 0 &&
-      Number(questionCount) > 0 &&
-      Number(passingScore) >= 0 &&
-      Number(maxAttempts) > 0 &&
+      timeLimitMinutes > 0 &&
+      questionCount > 0 &&
+      passingScore >= 0 &&
+      maxAttempts > 0 &&
       !createMutation.isPending
     );
   }
@@ -221,14 +244,15 @@ export default function TeacherExamsPage() {
       textbookId: selectedTextbookId,
       chapterId: selectedChapterId,
       teacherId,
-      timeLimitMinutes: Number(timeLimitMinutes),
+      timeLimitMinutes,
       selectedModels: [...selectedModels],
-      questionCount: Number(questionCount),
-      passingScore: Number(passingScore),
-      maxAttempts: Number(maxAttempts),
+      questionCount,
+      passingScore,
+      maxAttempts,
       distribution,
-      shuffleQuestions: true,
+      shuffleQuestions,
       showResults: true,
+      targetStudentIds: publishScope === 'students' ? selectedStudentIds : [],
     };
     if (reviewQuestions.length > 0) {
       (body as any).questions = reviewQuestions;
@@ -246,9 +270,9 @@ export default function TeacherExamsPage() {
       textbookId: selectedTextbookId,
       chapterId: selectedChapterId,
       teacherId,
-      timeLimitMinutes: Number(timeLimitMinutes),
+      timeLimitMinutes,
       selectedModels: [...selectedModels],
-      questionCount: Number(questionCount),
+      questionCount,
       distribution,
       preview: true,
     });
@@ -309,7 +333,7 @@ export default function TeacherExamsPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="sm:p-6 p-4 max-w-5xl mx-auto pb-32 space-y-8"
+        className="p-6 max-w-6xl mx-auto pb-32 space-y-6"
       >
         <motion.div variants={cardStackReveal} custom={0}>
           <h1 className="text-headline-sm">{_('Exams')}</h1>
@@ -318,315 +342,391 @@ export default function TeacherExamsPage() {
           </p>
         </motion.div>
 
-        <motion.div variants={cardStackReveal} custom={1} className="space-y-6">
+        <motion.div variants={cardStackReveal} custom={0}>
           <Card className="border-border/60">
-            <CardHeader>
-              <CardTitle className="text-title-sm">{_('Teacher Assignment')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-5 space-y-6">
+              <div className="flex items-center gap-2">
+                <Icon name="school" size={16} className="text-primary" />
+                <span className="text-title-sm">{_('Class & Content Selection')}</span>
+              </div>
+
               <div>
-                <Label htmlFor="class-select">{_('Class')}</Label>
+                <Label className="mb-2 block">{_('Class')}</Label>
+                <select
+                  value={selectedClassId}
+                  onChange={(e) => {
+                    setSelectedClassId(e.target.value);
+                    setSelectedSubjectId('');
+                    setSelectedTextbookId('');
+                    setSelectedChapterId('');
+                    setReviewQuestions([]);
+                  }}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                >
+                  <option value="">{_('Select a class...')}</option>
+                  {uniqueClasses.map((a) => (
+                    <option key={a.classId} value={a.classId}>{a.className}</option>
+                  ))}
+                </select>
+              </div>
+
+              {classAssignments.length > 0 && (
+                <div>
+                  <Label className="mb-2 block">{_('Subject')}</Label>
+                  {classAssignments.length === 1 ? (
+                    <p className="text-sm text-muted-foreground">{classAssignments[0].subjectName}</p>
+                  ) : (
                     <select
-                      id="class-select"
-                      value={selectedClassId}
+                      value={effectiveSubjectId}
                       onChange={(e) => {
-                        setSelectedClassId(e.target.value);
-                        setSelectedSubjectId('');
+                        setSelectedSubjectId(e.target.value);
                         setSelectedTextbookId('');
                         setSelectedChapterId('');
                         setReviewQuestions([]);
                       }}
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm mt-1.5 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                     >
-                      <option value="">{_('Select a class...')}</option>
-                      {uniqueClasses.map((a) => (
-                        <option key={a.classId} value={a.classId}>
-                          {a.className}
-                        </option>
+                      {classAssignments.map((a) => (
+                        <option key={a.subjectId} value={a.subjectId}>{a.subjectName}</option>
                       ))}
                     </select>
+                  )}
+                </div>
+              )}
+
+              {selectedAssignment && (
+                <div>
+                  <Label className="mb-2 block">{_('Textbook')}</Label>
+                  <select
+                    value={selectedTextbookId}
+                    onChange={(e) => {
+                      setSelectedTextbookId(e.target.value);
+                      setSelectedChapterId('');
+                      setReviewQuestions([]);
+                    }}
+                    disabled={!selectedAssignment || textbooksLoading}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <option value="">{_('Select a textbook...')}</option>
+                    {textbooks.map((tb: Textbook) => (
+                      <option key={tb.id} value={tb.id}>{tb.title || tb.id}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {selectedTextbookId && (
+                <div>
+                  <Label className="mb-2 block">{_('Chapter')}</Label>
+                  {chaptersLoading ? (
+                    <Skeleton className="h-10 w-full" />
+                  ) : (
+                    <select
+                      value={selectedChapterId}
+                      onChange={(e) => {
+                        setSelectedChapterId(e.target.value);
+                        setReviewQuestions([]);
+                      }}
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    >
+                      <option value="">{_('Select a chapter...')}</option>
+                      {chapters.map((ch: Chapter) => (
+                        <option key={ch.id} value={ch.id}>{_('Chapter')} {ch.order + 1}: {ch.title}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
+
+              {selectedClassId && (
+                <div>
+                  <Label className="mb-2 block">{_('Push to')}</Label>
+                  <div className="flex gap-3 mb-3">
+                    <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer flex-1 ${
+                      publishScope === 'class'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-muted-foreground/30'
+                    }`}>
+                      <input
+                        type="radio"
+                        name="scope"
+                        checked={publishScope === 'class'}
+                        onChange={() => { setPublishScope('class'); setSelectedStudentIds([]); }}
+                        className="text-primary"
+                      />
+                      <span className="text-sm">{_('Whole Class')}</span>
+                    </label>
+                    <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer flex-1 ${
+                      publishScope === 'students'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-muted-foreground/30'
+                    }`}>
+                      <input
+                        type="radio"
+                        name="scope"
+                        checked={publishScope === 'students'}
+                        onChange={() => setPublishScope('students')}
+                        className="text-primary"
+                      />
+                      <span className="text-sm">{_('Selected Students')}</span>
+                    </label>
                   </div>
-
-                  {selectedClassId && classAssignments.length > 1 && (
-                    <div>
-                      <Label htmlFor="subject-select">{_('Subject')}</Label>
-                      <select
-                        id="subject-select"
-                        value={effectiveSubjectId}
-                        onChange={(e) => {
-                          setSelectedSubjectId(e.target.value);
-                          setSelectedTextbookId('');
-                          setSelectedChapterId('');
-                          setReviewQuestions([]);
-                        }}
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm mt-1.5 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                      >
-                        {classAssignments.map((a) => (
-                          <option key={a.subjectId} value={a.subjectId}>
-                            {a.subjectName}
-                          </option>
-                        ))}
-                      </select>
+                  {publishScope === 'students' && (
+                    <div className="border rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
+                      {classStudents?.length ? (
+                        classStudents.map((s: any) => (
+                          <label key={s.id || s.uid} className="flex items-center gap-2 cursor-pointer text-sm">
+                            <Checkbox
+                              checked={selectedStudentIds.includes(s.id || s.uid)}
+                              onCheckedChange={(checked) => {
+                                const sid = s.id || s.uid;
+                                setSelectedStudentIds((prev) =>
+                                  checked ? [...prev, sid] : prev.filter((id) => id !== sid),
+                                );
+                              }}
+                            />
+                            <span>{s.displayName || s.email}</span>
+                          </label>
+                        ))
+                      ) : (
+                        <p className="text-sm text-muted-foreground">{_('No students found in this class')}</p>
+                      )}
                     </div>
                   )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
 
-                  {selectedAssignment && (
-                    <div>
-                      <Label htmlFor="textbook-select">{_('Textbook')}</Label>
-                      <select
-                        id="textbook-select"
-                        value={selectedTextbookId}
-                        onChange={(e) => {
-                          setSelectedTextbookId(e.target.value);
-                          setSelectedChapterId('');
-                          setReviewQuestions([]);
-                        }}
-                        disabled={!selectedAssignment || textbooksLoading}
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm mt-1.5 focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <option value="">{_('Select a textbook...')}</option>
-                        {textbooks.map((tb: Textbook) => (
-                          <option key={tb.id} value={tb.id}>
-                            {tb.title || tb.id}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
+        <motion.div variants={cardStackReveal} custom={0}>
+          <Card className="border-border/60">
+            <CardContent className="p-5 space-y-6">
+              <div className="flex items-center gap-2">
+                <Icon name="quiz" size={16} className="text-primary" />
+                <span className="text-title-sm">{_('Exam Details')}</span>
+              </div>
 
-                  {selectedTextbookId && (
-                    <div>
-                      <Label htmlFor="chapter-select">{_('Chapter')}</Label>
-                      <select
-                        id="chapter-select"
-                        value={selectedChapterId}
-                        onChange={(e) => {
-                          setSelectedChapterId(e.target.value);
-                          setReviewQuestions([]);
-                        }}
-                        disabled={chaptersLoading}
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm mt-1.5 focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <option value="">{_('Select a chapter...')}</option>
-                        {chapters.map((ch: Chapter) => (
-                          <option key={ch.id} value={ch.id}>
-                            {ch.title || ch.id}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <div>
+                <Label htmlFor="exam-title" className="mb-2 block">{_('Title')}</Label>
+                <Input
+                  id="exam-title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder={_('e.g. Mid-term Science Exam')}
+                />
+              </div>
 
-              <Card className="border-border/60">
-                <CardHeader>
-                  <CardTitle className="text-title-sm">{_('Exam Details')}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="exam-desc" className="mb-2 block">{_('Description')}</Label>
+                <Textarea
+                  id="exam-desc"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder={_('Provide instructions or context for this exam')}
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="exam-time-limit" className="mb-2 block">{_('Time Limit (minutes)')}</Label>
+                  <Input
+                    id="exam-time-limit"
+                    type="number"
+                    min={1}
+                    value={timeLimitMinutes}
+                    onChange={(e) => setTimeLimitMinutes(Number(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="exam-question-count" className="mb-2 block">{_('Question Count')}</Label>
+                  <Input
+                    id="exam-question-count"
+                    type="number"
+                    min={1}
+                    value={questionCount}
+                    onChange={(e) => setQuestionCount(Number(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="exam-passing-score" className="mb-2 block">{_('Passing Score (%)')}</Label>
+                  <Input
+                    id="exam-passing-score"
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={passingScore}
+                    onChange={(e) => setPassingScore(Number(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="exam-max-attempts" className="mb-2 block">{_('Max Attempts')}</Label>
+                  <Input
+                    id="exam-max-attempts"
+                    type="number"
+                    min={1}
+                    value={maxAttempts}
+                    onChange={(e) => setMaxAttempts(Number(e.target.value))}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-end pb-2">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <Switch checked={shuffleQuestions} onCheckedChange={setShuffleQuestions} />
                   <div>
-                    <Label htmlFor="exam-title">{_('Title')}</Label>
-                    <Input
-                      id="exam-title"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder={_('Enter exam title')}
-                      className="mt-1.5"
-                    />
+                    <span className="text-sm font-medium">{_('Shuffle Questions')}</span>
+                    <p className="text-label-xs text-muted-foreground">{_('Randomize question order for each student')}</p>
                   </div>
+                </label>
+              </div>
 
-                  <div>
-                    <Label htmlFor="exam-desc">{_('Description')}</Label>
-                    <Textarea
-                      id="exam-desc"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder={_('Brief description of the exam')}
-                      className="mt-1.5"
-                      rows={2}
-                    />
+              <div>
+                <Label className="mb-2 block">{_('Available Question Types')}</Label>
+                {selectedChapterId && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {Object.entries(diffCountMap).map(([d, c]) => (
+                      <span key={d} className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                        {d.charAt(0).toUpperCase() + d.slice(1)}: {c}
+                      </span>
+                    ))}
+                    {breakdown?.hotsCount > 0 && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                        HOTS: {breakdown.hotsCount}
+                      </span>
+                    )}
+                    {breakdown?.total > 0 && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                        Total: {breakdown.total}
+                      </span>
+                    )}
                   </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="time-limit">{_('Time Limit (minutes)')}</Label>
-                      <Input
-                        id="time-limit"
-                        type="number"
-                        value={timeLimitMinutes}
-                        onChange={(e) => setTimeLimitMinutes(e.target.value)}
-                        className="mt-1.5"
-                        min={1}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="questions-per-concept">{_('Total Questions')}</Label>
-                      <Input
-                        id="questions-per-concept"
-                        type="number"
-                        value={questionCount}
-                        onChange={(e) => setQuestionCount(e.target.value)}
-                        className="mt-1.5"
-                        min={1}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="passing-score">{_('Passing Score (%)')}</Label>
-                      <Input
-                        id="passing-score"
-                        type="number"
-                        value={passingScore}
-                        onChange={(e) => setPassingScore(e.target.value)}
-                        className="mt-1.5"
-                        min={0}
-                        max={100}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="max-attempts">{_('Max Attempts')}</Label>
-                      <Input
-                        id="max-attempts"
-                        type="number"
-                        value={maxAttempts}
-                        onChange={(e) => setMaxAttempts(e.target.value)}
-                        className="mt-1.5"
-                        min={1}
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-border/60">
-                <CardHeader>
-                  <CardTitle className="text-title-sm">{_('Question Models')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-3">
-                    {QUESTION_MODEL_OPTIONS.map((model) => (
+                )}
+                <p className="text-label-xs text-muted-foreground mb-3">
+                  {_('Select which question types to pull from the question bank')}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {QUESTION_MODEL_OPTIONS.map((model) => {
+                    const mappedType = model.value === 'multiple_choice' ? 'mcq' : model.value;
+                    const available = typeCountMap[mappedType] || 0;
+                    return (
                       <label
                         key={model.value}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-colors ${
+                        className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors ${
                           selectedModels.includes(model.value)
-                            ? 'border-primary bg-primary/5 text-primary'
-                            : 'border-border bg-background hover:border-border/80'
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-muted-foreground/30'
                         }`}
                       >
                         <Checkbox
                           checked={selectedModels.includes(model.value)}
                           onCheckedChange={() => handleToggleModel(model.value)}
                         />
-                        <span className="text-sm whitespace-nowrap">{model.label}</span>
+                        <span className="text-sm">{model.label}</span>
+                        {selectedChapterId && (
+                          <span className="ml-auto text-xs text-muted-foreground">{available > 0 ? `(${available})` : ''}</span>
+                        )}
                       </label>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                    );
+                  })}
+                </div>
+              </div>
 
-              {selectedModels.length > 0 && Number(questionCount) > 0 && (
-                <Card className="border-border/60">
-                  <CardHeader>
-                    <CardTitle className="text-title-sm">{_('Question Distribution')}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {(() => {
-                      const activeTypes = QUESTION_MODEL_OPTIONS.filter(m => selectedModels.includes(m.value));
-                      const distTotal = ['easy', 'medium', 'hard', 'hots'].reduce((sum, diff) =>
-                        sum + activeTypes.reduce((s, m) => {
-                          const t = m.value === 'multiple_choice' ? 'mcq' : m.value;
-                          return s + (distribution[diff]?.[t] ?? 0);
-                        }, 0), 0);
-                      return (
-                        <>
-                          <div className="flex items-center justify-between">
-                            <p className="text-xs text-muted-foreground">
-                              {_('Auto-distributed equally across difficulties. Adjust cells manually as needed.')}
-                            </p>
-                            <div className="flex items-center gap-2">
-                              <p className={`text-xs font-semibold ${distTotal !== Number(questionCount) ? 'text-destructive' : ''}`}>
-                                Total: {distTotal} / {questionCount} {_('questions')}
-                              </p>
-                              {distTotal !== Number(questionCount) && selectedModels.length > 0 && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    if (selectedModels.length === 0 || Number(questionCount) === 0) return;
-                                    const backendTypes = selectedModels.map((m: string) => (EXAM_TYPE_MAP[m] || [m])[0]);
-                                    const numTypes = backendTypes.length;
-                                    const totalCells = numTypes * 4;
-                                    const perCell = Math.floor(Number(questionCount) / totalCells);
-                                    let rem = Number(questionCount) - perCell * totalCells;
-                                    const newDist: Record<string, Record<string, number>> = { easy: {}, medium: {}, hard: {}, hots: {} };
-                                    for (const d of ['easy', 'medium', 'hard', 'hots']) {
-                                      for (const bt of backendTypes) {
-                                        let val = perCell;
-                                        if (rem > 0) { val += 1; rem -= 1; }
-                                        newDist[d][bt] = val;
-                                      }
-                                    }
-                                    setDistribution(newDist);
-                                  }}
-                                  className="gap-1 h-6 text-[10px]"
-                                >
-                                  <Icon name="sync" size={12} />
-                                  Sync
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-xs">
-                              <thead>
-                                <tr className="border-b border-border/60">
-                                  <th className="text-left py-2 pr-3">{_('Difficulty')}</th>
-                                  {activeTypes.map((m) => (
-                                    <th key={m.value} className="text-center px-2 py-2">{m.label}</th>
-                                  ))}
-                                  <th className="text-center px-2 py-2">{_('Total')}</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {['easy', 'medium', 'hard', 'hots'].map((diff) => (
-                                  <tr key={diff} className="border-b border-border/40">
-                                    <td className={`py-2 pr-3 font-medium capitalize ${diff === 'hots' ? 'text-purple-600' : ''}`}>{diff}</td>
-                                    {activeTypes.map((m) => {
-                                      const mappedType = m.value === 'multiple_choice' ? 'mcq' : m.value;
-                                      return (
-                                        <td key={m.value} className="text-center px-1 py-1">
-                                          <input
-                                            type="number"
-                                            min={0}
-                                            value={distribution[diff]?.[mappedType] ?? 0}
-                                            onChange={(e) => {
-                                              const newDist = { ...distribution };
-                                              newDist[diff] = { ...newDist[diff], [mappedType]: parseInt(e.target.value) || 0 };
-                                              setDistribution(newDist);
-                                            }}
-                                            className="w-14 text-center rounded border border-border bg-background px-1 py-1 text-xs"
-                                          />
-                                        </td>
-                                      );
-                                    })}
-                                    <td className="text-center px-2 py-2 font-semibold">
-                                      {activeTypes.reduce((sum, m) => {
-                                        const t = m.value === 'multiple_choice' ? 'mcq' : m.value;
-                                        return sum + (distribution[diff]?.[t] ?? 0);
-                                      }, 0)}
-                                    </td>
-                                  </tr>
+              {selectedChapterId && (
+                <div className="border-t border-border/60 pt-4">
+                  <div className="space-y-3 p-4 rounded-lg border border-border/60 bg-muted/20 mb-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground">
+                        {_('Auto-distributed equally across difficulties. Adjust cells manually as needed.')}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className={`text-xs font-semibold ${distTotal !== questionCount ? 'text-destructive' : ''}`}>
+                          Total: {distTotal} / {questionCount} {_('questions')}
+                        </p>
+                        {distTotal !== questionCount && selectedModels.length > 0 && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              if (selectedModels.length === 0 || questionCount === 0) return;
+                              const backendTypes = selectedModels.map((m: string) => (EXAM_TYPE_MAP[m] || [m])[0]);
+                              const numTypes = backendTypes.length;
+                              const totalCells = numTypes * 4;
+                              const perCell = Math.floor(questionCount / totalCells);
+                              let rem = questionCount - perCell * totalCells;
+                              const newDist: Record<string, Record<string, number>> = { easy: {}, medium: {}, hard: {}, hots: {} };
+                              for (const d of ['easy', 'medium', 'hard', 'hots']) {
+                                for (const bt of backendTypes) {
+                                  let val = perCell;
+                                  if (rem > 0) { val += 1; rem -= 1; }
+                                  newDist[d][bt] = val;
+                                }
+                              }
+                              setDistribution(newDist);
+                            }}
+                            className="gap-1 h-6 text-[10px]"
+                          >
+                            <Icon name="sync" size={12} />
+                            Sync
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                      {(() => {
+                        const activeTypes = QUESTION_MODEL_OPTIONS.filter(m => selectedModels.includes(m.value));
+                        return (
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="border-b border-border/60">
+                                <th className="text-left py-2 pr-3">{_('Difficulty')}</th>
+                                {activeTypes.map((m) => (
+                                  <th key={m.value} className="text-center px-2 py-2">{m.label}</th>
                                 ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </>
-                      );
-                    })()}
-                  </CardContent>
-                </Card>
+                                <th className="text-center px-2 py-2">{_('Total')}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {['easy', 'medium', 'hard', 'hots'].map((diff) => (
+                                <tr key={diff} className="border-b border-border/40">
+                                  <td className={`py-2 pr-3 font-medium capitalize ${diff === 'hots' ? 'text-purple-600' : ''}`}>{diff}</td>
+                                  {activeTypes.map((m) => {
+                                    const mappedType = m.value === 'multiple_choice' ? 'mcq' : m.value;
+                                    const avail = typeCountMap[mappedType] || 0;
+                                    return (
+                                      <td key={m.value} className="text-center px-1 py-1">
+                                        <input
+                                          type="number"
+                                          min={0}
+                                          max={avail}
+                                          value={distribution[diff]?.[mappedType] ?? 0}
+                                          onChange={(e) => setDist(diff, mappedType, parseInt(e.target.value) || 0)}
+                                          className="w-14 text-center rounded border border-border bg-background px-1 py-1 text-xs"
+                                        />
+                                        <div className="text-[10px] text-muted-foreground">/ {avail}</div>
+                                      </td>
+                                    );
+                                  })}
+                                  <td className="text-center px-2 py-2 font-semibold">
+                                    {activeTypes.reduce((sum, m) => {
+                                      const t = m.value === 'multiple_choice' ? 'mcq' : m.value;
+                                      return sum + (distribution[diff]?.[t] ?? 0);
+                                    }, 0)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        );
+                      })()}
+                    </div>
+
+                    {distTotal > questionCount && (
+                      <p className="text-xs text-red-500">{_('Total exceeds question count by')} {distTotal - questionCount}</p>
+                    )}
+                  </div>
+                </div>
               )}
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
@@ -638,9 +738,9 @@ export default function TeacherExamsPage() {
                     className="gap-2"
                   >
                     {generatePreviewMutation.isPending ? (
-                      <><span className="animate-spin">⟳</span> {_('Generating...')}</>
+                      <><Icon name="hourglass_top" size={16} className="animate-spin" /> {_('Generating...')}</>
                     ) : (
-                      <><Icon name="visibility" size={16} /> {_('Generate Preview')} ({questionCount} {_('questions')})</>
+                      <><Icon name="visibility" size={16} /> {_('Preview')} ({questionCount} {_('questions')})</>
                     )}
                   </Button>
                 )}
@@ -649,99 +749,53 @@ export default function TeacherExamsPage() {
                   onClick={handleCreate}
                   disabled={!canCreate()}
                   className="gap-2"
+                  size="lg"
                 >
-                  <Icon name="add" size={16} />
-                  {_('Create Exam')}
+                  {createMutation.isPending ? (
+                    <><Icon name="hourglass_top" size={18} className="animate-spin" /> {_('Creating Exam...')}</>
+                  ) : (
+                    <><Icon name="fact_check" size={18} /> {_('Create Exam')}</>
+                  )}
                 </Button>
               </div>
 
               {reviewQuestions.length > 0 && (
-                <Card className="border-border/60">
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle className="text-title-sm">
-                      {_('All Questions')} — {reviewQuestions.length} {_('total')}
-                    </CardTitle>
+                <div className="border rounded-lg p-3 bg-background space-y-3 max-h-80 overflow-y-auto">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-primary">{_('Preview')} ({reviewQuestions.length} {_('questions')})</p>
+                    {reviewQuestions.length < questionCount && (
+                      <p className="text-[10px] text-amber-600">{_('Warning: fewer questions than requested')}</p>
+                    )}
                     <Button variant="ghost" size="sm" onClick={() => setReviewQuestions([])}>
                       <Icon name="close" size={16} />
                     </Button>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {reviewQuestions.map((q: any, i: number) => (
-                      <Card key={q.id || i} className="border-border/40 bg-muted/30">
-                        <CardContent className="p-4 space-y-3">
-                          <div className="flex items-start justify-between gap-2">
-                            <span className="text-label-xs text-muted-foreground shrink-0 mt-1">
-                              Q{i + 1}
-                            </span>
-                            <input
-                              className="flex-1 bg-background text-foreground border border-border rounded px-2 py-1 text-sm"
-                              value={q.text || q.question || ''}
-                              onChange={(e) => {
-                                const updated = [...reviewQuestions];
-                                updated[i] = { ...updated[i], text: e.target.value, question: e.target.value };
-                                setReviewQuestions(updated);
-                              }}
-                            />
-                            <Badge variant="outline" className="shrink-0 text-[10px]">
-                              {q.type || 'mcq'}
-                            </Badge>
-                          </div>
-
-                          {q.options && q.options.length > 0 && (
-                            <div className="space-y-1.5 pl-6">
-                              {q.options.map((opt: string, oi: number) => (
-                                <div key={oi} className="flex items-center gap-2">
-                                  <span className="text-label-xs text-muted-foreground w-4">{String.fromCharCode(65 + oi)}.</span>
-                                  <input
-                                    className="flex-1 bg-background text-foreground border border-border rounded px-2 py-1 text-sm"
-                                    value={opt}
-                                    onChange={(e) => {
-                                      const updated = [...reviewQuestions];
-                                      const opts = [...(updated[i].options || [])];
-                                      opts[oi] = e.target.value;
-                                      updated[i] = { ...updated[i], options: opts };
-                                      setReviewQuestions(updated);
-                                    }}
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          <div className="flex items-center gap-4 pl-6">
-                            <div className="flex items-center gap-2">
-                              <span className="text-label-xs text-muted-foreground">{_('Points')}:</span>
-                              <input
-                                type="number"
-                                className="w-16 bg-background text-foreground border border-border rounded px-2 py-1 text-sm"
-                                value={q.points ?? 1}
-                                onChange={(e) => {
-                                  const updated = [...reviewQuestions];
-                                  updated[i] = { ...updated[i], points: Number(e.target.value) };
-                                  setReviewQuestions(updated);
-                                }}
-                              />
-                            </div>
-                            <div className="flex items-center gap-2 flex-1">
-                              <span className="text-label-xs text-muted-foreground">{_('Answer')}:</span>
-                              <input
-                                className="flex-1 bg-background text-foreground border border-border rounded px-2 py-1 text-sm"
-                                value={q.correctAnswer || q.answer || ''}
-                                onChange={(e) => {
-                                  const updated = [...reviewQuestions];
-                                  updated[i] = { ...updated[i], correctAnswer: e.target.value, answer: e.target.value };
-                                  setReviewQuestions(updated);
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </CardContent>
-                </Card>
+                  </div>
+                  {reviewQuestions.map((q: any, i: number) => (
+                    <div key={q.id || i} className="rounded-lg border border-border/60 p-3 space-y-1.5">
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">{i + 1}</span>
+                        <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-medium">{q.type?.replace(/_/g, ' ')}</span>
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${q.difficulty === 'easy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : q.difficulty === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : q.difficulty === 'hard' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'}`}>{q.difficulty}</span>
+                        {q.hots && <span className="px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[10px] font-bold">HOTS</span>}
+                      </div>
+                      <p className="text-xs text-foreground leading-relaxed">{q.text}</p>
+                      {q.options && q.options.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-0.5">
+                          {q.options.map((opt: string, oi: number) => (
+                            <span key={oi} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{String.fromCharCode(65 + oi)}. {opt}</span>
+                          ))}
+                        </div>
+                      )}
+                      {q.correctAnswer && (
+                        <p className="text-[10px] text-green-600 dark:text-green-400 font-medium">{_('Answer')}: {Array.isArray(q.correctAnswer) ? q.correctAnswer.join(', ') : q.correctAnswer}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
               )}
-            </motion.div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </motion.div>
     </>
   );
