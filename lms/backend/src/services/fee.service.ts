@@ -145,7 +145,7 @@ export async function getOutstandingReport(schoolId?: string) {
   const supabase = getSupabaseAdmin()!;
 
   let structQ = supabase.from('fee_structures').select('*');
-  let studentQ = supabase.from('users').select('id, display_name, class_id, class_ids').eq('role', 'student');
+  let studentQ = supabase.from('users').select('id, display_name, class_id, class_ids').eq('role', 'student').is('deleted_at', null);
   let paymentQ = supabase.from('fee_payments').select('*');
 
   if (schoolId) {
