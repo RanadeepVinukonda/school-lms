@@ -57,7 +57,12 @@ export async function createReport(data: {
     .insert(report)
     .select()
     .single();
-  if (error) throw error;
+  if (error) {
+    if (error.code === '42P01' || error.message?.includes('does not exist') || error.message?.includes('relation')) {
+      throw new Error('Report system is not configured yet. Please contact your administrator.');
+    }
+    throw error;
+  }
 
   logger.info('Report created', { id: inserted.id, category: data.category });
 
@@ -132,7 +137,13 @@ export async function getReports(query: {
   }
 
   const { data, count, error } = await base.range(offset, offset + limit - 1);
-  if (error) throw error;
+  if (error) {
+    if (error.code === '42P01' || error.message?.includes('does not exist') || error.message?.includes('relation')) {
+      logger.warn('report_feedback table not found — migration may not be applied');
+      return { items: [], total: 0, page, limit };
+    }
+    throw error;
+  }
 
   return {
     items: (data || []).map((r: any) => ({
@@ -188,7 +199,13 @@ export async function updateReportStatus(id: string, data: {
 export async function getReportStats() {
   const supabase = getSupabaseAdmin()!;
   const { data, error } = await supabase.from('report_feedback').select('status, category, user_role, class_name, priority');
-  if (error) throw error;
+  if (error) {
+    if (error.code === '42P01' || error.message?.includes('does not exist') || error.message?.includes('relation')) {
+      logger.warn('report_feedback table not found — migration may not be applied');
+      return { byStatus: {}, byCategory: {}, byRole: {}, byClass: {}, total: 0 };
+    }
+    throw error;
+  }
 
   const byStatus: Record<string, number> = {};
   const byCategory: Record<string, number> = {};

@@ -69,7 +69,7 @@ export default function AdminReportsPage() {
 
   const { data: teachers } = useQuery({
     queryKey: ['teachers-list'],
-    queryFn: () => api.get('/users?role=teacher').then((r) => r.data.data),
+    queryFn: () => api.get('/auth/users?role=teacher').then((r) => r.data.data),
   });
 
   const { data: stats } = useQuery({
