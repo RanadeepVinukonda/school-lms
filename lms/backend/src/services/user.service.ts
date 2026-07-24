@@ -2,7 +2,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from './supabase';
 import { createUser as createAuthUser, updateUser, deleteUser, getUserByEmail, getUserById, setCustomClaims } from '../database/auth';
-import { NotFoundError, ValidationError } from '../utils/errors';
+import { NotFoundError, ValidationError, ConflictError } from '../utils/errors';
 import { deriveAcademicYear } from '../middlewares/academicYear.middleware';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
@@ -66,10 +66,28 @@ export async function createUser(data: {
     if (data.rollNo === undefined) throw new ValidationError('Roll number is required for students');
     const { data: classRow } = await supabase.from('classes').select('*').eq('id', data.classId).maybeSingle();
     if (!classRow) throw new NotFoundError('Assigned Class not found');
+
+    // Check for duplicate roll number within the same class and academic year
+    const acYear = data.academicYear || classRow.academic_year || new Date().getFullYear().toString();
+    const { data: existingWithRoll } = await supabase
+      .from('users')
+      .select('id, display_name')
+      .eq('class_id', data.classId)
+      .eq('roll_no', data.rollNo)
+      .eq('academic_year', acYear)
+      .is('deleted_at', null)
+      .maybeSingle();
+    if (existingWithRoll) {
+      throw new ConflictError(`Roll number ${data.rollNo} already assigned to ${existingWithRoll.display_name} in this class for academic year ${acYear}`);
+    }
+
     const classCode = (classRow.code || classRow.section
       ? `${classRow.grade || ''}${classRow.section || ''}` : 'CLASS'
     ).toUpperCase().replace(/\s+/g, '');
+<<<<<<< HEAD
     const acYear = deriveAcademicYear();
+=======
+>>>>>>> 6e708ea (fix: add roll number conflict check + detailed auth error messages in user registration)
     studentId = generateStudentId(acYear, classCode, data.rollNo);
     if (!finalClassIds.includes(data.classId)) finalClassIds.push(data.classId);
     studentClassId = data.classId;
@@ -161,6 +179,7 @@ export async function createUser(data: {
       displayName: data.displayName, phoneNumber: data.phoneNumber, photoURL: data.photoURL,
     });
   } catch (err: any) {
+    logger.error('Auth user creation failed', { email: generatedEmail, role: data.role, error: err.message, stack: err.stack });
     // If user already exists in Auth but DB row is missing, look up via Auth API and create DB row
     if (err.message?.toLowerCase().includes('already exists') || err.message?.toLowerCase().includes('already registered')) {
       const supabase = getSupabaseAdmin();
@@ -184,7 +203,10 @@ export async function createUser(data: {
         return { ...userData, generatedPassword };
       }
     }
-    throw err;
+    if (err.message?.toLowerCase().includes('supabase') || err.message?.toLowerCase().includes('not configured')) {
+      throw new Error(`Auth service unavailable: ${err.message}`);
+    }
+    throw new Error(`Failed to create user in auth system: ${err.message}`);
   }
 
   const now = new Date().toISOString();
