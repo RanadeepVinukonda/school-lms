@@ -24,7 +24,11 @@ function fallbackText(type: string, _options: any): string {
 }
 
 async function nosqlGet(col: string, id: string) {
-  const { data: row } = await getSupabaseAdmin()!.from('firestore_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  const { data: row, error } = await getSupabaseAdmin()!.from('firestore_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
+  if (error) {
+    logger.error('nosqlGet failed', { collection: col, doc_id: id, error: error.message, details: error.details, hint: error.hint, code: error.code });
+    throw new AppError(500, `Database read failed: ${error.message}`, { collection: col, doc_id: id });
+  }
   return { exists: !!row, data: (row?.data as Record<string, unknown>) ?? null };
 }
 
@@ -33,7 +37,10 @@ async function nosqlSet(col: string, id: string, data: Record<string, unknown>) 
     collection: col, doc_id: id, data,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'collection,doc_id' });
-  if (error) throw error;
+  if (error) {
+    logger.error('nosqlSet failed', { collection: col, doc_id: id, error: error.message, details: error.details, hint: error.hint, code: error.code });
+    throw new AppError(500, `Database write failed: ${error.message}`, { collection: col, doc_id: id });
+  }
 }
 
 async function nosqlUpdate(col: string, id: string, updates: Record<string, unknown>) {
@@ -43,7 +50,10 @@ async function nosqlUpdate(col: string, id: string, updates: Record<string, unkn
     collection: col, doc_id: id, data: merged,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'collection,doc_id' });
-  if (error) throw error;
+  if (error) {
+    logger.error('nosqlUpdate failed', { collection: col, doc_id: id, error: error.message, details: error.details, hint: error.hint, code: error.code });
+    throw new AppError(500, `Database update failed: ${error.message}`, { collection: col, doc_id: id });
+  }
 }
 
 async function nosqlDelete(col: string, id: string) {
@@ -56,7 +66,10 @@ async function nosqlQuery(col: string, filters: Record<string, unknown>) {
     q = q.contains('data', { [k]: v });
   }
   const { data: rows, error } = await q;
-  if (error) throw error;
+  if (error) {
+    logger.error('nosqlQuery failed', { collection: col, filters, error: error.message, details: error.details, hint: error.hint, code: error.code });
+    throw new AppError(500, `Database query failed: ${error.message}`);
+  }
   return (rows || []).map((r: { doc_id: string; data: unknown }) => ({ id: r.doc_id, ...(r.data as object) }));
 }
 
@@ -77,12 +90,20 @@ const DIFFICULTY_RANK: Record<Difficulty, number> = { easy: 0, medium: 1, hard: 
 
 async function getConcept(textbookId: string, chapterId: string, conceptId: string) {
   const supabase = getSupabaseAdmin()!;
-  const { data: c } = await supabase.from('concepts').select('*').eq('id', conceptId).maybeSingle();
+  const { data: c, error } = await supabase.from('concepts').select('*').eq('id', conceptId).maybeSingle();
+  if (error) {
+    logger.error('getConcept failed', { conceptId, error: error.message, details: error.details, hint: error.hint, code: error.code });
+    throw new AppError(500, `Failed to fetch concept: ${error.message}`);
+  }
   return c;
 }
 
 async function getConceptQuestions(conceptId: string) {
-  const { data: rows } = await getSupabaseAdmin()!.from('concept_questions').select('*').eq('concept_id', conceptId);
+  const { data: rows, error } = await getSupabaseAdmin()!.from('concept_questions').select('*').eq('concept_id', conceptId);
+  if (error) {
+    logger.error('getConceptQuestions failed', { conceptId, error: error.message, details: error.details, hint: error.hint, code: error.code });
+    throw new AppError(500, `Failed to fetch concept questions: ${error.message}`);
+  }
   return rows || [];
 }
 
@@ -107,7 +128,10 @@ async function upsertQuestions(questions: Array<Record<string, unknown>>, concep
       source: (q.source as string) || 'AI Quiz Generation',
       data: q,
     }, { onConflict: 'id' });
-    if (error) throw error;
+    if (error) {
+      logger.error('upsertQuestions failed', { conceptId, questionId: q.id, error: error.message, details: error.details, hint: error.hint, code: error.code });
+      throw new AppError(500, `Failed to save question: ${error.message}`);
+    }
   }
 }
 

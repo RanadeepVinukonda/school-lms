@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from './supabase';
-import { NotFoundError, ConflictError } from '../utils/errors';
+import { NotFoundError, ConflictError, AppError } from '../utils/errors';
 import { deleteDocument } from './document.service';
 import { logger } from '../utils/logger';
 
@@ -102,7 +102,10 @@ export async function getTeacherAssignment(teacherId: string, classId: string): 
     .eq('collection', 'teacherClassSubject')
     .contains('data', { teacherId, classId })
     .limit(1);
-  if (error) throw new Error('Failed to fetch teacher assignment: ' + error.message);
+  if (error) {
+    logger.error('getTeacherAssignment failed', { teacherId, classId, error: error.message, details: error.details, hint: error.hint, code: error.code });
+    throw new AppError(500, 'Failed to fetch teacher assignment: ' + error.message);
+  }
 
   if (!rows || rows.length === 0) return null;
   return { id: rows[0].doc_id, ...rows[0].data as Record<string, unknown> } as unknown as TeacherClassSubject;
