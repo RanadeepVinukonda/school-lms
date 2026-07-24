@@ -14,6 +14,10 @@ const CSRF_COOKIE_NAME = 'csrf-token';
 const CSRF_HEADER_NAME = 'x-csrf-token';
 const MUTATING_METHODS = new Set(['post', 'put', 'patch', 'delete']);
 
+// In-memory cache for CSRF token (needed for Capacitor/mobile where JS
+// cannot read cookies set by a different origin /api backend domain).
+let cachedCsrfToken: string | null = null;
+
 function readCsrfCookie(): string | null {
   if (typeof document === 'undefined') return null;
   const match = document.cookie.match(new RegExp(`(?:^|; )${CSRF_COOKIE_NAME}=([^;]*)`));
@@ -28,8 +32,19 @@ async function fetchAndCacheCsrfToken(): Promise<string | null> {
 
   csrfFetchPromise = (async () => {
     try {
-      // A GET to /csrf-token sets the cookie and returns the token in the body.
-      await axios.get(`${API_BASE_URL}/csrf-token`, { withCredentials: true });
+      // The /csrf-token endpoint sets a cookie AND returns the token in the body.
+      // On Capacitor/mobile, JS cannot read the cross-origin cookie, so we must
+      // use the response body token instead.
+      const response = await axios.get<{ success: boolean; data: { csrfToken: string } }>(
+        `${API_BASE_URL}/csrf-token`,
+        { withCredentials: true }
+      );
+      const bodyToken = response.data?.data?.csrfToken;
+      if (bodyToken) {
+        cachedCsrfToken = bodyToken;
+        return bodyToken;
+      }
+      // Fallback: try reading the cookie (works on same-origin web deployments)
       return readCsrfCookie();
     } catch {
       return null;
@@ -42,8 +57,15 @@ async function fetchAndCacheCsrfToken(): Promise<string | null> {
 }
 
 async function getCsrfToken(): Promise<string | null> {
+  // 1. Check in-memory cache first (works everywhere, including Capacitor)
+  if (cachedCsrfToken) return cachedCsrfToken;
+  // 2. Try reading the cookie (works on same-origin web)
   const existing = readCsrfCookie();
-  if (existing) return existing;
+  if (existing) {
+    cachedCsrfToken = existing;
+    return existing;
+  }
+  // 3. Fetch a fresh token from the server
   return fetchAndCacheCsrfToken();
 }
 
@@ -204,9 +226,30 @@ api.interceptors.response.use(
       }
     }
 
+    // Handle CSRF token failures — refresh token and retry once
+    if (
+      error.response?.status === 403 &&
+      (error.response?.data as any)?.error?.message?.toLowerCase().includes('csrf') &&
+      !originalRequest._retry
+    ) {
+      originalRequest._retry = true;
+      cachedCsrfToken = null; // clear stale cache
+      const newToken = await fetchAndCacheCsrfToken();
+      if (newToken) {
+        originalRequest.headers[CSRF_HEADER_NAME] = newToken;
+        return api(originalRequest);
+      }
+    }
+
     const errData = error.response?.data;
-    const errorMessage = errData?.error?.message || errData?.message || error.message;
+    let errorMessage = errData?.error?.message || errData?.message || error.message;
     const details = errData?.error?.details;
+
+    // Replace cryptic CSRF error with user-friendly message
+    if (errorMessage?.toLowerCase().includes('csrf')) {
+      errorMessage = 'Your session has expired. Please log in again.';
+    }
+
     const message = details && details.length > 0
       ? details.map((d) => d.message).join('; ')
       : errorMessage;
