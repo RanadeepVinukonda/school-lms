@@ -128,6 +128,46 @@ async function getAccessToken(): Promise<string | null> {
   return null;
 }
 
+// ---------- Debug logging interceptor ----------
+const LOG_PREFIX = '[API]';
+api.interceptors.request.use(
+  (config) => {
+    const url = `${config.baseURL || ''}${config.url || ''}`;
+    const method = (config.method || 'GET').toUpperCase();
+    const hasAuth = !!config.headers?.Authorization;
+    const hasCsrf = !!config.headers?.[CSRF_HEADER_NAME];
+    console.log(`${LOG_PREFIX} ➡️  ${method} ${url}`, { hasAuth, hasCsrf, dataSize: config.data ? JSON.stringify(config.data).length : 0 });
+    (config as any)._startTime = Date.now();
+    return config;
+  },
+  (error) => {
+    console.error(`${LOG_PREFIX} ❌ Request interceptor error:`, error.message);
+    return Promise.reject(error);
+  }
+);
+
+api.interceptors.response.use(
+  (response) => {
+    const cfg = response.config as any;
+    const duration = cfg._startTime ? Date.now() - cfg._startTime : -1;
+    const url = `${response.config.baseURL || ''}${response.config.url || ''}`;
+    const method = (response.config.method || 'GET').toUpperCase();
+    console.log(`${LOG_PREFIX} ✅ ${method} ${url} ${response.status} (${duration}ms)`);
+    return response;
+  },
+  (error) => {
+    const cfg = error.config as any;
+    const duration = cfg?._startTime ? Date.now() - cfg._startTime : -1;
+    const url = cfg ? `${cfg.baseURL || ''}${cfg.url || ''}` : 'unknown';
+    const method = cfg ? (cfg.method || 'GET').toUpperCase() : 'UNKNOWN';
+    const status = error.response?.status || 'NETWORK_ERR';
+    const respBody = error.response?.data ? JSON.stringify(error.response.data).substring(0, 500) : '(no response body)';
+    console.error(`${LOG_PREFIX} ❌ ${method} ${url} ${status} (${duration}ms)`, { responseBody: respBody, message: error.message, code: error.code });
+    // Continue with the normal error handling below
+    return Promise.reject(error);
+  }
+);
+
 // ---------- Auth token interceptor ----------
 api.interceptors.request.use(async (config) => {
   // Skip auth for the refresh endpoint itself

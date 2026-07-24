@@ -22,7 +22,9 @@ function getCookies(req: Request): Record<string, string> {
 function setCsrfCookie(res: Response, token: string) {
   res.cookie(CSRF_COOKIE, token, {
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    // 'none' allows the cookie to be sent cross-origin (needed for Capacitor mobile app
+    // where the WebView origin differs from the API backend domain).
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     httpOnly: false,
     path: '/',
   });

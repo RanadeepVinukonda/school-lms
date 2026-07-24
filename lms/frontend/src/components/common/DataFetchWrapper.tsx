@@ -15,12 +15,13 @@ interface DataFetchWrapperProps<T> {
   children: (data: NonNullable<T>) => React.ReactNode;
 }
 
-function categorizeError(error: Error): { title: string; message: string } {
-  const msg = error.message || '';
-  const statusMatch = msg.match(/\b(\d{3})\b/);
-  const status = statusMatch ? parseInt(statusMatch[1], 10) : 0;
+function categorizeError(error: any): { title: string; message: string } {
+  const msg = error?.message || '';
+  // Use explicit status/code from ApiError if available (set by api.ts response interceptor)
+  const status = error?.status || 0;
+  const code = error?.code || '';
 
-  if (msg.includes('Network Error') || msg.includes('ERR_NETWORK') || msg.includes('ERR_CONNECTION')) {
+  if (status === 0 && (msg.includes('Network Error') || msg.includes('ERR_NETWORK') || msg.includes('ERR_CONNECTION'))) {
     return { title: 'Server Unavailable', message: 'Cannot connect to the server. Check your internet connection.' };
   }
   if (msg.includes('timeout') || msg.includes('TIMEOUT') || msg.includes('ERR_TIMEOUT')) {
@@ -29,7 +30,7 @@ function categorizeError(error: Error): { title: string; message: string } {
   if (msg.includes('CORS') || msg.includes('not allowed by CORS')) {
     return { title: 'Access Blocked', message: 'Request blocked by security policy. Contact support.' };
   }
-  if (status === 401 || msg.includes('Unauthorized') || msg.includes('SESSION_EXPIRED')) {
+  if (status === 401 || code === 'SESSION_EXPIRED' || msg.includes('Unauthorized') || msg.includes('sign in again') || msg.includes('log in again')) {
     return { title: 'Authentication Failed', message: 'Your session has expired. Please sign in again.' };
   }
   if (status === 403 || msg.includes('Forbidden')) {
@@ -40,6 +41,9 @@ function categorizeError(error: Error): { title: string; message: string } {
   }
   if (status >= 500 || msg.includes('Internal Server Error') || msg.includes('Database')) {
     return { title: 'Server Error', message: 'The server encountered an error. Please try again later.' };
+  }
+  if (!msg || msg === 'An unexpected error occurred') {
+    return { title: 'No Data Available', message: 'No data could be loaded at this time.' };
   }
 
   return { title: 'Failed to load data', message: msg || 'An unexpected error occurred' };
