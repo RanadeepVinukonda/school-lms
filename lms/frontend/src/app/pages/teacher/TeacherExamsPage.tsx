@@ -13,7 +13,6 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
@@ -96,18 +95,10 @@ export default function TeacherExamsPage() {
 
   const [reviewQuestions, setReviewQuestions] = useState<any[]>([]);
 
-  const [activeTab, setActiveTab] = useState('list');
-
   const { data: assignments, isLoading: assignmentsLoading, error: assignmentsError } = useQuery({
     queryKey: ['teacher-assignments', user?.id],
     queryFn: () => api.get('/teacher-class-subject/my').then((r) => r.data.data),
     enabled: !!user?.id,
-  });
-
-  const { data: existingExams = [], isLoading: examsLoading } = useQuery({
-    queryKey: ['teacher-exams-v2', teacherId],
-    queryFn: () => api.get('/exams-v2/my').then((r) => r.data.data ?? []),
-    enabled: !!teacherId,
   });
 
   const assignmentList: TeacherAssignment[] = assignments ?? [];
@@ -327,100 +318,14 @@ export default function TeacherExamsPage() {
           </p>
         </motion.div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="list">{_('Existing Exams')}</TabsTrigger>
-            <TabsTrigger value="create">{_('Create Exam')}</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="list" className="space-y-6">
-            <Card className="border-border/60">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-title-sm flex items-center gap-2">
-                  <Icon name="fact_check" size={18} className="text-primary" />
-                  {_('Your Exams')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {examsLoading ? (
-                  <div className="space-y-3">
-                    {[1, 2, 3].map((i) => (
-                      <Skeleton key={i} className="h-14 w-full" />
-                    ))}
-                  </div>
-                ) : existingExams.length === 0 ? (
-                  <div className="flex flex-col items-center gap-3 py-12 text-muted-foreground">
-                    <Icon name="quiz" size={48} className="opacity-50" />
-                    <p className="text-title-sm font-semibold">{_('No exams created yet')}</p>
-                    <p className="text-label-sm text-center max-w-sm">
-                      {_('Create your first exam by switching to the Create Exam tab.')}
-                    </p>
-                    <Button variant="outline" size="sm" onClick={() => setActiveTab('create')}>
-                      <Icon name="add" size={14} className="mr-1" />
-                      {_('Create Exam')}
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="border border-border/60 rounded-xl overflow-x-auto">
-                    <table className="w-full text-left">
-                      <thead>
-                        <tr className="border-b border-b-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
-                          <th className="px-4 py-3">{_('Title')}</th>
-                          <th className="px-4 py-3">{_('Chapter')}</th>
-                          <th className="px-4 py-3 text-center">{_('Status')}</th>
-                          <th className="px-4 py-3">{_('Created')}</th>
-                          <th className="px-4 py-3 text-right">{_('Actions')}</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border/40 text-title-sm">
-                        {existingExams.map((exam: any) => (
-                          <tr key={exam.id} className="hover:bg-muted/20 transition-colors">
-                            <td className="px-4 py-3 font-semibold">{exam.title}</td>
-                            <td className="px-4 py-3 text-label-sm text-muted-foreground">
-                              {exam.chapterTitle || exam.chapterId || '-'}
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <Badge
-                                variant={exam.status === 'active' || exam.status === 'published' ? 'default' : exam.status === 'draft' ? 'secondary' : 'outline'}
-                                className="text-[10px] capitalize"
-                              >
-                                {exam.status || 'draft'}
-                              </Badge>
-                            </td>
-                            <td className="px-4 py-3 text-label-sm text-muted-foreground">
-                              {exam.createdAt ? new Date(exam.createdAt).toLocaleDateString() : '-'}
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  toast.info(_('Exam details copied to clipboard'));
-                                  navigator.clipboard?.writeText(JSON.stringify({ id: exam.id, title: exam.title, classId: exam.classId }, null, 2));
-                                }}
-                              >
-                                <Icon name="content_copy" size={14} />
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="create" className="space-y-6">
-            <motion.div variants={cardStackReveal} custom={1} className="space-y-6">
-              <Card className="border-border/60">
-                <CardHeader>
-                  <CardTitle className="text-title-sm">{_('Teacher Assignment')}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="class-select">{_('Class')}</Label>
+        <motion.div variants={cardStackReveal} custom={1} className="space-y-6">
+          <Card className="border-border/60">
+            <CardHeader>
+              <CardTitle className="text-title-sm">{_('Teacher Assignment')}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="class-select">{_('Class')}</Label>
                     <select
                       id="class-select"
                       value={selectedClassId}
@@ -837,8 +742,6 @@ export default function TeacherExamsPage() {
                 </Card>
               )}
             </motion.div>
-          </TabsContent>
-        </Tabs>
       </motion.div>
     </>
   );

@@ -6,7 +6,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { ReleaseRepublishModal } from '@/components/common/ReleaseRepublishModal';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -52,12 +52,6 @@ export default function TeacherTestSchedulePage() {
     const map = new Map<string, string>();
     assignmentList.forEach(a => { if (!map.has(a.subjectId)) map.set(a.subjectId, a.subjectName); });
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
-  }, [assignmentList]);
-
-  const subjectMap = useMemo(() => {
-    const m = new Map<string, string>();
-    assignmentList.forEach(a => m.set(a.subjectId, a.subjectName));
-    return m;
   }, [assignmentList]);
 
   const { data: exams, isLoading: examsLoading } = useQuery({
@@ -172,21 +166,20 @@ export default function TeacherTestSchedulePage() {
 
   return (
     <>
-      <SEOHead title={_('Manage Tests & Review')} description={_('Review all exams, quizzes and assignments by class')} />
+      <SEOHead title={_('Manage Tests')} description={_('View all exams, quizzes and assignments by class')} />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="sm:p-6 p-4 max-w-6xl mx-auto space-y-8 pb-32"
+        className="sm:p-6 p-4 max-w-6xl mx-auto space-y-6 pb-32"
       >
         <motion.div variants={cardStackReveal} custom={0}>
-          <h1 className="text-headline-sm">{_('Manage Tests & Review')}</h1>
+          <h1 className="text-headline-sm">{_('Manage Tests')}</h1>
           <p className="text-body-md text-muted-foreground mt-1">
             {_('View all created exams, quizzes, and assignments by class')}
           </p>
         </motion.div>
 
-        {/* Class Selector */}
         <motion.div variants={cardStackReveal} custom={1}>
           <Card className="border-border/60">
             <CardContent className="p-5">
@@ -260,46 +253,58 @@ export default function TeacherTestSchedulePage() {
                 emptyIcon={<Icon name="fact_check" size={40} className="text-muted-foreground/50" />}
               >
                 {() => (
-                  <div className="space-y-3">
-                    {(filteredExamList.length > 0 ? filteredExamList : examList).map((exam: any) => (
-                      <Card key={exam.id} className="border-border/60">
-                        <CardContent className="p-4">
-                          <div className="flex items-start gap-3">
-                            <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${exam.releasedAt ? 'bg-success-container' : 'bg-secondary-container'}`}>
-                              <Icon name="fact_check" size={20} className={exam.releasedAt ? 'text-on-success-container' : 'text-on-secondary-container'} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-0.5">
-                                <p className="font-semibold truncate">{exam.title}</p>
-                                <Badge variant={exam.releasedAt ? 'success' : 'secondary'} className="text-[10px] shrink-0 capitalize">
-                                  {exam.releasedAt ? _('Released') : _('Draft')}
-                                </Badge>
+                  <div className="border border-border/60 rounded-xl overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="border-b border-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
+                          <th className="px-4 py-3">{_('Title')}</th>
+                          <th className="px-4 py-3">{_('Chapter')}</th>
+                          <th className="px-4 py-3 text-center">{_('Status')}</th>
+                          <th className="px-4 py-3 text-center">{_('Attempts')}</th>
+                          <th className="px-4 py-3">{_('Created')}</th>
+                          <th className="px-4 py-3 text-right">{_('Actions')}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/40 text-title-sm">
+                        {(filteredExamList.length > 0 ? filteredExamList : examList).map((exam: any) => (
+                          <tr key={exam.id} className="hover:bg-muted/20 transition-colors">
+                            <td className="px-4 py-3">
+                              <div className="font-semibold">{exam.title}</div>
+                              <div className="text-label-xs text-muted-foreground line-clamp-1">{exam.description}</div>
+                            </td>
+                            <td className="px-4 py-3 text-label-sm text-muted-foreground">
+                              {exam.chapterTitle || exam.chapterId || '-'}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <Badge variant={exam.releasedAt ? 'success' : 'secondary'} className="text-[10px] capitalize">
+                                {exam.releasedAt ? _('Released') : _('Draft')}
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-3 text-center text-label-sm text-muted-foreground">
+                              {exam.attemptCount ?? 0}
+                            </td>
+                            <td className="px-4 py-3 text-label-sm text-muted-foreground">
+                              {formatDate(exam.createdAt)}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                {!exam.releasedAt && (
+                                  <Button size="sm" onClick={() => { setModalConfig({ type: 'release', assessmentType: 'exam', id: exam.id, title: exam.title }); setModalOpen(true); }} className="gap-1">
+                                    <Icon name="publish" size={15} />{_('Release')}
+                                  </Button>
+                                )}
+                                {exam.releasedAt && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-label-xs text-muted-foreground">{_('Grades')}</span>
+                                    <Switch checked={exam.showResults} onCheckedChange={() => toggleGradesMutation.mutate(exam.id)} disabled={toggleGradesMutation.isPending && toggleGradesMutation.variables === exam.id} />
+                                  </div>
+                                )}
                               </div>
-                              <p className="text-label-xs text-muted-foreground line-clamp-1">{exam.description}</p>
-                              <div className="flex items-center gap-3 mt-1.5 text-label-xs text-muted-foreground">
-                                <span className="flex items-center gap-1"><Icon name="schedule" size={14} />{exam.timeLimitMinutes} {_('min')}</span>
-                                <span className="flex items-center gap-1"><Icon name="percent" size={14} />{_('Pass')}: {exam.passingScore}%</span>
-                                <span className="flex items-center gap-1"><Icon name="people" size={14} />{exam.attemptCount ?? 0} {_('attempts')}</span>
-                                <span>{formatDate(exam.createdAt)}</span>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {!exam.releasedAt && (
-                                <Button size="sm" onClick={() => { setModalConfig({ type: 'release', assessmentType: 'exam', id: exam.id, title: exam.title }); setModalOpen(true); }} className="gap-1">
-                                  <Icon name="publish" size={15} />{_('Release')}
-                                </Button>
-                              )}
-                              {exam.releasedAt && (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-label-xs text-muted-foreground">{_('Grades')}</span>
-                                  <Switch checked={exam.showResults} onCheckedChange={() => toggleGradesMutation.mutate(exam.id)} disabled={toggleGradesMutation.isPending && toggleGradesMutation.variables === exam.id} />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </DataFetchWrapper>
@@ -315,56 +320,72 @@ export default function TeacherTestSchedulePage() {
                 emptyIcon={<Icon name="quiz" size={40} className="text-muted-foreground/50" />}
               >
                 {() => (
-                  <div className="space-y-3">
-                    {(filteredQuizList.length > 0 ? filteredQuizList : quizList).map((quiz: any) => {
-                      const isDraft = !quiz.releasedAt;
-                      const isReleased = !!quiz.releasedAt && !quiz.isRepublished;
-                      const isRepublished = !!quiz.releasedAt && !!quiz.isRepublished;
-                      return (
-                      <Card key={quiz.id} className="border-border/60">
-                        <CardContent className="p-4">
-                          <div className="flex items-start gap-3">
-                            <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${isReleased || isRepublished ? 'bg-success-container' : 'bg-secondary-container'}`}>
-                              <Icon name="quiz" size={20} className={isReleased || isRepublished ? 'text-on-success-container' : 'text-on-secondary-container'} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-0.5">
-                                <p className="font-semibold truncate">{quiz.title}</p>
-                                <Badge variant={isRepublished ? 'success' : isReleased ? 'success' : 'secondary'} className="text-[10px] shrink-0 capitalize">
-                                  {isRepublished ? _('Republished') : isReleased ? _('Released') : _('Draft')}
-                                </Badge>
+                  <div className="border border-border/60 rounded-xl overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="border-b border-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
+                          <th className="px-4 py-3">{_('Title')}</th>
+                          <th className="px-4 py-3">{_('Chapter')}</th>
+                          <th className="px-4 py-3">{_('Concept')}</th>
+                          <th className="px-4 py-3 text-center">{_('Status')}</th>
+                          <th className="px-4 py-3 text-center">{_('Attempts')}</th>
+                          <th className="px-4 py-3">{_('Created')}</th>
+                          <th className="px-4 py-3 text-right">{_('Actions')}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/40 text-title-sm">
+                        {(filteredQuizList.length > 0 ? filteredQuizList : quizList).map((quiz: any) => {
+                          const isDraft = !quiz.releasedAt;
+                          const isReleased = !!quiz.releasedAt && !quiz.isRepublished;
+                          const isRepublished = !!quiz.releasedAt && !!quiz.isRepublished;
+                          return (
+                          <tr key={quiz.id} className="hover:bg-muted/20 transition-colors">
+                            <td className="px-4 py-3">
+                              <div className="font-semibold">{quiz.title}</div>
+                              <div className="text-label-xs text-muted-foreground line-clamp-1">{quiz.description}</div>
+                            </td>
+                            <td className="px-4 py-3 text-label-sm text-muted-foreground">
+                              {quiz.chapterTitle || quiz.chapterId || '-'}
+                            </td>
+                            <td className="px-4 py-3 text-label-sm text-muted-foreground">
+                              {quiz.conceptTitle || quiz.conceptId || '-'}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <Badge variant={isRepublished ? 'success' : isReleased ? 'success' : 'secondary'} className="text-[10px] capitalize">
+                                {isRepublished ? _('Republished') : isReleased ? _('Released') : _('Draft')}
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-3 text-center text-label-sm text-muted-foreground">
+                              {quiz.attemptCount ?? 0}
+                            </td>
+                            <td className="px-4 py-3 text-label-sm text-muted-foreground">
+                              {formatDate(quiz.createdAt)}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                {isDraft && (
+                                  <Button size="sm" onClick={() => { setModalConfig({ type: 'release', assessmentType: 'quiz', id: quiz.id, title: quiz.title }); setModalOpen(true); }} className="gap-1">
+                                    <Icon name="publish" size={15} />{_('Release')}
+                                  </Button>
+                                )}
+                                {isReleased && (
+                                  <Button size="sm" variant="outline" onClick={() => { setModalConfig({ type: 'republish', assessmentType: 'quiz', id: quiz.id, title: quiz.title }); setModalOpen(true); }} className="gap-1">
+                                    <Icon name="autorenew" size={15} />{_('Republish')}
+                                  </Button>
+                                )}
+                                {isRepublished && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-label-xs text-muted-foreground">{_('Grades')}</span>
+                                    <Switch checked={quiz.showResults} onCheckedChange={(checked) => toggleQuizGradesMutation.mutate({ id: quiz.id, showResults: checked })} disabled={toggleQuizGradesMutation.isPending && toggleQuizGradesMutation.variables?.id === quiz.id} />
+                                  </div>
+                                )}
                               </div>
-                              <p className="text-label-xs text-muted-foreground line-clamp-1">{quiz.description}</p>
-                              <div className="flex items-center gap-3 mt-1.5 text-label-xs text-muted-foreground">
-                                <span className="flex items-center gap-1"><Icon name="schedule" size={14} />{quiz.timeLimitMinutes || quiz.durationMinutes || '-'} {_('min')}</span>
-                                <span className="flex items-center gap-1"><Icon name="percent" size={14} />{_('Pass')}: {quiz.passingScore}%</span>
-                                <span className="flex items-center gap-1"><Icon name="people" size={14} />{quiz.attemptCount ?? 0} {_('attempts')}</span>
-                                <span>{formatDate(quiz.createdAt)}</span>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {isDraft && (
-                                <Button size="sm" onClick={() => { setModalConfig({ type: 'release', assessmentType: 'quiz', id: quiz.id, title: quiz.title }); setModalOpen(true); }} className="gap-1">
-                                  <Icon name="publish" size={15} />{_('Release')}
-                                </Button>
-                              )}
-                              {isReleased && (
-                                <Button size="sm" variant="outline" onClick={() => { setModalConfig({ type: 'republish', assessmentType: 'quiz', id: quiz.id, title: quiz.title }); setModalOpen(true); }} className="gap-1">
-                                  <Icon name="autorenew" size={15} />{_('Republish')}
-                                </Button>
-                              )}
-                              {isRepublished && (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-label-xs text-muted-foreground">{_('Grades')}</span>
-                                  <Switch checked={quiz.showResults} onCheckedChange={(checked) => toggleQuizGradesMutation.mutate({ id: quiz.id, showResults: checked })} disabled={toggleQuizGradesMutation.isPending && toggleQuizGradesMutation.variables?.id === quiz.id} />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                      );
-                    })}
+                            </td>
+                          </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </DataFetchWrapper>
@@ -380,39 +401,56 @@ export default function TeacherTestSchedulePage() {
                 emptyIcon={<Icon name="assignment" size={40} className="text-muted-foreground/50" />}
               >
                 {() => (
-                  <div className="space-y-3">
-                    {(filteredAssignmentList.length > 0 ? filteredAssignmentList : assignmentItems).map((as: any) => (
-                      <Card key={as.id} className="border-border/60">
-                        <CardContent className="p-4">
-                          <div className="flex items-start gap-3">
-                            <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${as.releasedAt ? 'bg-success-container' : 'bg-secondary-container'}`}>
-                              <Icon name="assignment" size={20} className={as.releasedAt ? 'text-on-success-container' : 'text-on-secondary-container'} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-0.5">
-                                <p className="font-semibold truncate">{as.title}</p>
-                                <Badge variant={as.releasedAt ? 'success' : 'secondary'} className="text-[10px] shrink-0 capitalize">
-                                  {as.releasedAt ? _('Released') : _('Draft')}
-                                </Badge>
+                  <div className="border border-border/60 rounded-xl overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="border-b border-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
+                          <th className="px-4 py-3">{_('Title')}</th>
+                          <th className="px-4 py-3">{_('Chapter')}</th>
+                          <th className="px-4 py-3">{_('Concept')}</th>
+                          <th className="px-4 py-3 text-center">{_('Status')}</th>
+                          <th className="px-4 py-3 text-center">{_('Submissions')}</th>
+                          <th className="px-4 py-3">{_('Created')}</th>
+                          <th className="px-4 py-3 text-right">{_('Actions')}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/40 text-title-sm">
+                        {(filteredAssignmentList.length > 0 ? filteredAssignmentList : assignmentItems).map((as: any) => (
+                          <tr key={as.id} className="hover:bg-muted/20 transition-colors">
+                            <td className="px-4 py-3">
+                              <div className="font-semibold">{as.title}</div>
+                              <div className="text-label-xs text-muted-foreground line-clamp-1">{as.description}</div>
+                            </td>
+                            <td className="px-4 py-3 text-label-sm text-muted-foreground">
+                              {as.chapterTitle || as.chapterId || '-'}
+                            </td>
+                            <td className="px-4 py-3 text-label-sm text-muted-foreground">
+                              {as.conceptTitle || as.conceptId || '-'}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <Badge variant={as.releasedAt ? 'success' : 'secondary'} className="text-[10px] capitalize">
+                                {as.releasedAt ? _('Released') : _('Draft')}
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-3 text-center text-label-sm text-muted-foreground">
+                              {as.submissionCount ?? as.attemptCount ?? 0}
+                            </td>
+                            <td className="px-4 py-3 text-label-sm text-muted-foreground">
+                              {formatDate(as.createdAt)}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                {!as.releasedAt && (
+                                  <Button size="sm" onClick={() => { setModalConfig({ type: 'release', assessmentType: 'assignment', id: as.id, title: as.title }); setModalOpen(true); }} className="gap-1">
+                                    <Icon name="publish" size={15} />{_('Release')}
+                                  </Button>
+                                )}
                               </div>
-                              <p className="text-label-xs text-muted-foreground line-clamp-1">{as.description}</p>
-                              <div className="flex items-center gap-3 mt-1.5 text-label-xs text-muted-foreground">
-                                <span className="flex items-center gap-1"><Icon name="calendar_today" size={14} />{formatDate(as.dueDate || as.due_date)}</span>
-                                <span className="flex items-center gap-1"><Icon name="people" size={14} />{as.submissionCount ?? as.attemptCount ?? 0} {_('submissions')}</span>
-                                <span>{formatDate(as.createdAt)}</span>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {!as.releasedAt && (
-                                <Button size="sm" onClick={() => { setModalConfig({ type: 'release', assessmentType: 'assignment', id: as.id, title: as.title }); setModalOpen(true); }} className="gap-1">
-                                  <Icon name="publish" size={15} />{_('Release')}
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </DataFetchWrapper>
