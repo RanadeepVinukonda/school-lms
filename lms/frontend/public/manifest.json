@@ -7,14 +7,56 @@
   "background_color": "#ffffff",
   "theme_color": "#3B82F6",
   "orientation": "portrait-primary",
-  "categories": ["education", "productivity"],
+  "categories": [
+    "education",
+    "productivity"
+  ],
   "gcm_sender_id": "103953800507",
   "lang": "en",
   "dir": "ltr",
   "icons": [
-    { "src": "/favicon.png", "sizes": "any", "type": "image/png" },
-    { "src": "/genesis_icon.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/genesis_icon.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "../icons/icon-48.webp",
+      "type": "image/png",
+      "sizes": "48x48",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-72.webp",
+      "type": "image/png",
+      "sizes": "72x72",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-96.webp",
+      "type": "image/png",
+      "sizes": "96x96",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-128.webp",
+      "type": "image/png",
+      "sizes": "128x128",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-192.webp",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-256.webp",
+      "type": "image/png",
+      "sizes": "256x256",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-512.webp",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
   ],
   "screenshots": [],
   "shortcuts": [
@@ -23,21 +65,36 @@
       "short_name": "Dashboard",
       "description": "View your learning dashboard",
       "url": "/student/dashboard",
-      "icons": [{ "src": "/genesis_icon.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/genesis_icon.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Tasks",
       "short_name": "Tasks",
       "description": "View your pending tasks",
       "url": "/student/tasks",
-      "icons": [{ "src": "/genesis_icon.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/genesis_icon.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Exams",
       "short_name": "Exams",
       "description": "View upcoming exams",
       "url": "/student/exams",
-      "icons": [{ "src": "/genesis_icon.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/genesis_icon.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }
