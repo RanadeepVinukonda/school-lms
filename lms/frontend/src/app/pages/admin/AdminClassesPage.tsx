@@ -113,6 +113,7 @@ export default function AdminClassesPage() {
   const [classSection, setClassSection] = useState('');
   const [classRoomNumber, setClassRoomNumber] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [classCreateLoading, setClassCreateLoading] = useState(false);
 
   const [classDeleteTarget, setClassDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [classDeleteLoading, setClassDeleteLoading] = useState(false);
@@ -141,6 +142,7 @@ export default function AdminClassesPage() {
   };
 
   const handleCreateClass = async () => {
+    if (classCreateLoading) return;
     const g = classGrade.trim();
     if (!g || !/^\d+$/.test(g)) {
       toast.error('Enter a valid grade number');
@@ -156,6 +158,7 @@ export default function AdminClassesPage() {
       return;
     }
 
+    setClassCreateLoading(true);
     try {
       const { data: newClass } = await supabase.from('classes').insert({
         name: className,
@@ -189,6 +192,8 @@ export default function AdminClassesPage() {
       refetchClasses();
     } catch {
       toast.error('Failed to create class');
+    } finally {
+      setClassCreateLoading(false);
     }
   };
 
@@ -354,6 +359,7 @@ export default function AdminClassesPage() {
   const [showAddSubject, setShowAddSubject] = useState(false);
   const [addSubjectClassId, setAddSubjectClassId] = useState('');
   const [subjectForm, setSubjectForm] = useState({ name: '', code: '', category: 'STEM', icon: 'menu_book' });
+  const [subjectCreateLoading, setSubjectCreateLoading] = useState(false);
 
   const handleAddSubjectClick = (classId: string) => {
     setAddSubjectClassId(classId);
@@ -362,6 +368,7 @@ export default function AdminClassesPage() {
   };
 
   const handleAddSubject = async () => {
+    if (subjectCreateLoading) return;
     if (!subjectForm.name || !subjectForm.code) {
       toast.error('Please fill in subject name and code');
       return;
@@ -372,6 +379,7 @@ export default function AdminClassesPage() {
       toast.error(`Subject code "${code}" is already in use in this class`);
       return;
     }
+    setSubjectCreateLoading(true);
     try {
       const { data: newSubject } = await supabase.from('subjects').insert({
         name: subjectForm.name,
@@ -410,6 +418,8 @@ export default function AdminClassesPage() {
       refetchClasses();
     } catch {
       toast.error('Failed to add subject');
+    } finally {
+      setSubjectCreateLoading(false);
     }
   };
 
@@ -1128,6 +1138,14 @@ export default function AdminClassesPage() {
                                 >
                                   <Icon name={student.isActive === false ? 'toggle_off' : 'toggle_on'} size={18} />
                                 </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  onClick={() => handleUserDeleteClick(student)}
+                                  title="Delete student"
+                                >
+                                  <Icon name="delete" size={16} className="text-error" />
+                                </Button>
                               </td>
                             </tr>
                           );
@@ -1210,7 +1228,9 @@ export default function AdminClassesPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreateClass(false)}>Cancel</Button>
-            <Button onClick={handleCreateClass} disabled={!classGrade.trim()}>Create</Button>
+            <Button onClick={handleCreateClass} disabled={!classGrade.trim() || classCreateLoading}>
+              {classCreateLoading ? 'Creating...' : 'Create'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1337,7 +1357,9 @@ export default function AdminClassesPage() {
               <Label>Category</Label>
               <OptionsSelect options={subjectCategoryOptions} placeholder="Select category" value={subjectForm.category} onChange={(v: string) => setSubjectForm((f) => ({ ...f, category: v }))} />
             </div>
-            <Button className="w-full" onClick={handleAddSubject}><Icon name="add" size={16} className="mr-2" />Add Subject</Button>
+            <Button className="w-full" onClick={handleAddSubject} disabled={subjectCreateLoading}>
+              <Icon name="add" size={16} className="mr-2" />{subjectCreateLoading ? 'Adding...' : 'Add Subject'}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
