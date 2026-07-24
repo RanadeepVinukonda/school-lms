@@ -147,19 +147,23 @@ export async function getAdminDashboard() {
   const { count: studentsCount } = await supabase
     .from('users')
     .select('id', { count: 'exact', head: true })
-    .eq('role', 'student');
+    .eq('role', 'student')
+    .is('deleted_at', null);
   const { count: teachersCount } = await supabase
     .from('users')
     .select('id', { count: 'exact', head: true })
-    .eq('role', 'teacher');
+    .eq('role', 'teacher')
+    .is('deleted_at', null);
   const { count: adminsCount } = await supabase
     .from('users')
     .select('id', { count: 'exact', head: true })
-    .eq('role', 'admin');
+    .eq('role', 'admin')
+    .is('deleted_at', null);
   const { count: parentsCount } = await supabase
     .from('users')
     .select('id', { count: 'exact', head: true })
-    .eq('role', 'parent');
+    .eq('role', 'parent')
+    .is('deleted_at', null);
 
   const { count: totalCourses } = await supabase
     .from('courses')
@@ -177,30 +181,46 @@ export async function getAdminDashboard() {
     .select('id', { count: 'exact', head: true })
     .eq('status', 'active');
 
-  const { count: totalGrades } = await supabase
-    .from('grades')
-    .select('id', { count: 'exact', head: true });
+  // Aggregate performance from firestore_docs attempt collections
+  const [quizAttemptRes, examAttemptRes, submitRes] = await Promise.all([
+    supabase.from('firestore_docs').select('data').eq('collection', 'quizAttemptV2'),
+    supabase.from('firestore_docs').select('data').eq('collection', 'examAttemptV2'),
+    supabase.from('firestore_docs').select('data').eq('collection', 'assignmentSubmissionV2'),
+  ]);
 
-  const { data: gradeScores } = await supabase
-    .from('grades')
-    .select('score, totalPoints');
+  let totalScore = 0;
+  let totalPoints = 0;
+  let totalAttempts = 0;
+  const studentScores: Record<string, { total: number; count: number }> = {};
+  const uniqueStudentIds = new Set<string>();
 
-  let averagePerformance = 0;
-  let atRiskCount = 0;
-  if (gradeScores && gradeScores.length > 0) {
-    let totalScore = 0;
-    let totalPoints = 0;
-    for (const g of gradeScores) {
-      totalScore += (g.score as number) || 0;
-      totalPoints += (g.totalPoints as number) || 0;
-      if (((g.score as number) || 0) < ((g.totalPoints as number) || 1) * 0.4) {
-        atRiskCount++;
-      }
+  for (const arr of [quizAttemptRes.data || [], examAttemptRes.data || [], submitRes.data || []]) {
+    for (const a of arr) {
+      const pct = a.data?.percentage;
+      if (pct == null) continue;
+      const studentId = a.data?.studentId;
+      if (!studentId) continue;
+      totalScore += pct;
+      totalPoints += 100;
+      totalAttempts++;
+      uniqueStudentIds.add(studentId);
+      if (!studentScores[studentId]) studentScores[studentId] = { total: 0, count: 0 };
+      studentScores[studentId].total += pct;
+      studentScores[studentId].count++;
     }
-    averagePerformance = totalPoints > 0 ? safePct(Math.round((totalScore / totalPoints) * 100)) : 0;
   }
 
-  logger.info('Admin dashboard retrieved');
+  const averagePerformance = totalPoints > 0 ? safePct(Math.round((totalScore / totalPoints) * 100)) : 0;
+  const totalGrades = uniqueStudentIds.size;
+
+  // At-risk: students with average score < 40%
+  let atRiskCount = 0;
+  for (const s of Object.values(studentScores)) {
+    const avg = s.count > 0 ? s.total / s.count : 0;
+    if (avg < 40) atRiskCount++;
+  }
+
+  logger.info('Admin dashboard retrieved', { totalAttempts, uniqueStudents: totalGrades, atRiskCount });
 
   return {
     totalUsers: (studentsCount || 0) + (teachersCount || 0) + (adminsCount || 0) + (parentsCount || 0),
@@ -214,7 +234,7 @@ export async function getAdminDashboard() {
     activeClasses: activeClasses || 0,
     averagePerformance,
     atRiskCount,
-    totalGrades: totalGrades || 0,
+    totalGrades,
   };
 }
 
