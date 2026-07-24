@@ -26,7 +26,7 @@ CREATE POLICY "Users can insert their own reports"
 CREATE POLICY "Admins can read all reports"
   ON report_feedback FOR SELECT
   USING (EXISTS (
-    SELECT 1 FROM users WHERE id = auth.uid()::text AND role IN ('admin', 'super_admin')
+    SELECT 1 FROM users WHERE id = auth.uid() AND role IN ('admin', 'super_admin')
   ));
 
 CREATE POLICY "Users can read their own reports"
@@ -36,7 +36,7 @@ CREATE POLICY "Users can read their own reports"
 CREATE POLICY "Admins can update reports"
   ON report_feedback FOR UPDATE
   USING (EXISTS (
-    SELECT 1 FROM users WHERE id = auth.uid()::text AND role IN ('admin', 'super_admin')
+    SELECT 1 FROM users WHERE id = auth.uid() AND role IN ('admin', 'super_admin')
   ));
 
 CREATE INDEX IF NOT EXISTS idx_report_feedback_status ON report_feedback(status);
