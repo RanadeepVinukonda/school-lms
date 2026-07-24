@@ -11,6 +11,7 @@ const router = Router();
 router.get('/', authenticate, asyncHandler(academicYearController.listAcademicYears));
 router.post('/', authenticate, requireRole('admin', 'super_admin'), validate(createAcademicYearSchema), asyncHandler(academicYearController.createAcademicYear));
 router.get('/current', authenticate, asyncHandler(academicYearController.getCurrentAcademicYear));
+router.post('/promote', authenticate, requireRole('admin', 'super_admin'), asyncHandler(academicYearController.promoteStudents));
 router.get('/:id', authenticate, asyncHandler(academicYearController.getAcademicYear));
 router.put('/:id', authenticate, requireRole('admin', 'super_admin'), validate(updateAcademicYearSchema), asyncHandler(academicYearController.updateAcademicYear));
 router.delete('/:id', authenticate, requireRole('admin', 'super_admin'), asyncHandler(academicYearController.deleteAcademicYear));

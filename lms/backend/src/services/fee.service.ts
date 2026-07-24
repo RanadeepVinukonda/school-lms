@@ -2,6 +2,7 @@ import { getSupabaseAdmin } from './supabase';
 import { getConnectionPool } from '../database/connection-manager';
 import { ValidationError } from '../utils/errors';
 import { BaseService, DbRecord } from '../lib/base-service';
+import { deriveAcademicYear } from '../middlewares/academicYear.middleware';
 
 interface FeeStructureRecord extends DbRecord {
   school_id?: string;
@@ -43,7 +44,7 @@ export async function createFeeSchedule(data: {
     amount: data.amount,
     due_date: data.dueDate || null,
     class_id: data.classId,
-    academic_year: data.academicYear || null,
+    academic_year: data.academicYear || deriveAcademicYear(),
     description: data.description || null,
   } as Partial<FeeStructureRecord>);
   return result;

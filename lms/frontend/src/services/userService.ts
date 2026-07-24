@@ -8,7 +8,6 @@ export interface CreateUserInput {
   role: UserRole;
   classId?: string;
   rollNo?: number;
-  academicYear?: string;
   gender?: string;
 }
 

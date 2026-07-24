@@ -58,7 +58,6 @@ export const ROUTES = {
   TEACHER_UNIFIED_TEST: '/teacher/unified-test',
 
   ADMIN_DASHBOARD: '/admin/dashboard',
-  ADMIN_ACADEMIC_YEARS: '/admin/academic-years',
   ADMIN_STUDENTS: '/admin/students',
   ADMIN_TEACHERS: '/admin/teachers',
   ADMIN_CLASSES: '/admin/classes',

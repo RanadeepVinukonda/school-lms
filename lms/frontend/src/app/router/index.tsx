@@ -94,7 +94,7 @@ const TeacherReportPage = lazyRetry(() => import('@/app/pages/teacher/TeacherRep
 const TeacherUnifiedTestPage = lazyRetry(() => import('@/app/pages/teacher/TeacherUnifiedTestPage'));
 
 const AdminDashboardPage = lazyRetry(() => import('@/app/pages/admin/AdminDashboardPage'));
-const AdminAcademicYearsPage = lazyRetry(() => import('@/app/pages/admin/AdminAcademicYearsPage'));
+
 const AdminClassesPage = lazyRetry(() => import('@/app/pages/admin/AdminClassesPage'));
 const AdminSettingsPage = lazyRetry(() => import('@/app/pages/admin/AdminSettingsPage'));
 const AdminProfileEditPage = lazyRetry(() => import('@/app/pages/admin/AdminProfileEditPage'));
@@ -235,7 +235,6 @@ export const router = createBrowserRouter([
     ),
     children: [
       { path: ROUTES.ADMIN_DASHBOARD, element: <Suspense fallback={<PageFallback />}><AdminDashboardPage /></Suspense> },
-      { path: ROUTES.ADMIN_ACADEMIC_YEARS, element: <Suspense fallback={<PageFallback />}><AdminAcademicYearsPage /></Suspense> },
       { path: ROUTES.ADMIN_STUDENTS, element: <Navigate to={ROUTES.ADMIN_CLASSES} replace /> },
       { path: ROUTES.ADMIN_TEACHERS, element: <Navigate to={ROUTES.ADMIN_CLASSES} replace /> },
       { path: ROUTES.ADMIN_CLASSES, element: <Suspense fallback={<PageFallback />}><AdminClassesPage /></Suspense> },

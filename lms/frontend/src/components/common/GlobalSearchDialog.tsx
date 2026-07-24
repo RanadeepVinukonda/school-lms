@@ -42,7 +42,6 @@ const PAGE_INDEX: PageEntry[] = [
   { id: 'leave-management', title: 'Leave Management', keywords: ['leave', 'leaves', 'holiday', 'absence'], icon: 'event', url: '/admin/hr/leaves' },
   { id: 'classroom', title: 'Classroom', keywords: ['classroom', 'google classroom', 'integration'], icon: 'google', url: '/admin/classroom' },
   { id: 'lti', title: 'LTI Integration', keywords: ['lti', 'integration', 'tools', 'external'], icon: 'extension', url: '/admin/lti' },
-  { id: 'academic-years', title: 'Academic Years', keywords: ['academic', 'years', 'sessions', 'terms'], icon: 'calendar_today', url: ROUTES.ADMIN_ACADEMIC_YEARS },
   { id: 'teacher-dashboard', title: 'Teacher Dashboard', keywords: ['teacher dashboard', 'my classes'], icon: 'dashboard', url: ROUTES.TEACHER_DASHBOARD },
   { id: 'teacher-students', title: 'My Students', keywords: ['my students', 'my pupils'], icon: 'people', url: ROUTES.TEACHER_STUDENTS },
   { id: 'teacher-exams', title: 'Exams', keywords: ['exams', 'examinations', 'tests', 'assessments'], icon: 'quiz', url: ROUTES.TEACHER_EXAMS },

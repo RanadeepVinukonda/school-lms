@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from './supabase';
 import { createUser as createAuthUser, updateUser, deleteUser, getUserByEmail, getUserById, setCustomClaims } from '../database/auth';
 import { NotFoundError, ValidationError } from '../utils/errors';
+import { deriveAcademicYear } from '../middlewares/academicYear.middleware';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 import { generateStudentId } from '../utils/studentIdGenerator.js';
@@ -53,7 +54,7 @@ export async function getUserByIdService(uid: string) {
 export async function createUser(data: {
   email?: string; password?: string; displayName: string; role: string;
   phoneNumber?: string; photoURL?: string; classIds?: string[]; classId?: string;
-  rollNo?: number; academicYear?: string; gender?: string; childrenIds?: string[]; schoolId?: string;
+  rollNo?: number; gender?: string; childrenIds?: string[]; schoolId?: string;
 }) {
   const supabase = getSupabaseAdmin();
   let studentId = '';
@@ -68,7 +69,7 @@ export async function createUser(data: {
     const classCode = (classRow.code || classRow.section
       ? `${classRow.grade || ''}${classRow.section || ''}` : 'CLASS'
     ).toUpperCase().replace(/\s+/g, '');
-    const acYear = data.academicYear || classRow.academic_year || new Date().getFullYear().toString();
+    const acYear = deriveAcademicYear();
     studentId = generateStudentId(acYear, classCode, data.rollNo);
     if (!finalClassIds.includes(data.classId)) finalClassIds.push(data.classId);
     studentClassId = data.classId;
@@ -134,7 +135,7 @@ export async function createUser(data: {
         role: data.role, phone_number: data.phoneNumber || '', photo_url: data.photoURL || '',
         class_ids: finalClassIds, class_id: studentClassId || null,
         student_id: studentId || null, roll_no: data.rollNo || null,
-        academic_year: data.academicYear || null, gender: data.gender || null,
+        academic_year: deriveAcademicYear(), gender: data.gender || null,
         children_ids: resolvedChildrenIds, is_active: true, school_id: data.schoolId || '',
         created_at: now2, updated_at: now2,
       };
@@ -172,7 +173,7 @@ export async function createUser(data: {
           role: data.role, phone_number: data.phoneNumber || '', photo_url: data.photoURL || '',
           class_ids: finalClassIds, class_id: studentClassId || null,
           student_id: studentId || null, roll_no: data.rollNo || null,
-          academic_year: data.academicYear || null, gender: data.gender || null,
+          academic_year: deriveAcademicYear(), gender: data.gender || null,
           children_ids: resolvedChildrenIds, is_active: true, school_id: data.schoolId || '',
           created_at: now, updated_at: now,
         };
@@ -192,7 +193,7 @@ export async function createUser(data: {
     role: data.role, phone_number: data.phoneNumber || '', photo_url: data.photoURL || '',
     class_ids: finalClassIds, class_id: studentClassId || null,
     student_id: studentId || null, roll_no: data.rollNo || null,
-    academic_year: data.academicYear || null, gender: data.gender || null,
+    academic_year: deriveAcademicYear(), gender: data.gender || null,
     children_ids: resolvedChildrenIds, is_active: true, school_id: data.schoolId || '',
     created_at: now, updated_at: now,
   };
@@ -214,7 +215,7 @@ export async function createUser(data: {
 
 export async function updateUser(uid: string, data: {
   displayName?: string; phoneNumber?: string; photoURL?: string; disabled?: boolean;
-  classIds?: string[]; classId?: string; rollNo?: number; academicYear?: string;
+  classIds?: string[]; classId?: string; rollNo?: number;
   childrenIds?: string[]; gender?: string;
 }) {
   const supabase = getSupabaseAdmin();
@@ -247,18 +248,15 @@ export async function updateUser(uid: string, data: {
     }
   }
   if (data.rollNo !== undefined) updateData.roll_no = data.rollNo;
-  if (data.academicYear !== undefined) updateData.academic_year = data.academicYear;
 
-  if (isStudent && (data.classId !== undefined || data.rollNo !== undefined || data.academicYear !== undefined)) {
+  if (isStudent && (data.classId !== undefined || data.rollNo !== undefined)) {
     const finalClassId = data.classId !== undefined ? data.classId : existing.class_id;
     const finalRollNo = data.rollNo !== undefined ? data.rollNo : existing.roll_no;
-    const finalAcademicYear = data.academicYear !== undefined ? data.academicYear : existing.academic_year;
     if (finalClassId && finalRollNo !== undefined) {
       const { data: cls } = await supabase.from('classes').select('*').eq('id', finalClassId).maybeSingle();
       if (cls) {
         const classCode = (cls.code || cls.section ? `${cls.grade || ''}${cls.section || ''}` : 'CLASS').toUpperCase().replace(/\s+/g, '');
-        const acYear = finalAcademicYear || cls.academic_year || new Date().getFullYear().toString();
-        updateData.student_id = generateStudentId(acYear, classCode, finalRollNo);
+        updateData.student_id = generateStudentId(deriveAcademicYear(), classCode, finalRollNo);
       }
     }
   }

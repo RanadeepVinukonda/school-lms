@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Icon } from '@/components/ui/Icon';
-import { AcademicYearSelect } from '@/components/ui/academic-year-select';
+
 import { useActiveAcademicYear } from '@/context/ActiveAcademicYearContext';
 import {
   Dialog,
@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/supabase/config';
 import { hasRole } from '@/lib/roleHelpers';
 import { getAllClasses, getAllUsers, getAllSubjects } from '@/services/dataService';
+import api from '@/services/api';
 import { getClassDependencies, getUserDependencies } from '@/services/dependencyService';
 import { logAudit } from '@/services/auditService';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
@@ -481,10 +482,11 @@ export default function AdminClassesPage() {
     }
   };
 
-  // INLINE REGISTER STUDENT FOR A CLASS
+
+// INLINE REGISTER STUDENT FOR A CLASS
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [addStudentClassId, setAddStudentClassId] = useState('');
-  const [studentForm, setStudentForm] = useState({ displayName: '', rollNo: '', academicYear: '', gender: '' });
+  const [studentForm, setStudentForm] = useState({ displayName: '', rollNo: '', gender: '' });
   const [studentRegisterLoading, setStudentRegisterLoading] = useState(false);
 
   const getNextRollNo = (classId: string) => {
@@ -501,7 +503,6 @@ export default function AdminClassesPage() {
     setStudentForm({
       displayName: '',
       rollNo: String(nextRoll),
-      academicYear: cls.academicYear || new Date().getFullYear().toString(),
       gender: '',
     });
     setShowAddStudent(true);
@@ -519,7 +520,6 @@ export default function AdminClassesPage() {
         role: 'student',
         classId: addStudentClassId,
         rollNo: parseInt(studentForm.rollNo, 10),
-        academicYear: studentForm.academicYear,
         gender: studentForm.gender || undefined,
       });
 
@@ -539,6 +539,26 @@ export default function AdminClassesPage() {
       toast.error(err.message || 'Failed to register student');
     } finally {
       setStudentRegisterLoading(false);
+    }
+  };
+
+  // PROMOTE STUDENTS
+  const [showPromoteConfirm, setShowPromoteConfirm] = useState(false);
+  const [promoteLoading, setPromoteLoading] = useState(false);
+
+  const handlePromoteStudents = async () => {
+    setPromoteLoading(true);
+    try {
+      const res = await api.post('/academic-years/promote');
+      const data = res.data?.data || res.data;
+      toast.success(`Promoted ${data?.promoted || 0} students, graduated ${data?.graduated || 0}`);
+      setShowPromoteConfirm(false);
+      refetchUsers();
+      refetchClasses();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to promote students');
+    } finally {
+      setPromoteLoading(false);
     }
   };
 
@@ -653,7 +673,7 @@ export default function AdminClassesPage() {
   const [studentPage, setStudentPage] = useState(1);
   const [showEditStudent, setShowEditStudent] = useState(false);
   const [editStudentTarget, setEditStudentTarget] = useState<UserDoc | null>(null);
-  const [editStudentForm, setEditStudentForm] = useState({ displayName: '', rollNo: '', classId: '', academicYear: '' });
+  const [editStudentForm, setEditStudentForm] = useState({ displayName: '', rollNo: '', classId: '' });
   const [studentSaveLoading, setStudentSaveLoading] = useState(false);
 
   const students = useMemo(() => users.filter((u) => hasRole(u.role, 'student')), [users]);
@@ -690,7 +710,6 @@ export default function AdminClassesPage() {
       displayName: student.displayName || '',
       rollNo: student.rollNo ? String(student.rollNo) : '',
       classId: student.classId || '',
-      academicYear: student.academicYear || '',
     });
     setShowEditStudent(true);
   };
@@ -706,7 +725,6 @@ export default function AdminClassesPage() {
         displayName: editStudentForm.displayName,
         classId: editStudentForm.classId,
         rollNo: parseInt(editStudentForm.rollNo, 10),
-        academicYear: editStudentForm.academicYear,
       });
       toast.success('Student updated successfully');
       setShowEditStudent(false);
@@ -737,6 +755,10 @@ export default function AdminClassesPage() {
             <Button variant="outline" size="sm" onClick={handleRefreshAll}>
               <Icon name="refresh" size={16} className="mr-1" />
               Refresh
+            </Button>
+            <Button variant="destructive" size="sm" onClick={() => setShowPromoteConfirm(true)}>
+              <Icon name="trending_up" size={16} className="mr-1" />
+              Promote Students
             </Button>
           </div>
 
@@ -1400,20 +1422,9 @@ export default function AdminClassesPage() {
               <Label>Student Name</Label>
               <Input placeholder="John Doe" value={studentForm.displayName} onChange={(e) => setStudentForm((f) => ({ ...f, displayName: e.target.value }))} />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Roll Number</Label>
-                <Input type="number" value={studentForm.rollNo} onChange={(e) => setStudentForm((f) => ({ ...f, rollNo: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Academic Year</Label>
-                <AcademicYearSelect
-                  value={studentForm.academicYear}
-                  onChange={(v) => setStudentForm((f) => ({ ...f, academicYear: v }))}
-                  placeholder="Select Academic Year"
-                  globalSwitcher
-                />
-              </div>
+            <div className="space-y-2">
+              <Label>Roll Number</Label>
+              <Input type="number" value={studentForm.rollNo} onChange={(e) => setStudentForm((f) => ({ ...f, rollNo: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label>Gender</Label>
@@ -1530,19 +1541,32 @@ export default function AdminClassesPage() {
                 <Input type="number" value={editStudentForm.rollNo} onChange={(e) => setEditStudentForm((f) => ({ ...f, rollNo: e.target.value }))} />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Academic Year</Label>
-              <AcademicYearSelect
-                value={editStudentForm.academicYear}
-                onChange={(v) => setEditStudentForm((f) => ({ ...f, academicYear: v }))}
-                placeholder="Select Academic Year"
-                globalSwitcher
-              />
-            </div>
             <Button className="w-full" onClick={handleUpdateStudent} disabled={studentSaveLoading}>
               {studentSaveLoading ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* PROMOTE STUDENTS CONFIRMATION */}
+      <Dialog open={showPromoteConfirm} onOpenChange={setShowPromoteConfirm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Icon name="warning" size={24} />
+              Promote All Students?
+            </DialogTitle>
+            <DialogDescription>
+              This will promote every student to the next class and graduate those in the highest class.
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPromoteConfirm(false)} disabled={promoteLoading}>Cancel</Button>
+            <Button variant="destructive" onClick={handlePromoteStudents} disabled={promoteLoading}>
+              {promoteLoading ? 'Promoting...' : 'Yes, Promote All'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

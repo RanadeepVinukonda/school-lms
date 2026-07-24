@@ -5,7 +5,7 @@ export const createFeeScheduleSchema = z.object({
   amount: z.number().positive('Amount must be positive'),
   dueDate: z.string().min(1, 'Due date required'),
   classId: z.string().min(1, 'Class ID required'),
-  academicYear: z.string().min(1, 'Academic year required'),
+  academicYear: z.string().optional(),
   description: z.string().max(1000).optional(),
 });
 

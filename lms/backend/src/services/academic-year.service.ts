@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ConflictError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { deleteDocument } from './document.service';
+import { deriveAcademicYear } from '../middlewares/academicYear.middleware';
 
 async function nosqlDoc(collection: string, docId: string) {
   const supabase = getSupabaseAdmin()!;
@@ -130,14 +131,85 @@ export async function listAcademicYears(query: { status?: string; page?: string;
   return { items, total, page: 1, limit: total };
 }
 
-export async function getCurrentAcademicYear() {
-  const supabase = getSupabaseAdmin()!;
-  const { data: rows, error } = await supabase.from('firestore_docs').select('doc_id, data')
-    .eq('collection', 'academicYears')
-    .contains('data', { isCurrent: true, status: 'active' })
-    .limit(1);
-  if (error) throw new Error('Failed to fetch current academic year: ' + error.message);
+export function getCurrentAcademicYear() {
+  const now = new Date();
+  const year = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1;
+  const name = `${year}-${year + 1}`;
+  return { name, startDate: `${year}-07-01`, endDate: `${year + 1}-06-30`, isCurrent: true, status: 'active' };
+}
 
-  if (!rows || rows.length === 0) return null;
-  return { ...rows[0].data as Record<string, unknown> };
+/**
+ * Promote all students to the next class and graduate the highest class students.
+ * - Each student moves from Class N to Class N+1
+ * - Students in the highest class are marked as graduated (role → 'alumni')
+ * - All classes get updated academic_year
+ */
+export async function promoteAllStudents(): Promise<{ promoted: number; graduated: number }> {
+  const supabase = getSupabaseAdmin()!;
+  const newYear = deriveAcademicYear();
+  let promoted = 0;
+  let graduated = 0;
+
+  // 1. Get all classes sorted by grade ascending
+  const { data: classes, error: clsErr } = await supabase
+    .from('classes')
+    .select('id, grade, section, academic_year')
+    .order('grade', { ascending: true });
+  if (clsErr) throw new Error('Failed to fetch classes: ' + clsErr.message);
+  if (!classes || classes.length === 0) return { promoted: 0, graduated: 0 };
+
+  // 2. Find the highest grade
+  const maxGrade = Math.max(...classes.map((c) => Number(c.grade) || 0));
+
+  // 3. Build a grade → next classId map
+  const gradeToClass: Record<number, string> = {};
+  for (const cls of classes) {
+    const g = Number(cls.grade) || 0;
+    gradeToClass[g] = cls.id;
+  }
+
+  // 4. For each student, promote or graduate
+  const { data: students, error: stuErr } = await supabase
+    .from('users')
+    .select('id, class_id, role, grade')
+    .eq('role', 'student');
+  if (stuErr) throw new Error('Failed to fetch students: ' + stuErr.message);
+
+  for (const student of students || []) {
+    const currentGrade = Number(student.grade) || 0;
+
+    if (currentGrade >= maxGrade) {
+      // Graduate: mark as alumni
+      const { error } = await supabase
+        .from('users')
+        .update({ role: 'alumni', updated_at: new Date().toISOString() })
+        .eq('id', student.id);
+      if (!error) graduated++;
+    } else {
+      // Promote: move to next grade's class
+      const nextGrade = currentGrade + 1;
+      const nextClassId = gradeToClass[nextGrade];
+      if (nextClassId) {
+        const { error } = await supabase
+          .from('users')
+          .update({
+            class_id: nextClassId,
+            grade: nextGrade,
+            academic_year: newYear,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', student.id);
+        if (!error) promoted++;
+      }
+    }
+  }
+
+  // 5. Update all classes' academic_year to new year
+  await supabase
+    .from('classes')
+    .update({ academic_year: newYear, updated_at: new Date().toISOString() })
+    .neq('id', '');
+
+  logger.info('Students promoted', { promoted, graduated, newYear });
+  return { promoted, graduated };
 }
