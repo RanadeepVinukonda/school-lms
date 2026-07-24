@@ -156,6 +156,7 @@ export async function createQuiz(data: {
   schoolId?: string;
   publishedTo?: 'class' | 'students';
   targetStudentIds?: string[];
+  difficultyDistribution?: Record<string, Record<string, number>>;
 }) {
   const assignment = await getTeacherAssignment(data.teacherId, data.classId);
   if (!assignment) {
@@ -171,6 +172,20 @@ export async function createQuiz(data: {
   const selectedModels = data.selectedModels ?? [];
   const questionCount = data.questionCount ?? 0;
   const targetTypes = resolveTypes(selectedModels);
+
+  const difficultyDistribution = data.difficultyDistribution;
+  const perDifficultyTotal: Record<string, number> = {};
+  const diffOrder = ['easy', 'medium', 'hard', 'hots'];
+  if (difficultyDistribution) {
+    for (const diff of diffOrder) {
+      const row = difficultyDistribution[diff];
+      if (row) {
+        perDifficultyTotal[diff] = Object.values(row).reduce((s: number, v: any) => s + (Number(v) || 0), 0);
+      } else {
+        perDifficultyTotal[diff] = 0;
+      }
+    }
+  }
 
   let matchingQuestions: any[];
   let aiGeneratedCount = 0;
@@ -219,10 +234,26 @@ For matching questions:
 - correctAnswer must be a pipe-delimited string of colon-separated pairs, e.g. "Term Name:Definition description|Term Name2:Definition2"`;
       }
 
-      const prompt = `You are an educational assessment generator. Generate EXACTLY ${needed} questions for the concept "${conceptName}".
+      const hasDifficultyDist = difficultyDistribution && diffOrder.some((d) => (perDifficultyTotal[d] || 0) > 0);
+
+      let difficultyBreakdown = '';
+      if (hasDifficultyDist) {
+        const diffDescriptions: Record<string, string> = {
+          easy: 'Easy — Remember/Recall: define, identify, list, name, recall, recognize, state facts',
+          medium: 'Medium — Understand: explain, describe, compare, summarize, interpret, classify',
+          hard: 'Hard — Apply/Analyze: apply concepts to scenarios, analyze, differentiate, solve multi-step problems',
+          hots: 'HOTS — Evaluate/Create: evaluate, design, create, justify, critique, synthesize new ideas',
+        };
+        const lines = diffOrder
+          .filter((d) => (perDifficultyTotal[d] || 0) > 0)
+          .map((d) => `${d}: ${perDifficultyTotal[d]} questions — ${diffDescriptions[d]}`);
+        difficultyBreakdown = `\nDifficulty distribution (MUST match EXACTLY):\n${lines.join('\n')}\n`;
+      }
+
+      const prompt = `You are an educational assessment generator following Bloom's Taxonomy. Generate EXACTLY ${needed} questions for the concept "${conceptName}".
 
 Question types to use: ${typeNames}
-
+${difficultyBreakdown}
 IMPORTANT: You MUST generate exactly ${needed} questions. Each question must have:
 ${formatInstructions}
 
@@ -272,6 +303,16 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
         logger.error('Failed to generate questions for quiz', { conceptName, error: errMsg });
       }
     }
+  }
+
+  const DIFF_ORDER: Record<string, number> = { easy: 0, medium: 1, hard: 2, hots: 3 };
+
+  if (difficultyDistribution) {
+    matchingQuestions.sort((a: any, b: any) => {
+      const orderA = DIFF_ORDER[a.difficulty] ?? 99;
+      const orderB = DIFF_ORDER[b.difficulty] ?? 99;
+      return orderA - orderB;
+    });
   }
 
   if (questionCount > 0 && matchingQuestions.length > questionCount) {

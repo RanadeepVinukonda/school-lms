@@ -531,6 +531,7 @@ export default function TeacherAssessmentCreatePage() {
       shuffleQuestions: quizShuffle,
       publishedTo: publishScope,
       targetStudentIds: publishScope === 'students' ? selectedStudentIds : [],
+      difficultyDistribution: quizDistribution,
     };
 
     if (reviewQuestions.length > 0) {
@@ -542,7 +543,7 @@ export default function TeacherAssessmentCreatePage() {
     selectedAssignment, selectedTextbookId, selectedChapterId, selectedConceptId,
     quizTitle, selectedModels, timeLimitMinutes, questionCount,
     quizPassingScore, quizMaxAttempts, quizShuffle, selectedClassId, user?.id,
-    createQuizMutation, reviewQuestions, publishScope, selectedStudentIds,
+    createQuizMutation, reviewQuestions, publishScope, selectedStudentIds, quizDistribution,
   ]);
 
   const handleCreateAssignment = useCallback(() => {
@@ -1251,6 +1252,7 @@ export default function TeacherAssessmentCreatePage() {
                           selectedModels,
                           questionCount,
                           preview: true,
+                          difficultyDistribution: quizDistribution,
                         });
                       }}
                       disabled={generatePreviewMutation.isPending || !quizTitle.trim()}
