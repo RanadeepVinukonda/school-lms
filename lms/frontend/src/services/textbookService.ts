@@ -21,8 +21,9 @@ const snakeToCamel = (obj: any): any => {
 
 /** Create a new textbook document in Supabase. Returns the new document id. */
 export async function createTextbook(data: Omit<Textbook, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+  const { chapters, ...rest } = data;
   const { data: inserted, error } = await supabase.from(TEXTBOOKS_COLLECTION).insert({
-    ...data,
+    ...rest,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   }).select('id').single();
@@ -42,8 +43,9 @@ export async function createTextbook(data: Omit<Textbook, 'id' | 'createdAt' | '
 
 /** Update a textbook document's fields. */
 export async function updateTextbook(id: string, data: Partial<Textbook>): Promise<void> {
+  const { chapters, ...rest } = data;
   await supabase.from(TEXTBOOKS_COLLECTION).update({
-    ...data,
+    ...rest,
     updatedAt: new Date().toISOString(),
   }).eq('id', id);
   logAudit({
