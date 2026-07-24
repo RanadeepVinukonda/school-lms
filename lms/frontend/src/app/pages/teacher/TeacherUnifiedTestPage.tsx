@@ -141,7 +141,6 @@ export default function TeacherUnifiedTestPage() {
     mutationFn: (body: Record<string, unknown>) => unifiedTestEngineService.previewTest(body),
     onSuccess: (data) => {
       if (data.questions?.length) {
-        console.log('[UnifiedPreview] questions from API:', data.questions.map((q: any) => ({ id: q.id, type: q.type, text: q.text, textLen: q.text?.length })));
         setReviewQuestions(data.questions);
         toast.success(`Preview: ${data.questions.length} questions (${data.aiGeneratedCount ?? 0} AI)`);
       } else {

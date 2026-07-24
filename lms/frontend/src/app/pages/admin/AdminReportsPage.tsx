@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,6 @@ import { Icon } from '@/components/ui/Icon';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { cardStackReveal } from '@/lib/motion';
 import api from '@/services/api';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -27,6 +26,7 @@ const PRIORITY_COLORS: Record<string, string> = {
   low: 'bg-green-100 text-green-700',
   medium: 'bg-amber-100 text-amber-700',
   high: 'bg-red-100 text-red-700',
+  urgent: 'bg-rose-100 text-rose-700',
 };
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -49,6 +49,8 @@ export default function AdminReportsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
+  const [filterClass, setFilterClass] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
   const [selectedReport, setSelectedReport] = useState<any>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [remarks, setRemarks] = useState('');
@@ -74,6 +76,13 @@ export default function AdminReportsPage() {
     queryKey: ['admin-report-stats'],
     queryFn: () => api.get('/report-feedback/stats').then((r) => r.data.data),
   });
+
+  const { data: classes } = useQuery({
+    queryKey: ['classes-list'],
+    queryFn: () => api.get('/classes').then((r) => r.data.data),
+  });
+
+  const classList = Array.isArray(classes) ? classes : classes?.items || [];
 
   const updateMutation = useMutation({
     mutationFn: () => api.put(`/report-feedback/${selectedReport?.id}`, {
@@ -107,8 +116,10 @@ export default function AdminReportsPage() {
     }
     if (filterRole) items = items.filter((r: any) => r.userRole === filterRole);
     if (filterCategory) items = items.filter((r: any) => r.category === filterCategory);
+    if (filterClass) items = items.filter((r: any) => r.classId === filterClass || r.className === filterClass);
+    if (filterStatus) items = items.filter((r: any) => r.status === filterStatus);
     return items;
-  }, [data?.items, searchQuery, filterRole, filterCategory]);
+  }, [data?.items, searchQuery, filterRole, filterCategory, filterClass, filterStatus]);
 
   return (
     <>
@@ -142,8 +153,8 @@ export default function AdminReportsPage() {
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
+        <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
             <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={_('Search reports...')} className="pl-10" />
           </div>
@@ -160,6 +171,19 @@ export default function AdminReportsPage() {
             <option value="feedback">{_('Feedback')}</option>
             <option value="improvement">{_('Improvement')}</option>
             <option value="technical_issue">{_('Technical Issue')}</option>
+          </select>
+          <select value={filterClass} onChange={(e) => setFilterClass(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+            <option value="">{_('All Classes')}</option>
+            {classList.map((cls: any) => (
+              <option key={cls.id} value={cls.id}>{cls.name}</option>
+            ))}
+          </select>
+          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+            <option value="">{_('All Statuses')}</option>
+            <option value="open">{_('Open')}</option>
+            <option value="in_progress">{_('In Progress')}</option>
+            <option value="resolved">{_('Resolved')}</option>
+            <option value="closed">{_('Closed')}</option>
           </select>
         </div>
 

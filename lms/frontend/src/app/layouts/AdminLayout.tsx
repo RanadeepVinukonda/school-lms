@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { toast } from 'sonner';
+import { supabase } from '@/supabase/config';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/lib/constants';
 import NotificationDropdown from '@/components/common/NotificationDropdown';
 import GlobalSearchDialog from '@/components/common/GlobalSearchDialog';
+import { TutorialGuide } from '@/components/common/TutorialGuide';
+import { useNotificationStore } from '@/store/notificationStore';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
@@ -39,7 +44,10 @@ export function AdminLayout() {
   const { sidebarCollapsed, setSidebarCollapsed } = useUIStore();
   const user = useAuthStore((s) => s.user);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
   const { t } = useTranslation();
+  const subscribeToNotifications = useNotificationStore((s) => s.subscribeToNotifications);
+  usePushNotifications(!!user);
 
   const getLabel = (label: string) => {
     const key = `nav.${label.toLowerCase().replace(/ /g, '')}`;
@@ -47,6 +55,20 @@ export function AdminLayout() {
     return val === key ? label : val;
   };
 
+  useEffect(() => {
+    if (!user?.id) return;
+    const unsub = subscribeToNotifications(user.id);
+    return unsub;
+  }, [user?.id, subscribeToNotifications]);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('users').select('tutorial_seen').eq('id', user.id).maybeSingle().then(({ data }) => {
+      if (data && data.tutorial_seen === false) {
+        setTutorialOpen(true);
+      }
+    }, () => toast.error('Failed to check tutorial status'));
+  }, [user]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -250,6 +272,7 @@ export function AdminLayout() {
 
       </div>
       <GlobalSearchDialog isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+      <TutorialGuide open={tutorialOpen} onComplete={() => setTutorialOpen(false)} />
     </div>
   );
 }

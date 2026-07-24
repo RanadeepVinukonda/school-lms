@@ -53,10 +53,6 @@ const steps: Record<string, { title: string; body: string; target?: string }[]> 
       body: 'The Coding tab lets you create and evaluate programming assignments in Java, C/C++, JavaScript, Python, and HTML.',
     },
     {
-      title: 'My Rewards',
-      body: 'Track your achievements and rewards earned through platform activity and student feedback.',
-    },
-    {
       title: 'Timetable',
       body: 'View your class schedule. Your timetable only shows the classes you are assigned to teach.',
     },

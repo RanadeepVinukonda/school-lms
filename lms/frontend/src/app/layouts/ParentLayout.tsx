@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils';
 import NotificationDropdown from '@/components/common/NotificationDropdown';
 import GlobalSearchDialog from '@/components/common/GlobalSearchDialog';
 import { TutorialGuide } from '@/components/common/TutorialGuide';
+import { useNotificationStore } from '@/store/notificationStore';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { UserAvatar } from '@/components/layout/UserAvatar';
 import { Icon } from '@/components/ui/Icon';
@@ -56,6 +58,8 @@ export default function ParentLayout() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const { t } = useTranslation();
+  const subscribeToNotifications = useNotificationStore((s) => s.subscribeToNotifications);
+  usePushNotifications(!!user);
   const getLabel = (label: string) => {
     const key = `nav.${label.toLowerCase().replace(/ /g, '')}`;
     const val = t(key as any);
@@ -81,6 +85,12 @@ export default function ParentLayout() {
       }
     }, () => toast.error('Failed to check tutorial status'));
   }, [user]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const unsub = subscribeToNotifications(user.id);
+    return unsub;
+  }, [user?.id, subscribeToNotifications]);
 
   return (
     <div className="min-h-screen bg-background">

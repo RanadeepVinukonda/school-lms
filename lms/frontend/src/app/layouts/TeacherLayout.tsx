@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils';
 import NotificationDropdown from '@/components/common/NotificationDropdown';
 import GlobalSearchDialog from '@/components/common/GlobalSearchDialog';
 import { TutorialGuide } from '@/components/common/TutorialGuide';
+import { useNotificationStore } from '@/store/notificationStore';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { UserAvatar } from '@/components/layout/UserAvatar';
 import { Icon } from '@/components/ui/Icon';
@@ -37,7 +39,6 @@ const navGroups: NavGroup[] = [
       { label: 'Teaching Space', href: ROUTES.TEACHER_TEXTBOOKS, icon: 'menu_book' },
       { label: 'Coding', href: ROUTES.TEACHER_CODING, icon: 'code' },
       { label: 'Quizzes & Tasks', href: ROUTES.TEACHER_ASSESSMENTS, icon: 'quiz' },
-      { label: 'My Rewards', href: ROUTES.TEACHER_REWARDS, icon: 'emoji_events' },
       { label: 'Manage Tests & Review', href: ROUTES.TEACHER_TEST_SCHEDULE, icon: 'analytics' },
       { label: 'OCR Scanner', href: ROUTES.TEACHER_OCR, icon: 'document_scanner' },
       { label: 'Attendance', href: ROUTES.TEACHER_ATTENDANCE, icon: 'checklist' },
@@ -53,7 +54,6 @@ const mobileNavItems: NavItem[] = [
   { label: 'Teaching', href: ROUTES.TEACHER_TEXTBOOKS, icon: 'menu_book' },
   { label: 'Coding', href: ROUTES.TEACHER_CODING, icon: 'code' },
   { label: 'Quizzes', href: ROUTES.TEACHER_ASSESSMENTS, icon: 'quiz' },
-  { label: 'Rewards', href: ROUTES.TEACHER_REWARDS, icon: 'emoji_events' },
   { label: 'Tests', href: ROUTES.TEACHER_TEST_SCHEDULE, icon: 'analytics' },
   { label: 'Attendance', href: ROUTES.TEACHER_ATTENDANCE, icon: 'checklist' },
   { label: 'Notice Board', href: ROUTES.TEACHER_NOTICEBOARD, icon: 'campaign' },
@@ -65,11 +65,19 @@ export default function TeacherLayout() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const { t } = useTranslation();
+  const subscribeToNotifications = useNotificationStore((s) => s.subscribeToNotifications);
+  usePushNotifications(!!user);
   const getLabel = (label: string) => {
     const key = `nav.${label.toLowerCase().replace(/ /g, '')}`;
     const val = t(key as any);
     return val === key ? label : val;
   };
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const unsub = subscribeToNotifications(user.id);
+    return unsub;
+  }, [user?.id, subscribeToNotifications]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

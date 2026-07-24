@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 import NotificationDropdown from '@/components/common/NotificationDropdown';
 import GlobalSearchDialog from '@/components/common/GlobalSearchDialog';
 import { TutorialGuide } from '@/components/common/TutorialGuide';
+import { useNotificationStore } from '@/store/notificationStore';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { UserAvatar } from '@/components/layout/UserAvatar';
 import { Icon } from '@/components/ui/Icon';
@@ -24,14 +26,12 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Home', href: ROUTES.STUDENT_DASHBOARD, icon: 'home' },
-  { label: 'Tasks', href: ROUTES.STUDENT_TASKS, icon: 'checklist' },
+  { label: 'Quizzes & Tasks', href: ROUTES.STUDENT_TASKS, icon: 'checklist' },
   { label: 'Exams', href: ROUTES.STUDENT_EXAMS, icon: 'assignment' },
   { label: 'AI Tutor', href: ROUTES.STUDENT_AI_TUTOR, icon: 'smart_toy' },
   { label: 'Profile', href: ROUTES.STUDENT_PROFILE, icon: 'person' },
   { label: 'Rewards', href: ROUTES.STUDENT_GAMIFICATION, icon: 'emoji_events' },
   { label: 'Leaderboard', href: ROUTES.STUDENT_LEADERBOARD, icon: 'leaderboard' },
-  { label: 'Virtual Labs', href: ROUTES.STUDENT_LABS, icon: 'science' },
-  { label: 'Mind Maps', href: ROUTES.STUDENT_MIND_MAPS, icon: 'psychology' },
   { label: 'Coding', href: ROUTES.STUDENT_CODING, icon: 'code' },
   { label: 'Report & Suggestion', href: ROUTES.STUDENT_REPORT, icon: 'feedback' },
 
@@ -45,6 +45,14 @@ export default function StudentLayout() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const { t } = useTranslation();
+  const subscribeToNotifications = useNotificationStore((s) => s.subscribeToNotifications);
+  usePushNotifications(!!user);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const unsub = subscribeToNotifications(user.id);
+    return unsub;
+  }, [user?.id, subscribeToNotifications]);
   const getLabel = (label: string) => {
     const key = `nav.${label.toLowerCase().replace(/ /g, '')}`;
     const val = t(key as any);

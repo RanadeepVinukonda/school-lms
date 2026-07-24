@@ -219,16 +219,28 @@ export default function StudentGamificationPage() {
           <div className="space-y-6">
             <div>
               <h2 className="text-title-md font-bold tracking-tight">{_('Badges')}</h2>
-              <p className="text-body-sm text-muted-foreground">{_('Your earned and locked achievements')}</p>
+              <p className="text-body-sm text-muted-foreground">{_('Badges you have earned')}</p>
             </div>
             <DataFetchWrapper data={badges} isLoading={badgesLoading} error={badgesError} loadingType="card">
-              {(bData) => (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {bData?.map((b, i) => (
-                    <BadgeCard key={b.id} badge={b} earned={b.earned} earnedAt={b.earnedAt} index={i} />
-                  ))}
-                </div>
-              )}
+              {(bData) => {
+                const earnedBadges = bData?.filter((b) => b.earned) ?? [];
+                if (earnedBadges.length === 0) {
+                  return (
+                    <div className="flex flex-col items-center py-10 px-4 text-center rounded-xl border border-dashed border-muted-foreground/30">
+                      <Icon name="workspace_premium" size={40} className="text-muted-foreground/40 mb-3" />
+                      <p className="text-sm font-medium">{_('No badges earned yet')}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{_('Complete lessons and challenges to start earning badges')}</p>
+                    </div>
+                  );
+                }
+                return (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {earnedBadges.map((b, i) => (
+                      <BadgeCard key={b.id} badge={b} earned earnedAt={b.earnedAt} index={i} />
+                    ))}
+                  </div>
+                );
+              }}
             </DataFetchWrapper>
           </div>
         </div>

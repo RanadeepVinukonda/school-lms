@@ -92,8 +92,6 @@ export const ROUTES = {
 
   STUDENT_GAMIFICATION: '/student/gamification',
   STUDENT_LEADERBOARD: '/student/leaderboard',
-  STUDENT_LABS: '/student/labs',
-  STUDENT_LAB_DETAIL: (id: string) => `/student/labs/${id}`,
   STUDENT_ROLL_NUMBER: '/student/roll-number',
   TEACHER_SELECT_CLASS: '/teacher/select-class',
 
@@ -104,11 +102,8 @@ export const ROUTES = {
   PARENT_PROFILE: '/parent/profile',
   PARENT_NOTICEBOARD: '/parent/noticeboard',
 
-  STUDENT_MIND_MAPS: '/student/mindmaps',
-  STUDENT_MIND_MAP_EDITOR: (id: string) => `/student/mindmaps/${id}`,
   STUDENT_CODING: '/student/coding',
   STUDENT_CODING_EDITOR: (id: string) => `/student/coding/${id}`,
-  STUDENT_STREAM_PROJECTS: '/student/stream-projects',
   STUDENT_OCR: '/student/ocr',
   STUDENT_ADAPTIVE_QUIZ: (conceptId: string) => `/student/concepts/${conceptId}/adaptive-quiz`,
   TEACHER_NEP_QUESTIONS: '/teacher/nep-questions',

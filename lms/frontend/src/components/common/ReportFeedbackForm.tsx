@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,13 +12,14 @@ import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
 
 type ReportCategory = 'suggestion' | 'complaint' | 'feedback' | 'improvement' | 'technical_issue';
-type ReportPriority = 'low' | 'medium' | 'high';
+type ReportPriority = 'low' | 'medium' | 'high' | 'urgent';
 
 interface ReportFormData {
   title: string;
   description: string;
   category: ReportCategory;
   priority: ReportPriority;
+  classId: string;
 }
 
 const CATEGORIES: { value: ReportCategory; label: string; icon: string }[] = [
@@ -38,14 +39,25 @@ export default function ReportFeedbackForm({ className: classnameProp, onSuccess
   const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [form, setForm] = useState<ReportFormData>({
-    title: '', description: '', category: 'feedback', priority: 'medium',
+    title: '', description: '', category: 'feedback', priority: 'medium', classId: '',
   });
+
+  const { data: classes } = useQuery({
+    queryKey: ['classes-list'],
+    queryFn: () => api.get('/classes').then((r) => r.data.data),
+  });
+
+  const classList = Array.isArray(classes) ? classes : classes?.items || [];
+
+  const selectedClassName = classList.find((c: any) => c.id === form.classId)?.name || '';
 
   const mutation = useMutation({
     mutationFn: () => api.post('/report-feedback', {
+      userId: user?.id || '',
       userName: user?.displayName || user?.email || '',
       userRole: user?.role || '',
-      className: classnameProp || '',
+      classId: form.classId,
+      className: selectedClassName || classnameProp || '',
       title: form.title,
       description: form.description,
       category: form.category,
@@ -53,7 +65,7 @@ export default function ReportFeedbackForm({ className: classnameProp, onSuccess
     }),
     onSuccess: () => {
       toast.success(_('Report submitted successfully'));
-      setForm({ title: '', description: '', category: 'feedback', priority: 'medium' });
+      setForm({ title: '', description: '', category: 'feedback', priority: 'medium', classId: '' });
       onSuccess?.();
     },
     onError: () => toast.error(_('Failed to submit report')),
@@ -100,14 +112,15 @@ export default function ReportFeedbackForm({ className: classnameProp, onSuccess
           <div>
             <Label className="mb-1.5 block">{_('Priority')}</Label>
             <div className="flex gap-2">
-              {(['low', 'medium', 'high'] as ReportPriority[]).map((p) => (
+              {(['low', 'medium', 'high', 'urgent'] as ReportPriority[]).map((p) => (
                 <button
                   key={p}
                   type="button"
                   onClick={() => setForm({ ...form, priority: p })}
                   className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors capitalize ${
                     form.priority === p
-                      ? p === 'high' ? 'border-red-500 bg-red-50 text-red-700'
+                      ? p === 'urgent' ? 'border-rose-600 bg-rose-50 text-rose-700'
+                        : p === 'high' ? 'border-red-500 bg-red-50 text-red-700'
                         : p === 'medium' ? 'border-amber-500 bg-amber-50 text-amber-700'
                         : 'border-green-500 bg-green-50 text-green-700'
                       : 'border-border/60 text-muted-foreground hover:border-border'
@@ -140,6 +153,21 @@ export default function ReportFeedbackForm({ className: classnameProp, onSuccess
               rows={4}
               required
             />
+          </div>
+
+          <div>
+            <Label className="mb-1.5 block" htmlFor="report-class">{_('Child\'s Class')}</Label>
+            <select
+              id="report-class"
+              value={form.classId}
+              onChange={(e) => setForm({ ...form, classId: e.target.value })}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            >
+              <option value="">{_('Select class (optional)')}</option>
+              {classList.map((cls: any) => (
+                <option key={cls.id} value={cls.id}>{cls.name}</option>
+              ))}
+            </select>
           </div>
 
           <Button type="submit" className="w-full gap-2" loading={mutation.isPending}>

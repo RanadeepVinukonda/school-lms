@@ -145,7 +145,7 @@ function MarkerCanvas() {
       </div>
       <canvas
         ref={canvasRef}
-        className={`w-full h-[400px] border rounded-xl bg-white ${drawingEnabled ? 'cursor-crosshair' : 'cursor-default'}`}
+        className={`w-full h-[400px] border rounded-xl bg-white touch-none ${drawingEnabled ? 'cursor-crosshair' : 'cursor-default'}`}
         onMouseDown={startDrawing}
         onMouseMove={draw}
         onMouseUp={stopDrawing}

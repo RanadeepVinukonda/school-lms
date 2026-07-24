@@ -41,13 +41,8 @@ const StudentConceptPage = lazyRetry(() => import('@/app/pages/student/StudentCo
 const StudentGamificationPage = lazyRetry(() => import('@/app/pages/student/StudentGamificationPage'));
 const StudentLeaderboardPage = lazyRetry(() => import('@/app/pages/student/StudentLeaderboardPage'));
 const StudentAITutorPage = lazyRetry(() => import('@/app/pages/student/StudentAITutorPage'));
-const StudentVirtualLabsPage = lazyRetry(() => import('@/app/pages/student/StudentVirtualLabsPage'));
-const StudentVirtualLabDetailPage = lazyRetry(() => import('@/app/pages/student/StudentVirtualLabDetailPage'));
-const StudentMindMapsPage = lazyRetry(() => import('@/app/pages/student/StudentMindMapsPage'));
-const StudentMindMapEditorPage = lazyRetry(() => import('@/app/pages/student/StudentMindMapEditorPage'));
 const StudentCodingPage = lazyRetry(() => import('@/app/pages/student/StudentCodingPage'));
 const StudentCodingEditorPage = lazyRetry(() => import('@/app/pages/student/StudentCodingEditorPage'));
-const StudentStreamProjectsPage = lazyRetry(() => import('@/app/pages/student/StudentStreamProjectsPage'));
 const StudentOCRPage = lazyRetry(() => import('@/app/pages/student/StudentOCRPage'));
 const SubjectsPage = lazyRetry(() => import('@/app/pages/student/SubjectsPage'));
 const SubjectDetailPage = lazyRetry(() => import('@/app/pages/student/SubjectDetailPage'));
@@ -95,7 +90,6 @@ const TeacherRubricPage = lazyRetry(() => import('@/app/pages/teacher/TeacherRub
 const TeacherNoticeBoardPage = lazyRetry(() => import('@/app/pages/teacher/TeacherNoticeBoardPage'));
 const TeacherTimetablePage = lazyRetry(() => import('@/app/pages/teacher/TeacherTimetablePage'));
 const TeacherOCRPage = lazyRetry(() => import('@/app/pages/teacher/TeacherOCRPage'));
-const TeacherRewardsPage = lazyRetry(() => import('@/app/pages/teacher/TeacherRewardsPage'));
 const TeacherReportPage = lazyRetry(() => import('@/app/pages/teacher/TeacherReportPage'));
 const TeacherUnifiedTestPage = lazyRetry(() => import('@/app/pages/teacher/TeacherUnifiedTestPage'));
 
@@ -173,13 +167,8 @@ export const router = createBrowserRouter([
       { path: ROUTES.STUDENT_AI_TUTOR, element: <Suspense fallback={<PageFallback />}><StudentAITutorPage /></Suspense> },
       { path: ROUTES.STUDENT_GAMIFICATION, element: <Suspense fallback={<PageFallback />}><StudentGamificationPage /></Suspense> },
       { path: ROUTES.STUDENT_LEADERBOARD, element: <Suspense fallback={<PageFallback />}><StudentLeaderboardPage /></Suspense> },
-      { path: ROUTES.STUDENT_LABS, element: <Suspense fallback={<PageFallback />}><StudentVirtualLabsPage /></Suspense> },
-      { path: ROUTES.STUDENT_LAB_DETAIL(':id'), element: <Suspense fallback={<PageFallback />}><StudentVirtualLabDetailPage /></Suspense> },
-      { path: ROUTES.STUDENT_MIND_MAPS, element: <Suspense fallback={<PageFallback />}><StudentMindMapsPage /></Suspense> },
-      { path: ROUTES.STUDENT_MIND_MAP_EDITOR(':id'), element: <Suspense fallback={<PageFallback />}><StudentMindMapEditorPage /></Suspense> },
       { path: ROUTES.STUDENT_CODING, element: <Suspense fallback={<PageFallback />}><StudentCodingPage /></Suspense> },
       { path: ROUTES.STUDENT_CODING_EDITOR(':id'), element: <Suspense fallback={<PageFallback />}><StudentCodingEditorPage /></Suspense> },
-      { path: ROUTES.STUDENT_STREAM_PROJECTS, element: <Suspense fallback={<PageFallback />}><StudentStreamProjectsPage /></Suspense> },
       { path: ROUTES.STUDENT_OCR, element: <Suspense fallback={<PageFallback />}><StudentOCRPage /></Suspense> },
       { path: ROUTES.STUDENT_SUBJECTS, element: <Suspense fallback={<PageFallback />}><SubjectsPage /></Suspense> },
       { path: ROUTES.STUDENT_SUBJECT(':id'), element: <Suspense fallback={<PageFallback />}><SubjectDetailPage /></Suspense> },
@@ -233,7 +222,6 @@ export const router = createBrowserRouter([
       { path: ROUTES.TEACHER_UNIFIED_TEST, element: <Suspense fallback={<PageFallback />}><TeacherUnifiedTestPage /></Suspense> },
       { path: ROUTES.TEACHER_NOTICEBOARD, element: <Suspense fallback={<PageFallback />}><TeacherNoticeBoardPage /></Suspense> },
       { path: ROUTES.TEACHER_TIMETABLE, element: <Suspense fallback={<PageFallback />}><TeacherTimetablePage /></Suspense> },
-      { path: ROUTES.TEACHER_REWARDS, element: <Suspense fallback={<PageFallback />}><TeacherRewardsPage /></Suspense> },
       { path: ROUTES.TEACHER_REPORT, element: <Suspense fallback={<PageFallback />}><TeacherReportPage /></Suspense> },
     ],
   },
