@@ -5,7 +5,11 @@ import { logger } from '../utils/logger';
 const PRODUCTION_ORIGINS = [
   'https://app.school-lms.com',
   env.FRONTEND_URL, // allow whatever FRONTEND_URL is set to (for flexible deploys)
-] as const;
+  // Capacitor / mobile app origins
+  'http://localhost',
+  'capacitor://localhost',
+  'http://localhost:8080',
+];
 
 const STAGING_ORIGINS = [
   'https://staging.school-lms.com',
@@ -19,7 +23,7 @@ const DEV_ORIGINS = [
 
 const isAllowed = (origin: string): boolean => {
   if (env.NODE_ENV === 'production') {
-    return PRODUCTION_ORIGINS.includes(origin as typeof PRODUCTION_ORIGINS[number]);
+    return PRODUCTION_ORIGINS.some((o) => origin === o || origin.startsWith(o));
   }
   return [...DEV_ORIGINS, ...STAGING_ORIGINS, env.FRONTEND_URL].includes(origin);
 };
