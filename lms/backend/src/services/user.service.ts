@@ -84,10 +84,6 @@ export async function createUser(data: {
     const classCode = (classRow.code || classRow.section
       ? `${classRow.grade || ''}${classRow.section || ''}` : 'CLASS'
     ).toUpperCase().replace(/\s+/g, '');
-<<<<<<< HEAD
-    const acYear = deriveAcademicYear();
-=======
->>>>>>> 6e708ea (fix: add roll number conflict check + detailed auth error messages in user registration)
     studentId = generateStudentId(acYear, classCode, data.rollNo);
     if (!finalClassIds.includes(data.classId)) finalClassIds.push(data.classId);
     studentClassId = data.classId;
