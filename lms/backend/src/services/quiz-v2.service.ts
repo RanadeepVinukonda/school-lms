@@ -191,6 +191,9 @@ export async function createQuiz(data: {
   let aiGeneratedCount = 0;
   let aiErrorMessage = '';
 
+  const hasDifficultyDist = difficultyDistribution && diffOrder.some((d) => (perDifficultyTotal[d] || 0) > 0);
+  const DIFF_ORDER: Record<string, number> = { easy: 0, medium: 1, hard: 2, hots: 3 };
+
   if (data.questions && data.questions.length > 0) {
     matchingQuestions = data.questions.map((q: any) => ({
       id: q.id || uuidv4(),
@@ -204,21 +207,183 @@ export async function createQuiz(data: {
     }));
   } else {
     const questionBank = await getConceptQuestions(data.conceptId);
+    matchingQuestions = [];
 
-    matchingQuestions = targetTypes.length > 0
-      ? questionBank.filter((q: any) => targetTypes.includes(q.type))
-      : [...questionBank];
-    if (questionCount > 0 && matchingQuestions.length < questionCount) {
-      const needed = questionCount - matchingQuestions.length;
-      logger.info('Generating additional questions via AI', { conceptName, needed, existing: matchingQuestions.length });
+    if (hasDifficultyDist) {
+      const usedBankIds = new Set<string>();
+      const shortfallPerDiff: Record<string, number> = {};
 
-      const typeNames = selectedModels.length > 0
-        ? selectedModels.map((m: string) => (TYPE_MAP[m] || [m])[0]).join(', ')
-        : 'mcq, true_false, short_answer, fill_blank';
+      for (const diff of diffOrder) {
+        const need = perDifficultyTotal[diff] || 0;
+        if (need === 0) continue;
 
-      const hasMatching = typeNames.includes('matching');
+        const candidates = questionBank.filter((q: any) =>
+          q.difficulty === diff &&
+          (targetTypes.length === 0 || targetTypes.includes(q.type)) &&
+          !usedBankIds.has(q.id)
+        );
+        const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+        const taken = shuffled.slice(0, need);
 
-      let formatInstructions = `- type: one of "${typeNames}"
+        for (const q of taken) {
+          usedBankIds.add(q.id);
+          matchingQuestions.push({
+            id: q.id,
+            type: q.type || 'mcq',
+            text: q.question || q.text || fallbackText(q.type, q.options),
+            options: q.options || null,
+            correctAnswer: q.correctAnswer || q.answer || '',
+            explanation: q.explanation || '',
+            difficulty: diff,
+            points: q.points || 2,
+          });
+        }
+
+        shortfallPerDiff[diff] = need - taken.length;
+      }
+
+      const totalAiNeeded = Object.values(shortfallPerDiff).reduce((s: number, v: number) => s + v, 0);
+
+      if (totalAiNeeded > 0) {
+        logger.info('Generating AI questions per difficulty', { conceptName, shortfallPerDiff });
+
+        const typeNames = selectedModels.length > 0
+          ? selectedModels.map((m: string) => (TYPE_MAP[m] || [m])[0]).join(', ')
+          : 'mcq, true_false, short_answer, fill_blank';
+
+        const hasMatching = typeNames.includes('matching');
+
+        let formatInstructions = `- type: one of "${typeNames}"
+- text: the question text
+- options: array of 4 options (for mcq, true_false, fill_blank only — set to null for short_answer)
+- correctAnswer: the correct answer string
+- explanation: brief explanation
+- difficulty: the exact difficulty label from the distribution below
+- points: number (1-5)`;
+
+        if (hasMatching) {
+          formatInstructions += `
+
+For matching questions:
+- options must be an array of term-definition pairs, each formatted like "Term Name - Definition description"
+- correctAnswer must be a pipe-delimited string of colon-separated pairs, e.g. "Term Name:Definition description|Term Name2:Definition2"`;
+        }
+
+        const diffDescriptions: Record<string, string> = {
+          easy: 'Easy — Remember/Recall: define, identify, list, name, recall, recognize, state facts',
+          medium: 'Medium — Understand: explain, describe, compare, summarize, interpret, classify',
+          hard: 'Hard — Apply/Analyze: apply concepts to scenarios, analyze, differentiate, solve multi-step problems',
+          hots: 'HOTS — Evaluate/Create: evaluate, design, create, justify, critique, synthesize new ideas',
+        };
+
+        const diffLines = diffOrder
+          .filter((d) => (shortfallPerDiff[d] || 0) > 0)
+          .map((d) => `${d}: ${shortfallPerDiff[d]} questions — ${diffDescriptions[d]}`);
+
+        const difficultyBreakdown = `Difficulty distribution (MUST match EXACTLY):\n${diffLines.join('\n')}\n`;
+
+        const prompt = `You are an educational assessment generator following Bloom's Taxonomy. Generate EXACTLY ${totalAiNeeded} questions for the concept "${conceptName}".
+
+Question types to use: ${typeNames}
+
+${difficultyBreakdown}
+IMPORTANT: You MUST generate exactly these counts per difficulty. Each question must have:
+${formatInstructions}
+
+Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${totalAiNeeded} items.`;
+
+        try {
+          const raw = await chatCompletion({
+            model: env.AI_MODEL,
+            messages: [
+              { role: 'system', content: 'You are an educational assessment generator. Return only valid JSON.' },
+              { role: 'user', content: prompt },
+            ],
+            temperature: 0.7,
+            max_tokens: 8192,
+          });
+
+          const cleaned = raw.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/gm, '').trim();
+          const braceStart = cleaned.indexOf('{');
+          const braceEnd = cleaned.lastIndexOf('}');
+          const jsonStr = braceStart !== -1 && braceEnd !== -1 ? cleaned.slice(braceStart, braceEnd + 1) : cleaned;
+          const parsed = JSON.parse(jsonStr);
+          const generated = (parsed.questions || (Array.isArray(parsed) ? parsed : [])).slice(0, totalAiNeeded);
+
+          if (generated.length === 0) {
+            logger.warn('AI returned zero questions', { conceptName });
+          } else if (generated.length < totalAiNeeded) {
+            logger.warn('AI returned fewer questions than needed', { conceptName, requested: totalAiNeeded, received: generated.length });
+          }
+
+          const aiByDiff: Record<string, any[]> = { easy: [], medium: [], hard: [], hots: [] };
+          for (const q of generated) {
+            const d = q.difficulty || 'medium';
+            if (aiByDiff[d]) aiByDiff[d].push(q);
+            else aiByDiff[d] = [q];
+          }
+
+          for (const diff of diffOrder) {
+            const need = shortfallPerDiff[diff] || 0;
+            if (need === 0) continue;
+            const taken = (aiByDiff[diff] || []).splice(0, need);
+            for (const q of taken) {
+              matchingQuestions.push({
+                id: uuidv4(),
+                type: q.type || 'mcq',
+                text: q.question || q.text || fallbackText(q.type, q.options),
+                options: q.options || null,
+                correctAnswer: q.correctAnswer || q.answer || '',
+                explanation: q.explanation || '',
+                difficulty: diff,
+                points: q.points || 2,
+              });
+              aiGeneratedCount++;
+            }
+            if (taken.length < need) {
+              const surplus: any[] = [];
+              for (const bucket of Object.values(aiByDiff)) {
+                while (bucket.length > 0 && surplus.length < need - taken.length) {
+                  surplus.push(bucket.shift()!);
+                }
+              }
+              for (const q of surplus) {
+                matchingQuestions.push({
+                  id: uuidv4(),
+                  type: q.type || 'mcq',
+                  text: q.question || q.text || fallbackText(q.type, q.options),
+                  options: q.options || null,
+                  correctAnswer: q.correctAnswer || q.answer || '',
+                  explanation: q.explanation || '',
+                  difficulty: diff,
+                  points: q.points || 2,
+                });
+                aiGeneratedCount++;
+              }
+            }
+          }
+        } catch (err) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          aiErrorMessage = errMsg;
+          logger.error('Failed to generate questions for quiz', { conceptName, error: errMsg });
+        }
+      }
+    } else {
+      matchingQuestions = targetTypes.length > 0
+        ? questionBank.filter((q: any) => targetTypes.includes(q.type))
+        : [...questionBank];
+
+      if (questionCount > 0 && matchingQuestions.length < questionCount) {
+        const needed = questionCount - matchingQuestions.length;
+        logger.info('Generating additional questions via AI', { conceptName, needed, existing: matchingQuestions.length });
+
+        const typeNames = selectedModels.length > 0
+          ? selectedModels.map((m: string) => (TYPE_MAP[m] || [m])[0]).join(', ')
+          : 'mcq, true_false, short_answer, fill_blank';
+
+        const hasMatching = typeNames.includes('matching');
+
+        let formatInstructions = `- type: one of "${typeNames}"
 - text: the question text
 - options: array of 4 options (for mcq, true_false, fill_blank only — set to null for short_answer)
 - correctAnswer: the correct answer string
@@ -226,88 +391,70 @@ export async function createQuiz(data: {
 - difficulty: "easy" | "medium" | "hard"
 - points: number (1-5)`;
 
-      if (hasMatching) {
-        formatInstructions += `
+        if (hasMatching) {
+          formatInstructions += `
 
 For matching questions:
 - options must be an array of term-definition pairs, each formatted like "Term Name - Definition description"
 - correctAnswer must be a pipe-delimited string of colon-separated pairs, e.g. "Term Name:Definition description|Term Name2:Definition2"`;
-      }
+        }
 
-      const hasDifficultyDist = difficultyDistribution && diffOrder.some((d) => (perDifficultyTotal[d] || 0) > 0);
-
-      let difficultyBreakdown = '';
-      if (hasDifficultyDist) {
-        const diffDescriptions: Record<string, string> = {
-          easy: 'Easy — Remember/Recall: define, identify, list, name, recall, recognize, state facts',
-          medium: 'Medium — Understand: explain, describe, compare, summarize, interpret, classify',
-          hard: 'Hard — Apply/Analyze: apply concepts to scenarios, analyze, differentiate, solve multi-step problems',
-          hots: 'HOTS — Evaluate/Create: evaluate, design, create, justify, critique, synthesize new ideas',
-        };
-        const lines = diffOrder
-          .filter((d) => (perDifficultyTotal[d] || 0) > 0)
-          .map((d) => `${d}: ${perDifficultyTotal[d]} questions — ${diffDescriptions[d]}`);
-        difficultyBreakdown = `\nDifficulty distribution (MUST match EXACTLY):\n${lines.join('\n')}\n`;
-      }
-
-      const prompt = `You are an educational assessment generator following Bloom's Taxonomy. Generate EXACTLY ${needed} questions for the concept "${conceptName}".
+        const prompt = `You are an educational assessment generator. Generate EXACTLY ${needed} questions for the concept "${conceptName}".
 
 Question types to use: ${typeNames}
-${difficultyBreakdown}
+
 IMPORTANT: You MUST generate exactly ${needed} questions. Each question must have:
 ${formatInstructions}
 
 Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in the array.`;
 
-      try {
-        const raw = await chatCompletion({
-          model: env.AI_MODEL,
-          messages: [
-            { role: 'system', content: 'You are an educational assessment generator. Return only valid JSON.' },
-            { role: 'user', content: prompt },
-          ],
-          temperature: 0.7,
-          max_tokens: 8192,
-        });
-
-        const cleaned = raw.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/gm, '').trim();
-        const braceStart = cleaned.indexOf('{');
-        const braceEnd = cleaned.lastIndexOf('}');
-        const jsonStr = braceStart !== -1 && braceEnd !== -1 ? cleaned.slice(braceStart, braceEnd + 1) : cleaned;
-        const parsed = JSON.parse(jsonStr);
-        const generated = (parsed.questions || (Array.isArray(parsed) ? parsed : [])).slice(0, needed);
-
-        if (generated.length === 0) {
-          logger.warn('AI returned zero questions', { conceptName });
-        } else if (generated.length < needed) {
-          logger.warn('AI returned fewer questions than needed', { conceptName, requested: needed, received: generated.length });
-        }
-
-        for (const q of generated) {
-          const qId = uuidv4();
-          matchingQuestions.push({
-            id: qId,
-            type: q.type || 'mcq',
-            text: q.question || q.text || fallbackText(q.type, q.options),
-            options: q.options || null,
-            correctAnswer: q.correctAnswer || q.answer || '',
-            explanation: q.explanation || '',
-            difficulty: q.difficulty || 'medium',
-            points: q.points || 2,
+        try {
+          const raw = await chatCompletion({
+            model: env.AI_MODEL,
+            messages: [
+              { role: 'system', content: 'You are an educational assessment generator. Return only valid JSON.' },
+              { role: 'user', content: prompt },
+            ],
+            temperature: 0.7,
+            max_tokens: 8192,
           });
-          aiGeneratedCount++;
+
+          const cleaned = raw.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/gm, '').trim();
+          const braceStart = cleaned.indexOf('{');
+          const braceEnd = cleaned.lastIndexOf('}');
+          const jsonStr = braceStart !== -1 && braceEnd !== -1 ? cleaned.slice(braceStart, braceEnd + 1) : cleaned;
+          const parsed = JSON.parse(jsonStr);
+          const generated = (parsed.questions || (Array.isArray(parsed) ? parsed : [])).slice(0, needed);
+
+          if (generated.length === 0) {
+            logger.warn('AI returned zero questions', { conceptName });
+          } else if (generated.length < needed) {
+            logger.warn('AI returned fewer questions than needed', { conceptName, requested: needed, received: generated.length });
+          }
+
+          for (const q of generated) {
+            matchingQuestions.push({
+              id: uuidv4(),
+              type: q.type || 'mcq',
+              text: q.question || q.text || fallbackText(q.type, q.options),
+              options: q.options || null,
+              correctAnswer: q.correctAnswer || q.answer || '',
+              explanation: q.explanation || '',
+              difficulty: q.difficulty || 'medium',
+              points: q.points || 2,
+            });
+            aiGeneratedCount++;
+          }
+        } catch (err) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          aiErrorMessage = errMsg;
+          logger.error('Failed to generate questions for quiz', { conceptName, error: errMsg });
         }
-      } catch (err) {
-        const errMsg = err instanceof Error ? err.message : String(err);
-        aiErrorMessage = errMsg;
-        logger.error('Failed to generate questions for quiz', { conceptName, error: errMsg });
       }
     }
   }
 
-  const DIFF_ORDER: Record<string, number> = { easy: 0, medium: 1, hard: 2, hots: 3 };
-
-  if (difficultyDistribution) {
+  if (hasDifficultyDist) {
     matchingQuestions.sort((a: any, b: any) => {
       const orderA = DIFF_ORDER[a.difficulty] ?? 99;
       const orderB = DIFF_ORDER[b.difficulty] ?? 99;
@@ -315,8 +462,29 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
     });
   }
 
-  if (questionCount > 0 && matchingQuestions.length > questionCount) {
+  if (questionCount > 0 && matchingQuestions.length > questionCount && !hasDifficultyDist) {
     matchingQuestions = matchingQuestions.slice(0, questionCount);
+  }
+
+  if (hasDifficultyDist && data.preview) {
+    const diffCounts: Record<string, number> = {};
+    for (const q of matchingQuestions) {
+      const d = q.difficulty || 'medium';
+      diffCounts[d] = (diffCounts[d] || 0) + 1;
+    }
+    let mismatch = false;
+    for (const diff of diffOrder) {
+      const expected = perDifficultyTotal[diff] || 0;
+      const actual = diffCounts[diff] || 0;
+      if (expected !== actual) {
+        mismatch = true;
+        logger.warn('Difficulty distribution mismatch', { diff, expected, actual });
+      }
+    }
+    if (mismatch) {
+      aiErrorMessage = (aiErrorMessage ? aiErrorMessage + ' ' : '') +
+        `Distribution mismatch: expected ${diffOrder.map(d => `${d}=${perDifficultyTotal[d] || 0}`).join(', ')}, got ${diffOrder.map(d => `${d}=${diffCounts[d] || 0}`).join(', ')}. Regenerate or adjust manually.`;
+    }
   }
 
   if (data.preview) {
