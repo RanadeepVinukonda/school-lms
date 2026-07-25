@@ -551,6 +551,9 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
   // Final count guarantee before returning to frontend
   if (data.preview && hasDifficultyDist) {
     const target = Object.values(perDifficultyTotal).reduce((s: number, v: number) => s + v, 0);
+    logger.info('[QuizV2 Count Check]', {
+      matchingQuestionsLength: matchingQuestions.length, target, perDifficultyTotal, targetTypes, selectedModels, hasDifficultyDist,
+    });
     if (matchingQuestions.length > target) matchingQuestions = matchingQuestions.slice(0, target);
     while (matchingQuestions.length < target) {
       const fallbackType = targetTypes[0] || 'mcq';
