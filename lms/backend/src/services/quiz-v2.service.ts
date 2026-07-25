@@ -1139,3 +1139,4 @@ export async function getQuizAttemptsForStudent(studentId: string) {
   const items = await nosqlQuery(QAV2, { studentId });
   return items;
 }
+// deploy trigger
