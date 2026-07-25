@@ -298,86 +298,125 @@ ${formatInstructions}
 
 Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${totalAiNeeded} items.`;
 
-        try {
-          const raw = await chatCompletion({
-            model: env.AI_MODEL,
-            messages: [
-              { role: 'system', content: 'You are an educational assessment generator. Return only valid JSON.' },
-              { role: 'user', content: prompt },
-            ],
-            temperature: 0.7,
-            max_tokens: 8192,
-          });
-
+        const parseAiResponse = (raw: string): any[] => {
           const cleaned = raw.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/gm, '').trim();
           const braceStart = cleaned.indexOf('{');
           const braceEnd = cleaned.lastIndexOf('}');
           const jsonStr = braceStart !== -1 && braceEnd !== -1 ? cleaned.slice(braceStart, braceEnd + 1) : cleaned;
           const parsed = JSON.parse(jsonStr);
-          const generated = (parsed.questions || (Array.isArray(parsed) ? parsed : [])).slice(0, totalAiNeeded);
+          return parsed.questions || (Array.isArray(parsed) ? parsed : []);
+        };
 
-          if (generated.length === 0) {
-            logger.warn('AI returned zero questions', { conceptName });
-          } else if (generated.length < totalAiNeeded) {
-            logger.warn('AI returned fewer questions than needed', { conceptName, requested: totalAiNeeded, received: generated.length });
-          }
-
-          const remainingShortfall: Record<string, Record<string, number>> = {};
-          for (const diff of diffOrder) {
-            remainingShortfall[diff] = { ...(shortfall[diff] || {}) };
-          }
-
-          const leftover: any[] = [];
-          for (const q of generated) {
+        const pushMatching = (questions: any[], shortfallState: Record<string, Record<string, number>>, leftoverAcc: any[]) => {
+          for (const q of questions) {
             const d = (q.difficulty || 'medium') as string;
             const t = (q.type || 'mcq') as string;
-
-            if (remainingShortfall[d] && (remainingShortfall[d][t] || 0) > 0) {
+            if (shortfallState[d] && (shortfallState[d][t] || 0) > 0) {
               matchingQuestions.push({
-                id: uuidv4(),
-                type: t,
+                id: uuidv4(), type: t,
                 text: q.question || q.text || fallbackText(t, q.options),
                 options: q.options || null,
                 correctAnswer: q.correctAnswer || q.answer || '',
                 explanation: q.explanation || '',
-                difficulty: d,
-                points: q.points || 2,
+                difficulty: d, points: q.points || 2,
               });
               aiGeneratedCount++;
-              remainingShortfall[d][t]--;
+              shortfallState[d][t]--;
             } else {
-              leftover.push(q);
+              leftoverAcc.push(q);
             }
           }
+        };
 
-          // Fill remaining shortfall with leftover AI questions, overriding type/difficulty
-          const remainingSlots: Array<{ diff: string; type: string }> = [];
+        const fillLeftover = (shortfallState: Record<string, Record<string, number>>, leftoverAcc: any[]) => {
+          const slots: Array<{ diff: string; type: string }> = [];
           for (const diff of diffOrder) {
-            const row = remainingShortfall[diff];
+            const row = shortfallState[diff];
             if (!row) continue;
             for (const [t, count] of Object.entries(row)) {
-              for (let i = 0; i < (count as number); i++) remainingSlots.push({ diff, type: t });
+              for (let i = 0; i < (count as number); i++) slots.push({ diff, type: t });
             }
           }
-          for (const slot of remainingSlots) {
-            const q = leftover.shift();
+          let filled = 0;
+          for (const slot of slots) {
+            const q = leftoverAcc.shift();
             if (!q) break;
             matchingQuestions.push({
-              id: uuidv4(),
-              type: slot.type,
+              id: uuidv4(), type: slot.type,
               text: q.question || q.text || fallbackText(slot.type, q.options),
               options: q.options || null,
               correctAnswer: q.correctAnswer || q.answer || '',
               explanation: q.explanation || '',
-              difficulty: slot.diff,
-              points: q.points || 2,
+              difficulty: slot.diff, points: q.points || 2,
             });
             aiGeneratedCount++;
+            shortfallState[slot.diff][slot.type]--;
+            filled++;
+          }
+          return slots.length - filled;
+        };
+
+        const remainingShortfall: Record<string, Record<string, number>> = {};
+        for (const diff of diffOrder) {
+          remainingShortfall[diff] = { ...(shortfall[diff] || {}) };
+        }
+
+        const callAndProcess = async (p: string): Promise<number> => {
+          const raw = await chatCompletion({
+            model: env.AI_MODEL,
+            messages: [
+              { role: 'system', content: 'You are an educational assessment generator. Return only valid JSON.' },
+              { role: 'user', content: p },
+            ],
+            temperature: 0.7,
+            max_tokens: 8192,
+          });
+          const parsed = parseAiResponse(raw);
+          const leftover: any[] = [];
+          pushMatching(parsed, remainingShortfall, leftover);
+          return fillLeftover(remainingShortfall, leftover);
+        };
+
+        let remainingSlotCount = 0;
+        try {
+          remainingSlotCount = await callAndProcess(prompt);
+
+          for (let retry = 0; retry < 3 && remainingSlotCount > 0; retry++) {
+            const details = diffOrder.flatMap(d => {
+              const row = remainingShortfall[d];
+              return row ? Object.entries(row).filter(([, c]) => (c as number) > 0).map(([t, c]) => `  ${d} ${t}: ${c}`) : [];
+            }).join('\n');
+            if (!details) { remainingSlotCount = 0; break; }
+            const retryPrompt = `Generate exactly ${remainingSlotCount} questions for "${conceptName}". Remaining slots:\n${details}\n\nUse format: type, text, options (null for short_answer), correctAnswer, explanation, difficulty. Return JSON: { "questions": [...] }`;
+            remainingSlotCount = await callAndProcess(retryPrompt);
           }
         } catch (err) {
           const errMsg = err instanceof Error ? err.message : String(err);
           aiErrorMessage = errMsg;
           logger.error('Failed to generate questions for quiz', { conceptName, error: errMsg });
+        }
+
+        // Fill any remaining unfilled slots with placeholder questions
+        const remainingUnfilled: Array<{ diff: string; type: string }> = [];
+        for (const diff of diffOrder) {
+          const row = remainingShortfall[diff];
+          if (!row) continue;
+          for (const [t, count] of Object.entries(row)) {
+            for (let i = 0; i < (count as number); i++) remainingUnfilled.push({ diff, type: t });
+          }
+        }
+        if (remainingUnfilled.length > 0) {
+          for (const slot of remainingUnfilled) {
+            matchingQuestions.push({
+              id: uuidv4(), type: slot.type,
+              text: `Explain the concept of ${conceptName} as it relates to ${slot.type} at a ${slot.diff} level.`,
+              options: slot.type === 'mcq' || slot.type === 'true_false' || slot.type === 'fill_blank' ? ['Option A', 'Option B', 'Option C', 'Option D'] : null,
+              correctAnswer: 'Sample answer',
+              explanation: `This ${slot.type} question covers ${conceptName}.`,
+              difficulty: slot.diff, points: 2,
+            });
+            aiGeneratedCount++;
+          }
         }
       }
 
