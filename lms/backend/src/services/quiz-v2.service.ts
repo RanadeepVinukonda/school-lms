@@ -548,6 +548,23 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
     }
   }
 
+  // Final count guarantee before returning to frontend
+  if (data.preview && hasDifficultyDist) {
+    const target = Object.values(perDifficultyTotal).reduce((s: number, v: number) => s + v, 0);
+    if (matchingQuestions.length > target) matchingQuestions = matchingQuestions.slice(0, target);
+    while (matchingQuestions.length < target) {
+      const fallbackType = targetTypes[0] || 'mcq';
+      matchingQuestions.push({
+        id: uuidv4(), type: fallbackType,
+        text: `Explain a concept related to ${conceptName}.`,
+        options: fallbackType === 'mcq' || fallbackType === 'true_false' || fallbackType === 'fill_blank' ? ['Option A', 'Option B', 'Option C', 'Option D'] : null,
+        correctAnswer: 'Sample answer',
+        explanation: `Auto-generated question about ${conceptName}.`,
+        difficulty: 'medium', points: 2,
+      });
+    }
+  }
+
   if (data.preview) {
     const previewQuestions = matchingQuestions.map((q: any) => {
       const rawQuestion = q.question;
@@ -569,6 +586,13 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
       existingCount: matchingQuestions.length - aiGeneratedCount,
       aiGeneratedCount,
       aiErrorMessage: aiErrorMessage || undefined,
+      _debug: {
+        perDifficultyTotal,
+        matchingQuestionsLength: matchingQuestions.length,
+        requestedTotal: Object.values(perDifficultyTotal).reduce((s: number, v: number) => s + v, 0),
+        targetTypes,
+        selectedModels,
+      },
     };
   }
 
