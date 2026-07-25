@@ -410,21 +410,54 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${totalAiNeeded} i
         new Map(matchingQuestions.map((q: any) => [q.id, q])).values()
       );
 
-      // Ensure exact count — trim excess then pad if short
-      const requestedTotal = Object.values(perDifficultyTotal).reduce((s: number, v: number) => s + v, 0);
-      if (matchingQuestions.length > requestedTotal) {
-        matchingQuestions = matchingQuestions.slice(0, requestedTotal);
+      // Post-filter: discard questions with unexpected types
+      if (targetTypes.length > 0) {
+        matchingQuestions = matchingQuestions.filter((q: any) => targetTypes.includes(q.type));
       }
-      while (matchingQuestions.length < requestedTotal) {
-        const fallbackType = targetTypes[0] || 'mcq';
-        matchingQuestions.push({
-          id: uuidv4(), type: fallbackType,
-          text: `Explain a concept related to ${conceptName}.`,
-          options: fallbackType === 'mcq' || fallbackType === 'true_false' || fallbackType === 'fill_blank' ? ['Option A', 'Option B', 'Option C', 'Option D'] : null,
-          correctAnswer: 'Sample answer',
-          explanation: `Auto-generated question about ${conceptName}.`,
-          difficulty: 'medium', points: 2,
+
+      // Strict validation
+      const requestedTotal = Object.values(perDifficultyTotal).reduce((s: number, v: number) => s + v, 0);
+      const actualDiffCounts: Record<string, number> = {};
+      const actualTypeCounts: Record<string, number> = {};
+      for (const q of matchingQuestions) {
+        const d = q.difficulty || 'medium';
+        const t = q.type || 'mcq';
+        actualDiffCounts[d] = (actualDiffCounts[d] || 0) + 1;
+        actualTypeCounts[t] = (actualTypeCounts[t] || 0) + 1;
+      }
+      const validationErrors: string[] = [];
+      if (matchingQuestions.length !== requestedTotal) {
+        validationErrors.push(`Total count mismatch: expected ${requestedTotal}, got ${matchingQuestions.length}`);
+      }
+      for (const diff of diffOrder) {
+        const expected = perDifficultyTotal[diff] || 0;
+        const actual = actualDiffCounts[diff] || 0;
+        if (expected !== actual) {
+          validationErrors.push(`Difficulty "${diff}" count mismatch: expected ${expected}, got ${actual}`);
+        }
+      }
+      for (const diff of diffOrder) {
+        const distRow = difficultyDistribution?.[diff];
+        if (!distRow) continue;
+        for (const [qType, needRaw] of Object.entries(distRow)) {
+          if (targetTypes.length > 0 && !targetTypes.includes(qType)) continue;
+          const expected = Number(needRaw) || 0;
+          if (expected <= 0) continue;
+          const actual = matchingQuestions.filter((q: any) => q.difficulty === diff && q.type === qType).length;
+          if (expected !== actual) {
+            validationErrors.push(`Type "${qType}" at difficulty "${diff}" mismatch: expected ${expected}, got ${actual}`);
+          }
+        }
+      }
+      if (validationErrors.length > 0) {
+        const msg = validationErrors.join('; ');
+        logger.error('[QuizV2 Validation Failed]', {
+          errors: validationErrors, requestedTotal, perDifficultyTotal, actualDiffCounts, actualTypeCounts, targetTypes,
         });
+        aiErrorMessage = msg;
+        if (data.preview) {
+          throw new AppError(400, `Quiz generation validation failed: ${msg}`);
+        }
       }
     } else {
       matchingQuestions = targetTypes.length > 0
@@ -492,8 +525,8 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
 
           for (const q of generated) {
             const qType = q.type || 'mcq';
-          const validTypes = targetTypes.length > 0 ? targetTypes : ALL_QUESTION_TYPES;
-          if (!validTypes.includes(qType)) continue;
+            const validTypes = targetTypes.length > 0 ? targetTypes : ALL_QUESTION_TYPES;
+            if (!validTypes.includes(qType)) continue;
             matchingQuestions.push({
               id: uuidv4(),
               type: qType,
@@ -533,39 +566,10 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
       const d = q.difficulty || 'medium';
       diffCounts[d] = (diffCounts[d] || 0) + 1;
     }
-    let mismatch = false;
-    for (const diff of diffOrder) {
-      const expected = perDifficultyTotal[diff] || 0;
-      const actual = diffCounts[diff] || 0;
-      if (expected !== actual) {
-        mismatch = true;
-        logger.warn('Difficulty distribution mismatch', { diff, expected, actual });
-      }
-    }
-    if (mismatch) {
-      aiErrorMessage = (aiErrorMessage ? aiErrorMessage + ' ' : '') +
-        `Distribution mismatch: expected ${diffOrder.map(d => `${d}=${perDifficultyTotal[d] || 0}`).join(', ')}, got ${diffOrder.map(d => `${d}=${diffCounts[d] || 0}`).join(', ')}. Regenerate or adjust manually.`;
-    }
-  }
-
-  // Final count guarantee before returning to frontend
-  if (data.preview && hasDifficultyDist) {
     const target = Object.values(perDifficultyTotal).reduce((s: number, v: number) => s + v, 0);
     logger.info('[QuizV2 Count Check]', {
-      matchingQuestionsLength: matchingQuestions.length, target, perDifficultyTotal, targetTypes, selectedModels, hasDifficultyDist,
+      matchingQuestionsLength: matchingQuestions.length, target, perDifficultyTotal, actualDiffCounts: diffCounts, targetTypes, selectedModels, hasDifficultyDist,
     });
-    if (matchingQuestions.length > target) matchingQuestions = matchingQuestions.slice(0, target);
-    while (matchingQuestions.length < target) {
-      const fallbackType = targetTypes[0] || 'mcq';
-      matchingQuestions.push({
-        id: uuidv4(), type: fallbackType,
-        text: `Explain a concept related to ${conceptName}.`,
-        options: fallbackType === 'mcq' || fallbackType === 'true_false' || fallbackType === 'fill_blank' ? ['Option A', 'Option B', 'Option C', 'Option D'] : null,
-        correctAnswer: 'Sample answer',
-        explanation: `Auto-generated question about ${conceptName}.`,
-        difficulty: 'medium', points: 2,
-      });
-    }
   }
 
   if (data.preview) {
