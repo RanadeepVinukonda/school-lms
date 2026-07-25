@@ -80,6 +80,7 @@ const TYPE_MAP: Record<string, string[]> = {
   short_answer: ['short_answer'],
   matching: ['matching'],
 };
+const ALL_QUESTION_TYPES = ['mcq', 'multiple_choice', 'true_false', 'short_answer', 'fill_blank', 'matching'];
 
 function resolveTypes(selectedModels: string[]): string[] {
   if (!selectedModels || selectedModels.length === 0) return [];
@@ -180,9 +181,8 @@ export async function createQuiz(data: {
     for (const diff of diffOrder) {
       const row = difficultyDistribution[diff];
       if (row) {
-        perDifficultyTotal[diff] = targetTypes.length > 0
-          ? targetTypes.reduce((s: number, t: string) => s + (Number(row[t]) || 0), 0)
-          : Object.values(row).reduce((s: number, v: any) => s + (Number(v) || 0), 0);
+        const typeKeys = targetTypes.length > 0 ? targetTypes : ALL_QUESTION_TYPES;
+        perDifficultyTotal[diff] = typeKeys.reduce((s: number, t: string) => s + (Number(row[t]) || 0), 0);
       } else {
         perDifficultyTotal[diff] = 0;
       }
@@ -410,8 +410,11 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${totalAiNeeded} i
         new Map(matchingQuestions.map((q: any) => [q.id, q])).values()
       );
 
-      // Ensure exact count — auto-fill any remaining gap
+      // Ensure exact count — trim excess then pad if short
       const requestedTotal = Object.values(perDifficultyTotal).reduce((s: number, v: number) => s + v, 0);
+      if (matchingQuestions.length > requestedTotal) {
+        matchingQuestions = matchingQuestions.slice(0, requestedTotal);
+      }
       while (matchingQuestions.length < requestedTotal) {
         const fallbackType = targetTypes[0] || 'mcq';
         matchingQuestions.push({
@@ -489,7 +492,8 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
 
           for (const q of generated) {
             const qType = q.type || 'mcq';
-            if (targetTypes.length > 0 && !targetTypes.includes(qType)) continue;
+          const validTypes = targetTypes.length > 0 ? targetTypes : ALL_QUESTION_TYPES;
+          if (!validTypes.includes(qType)) continue;
             matchingQuestions.push({
               id: uuidv4(),
               type: qType,
