@@ -186,8 +186,11 @@ export default function TeacherAssessmentCreatePage() {
 
   useEffect(() => {
     if (availableTypes.length > 0) {
-      const known = availableTypes.filter((t: string) => QUESTION_MODELS.some((m) => m.value === t || (t === 'mcq' && m.value === 'multiple_choice')));
-      setSelectedModels(known.length > 0 ? known : availableTypes);
+      const mapped = availableTypes.map((t: string) => {
+        const found = QUESTION_MODELS.find((m) => m.value === t || (t === 'mcq' && m.value === 'multiple_choice'));
+        return found ? found.value : null;
+      }).filter(Boolean) as string[];
+      setSelectedModels(mapped.length > 0 ? mapped : availableTypes);
     }
   }, [availableTypes]);
 
