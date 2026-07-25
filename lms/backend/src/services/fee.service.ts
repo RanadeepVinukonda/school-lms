@@ -62,7 +62,7 @@ async function notifyFeeReminder(schoolId: string, classId: string, name: string
     .from('users').select('id').eq('school_id', schoolId).eq('class_id', classId).eq('role', 'student');
   const userIds: string[] = (students || []).map(s => s.id as string);
   const { data: parents } = await supabase
-    .from('users').select('children_ids').eq('school_id', schoolId).eq('role', 'parent');
+    .from('users').select('id, children_ids').eq('school_id', schoolId).eq('role', 'parent');
   if (parents) {
     for (const p of parents) {
       if ((p.children_ids as string[] || []).some(kid => userIds.includes(kid))) {
