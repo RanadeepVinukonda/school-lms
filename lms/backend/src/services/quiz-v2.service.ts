@@ -418,11 +418,6 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${totalAiNeeded} i
         new Map(matchingQuestions.map((q: any) => [q.id, q])).values()
       );
 
-      // Post-filter: discard questions with unexpected types
-      if (targetTypes.length > 0) {
-        matchingQuestions = matchingQuestions.filter((q: any) => targetTypes.includes(q.type));
-      }
-
       // Log distribution snapshot
       logger.info('[QuizV2 Distribution Check]', {
         matchingQuestionsLength: matchingQuestions.length,
@@ -525,6 +520,11 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
       const orderB = DIFF_ORDER[b.difficulty] ?? 99;
       return orderA - orderB;
     });
+  }
+
+  // ── Post-filter: discard unexpected types (unconditional, covers ALL paths) ──
+  if (targetTypes.length > 0) {
+    matchingQuestions = matchingQuestions.filter((q: any) => targetTypes.includes(q.type));
   }
 
   // ── FINAL: enforce requestedTotal as single source of truth ──
