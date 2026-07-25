@@ -221,52 +221,34 @@ export async function createQuiz(data: {
 
     if (hasDifficultyDist) {
       const usedBankIds = new Set<string>();
-      const shortfall: Record<string, Record<string, number>> = {};
 
       for (const diff of diffOrder) {
-        shortfall[diff] = {};
         const distRow = difficultyDistribution[diff];
         if (!distRow) continue;
-
         for (const [qType, needRaw] of Object.entries(distRow)) {
           if (targetTypes.length > 0 && !targetTypes.includes(qType)) continue;
           const need = Number(needRaw) || 0;
           if (need <= 0) continue;
-
-          shortfall[diff][qType] = need;
-
-          const candidates = questionBank.filter((q: any) =>
-            q.difficulty === diff &&
-            q.type === qType &&
-            !usedBankIds.has(q.id)
-          );
-          const shuffled = [...candidates].sort(() => Math.random() - 0.5);
-          const taken = shuffled.slice(0, need);
-
-          for (const q of taken) {
+          for (const q of [...questionBank.filter((qb: any) =>
+            qb.difficulty === diff && qb.type === qType && !usedBankIds.has(qb.id)
+          )].sort(() => Math.random() - 0.5).slice(0, need)) {
             usedBankIds.add(q.id);
             matchingQuestions.push({
-              id: q.id,
-              type: q.type || 'mcq',
+              id: q.id, type: q.type || 'mcq',
               text: q.question || q.text || fallbackText(q.type, q.options),
               options: q.options || null,
               correctAnswer: q.correctAnswer || q.answer || '',
               explanation: q.explanation || '',
-              difficulty: diff,
-              points: q.points || 2,
+              difficulty: diff, points: q.points || 2,
             });
           }
-
-          shortfall[diff][qType] = need - taken.length;
         }
       }
 
-      const totalAiNeeded = Object.values(shortfall).reduce(
-        (sum, row) => sum + Object.values(row).reduce((s, v) => s + Math.max(0, v as number), 0), 0
-      );
+      const missing = requestedTotal - matchingQuestions.length;
 
-      if (totalAiNeeded > 0) {
-        logger.info('Generating AI questions per difficulty × type', { conceptName, shortfall });
+      if (missing > 0) {
+        logger.info('Generating AI questions', { conceptName, missing });
 
         const diffDescriptions: Record<string, string> = {
           easy: 'Easy — Remember/Recall: define, identify, list, name, recall, recognize, state facts',
@@ -275,51 +257,75 @@ export async function createQuiz(data: {
           hots: 'HOTS — Evaluate/Create: evaluate, design, create, justify, critique, synthesize new ideas',
         };
 
+        const shortfall: Record<string, Record<string, number>> = {};
+        for (const diff of diffOrder) {
+          const distRow = difficultyDistribution[diff];
+          if (!distRow) continue;
+          for (const [qType, needRaw] of Object.entries(distRow)) {
+            if (targetTypes.length > 0 && !targetTypes.includes(qType)) continue;
+            const need = Number(needRaw) || 0;
+            if (need <= 0) continue;
+            const have = matchingQuestions.filter((q: any) => q.difficulty === diff && q.type === qType).length;
+            const miss = need - have;
+            if (miss > 0) {
+              if (!shortfall[diff]) shortfall[diff] = {};
+              shortfall[diff][qType] = miss;
+            }
+          }
+        }
+
         const breakdownLines: string[] = [];
         for (const diff of diffOrder) {
           const row = shortfall[diff];
           if (!row) continue;
-          const typeLines = Object.entries(row)
-            .filter(([, v]) => (v as number) > 0)
-            .map(([t, v]) => `    ${t}: ${v}`);
-          if (typeLines.length > 0) {
-            breakdownLines.push(`  ${diff} — ${diffDescriptions[diff]}:`);
-            breakdownLines.push(...typeLines);
+          for (const [t, v] of Object.entries(row)) {
+            if (v > 0) breakdownLines.push(`  ${diff} — ${diffDescriptions[diff]}: ${t}: ${v}`);
           }
         }
 
-        const difficultyBreakdown = `Difficulty × Type breakdown (MUST match EXACTLY):\n${breakdownLines.join('\n')}\n`;
+        const prompt = `You are an educational assessment generator following Bloom's Taxonomy. Generate EXACTLY ${missing} questions for the concept "${conceptName}".
 
-        const formatInstructions = `- type: one of "${Object.keys(shortfall).flatMap(d => Object.keys(shortfall[d] || {})).filter((v, i, a) => a.indexOf(v) === i).join(', ')}"
+Required questions by difficulty and type:
+${breakdownLines.join('\n')}
+
+IMPORTANT: You MUST generate exactly ${missing} questions. Each question must match BOTH its assigned difficulty AND type from the breakdown above. Each question must have:
+- type: one of "${[...new Set(Object.values(shortfall).flatMap(r => Object.keys(r)))].join(', ')}"
 - text: the question text
 - options: array of 4 options (for mcq, true_false, fill_blank only — set to null for short_answer)
 - correctAnswer: the correct answer string
 - explanation: brief explanation
-- difficulty: the exact difficulty label from the distribution
-- points: number (1-5)`;
+- difficulty: the exact difficulty label
+- points: number (1-5)
 
-        const prompt = `You are an educational assessment generator following Bloom's Taxonomy. Generate EXACTLY ${totalAiNeeded} questions for the concept "${conceptName}".
+Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${missing} items.`;
 
-${difficultyBreakdown}
-IMPORTANT: You MUST generate exactly these counts. Each question must match BOTH its assigned difficulty AND type from the breakdown above. Each question must have:
-${formatInstructions}
+        try {
+          const raw = await chatCompletion({
+            model: env.AI_MODEL,
+            messages: [
+              { role: 'system', content: 'You are an educational assessment generator. Return only valid JSON.' },
+              { role: 'user', content: prompt },
+            ],
+            temperature: 0.7,
+            max_tokens: 8192,
+          });
 
-Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${totalAiNeeded} items.`;
-
-        const parseAiResponse = (raw: string): any[] => {
           const cleaned = raw.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/gm, '').trim();
           const braceStart = cleaned.indexOf('{');
           const braceEnd = cleaned.lastIndexOf('}');
           const jsonStr = braceStart !== -1 && braceEnd !== -1 ? cleaned.slice(braceStart, braceEnd + 1) : cleaned;
           const parsed = JSON.parse(jsonStr);
-          return parsed.questions || (Array.isArray(parsed) ? parsed : []);
-        };
+          const aiQuestions = (parsed.questions || (Array.isArray(parsed) ? parsed : []));
 
-        const pushMatching = (questions: any[], shortfallState: Record<string, Record<string, number>>, leftoverAcc: any[]) => {
-          for (const q of questions) {
+          const remaining: Record<string, Record<string, number>> = {};
+          for (const diff of diffOrder) {
+            if (shortfall[diff]) remaining[diff] = { ...shortfall[diff] };
+          }
+
+          for (const q of aiQuestions) {
             const d = (q.difficulty || 'medium') as string;
             const t = (q.type || 'mcq') as string;
-            if (shortfallState[d] && (shortfallState[d][t] || 0) > 0) {
+            if (remaining[d] && (remaining[d][t] || 0) > 0) {
               matchingQuestions.push({
                 id: uuidv4(), type: t,
                 text: q.question || q.text || fallbackText(t, q.options),
@@ -329,101 +335,40 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${totalAiNeeded} i
                 difficulty: d, points: q.points || 2,
               });
               aiGeneratedCount++;
-              shortfallState[d][t]--;
-            } else {
-              leftoverAcc.push(q);
+              remaining[d][t]--;
             }
           }
-        };
 
-        const fillLeftover = (shortfallState: Record<string, Record<string, number>>, leftoverAcc: any[]) => {
-          const slots: Array<{ diff: string; type: string }> = [];
           for (const diff of diffOrder) {
-            const row = shortfallState[diff];
+            const row = remaining[diff];
             if (!row) continue;
             for (const [t, count] of Object.entries(row)) {
-              for (let i = 0; i < (count as number); i++) slots.push({ diff, type: t });
+              for (let i = 0; i < count; i++) {
+                matchingQuestions.push({
+                  id: uuidv4(), type: t,
+                  text: `Explain the concept of ${conceptName} as it relates to ${t} at a ${diff} level.`,
+                  options: t === 'mcq' || t === 'true_false' || t === 'fill_blank' ? ['Option A', 'Option B', 'Option C', 'Option D'] : null,
+                  correctAnswer: 'Sample answer',
+                  explanation: `This ${t} question covers ${conceptName}.`,
+                  difficulty: diff, points: 2,
+                });
+                aiGeneratedCount++;
+              }
             }
           }
-          let filled = 0;
-          for (const slot of slots) {
-            const q = leftoverAcc.shift();
-            if (!q) break;
-            matchingQuestions.push({
-              id: uuidv4(), type: slot.type,
-              text: q.question || q.text || fallbackText(slot.type, q.options),
-              options: q.options || null,
-              correctAnswer: q.correctAnswer || q.answer || '',
-              explanation: q.explanation || '',
-              difficulty: slot.diff, points: q.points || 2,
-            });
-            aiGeneratedCount++;
-            shortfallState[slot.diff][slot.type]--;
-            filled++;
-          }
-          return slots.length - filled;
-        };
-
-        const remainingShortfall: Record<string, Record<string, number>> = {};
-        for (const diff of diffOrder) {
-          remainingShortfall[diff] = { ...(shortfall[diff] || {}) };
-        }
-
-        const callAndProcess = async (p: string): Promise<number> => {
-          const raw = await chatCompletion({
-            model: env.AI_MODEL,
-            messages: [
-              { role: 'system', content: 'You are an educational assessment generator. Return only valid JSON.' },
-              { role: 'user', content: p },
-            ],
-            temperature: 0.7,
-            max_tokens: 8192,
-          });
-          const parsed = parseAiResponse(raw);
-          const leftover: any[] = [];
-          pushMatching(parsed, remainingShortfall, leftover);
-          return fillLeftover(remainingShortfall, leftover);
-        };
-
-        try {
-          await callAndProcess(prompt);
         } catch (err) {
-          const errMsg = err instanceof Error ? err.message : String(err);
-          aiErrorMessage = errMsg;
-          logger.error('Failed to generate questions for quiz', { conceptName, error: errMsg });
-        }
-
-        // Fill any remaining unfilled slots with placeholder questions
-        for (const diff of diffOrder) {
-          const row = remainingShortfall[diff];
-          if (!row) continue;
-          for (const [t, count] of Object.entries(row)) {
-            for (let i = 0; i < (count as number); i++) {
-              matchingQuestions.push({
-                id: uuidv4(), type: t,
-                text: `Explain the concept of ${conceptName} as it relates to ${t} at a ${diff} level.`,
-                options: t === 'mcq' || t === 'true_false' || t === 'fill_blank' ? ['Option A', 'Option B', 'Option C', 'Option D'] : null,
-                correctAnswer: 'Sample answer',
-                explanation: `This ${t} question covers ${conceptName}.`,
-                difficulty: diff, points: 2,
-              });
-              aiGeneratedCount++;
-            }
-          }
+          aiErrorMessage = err instanceof Error ? err.message : String(err);
+          logger.error('Failed to generate questions for quiz', { conceptName, error: aiErrorMessage });
         }
       }
 
-      // Remove duplicates
       matchingQuestions = Array.from(
         new Map(matchingQuestions.map((q: any) => [q.id, q])).values()
       );
 
-      // Log distribution snapshot
       logger.info('[QuizV2 Distribution Check]', {
         matchingQuestionsLength: matchingQuestions.length,
-        perDifficultyTotal,
-        aiGeneratedCount,
-        targetTypes,
+        perDifficultyTotal, aiGeneratedCount, targetTypes,
       });
     } else {
       matchingQuestions = targetTypes.length > 0
