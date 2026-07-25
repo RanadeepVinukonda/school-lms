@@ -903,7 +903,7 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     await createNotification({
       userId: studentId, type: 'grade', title: 'Quiz Result',
       body: `You scored ${score}/${totalPoints} (${percentage}%) in ${quizTitle}.`,
-      data: { quizId, attemptId, link: `/quizzes/${quizId}/results` },
+      data: { quizId: attemptData.quizId, attemptId, link: `/quizzes/${attemptData.quizId}/results` },
     });
     const { data: parentRows } = await supabase
       .from('users')
@@ -914,7 +914,7 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
       const parentNotifs = parentRows.map((p: any) => ({
         userId: p.id, type: 'grade', title: 'Quiz Completed',
         body: `Your child scored ${score}/${totalPoints} (${percentage}%) in ${quizTitle}.`,
-        data: { quizId, studentId, link: `/quizzes/${quizId}/results` },
+        data: { quizId: attemptData.quizId, studentId, link: `/quizzes/${attemptData.quizId}/results` },
       }));
       await createBulkNotifications(parentNotifs);
     }
