@@ -264,15 +264,6 @@ export default function TeacherAssessmentCreatePage() {
     }
   }, [urlConceptId, conceptList]);
 
-  const selectedConcept = conceptList.find((c: any) => c.id === selectedConceptId);
-  const allConceptQuestions: any[] = (selectedConcept as any)?.questionBank ?? [];
-  const previewQuestions: any[] = allConceptQuestions
-    .filter((q: any) => {
-      if (selectedModels.length === 0) return true;
-      return selectedModels.some((m: string) => (TYPE_MAP[m] || [m]).includes(q.type));
-    })
-    .slice(0, questionCount || allConceptQuestions.length);
-
   const [reviewQuestions, setReviewQuestions] = useState<any[]>([]);
   const [reviewTitle, setReviewTitle] = useState('');
   const [generatingPreview, setGeneratingPreview] = useState(false);
@@ -391,6 +382,7 @@ export default function TeacherAssessmentCreatePage() {
   });
 
   const setQuizDist = (difficulty: string, type: string, value: number) => {
+    setReviewQuestions([]);
     setQuizDistribution((prev) => ({
       ...prev,
       [difficulty]: { ...prev[difficulty], [type]: Math.max(0, value || 0) },
@@ -593,6 +585,7 @@ export default function TeacherAssessmentCreatePage() {
   ]);
 
   const handleModelToggle = useCallback((model: string) => {
+    setReviewQuestions([]);
     setSelectedModels((prev) =>
       prev.includes(model) ? prev.filter((m) => m !== model) : [...prev, model],
     );
@@ -863,7 +856,7 @@ export default function TeacherAssessmentCreatePage() {
                       ))}
                     </select>
                   )}
-                  {selectedConceptId && allConceptQuestions.length === 0 && (
+                  {selectedConceptId && conceptList.find((c: any) => c.id === selectedConceptId)?.questionBank?.length === 0 && (
                     <p className="mt-2 text-xs text-muted-foreground">{_('No questions available for this concept.')}</p>
                   )}
                 </div>

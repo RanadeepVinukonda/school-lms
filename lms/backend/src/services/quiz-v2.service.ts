@@ -211,63 +211,51 @@ export async function createQuiz(data: {
 
     if (hasDifficultyDist) {
       const usedBankIds = new Set<string>();
-      const shortfallPerDiff: Record<string, number> = {};
+      const shortfall: Record<string, Record<string, number>> = {};
 
       for (const diff of diffOrder) {
-        const need = perDifficultyTotal[diff] || 0;
-        if (need === 0) continue;
+        shortfall[diff] = {};
+        const distRow = difficultyDistribution[diff];
+        if (!distRow) continue;
 
-        const candidates = questionBank.filter((q: any) =>
-          q.difficulty === diff &&
-          (targetTypes.length === 0 || targetTypes.includes(q.type)) &&
-          !usedBankIds.has(q.id)
-        );
-        const shuffled = [...candidates].sort(() => Math.random() - 0.5);
-        const taken = shuffled.slice(0, need);
+        for (const [qType, needRaw] of Object.entries(distRow)) {
+          const need = Number(needRaw) || 0;
+          if (need <= 0) continue;
 
-        for (const q of taken) {
-          usedBankIds.add(q.id);
-          matchingQuestions.push({
-            id: q.id,
-            type: q.type || 'mcq',
-            text: q.question || q.text || fallbackText(q.type, q.options),
-            options: q.options || null,
-            correctAnswer: q.correctAnswer || q.answer || '',
-            explanation: q.explanation || '',
-            difficulty: diff,
-            points: q.points || 2,
-          });
+          shortfall[diff][qType] = need;
+
+          const candidates = questionBank.filter((q: any) =>
+            q.difficulty === diff &&
+            q.type === qType &&
+            !usedBankIds.has(q.id)
+          );
+          const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+          const taken = shuffled.slice(0, need);
+
+          for (const q of taken) {
+            usedBankIds.add(q.id);
+            matchingQuestions.push({
+              id: q.id,
+              type: q.type || 'mcq',
+              text: q.question || q.text || fallbackText(q.type, q.options),
+              options: q.options || null,
+              correctAnswer: q.correctAnswer || q.answer || '',
+              explanation: q.explanation || '',
+              difficulty: diff,
+              points: q.points || 2,
+            });
+          }
+
+          shortfall[diff][qType] = need - taken.length;
         }
-
-        shortfallPerDiff[diff] = need - taken.length;
       }
 
-      const totalAiNeeded = Object.values(shortfallPerDiff).reduce((s: number, v: number) => s + v, 0);
+      const totalAiNeeded = Object.values(shortfall).reduce(
+        (sum, row) => sum + Object.values(row).reduce((s, v) => s + Math.max(0, v as number), 0), 0
+      );
 
       if (totalAiNeeded > 0) {
-        logger.info('Generating AI questions per difficulty', { conceptName, shortfallPerDiff });
-
-        const typeNames = selectedModels.length > 0
-          ? selectedModels.map((m: string) => (TYPE_MAP[m] || [m])[0]).join(', ')
-          : 'mcq, true_false, short_answer, fill_blank';
-
-        const hasMatching = typeNames.includes('matching');
-
-        let formatInstructions = `- type: one of "${typeNames}"
-- text: the question text
-- options: array of 4 options (for mcq, true_false, fill_blank only — set to null for short_answer)
-- correctAnswer: the correct answer string
-- explanation: brief explanation
-- difficulty: the exact difficulty label from the distribution below
-- points: number (1-5)`;
-
-        if (hasMatching) {
-          formatInstructions += `
-
-For matching questions:
-- options must be an array of term-definition pairs, each formatted like "Term Name - Definition description"
-- correctAnswer must be a pipe-delimited string of colon-separated pairs, e.g. "Term Name:Definition description|Term Name2:Definition2"`;
-        }
+        logger.info('Generating AI questions per difficulty × type', { conceptName, shortfall });
 
         const diffDescriptions: Record<string, string> = {
           easy: 'Easy — Remember/Recall: define, identify, list, name, recall, recognize, state facts',
@@ -276,18 +264,33 @@ For matching questions:
           hots: 'HOTS — Evaluate/Create: evaluate, design, create, justify, critique, synthesize new ideas',
         };
 
-        const diffLines = diffOrder
-          .filter((d) => (shortfallPerDiff[d] || 0) > 0)
-          .map((d) => `${d}: ${shortfallPerDiff[d]} questions — ${diffDescriptions[d]}`);
+        const breakdownLines: string[] = [];
+        for (const diff of diffOrder) {
+          const row = shortfall[diff];
+          if (!row) continue;
+          const typeLines = Object.entries(row)
+            .filter(([, v]) => (v as number) > 0)
+            .map(([t, v]) => `    ${t}: ${v}`);
+          if (typeLines.length > 0) {
+            breakdownLines.push(`  ${diff} — ${diffDescriptions[diff]}:`);
+            breakdownLines.push(...typeLines);
+          }
+        }
 
-        const difficultyBreakdown = `Difficulty distribution (MUST match EXACTLY):\n${diffLines.join('\n')}\n`;
+        const difficultyBreakdown = `Difficulty × Type breakdown (MUST match EXACTLY):\n${breakdownLines.join('\n')}\n`;
+
+        const formatInstructions = `- type: one of "${Object.keys(shortfall).flatMap(d => Object.keys(shortfall[d] || {})).filter((v, i, a) => a.indexOf(v) === i).join(', ')}"
+- text: the question text
+- options: array of 4 options (for mcq, true_false, fill_blank only — set to null for short_answer)
+- correctAnswer: the correct answer string
+- explanation: brief explanation
+- difficulty: the exact difficulty label from the distribution
+- points: number (1-5)`;
 
         const prompt = `You are an educational assessment generator following Bloom's Taxonomy. Generate EXACTLY ${totalAiNeeded} questions for the concept "${conceptName}".
 
-Question types to use: ${typeNames}
-
 ${difficultyBreakdown}
-IMPORTANT: You MUST generate exactly these counts per difficulty. Each question must have:
+IMPORTANT: You MUST generate exactly these counts. Each question must match BOTH its assigned difficulty AND type from the breakdown above. Each question must have:
 ${formatInstructions}
 
 Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${totalAiNeeded} items.`;
@@ -316,50 +319,28 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${totalAiNeeded} i
             logger.warn('AI returned fewer questions than needed', { conceptName, requested: totalAiNeeded, received: generated.length });
           }
 
-          const aiByDiff: Record<string, any[]> = { easy: [], medium: [], hard: [], hots: [] };
-          for (const q of generated) {
-            const d = q.difficulty || 'medium';
-            if (aiByDiff[d]) aiByDiff[d].push(q);
-            else aiByDiff[d] = [q];
+          const remainingShortfall: Record<string, Record<string, number>> = {};
+          for (const diff of diffOrder) {
+            remainingShortfall[diff] = { ...(shortfall[diff] || {}) };
           }
 
-          for (const diff of diffOrder) {
-            const need = shortfallPerDiff[diff] || 0;
-            if (need === 0) continue;
-            const taken = (aiByDiff[diff] || []).splice(0, need);
-            for (const q of taken) {
+          for (const q of generated) {
+            const d = (q.difficulty || 'medium') as string;
+            const t = (q.type || 'mcq') as string;
+
+            if (remainingShortfall[d] && (remainingShortfall[d][t] || 0) > 0) {
               matchingQuestions.push({
                 id: uuidv4(),
-                type: q.type || 'mcq',
-                text: q.question || q.text || fallbackText(q.type, q.options),
+                type: t,
+                text: q.question || q.text || fallbackText(t, q.options),
                 options: q.options || null,
                 correctAnswer: q.correctAnswer || q.answer || '',
                 explanation: q.explanation || '',
-                difficulty: diff,
+                difficulty: d,
                 points: q.points || 2,
               });
               aiGeneratedCount++;
-            }
-            if (taken.length < need) {
-              const surplus: any[] = [];
-              for (const bucket of Object.values(aiByDiff)) {
-                while (bucket.length > 0 && surplus.length < need - taken.length) {
-                  surplus.push(bucket.shift()!);
-                }
-              }
-              for (const q of surplus) {
-                matchingQuestions.push({
-                  id: uuidv4(),
-                  type: q.type || 'mcq',
-                  text: q.question || q.text || fallbackText(q.type, q.options),
-                  options: q.options || null,
-                  correctAnswer: q.correctAnswer || q.answer || '',
-                  explanation: q.explanation || '',
-                  difficulty: diff,
-                  points: q.points || 2,
-                });
-                aiGeneratedCount++;
-              }
+              remainingShortfall[d][t]--;
             }
           }
         } catch (err) {
@@ -367,6 +348,19 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${totalAiNeeded} i
           aiErrorMessage = errMsg;
           logger.error('Failed to generate questions for quiz', { conceptName, error: errMsg });
         }
+      }
+
+      // Remove duplicates
+      matchingQuestions = Array.from(
+        new Map(matchingQuestions.map((q: any) => [q.id, q])).values()
+      );
+
+      // Validate exact count
+      const requestedTotal = Object.values(perDifficultyTotal).reduce((s: number, v: number) => s + v, 0);
+      if (matchingQuestions.length !== requestedTotal) {
+        throw new AppError(400,
+          `Expected ${requestedTotal} questions but received ${matchingQuestions.length}. Insufficient questions available for the selected distribution.`
+        );
       }
     } else {
       matchingQuestions = targetTypes.length > 0
