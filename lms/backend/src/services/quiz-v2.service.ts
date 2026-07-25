@@ -327,6 +327,7 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${totalAiNeeded} i
             remainingShortfall[diff] = { ...(shortfall[diff] || {}) };
           }
 
+          const leftover: any[] = [];
           for (const q of generated) {
             const d = (q.difficulty || 'medium') as string;
             const t = (q.type || 'mcq') as string;
@@ -344,7 +345,34 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${totalAiNeeded} i
               });
               aiGeneratedCount++;
               remainingShortfall[d][t]--;
+            } else {
+              leftover.push(q);
             }
+          }
+
+          // Fill remaining shortfall with leftover AI questions, overriding type/difficulty
+          const remainingSlots: Array<{ diff: string; type: string }> = [];
+          for (const diff of diffOrder) {
+            const row = remainingShortfall[diff];
+            if (!row) continue;
+            for (const [t, count] of Object.entries(row)) {
+              for (let i = 0; i < (count as number); i++) remainingSlots.push({ diff, type: t });
+            }
+          }
+          for (const slot of remainingSlots) {
+            const q = leftover.shift();
+            if (!q) break;
+            matchingQuestions.push({
+              id: uuidv4(),
+              type: slot.type,
+              text: q.question || q.text || fallbackText(slot.type, q.options),
+              options: q.options || null,
+              correctAnswer: q.correctAnswer || q.answer || '',
+              explanation: q.explanation || '',
+              difficulty: slot.diff,
+              points: q.points || 2,
+            });
+            aiGeneratedCount++;
           }
         } catch (err) {
           const errMsg = err instanceof Error ? err.message : String(err);
