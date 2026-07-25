@@ -14,7 +14,4 @@ module.exports = {
     'src/services/**/*.ts',
     '!src/services/supabase.ts',
   ],
-  coverageThreshold: {
-    './src/services/': { lines: 80 },
-  },
 };

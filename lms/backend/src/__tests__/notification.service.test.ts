@@ -43,11 +43,11 @@ describe('notification.service', () => {
     expect(result.total).toBe(5);
   });
   it('marks notification as read', async () => {
-    mockQuery.maybeSingle.mockResolvedValue(({ data: { id: 'n1', user_id: 'u1' }, error: null }) as any);
+    mockQuery.maybeSingle.mockResolvedValue(({ data: { id: 'n1', userId: 'u1' }, error: null }) as any);
     await expect(markNotificationRead('n1', 'u1')).resolves.not.toThrow();
   });
   it('throws NotFoundError when not owner', async () => {
-    mockQuery.maybeSingle.mockResolvedValue(({ data: { id: 'n1', user_id: 'other' }, error: null }) as any);
+    mockQuery.maybeSingle.mockResolvedValue(({ data: { id: 'n1', userId: 'other' }, error: null }) as any);
     await expect(markNotificationRead('n1', 'u1')).rejects.toThrow(NotFoundError);
   });
   it('returns unread count', async () => {
@@ -56,7 +56,7 @@ describe('notification.service', () => {
     expect(result.count).toBe(5);
   });
   it('deletes owned notification', async () => {
-    mockQuery.maybeSingle.mockResolvedValue(({ data: { id: 'n1', user_id: 'u1' }, error: null }) as any);
+    mockQuery.maybeSingle.mockResolvedValue(({ data: { id: 'n1', userId: 'u1' }, error: null }) as any);
     await expect(deleteNotification('n1', 'u1')).resolves.not.toThrow();
   });
   it('returns user preferences', async () => {

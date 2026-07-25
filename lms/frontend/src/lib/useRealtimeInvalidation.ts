@@ -36,7 +36,5 @@ export function useRealtimeInvalidation(configs: RealtimeConfig[]) {
     return () => {
       channels.forEach((ch) => supabase.removeChannel(ch));
     };
-    // ponytail: configs reference stable, queryClient is stable ref
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [configs, queryClient]);
 }
