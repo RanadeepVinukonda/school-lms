@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -8,8 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
 import { attendanceService } from '@/services/attendanceService';
-import { settingsService } from '@/services/settingsService';
-import { getAllClasses, getAllUsers } from '@/services/dataService';
+import { getAllClasses } from '@/services/dataService';
 
 export default function AdminAttendancePage() {
   const [selectedClass, setSelectedClass] = useState('');
@@ -19,42 +18,11 @@ export default function AdminAttendancePage() {
     queryFn: getAllClasses,
   });
 
-  const { data: usersData = [] } = useQuery({
-    queryKey: ['admin-users'],
-    queryFn: getAllUsers,
-  });
-
   const { data: reportData, isLoading: reportLoading, isError: reportError, refetch: refetchReport } = useQuery({
     queryKey: ['attendance-report', selectedClass],
     queryFn: () => attendanceService.getAttendanceReport(selectedClass).then((r) => r.data),
     enabled: !!selectedClass,
   });
-
-  const { data: settings } = useQuery({
-    queryKey: ['admin-settings-data'],
-    queryFn: () => settingsService.getSettings(),
-  });
-
-  const filteredReport = useMemo(() => {
-    if (!reportData) return null;
-    const yearStart = reportData.yearStart || (settings?.academicYear ? `${settings.academicYear}-01-01` : null);
-    if (!yearStart) return reportData;
-    const startDate = new Date(yearStart);
-    const filteredRecords = reportData.records.filter((r) => new Date(r.date) >= startDate);
-    const summary: typeof reportData.summary = {};
-    for (const record of filteredRecords) {
-      if (!summary[record.studentId]) {
-        summary[record.studentId] = { present: 0, absent: 0, late: 0, holiday: 0, total: 0 };
-      }
-      summary[record.studentId][record.status]++;
-      summary[record.studentId].total++;
-    }
-    for (const id of Object.keys(summary)) {
-      const d = summary[id];
-      d.percentage = d.total > 0 ? Math.round((d.present / d.total) * 100) : 0;
-    }
-    return { ...reportData, summary, yearStart };
-  }, [reportData, settings]);
 
   return (
     <>
@@ -123,16 +91,16 @@ export default function AdminAttendancePage() {
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <CardTitle className="text-title-sm">Attendance Summary</CardTitle>
-                      {filteredReport?.yearStart && (
+                      {reportData?.yearStart && (
                         <span className="text-label-sm text-muted-foreground">
-                          Filtered from {new Date(filteredReport.yearStart).toLocaleDateString()}
+                          From {new Date(reportData.yearStart).toLocaleDateString()}
                         </span>
                       )}
                     </div>
                   </CardHeader>
                   <CardContent>
-                    {(!filteredReport?.summary || Object.keys(filteredReport.summary).length === 0) ? (
-                      <p className="text-muted-foreground text-center py-8">No attendance records found</p>
+                    {(!reportData?.summary || Object.keys(reportData.summary).length === 0) ? (
+                      <p className="text-muted-foreground text-center py-8">No students found</p>
                     ) : (
                       <div className="border border-border/60 rounded-xl overflow-x-auto">
                         <table className="w-full text-left">
@@ -149,13 +117,12 @@ export default function AdminAttendancePage() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-border/40 text-title-sm">
-                            {Object.entries(filteredReport.summary).map(([studentId, data]: [string, any], idx: number) => {
-                              const student = usersData.find((u) => u.id === studentId);
+                            {(Object.entries(reportData.summary) as [string, any][]).sort(([, a], [, b]) => (a.rollNo || '').localeCompare(b.rollNo || '')).map(([studentId, data], idx: number) => {
                               const pct = data.percentage ?? 0;
                               return (
                                 <tr key={studentId} className="hover:bg-muted/20">
                                   <td className="px-4 py-3 text-muted-foreground">{idx + 1}</td>
-                                  <td className="px-4 py-3 font-semibold">{student?.displayName || studentId}</td>
+                                  <td className="px-4 py-3 font-semibold">{data.studentName || studentId}</td>
                                   <td className="px-4 py-3 text-center font-mono text-success">{data.present}</td>
                                   <td className="px-4 py-3 text-center font-mono text-error">{data.absent}</td>
                                   <td className="px-4 py-3 text-center font-mono text-warning">{data.late}</td>

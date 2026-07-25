@@ -284,12 +284,12 @@ export default function TeacherAttendancePage() {
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-border/40 text-title-sm">
-                              {Object.entries(reportData.summary).map(([studentId, data]: [string, any], idx: number) => {
+                              {(Object.entries(reportData.summary) as [string, any][]).sort(([, a], [, b]) => (a.rollNo || '').localeCompare(b.rollNo || '')).map(([studentId, data], idx: number) => {
                                 const pct = data.percentage ?? (data.total > 0 ? Math.round((data.present / data.total) * 100) : 0);
                                 return (
                                   <tr key={studentId} className="hover:bg-muted/20">
                                     <td className="px-4 py-3 text-muted-foreground">{idx + 1}</td>
-                                    <td className="px-4 py-3 font-semibold">{studentId.slice(0, 8)}</td>
+                                    <td className="px-4 py-3 font-semibold">{data.studentName || studentId.slice(0, 8)}</td>
                                     <td className="px-4 py-3 text-center font-mono text-success">{data.present}</td>
                                     <td className="px-4 py-3 text-center font-mono text-error">{data.absent}</td>
                                     <td className="px-4 py-3 text-center font-mono text-warning">{data.late}</td>

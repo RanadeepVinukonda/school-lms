@@ -5,6 +5,20 @@ import { logger } from '../utils/logger';
 import { createBulkNotifications } from './notification.service';
 import { getCurrentAcademicYear } from './academic-year.service';
 
+function countWeekdays(start: Date, end: Date): number {
+  let count = 0;
+  const d = new Date(start);
+  d.setHours(0, 0, 0, 0);
+  const e = new Date(end);
+  e.setHours(23, 59, 59, 999);
+  while (d <= e) {
+    const day = d.getDay();
+    if (day !== 0 && day !== 6) count++;
+    d.setDate(d.getDate() + 1);
+  }
+  return count;
+}
+
 // ── Public API ───────────────────────────────────────────
 
 /** Mark attendance for multiple students with duplicate rejection and parent notifications. */
@@ -31,7 +45,6 @@ export async function markAttendance(data: {
 
   for (const studentId of data.studentIds) {
     if (existingStudentIds.has(studentId)) {
-      // Skip — attendance already recorded for this student on this date
       logger.info('Duplicate attendance skipped', { studentId, classId: data.classId, date: data.date });
       continue;
     }
@@ -98,30 +111,91 @@ export async function getStudentAttendance(studentId: string) {
   return records;
 }
 
-/** Get summary report for a class, filtered by academic year start date. */
+/** Get summary report for a class, using total working days as denominator. */
 export async function getAttendanceReport(classId: string) {
+  const supabase = getSupabaseAdmin();
+
+  // Get all students enrolled in this class
+  const { data: allStudents, error: studentError } = await supabase
+    .from('users')
+    .select('id, display_name, roll_no, student_id')
+    .eq('role', 'student')
+    .contains('class_ids', [classId]);
+  if (studentError) throw studentError;
+
+  const currentYear = getCurrentAcademicYear();
+  const yearStart = currentYear?.startDate ? new Date(currentYear.startDate as string) : new Date();
+  const yearEnd = new Date();
+
+  // Calculate total working days (weekdays) from academic year start to today
+  const workingDays = countWeekdays(yearStart, yearEnd);
+
+  // Get all attendance records for this class
   const records = await getClassAttendance(classId);
 
-  const currentYear = await getCurrentAcademicYear();
-  const yearStart = currentYear?.startDate ? new Date(currentYear.startDate as string) : null;
+  const filteredRecords = records.filter((r: any) => r.date && new Date(r.date) >= yearStart);
 
-  const filteredRecords = yearStart
-    ? records.filter((r: any) => !r.date || new Date(r.date) >= yearStart)
-    : records;
+  // Build student name map
+  const studentNameMap: Record<string, string> = {};
+  const studentRollMap: Record<string, string> = {};
+  for (const s of allStudents || []) {
+    studentNameMap[s.id] = s.display_name || s.student_id || s.id;
+    studentRollMap[s.id] = s.roll_no || '';
+  }
 
-  const summary: Record<string, { present: number; absent: number; late: number; holiday: number; total: number; percentage: number }> = {};
+  // Pre-process records per student for faster lookup
+  const recordMap: Record<string, any[]> = {};
   for (const r of filteredRecords) {
-    const sid = r.studentId;
-    if (!summary[sid]) summary[sid] = { present: 0, absent: 0, late: 0, holiday: 0, total: 0, percentage: 0 };
-    summary[sid][r.status as 'present' | 'absent' | 'late' | 'holiday']++;
-    summary[sid].total++;
-  }
-  for (const sid of Object.keys(summary)) {
-    const s = summary[sid];
-    s.percentage = s.total > 0 ? Math.round((s.present / s.total) * 100) : 0;
+    if (!recordMap[r.studentId]) recordMap[r.studentId] = [];
+    recordMap[r.studentId].push(r);
   }
 
-  return { records: filteredRecords, summary, yearStart: yearStart?.toISOString() || null };
+  const summary: Record<string, {
+    studentId: string;
+    studentName: string;
+    rollNo: string;
+    present: number;
+    absent: number;
+    late: number;
+    holiday: number;
+    total: number;
+    percentage: number;
+  }> = {};
+
+  for (const student of allStudents || []) {
+    const sid = student.id;
+    const studentRecords = recordMap[sid] || [];
+    const present = studentRecords.filter((r: any) => r.status === 'present').length;
+    const lateCount = studentRecords.filter((r: any) => r.status === 'late').length;
+    const holidayCount = studentRecords.filter((r: any) => r.status === 'holiday').length;
+    const absent = studentRecords.filter((r: any) => r.status === 'absent').length;
+
+    // Count unmarked days as absent
+    const unmarkedDays = workingDays - studentRecords.length;
+    const totalAbsent = absent + unmarkedDays;
+
+    const percentage = workingDays > 0 ? Math.round((present / workingDays) * 100) : 0;
+
+    summary[sid] = {
+      studentId: sid,
+      studentName: studentNameMap[sid] || sid.slice(0, 8),
+      rollNo: studentRollMap[sid] || '',
+      present,
+      absent: totalAbsent,
+      late: lateCount,
+      holiday: holidayCount,
+      total: workingDays,
+      percentage,
+    };
+  }
+
+  return {
+    records: filteredRecords,
+    summary,
+    yearStart: yearStart.toISOString(),
+    yearEnd: yearEnd.toISOString(),
+    workingDays,
+  };
 }
 
 /** Export attendance as CSV. */
