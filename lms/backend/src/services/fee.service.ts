@@ -3,6 +3,8 @@ import { getConnectionPool } from '../database/connection-manager';
 import { ValidationError } from '../utils/errors';
 import { BaseService, DbRecord } from '../lib/base-service';
 import { deriveAcademicYear } from '../middlewares/academicYear.middleware';
+import { createBulkNotifications } from './notification.service';
+import { logger } from '../utils/logger';
 
 interface FeeStructureRecord extends DbRecord {
   school_id?: string;
@@ -47,7 +49,31 @@ export async function createFeeSchedule(data: {
     academic_year: data.academicYear || deriveAcademicYear(),
     description: data.description || null,
   } as Partial<FeeStructureRecord>);
+  // notify students and parents in the class
+  notifyFeeReminder(data.schoolId, data.classId, data.name, data.dueDate)
+    .catch((err) => logger.warn('Failed to notify fee reminder', { error: err?.message || err }));
   return result;
+}
+
+async function notifyFeeReminder(schoolId: string, classId: string, name: string, dueDate?: string) {
+  const supabase = getSupabaseAdmin(); if (!supabase) return;
+  const dueText = dueDate ? ` due by ${dueDate}` : '';
+  const { data: students } = await supabase
+    .from('users').select('id').eq('school_id', schoolId).eq('class_id', classId).eq('role', 'student');
+  const userIds: string[] = (students || []).map(s => s.id as string);
+  const { data: parents } = await supabase
+    .from('users').select('children_ids').eq('school_id', schoolId).eq('role', 'parent');
+  if (parents) {
+    for (const p of parents) {
+      if ((p.children_ids as string[] || []).some(kid => userIds.includes(kid))) {
+        userIds.push(p.id as string);
+      }
+    }
+  }
+  if (userIds.length === 0) return;
+  await createBulkNotifications(userIds.map(uid => ({
+    userId: uid, type: 'fee_reminder', title: 'Fee Reminder', body: `${name}: Please pay before ${dueDate || 'the due date'}.`,
+  })));
 }
 
 /**

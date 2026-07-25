@@ -40,6 +40,9 @@ const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = 
   regrade_requested: MessageCircle, timetable_updated: Calendar, new_registration: Info,
   parent_registration: Info, system_alert: AlertTriangle, performance_report: Star,
   teacher_message: MessageSquare,
+  announcement: Info, re_teach: AlertTriangle, fee_reminder: Calendar,
+  content_published: FileText, test_published: HelpCircle, test_submitted: FileText,
+  registration: Info,
 };
 
 const DEEP_LINKS: Record<string, (role: string) => string> = {
@@ -53,9 +56,9 @@ const DEEP_LINKS: Record<string, (role: string) => string> = {
 };
 
 function derivePriority(type: string): Priority {
-  if (type === 'exam') return 'urgent';
-  if (type === 'grade' || type === 'warning') return 'high';
-  if (type === 'assignment' || type === 'message' || type === 'schedule') return 'medium';
+  if (type === 'exam' || type === 're_teach') return 'urgent';
+  if (type === 'grade' || type === 'warning' || type === 'fee_reminder') return 'high';
+  if (type === 'assignment' || type === 'message' || type === 'schedule' || type === 'announcement') return 'medium';
   return 'low';
 }
 
@@ -120,7 +123,7 @@ export default function NotificationDropdown() {
   );
 
   const items: Item[] = useMemo(
-    () => rawItems.map((n) => ({ ...n, message: n.body || n.title, priority: derivePriority(n.type) })),
+    () => rawItems.map((n) => ({ ...n, message: n.message ?? n.body ?? n.title, priority: derivePriority(n.type) })),
     [rawItems],
   );
   const unreadItems = useMemo(() => items.filter((n) => !n.read), [items]);
