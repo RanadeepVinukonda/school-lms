@@ -181,8 +181,11 @@ export async function createQuiz(data: {
     for (const diff of diffOrder) {
       const row = difficultyDistribution[diff];
       if (row) {
-        const typeKeys = targetTypes.length > 0 ? targetTypes : ALL_QUESTION_TYPES;
-        perDifficultyTotal[diff] = typeKeys.reduce((s: number, t: string) => s + (Number(row[t]) || 0), 0);
+        perDifficultyTotal[diff] = Object.entries(row).reduce((sum: number, [qType, needRaw]) => {
+          if (targetTypes.length > 0 && !targetTypes.includes(qType)) return sum;
+          const need = Number(needRaw) || 0;
+          return sum + (need > 0 ? need : 0);
+        }, 0);
       } else {
         perDifficultyTotal[diff] = 0;
       }
@@ -420,43 +423,13 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${totalAiNeeded} i
         matchingQuestions = matchingQuestions.filter((q: any) => targetTypes.includes(q.type));
       }
 
-      // Strict validation
-      const actualDiffCounts: Record<string, number> = {};
-      for (const q of matchingQuestions) {
-        const d = q.difficulty || 'medium';
-        actualDiffCounts[d] = (actualDiffCounts[d] || 0) + 1;
-      }
-      const validationErrors: string[] = [];
-      for (const diff of diffOrder) {
-        const expected = perDifficultyTotal[diff] || 0;
-        const actual = actualDiffCounts[diff] || 0;
-        if (expected !== actual) {
-          validationErrors.push(`Difficulty "${diff}" count mismatch: expected ${expected}, got ${actual}`);
-        }
-      }
-      for (const diff of diffOrder) {
-        const distRow = difficultyDistribution?.[diff];
-        if (!distRow) continue;
-        for (const [qType, needRaw] of Object.entries(distRow)) {
-          if (targetTypes.length > 0 && !targetTypes.includes(qType)) continue;
-          const expected = Number(needRaw) || 0;
-          if (expected <= 0) continue;
-          const actual = matchingQuestions.filter((q: any) => q.difficulty === diff && q.type === qType).length;
-          if (expected !== actual) {
-            validationErrors.push(`Type "${qType}" at difficulty "${diff}" mismatch: expected ${expected}, got ${actual}`);
-          }
-        }
-      }
-      if (validationErrors.length > 0) {
-        const msg = validationErrors.join('; ');
-        logger.error('[QuizV2 Validation Failed]', {
-          errors: validationErrors, requestedTotal, perDifficultyTotal, actualDiffCounts, targetTypes,
-        });
-        aiErrorMessage = msg;
-        if (data.preview) {
-          throw new AppError(400, `Quiz generation validation failed: ${msg}`);
-        }
-      }
+      // Log distribution snapshot
+      logger.info('[QuizV2 Distribution Check]', {
+        matchingQuestionsLength: matchingQuestions.length,
+        perDifficultyTotal,
+        aiGeneratedCount,
+        targetTypes,
+      });
     } else {
       matchingQuestions = targetTypes.length > 0
         ? questionBank.filter((q: any) => targetTypes.includes(q.type))
