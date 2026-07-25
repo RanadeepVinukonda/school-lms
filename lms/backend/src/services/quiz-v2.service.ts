@@ -596,7 +596,7 @@ export async function releaseQuiz(quizId: string, teacherId: string) {
   return { id: quizId, ...updated.data };
 }
 
-const POINTS_BY_DIFFICULTY: Record<string, number> = { easy: 1, medium: 2, hard: 3 };
+const POINTS_BY_DIFFICULTY: Record<string, number> = { easy: 1, medium: 2, hard: 3, hots: 4 };
 
 export async function startQuizAttempt(quizId: string, studentId: string, selectedModels: string[]) {
   const supabase = getSupabaseAdmin()!;
@@ -643,12 +643,6 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
     ? questionBank.filter((q: any) => targetTypes.includes(q.type))
     : [...questionBank];
   if (available.length === 0) available = [...questionBank];
-
-  if (quizData.isRepublished && studentLevel) {
-    const targetCount = (quizData.questionCount as number) || 0;
-    const leveled = filterQuestionsByLevel(available, studentLevel, targetCount || available.length);
-    if (leveled.length > 0) available = leveled;
-  }
 
   if (quizData.shuffleQuestions !== false) {
     available = [...available].sort(() => Math.random() - 0.5);
@@ -749,12 +743,18 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     let isCorrect = false;
     const normalize = (v: unknown) => v?.toString().toLowerCase().trim() || '';
     const qType = question.type as string;
-    if (['multiple_choice', 'mcq', 'true_false', 'passage'].includes(qType)) {
-      isCorrect = normalize(answer.answer) === normalize(question.correctAnswer);
+    const normalizedCorrect = normalize(question.correctAnswer);
+    const normalizedAnswer = normalize(answer.answer);
+
+    if (!normalizedCorrect && normalizedAnswer) {
+      // No stored answer but student answered — auto-grading impossible, give credit
+      isCorrect = true;
+    } else if (['multiple_choice', 'mcq', 'true_false', 'passage'].includes(qType)) {
+      isCorrect = normalizedAnswer === normalizedCorrect;
     } else if (['short_answer', 'fill_blank'].includes(qType)) {
-      isCorrect = normalize(answer.answer) === normalize(question.correctAnswer);
+      isCorrect = normalizedAnswer === normalizedCorrect;
     } else if (['numerical', 'matching'].includes(qType)) {
-      isCorrect = normalize(answer.answer) === normalize(question.correctAnswer);
+      isCorrect = normalizedAnswer === normalizedCorrect;
     } else if (qType === 'descriptive') {
       isCorrect = answer.answer.toString().trim().length > 5;
     }
