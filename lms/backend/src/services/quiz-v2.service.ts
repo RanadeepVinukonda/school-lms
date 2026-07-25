@@ -195,6 +195,11 @@ export async function createQuiz(data: {
 
   const hasDifficultyDist = difficultyDistribution && diffOrder.some((d) => (perDifficultyTotal[d] || 0) > 0);
   const DIFF_ORDER: Record<string, number> = { easy: 0, medium: 1, hard: 2, hots: 3 };
+  const requestedTotal = data.questions?.length
+    ? data.questions.length
+    : hasDifficultyDist
+      ? Object.values(perDifficultyTotal).reduce((s: number, v: number) => s + v, 0)
+      : questionCount || 0;
 
   if (data.questions && data.questions.length > 0) {
     matchingQuestions = data.questions.map((q: any) => ({
@@ -416,19 +421,12 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${totalAiNeeded} i
       }
 
       // Strict validation
-      const requestedTotal = Object.values(perDifficultyTotal).reduce((s: number, v: number) => s + v, 0);
       const actualDiffCounts: Record<string, number> = {};
-      const actualTypeCounts: Record<string, number> = {};
       for (const q of matchingQuestions) {
         const d = q.difficulty || 'medium';
-        const t = q.type || 'mcq';
         actualDiffCounts[d] = (actualDiffCounts[d] || 0) + 1;
-        actualTypeCounts[t] = (actualTypeCounts[t] || 0) + 1;
       }
       const validationErrors: string[] = [];
-      if (matchingQuestions.length !== requestedTotal) {
-        validationErrors.push(`Total count mismatch: expected ${requestedTotal}, got ${matchingQuestions.length}`);
-      }
       for (const diff of diffOrder) {
         const expected = perDifficultyTotal[diff] || 0;
         const actual = actualDiffCounts[diff] || 0;
@@ -452,7 +450,7 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${totalAiNeeded} i
       if (validationErrors.length > 0) {
         const msg = validationErrors.join('; ');
         logger.error('[QuizV2 Validation Failed]', {
-          errors: validationErrors, requestedTotal, perDifficultyTotal, actualDiffCounts, actualTypeCounts, targetTypes,
+          errors: validationErrors, requestedTotal, perDifficultyTotal, actualDiffCounts, targetTypes,
         });
         aiErrorMessage = msg;
         if (data.preview) {
@@ -556,20 +554,23 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
     });
   }
 
-  if (questionCount > 0 && matchingQuestions.length > questionCount && !hasDifficultyDist) {
-    matchingQuestions = matchingQuestions.slice(0, questionCount);
-  }
-
-  if (hasDifficultyDist && data.preview) {
-    const diffCounts: Record<string, number> = {};
-    for (const q of matchingQuestions) {
-      const d = q.difficulty || 'medium';
-      diffCounts[d] = (diffCounts[d] || 0) + 1;
-    }
-    const target = Object.values(perDifficultyTotal).reduce((s: number, v: number) => s + v, 0);
-    logger.info('[QuizV2 Count Check]', {
-      matchingQuestionsLength: matchingQuestions.length, target, perDifficultyTotal, actualDiffCounts: diffCounts, targetTypes, selectedModels, hasDifficultyDist,
+  // ── FINAL: enforce requestedTotal as single source of truth ──
+  {
+    const before = matchingQuestions.length;
+    matchingQuestions = Array.from(
+      new Map(matchingQuestions.map((q: any) => [q.id, q])).values()
+    );
+    const duplicates = before - matchingQuestions.length;
+    logger.info('[QuizV2 Final]', {
+      requestedTotal, beforeDedup: before, duplicates, afterDedup: matchingQuestions.length,
+      hasDifficultyDist, targetTypes, perDifficultyTotal,
     });
+    if (matchingQuestions.length > requestedTotal) {
+      matchingQuestions = matchingQuestions.slice(0, requestedTotal);
+    }
+    if (matchingQuestions.length < requestedTotal) {
+      throw new AppError(500, `Insufficient questions generated. Expected ${requestedTotal}, got ${matchingQuestions.length}. Regenerate quiz.`);
+    }
   }
 
   if (data.preview) {
@@ -594,9 +595,9 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
       aiGeneratedCount,
       aiErrorMessage: aiErrorMessage || undefined,
       _debug: {
-        perDifficultyTotal,
+        requestedTotal,
         matchingQuestionsLength: matchingQuestions.length,
-        requestedTotal: Object.values(perDifficultyTotal).reduce((s: number, v: number) => s + v, 0),
+        perDifficultyTotal,
         targetTypes,
         selectedModels,
       },
