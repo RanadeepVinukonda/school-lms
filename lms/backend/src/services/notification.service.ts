@@ -172,9 +172,12 @@ export async function updateNotificationPreferences(userId: string, preferences:
   return preferences;
 }
 
+const BATCH_SIZE = 100;
+
 /** Create multiple notifications in a single batch. */
 export async function createBulkNotifications(
   notifications: Array<{ userId: string; type: string; title: string; body: string; data?: Record<string, unknown> }>,
+  fallbackSchoolId?: string,
 ) {
   if (notifications.length === 0) return [];
   const db = supabase();
@@ -199,18 +202,21 @@ export async function createBulkNotifications(
         title: n.title, message: n.body,
         read: false, createdAt: new Date().toISOString(),
       };
-      const sid = schoolMap.get(n.userId);
+      const sid = schoolMap.get(n.userId) || fallbackSchoolId;
       if (sid) r.school_id = sid;
       return r;
     });
 
   const results: string[] = [];
   if (rows.length > 0) {
-    const { data: inserted, error } = await db.from('notifications').insert(rows).select('id');
-    if (error) {
-      logger.error('Failed to create bulk notifications', { error: error.message });
-    } else if (inserted) {
-      results.push(...inserted.map((r: any) => r.id as string));
+    for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+      const batch = rows.slice(i, i + BATCH_SIZE);
+      const { data: inserted, error } = await db.from('notifications').insert(batch).select('id');
+      if (error) {
+        logger.error('Failed to create bulk notification batch', { error: error.message, batchStart: i });
+      } else if (inserted) {
+        results.push(...inserted.map((r: any) => r.id as string));
+      }
     }
   }
 

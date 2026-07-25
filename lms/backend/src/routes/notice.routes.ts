@@ -34,8 +34,8 @@ router.post('/', authenticate, requireRole('admin', 'super_admin', 'teacher'),
   validate(z.object({ title: z.string(), content: z.string(), priority: z.string().optional(), expires_at: z.string().optional(), target_class_id: z.string().nullable().optional() })),
   asyncHandler(async (req, res) => {
     const result = await noticeService.createNotice(req.user!.school_id || '', req.user!.uid, req.body);
-    // generate bell notifications for affected users
-    notifyUsersOfNotice(req.user!.school_id || '', req.body.target_class_id, req.body.title, req.body.content)
+    const schoolId = req.user!.school_id || '';
+    notifyUsersOfNotice(schoolId, req.body.target_class_id, req.body.title, req.body.content)
       .catch((err) => logger.warn('Failed to notify users of notice', { error: err?.message || err }));
     sendSuccess(res, result);
   })
@@ -49,34 +49,38 @@ router.delete('/:id', authenticate, requireRole('admin', 'super_admin'), asyncHa
 async function notifyUsersOfNotice(schoolId: string, targetClassId: string | null | undefined, title: string, content: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return;
   let userIds: string[] = [];
+
   if (targetClassId) {
-    const { data: users } = await supabase
-      .from('users').select('id').eq('school_id', schoolId)
-      .or(`role.eq.student,role.eq.teacher,role.eq.parent`)
-      .contains('class_ids', [targetClassId]);
-    if (users) userIds = users.map(u => u.id as string);
+    const [studentRes, teacherRes] = await Promise.all([
+      supabase.from('users').select('id').eq('school_id', schoolId).eq('role', 'student').eq('class_id', targetClassId),
+      supabase.from('users').select('id').eq('school_id', schoolId).eq('role', 'teacher').contains('class_ids', [targetClassId]),
+    ]);
+    if (studentRes.data) userIds.push(...studentRes.data.map(u => u.id as string));
+    if (teacherRes.data) userIds.push(...teacherRes.data.map(u => u.id as string));
+
+    const studentIds = new Set(userIds);
     const { data: parents } = await supabase
-      .from('users').select('children_ids').eq('school_id', schoolId).eq('role', 'parent');
+      .from('users').select('id, children_ids').eq('school_id', schoolId).eq('role', 'parent');
     if (parents) {
-      const { data: students } = await supabase.from('users').select('id').in('class_id', [targetClassId]);
-      if (students) {
-        const studentIds = new Set(students.map(s => s.id as string));
-        for (const p of parents) {
-          const kids = (p.children_ids as string[]) || [];
-          if (kids.some(k => studentIds.has(k))) userIds.push(p.id as string);
+      for (const p of parents) {
+        if ((p.children_ids as string[] || []).some(k => studentIds.has(k))) {
+          userIds.push(p.id as string);
         }
       }
     }
   } else {
     const { data: users } = await supabase
-      .from('users').select('id').eq('school_id', schoolId)
-      .in('role', ['student', 'teacher', 'parent']);
+      .from('users').select('id').eq('school_id', schoolId);
     if (users) userIds = users.map(u => u.id as string);
   }
+
   if (userIds.length === 0) return;
-  await createBulkNotifications(userIds.map(uid => ({
-    userId: uid, type: 'announcement', title: `Notice: ${title}`, body: content,
-  })));
+  await createBulkNotifications(
+    userIds.map(uid => ({
+      userId: uid, type: 'notice', title: `Notice: ${title}`, body: content,
+    })),
+    schoolId,
+  );
 }
 
 export default router;

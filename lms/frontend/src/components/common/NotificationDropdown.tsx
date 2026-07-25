@@ -40,7 +40,7 @@ const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = 
   regrade_requested: MessageCircle, timetable_updated: Calendar, new_registration: Info,
   parent_registration: Info, system_alert: AlertTriangle, performance_report: Star,
   teacher_message: MessageSquare,
-  announcement: Info, re_teach: AlertTriangle, fee_reminder: Calendar,
+  announcement: Info, notice: Info, re_teach: AlertTriangle, fee_reminder: Calendar,
   content_published: FileText, test_published: HelpCircle, test_submitted: FileText,
   registration: Info,
 };
@@ -58,7 +58,7 @@ const DEEP_LINKS: Record<string, (role: string) => string> = {
 function derivePriority(type: string): Priority {
   if (type === 'exam' || type === 're_teach') return 'urgent';
   if (type === 'grade' || type === 'warning' || type === 'fee_reminder') return 'high';
-  if (type === 'assignment' || type === 'message' || type === 'schedule' || type === 'announcement') return 'medium';
+  if (type === 'assignment' || type === 'message' || type === 'schedule' || type === 'announcement' || type === 'notice') return 'medium';
   return 'low';
 }
 
