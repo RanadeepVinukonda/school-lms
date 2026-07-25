@@ -45,6 +45,7 @@ router.post('/re-teach', authenticate, requireRole('teacher', 'admin'), validate
     title: 'Action Required: Re-teach Concept',
     body: `The administrator has requested that you re-teach the concept "${conceptName}" in "${className}"${sectionText} for the subject "${subjectName}".${affectedText}${scoreText}${reasonText}`,
     priority: 'high',
+    schoolId: req.user!.school_id,
   });
   sendSuccess(res, null, 'Teacher notified to re-teach concept');
 }));

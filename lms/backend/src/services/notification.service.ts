@@ -15,6 +15,7 @@ export async function createNotification(data: {
   body: string;
   data?: Record<string, unknown>;
   priority?: string;
+  schoolId?: string;
 }) {
   const prefs = await getNotificationPreferences(data.userId);
   if (!prefs.in_app_enabled) {
@@ -22,14 +23,21 @@ export async function createNotification(data: {
     return null;
   }
 
-  const row = {
+  let school_id = data.schoolId;
+  if (!school_id) {
+    const { data: user } = await supabase().from('users').select('school_id').eq('id', data.userId).maybeSingle();
+    school_id = user?.school_id as string | undefined;
+  }
+
+  const row: Record<string, unknown> = {
     userId: data.userId,
     type: data.type,
     title: data.title,
-    body: data.body,
+    message: data.body,
     read: false,
     createdAt: new Date().toISOString(),
   };
+  if (school_id) row.school_id = school_id;
 
   const { data: inserted, error } = await supabase().from('notifications').insert(row).select('id').single();
   if (error) throw new Error(`Failed to create notification: ${error.message}`);
@@ -173,21 +181,28 @@ export async function createBulkNotifications(
 
   const userIds = [...new Set(notifications.map((n) => n.userId))];
   const { data: users } = await db
-    .from('users').select('id, notification_preferences').in('id', userIds);
+    .from('users').select('id, notification_preferences, school_id').in('id', userIds);
 
   const prefsMap = new Map<string, { in_app_enabled: boolean }>();
+  const schoolMap = new Map<string, string>();
   for (const u of users || []) {
     const prefs = u.notification_preferences || {};
     prefsMap.set(u.id, { in_app_enabled: prefs.inApp ?? prefs.in_app_enabled ?? true });
+    if (u.school_id) schoolMap.set(u.id, u.school_id as string);
   }
 
   const rows = notifications
     .filter((n) => prefsMap.get(n.userId)?.in_app_enabled !== false)
-    .map((n) => ({
-      userId: n.userId, type: n.type,
-      title: n.title, body: n.body,
-      read: false, createdAt: new Date().toISOString(),
-    }));
+    .map((n) => {
+      const r: Record<string, unknown> = {
+        userId: n.userId, type: n.type,
+        title: n.title, message: n.body,
+        read: false, createdAt: new Date().toISOString(),
+      };
+      const sid = schoolMap.get(n.userId);
+      if (sid) r.school_id = sid;
+      return r;
+    });
 
   const results: string[] = [];
   if (rows.length > 0) {
