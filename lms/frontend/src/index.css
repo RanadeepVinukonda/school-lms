@@ -214,7 +214,7 @@
     --surface: var(--surface-h) var(--surface-s) var(--surface-l);
     --on-surface: 220 8% 92%;
     --surface-variant: var(--surface-variant-h) var(--surface-variant-s) var(--surface-variant-l);
-    --on-surface-variant: 218 12% 72%;
+    --on-surface-variant: 218 12% 82%;
     --outline: 218 8% 37%;
     --outline-variant: 218 8% 18%;
     --shadow: 0 0% 0%;
@@ -256,7 +256,34 @@
     --input: var(--outline-variant);
     --ring: var(--primary);
   }
-}
+
+  .dark ::placeholder,
+  .dark ::-webkit-input-placeholder,
+  .dark ::-moz-placeholder {
+    color: hsl(218 12% 60%) !important;
+    opacity: 0.9 !important;
+  }
+
+  .dark .text-muted-foreground,
+  .dark .muted-foreground {
+    color: hsl(218 12% 82%) !important;
+  }
+
+  .dark .opacity-50,
+  .dark .opacity-60 {
+    opacity: 0.85 !important;
+  }
+
+  .dark [class*="text-white/"],
+  .dark [class*="text-black/"] {
+    color: hsl(220 8% 92%) !important;
+  }
+
+  .dark th,
+  .dark td {
+    color: hsl(220 8% 88%);
+  }
+  }
 
 @layer base {
   * {
