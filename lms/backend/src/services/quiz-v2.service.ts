@@ -121,7 +121,7 @@ async function upsertQuestions(questions: Array<Record<string, unknown>>, concep
       question: (q.question || q.text) as string,
       options: q.options || null,
       answer: (q.answer || q.correctAnswer) as string,
-      explanation: q.explanation ?? '',
+      explanation: q.explanation || null,
       difficulty: (q.difficulty as string) || 'medium',
       points: (q.points as number) || 1,
       bloom_level: (q.bloomLevel as string) || null,
