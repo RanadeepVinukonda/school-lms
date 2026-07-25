@@ -10,6 +10,7 @@ import type { Difficulty, StudentLevel } from './ai-level.service';
 import * as gamificationService from './gamification.service';
 import { deleteDocument } from './document.service';
 import { computeMastery } from './adaptive/mastery.service';
+import { createNotification, createBulkNotifications } from './notification.service';
 
 const QV2 = 'quizV2';
 const QAV2 = 'quizAttemptV2';
@@ -579,6 +580,18 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
 
   await nosqlSet(QV2, quizId, quizData);
 
+  if (!data.preview) {
+    try {
+      await createNotification({
+        userId: data.teacherId, type: 'quiz', title: 'Quiz Created',
+        body: `Quiz '${data.title}' was created successfully with ${matchingQuestions.length} questions.`,
+        data: { quizId, classId: data.classId, link: `/quizzes/${quizId}` },
+      });
+    } catch (err) {
+      logger.warn('Failed to send quiz creation notification', { quizId, error: err });
+    }
+  }
+
   logger.info('Quiz V2 created', { quizId, classId: data.classId, title: data.title, totalQuestions: matchingQuestions.length });
 
   return { ...quizData, totalQuestions: matchingQuestions.length, questions: matchingQuestions.map((q: any) => ({ id: q.id, type: q.type, text: q.text || q.question || fallbackText(q.type, q.options), options: q.options, correctAnswer: q.correctAnswer, explanation: q.explanation, difficulty: q.difficulty, points: q.points })) };
@@ -608,6 +621,39 @@ export async function releaseQuiz(quizId: string, teacherId: string) {
 
   const now = new Date().toISOString();
   await nosqlUpdate(QV2, quizId, { releasedAt: now, updatedAt: now });
+
+  try {
+    const quizTitle = (quizData.title as string) || 'Untitled Quiz';
+    const publishedTo = (quizData.publishedTo as string) || 'class';
+    const targetStudentIds = (quizData.targetStudentIds as string[]) || [];
+
+    if (publishedTo === 'students' && targetStudentIds.length > 0) {
+      const studentNotifs = targetStudentIds.map((sid: string) => ({
+        userId: sid, type: 'quiz', title: 'New Quiz Assigned',
+        body: `Your teacher assigned Quiz: ${quizTitle}.`,
+        data: { quizId, link: `/quizzes/${quizId}` },
+      }));
+      await createBulkNotifications(studentNotifs);
+    } else if (publishedTo === 'class' && quizData.classId) {
+      const supabase = getSupabaseAdmin()!;
+      const { data: students } = await supabase
+        .from('users')
+        .select('id')
+        .eq('role', 'student')
+        .contains('class_ids', [(quizData.classId as string)]);
+      if (students && students.length > 0) {
+        const studentNotifs = students.map((s: any) => ({
+          userId: s.id, type: 'quiz', title: 'New Quiz Assigned',
+          body: `Your teacher assigned Quiz: ${quizTitle}.`,
+          data: { quizId, link: `/quizzes/${quizId}` },
+        }));
+        await createBulkNotifications(studentNotifs);
+      }
+    }
+  } catch (err) {
+    logger.warn('Failed to send quiz release notifications', { quizId, error: err });
+  }
+
   const updated = await nosqlGet(QV2, quizId);
   logger.info('Quiz V2 released', { quizId, teacherId });
   return { id: quizId, ...updated.data };
@@ -851,6 +897,30 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     },
   });
   if (gradeErr) logger.warn('Failed to create quiz grade record', { error: gradeErr.message });
+
+  try {
+    const quizTitle = (quizData.title as string) || 'Quiz';
+    await createNotification({
+      userId: studentId, type: 'grade', title: 'Quiz Result',
+      body: `You scored ${score}/${totalPoints} (${percentage}%) in ${quizTitle}.`,
+      data: { quizId, attemptId, link: `/quizzes/${quizId}/results` },
+    });
+    const { data: parentRows } = await supabase
+      .from('users')
+      .select('id')
+      .eq('role', 'parent')
+      .contains('children_ids', [studentId]);
+    if (parentRows && parentRows.length > 0) {
+      const parentNotifs = parentRows.map((p: any) => ({
+        userId: p.id, type: 'grade', title: 'Quiz Completed',
+        body: `Your child scored ${score}/${totalPoints} (${percentage}%) in ${quizTitle}.`,
+        data: { quizId, studentId, link: `/quizzes/${quizId}/results` },
+      }));
+      await createBulkNotifications(parentNotifs);
+    }
+  } catch (err) {
+    logger.warn('Failed to send quiz result notifications', { attemptId, error: err });
+  }
 
   logger.info('Quiz V2 attempt submitted', { attemptId, studentId, score, percentage, newLevel });
 

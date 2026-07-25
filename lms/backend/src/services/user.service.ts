@@ -9,6 +9,7 @@ import { parsePagination } from '../utils/pagination';
 import { generateStudentId } from '../utils/studentIdGenerator.js';
 import { generatePassword } from '../utils/passwordGenerator.js';
 import { validatePassword } from '../utils/passwordValidation';
+import { createNotification, createBulkNotifications } from './notification.service';
 
 async function getUserDoc(uid: string) {
   const { data, error } = await getSupabaseAdmin().from('users').select('*').eq('id', uid).maybeSingle();
@@ -225,6 +226,32 @@ export async function createUser(data: {
     if (rpcErr) {
       logger.warn('increment_student_count RPC failed (non-critical)', { classId: data.classId, error: rpcErr.message });
     }
+  }
+
+  try {
+    const roleName = data.role.charAt(0).toUpperCase() + data.role.slice(1);
+    await createNotification({
+      userId: authUser.uid, type: 'welcome', title: `Welcome to Genesis!`,
+      body: `Welcome ${roleName}! Your account has been created successfully.`,
+      data: { role: data.role },
+    });
+    const { data: admins } = await supabase
+      .from('users')
+      .select('id')
+      .eq('role', 'admin')
+      .eq('school_id', data.schoolId || null);
+    if (admins && admins.length > 0) {
+      const roleLabel = data.role === 'student' ? `Student ${data.displayName} (${studentId || ''})` : `${roleName} ${data.displayName}`;
+      await createBulkNotifications(
+        admins.map((a: any) => ({
+          userId: a.id, type: 'registration', title: 'New Registration',
+          body: `${roleLabel} registered.`,
+          data: { uid: authUser.uid, role: data.role },
+        }))
+      );
+    }
+  } catch (err) {
+    logger.warn('Failed to send welcome notification', { uid: authUser.uid, role: data.role, error: err });
   }
 
   const { password: _pw, ...userDataSafe } = userData;
