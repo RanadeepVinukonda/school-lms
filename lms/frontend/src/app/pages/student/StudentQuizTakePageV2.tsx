@@ -24,6 +24,7 @@ import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
+import { gamificationService } from '@/services/gamificationService';
 import { QuestionRendererV2, type V2Question, type QuestionModel } from '@/app/components/assessment/QuestionRendererV2';
 
 type AssessmentType = 'quiz' | 'exam';
@@ -80,6 +81,7 @@ interface V2SubmitResult {
   level: string;
   answers: V2AnswerResult[];
   showResults: boolean;
+  newBadges?: string[];
 }
 
 const MODEL_LABELS: Record<string, string> = {
@@ -158,6 +160,15 @@ export default function StudentQuizTakePageV2() {
   const [interactiveCorrect, setInteractiveCorrect] = useState<Record<string, boolean>>({});
   const [interactiveError, setInteractiveError] = useState<Record<string, boolean>>({});
   const [customTextInput, setCustomTextInput] = useState('');
+
+  useEffect(() => {
+    if (result?.newBadges?.length) {
+      gamificationService.getAllBadges().then(allBadges => {
+        const names = result.newBadges!.map(id => allBadges.find(b => b.id === id)?.name || id);
+        toast.success(`New badge${names.length > 1 ? 's' : ''}: ${names.join(', ')}!`);
+      }).catch(() => {});
+    }
+  }, [result?.newBadges]);
 
   const questionStartTimeRef = useRef<number>(Date.now());
   const questionTimeMapRef = useRef<Record<string, number>>({});

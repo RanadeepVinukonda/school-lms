@@ -588,7 +588,7 @@ export async function recordAssessmentResult(userId: string, accuracy: number) {
   profile.updatedAt = new Date().toISOString();
   await nosqlSet('gamificationProfiles', userId, profile);
   const p = await ensureProfile(userId);
-  await checkAndAwardBadges(userId, p);
+  return checkAndAwardBadges(userId, p);
 }
 
 export async function recordCodingProjectCompleted(userId: string) {

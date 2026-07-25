@@ -667,17 +667,23 @@ export async function submitTestAttempt(attemptId: string, studentId: string, da
 
   logger.info('Test attempt submitted', { attemptId, studentId, score, percentage, newLevel });
 
+  const allNewBadges: string[] = [];
+  const collect = (r: string[] | { newBadges?: string[] }) => {
+    const ids = Array.isArray(r) ? r : r?.newBadges;
+    if (ids) for (const b of ids) if (!allNewBadges.includes(b)) allNewBadges.push(b);
+  };
+
   try {
-    await gamificationService.recordAssessmentResult(studentId, percentage);
-    await gamificationService.awardXp(studentId, gamificationService.XP_REWARDS.assessmentComplete, `Completed test: ${testData.title}`);
-    await gamificationService.awardCoins(studentId, gamificationService.COIN_REWARDS.assessmentComplete, `Completed test: ${testData.title}`);
+    collect(await gamificationService.recordAssessmentResult(studentId, percentage));
+    collect(await gamificationService.awardXp(studentId, gamificationService.XP_REWARDS.assessmentComplete, `Completed test: ${testData.title}`));
+    collect(await gamificationService.awardCoins(studentId, gamificationService.COIN_REWARDS.assessmentComplete, `Completed test: ${testData.title}`));
     if (percentage >= 80) {
-      await gamificationService.awardXp(studentId, gamificationService.XP_REWARDS.highAccuracy, `High accuracy (${percentage}%) on ${testData.title}`);
-      await gamificationService.awardCoins(studentId, gamificationService.COIN_REWARDS.highAccuracy, `High accuracy (${percentage}%) on ${testData.title}`);
+      collect(await gamificationService.awardXp(studentId, gamificationService.XP_REWARDS.highAccuracy, `High accuracy (${percentage}%) on ${testData.title}`));
+      collect(await gamificationService.awardCoins(studentId, gamificationService.COIN_REWARDS.highAccuracy, `High accuracy (${percentage}%) on ${testData.title}`));
     }
     if (percentage === 100) {
-      await gamificationService.awardXp(studentId, gamificationService.XP_REWARDS.perfectScore, `Perfect score on ${testData.title}`);
-      await gamificationService.awardCoins(studentId, gamificationService.COIN_REWARDS.perfectScore, `Perfect score on ${testData.title}`);
+      collect(await gamificationService.awardXp(studentId, gamificationService.XP_REWARDS.perfectScore, `Perfect score on ${testData.title}`));
+      collect(await gamificationService.awardCoins(studentId, gamificationService.COIN_REWARDS.perfectScore, `Perfect score on ${testData.title}`));
     }
     await gamificationService.updateStreak(studentId);
   } catch (gamErr) {
@@ -698,7 +704,7 @@ export async function submitTestAttempt(attemptId: string, studentId: string, da
     logger.error('Failed to send submission notification to teacher', { attemptId, error: notifErr });
   }
 
-  return { id: attemptId, ...attemptData, ...result, level: newLevel };
+  return { id: attemptId, ...attemptData, ...result, level: newLevel, newBadges: allNewBadges };
 }
 
 export async function getTestResults(testId: string, studentId: string, isPrivileged = false): Promise<any[]> {

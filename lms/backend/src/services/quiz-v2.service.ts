@@ -180,7 +180,9 @@ export async function createQuiz(data: {
     for (const diff of diffOrder) {
       const row = difficultyDistribution[diff];
       if (row) {
-        perDifficultyTotal[diff] = Object.values(row).reduce((s: number, v: any) => s + (Number(v) || 0), 0);
+        perDifficultyTotal[diff] = targetTypes.length > 0
+          ? targetTypes.reduce((s: number, t: string) => s + (Number(row[t]) || 0), 0)
+          : Object.values(row).reduce((s: number, v: any) => s + (Number(v) || 0), 0);
       } else {
         perDifficultyTotal[diff] = 0;
       }
@@ -219,6 +221,7 @@ export async function createQuiz(data: {
         if (!distRow) continue;
 
         for (const [qType, needRaw] of Object.entries(distRow)) {
+          if (targetTypes.length > 0 && !targetTypes.includes(qType)) continue;
           const need = Number(needRaw) || 0;
           if (need <= 0) continue;
 
@@ -427,10 +430,12 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
           }
 
           for (const q of generated) {
+            const qType = q.type || 'mcq';
+            if (targetTypes.length > 0 && !targetTypes.includes(qType)) continue;
             matchingQuestions.push({
               id: uuidv4(),
-              type: q.type || 'mcq',
-              text: q.question || q.text || fallbackText(q.type, q.options),
+              type: qType,
+              text: q.question || q.text || fallbackText(qType, q.options),
               options: q.options || null,
               correctAnswer: q.correctAnswer || q.answer || '',
               explanation: q.explanation || '',
@@ -837,17 +842,23 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
 
   logger.info('Quiz V2 attempt submitted', { attemptId, studentId, score, percentage, newLevel });
 
+  const allNewBadges: string[] = [];
+  const collect = (r: string[] | { newBadges?: string[] }) => {
+    const ids = Array.isArray(r) ? r : r?.newBadges;
+    if (ids) for (const b of ids) if (!allNewBadges.includes(b)) allNewBadges.push(b);
+  };
+
   try {
-    await gamificationService.recordAssessmentResult(studentId, percentage);
-    await gamificationService.awardXp(studentId, gamificationService.XP_REWARDS.assessmentComplete, `Completed quiz: ${quizData.title}`);
-    await gamificationService.awardCoins(studentId, gamificationService.COIN_REWARDS.assessmentComplete, `Completed quiz: ${quizData.title}`);
+    collect(await gamificationService.recordAssessmentResult(studentId, percentage));
+    collect(await gamificationService.awardXp(studentId, gamificationService.XP_REWARDS.assessmentComplete, `Completed quiz: ${quizData.title}`));
+    collect(await gamificationService.awardCoins(studentId, gamificationService.COIN_REWARDS.assessmentComplete, `Completed quiz: ${quizData.title}`));
     if (percentage >= 80) {
-      await gamificationService.awardXp(studentId, gamificationService.XP_REWARDS.highAccuracy, `High accuracy (${percentage}%) on ${quizData.title}`);
-      await gamificationService.awardCoins(studentId, gamificationService.COIN_REWARDS.highAccuracy, `High accuracy (${percentage}%) on ${quizData.title}`);
+      collect(await gamificationService.awardXp(studentId, gamificationService.XP_REWARDS.highAccuracy, `High accuracy (${percentage}%) on ${quizData.title}`));
+      collect(await gamificationService.awardCoins(studentId, gamificationService.COIN_REWARDS.highAccuracy, `High accuracy (${percentage}%) on ${quizData.title}`));
     }
     if (percentage === 100) {
-      await gamificationService.awardXp(studentId, gamificationService.XP_REWARDS.perfectScore, `Perfect score on ${quizData.title}`);
-      await gamificationService.awardCoins(studentId, gamificationService.COIN_REWARDS.perfectScore, `Perfect score on ${quizData.title}`);
+      collect(await gamificationService.awardXp(studentId, gamificationService.XP_REWARDS.perfectScore, `Perfect score on ${quizData.title}`));
+      collect(await gamificationService.awardCoins(studentId, gamificationService.COIN_REWARDS.perfectScore, `Perfect score on ${quizData.title}`));
     }
     await gamificationService.updateStreak(studentId);
   } catch (gamErr) {
@@ -860,7 +871,7 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     );
   }
 
-  return { id: attemptId, ...attemptData, ...result, level: newLevel };
+  return { id: attemptId, ...attemptData, ...result, level: newLevel, newBadges: allNewBadges };
 }
 
 export async function releaseQuizGrades(quizId: string, showResults: boolean) {

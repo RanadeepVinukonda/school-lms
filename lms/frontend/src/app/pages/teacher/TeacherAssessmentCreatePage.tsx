@@ -1100,7 +1100,7 @@ export default function TeacherAssessmentCreatePage() {
                             <p className={`text-xs font-semibold ${quizDistributionTotal !== questionCount ? 'text-destructive' : ''}`}>
                               Total: {quizDistributionTotal} / {questionCount} questions
                             </p>
-                            {quizDistributionTotal !== questionCount && selectedModels.length > 0 && (
+                            {selectedModels.length > 0 && (
                               <Button
                                 size="sm"
                                 variant="outline"
