@@ -221,6 +221,7 @@ export default function TeacherAssessmentCreatePage() {
       }
     }
     setQuizDistribution(newDist);
+    setReviewQuestions([]);
   }, [questionCount, selectedModels]);
 
   useEffect(() => {
@@ -528,6 +529,7 @@ export default function TeacherAssessmentCreatePage() {
 
     if (reviewQuestions.length > 0) {
       body.questions = reviewQuestions;
+      body.questionCount = reviewQuestions.length;
     }
 
     createQuizMutation.mutate(body);
@@ -1104,6 +1106,7 @@ export default function TeacherAssessmentCreatePage() {
                                 variant="outline"
                                 onClick={() => {
                                   if (selectedModels.length === 0 || questionCount === 0) return;
+                                  setReviewQuestions([]);
                                   const backendTypes = selectedModels.map((m: string) => (TYPE_MAP[m] || [m])[0]);
                                   const numTypes = backendTypes.length;
                                   const totalCells = numTypes * 4;

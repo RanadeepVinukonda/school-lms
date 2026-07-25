@@ -368,9 +368,11 @@ export default function TeacherExamCreatePage() {
       }
     }
     setDistribution(newDist);
+    setGeneratedPaper(null);
   }, [selectedModels, questionCount]);
 
   const setDist = (difficulty: string, type: string, value: number) => {
+    setGeneratedPaper(null);
     setDistribution((prev) => ({
       ...prev,
       [difficulty]: { ...prev[difficulty], [type]: Math.max(0, value || 0) },
@@ -786,6 +788,7 @@ export default function TeacherExamCreatePage() {
                           variant="outline"
                           onClick={() => {
                             if (selectedModels.length === 0 || !questionCount || Number(questionCount) === 0) return;
+                            setGeneratedPaper(null);
                             const qc = Number(questionCount);
                             const backendTypes = selectedModels.map((m: string) => (EXAM_TYPE_MAP[m] || [m])[0]);
                             const perCell = Math.floor(qc / (backendTypes.length * 4));
@@ -859,6 +862,7 @@ export default function TeacherExamCreatePage() {
                       variant="outline"
                       onClick={() => {
                         if (selectedModels.length === 0 || !questionCount || Number(questionCount) === 0) return;
+                        setGeneratedPaper(null);
                         const qc = Number(questionCount);
                         const backendTypes = selectedModels.map((m: string) => (EXAM_TYPE_MAP[m] || [m])[0]);
                         const perCell = Math.floor(qc / (backendTypes.length * 4));
