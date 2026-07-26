@@ -7,6 +7,7 @@ import { computeLevel, computeComplexityHandled } from './ai-level.service';
 import type { Difficulty, StudentLevel } from './ai-level.service';
 import { deleteDocument } from './document.service';
 import * as gamificationService from './gamification.service';
+import { generateQuestionsForConcept, saveAiQuestions } from './ai-question-generator.service';
 
 const DIFFICULTY_RANK: Record<Difficulty, number> = { easy: 0, medium: 1, hard: 2 };
 const POINTS_BY_DIFFICULTY: Record<string, number> = { easy: 1, medium: 2, hard: 3 };
@@ -121,6 +122,7 @@ export async function createExam(data: {
 
   let totalPoints = 0;
   let allSelectedQuestions: Array<Record<string, unknown>> = [];
+  let aiGeneratedCount = 0;
 
   if (data.questions && data.questions.length > 0) {
     allSelectedQuestions = data.questions.map((q: any) => ({
@@ -157,6 +159,45 @@ export async function createExam(data: {
           conceptId: c.id,
         });
       }
+
+      const shortfall = perConcept - selected.length;
+      if (shortfall > 0 && remaining > 0) {
+        const needed = Math.min(shortfall, remaining);
+        try {
+          const aiQuestions = await generateQuestionsForConcept({
+            conceptId: c.id,
+            textbookId: data.textbookId,
+            chapterId: data.chapterId,
+            conceptName: c.title || 'Untitled Concept',
+            types: data.selectedModels,
+            count: needed,
+            difficulty: 'mixed',
+          });
+          if (aiQuestions.length > 0) {
+            await saveAiQuestions(aiQuestions, c.id, data.textbookId, data.chapterId);
+            aiGeneratedCount += aiQuestions.length;
+            remaining -= aiQuestions.length;
+            for (const q of aiQuestions) {
+              const pts = q.points || POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1;
+              allSelectedQuestions.push({
+                id: q.id,
+                type: q.type,
+                text: q.question,
+                options: q.options || null,
+                correctAnswer: q.answer,
+                explanation: q.explanation || '',
+                difficulty: q.difficulty || 'medium',
+                points: pts,
+                conceptId: c.id,
+                aiGenerated: true,
+              });
+              totalPoints += pts;
+            }
+          }
+        } catch (err) {
+          logger.error('AI question generation failed for concept', { conceptId: c.id, error: err });
+        }
+      }
     }
   }
 
@@ -165,7 +206,7 @@ export async function createExam(data: {
       questions: allSelectedQuestions,
       totalPoints,
       questionCount: allSelectedQuestions.length,
-      aiGeneratedCount: 0,
+      aiGeneratedCount,
       preview: true,
     };
   }
@@ -185,6 +226,7 @@ export async function createExam(data: {
     selectedModels: data.selectedModels,
     questionCountPerConcept: perConcept,
     questionCount: allSelectedQuestions.length,
+    aiGeneratedCount,
     totalPoints,
     passingScore: data.passingScore ?? 50,
     maxAttempts: data.maxAttempts ?? 1,
