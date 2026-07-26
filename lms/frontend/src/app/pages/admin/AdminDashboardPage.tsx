@@ -396,7 +396,7 @@ export default function AdminDashboardPage() {
               {activeTab === 'oversight' && (
                 <div className="space-y-6">
                   <div className="flex gap-3 items-center flex-wrap">
-                    <div className="relative flex-1 min-w-[200px]">
+                    <div className="relative flex-1 min-w-0 sm:min-w-[200px]">
                       <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                       <Input
                         placeholder={_('Search concept oversight...')}
@@ -440,7 +440,7 @@ export default function AdminDashboardPage() {
               {activeTab === 'tests_monitor' && (
                 <div className="space-y-6">
                   <div className="flex gap-3 items-center flex-wrap">
-                    <div className="relative flex-1 min-w-[200px]">
+                    <div className="relative flex-1 min-w-0 sm:min-w-[200px]">
                       <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                       <Input placeholder={_('Search tests...')} className="pl-10" value={testsSearch} onChange={(e) => setTestsSearch(e.target.value)} />
                     </div>

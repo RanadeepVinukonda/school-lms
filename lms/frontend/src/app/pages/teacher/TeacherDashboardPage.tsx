@@ -325,7 +325,7 @@ export default function TeacherDashboardPage() {
                 <SectionTitle label={_('My Students')} title={_('Student overview by class')} />
                 <div className="flex gap-3 items-center flex-wrap mb-6">
                   <select
-                    className="h-10 flex-1 min-w-[200px] px-3 rounded-lg border border-border/60 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
+                    className="h-10 flex-1 min-w-0 sm:min-w-[200px] px-3 rounded-lg border border-border/60 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
                     value={selectedClassFilter}
                     onChange={(e) => setSelectedClassFilter(e.target.value)}
                   >
@@ -360,7 +360,7 @@ export default function TeacherDashboardPage() {
                                 <p className="text-label-sm text-muted-foreground">{totalStudents} students</p>
                               </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-3 mt-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                               <div className="p-3 rounded-lg bg-success-container/30 text-center">
                                 <p className="text-display-xs font-bold text-success">{presentCount}</p>
                                 <p className="text-label-xs text-muted-foreground">Present</p>
@@ -370,7 +370,7 @@ export default function TeacherDashboardPage() {
                                 <p className="text-label-xs text-muted-foreground">Absent</p>
                               </div>
                             </div>
-                            <div className="flex gap-2 mt-4">
+                            <div className="flex flex-col sm:flex-row gap-2 mt-4">
                               <Link to={`/teacher/students?classId=${cls.id}`} className="flex-1">
                                 <Button variant="outline" size="sm" className="w-full">
                                   <Icon name="group" size={14} className="mr-1" /> View Students

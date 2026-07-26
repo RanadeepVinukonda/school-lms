@@ -161,7 +161,7 @@ export default function AdminInventoryPage() {
         </motion.div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-3 max-w-md">
+          <TabsList className="grid grid-cols-1 sm:grid-cols-3 max-w-md">
             <TabsTrigger value="items">Items</TabsTrigger>
             <TabsTrigger value="categories">Categories</TabsTrigger>
             <TabsTrigger value="suppliers">Suppliers</TabsTrigger>
@@ -186,7 +186,7 @@ export default function AdminInventoryPage() {
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleAdjustSubmit} className="space-y-4 max-w-lg">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="text-label-sm text-muted-foreground mb-1 block">Quantity Delta (e.g. -5 or +10)</label>
                         <Input

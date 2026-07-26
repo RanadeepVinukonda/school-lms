@@ -130,7 +130,7 @@ export default function TeacherAttendancePage() {
 
         <div className="flex gap-3 items-center flex-wrap">
           <select
-            className="h-10 flex-1 min-w-[200px] px-3 rounded-lg border border-border/60 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
+            className="h-10 flex-1 min-w-0 sm:min-w-[200px] px-3 rounded-lg border border-border/60 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
             value={selectedClass}
             onChange={(e) => setSelectedClass(e.target.value)}
           >

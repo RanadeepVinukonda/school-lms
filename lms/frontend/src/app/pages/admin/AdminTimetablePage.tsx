@@ -210,7 +210,7 @@ export default function AdminTimetablePage() {
                 <CardTitle className="text-title-sm">Select Day</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
                   {DAYS.map((day) => {
                     const dayEntryCount = allEntries.filter((e) => e.day === day).length;
                     const isActive = selectedDay === day;
@@ -271,7 +271,7 @@ export default function AdminTimetablePage() {
                 </CardHeader>
                 <CardContent className="p-0 sm:p-5">
                   <div className="overflow-x-auto">
-                    <table className="w-full border-collapse min-w-[640px]">
+                    <table className="w-full border-collapse min-w-[640px] lg:min-w-0">
                       <thead>
                         <tr className="border-b-2 border-border/60 bg-muted/40 text-label-xs font-bold text-muted-foreground uppercase tracking-wider sticky top-0 z-10">
                           <th className="px-4 py-3.5 text-center w-16">#</th>
@@ -390,7 +390,7 @@ export default function AdminTimetablePage() {
                     </div>
                   ) : (
                     <div className="overflow-x-auto overflow-y-auto max-h-[600px]">
-                      <table className="w-full text-left min-w-[700px]">
+                      <table className="w-full text-left min-w-[700px] lg:min-w-0">
                         <thead>
                           <tr className="border-b-2 border-border/60 bg-muted/40 sticky top-0 z-10">
                             <th className="px-4 py-3.5 text-center w-20 text-label-xs font-bold text-muted-foreground uppercase tracking-wider">Period</th>

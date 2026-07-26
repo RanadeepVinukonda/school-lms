@@ -133,7 +133,7 @@ export default function AdminReportsPage() {
         </div>
 
         {stats && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <Card className="border-border/60"><CardContent className="p-4 text-center">
               <p className="text-headline-sm font-bold text-foreground">{stats.total || 0}</p>
               <p className="text-label-xs text-muted-foreground">{_('Total')}</p>
@@ -154,7 +154,7 @@ export default function AdminReportsPage() {
         )}
 
         <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
-          <div className="relative flex-1 min-w-[200px]">
+          <div className="relative flex-1 min-w-0 sm:min-w-[200px]">
             <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={_('Search reports...')} className="pl-10" />
           </div>
