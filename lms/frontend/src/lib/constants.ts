@@ -115,7 +115,7 @@ export const ROUTES = {
   K2_FLASHCARD_CATEGORY: (category: string) => `/k2/flashcards/${category}`,
 } as const;
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://school-lms-api-b8cn.onrender.com/api';
 
 export const PAGINATION = {
   DEFAULT_PAGE_SIZE: 20,
