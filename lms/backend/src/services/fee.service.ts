@@ -113,6 +113,8 @@ export async function recordPayment(data: {
   amountPaid: number;
   paymentMethod?: string;
   schoolId?: string;
+  transactionId?: string;
+  status?: string;
 }) {
   const pool = getConnectionPool();
   const client = await pool.connect();

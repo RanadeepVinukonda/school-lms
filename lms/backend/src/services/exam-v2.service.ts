@@ -285,7 +285,7 @@ export async function releaseExam(examId: string, teacherId: string) {
     if (publishedTo === 'students' && targetStudentIds.length > 0) {
       const studentNotifs = targetStudentIds.map((sid: string) => ({
         userId: sid, type: 'exam', title: 'New Exam Assigned',
-        message: `Your teacher assigned Exam: ${examTitle}.`,
+        body: `Your teacher assigned Exam: ${examTitle}.`,
       }));
       await createBulkNotifications(studentNotifs);
     } else if (publishedTo === 'class' && examData.classId) {
@@ -298,7 +298,7 @@ export async function releaseExam(examId: string, teacherId: string) {
       if (students && students.length > 0) {
         const studentNotifs = students.map((s: any) => ({
           userId: s.id, type: 'exam', title: 'New Exam Assigned',
-          message: `Your teacher assigned Exam: ${examTitle}.`,
+          body: `Your teacher assigned Exam: ${examTitle}.`,
         }));
         await createBulkNotifications(studentNotifs);
       }

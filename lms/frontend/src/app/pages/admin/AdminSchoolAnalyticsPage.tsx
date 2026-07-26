@@ -197,29 +197,30 @@ export default function AdminSchoolAnalyticsPage() {
                         ) : (
                           <BarChart data={teacherData as any} labelKey="teacherName" valueKey="averageScore" color="bg-secondary" />
                         )}
-                        {teacherData.length > 0 && (
-                          <div className="mt-6 border-t border-border/40 pt-4">
-                            <div className="overflow-x-auto">
-                              <table className="w-full text-left text-title-sm">
-                                <thead>
-                                  <tr className="text-label-sm text-muted-foreground uppercase tracking-wider">
-                                    <th className="pb-2 font-bold">Teacher</th>
-                                    <th className="pb-2 font-bold">Avg Score</th>
-                                    <th className="pb-2 font-bold">Classes</th>
-                                    <th className="pb-2 font-bold">Students</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-border/40">
-                                {teacherData.map((t) => (
-                                  <tr key={t.teacherId} className="hover:bg-muted/20">
-                                    <td className="py-2 font-semibold">{t.teacherName}</td>
-                                    <td className="py-2 font-mono">{t.averageScore ?? 0}%</td>
-                                    <td className="py-2 text-muted-foreground">{t.classCount ?? 0}</td>
-                                    <td className="py-2 text-muted-foreground">{t.studentCount ?? 0}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
+                          {teacherData.length > 0 && (
+                            <div className="mt-6 border-t border-border/40 pt-4">
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-left text-title-sm">
+                                  <thead>
+                                    <tr className="text-label-sm text-muted-foreground uppercase tracking-wider">
+                                      <th className="pb-2 font-bold">Teacher</th>
+                                      <th className="pb-2 font-bold">Avg Score</th>
+                                      <th className="pb-2 font-bold">Classes</th>
+                                      <th className="pb-2 font-bold">Students</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-border/40">
+                                  {teacherData.map((t) => (
+                                    <tr key={t.teacherId} className="hover:bg-muted/20">
+                                      <td className="py-2 font-semibold">{t.teacherName}</td>
+                                      <td className="py-2 font-mono">{t.averageScore ?? 0}%</td>
+                                      <td className="py-2 text-muted-foreground">{t.classCount ?? 0}</td>
+                                      <td className="py-2 text-muted-foreground">{t.studentCount ?? 0}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
                           </div>
                         )}
                       </CardContent>
