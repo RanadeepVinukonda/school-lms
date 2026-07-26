@@ -94,12 +94,12 @@ export default function StudentTimetablePage() {
           {() => (
             <div className="border border-border/60 rounded-xl bg-surface overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
-                <table className="w-full text-left min-w-[600px] lg:min-w-0">
+                <table className="w-full text-left min-w-0 lg:min-w-0">
                   <thead>
                     <tr className="border-b border-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
                       <th className="px-3 py-3.5 text-center w-14">Period</th>
                       {DAYS.map((day) => (
-                        <th key={day} className="px-3 py-3.5 text-center min-w-[100px]">{DAY_SHORT[day] || day.slice(0, 3)}</th>
+                        <th key={day} className="px-3 py-3.5 text-center min-w-0">{DAY_SHORT[day] || day.slice(0, 3)}</th>
                       ))}
                     </tr>
                   </thead>

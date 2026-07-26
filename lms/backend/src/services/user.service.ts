@@ -1,7 +1,7 @@
 // @ts-nocheck — pre-existing type errors
 import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from './supabase';
-import { createUser as createAuthUser, updateUser, deleteUser, getUserByEmail, getUserById, setCustomClaims } from '../database/auth';
+import { createUser as createAuthUser, updateUser as updateAuthUser, deleteUser, getUserByEmail, getUserById, setCustomClaims } from '../database/auth';
 import { NotFoundError, ValidationError, ConflictError } from '../utils/errors';
 import { deriveAcademicYear } from '../middlewares/academicYear.middleware';
 import { logger } from '../utils/logger';
@@ -309,7 +309,7 @@ export async function updateUser(uid: string, data: {
   const { error: updErr } = await supabase.from('users').update(updateData).eq('id', uid);
   if (updErr) throw updErr;
 
-  if (data.disabled !== undefined) await updateUser(uid, { disabled: data.disabled });
+  if (data.disabled !== undefined) await updateAuthUser(uid, { disabled: data.disabled });
 
   const { data: updated } = await supabase.from('users').select('*').eq('id', uid).maybeSingle();
   logger.info('User updated by admin', { uid });

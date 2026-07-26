@@ -21,7 +21,7 @@ const buttonVariants = cva(
         warning: 'bg-warning text-warning-foreground hover:bg-warning/90',
       },
       size: {
-        default: 'h-10 px-6 py-2 rounded-lg',
+        default: 'h-11 px-6 py-2 rounded-lg',
         sm: 'h-9 px-4 rounded-md',
         lg: 'h-12 px-8 rounded-xl text-base',
         xl: 'h-14 px-10 rounded-xl text-lg',

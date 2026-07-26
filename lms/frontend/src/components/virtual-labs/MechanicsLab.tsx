@@ -174,7 +174,7 @@ export default function MechanicsLab() {
         </svg>
       </div>
 
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="p-3 rounded-lg bg-surface border border-outline-variant text-center">
           <p className="text-label-sm text-on-surface-variant">Net Force</p>
           <p className="text-title-md font-bold text-on-surface">{netForce.toFixed(2)} N</p>

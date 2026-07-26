@@ -32,7 +32,7 @@ function OutstandingRow({ item }: { item: any }) {
       {expanded && item.schedules?.map((sc: any) => (
         <tr key={`${item.studentId}-${sc.scheduleId}`} className="bg-muted/10 text-sm">
           <td className="px-4 py-2 pl-10 text-muted-foreground">{sc.name}</td>
-          <td className="px-4 py-2 text-muted-foreground">{new Date(sc.due_date || sc.dueDate).toLocaleDateString()}</td>
+          <td className="px-4 py-2 text-muted-foreground">{sc.due_date || sc.dueDate ? new Date(sc.due_date || sc.dueDate).toLocaleDateString() : '-'}</td>
           <td className="px-4 py-2 text-right font-mono">Rs. {sc.amount?.toFixed(2)}</td>
           <td className="px-4 py-2 text-right font-mono text-success">Rs. {(sc.paid || 0)?.toFixed(2)}</td>
           <td className={`px-4 py-2 text-right font-mono font-bold ${(sc.amount - (sc.paid || 0)) > 0 ? 'text-error' : 'text-success'}`}>
@@ -77,7 +77,7 @@ export default function AdminFeePage() {
     if (!selectedStudent) return all;
     const studentClassId = selectedStudent.classId || (selectedStudent.classIds?.[0]);
     if (!studentClassId) return all;
-    return all.filter((s) => s.class_id === studentClassId || s.classId === studentClassId);
+    return all.filter((s) => (s as any).class_id === studentClassId || s.classId === studentClassId);
   }, [allSchedulesData, selectedStudent]);
 
   const { data: outstandingData, isLoading: outLoading, isError: outError, refetch: refetchOut } = useQuery({
@@ -231,7 +231,9 @@ export default function AdminFeePage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                     <select className="h-10 px-3 rounded-lg border border-border/60 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary" value={paymentData.feeScheduleId} onChange={(e) => setPaymentData({ ...paymentData, feeScheduleId: e.target.value })}>
                       <option value="">Select Fee Schedule</option>
-                      {paymentData.studentId && (!schedulesData || schedulesData.length === 0) ? (
+                      {!paymentData.studentId ? (
+                        <option value="" disabled>Select a student first</option>
+                      ) : !schedulesData || schedulesData.length === 0 ? (
                         <option value="" disabled>No fee schedules available for this student.</option>
                       ) : (
                         (schedulesData as any[])?.map((s: any) => (
@@ -296,7 +298,13 @@ export default function AdminFeePage() {
                                       <td className="px-4 py-3 capitalize">{p.payment_method || p.paymentMethod || '-'}</td>
                                       <td className="px-4 py-3 text-muted-foreground">{new Date(p.created_at || p.paymentDate).toLocaleDateString()}</td>
                                       <td className="px-4 py-3">
-                                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-success-container text-success">completed</span>
+                                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                                          p.status === 'completed' ? 'bg-success-container text-success' :
+                                          p.status === 'pending' ? 'bg-warning-container text-warning' :
+                                          p.status === 'failed' ? 'bg-error-container text-error' :
+                                          p.status === 'refunded' ? 'bg-muted text-muted-foreground' :
+                                          'bg-muted text-muted-foreground'
+                                        }`}>{p.status || 'completed'}</span>
                                       </td>
                                     </tr>
                                   );

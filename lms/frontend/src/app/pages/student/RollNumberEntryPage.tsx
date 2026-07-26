@@ -116,7 +116,7 @@ export default function RollNumberEntryPage() {
         <form onSubmit={handleSubmit} className="w-full space-y-6">
           <div className="text-center space-y-2">
             <img src="/genesis_icon.png" alt={_('Genesis')} className="mx-auto h-16 w-auto" />
-            <h1 className="text-headline-sm font-bold">{_('Welcome')}, {user?.displayName}</h1>
+            <h1 className="text-headline-sm font-bold">{_('Welcome')}, {user?.displayName ?? _('Student')}</h1>
             <p className="text-body-md text-muted-foreground">{_('Enter your roll number to get started')}</p>
           </div>
           <div className="space-y-2">

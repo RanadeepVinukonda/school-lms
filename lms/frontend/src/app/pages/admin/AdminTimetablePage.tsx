@@ -271,7 +271,7 @@ export default function AdminTimetablePage() {
                 </CardHeader>
                 <CardContent className="p-0 sm:p-5">
                   <div className="overflow-x-auto">
-                    <table className="w-full border-collapse min-w-[640px] lg:min-w-0">
+                    <table className="w-full border-collapse min-w-0 lg:min-w-0">
                       <thead>
                         <tr className="border-b-2 border-border/60 bg-muted/40 text-label-xs font-bold text-muted-foreground uppercase tracking-wider sticky top-0 z-10">
                           <th className="px-4 py-3.5 text-center w-16">#</th>
@@ -390,12 +390,12 @@ export default function AdminTimetablePage() {
                     </div>
                   ) : (
                     <div className="overflow-x-auto overflow-y-auto max-h-[600px]">
-                      <table className="w-full text-left min-w-[700px] lg:min-w-0">
+                      <table className="w-full text-left min-w-0 lg:min-w-0">
                         <thead>
                           <tr className="border-b-2 border-border/60 bg-muted/40 sticky top-0 z-10">
                             <th className="px-4 py-3.5 text-center w-20 text-label-xs font-bold text-muted-foreground uppercase tracking-wider">Period</th>
                             {DAYS.map((day) => (
-                              <th key={day} className="px-4 py-3.5 text-center min-w-[130px] text-label-xs font-bold text-muted-foreground uppercase tracking-wider">{DAY_SHORT[day]}</th>
+                              <th key={day} className="px-4 py-3.5 text-center min-w-0 text-label-xs font-bold text-muted-foreground uppercase tracking-wider">{DAY_SHORT[day]}</th>
                             ))}
                           </tr>
                         </thead>

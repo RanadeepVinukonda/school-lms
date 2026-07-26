@@ -240,7 +240,7 @@ export default function CircuitLab() {
         </svg>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
         <div className="p-3 rounded-lg bg-surface border border-outline-variant text-center">
           <p className="text-label-sm text-on-surface-variant">Voltage</p>
           <p className="text-title-md font-bold text-primary">{voltage}V</p>

@@ -21,14 +21,18 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 
   subscribeToNotifications: (userId: string) => {
     // Fetch initial unread count
-    supabase
-      .from('notifications')
-      .select('id', { count: 'exact', head: true })
-      .eq('userId', userId)
-      .eq('read', false)
-      .then(({ count }) => {
+    (async () => {
+      try {
+        const { count } = await supabase
+          .from('notifications')
+          .select('id', { count: 'exact', head: true })
+          .eq('userId', userId)
+          .eq('read', false);
         if (count != null) set({ unreadCount: count });
-      });
+      } catch {
+        /* ignore */
+      }
+    })();
 
     // Use timestamped channel name to prevent 'cannot add postgres_changes
     // callbacks after subscribe' error when re-subscribing. supabase.channel()

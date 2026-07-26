@@ -14,6 +14,7 @@ import { getNotificationsByUser, markNotificationRead, markAllNotificationsRead 
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
 import { cn } from '@/lib/utils';
+import { ErrorState } from '@/components/common/ErrorState';
 
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -33,7 +34,7 @@ export default function NotificationsPage() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
 
-  const { data: items = [], refetch } = useQuery({
+  const { data: items = [], refetch, error } = useQuery({
     queryKey: ['notifications-page', user?.id],
     queryFn: () => getNotificationsByUser(user!.id),
     enabled: !!user,
@@ -86,7 +87,9 @@ export default function NotificationsPage() {
             </TabsList>
 
             <TabsContent value={filter} className="mt-6">
-              {displayed.length === 0 ? (
+              {error ? (
+                <ErrorState message="Failed to load notifications" onRetry={() => refetch()} />
+              ) : displayed.length === 0 ? (
                 <Card className="border-border/60">
                   <CardContent className="flex flex-col items-center py-16 text-center sm:p-5 p-4">
                     <Icon name="notifications_none" size={48} className="text-muted-foreground/30 mb-4" />

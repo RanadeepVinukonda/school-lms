@@ -248,18 +248,19 @@ export async function createExam(data: {
   await nosqlSet(EV2, examId, examData);
 
   if (aiGeneratedCount > 0) {
+    const byConcept = new Map<string, any[]>();
     for (const q of allSelectedQuestions) {
       if ((q as any).aiGenerated) {
-        try {
-          await saveAiQuestions(
-            [q as any],
-            (q as any).conceptId as string,
-            data.textbookId,
-            data.chapterId,
-          );
-        } catch (saveErr) {
-          logger.warn('Failed to save AI-generated question to bank', { questionId: q.id, error: saveErr });
-        }
+        const cid = (q as any).conceptId as string;
+        if (!byConcept.has(cid)) byConcept.set(cid, []);
+        byConcept.get(cid)!.push(q);
+      }
+    }
+    for (const [cid, questions] of byConcept) {
+      try {
+        await saveAiQuestions(questions as any, cid, data.textbookId, data.chapterId);
+      } catch (saveErr) {
+        logger.warn('Failed to save AI-generated questions to bank', { conceptId: cid, count: questions.length, error: saveErr });
       }
     }
   }

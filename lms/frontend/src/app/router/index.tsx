@@ -223,6 +223,8 @@ export const router = createBrowserRouter([
       { path: ROUTES.TEACHER_NOTICEBOARD, element: <Suspense fallback={<PageFallback />}><TeacherNoticeBoardPage /></Suspense> },
       { path: ROUTES.TEACHER_TIMETABLE, element: <Suspense fallback={<PageFallback />}><TeacherTimetablePage /></Suspense> },
       { path: ROUTES.TEACHER_REPORT, element: <Suspense fallback={<PageFallback />}><TeacherReportPage /></Suspense> },
+      { path: ROUTES.TEACHER_QUESTION_BANK, element: <Suspense fallback={<PageFallback />}><NotFoundPage /></Suspense> },
+      { path: ROUTES.TEACHER_REWARDS, element: <Suspense fallback={<PageFallback />}><NotFoundPage /></Suspense> },
     ],
   },
 
@@ -298,7 +300,7 @@ export const router = createBrowserRouter([
 
   {
     path: ROUTES.NOTIFICATIONS,
-    element: <Suspense fallback={<PageFallback />}><NotificationsPage /></Suspense>,
+    element: <Suspense fallback={<PageFallback />}><ProtectedRoute><NotificationsPage /></ProtectedRoute></Suspense>,
   },
   {
     path: ROUTES.ABOUT,

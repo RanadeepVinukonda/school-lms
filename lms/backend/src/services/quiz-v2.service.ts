@@ -301,15 +301,28 @@ IMPORTANT: You MUST generate exactly ${missing} questions. Each question must ma
 Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${missing} items.`;
 
         try {
-          const raw = await chatCompletion({
-            model: env.AI_MODEL,
-            messages: [
-              { role: 'system', content: 'You are an educational assessment generator. Return only valid JSON.' },
-              { role: 'user', content: prompt },
-            ],
-            temperature: 0.7,
-            max_tokens: 8192,
-          });
+          const maxRetries = 2;
+          let raw = '';
+          for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+              raw = await chatCompletion({
+                model: env.AI_MODEL,
+                messages: [
+                  { role: 'system', content: 'You are an educational assessment generator. Return only valid JSON.' },
+                  { role: 'user', content: prompt },
+                ],
+                temperature: 0.7,
+                max_tokens: 8192,
+              });
+              break;
+            } catch (err) {
+              if (attempt < maxRetries) {
+                logger.warn('AI question generation failed, retrying', { attempt, conceptName, error: err });
+                continue;
+              }
+              throw err;
+            }
+          }
 
           const cleaned = raw.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/gm, '').trim();
           const braceStart = cleaned.indexOf('{');
@@ -412,15 +425,28 @@ ${formatInstructions}
 Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in the array.`;
 
         try {
-          const raw = await chatCompletion({
-            model: env.AI_MODEL,
-            messages: [
-              { role: 'system', content: 'You are an educational assessment generator. Return only valid JSON.' },
-              { role: 'user', content: prompt },
-            ],
-            temperature: 0.7,
-            max_tokens: 8192,
-          });
+          const maxRetries = 2;
+          let raw = '';
+          for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+              raw = await chatCompletion({
+                model: env.AI_MODEL,
+                messages: [
+                  { role: 'system', content: 'You are an educational assessment generator. Return only valid JSON.' },
+                  { role: 'user', content: prompt },
+                ],
+                temperature: 0.7,
+                max_tokens: 8192,
+              });
+              break;
+            } catch (err) {
+              if (attempt < maxRetries) {
+                logger.warn('AI question generation failed, retrying', { attempt, conceptName, error: err });
+                continue;
+              }
+              throw err;
+            }
+          }
 
           const cleaned = raw.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/gm, '').trim();
           const braceStart = cleaned.indexOf('{');
@@ -523,18 +549,13 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
     };
   }
 
-  // save questions to concept bank
+  let toSave: any[] | null = null;
   if (!data.questions) {
     const existing = await getConceptQuestions(data.conceptId);
     const existingIds = new Set(existing.map((q: any) => q.id));
-    const toSave = matchingQuestions.filter((q: any) => !existingIds.has(q.id));
-    if (toSave.length > 0) {
-      await upsertQuestions(toSave, data.conceptId, data.textbookId, data.chapterId);
-      logger.info('AI-generated questions saved to concept', { conceptId: data.conceptId, count: toSave.length });
-    }
+    toSave = matchingQuestions.filter((q: any) => !existingIds.has(q.id));
   } else {
-    await upsertQuestions(matchingQuestions, data.conceptId, data.textbookId, data.chapterId);
-    logger.info('Teacher-edited questions saved to concept', { conceptId: data.conceptId, count: matchingQuestions.length });
+    toSave = matchingQuestions;
   }
 
   const totalPoints = matchingQuestions.reduce((sum: number, q: any) => sum + (q.points || 0), 0);
@@ -579,6 +600,15 @@ Return ONLY valid JSON: { "questions": [ ... ] } with exactly ${needed} items in
   };
 
   await nosqlSet(QV2, quizId, quizData);
+
+  if (toSave && toSave.length > 0) {
+    try {
+      await upsertQuestions(toSave, data.conceptId, data.textbookId, data.chapterId);
+      logger.info('Questions saved to concept bank', { conceptId: data.conceptId, count: toSave.length });
+    } catch (err) {
+      logger.warn('Failed to save questions to concept bank, but quiz was created', { conceptId: data.conceptId, error: err });
+    }
+  }
 
   if (!data.preview) {
     try {

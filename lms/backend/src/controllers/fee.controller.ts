@@ -39,7 +39,7 @@ export async function recordPayment(req: Request, res: Response) {
 }
 
 export async function getStudentPayments(req: Request, res: Response) {
-  const result = await feeService.getStudentPayments(req.params.studentId);
+  const result = await feeService.getStudentPayments(req.params.studentId, req.user!.school_id);
   sendSuccess(res, result);
 }
 

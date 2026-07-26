@@ -266,7 +266,7 @@ export async function getCompletedAssignmentAttempts(studentId: string): Promise
 
 /** Fetch notifications for a specific user. */
 export async function getNotificationsByUser(userId: string): Promise<NotificationItem[]> {
-  const { data, error } = await supabase.from(NOTIFICATIONS_COLLECTION).select('*').eq('userId', userId);
+  const { data, error } = await supabase.from(NOTIFICATIONS_COLLECTION).select('*').eq('userId', userId).order('createdAt', { ascending: false }).limit(50);
   if (error) throw error;
   return (data || []).map((n: Record<string, unknown>) => ({
     id: n.id as string,

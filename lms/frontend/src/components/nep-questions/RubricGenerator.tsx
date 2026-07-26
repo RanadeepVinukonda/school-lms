@@ -199,7 +199,7 @@ export function RubricGenerator({ assignments, onRubricSaved }: RubricGeneratorP
                   <div className="space-y-2">
                     <p className="text-label-xs font-medium">Performance Levels</p>
                     {criterion.levels.map((level, lIdx) => (
-                      <div key={lIdx} className="grid grid-cols-3 gap-2 p-2 rounded-lg bg-muted/50">
+                      <div key={lIdx} className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-2 rounded-lg bg-muted/50">
                         <div>
                           <label className="text-label-xs">Label</label>
                           <Input value={level.label} onChange={(e) => updateLevel(cIdx, lIdx, 'label', e.target.value)} className="mt-0.5" />

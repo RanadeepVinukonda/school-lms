@@ -90,6 +90,7 @@ export async function listFeeSchedules(
 ): Promise<FeeStructureRecord[]> {
   const result = await feeBase.list({
     schoolId,
+    limit: 1000,
     ...(academicYear ? { academic_year: academicYear } : {}),
     ...(classId ? { class_id: classId } : {}),
   });
@@ -163,9 +164,13 @@ export async function recordPayment(data: {
 /**
  * Get payments for a specific student.
  */
-export async function getStudentPayments(studentId: string) {
-  const supabase = getSupabaseAdmin()!;
-  const { data, error } = await supabase.from('fee_payments').select('*').eq('student_id', studentId);
+export async function getStudentPayments(studentId: string, schoolId?: string) {
+  const supabase = getSupabaseAdmin(); if (!supabase) return [];
+  let query = supabase.from('fee_payments').select('*').eq('student_id', studentId);
+  if (schoolId) {
+    query = query.eq('school_id', schoolId);
+  }
+  const { data, error } = await query;
   if (error) throw new Error(`Failed to get student payments: ${error.message}`);
   return data || [];
 }

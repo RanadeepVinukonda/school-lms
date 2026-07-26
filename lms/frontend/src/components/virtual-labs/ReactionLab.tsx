@@ -224,7 +224,7 @@ export default function ReactionLab() {
             </svg>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             <div className="p-3 rounded-lg bg-surface border border-outline-variant text-center">
               <p className="text-label-sm text-on-surface-variant">Temperature</p>
               <p className="text-title-md font-bold text-on-surface">{temperature.toFixed(1)}°C</p>

@@ -80,6 +80,7 @@ export async function generateQuestionsForConcept(params: {
         ],
         temperature: 0.7,
         max_tokens: 8192,
+        jsonMode: true,
       });
 
       const cleaned = raw.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/gm, '').trim();

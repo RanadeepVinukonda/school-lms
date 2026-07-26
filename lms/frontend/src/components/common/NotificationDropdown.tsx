@@ -160,7 +160,12 @@ export default function NotificationDropdown() {
 
   const handleSelect = useCallback(async (item: Item) => {
     if (!item.read) {
-      await markNotificationRead(item.id);
+      try {
+        await markNotificationRead(item.id);
+      } catch {
+        toast.error('Failed to mark notification as read');
+        return;
+      }
       decrementUnread();
       queryClient.invalidateQueries({ queryKey: ['notifications-dropdown-infinite', user?.id] });
     }
@@ -173,7 +178,12 @@ export default function NotificationDropdown() {
 
   const handleMarkAllRead = useCallback(async () => {
     if (!user) return;
-    await markAllNotificationsRead(user.id);
+    try {
+      await markAllNotificationsRead(user.id);
+    } catch {
+      toast.error('Failed to mark all notifications as read');
+      return;
+    }
     resetUnread();
     queryClient.invalidateQueries({ queryKey: ['notifications-dropdown-infinite', user?.id] });
     toast.success('All notifications marked as read');

@@ -241,7 +241,7 @@ export default function ClassSelectionPage() {
         <motion.div variants={cardStackReveal} custom={0}>
           <div className="text-center space-y-2">
             <img src="/genesis_icon.png" alt={_('Genesis')} className="mx-auto h-16 w-auto" />
-            <h1 className="text-2xl font-bold">{_('Welcome,')} {user?.displayName}</h1>
+            <h1 className="text-2xl font-bold">{_('Welcome,')} {user?.displayName ?? _('Teacher')}</h1>
             <p className="text-muted-foreground">{_('Select the classes you teach and your subjects')}</p>
           </div>
         </motion.div>
