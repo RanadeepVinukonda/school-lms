@@ -65,7 +65,7 @@ async function notifyFeeReminder(schoolId: string, classId: string, name: string
     .from('users').select('id, children_ids').eq('school_id', schoolId).eq('role', 'parent');
   if (parents) {
     for (const p of parents) {
-      if ((p.children_ids as string[] || []).some(kid => userIds.includes(kid))) {
+      if ((Array.isArray(p.children_ids) ? (p.children_ids as string[]) : []).some(kid => userIds.includes(kid))) {
         userIds.push(p.id as string);
       }
     }
@@ -141,10 +141,10 @@ export async function recordPayment(data: {
     }
 
     const { rows: result } = await client.query(
-      `INSERT INTO fee_payments (student_id, fee_structure_id, amount, school_id)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO fee_payments (student_id, fee_structure_id, amount, school_id, payment_method, transaction_id, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
-      [data.studentId, data.feeScheduleId, data.amountPaid, data.schoolId || null],
+      [data.studentId, data.feeScheduleId, data.amountPaid, data.schoolId || null, data.paymentMethod || null, data.transactionId || null, data.status || 'completed'],
     );
 
     await client.query('COMMIT');
@@ -209,13 +209,23 @@ export async function getOutstandingReport(schoolId?: string) {
 
 function buildOutstandingReport(structures: any[], payments: any[], students: any[], classMap: Record<string, string>) {
   const report = (students || []).map((s: any) => {
-    const studentClassId = s.class_id || (s.class_ids?.[0]);
+    const studentClassId = s.class_id || (Array.isArray(s.class_ids) ? s.class_ids[0] : null);
     const classStructures = (structures || []).filter((f: any) =>
       !f.class_id || f.class_id === studentClassId
     );
     const totalDue = classStructures.reduce((sum: number, f: any) => sum + Number(f.amount), 0);
     const studentPays = (payments || []).filter((p: any) => p.student_id === s.id);
     const totalPaid = studentPays.reduce((sum: number, p: any) => sum + Number(p.amount), 0);
+    const schedules = classStructures.map((f: any) => {
+      const paid = studentPays.filter((p: any) => p.fee_structure_id === f.id);
+      return {
+        scheduleId: f.id,
+        name: f.name,
+        amount: Number(f.amount),
+        paid: paid.reduce((s: number, p: any) => s + Number(p.amount), 0),
+        dueDate: f.due_date || f.dueDate,
+      };
+    });
     return {
       studentId: s.id,
       studentName: s.display_name || s.id,
@@ -223,6 +233,7 @@ function buildOutstandingReport(structures: any[], payments: any[], students: an
       totalDue,
       totalPaid,
       balance: totalDue - totalPaid,
+      schedules,
     };
   });
   return report.filter((r: { totalDue: number; totalPaid: number }) => r.totalDue > 0 || r.totalPaid > 0);
