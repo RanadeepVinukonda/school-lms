@@ -62,11 +62,23 @@ export default function AdminFeePage() {
     return students.filter((s) => s.displayName?.toLowerCase().includes(q) || s.studentId?.toLowerCase().includes(q) || s.email?.toLowerCase().includes(q));
   }, [students, paymentStudentLookup]);
 
-  const { data: schedulesData, isLoading: schedLoading, isError: schedError, refetch: refetchSched } = useQuery({
+  const { data: allSchedulesData, isLoading: schedLoading, isError: schedError, refetch: refetchSched } = useQuery({
     queryKey: ['fee-schedules'],
     queryFn: () => feeService.listFeeSchedules().then((r) => r.data),
-    enabled: activeTab === 'schedules',
   });
+
+  const selectedStudent = useMemo(() => {
+    if (!paymentData.studentId) return null;
+    return students.find((s) => s.id === paymentData.studentId) || null;
+  }, [students, paymentData.studentId]);
+
+  const schedulesData = useMemo(() => {
+    const all = allSchedulesData || [];
+    if (!selectedStudent) return all;
+    const studentClassId = selectedStudent.classId || (selectedStudent.classIds?.[0]);
+    if (!studentClassId) return all;
+    return all.filter((s) => s.class_id === studentClassId || s.classId === studentClassId);
+  }, [allSchedulesData, selectedStudent]);
 
   const { data: outstandingData, isLoading: outLoading, isError: outError, refetch: refetchOut } = useQuery({
     queryKey: ['fee-outstanding'],
@@ -142,7 +154,7 @@ export default function AdminFeePage() {
             </Card>
 
             <DataFetchWrapper
-              data={schedulesData}
+              data={allSchedulesData}
               isLoading={schedLoading}
               error={schedError ? new Error('Failed to load') : null}
               onRetry={refetchSched}
@@ -154,7 +166,7 @@ export default function AdminFeePage() {
                     <CardTitle className="text-title-sm">Existing Fee Schedules</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {(schedulesData as any[])?.length === 0 ? (
+                    {(allSchedulesData as any[])?.length === 0 ? (
                       <p className="text-muted-foreground text-center py-8">No fee schedules created yet</p>
                     ) : (
                       <div className="border border-border/60 rounded-xl overflow-x-auto">
@@ -169,7 +181,7 @@ export default function AdminFeePage() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-border/40 text-title-sm">
-                            {(schedulesData as any[])?.map((s: any) => {
+                            {(allSchedulesData as any[])?.map((s: any) => {
                               const cls = classesData.find((c) => c.id === (s.class_id || s.classId));
                               return (
                                 <tr key={s.id} className="hover:bg-muted/20">
@@ -219,9 +231,13 @@ export default function AdminFeePage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                     <select className="h-10 px-3 rounded-lg border border-border/60 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary" value={paymentData.feeScheduleId} onChange={(e) => setPaymentData({ ...paymentData, feeScheduleId: e.target.value })}>
                       <option value="">Select Fee Schedule</option>
-                      {(schedulesData as any[])?.map((s: any) => (
-                        <option key={s.id} value={s.id}>{s.name} - Rs. {s.amount?.toFixed(2)}</option>
-                      ))}
+                      {paymentData.studentId && (!schedulesData || schedulesData.length === 0) ? (
+                        <option value="" disabled>No fee schedules available for this student.</option>
+                      ) : (
+                        (schedulesData as any[])?.map((s: any) => (
+                          <option key={s.id} value={s.id}>{s.name} - Rs. {s.amount?.toFixed(2)}</option>
+                        ))
+                      )}
                     </select>
                     <Input type="number" placeholder="Amount Paid" value={paymentData.amountPaid || ''} onChange={(e) => setPaymentData({ ...paymentData, amountPaid: Number(e.target.value) })} />
                     <select className="h-10 px-3 rounded-lg border border-border/60 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary" value={paymentData.paymentMethod} onChange={(e) => setPaymentData({ ...paymentData, paymentMethod: e.target.value })}>
