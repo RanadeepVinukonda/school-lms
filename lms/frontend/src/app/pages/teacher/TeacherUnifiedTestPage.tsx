@@ -288,7 +288,7 @@ export default function TeacherUnifiedTestPage() {
   return (
     <>
       <SEOHead title="Push Test" description="Create and publish unified tests" />
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 max-w-5xl mx-auto pb-32 space-y-8">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="sm:p-6 p-4 max-w-5xl mx-auto pb-32 space-y-8">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-headline-sm">Push Test</h1>

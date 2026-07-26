@@ -11,7 +11,12 @@ const router = Router();
 router.post('/', authenticate,
   validate(z.object({ token: z.string(), platform: z.string().default('web') })),
   asyncHandler(async (req, res) => {
-    await registerToken(req.user!.uid, req.user!.school_id, req.body.token, req.body.platform);
+    // Auto-detect platform from token format
+    let platform = req.body.platform;
+    if (req.body.token.startsWith('ExponentPushToken[') || req.body.token.startsWith('expo_push_token[')) {
+      platform = 'expo';
+    }
+    await registerToken(req.user!.uid, req.user!.school_id, req.body.token, platform);
     sendSuccess(res, null, 'Token registered');
   })
 );

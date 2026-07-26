@@ -1,5 +1,5 @@
-importScripts('https://www.gstatic.com/firebasejs/10.x/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.x/firebase-messaging-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.11.0/firebase-messaging-compat.js');
 
 fetch('/firebase-config.json')
   .then((res) => res.json())
@@ -8,11 +8,15 @@ fetch('/firebase-config.json')
     const messaging = firebase.messaging();
 
     messaging.onBackgroundMessage((payload) => {
-      const { title, body, icon, click_action } = payload.data || {};
-      self.registration.showNotification(title || 'Genesis LMS', {
-        body: body || '',
-        icon: icon || '/genesis_icon.png',
-        data: { url: click_action || '/' },
+      const title = payload.notification?.title || payload.data?.title || 'Genesis LMS';
+      const body = payload.notification?.body || payload.data?.body || '';
+      const icon = payload.notification?.icon || payload.data?.icon || '/genesis_icon.png';
+      const url = payload.data?.url || payload.data?.click_action || '/';
+
+      self.registration.showNotification(title, {
+        body,
+        icon,
+        data: { url },
       });
     });
   })

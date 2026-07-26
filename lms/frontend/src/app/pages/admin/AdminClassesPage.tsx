@@ -744,7 +744,7 @@ export default function AdminClassesPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-7xl mx-auto pb-32"
+        className="sm:p-6 p-4 max-w-7xl mx-auto pb-32"
       >
         <motion.div variants={cardStackReveal} custom={0} className="space-y-16">
           <div className="flex items-center justify-between flex-wrap gap-4">

@@ -124,7 +124,7 @@ export default function AdminReportsPage() {
   return (
     <>
       <SEOHead title={_('Reports & Suggestions')} description={_('Manage user reports and suggestions')} />
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 max-w-7xl mx-auto space-y-6 pb-32">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="sm:p-6 p-4 max-w-7xl mx-auto space-y-6 pb-32">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-headline-md font-bold">{_('Reports & Suggestions')}</h1>

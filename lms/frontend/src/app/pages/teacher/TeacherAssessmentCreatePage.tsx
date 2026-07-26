@@ -658,7 +658,7 @@ export default function TeacherAssessmentCreatePage() {
     return (
       <>
         <SEOHead title={_('Create Assessment')} description={_('Create quizzes and assignments for your class')} canonical="/teacher/assessments/create" />
-        <div className="p-6 max-w-4xl mx-auto pb-32 space-y-16">
+        <div className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-16">
           <Skeleton className="h-8 w-56" />
           <Skeleton className="h-4 w-80" />
           <Skeleton className="h-10 w-full mt-4" />
@@ -674,7 +674,7 @@ export default function TeacherAssessmentCreatePage() {
     return (
       <>
         <SEOHead title="Create Assessment" description="Create quizzes and assignments for your class" canonical="/teacher/assessments/create" />
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-4xl mx-auto pb-32 space-y-16">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-16">
           <motion.div variants={cardStackReveal} custom={0}>
             <Card className="border-border/60">
               <CardContent className="p-5 text-center space-y-4">
@@ -695,7 +695,7 @@ export default function TeacherAssessmentCreatePage() {
     return (
       <>
         <SEOHead title="Create Assessment" description="Create quizzes and assignments for your class" canonical="/teacher/assessments/create" />
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-4xl mx-auto pb-32 space-y-16">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-16">
           <motion.div variants={cardStackReveal} custom={0}>
             <h1 className="text-headline-sm">{_('Create Assessment')}</h1>
             <p className="text-body-md text-muted-foreground">{_('Create quizzes and assignments for your class')}</p>
@@ -725,7 +725,7 @@ export default function TeacherAssessmentCreatePage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-6xl mx-auto pb-32 space-y-6"
+        className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-6"
       >
         <motion.div variants={cardStackReveal} custom={0}>
           <div>

@@ -182,7 +182,7 @@ export default function StudentLayout() {
       {/* Main content area */}
       <div
         className={cn(
-          'transition-all duration-300 ease-in-out pb-22 lg:pb-8',
+          'transition-all duration-300 ease-in-out pb-24 lg:pb-6',
           sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64',
         )}
       >
@@ -195,28 +195,28 @@ export default function StudentLayout() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="gap-0 p-0 flex flex-col h-full border-r border-outline-variant bg-surface">
-              <div className="flex items-center h-20 px-6 border-b border-outline-variant shrink-0">
+              <div className="flex items-center h-16 px-5 border-b border-outline-variant shrink-0">
                 <img
                   src="/genesis_icon.png"
                   alt="Genesis"
-                  className="h-10 w-auto object-contain"
+                  className="h-8 w-auto object-contain"
                 />
               </div>
-              <nav className="flex-1 overflow-y-auto py-2 px-2 flex flex-col gap-1">
+              <nav className="flex-1 overflow-y-auto py-2 px-2 flex flex-col gap-0.5">
                 {navItems.map((item) => (
                   <SheetClose asChild key={item.href}>
                     <NavLink
                       to={item.href}
                       className={({ isActive }) =>
                         cn(
-                          'flex items-center gap-3 rounded-xl w-full px-4 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                          'flex items-center gap-3 rounded-xl w-full px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                           isActive
                             ? 'bg-secondary-container text-on-secondary-container'
                             : 'text-on-surface-variant hover:bg-surface-variant/50',
                         )
                       }
                     >
-                      <Icon name={item.icon} size={24} />
+                      <Icon name={item.icon} size={20} />
                       <span>{getLabel(item.label)}</span>
                     </NavLink>
                   </SheetClose>
@@ -262,15 +262,15 @@ export default function StudentLayout() {
         </main>
 
         {/* Bottom navigation (mobile only) */}
-        <nav className="fixed bottom-0 left-0 right-0 z-40 h-20 bg-surface border-t border-outline-variant lg:hidden">
-          <div className="flex items-center justify-around h-full px-1">
+        <nav className="fixed bottom-0 left-0 right-0 z-40 h-[68px] bg-surface border-t border-outline-variant lg:hidden">
+          <div className="flex items-center h-full px-1">
             {navItems.slice(0, 5).map((item) => (
               <NavLink
                 key={item.href}
                 to={item.href}
                 className={({ isActive }) =>
                   cn(
-                    'relative flex flex-col items-center justify-center gap-0.5 px-1.5 py-1 text-[10px] font-medium transition-colors rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-w-0 flex-1 h-full',
+                    'relative flex flex-col items-center justify-center px-1 text-[10px] font-medium transition-colors rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-w-0 flex-1 h-full',
                     isActive
                       ? 'text-primary'
                       : 'text-on-surface-variant hover:text-on-surface',
@@ -282,8 +282,8 @@ export default function StudentLayout() {
                     {isActive && (
                       <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
                     )}
-                    <Icon name={item.icon} size={22} className={cn(isActive ? 'fill-icon' : '')} />
-                    <span className="text-label-sm leading-tight">{getLabel(item.label)}</span>
+                    <Icon name={item.icon} size={20} className={cn(isActive ? 'fill-icon' : '')} />
+                    <span className="text-[10px] leading-none mt-0.5">{getLabel(item.label)}</span>
                   </>
                 )}
               </NavLink>

@@ -11,7 +11,7 @@ export async function registerToken(userId: string, schoolId: string | undefined
 
 export async function getTokensForUser(userId: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return [];
-  const { data, error } = await supabase.from('device_tokens').select('token, platform').eq('user_id', userId);
+  const { data, error } = await supabase.from('device_tokens').select('token, platform').eq('user_id', userId).is('deleted_at', null);
   if (error) throw new Error('Failed to fetch device tokens: ' + error.message);
   return data || [];
 }

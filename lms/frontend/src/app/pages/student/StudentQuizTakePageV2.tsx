@@ -534,7 +534,7 @@ export default function StudentQuizTakePageV2() {
   if (infoError || !assessmentInfo) {
     const errorMessage = (infoErrorObj as { message?: string })?.message || (assessmentType === 'exam' ? _('Exam not found') : _('Quiz not found'));
     return (
-      <div className="p-6 max-w-lg mx-auto mt-12">
+      <div className="sm:p-6 p-4 max-w-lg mx-auto mt-12">
         <Card className="border-border/60">
           <CardContent className="flex flex-col items-center gap-4 py-8 text-center">
             <AlertCircle className="h-12 w-12 text-destructive" />
@@ -550,7 +550,7 @@ export default function StudentQuizTakePageV2() {
 
   if (questionModels.length === 0 && phase === 'select-models') {
     return (
-      <div className="p-6 max-w-lg mx-auto mt-12">
+      <div className="sm:p-6 p-4 max-w-lg mx-auto mt-12">
         <Button variant="ghost" size="sm" onClick={handleBack} className="mb-4">
               <ArrowLeft className="h-4 w-4 mr-1" />{_('Back')}
         </Button>
@@ -671,7 +671,7 @@ export default function StudentQuizTakePageV2() {
   const attemptData = attempt;
   if ((phase === 'quiz' || phase === 'result') && !attemptData) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh] p-6">
+      <div className="flex items-center justify-center min-h-[60vh] sm:p-6 p-4">
         <Card className="w-full max-w-sm border-border/60">
           <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
             <AlertCircle className="h-10 w-10 text-destructive" />
@@ -833,7 +833,7 @@ export default function StudentQuizTakePageV2() {
 
   if (!currentQuestion) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh] p-6">
+      <div className="flex items-center justify-center min-h-[60vh] sm:p-6 p-4">
         <Card className="w-full max-w-sm border-border/60">
           <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
             <AlertCircle className="h-10 w-10 text-destructive" />
@@ -897,7 +897,7 @@ export default function StudentQuizTakePageV2() {
           </div>
 
           {/* Question Display Workspace */}
-          <div className="flex-1 p-6 md:p-12 max-w-3xl mx-auto w-full flex flex-col justify-start space-y-6">
+          <div className="flex-1 sm:p-6 p-4 md:p-12 max-w-3xl mx-auto w-full flex flex-col justify-start space-y-6">
             <div className="flex items-center justify-between">
               <Badge variant="outline" className="text-label-xs px-2.5 py-0.5 capitalize">
                 {_(MODEL_LABELS[currentQuestion.type] || currentQuestion.type.toUpperCase())}

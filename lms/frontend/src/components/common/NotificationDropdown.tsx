@@ -85,7 +85,7 @@ export default function NotificationDropdown() {
   const loaderRef = useRef<HTMLDivElement>(null);
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
-  const { unreadCount, setUnreadCount, decrementUnread, resetUnread } = useNotificationStore();
+  const { unreadCount, decrementUnread, resetUnread } = useNotificationStore();
   const queryClient = useQueryClient();
 
   const {
@@ -115,7 +115,7 @@ export default function NotificationDropdown() {
     enabled: !!user && open,
   });
 
-  useRealtimeInvalidation([{ table: 'notifications', queryKey: ['notifications-dropdown', user?.id ?? ''] }]);
+  useRealtimeInvalidation([{ table: 'notifications', queryKey: ['notifications-dropdown-infinite', user?.id ?? ''] }]);
 
   const rawItems = useMemo(
     () => infiniteData?.pages.flatMap((p) => p.data) ?? [],
@@ -127,8 +127,6 @@ export default function NotificationDropdown() {
     [rawItems],
   );
   const unreadItems = useMemo(() => items.filter((n) => !n.read), [items]);
-
-  useEffect(() => { setUnreadCount(unreadItems.length); }, [unreadItems.length, setUnreadCount]);
 
   useEffect(() => {
     if (!scrollRef.current || !loaderRef.current) return;

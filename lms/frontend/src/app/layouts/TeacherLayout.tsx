@@ -227,36 +227,36 @@ export default function TeacherLayout() {
             </SheetTrigger>
             <SheetContent side="left" className="gap-0 p-0 flex flex-col h-full border-r border-outline-variant bg-surface animate-in">
               {/* Drawer Brand */}
-              <div className="flex items-center h-20 px-6 border-b border-outline-variant shrink-0">
+              <div className="flex items-center h-16 px-5 border-b border-outline-variant shrink-0">
                 <img
                   src="/genesis_icon.png"
                   alt="Genesis"
-                  className="h-10 w-auto object-contain"
+                  className="h-8 w-auto object-contain"
                 />
               </div>
 
               {/* Drawer Links */}
-              <nav className="flex-1 overflow-y-auto py-2 px-2 flex flex-col gap-3">
+              <nav className="flex-1 overflow-y-auto py-2 px-2 flex flex-col gap-0.5">
                 {navGroups.map((group) => (
                   <div key={group.label}>
                     <p className="text-label-xs font-semibold text-on-surface-variant uppercase tracking-wider px-3 pb-1">
                       {group.label}
                     </p>
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-0.5">
                       {group.items.map((item) => (
                         <SheetClose asChild key={item.href}>
                           <NavLink
                             to={item.href}
                             className={({ isActive }) =>
                               cn(
-                                'flex items-center gap-3 rounded-xl w-full px-4 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                'flex items-center gap-3 rounded-xl w-full px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                                 isActive
                                   ? 'bg-secondary-container text-on-secondary-container'
                                   : 'text-on-surface-variant hover:bg-surface-variant/50',
                               )
                             }
                           >
-                            <Icon name={item.icon} size={24} />
+                            <Icon name={item.icon} size={20} />
                             <span>{getLabel(item.label)}</span>
                           </NavLink>
                         </SheetClose>

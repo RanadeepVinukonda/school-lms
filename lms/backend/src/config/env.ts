@@ -31,6 +31,7 @@ const envSchema = z.object({
   SUPABASE_JWT_SECRET: z.string().optional(),
   SENTRY_DSN: z.string().optional(),
   EXPO_ACCESS_TOKEN: z.string().optional(),
+  FIREBASE_SERVICE_ACCOUNT_KEY: z.string().optional(),
 
   SMTP_HOST: z.string().default('smtp.gmail.com'),
   SMTP_PORT: z.coerce.number().default(587),

@@ -450,7 +450,7 @@ export default function TeacherExamCreatePage() {
     return (
       <>
         <SEOHead title={_('Create Exam')} description={_('Create chapter-level exams for your class')} />
-        <div className="p-6 max-w-4xl mx-auto pb-32 space-y-16">
+        <div className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-16">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-4 w-72 mt-2" />
           <Skeleton className="h-40 w-full mt-6" />
@@ -464,7 +464,7 @@ export default function TeacherExamCreatePage() {
     return (
       <>
         <SEOHead title={_('Create Exam')} description={_('Create chapter-level exams for your class')} />
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-4xl mx-auto pb-32 space-y-16">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-16">
           <motion.div variants={cardStackReveal} custom={0}>
             <h1 className="text-headline-sm">{_('Create Exam')}</h1>
             <p className="text-body-md text-muted-foreground">{_('Something went wrong loading your assignments')}</p>
@@ -490,7 +490,7 @@ export default function TeacherExamCreatePage() {
     return (
       <>
         <SEOHead title="Create Exam" description="Create chapter-level exams for your class" />
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 max-w-4xl mx-auto pb-32 space-y-16">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-16">
           <motion.div variants={cardStackReveal} custom={0}>
             <h1 className="text-headline-sm">{_('Create Exam')}</h1>
             <p className="text-body-md text-muted-foreground">{_('Create chapter-level exams for your students')}</p>
@@ -517,7 +517,7 @@ export default function TeacherExamCreatePage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="p-6 max-w-4xl mx-auto pb-32 space-y-16"
+        className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-16"
       >
         <motion.div variants={cardStackReveal} custom={0}>
           <h1 className="text-headline-sm">{_('Create Exam')}</h1>
