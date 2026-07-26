@@ -616,7 +616,11 @@ export default function AdminClassesPage() {
 
       setShowCreateTeacher(false);
       setTeacherForm({ displayName: '', email: '' });
-      toast.success('Teacher registered successfully');
+      if (!teacherData.generatedPassword) {
+        toast.success('Teacher exists — account reused');
+      } else {
+        toast.success('Teacher registered successfully');
+      }
       refetchUsers();
     } catch (err: any) {
       toast.error(err.message || 'Failed to create teacher');

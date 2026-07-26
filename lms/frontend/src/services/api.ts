@@ -33,19 +33,15 @@ async function fetchAndCacheCsrfToken(): Promise<string | null> {
 
   csrfFetchPromise = (async () => {
     try {
-      // The /csrf-token endpoint sets a cookie AND returns the token in the body.
-      // On Capacitor/mobile, JS cannot read the cross-origin cookie, so we must
-      // use the response body token instead.
       const response = await axios.get<{ success: boolean; data: { csrfToken: string } }>(
         `${API_BASE_URL}/csrf-token`,
-        { withCredentials: true }
+        { withCredentials: true, timeout: 5000 }
       );
       const bodyToken = response.data?.data?.csrfToken;
       if (bodyToken) {
         cachedCsrfToken = bodyToken;
         return bodyToken;
       }
-      // Fallback: try reading the cookie (works on same-origin web deployments)
       return readCsrfCookie();
     } catch {
       return null;
@@ -93,13 +89,22 @@ function isTokenExpired(token: string): boolean {
   return (payload.exp as number) * 1000 - 30000 < Date.now();
 }
 
+const AUTH_TIMEOUT_MS = 10000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timed out')), ms)),
+  ]);
+}
+
 async function getAccessToken(): Promise<string | null> {
   // Use cached token if still valid
   if (cachedToken && !isTokenExpired(cachedToken)) return cachedToken;
 
   // Try refreshing the Supabase session first (handles auto-refresh behind the scenes)
   try {
-    const { data: { session } } = await supabase.auth.refreshSession();
+    const { data: { session } } = await withTimeout(supabase.auth.refreshSession(), AUTH_TIMEOUT_MS);
     if (session?.access_token) {
       cachedToken = session.access_token;
       const payload = decodeJwtPayload(session.access_token);
@@ -110,7 +115,7 @@ async function getAccessToken(): Promise<string | null> {
 
   // Try getting the current session (if refresh didn't work)
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await withTimeout(supabase.auth.getSession(), AUTH_TIMEOUT_MS);
     if (session?.access_token) {
       cachedToken = session.access_token;
       const payload = decodeJwtPayload(session.access_token);
