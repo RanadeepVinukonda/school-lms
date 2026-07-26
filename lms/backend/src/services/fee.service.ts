@@ -71,9 +71,13 @@ async function notifyFeeReminder(schoolId: string, classId: string, name: string
     }
   }
   if (userIds.length === 0) return;
-  await createBulkNotifications(userIds.map(uid => ({
-    userId: uid, type: 'fee_reminder', title: 'Fee Reminder', body: `${name}: Please pay before ${dueDate || 'the due date'}.`,
-  })));
+  try {
+    await createBulkNotifications(userIds.map(uid => ({
+      userId: uid, type: 'fee_reminder', title: 'Fee Reminder', body: `${name}: Please pay before ${dueDate || 'the due date'}.`,
+    })));
+  } catch (err) {
+    logger.error('Failed to create fee reminder notifications', { error: err instanceof Error ? err.message : String(err) });
+  }
 }
 
 /**

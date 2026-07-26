@@ -218,7 +218,7 @@ export default function ParentChildDetailPage() {
                               {grades.map((grade: any) => (
                                 <tr key={grade.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                                   <td className="px-4 py-3">
-                                    <p className="font-medium">{grade.itemName ?? 'Untitled'}</p>
+                                    <p className="font-medium">{grade.itemName || 'Untitled'}</p>
                                     <Badge variant="secondary" className="text-[10px] mt-0.5">
                                       {grade.type ?? 'assessment'}
                                     </Badge>

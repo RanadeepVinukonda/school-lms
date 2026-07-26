@@ -75,12 +75,16 @@ async function notifyUsersOfNotice(schoolId: string, targetClassId: string | nul
   }
 
   if (userIds.length === 0) return;
-  await createBulkNotifications(
-    userIds.map(uid => ({
-      userId: uid, type: 'notice', title: `Notice: ${title}`, body: content,
-    })),
-    schoolId,
-  );
+  try {
+    await createBulkNotifications(
+      userIds.map(uid => ({
+        userId: uid, type: 'notice', title: `Notice: ${title}`, body: content,
+      })),
+      schoolId,
+    );
+  } catch (err) {
+    logger.error('Failed to send notice notifications', { error: err instanceof Error ? err.message : String(err) });
+  }
 }
 
 export default router;

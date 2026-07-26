@@ -8,6 +8,7 @@ import { asyncHandler } from '../middlewares/asyncHandler';
 import { validate } from '../middlewares/validate.middleware';
 import { createNotification } from '../services/notification.service';
 import { sendSuccess } from '../utils/response';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
@@ -39,14 +40,18 @@ router.post('/re-teach', authenticate, requireRole('teacher', 'admin'), validate
   const affectedText = affectedStudents != null ? `\nAffected Students: ${affectedStudents}` : '';
   const scoreText = averageScore != null ? `\nAverage Score: ${averageScore}%` : '';
   const reasonText = suggestedReason ? `\nSuggested Reason: ${suggestedReason}` : '';
-  await createNotification({
-    userId: teacherId,
-    type: 're_teach',
-    title: 'Action Required: Re-teach Concept',
-    body: `The administrator has requested that you re-teach the concept "${conceptName}" in "${className}"${sectionText} for the subject "${subjectName}".${affectedText}${scoreText}${reasonText}`,
-    priority: 'high',
-    schoolId: req.user!.school_id,
-  });
+  try {
+    await createNotification({
+      userId: teacherId,
+      type: 're_teach',
+      title: 'Action Required: Re-teach Concept',
+      body: `The administrator has requested that you re-teach the concept "${conceptName}" in "${className}"${sectionText} for the subject "${subjectName}".${affectedText}${scoreText}${reasonText}`,
+      priority: 'high',
+      schoolId: req.user!.school_id,
+    });
+  } catch (err) {
+    logger.error('Failed to send re-teach notification', { teacherId, error: err instanceof Error ? err.message : String(err) });
+  }
   sendSuccess(res, null, 'Teacher notified to re-teach concept');
 }));
 router.get('/conducted-tests', authenticate, requireRole('teacher', 'admin'), asyncHandler(async (_req: Request, res: Response) => {

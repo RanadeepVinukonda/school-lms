@@ -196,7 +196,7 @@ function toGradeResponse(row: Record<string, unknown>): Record<string, unknown> 
     id: row.id,
     studentId: row.studentId || row.student_id,
     courseId: row.courseId || row.course_id,
-    itemName: row.itemName || row.item_name || '',
+    itemName: row.itemName || row.item_name || 'Assessment',
     score: row.score,
     totalPoints: row.totalPoints || row.total_points || row.maxScore || row.max_score,
     letterGrade: row.letterGrade || row.letter_grade,

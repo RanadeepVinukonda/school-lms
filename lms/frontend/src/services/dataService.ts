@@ -268,7 +268,19 @@ export async function getCompletedAssignmentAttempts(studentId: string): Promise
 export async function getNotificationsByUser(userId: string): Promise<NotificationItem[]> {
   const { data, error } = await supabase.from(NOTIFICATIONS_COLLECTION).select('*').eq('userId', userId);
   if (error) throw error;
-  return (data || []) as NotificationItem[];
+  return (data || []).map((n: Record<string, unknown>) => ({
+    id: n.id as string,
+    userId: n.userId as string,
+    type: n.type as string,
+    title: n.title as string,
+    body: (n.body as string) || (n.message as string) || '',
+    data: n.data as Record<string, unknown> | undefined,
+    link: n.link as string | undefined,
+    priority: n.priority as string | undefined,
+    read: n.read as boolean,
+    readAt: n.readAt as string | undefined,
+    createdAt: n.createdAt as string,
+  }));
 }
 
 /** Get count of unread notifications for a user. */
