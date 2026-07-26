@@ -124,10 +124,12 @@ async function getAccessToken(): Promise<string | null> {
     }
   } catch { /* fall through */ }
 
-  // Fallback to persisted store token
+  // Fallback to persisted store token (use even if locally expired — backend will return 401 to trigger refresh)
   const storeToken = useAuthStore.getState().token;
-  if (storeToken && !isTokenExpired(storeToken)) {
+  if (storeToken) {
     cachedToken = storeToken;
+    const payload = decodeJwtPayload(storeToken);
+    if (payload?.exp) tokenExpiresAt = (payload.exp as number) * 1000;
     return cachedToken;
   }
 
