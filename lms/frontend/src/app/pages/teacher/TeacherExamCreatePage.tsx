@@ -234,6 +234,12 @@ export default function TeacherExamCreatePage() {
     enabled: !!selectedTextbookId && !!selectedChapterId,
   });
 
+  const { data: chapterConcepts = [] } = useQuery({
+    queryKey: ['chapter-concepts', selectedTextbookId, selectedChapterId],
+    queryFn: () => api.get(`/textbooks/${selectedTextbookId}/chapters/${selectedChapterId}/concepts`).then((r) => r.data.data || []),
+    enabled: !!selectedTextbookId && !!selectedChapterId,
+  });
+
   const typeCountMap: Record<string, number> = {};
   const diffCountMap: Record<string, number> = {};
   if (breakdown) {
@@ -251,6 +257,7 @@ export default function TeacherExamCreatePage() {
 
   const createMutation = useMutation({
     mutationFn: async () => {
+      const qc = Number(questionCount);
       const body = {
         title,
         description,
@@ -260,7 +267,7 @@ export default function TeacherExamCreatePage() {
         teacherId,
         timeLimitMinutes: Number(timeLimitMinutes),
         selectedModels,
-        questionCount: Number(questionCount),
+        questionCountPerConcept: isNaN(qc) ? 5 : Math.floor(qc),
         passingScore: Number(passingScore),
         maxAttempts: Number(maxAttempts),
         shuffleQuestions: true,
@@ -321,7 +328,7 @@ export default function TeacherExamCreatePage() {
         teacherId,
         timeLimitMinutes: Number(timeLimitMinutes),
         selectedModels,
-        questionCount: (generatedPaper || []).length,
+        questionCountPerConcept: (generatedPaper || []).length || 5,
         passingScore: Number(passingScore),
         maxAttempts: Number(maxAttempts),
         shuffleQuestions: true,
@@ -426,6 +433,7 @@ export default function TeacherExamCreatePage() {
   }
 
   function canCreate(): boolean {
+    const qc = Number(questionCount);
     return (
       !!title.trim() &&
       !!selectedClassId &&
@@ -434,6 +442,8 @@ export default function TeacherExamCreatePage() {
       selectedModels.length > 0 &&
       Number(timeLimitMinutes) > 0 &&
       Number(questionCount) > 0 &&
+      !isNaN(qc) &&
+      chapterConcepts.length > 0 &&
       Number(passingScore) >= 0 &&
       Number(maxAttempts) > 0 &&
       distributionTotal <= Number(questionCount) &&
@@ -930,6 +940,12 @@ export default function TeacherExamCreatePage() {
                 </div>
               </div>
 
+              {isNaN(Number(questionCount)) && (
+                <p className="text-xs text-destructive text-center">Please enter a valid question count.</p>
+              )}
+              {!!selectedChapterId && chapterConcepts.length === 0 && (
+                <p className="text-xs text-destructive text-center">This chapter has no concepts assigned.</p>
+              )}
               <Button
                 className="w-full gap-2"
                 size="lg"

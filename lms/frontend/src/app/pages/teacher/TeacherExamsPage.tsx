@@ -109,6 +109,12 @@ export default function TeacherExamsPage() {
     enabled: !!selectedTextbookId && !!selectedChapterId,
   });
 
+  const { data: chapterConcepts = [] } = useQuery({
+    queryKey: ['chapter-concepts', selectedTextbookId, selectedChapterId],
+    queryFn: () => api.get(`/textbooks/${selectedTextbookId}/chapters/${selectedChapterId}/concepts`).then((r) => r.data.data || []),
+    enabled: !!selectedTextbookId && !!selectedChapterId,
+  });
+
   const typeCountMap: Record<string, number> = {};
   const diffCountMap: Record<string, number> = {};
   if (breakdown) {
@@ -228,6 +234,8 @@ export default function TeacherExamsPage() {
       selectedModels.length > 0 &&
       timeLimitMinutes > 0 &&
       questionCount > 0 &&
+      !isNaN(Number(questionCount)) &&
+      chapterConcepts.length > 0 &&
       passingScore >= 0 &&
       maxAttempts > 0 &&
       !createMutation.isPending
@@ -236,6 +244,7 @@ export default function TeacherExamsPage() {
 
   function handleCreate() {
     if (!canCreate()) return;
+    const qc = Number(questionCount);
     const body: Record<string, unknown> = {
       title: title.trim(),
       description: description || '',
@@ -246,7 +255,7 @@ export default function TeacherExamsPage() {
       teacherId,
       timeLimitMinutes,
       selectedModels: [...selectedModels],
-      questionCount,
+      questionCountPerConcept: isNaN(qc) ? 10 : Math.floor(qc),
       passingScore,
       maxAttempts,
       distribution,
@@ -262,6 +271,7 @@ export default function TeacherExamsPage() {
 
   function handleGeneratePreview() {
     if (!selectedClassId || !selectedTextbookId || !selectedChapterId) return;
+    const qc = Number(questionCount);
     generatePreviewMutation.mutate({
       title: title.trim() || 'Preview',
       description: description || '',
@@ -272,7 +282,7 @@ export default function TeacherExamsPage() {
       teacherId,
       timeLimitMinutes,
       selectedModels: [...selectedModels],
-      questionCount,
+      questionCountPerConcept: isNaN(qc) ? 10 : Math.floor(qc),
       distribution,
       preview: true,
     });
@@ -729,6 +739,12 @@ export default function TeacherExamsPage() {
                 </div>
               )}
 
+              {isNaN(Number(questionCount)) && (
+                <p className="text-xs text-destructive text-center">Please enter a valid question count.</p>
+              )}
+              {!!selectedChapterId && chapterConcepts.length === 0 && (
+                <p className="text-xs text-destructive text-center">This chapter has no concepts assigned.</p>
+              )}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                 {selectedChapterId && (
                   <Button
