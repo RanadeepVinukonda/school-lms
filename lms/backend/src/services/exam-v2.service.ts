@@ -8,6 +8,7 @@ import type { Difficulty, StudentLevel } from './ai-level.service';
 import { deleteDocument } from './document.service';
 import * as gamificationService from './gamification.service';
 import { generateQuestionsForConcept, saveAiQuestions } from './ai-question-generator.service';
+import { createBulkNotifications } from './notification.service';
 
 const DIFFICULTY_RANK: Record<Difficulty, number> = { easy: 0, medium: 1, hard: 2 };
 const POINTS_BY_DIFFICULTY: Record<string, number> = { easy: 1, medium: 2, hard: 3 };
@@ -107,6 +108,8 @@ export async function createExam(data: {
   schoolId?: string;
   questions?: any[];
   preview?: boolean;
+  publishedTo?: string;
+  targetStudentIds?: string[];
 }) {
   const assignment = await getTeacherAssignment(data.teacherId, data.classId);
   if (!assignment) {
@@ -237,6 +240,8 @@ export async function createExam(data: {
     startDate: data.startDate || null,
     endDate: data.endDate || null,
     schoolId: data.schoolId || '',
+    publishedTo: data.publishedTo || 'class',
+    targetStudentIds: data.targetStudentIds || [],
     createdAt: now,
     updatedAt: now,
   };
@@ -255,6 +260,37 @@ export async function releaseExam(examId: string, teacherId: string) {
 
   const now = new Date().toISOString();
   await nosqlUpdate(EV2, examId, { releasedAt: now, updatedAt: now });
+
+  try {
+    const examTitle = (examData.title as string) || 'Untitled Exam';
+    const publishedTo = (examData.publishedTo as string) || 'class';
+    const targetStudentIds = (examData.targetStudentIds as string[]) || [];
+
+    if (publishedTo === 'students' && targetStudentIds.length > 0) {
+      const studentNotifs = targetStudentIds.map((sid: string) => ({
+        userId: sid, type: 'exam', title: 'New Exam Assigned',
+        message: `Your teacher assigned Exam: ${examTitle}.`,
+      }));
+      await createBulkNotifications(studentNotifs);
+    } else if (publishedTo === 'class' && examData.classId) {
+      const supabase = getSupabaseAdmin()!;
+      const { data: students } = await supabase
+        .from('users')
+        .select('id')
+        .eq('role', 'student')
+        .contains('class_ids', [(examData.classId as string)]);
+      if (students && students.length > 0) {
+        const studentNotifs = students.map((s: any) => ({
+          userId: s.id, type: 'exam', title: 'New Exam Assigned',
+          message: `Your teacher assigned Exam: ${examTitle}.`,
+        }));
+        await createBulkNotifications(studentNotifs);
+      }
+    }
+  } catch (err) {
+    logger.warn('Failed to send exam release notifications', { examId, error: err });
+  }
+
   const updated = await nosqlGet(EV2, examId);
   logger.info('Exam V2 released', { examId, teacherId });
   return { id: examId, ...updated.data };
@@ -538,9 +574,18 @@ export async function getExamById(examId: string) {
   return exam;
 }
 
-export async function listExamsForClass(classId: string, _schoolId?: string): Promise<any[]> {
+export async function listExamsForClass(classId: string, _schoolId?: string, studentId?: string): Promise<any[]> {
   const supabase = getSupabaseAdmin();
-  const items = await nosqlQuery(EV2, { classId });
+  let items = await nosqlQuery(EV2, { classId });
+
+  if (studentId) {
+    items = items.filter((q: any) => {
+      if (!q.publishedTo || q.publishedTo === 'class') return true;
+      if (q.publishedTo === 'students') return (q.targetStudentIds || []).includes(studentId);
+      return true;
+    });
+  }
+
   for (const exam of items as any[]) {
     if (!exam.questionCount && exam.questionCountPerConcept && exam.textbookId && exam.chapterId) {
       try {
