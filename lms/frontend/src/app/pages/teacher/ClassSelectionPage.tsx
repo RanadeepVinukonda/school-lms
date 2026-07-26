@@ -184,8 +184,8 @@ export default function ClassSelectionPage() {
         action: 'teacher.class.assignment',
         targetId: user.id,
         targetType: 'user',
-        targetName: user.displayName,
-        summary: `${_('Teacher')} "${user.displayName}" ${_('assigned to classes:')} ${selectedNames}`,
+        targetName: user?.displayName ?? 'Unknown',
+        summary: `${_('Teacher')} "${user?.displayName ?? 'Unknown'}" ${_('assigned to classes:')} ${selectedNames}`,
         newValue: { classIds: classIdArray, subjectAssignments },
       });
 
@@ -193,7 +193,7 @@ export default function ClassSelectionPage() {
         userId: user.id,
         type: 'welcome',
         title: _('Welcome to Genesis LMS!'),
-        body: `${_('Hi')} ${user.displayName}! ${_("You're now assigned to")} ${selectedNames}. ${_('Start creating content for your students.')}`,
+        body: `${_('Hi')} ${user?.displayName ?? 'Unknown'}! ${_("You're now assigned to")} ${selectedNames}. ${_('Start creating content for your students.')}`,
         data: { role: 'teacher', classIds: classIdArray },
         priority: 'high',
         read: false,

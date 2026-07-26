@@ -64,49 +64,65 @@ export async function generateQuestionsForConcept(params: {
   count: number;
   difficulty?: 'easy' | 'medium' | 'hard' | 'mixed';
 }): Promise<GeneratedQuestion[]> {
-  const { conceptId, conceptName, types, count, difficulty } = params;
+  const { conceptId, conceptName, types, difficulty } = params;
+  const allQuestions: GeneratedQuestion[] = [];
+  let remaining = params.count;
+  const maxRetries = 2;
 
-  const prompt = buildPrompt(conceptName, types, count, difficulty);
+  for (let attempt = 0; attempt <= maxRetries && remaining > 0; attempt++) {
+    try {
+      const prompt = buildPrompt(conceptName, types, remaining, difficulty, attempt > 0);
+      const raw = await chatCompletion({
+        model: env.AI_MODEL,
+        messages: [
+          { role: 'system', content: 'You are an expert educational assessment generator for K-12. Return ONLY valid JSON.' },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.7,
+        max_tokens: 8192,
+      });
 
-  try {
-    const raw = await chatCompletion({
-      model: env.AI_MODEL,
-      messages: [
-        { role: 'system', content: 'You are an expert educational assessment generator for K-12. Return ONLY valid JSON.' },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.7,
-      max_tokens: 8192,
-    });
+      const cleaned = raw.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/gm, '').trim();
+      const braceStart = cleaned.indexOf('{');
+      const braceEnd = cleaned.lastIndexOf('}');
+      const jsonStr = braceStart !== -1 && braceEnd !== -1 ? cleaned.slice(braceStart, braceEnd + 1) : cleaned;
+      const parsed = JSON.parse(jsonStr);
+      const questions = (parsed.questions || parsed.results || (Array.isArray(parsed) ? parsed : [])).slice(0, remaining);
 
-    const cleaned = raw.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/gm, '').trim();
-    const braceStart = cleaned.indexOf('{');
-    const braceEnd = cleaned.lastIndexOf('}');
-    const jsonStr = braceStart !== -1 && braceEnd !== -1 ? cleaned.slice(braceStart, braceEnd + 1) : cleaned;
-    const parsed = JSON.parse(jsonStr);
-    const questions = (parsed.questions || parsed.results || (Array.isArray(parsed) ? parsed : [])).slice(0, count);
+      for (const q of questions) {
+        allQuestions.push({
+          id: randomUUID(),
+          question: q.question || q.text || '',
+          type: q.type || 'mcq',
+          difficulty: q.difficulty || difficulty || 'medium',
+          options: q.options || null,
+          answer: q.answer || q.correctAnswer || '',
+          explanation: q.explanation || '',
+          points: q.points || 2,
+          aiGenerated: true,
+          source: 'ai' as const,
+          bloomLevel: q.bloomLevel || q.bloom_level || 'Understand',
+          hots: q.hots === true || q.hots === 'true' || false,
+          topic: q.topic || '',
+          chapter: q.chapter || '',
+        });
+      }
 
-    return questions.map((q: any) => ({
-      id: randomUUID(),
-      question: q.question || q.text || '',
-      type: q.type || 'mcq',
-      difficulty: q.difficulty || difficulty || 'medium',
-      options: q.options || null,
-      answer: q.answer || q.correctAnswer || '',
-      explanation: q.explanation || '',
-      points: q.points || 2,
-      aiGenerated: true,
-      source: 'ai' as const,
-      bloomLevel: q.bloomLevel || q.bloom_level || 'Understand',
-      hots: q.hots === true || q.hots === 'true' || false,
-      topic: q.topic || '',
-      chapter: q.chapter || '',
-    }));
-  } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err);
-    logger.error('AI question generation failed', { conceptId, error: errMsg });
-    return [];
+      remaining -= questions.length;
+      if (remaining > 0 && attempt < maxRetries) {
+        logger.warn('AI returned fewer questions than requested, retrying', {
+          conceptId, attempt, got: questions.length, stillNeeded: remaining,
+        });
+      }
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      logger.error('AI question generation failed', { conceptId, attempt, error: errMsg });
+      if (attempt < maxRetries) continue;
+      break;
+    }
   }
+
+  return allQuestions;
 }
 
 export async function generateQuestionsFromTextbook(params: {
@@ -232,6 +248,7 @@ function buildPrompt(
   types: string[],
   count: number,
   difficulty?: string,
+  isRetry?: boolean,
 ): string {
   const typeDescriptions = resolveTypes(types)
     .map((t) => `- ${t}: ${QUESTION_TYPE_INSTRUCTIONS[t] || t}`)
@@ -278,5 +295,5 @@ Return ONLY valid JSON in this exact format:
   ]
 }
 
-Generate exactly ${count} questions. Return ONLY the JSON, no other text.`;
+Generate exactly ${count} questions. Return ONLY the JSON, no other text.${isRetry ? '\n\nIMPORTANT: The previous generation did NOT produce enough valid questions. You MUST generate EXACTLY the requested number this time. Do not skip any question. Every question must be complete and valid.' : ''}`;
 }

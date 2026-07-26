@@ -129,11 +129,11 @@ export default function StudentProfilePage() {
                 <Card className="border-border/60">
                   <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-5">
                     <Avatar className="h-20 w-20">
-                      <AvatarImage src={d.user.avatar} alt={d.user.displayName} />
-                      <AvatarFallback className="text-xl font-bold bg-primary-container text-primary">{getInitials(d.user.displayName)}</AvatarFallback>
+                      <AvatarImage src={d?.user?.avatar} alt={d?.user?.displayName ?? ''} />
+                      <AvatarFallback className="text-xl font-bold bg-primary-container text-primary">{getInitials(d?.user?.displayName ?? 'S')}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 text-center sm:text-left">
-                      <h2 className="text-title-md font-bold">{d.user.displayName}</h2>
+                      <h2 className="text-title-md font-bold">{d?.user?.displayName ?? 'Student'}</h2>
                       <p className="text-body-md text-muted-foreground">{_('Student')} &middot; {_('Roll No')}: {d.user.studentId ?? _('N/A')}</p>
                       <div className="flex items-center justify-center sm:justify-start gap-3 mt-2 flex-wrap">
                         <Badge variant="secondary" className="text-xs gap-1"><Icon name="mail" size={12} />{d.user.email}</Badge>

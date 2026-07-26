@@ -45,7 +45,7 @@ export default function ParentChildDetailPage() {
   return (
     <>
       <SEOHead
-        title={data ? `${(data as any).student.displayName} - Child Details` : 'Child Details'}
+        title={data ? `${(data as any)?.student?.displayName ?? 'Child'} - Child Details` : 'Child Details'}
         description="View your child's performance and progress"
       />
       <motion.div
@@ -94,10 +94,10 @@ export default function ParentChildDetailPage() {
                     <CardContent className="p-5">
                       <div className="flex items-center gap-5 flex-wrap">
                         <Avatar className="h-16 w-16">
-                          <AvatarFallback className="text-lg">{getInitials(d.student.displayName)}</AvatarFallback>
+                          <AvatarFallback className="text-lg">{getInitials(d?.student?.displayName ?? 'C')}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <h1 className="text-headline-sm">{d.student.displayName}</h1>
+                          <h1 className="text-headline-sm">{d?.student?.displayName ?? 'Child'}</h1>
                           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-muted-foreground">
                             {d.student.studentId && (
                               <span className="flex items-center gap-1">

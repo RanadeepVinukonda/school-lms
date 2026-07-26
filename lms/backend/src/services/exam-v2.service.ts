@@ -177,7 +177,6 @@ export async function createExam(data: {
             difficulty: 'mixed',
           });
           if (aiQuestions.length > 0) {
-            await saveAiQuestions(aiQuestions, c.id, data.textbookId, data.chapterId);
             aiGeneratedCount += aiQuestions.length;
             remaining -= aiQuestions.length;
             for (const q of aiQuestions) {
@@ -247,6 +246,23 @@ export async function createExam(data: {
   };
 
   await nosqlSet(EV2, examId, examData);
+
+  if (aiGeneratedCount > 0) {
+    for (const q of allSelectedQuestions) {
+      if ((q as any).aiGenerated) {
+        try {
+          await saveAiQuestions(
+            [q as any],
+            (q as any).conceptId as string,
+            data.textbookId,
+            data.chapterId,
+          );
+        } catch (saveErr) {
+          logger.warn('Failed to save AI-generated question to bank', { questionId: q.id, error: saveErr });
+        }
+      }
+    }
+  }
 
   logger.info('Exam V2 created', { examId, classId: data.classId, title: data.title });
 

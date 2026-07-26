@@ -160,10 +160,10 @@ export function useSearch(
         .map((a) => ({ id: a.id, title: a.title, subtitle: `Due ${a.dueDate ? new Date(a.dueDate).toLocaleDateString() : 'N/A'}`, icon: 'assignment', url: '', category: 'assignments' as Cat })),
       exams: ex.filter((e) => [e.title, e.description].some((f) => f?.toLowerCase().includes(q) ?? false))
         .map((e) => ({ id: e.id, title: e.title, subtitle: `${e.startDate ? new Date(e.startDate).toLocaleDateString() : ''} · ${e.duration}min`, icon: 'quiz', url: '', category: 'exams' as Cat })),
-      teachers: us.filter((t) => hasRole(t.role, 'teacher') && t.displayName.toLowerCase().includes(q))
-        .map((t) => ({ id: t.id, title: t.displayName, subtitle: 'Teacher', icon: 'person', url: '', category: 'teachers' as Cat })),
-      students: us.filter((s) => hasRole(s.role, 'student') && s.displayName.toLowerCase().includes(q))
-        .map((s) => ({ id: s.id, title: s.displayName, subtitle: s.studentId || 'Student', icon: 'person', url: '', category: 'students' as Cat })),
+      teachers: us.filter((t) => hasRole(t.role, 'teacher') && (t.displayName ?? '').toLowerCase().includes(q))
+        .map((t) => ({ id: t.id, title: t.displayName ?? 'Unknown', subtitle: 'Teacher', icon: 'person', url: '', category: 'teachers' as Cat })),
+      students: us.filter((s) => hasRole(s.role, 'student') && (s.displayName ?? '').toLowerCase().includes(q))
+        .map((s) => ({ id: s.id, title: s.displayName ?? 'Unknown', subtitle: s.studentId || 'Student', icon: 'person', url: '', category: 'students' as Cat })),
       lessons: ls.filter((l) => [l.title, l.content].some((f) => f?.toLowerCase().includes(q) ?? false))
         .map((l) => ({ id: l.id, title: l.title, subtitle: `Lesson · ${l.contentType}`, icon: 'book', url: '', category: 'lessons' as Cat })),
       textbooks: [],

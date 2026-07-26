@@ -40,7 +40,7 @@ export default function K2DashboardPage() {
       <div className="bg-white rounded-3xl p-6 shadow-lg border-2 border-yellow-200 flex items-center gap-4">
         <span className="text-6xl animate-bounce">🦁</span>
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">{_('Hi')}, {data?.profile.displayName || _('Little Learner')}!</h2>
+          <h2 className="text-2xl font-bold text-gray-800">{_('Hi')}, {data?.profile?.displayName || _('Little Learner')}!</h2>
           <p className="text-lg text-purple-600 font-medium">{greeting}</p>
         </div>
       </div>

@@ -80,8 +80,8 @@ export default function RollNumberEntryPage() {
         action: 'student.roll.assignment',
         targetId: user.id,
         targetType: 'user',
-        targetName: user.displayName,
-        summary: `Student "${user.displayName}" assigned roll number ${cleaned} in class ${classId}`,
+        targetName: user?.displayName ?? 'Unknown',
+        summary: `Student "${user?.displayName ?? 'Unknown'}" assigned roll number ${cleaned} in class ${classId}`,
         newValue: { studentId: cleaned, classId },
       });
 
@@ -89,7 +89,7 @@ export default function RollNumberEntryPage() {
         user_id: user.id,
         type: 'welcome',
         title: 'Welcome to Genesis LMS!',
-        body: `Hi ${user.displayName}! Your student account is now active. Explore your subjects, tasks, and exams to get started.`,
+        body: `Hi ${user?.displayName ?? 'Unknown'}! Your student account is now active. Explore your subjects, tasks, and exams to get started.`,
         data: { role: 'student' },
         priority: 'high',
         read: false,

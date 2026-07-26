@@ -116,8 +116,8 @@ export default function TeacherStudentDetailPage() {
   return (
     <>
       <SEOHead
-        title={data ? `${data.student.displayName} - ${_('Student Details')}` : _('Student Details')}
-        description={data ? `${_('Performance and grades for')} ${data.student.displayName}` : _('View student details')}
+        title={data ? `${data?.student?.displayName ?? 'Student'} - ${_('Student Details')}` : _('Student Details')}
+        description={data ? `${_('Performance and grades for')} ${data?.student?.displayName ?? 'Student'}` : _('View student details')}
       />
       <motion.div
         initial={{ opacity: 0 }}
@@ -165,10 +165,10 @@ export default function TeacherStudentDetailPage() {
                     <CardContent className="p-5">
                       <div className="flex items-center gap-5">
                         <Avatar className="h-16 w-16">
-                          <AvatarFallback className="text-lg">{getInitials(d.student.displayName)}</AvatarFallback>
+                          <AvatarFallback className="text-lg">{getInitials(d?.student?.displayName ?? 'S')}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <h1 className="text-headline-sm">{d.student.displayName}</h1>
+                          <h1 className="text-headline-sm">{d?.student?.displayName ?? 'Student'}</h1>
                           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Icon name="badge" size={15} />
