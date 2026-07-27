@@ -453,16 +453,17 @@ export default function AdminClassesPage() {
         return;
       }
 
-      await teacherClassSubjectService.assign({
+      const res = await teacherClassSubjectService.assign({
         teacherId,
         classId: assignClassId,
         subjectId: assignSubjectId,
       });
+      console.log("Assignment Response:", res);
+      console.log("Teacher Returned:", teacherId);
 
-      toast.success('Teacher assigned successfully');
+      await Promise.all([refetchTCAssignments(), refetchUsers()]);
       setShowAssign(false);
-      refetchTCAssignments();
-      refetchUsers();
+      toast.success('Teacher assigned successfully');
     } catch (err: any) {
       toast.error(err.message || 'Failed to assign teacher');
     } finally {
