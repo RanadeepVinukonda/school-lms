@@ -1,0 +1,14 @@
+export * as aiService from './ai.service';
+export * as authService from './auth.service';
+export * as attendanceService from './attendance.service';
+export * as auditService from './audit.service';
+export * as classService from './class.service';
+export * as feeService from './fee.service';
+export * as gamificationService from './gamification.service';
+export * as gradeService from './grade.service';
+export * as inventoryService from './inventory.service';
+export * as lessonService from './lesson.service';
+export * as notificationService from './notification.service';
+export * as quizV2Service from './quiz-v2.service';
+export * as textbookService from './textbook.service';
+export * as userService from './user.service';

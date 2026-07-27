@@ -98,7 +98,6 @@ export async function updateAcademicYear(id: string, data: Record<string, unknow
 }
 
 export async function deleteAcademicYear(id: string) {
-  const supabase = getSupabaseAdmin()!;
   const existing = await nosqlDoc('academicYears', id);
   if (!existing) throw new NotFoundError('Academic year not found');
   await deleteDocument('academicYears', id);

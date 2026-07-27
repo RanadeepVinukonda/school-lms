@@ -268,9 +268,47 @@ router.get('/deep', async (_req: Request, res: Response) => {
   } satisfies DeepHealthResponse);
 });
 
+/* ── Readiness probe (Kubernetes-style) ─────────────────── */
+
+/**
+ * @openapi
+ * /health/ready:
+ *   get:
+ *     tags: [Health]
+ *     summary: Readiness probe
+ *     description: Returns 200 if DB responds to SELECT 1, otherwise 503. For load balancers / k8s.
+ *     operationId: getHealthReady
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Ready
+ *       503:
+ *         description: Not ready
+ */
+router.get('/ready', async (_req: Request, res: Response) => {
+  const start = Date.now();
+  try {
+    const { getConnectionPool } = await import('../database/connection-manager');
+    const pool = getConnectionPool();
+    const client = await pool.connect();
+    try {
+      await client.query('SELECT 1');
+      res.status(200).json({ status: 'ready', latency_ms: Date.now() - start });
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    res.status(503).json({ status: 'not_ready', error: (err as Error).message, latency_ms: Date.now() - start });
+  }
+});
+
 /* ── Table existence check (diagnostic, no auth) ────────────── */
 
 router.get('/tables', async (_req: Request, res: Response) => {
+  if (process.env.NODE_ENV === 'production') {
+    res.status(404).json({ success: false, error: { message: 'Not found' } });
+    return;
+  }
   const { getSupabaseAdmin } = await import('../services/supabase');
   const supabase = getSupabaseAdmin();
   const tables = ['fee_structures', 'fee_payments', 'timetable', 'classes', 'subjects', 'courses', 'firestore_docs', 'users', 'schools'];

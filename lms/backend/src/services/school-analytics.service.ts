@@ -23,7 +23,7 @@ async function loadClassMeta(supabase: any): Promise<{ nameMap: Map<string, stri
   return { nameMap, gradeMap };
 }
 
-export async function getGradeComparison(schoolId?: string) {
+export async function getGradeComparison(_schoolId?: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return [];
 
   const [{ nameMap }] = await Promise.all([loadClassMeta(supabase)]);
@@ -140,7 +140,7 @@ export async function getTeacherComparison(schoolId?: string) {
   });
 }
 
-export async function getClassComparison(schoolId?: string) {
+export async function getClassComparison(_schoolId?: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return [];
 
   const [{ nameMap, gradeMap }] = await Promise.all([loadClassMeta(supabase)]);
@@ -200,7 +200,7 @@ export async function getSchoolOverview() {
   return getAdminDashboard();
 }
 
-export async function getPerformanceTrends(schoolId?: string) {
+export async function getPerformanceTrends(_schoolId?: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return [];
 
   const [quizAttemptRes, examAttemptRes, submitRes] = await Promise.all([

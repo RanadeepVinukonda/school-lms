@@ -27,6 +27,25 @@ export function requireSchoolAccess(req: Request, _res: Response, next: NextFunc
     next(new ForbiddenError('No school association'));
     return;
   }
+
+  // Admins/super_admins bypass school matching
+  const roles = req.user.role.split(',').map((r) => r.trim());
+  if (roles.includes('admin') || roles.includes('super_admin')) {
+    next();
+    return;
+  }
+
+  // Check resource schoolId matches user schoolId (if present on request)
+  const resourceSchoolId =
+    (req.params.schoolId as string) ||
+    (req.body?.schoolId as string) ||
+    (req.query?.schoolId as string);
+
+  if (resourceSchoolId && resourceSchoolId !== req.user.school_id) {
+    next(new ForbiddenError('Access denied: school mismatch'));
+    return;
+  }
+
   next();
 }
 

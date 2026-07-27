@@ -1,11 +1,16 @@
 import { Router } from 'express';
-import { z } from 'zod';
 import { authenticate } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/role.middleware';
 import { validate } from '../middlewares/validate.middleware';
 import { asyncHandler } from '../middlewares/asyncHandler';
 import { sendSuccess } from '../utils/response';
 import * as staffService from '../services/staff.service';
+import {
+  createStaffSchema,
+  updateStaffSchema,
+  markStaffAttendanceSchema,
+  staffAttendanceReportQuerySchema,
+} from '../validators/staff.validator';
 
 const router = Router();
 
@@ -20,14 +25,7 @@ router.get('/:id', authenticate, asyncHandler(async (req, res) => {
 }));
 
 router.post('/', authenticate, requireRole('admin', 'super_admin'),
-  validate(z.object({
-    name: z.string().min(1, 'Name is required'),
-    role: z.enum(['teacher', 'non-teaching']),
-    department: z.string().optional(),
-    joining_date: z.string().optional(),
-    contract_url: z.string().optional(),
-    user_id: z.string().uuid().optional(),
-  })),
+  validate(createStaffSchema),
   asyncHandler(async (req, res) => {
     const result = await staffService.createStaff(req.user!.school_id || '', req.body);
     sendSuccess(res, result);
@@ -35,14 +33,7 @@ router.post('/', authenticate, requireRole('admin', 'super_admin'),
 );
 
 router.put('/:id', authenticate, requireRole('admin', 'super_admin'),
-  validate(z.object({
-    name: z.string().optional(),
-    role: z.enum(['teacher', 'non-teaching']).optional(),
-    department: z.string().optional(),
-    joining_date: z.string().optional(),
-    contract_url: z.string().optional(),
-    user_id: z.string().uuid().optional(),
-  })),
+  validate(updateStaffSchema),
   asyncHandler(async (req, res) => {
     const result = await staffService.updateStaff(req.params.id, req.body);
     sendSuccess(res, result);
@@ -55,11 +46,7 @@ router.delete('/:id', authenticate, requireRole('admin', 'super_admin'), asyncHa
 }));
 
 router.post('/attendance', authenticate, requireRole('admin', 'super_admin'),
-  validate(z.object({
-    staff_id: z.string().uuid(),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD'),
-    status: z.enum(['present', 'absent', 'leave']),
-  })),
+  validate(markStaffAttendanceSchema),
   asyncHandler(async (req, res) => {
     const { staff_id, date, status } = req.body;
     const result = await staffService.markStaffAttendance(req.user!.school_id || '', staff_id, date, status);
@@ -68,10 +55,7 @@ router.post('/attendance', authenticate, requireRole('admin', 'super_admin'),
 );
 
 router.get('/attendance/report', authenticate,
-  validate(z.object({
-    dateStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    dateEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  }), 'query'),
+  validate(staffAttendanceReportQuerySchema, 'query'),
   asyncHandler(async (req, res) => {
     const { dateStart, dateEnd } = req.query as any;
     const result = await staffService.getStaffAttendanceReport(req.user!.school_id || '', dateStart, dateEnd);

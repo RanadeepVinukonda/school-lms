@@ -1,5 +1,4 @@
 import swaggerJsdoc from 'swagger-jsdoc';
-import path from 'path';
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -118,8 +117,7 @@ const options: swaggerJsdoc.Options = {
     ],
   },
   apis: [
-    path.join(__dirname, '../routes/health.ts'),
-    path.join(__dirname, '../routes/auth.routes.ts'),
+    './src/routes/*.ts',
   ],
 };
 

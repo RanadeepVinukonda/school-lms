@@ -1,4 +1,4 @@
-import { CorsOptions, CorsRequest } from 'cors';
+import { CorsOptions } from 'cors';
 import { env } from './env';
 import { logger } from '../utils/logger';
 
@@ -39,7 +39,7 @@ export const corsOptions: CorsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'x-csrf-token', 'X-Request-Id'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'x-csrf-token', 'X-Request-Id', 'idempotency-key'],
   exposedHeaders: ['Content-Disposition', 'X-Request-Id', 'X-Response-Time'],
   maxAge: 86400,
 };

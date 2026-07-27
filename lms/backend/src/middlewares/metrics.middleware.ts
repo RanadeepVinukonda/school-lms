@@ -27,6 +27,29 @@ register.registerMetric(httpRequestDuration);
 register.registerMetric(httpRequestTotal);
 register.registerMetric(httpErrorsTotal);
 
+// Business metrics
+export const quizCompletionsCounter = new promClient.Counter({
+  name: 'lms_quiz_completions_total',
+  help: 'Total quiz completions',
+  labelNames: ['passed'] as const,
+});
+
+export const aiRequestsCounter = new promClient.Counter({
+  name: 'lms_ai_requests_total',
+  help: 'Total AI requests',
+  labelNames: ['provider', 'success'] as const,
+});
+
+export const userActionsCounter = new promClient.Counter({
+  name: 'lms_user_actions_total',
+  help: 'Total user actions',
+  labelNames: ['action', 'role'] as const,
+});
+
+register.registerMetric(quizCompletionsCounter);
+register.registerMetric(aiRequestsCounter);
+register.registerMetric(userActionsCounter);
+
 export function metricsMiddleware(req: Request, res: Response, next: NextFunction) {
   const start = Date.now();
   res.on('finish', () => {

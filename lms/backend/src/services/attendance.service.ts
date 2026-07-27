@@ -1,9 +1,21 @@
-// @ts-nocheck — pre-existing type errors
 import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from './supabase';
 import { logger } from '../utils/logger';
 import { createBulkNotifications } from './notification.service';
 import { getCurrentAcademicYear } from './academic-year.service';
+
+interface AttendanceRecord {
+  id: string;
+  studentId: string;
+  classId: string;
+  date: string;
+  status: string;
+  markedBy: string | null;
+  note: string | null;
+  markedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 function countWeekdays(start: Date, end: Date): number {
   let count = 0;
@@ -30,7 +42,7 @@ export async function markAttendance(data: {
   markedBy: string;
   note?: string;
 }) {
-  const records: any[] = [];
+  const records: AttendanceRecord[] = [];
   const supabase = getSupabaseAdmin();
   const now = new Date().toISOString();
 
@@ -54,7 +66,7 @@ export async function markAttendance(data: {
       note: data.note || '', marked_at: now, created_at: now, updated_at: now,
     });
     if (insertError) throw insertError;
-    records.push({ studentId, classId: data.classId, date: data.date, status: data.status, markedBy: data.markedBy });
+    records.push({ studentId, classId: data.classId, date: data.date, status: data.status, markedBy: data.markedBy } as AttendanceRecord);
   }
 
   logger.info('Attendance marked', { classId: data.classId, date: data.date, count: records.length });
@@ -92,7 +104,7 @@ export async function markAttendance(data: {
 }
 
 /** Get attendance records for a class, optionally filtered by date. */
-export async function getClassAttendance(classId: string, date?: string) {
+export async function getClassAttendance(classId: string, date?: string): Promise<AttendanceRecord[]> {
   const supabase = getSupabaseAdmin();
   let query = supabase.from('attendance').select('*').eq('class_id', classId);
   if (date) query = query.eq('date', date);
@@ -102,7 +114,7 @@ export async function getClassAttendance(classId: string, date?: string) {
 }
 
 /** Get attendance records for a student, sorted by date descending. */
-export async function getStudentAttendance(studentId: string) {
+export async function getStudentAttendance(studentId: string): Promise<AttendanceRecord[]> {
   const supabase = getSupabaseAdmin();
   const { data: rows, error } = await supabase.from('attendance').select('*').eq('student_id', studentId);
   if (error) throw error;
@@ -216,23 +228,23 @@ export async function exportAttendanceCSV(classId: string): Promise<string> {
 
   const header = 'StudentId,StudentName,Date,Status,MarkedBy,Note,MarkedAt';
   const rows = records.map((r) =>
-    [r.studentId, (nameMap[r.studentId] || r.studentId), r.date, r.status, r.markedBy, (r.note || ''), r.markedAt].map(escapeCSV).join(','));
+    [r.studentId, (nameMap[r.studentId] || r.studentId), r.date, r.status, r.markedBy || '', (r.note || ''), r.markedAt || ''].map((v) => escapeCSV(String(v))).join(','));
   return [header, ...rows].join('\n');
 }
 
 // ── Helpers ──────────────────────────────────────────────
 
-function toAttendanceResponse(row: Record<string, unknown>): Record<string, unknown> {
+function toAttendanceResponse(row: Record<string, unknown>): AttendanceRecord {
   return {
-    id: row.id,
-    studentId: row.student_id,
-    classId: row.class_id,
-    date: row.date,
-    status: row.status,
-    markedBy: row.marked_by,
-    note: row.note,
-    markedAt: row.marked_at,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    id: row.id as string,
+    studentId: row.student_id as string,
+    classId: row.class_id as string,
+    date: row.date as string,
+    status: row.status as string,
+    markedBy: row.marked_by as string | null,
+    note: row.note as string | null,
+    markedAt: row.marked_at as string | null,
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
   };
 }

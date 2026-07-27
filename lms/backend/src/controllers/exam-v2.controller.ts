@@ -2,30 +2,35 @@ import { Request, Response } from 'express';
 import * as examV2Service from '../services/exam-v2.service';
 import { getQuestionTypeBreakdown } from '../services/concept-questions.service';
 import { sendSuccess, sendCreated } from '../utils/response';
+import { ValidationError } from '../utils/errors';
 
 export async function createExam(req: Request, res: Response) {
-  const result = await examV2Service.createExam({ ...req.body, teacherId: req.user!.uid, schoolId: req.user!.school_id });
+  if (!req.user) throw new ValidationError('Authentication required');
+  const result = await examV2Service.createExam({ ...req.body, teacherId: req.user.uid, schoolId: req.user.school_id });
   sendCreated(res, result, 'Exam created');
 }
 
 export async function releaseExam(req: Request, res: Response) {
-  const result = await examV2Service.releaseExam(req.params.examId, req.user!.uid);
+  if (!req.user) throw new ValidationError('Authentication required');
+  const result = await examV2Service.releaseExam(req.params.examId, req.user.uid);
   sendSuccess(res, result, 'Exam released');
 }
 
 export async function startAttempt(req: Request, res: Response) {
+  if (!req.user) throw new ValidationError('Authentication required');
   const result = await examV2Service.startExamAttempt(
     req.params.examId,
-    req.user!.uid,
+    req.user.uid,
     req.body.selectedModels || [],
   );
   sendSuccess(res, result, 'Exam attempt started');
 }
 
 export async function submitAttempt(req: Request, res: Response) {
+  if (!req.user) throw new ValidationError('Authentication required');
   const result = await examV2Service.submitExamAttempt(
     req.params.attemptId,
-    req.user!.uid,
+    req.user.uid,
     req.body,
   );
   sendSuccess(res, result, 'Exam submitted');
@@ -38,22 +43,26 @@ export async function releaseGrades(req: Request, res: Response) {
 }
 
 export async function getResults(req: Request, res: Response) {
-  const result = await examV2Service.getExamResults(req.params.examId, req.user!.uid);
+  if (!req.user) throw new ValidationError('Authentication required');
+  const result = await examV2Service.getExamResults(req.params.examId, req.user.uid);
   sendSuccess(res, result);
 }
 
 export async function listForClass(req: Request, res: Response) {
-  const studentId = req.user!.role === 'student' ? req.user!.uid : undefined;
-  const result = await examV2Service.listExamsForClass(req.params.classId, req.user!.school_id, studentId);
+  if (!req.user) throw new ValidationError('Authentication required');
+  const studentId = req.user.role === 'student' ? req.user.uid : undefined;
+  const result = await examV2Service.listExamsForClass(req.params.classId, req.user.school_id, studentId);
   sendSuccess(res, result);
 }
 
 export async function listForTeacher(req: Request, res: Response) {
-  const result = await examV2Service.listExamsForTeacher(req.user!.uid, req.user!.school_id);
+  if (!req.user) throw new ValidationError('Authentication required');
+  const result = await examV2Service.listExamsForTeacher(req.user.uid, req.user.school_id);
   sendSuccess(res, result);
 }
 
 export async function logProctoringEvent(req: Request, res: Response) {
+  if (!req.user) throw new ValidationError('Authentication required');
   let eventData = req.body;
   if (typeof eventData === 'string') {
     try {
@@ -64,7 +73,7 @@ export async function logProctoringEvent(req: Request, res: Response) {
   }
   const result = await examV2Service.logProctoringEvent(
     req.params.attemptId,
-    req.user!.uid,
+    req.user.uid,
     eventData
   );
   sendSuccess(res, result, 'Proctoring event logged');
@@ -101,9 +110,10 @@ export async function getQuestionBreakdown(req: Request, res: Response) {
 }
 
 export async function generatePaper(req: Request, res: Response) {
+  if (!req.user) throw new ValidationError('Authentication required');
   const result = await examV2Service.generateQuestionPaper({
     ...req.body,
-    teacherId: req.user!.uid,
+    teacherId: req.user.uid,
   });
   sendSuccess(res, result, 'Question paper generated');
 }

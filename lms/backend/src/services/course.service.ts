@@ -65,7 +65,6 @@ export async function updateCourse(courseId: string, data: Record<string, unknow
 
 /** Delete a course by id. */
 export async function deleteCourse(courseId: string) {
-  const supabase = getSupabaseAdmin();
   const existing = await nosqlDoc('courses', courseId);
   if (!existing) throw new NotFoundError('Course not found');
   await deleteDocument('courses', courseId);
@@ -148,7 +147,6 @@ export async function enrollStudent(courseId: string, studentId: string) {
 
 /** Unenroll a student from a course. */
 export async function unenrollStudent(courseId: string, studentId: string) {
-  const supabase = getSupabaseAdmin();
   const enrollmentId = `${courseId}_${studentId}`;
   const enrollment = await nosqlDoc('enrollment', enrollmentId);
   if (!enrollment) throw new NotFoundError('Enrollment not found');

@@ -4,11 +4,13 @@ import * as aiQuestionGeneratorService from '../services/ai-question-generator.s
 import { aiGrade, aiGradeBulk } from '../services/ai-grading.service';
 import { requireNoDependenciesOrThrow, getAssignmentImpact } from '../services/impact.service';
 import { logAudit, adminAuditEntry } from '../services/audit.service';
+import { ValidationError } from '../utils/errors';
 import type { ReqWithUser, QueryParams } from '../types/common';
 import { sendSuccess, sendCreated } from '../utils/response';
 
 export async function createAssignment(req: Request, res: Response) {
-  const result = await assignmentService.createAssignment({ ...req.body, schoolId: req.user!.school_id });
+  if (!req.user) throw new ValidationError('Authentication required');
+  const result = await assignmentService.createAssignment({ ...req.body, schoolId: req.user.school_id });
   logAudit(adminAuditEntry(req as ReqWithUser, 'assignment.create', result.id as string, 'assignment', result.title as string, {
     newValue: result,
     summary: `Created assignment "${result.title}"`,
@@ -41,28 +43,32 @@ export async function getAssignment(req: Request, res: Response) {
 }
 
 export async function listAllAssignments(req: Request, res: Response) {
+  if (!req.user) throw new ValidationError('Authentication required');
   const result = await assignmentService.listAllAssignments({
     ...(req.query as QueryParams),
-    schoolId: req.user!.school_id,
+    schoolId: req.user.school_id,
   });
   sendSuccess(res, result);
 }
 
 export async function listAssignmentsByCourse(req: Request, res: Response) {
+  if (!req.user) throw new ValidationError('Authentication required');
   const result = await assignmentService.listAssignmentsByCourse(req.params.courseId, {
     ...(req.query as QueryParams),
-    schoolId: req.user!.school_id,
+    schoolId: req.user.school_id,
   });
   sendSuccess(res, result);
 }
 
 export async function submitAssignment(req: Request, res: Response) {
-  const result = await assignmentService.submitAssignment(req.params.assignmentId, req.user!.uid, req.body);
+  if (!req.user) throw new ValidationError('Authentication required');
+  const result = await assignmentService.submitAssignment(req.params.assignmentId, req.user.uid, req.body);
   sendCreated(res, result, 'Assignment submitted');
 }
 
 export async function gradeSubmission(req: Request, res: Response) {
-  const result = await assignmentService.gradeSubmission(req.params.submissionId, req.user!.uid, req.body);
+  if (!req.user) throw new ValidationError('Authentication required');
+  const result = await assignmentService.gradeSubmission(req.params.submissionId, req.user.uid, req.body);
   logAudit(adminAuditEntry(req as ReqWithUser, 'grade.update', req.params.submissionId, 'submission', req.params.submissionId, {
     newValue: req.body,
     summary: `Graded submission ${req.params.submissionId}: ${req.body.score}/${req.body.totalPoints}`,

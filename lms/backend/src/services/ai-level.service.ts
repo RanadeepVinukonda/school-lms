@@ -30,7 +30,6 @@ export function filterQuestionsByLevel<T extends { difficulty?: Difficulty }>(
   level: StudentLevel,
   count: number,
 ): T[] {
-  const rank = level === 'beginner' ? 0 : level === 'intermediate' ? 1 : 2;
   const filtered = questions.filter((q) => {
     const qRank = q.difficulty ? DIFFICULTY_RANK[q.difficulty] : 0;
     if (level === 'advanced') return qRank >= 1;

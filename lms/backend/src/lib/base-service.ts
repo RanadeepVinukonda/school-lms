@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from '../services/supabase';
-import { NotFoundError, ValidationError } from '../utils/errors';
+import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
 export interface DbRecord {

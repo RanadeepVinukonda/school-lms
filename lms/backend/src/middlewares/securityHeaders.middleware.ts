@@ -7,12 +7,12 @@ const cspMiddleware = helmet.contentSecurityPolicy({
     defaultSrc: ["'self'"],
     scriptSrc: [
       "'self'",
-      (req, res) => `'nonce-${(res as Response).locals.nonce}'`,
+      (_req: any, res: any) => `'nonce-${(res as Response).locals.nonce}'`,
       "'strict-dynamic'",
     ],
     styleSrc: [
       "'self'",
-      (req, res) => `'nonce-${(res as Response).locals.nonce}'`,
+      (_req: any, res: any) => `'nonce-${(res as Response).locals.nonce}'`,
       'https://fonts.googleapis.com',
     ],
     fontSrc: ["'self'", 'https://fonts.gstatic.com'],

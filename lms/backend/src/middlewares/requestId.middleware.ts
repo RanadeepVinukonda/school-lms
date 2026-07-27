@@ -1,10 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { randomUUID } from 'crypto';
+import { setRequestId } from '../config/logger';
 
 export function requestId(req: Request, res: Response, next: NextFunction) {
   const id = (req.headers['x-request-id'] as string) || randomUUID();
   req.requestId = id;
   res.setHeader('x-request-id', id);
+  setRequestId(id);
   next();
 }
 

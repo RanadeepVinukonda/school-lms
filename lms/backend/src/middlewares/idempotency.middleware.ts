@@ -1,4 +1,3 @@
-// @ts-nocheck — pre-existing type errors
 import { Request, Response, NextFunction } from 'express';
 import { getSupabaseAdmin } from '../services/supabase';
 import { logger } from '../utils/logger';
@@ -36,17 +35,17 @@ export function idempotency() {
       }
 
       const originalJson = res.json.bind(res);
-      res.json = function (body: any) {
-        supabase.from('idempotency_keys').update({
+      (res as unknown as { json: typeof originalJson }).json = function (body: unknown) {
+        Promise.resolve(supabase.from('idempotency_keys').update({
           response_status: res.statusCode,
           response_body: body,
-        }).eq('id', key).then().catch(() => {});
-        return originalJson(body);
+        }).eq('id', key)).catch(() => {});
+        return originalJson(body as Parameters<typeof originalJson>[0]);
       };
 
       next();
     } catch (err) {
-      logger.error('Idempotency middleware error', err);
+      logger.error('Idempotency middleware error', err as Record<string, unknown>);
       next();
     }
   };

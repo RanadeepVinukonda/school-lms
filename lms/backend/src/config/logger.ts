@@ -3,6 +3,11 @@ import { env } from './env';
 
 const service = 'lms-backend';
 
+const moduleLogLevels: Record<string, string> = {};
+if (process.env.LOG_LEVEL_AUTH) moduleLogLevels['auth'] = process.env.LOG_LEVEL_AUTH;
+if (process.env.LOG_LEVEL_AI) moduleLogLevels['ai'] = process.env.LOG_LEVEL_AI;
+if (process.env.LOG_LEVEL_DB) moduleLogLevels['db'] = process.env.LOG_LEVEL_DB;
+
 const jsonFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
   winston.format.errors({ stack: true }),
@@ -27,7 +32,8 @@ const humanFormat = winston.format.combine(
 const transports: winston.transport[] = [
   new winston.transports.Console({
     format: env.NODE_ENV === 'production' ? jsonFormat : humanFormat,
-  }),
+    level: env.LOG_LEVEL,
+  } as winston.transports.ConsoleTransportOptions),
 ];
 
 if (!process.env.VERCEL && env.NODE_ENV !== 'test') {
@@ -69,7 +75,7 @@ export interface Logger {
 
 function createLogger(winstonLogger: winston.Logger, defaultMeta: Record<string, unknown> = {}): Logger {
   const log = (level: LogLevels, message: string, meta?: Record<string, unknown>) => {
-    winstonLogger.log(level, message, { ...defaultMeta, ...meta });
+    winstonLogger.log(level, message, { ...defaultMeta, ...(_requestId ? { requestId: _requestId } : {}), ...meta });
   };
   return {
     error: (message: string, meta?: Record<string, unknown>) => log('error', message, meta),
@@ -78,6 +84,12 @@ function createLogger(winstonLogger: winston.Logger, defaultMeta: Record<string,
     debug: (message: string, meta?: Record<string, unknown>) => log('debug', message, meta),
     child: (context: Record<string, unknown>) => createLogger(winstonLogger, { ...defaultMeta, ...context }),
   };
+}
+
+let _requestId = '';
+
+export function setRequestId(id: string): void {
+  _requestId = id;
 }
 
 export const logger = createLogger(baseLogger);

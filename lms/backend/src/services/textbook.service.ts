@@ -182,7 +182,7 @@ export async function getTextbookById(textbookId: string, user?: Express.Request
   if (error || !data) throw new NotFoundError('Textbook not found');
 
   if (user && user.role === 'student') {
-    if (!user.classIds?.includes(data.class_id)) {
+    if (!(user.classIds as string[])?.includes(data.class_id)) {
       throw new ForbiddenError('You do not have access to this textbook');
     }
   }

@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
-import { deleteDocument } from './document.service';
 import { logger } from '../utils/logger';
+import { nosqlGet, nosqlSet, nosqlUpdate, nosqlDelete } from './nosql.service';
 
 const QP = 'questionPapers';
 const QB = 'questionBank';
@@ -24,36 +24,6 @@ interface SectionInput {
   instructions?: string;
   questionIds: string[];
   pointsPerQuestion?: number;
-}
-
-async function nosqlGet(col: string, id: string) {
-  const supabase = getSupabaseAdmin()!;
-  const { data: row } = await supabase.from('firestore_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
-  return { exists: !!row, data: (row?.data as Record<string, unknown>) ?? null };
-}
-
-async function nosqlSet(col: string, id: string, data: Record<string, unknown>) {
-  const supabase = getSupabaseAdmin()!;
-  const { error } = await supabase.from('firestore_docs').upsert({
-    collection: col, doc_id: id, data,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'collection,doc_id' });
-  if (error) throw error;
-}
-
-async function nosqlUpdate(col: string, id: string, updates: Record<string, unknown>) {
-  const supabase = getSupabaseAdmin()!;
-  const { data: existing } = await supabase.from('firestore_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
-  const merged = { ...((existing?.data as Record<string, unknown>) || {}), ...updates };
-  const { error } = await supabase.from('firestore_docs').upsert({
-    collection: col, doc_id: id, data: merged,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'collection,doc_id' });
-  if (error) throw error;
-}
-
-async function nosqlDelete(col: string, id: string) {
-  await deleteDocument(col, id);
 }
 
 export async function createPaper(data: {

@@ -22,7 +22,7 @@ export function requireClassAccess(...roles: string[]) {
       return;
     }
 
-    const userClassIds = req.user.classIds || [];
+    const userClassIds = (req.user.classIds || []) as string[];
     if (userClassIds.includes(classId)) {
       next();
       return;
@@ -57,8 +57,8 @@ export function requireClassAccessByParam(paramName: string, ...roles: string[])
       return;
     }
 
-    const userClassIds = req.user.classIds || [];
-    if (userClassIds.includes(classId)) {
+    const userClassIds2 = (req.user.classIds || []) as string[];
+    if (userClassIds2.includes(classId)) {
       next();
       return;
     }

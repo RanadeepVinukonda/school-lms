@@ -4,6 +4,7 @@ import { requireNoDependenciesOrThrow, getUserImpact } from '../services/impact.
 import { logAudit, adminAuditEntry } from '../services/audit.service';
 import type { AuditAction } from '../services/audit.service';
 import { sendSuccess, sendCreated, sendPaginated, buildPaginationMeta } from '../utils/response';
+import { requireUser } from '../types/common';
 
 type ReqWithUser = Request & { user?: { uid: string; role?: string; displayName?: string } };
 
@@ -49,9 +50,10 @@ function mapUserRow(row: any): any {
 }
 
 export async function listUsers(req: Request, res: Response) {
+  const user = requireUser(req);
   const { items, total, page, limit } = await userService.listUsers({
     ...(req.query as unknown as ListUsersQuery),
-    schoolId: req.user!.school_id,
+    schoolId: user.school_id,
   });
   const pagination = buildPaginationMeta(total, page, limit);
   sendPaginated(res, items.map(mapUserRow), pagination);
@@ -63,7 +65,8 @@ export async function getUser(req: Request, res: Response) {
 }
 
 export async function createUser(req: Request, res: Response) {
-  const rawResult = await userService.createUser({ ...req.body, schoolId: req.user!.school_id });
+  const authUser = requireUser(req);
+  const rawResult = await userService.createUser({ ...req.body, schoolId: authUser.school_id });
   const result = mapUserRow(rawResult);
   if (rawResult.generatedPassword) {
     result.generatedPassword = rawResult.generatedPassword;
@@ -126,17 +129,20 @@ export async function assignRole(req: Request, res: Response) {
 }
 
 export async function updateProfile(req: Request, res: Response) {
-  const result = await userService.updateProfile(req.user!.uid, req.body);
+  const user = requireUser(req);
+  const result = await userService.updateProfile(user.uid, req.body);
   sendSuccess(res, mapUserRow(result), 'Profile updated');
 }
 
 export async function pingActive(req: Request, res: Response) {
-  const result = await userService.pingActive(req.user!.uid);
+  const user = requireUser(req);
+  const result = await userService.pingActive(user.uid);
   sendSuccess(res, result, 'Active ping recorded');
 }
 
 export async function getStrengthsWeaknesses(req: Request, res: Response) {
-  const uid = req.params.userId || req.user!.uid;
+  const user = requireUser(req);
+  const uid = req.params.userId || user.uid;
   const result = await userService.getStrengthsWeaknesses(uid);
   sendSuccess(res, result);
 }

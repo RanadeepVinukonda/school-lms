@@ -45,14 +45,12 @@ const releaseGradesSchema = z.object({
 });
 
 router.post('/', authenticate, requireRole('teacher', 'admin'), (req, _res, next) => {
-  console.log('EXAM_BODY', JSON.stringify(req.body).substring(0, 1000));
   try {
     req.body = createExamSchema.parse(req.body);
     next();
   } catch (e: unknown) {
     if (e instanceof z.ZodError) {
-      console.log('ZOD_ERR', JSON.stringify(e.errors));
-      return _res.status(400).json({ success: false, error: { message: 'ZOD: ' + e.errors.map((x: any) => x.path.join('.') + ' ' + x.message).join(', '), code: 'VALIDATION', details: e.errors.map((x: any) => ({ field: x.path.join('.'), message: x.message })) } });
+      return _res.status(400).json({ success: false, error: { message: 'Validation failed: ' + e.errors.map((x: any) => x.path.join('.') + ' ' + x.message).join(', '), code: 'VALIDATION', details: e.errors.map((x: any) => ({ field: x.path.join('.'), message: x.message })) } });
     }
     return next(e);
   }

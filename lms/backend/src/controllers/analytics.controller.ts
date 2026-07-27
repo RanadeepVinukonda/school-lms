@@ -1,18 +1,21 @@
 import { Request, Response } from 'express';
 import * as analyticsService from '../services/analytics.service';
 import { sendSuccess } from '../utils/response';
+import { ValidationError } from '../utils/errors';
 
 export async function getStudentDashboard(req: Request, res: Response) {
-  const result = await analyticsService.getStudentDashboard(req.user!.uid);
+  if (!req.user) throw new ValidationError('Authentication required');
+  const result = await analyticsService.getStudentDashboard(req.user.uid);
   sendSuccess(res, result);
 }
 
 export async function getTeacherDashboard(req: Request, res: Response) {
-  const result = await analyticsService.getTeacherDashboard(req.user!.uid);
+  if (!req.user) throw new ValidationError('Authentication required');
+  const result = await analyticsService.getTeacherDashboard(req.user.uid);
   sendSuccess(res, result);
 }
 
-export async function getAdminDashboard(req: Request, res: Response) {
+export async function getAdminDashboard(_req: Request, res: Response) {
   const result = await analyticsService.getAdminDashboard();
   sendSuccess(res, result);
 }

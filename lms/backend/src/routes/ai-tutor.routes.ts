@@ -4,7 +4,6 @@ import { authenticate } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/validate.middleware';
 import { asyncHandler } from '../middlewares/asyncHandler';
 import { sendSuccess } from '../utils/response';
-import { logger } from '../utils/logger';
 import { saveMessage, getSession } from '../services/ai-tutor.service';
 import { getSupabaseAdmin } from '../services/supabase';
 import { chatCompletion } from '../services/ai.service';

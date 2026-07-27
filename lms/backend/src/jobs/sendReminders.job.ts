@@ -1,5 +1,3 @@
-// @ts-nocheck — pre-existing type errors
-import { randomUUID } from 'crypto';
 import { getSupabaseAdmin } from '../services/supabase';
 import { logger } from '../utils/logger';
 
@@ -85,7 +83,7 @@ export async function checkUpcomingDeadlines() {
 
     if (exams && exams.length > 0) {
       for (const exam of exams) {
-        const classIds: string[] = exam.scheduled_classes || (exam as any).scheduledClasses || [];
+        const classIds: string[] = exam.scheduled_classes || (exam as Record<string, unknown>).scheduledClasses as string[] || [];
 
         for (const classId of classIds) {
           const { data: students } = await supabase
@@ -117,6 +115,6 @@ export async function checkUpcomingDeadlines() {
       logger.info(`Sent ${exams.length} exam reminders`);
     }
   } catch (error) {
-    logger.error('Failed to send reminders', error);
+    logger.error('Failed to send reminders', error as Record<string, unknown>);
   }
 }

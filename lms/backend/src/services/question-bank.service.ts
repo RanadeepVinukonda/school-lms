@@ -2,8 +2,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
-import { deleteDocument } from './document.service';
 import { TransactionManager } from '../database/transaction-manager';
+import { nosqlGet, nosqlUpdate, nosqlDelete } from './nosql.service';
 
 interface CreateQuestionData {
   text: string;
@@ -92,27 +92,6 @@ export async function bulkCreateQuestions(questions: CreateQuestionData[], creat
   return results;
 }
 
-async function nosqlGet(col: string, id: string) {
-  const supabase = getSupabaseAdmin()!;
-  const { data: row } = await supabase.from('firestore_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
-  return { exists: !!row, data: (row?.data as Record<string, unknown>) ?? null };
-}
-
-async function nosqlUpdate(col: string, id: string, updates: Record<string, unknown>) {
-  const supabase = getSupabaseAdmin()!;
-  const { data: existing } = await supabase.from('firestore_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
-  const merged = { ...((existing?.data as Record<string, unknown>) || {}), ...updates };
-  const { error } = await supabase.from('firestore_docs').upsert({
-    collection: col, doc_id: id, data: merged,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'collection,doc_id' });
-  if (error) throw error;
-}
-
-async function nosqlDelete(col: string, id: string) {
-  await deleteDocument(col, id);
-}
-
 export async function updateQuestion(id: string, userId: string, data: Partial<CreateQuestionData>) {
   const { exists, data: docData } = await nosqlGet(QB, id);
   if (!exists || !docData) throw new NotFoundError('Question not found');
@@ -187,7 +166,7 @@ export async function listQuestions(params: {
   return { items: paginated, total: results.length, page, limit };
 }
 
-export async function importFromConcept(textbookId: string, chapterId: string, conceptId: string, userId: string) {
+export async function importFromConcept(_textbookId: string, _chapterId: string, conceptId: string, userId: string) {
   const existingResult = await listQuestions({ createdBy: userId });
   const existingTexts = new Set(existingResult.items.map((q: any) => q.text));
 

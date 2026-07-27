@@ -10,18 +10,6 @@ import { asyncHandler } from '../middlewares/asyncHandler';
 
 const router = Router();
 
-const resetWithTokenSchema = z.object({
-  token: z.string().min(1, 'Token required'),
-  newPassword: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .max(128)
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-      'Password must contain uppercase, lowercase, number, and special character'
-    ),
-});
-
 const refreshTokenSchema = z.object({
   refresh_token: z.string().min(1, 'Refresh token required'),
 }).or(z.object({

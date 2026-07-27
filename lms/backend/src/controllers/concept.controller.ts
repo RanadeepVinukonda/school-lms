@@ -1,13 +1,15 @@
 import { Request, Response } from 'express';
 import { getSupabaseClient } from '../services/supabase';
 import { sendSuccess } from '../utils/response';
+import { ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
 /** Fetch whiteboard strokes for a concept, scoped to the requesting teacher. */
 export async function getWhiteboard(req: Request, res: Response) {
+  if (!req.user) throw new ValidationError('Authentication required');
   const supabase = getSupabaseClient();
   const { conceptId } = req.params;
-  const teacherId = req.user!.uid;
+  const teacherId = req.user.uid;
   const docId = `${teacherId}_${conceptId}`;
 
   const { data } = await supabase.from('firestore_docs').select('data').eq('collection', 'whiteboards').eq('doc_id', docId).maybeSingle();
@@ -22,9 +24,10 @@ export async function getWhiteboard(req: Request, res: Response) {
 
 /** Save (overwrite) whiteboard strokes for a concept, scoped to the requesting teacher. */
 export async function saveWhiteboard(req: Request, res: Response) {
+  if (!req.user) throw new ValidationError('Authentication required');
   const supabase = getSupabaseClient();
   const { conceptId } = req.params;
-  const teacherId = req.user!.uid;
+  const teacherId = req.user.uid;
   const { strokes } = req.body;
 
   if (!Array.isArray(strokes)) {

@@ -7,7 +7,7 @@ export async function getDashboard(req: Request, res: Response) {
   sendSuccess(res, result);
 }
 
-export async function getLessons(req: Request, res: Response) {
+export async function getLessons(_req: Request, res: Response) {
   const result = await prePrimaryService.getLessons();
   sendSuccess(res, result);
 }
@@ -17,7 +17,7 @@ export async function getFlashcards(req: Request, res: Response) {
   sendSuccess(res, result);
 }
 
-export async function getStories(req: Request, res: Response) {
+export async function getStories(_req: Request, res: Response) {
   const result = await prePrimaryService.getStories();
   sendSuccess(res, result);
 }

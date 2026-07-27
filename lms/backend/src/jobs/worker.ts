@@ -178,7 +178,7 @@ async function runConceptPipeline(jobData: { textbookId: string; chapterId: stri
   if (subjectId) {
     try {
       const { data: subj } = await supabase.from('subjects').select('name').eq('id', subjectId).maybeSingle();
-      subjectName = (subj as any)?.name || 'Education';
+      subjectName = (subj as Record<string, unknown> | null)?.name as string || 'Education';
     } catch { /* fallback to default */ }
   }
 

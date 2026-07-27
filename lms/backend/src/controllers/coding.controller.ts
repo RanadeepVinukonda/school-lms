@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import * as codingService from '../services/coding.service';
 import { sendSuccess, sendCreated } from '../utils/response';
+import { ValidationError } from '../utils/errors';
 import type { ReqWithUser } from '../types/common';
 
 export async function getAllProjects(_req: Request, res: Response) {
@@ -14,18 +15,21 @@ export async function getProjectById(req: Request, res: Response) {
 }
 
 export async function createProject(req: Request, res: Response) {
+  if (!(req as ReqWithUser).user) throw new ValidationError('Authentication required');
   const userId = (req as ReqWithUser).user!.uid;
   const project = await codingService.createProject({ ...req.body, ownerId: userId });
   sendCreated(res, project, 'Coding project created');
 }
 
 export async function updateProject(req: Request, res: Response) {
+  if (!(req as ReqWithUser).user) throw new ValidationError('Authentication required');
   const userId = (req as ReqWithUser).user!.uid;
   const project = await codingService.updateProject(req.params.id, req.body, userId);
   sendSuccess(res, project, 'Coding project updated');
 }
 
 export async function deleteProject(req: Request, res: Response) {
+  if (!(req as ReqWithUser).user) throw new ValidationError('Authentication required');
   const userId = (req as ReqWithUser).user!.uid;
   await codingService.deleteProject(req.params.id, userId);
   sendSuccess(res, null, 'Coding project deleted');
@@ -53,6 +57,7 @@ export async function getStreamProjectById(req: Request, res: Response) {
 }
 
 export async function updateStreamProject(req: Request, res: Response) {
+  if (!(req as ReqWithUser).user) throw new ValidationError('Authentication required');
   const userId = (req as ReqWithUser).user!.uid;
   const project = await codingService.updateStreamProject(req.params.id, req.body, userId);
   sendSuccess(res, project, 'STREAM project updated');

@@ -47,7 +47,7 @@ const envSchema = z.object({
   AI_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
 
   COOKIE_DOMAIN: z.string().optional(),
-  COOKIE_SECURE: z.coerce.boolean().default(false),
+  COOKIE_SECURE: z.coerce.boolean().default(process.env.NODE_ENV === 'production'),
 
   API_DOCS_ENABLED: z.coerce.boolean().default(process.env.NODE_ENV !== 'production'),
   API_DOCS_USERNAME: z.string().optional(),

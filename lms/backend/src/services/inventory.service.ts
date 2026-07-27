@@ -1,4 +1,6 @@
 import { getSupabaseAdmin } from './supabase';
+import { getConnectionPool } from '../database/connection-manager';
+import { withAdvisoryLock } from '../utils/advisory-lock';
 
 // SUPPLIERS
 export async function createSupplier(schoolId: string, data: { name: string; contact_person?: string; phone?: string; email?: string; address?: string; catalog_items?: string[] }) {
@@ -82,10 +84,24 @@ export async function getItemById(id: string) {
   return data;
 }
 
-export async function updateItem(id: string, data: { name?: string; category_id?: string; quantity?: number; unit?: string; reorder_level?: number; supplier_id?: string }) {
+export async function updateItem(id: string, data: { name?: string; category_id?: string; quantity?: number; unit?: string; reorder_level?: number; supplier_id?: string; version?: number }) {
   const supabase = getSupabaseAdmin(); if (!supabase) return null;
-  const { data: result, error } = await supabase.from('inventory_items').update(data).eq('id', id).select().single();
+  const version = data.version;
+  if (version === undefined) throw new Error('Version is required for concurrent updates');
+
+  const { data: current } = await supabase.from('inventory_items').select('version').eq('id', id).maybeSingle();
+  if (!current) throw new Error('Inventory item not found');
+  if (current.version !== version) throw new Error('Concurrent modification detected. Please retry.');
+
+  const { data: result, error } = await supabase
+    .from('inventory_items')
+    .update({ ...data, version: version + 1 })
+    .eq('id', id)
+    .eq('version', version)
+    .select()
+    .single();
   if (error) throw new Error(`Failed to update item: ${error.message}`);
+  if (!result) throw new Error('Concurrent modification detected. Please retry.');
   return result;
 }
 
@@ -97,27 +113,42 @@ export async function deleteItem(id: string) {
 
 // USAGE LOGS
 export async function logUsage(schoolId: string, actionBy: string, data: { item_id: string; quantity_changed: number; reason?: string }) {
-  const supabase = getSupabaseAdmin(); if (!supabase) return null;
-  
-  // 1. Fetch item to adjust quantity
-  const { data: item, error: itemErr } = await supabase.from('inventory_items').select('quantity').eq('id', data.item_id).single();
-  if (itemErr) throw new Error('Failed to fetch inventory item: ' + itemErr.message);
-  const currentQty = item?.quantity || 0;
-  const newQty = currentQty + data.quantity_changed;
-  if (newQty < 0) return null; // ponytail: reject negative quantity
-  
-  // 2. Update item quantity
-  const { error: updateError } = await supabase.from('inventory_items').update({ quantity: newQty }).eq('id', data.item_id);
-  if (updateError) throw new Error(`Failed to update item quantity: ${updateError.message}`);
-  
-  // 3. Log the action
-  const { data: result, error: logError } = await supabase.from('inventory_usage_log').insert({
-    school_id: schoolId,
-    action_by: actionBy,
-    ...data
-  }).select().single();
-  if (logError) throw new Error(`Failed to log usage: ${logError.message}`);
-  return result;
+  const pool = getConnectionPool();
+  const client = await pool.connect();
+  return withAdvisoryLock(`inventory:${data.item_id}`, async () => {
+    try {
+      await client.query('BEGIN');
+
+      const updateResult = await client.query(
+        `WITH current_item AS (
+           SELECT version, quantity FROM inventory_items WHERE id = $1 AND deleted_at IS NULL
+         )
+         UPDATE inventory_items
+         SET quantity = current_item.quantity - $2, version = current_item.version + 1
+         FROM current_item
+         WHERE inventory_items.id = $1
+           AND inventory_items.version = current_item.version
+           AND current_item.quantity >= $2`,
+        [data.item_id, data.quantity_changed]
+      );
+      if ((updateResult as unknown as { rowCount: number | null }).rowCount === 0) {
+        await client.query('ROLLBACK');
+        throw new Error('Item not found, concurrent modification, or insufficient stock.');
+      }
+
+      const { rows } = await client.query(
+        `INSERT INTO inventory_usage_log (school_id, action_by, item_id, quantity_changed, reason)
+         VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+        [schoolId, actionBy, data.item_id, data.quantity_changed, data.reason || null]
+      );
+
+      await client.query('COMMIT');
+      return rows[0];
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw err;
+    }
+  }, client);
 }
 
 export async function getUsageLogs(schoolId: string, itemId?: string) {

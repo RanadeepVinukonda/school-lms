@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import * as virtualLabsService from '../services/virtual-labs.service';
 import { sendSuccess, sendCreated } from '../utils/response';
-import type { ReqWithUser } from '../types/common';
+import { ValidationError } from '../utils/errors';
 
 export async function getAllLabs(_req: Request, res: Response) {
   const labs = await virtualLabsService.getAllLabs();
@@ -29,7 +29,8 @@ export async function deleteLab(req: Request, res: Response) {
 }
 
 export async function markLabCompleted(req: Request, res: Response) {
-  const studentId = (req as ReqWithUser).user!.uid;
+  if (!req.user) throw new ValidationError('Authentication required');
+  const studentId = req.user.uid;
   const result = await virtualLabsService.markLabCompleted(studentId, req.params.id);
   sendCreated(res, result, 'Lab marked as completed');
 }

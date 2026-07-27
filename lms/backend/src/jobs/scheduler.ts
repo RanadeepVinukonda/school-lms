@@ -1,9 +1,9 @@
-// @ts-nocheck — pre-existing type errors
-import { randomUUID } from 'crypto';
 import { logger } from '../utils/logger';
+import { randomUUID } from 'crypto';
 import { checkUpcomingDeadlines } from './sendReminders.job';
 import { cleanupExpiredData, cleanupSoftDeletedRecords } from './cleanupExpired.job';
 import { generateWeeklyReport, generateMonthlyReport } from './generateReports.job';
+import { cleanupIdempotencyKeys } from './cleanup-idempotency.job';
 import { getSupabaseAdmin } from '../services/supabase';
 import { TransactionManager } from '../database/transaction-manager';
 
@@ -95,12 +95,12 @@ export async function checkOverdueTests(): Promise<void> {
       }
     }
   } catch (error) {
-    logger.error('Overdue test check failed', error);
+    logger.error('Overdue test check failed', error as Record<string, unknown>);
   }
 }
 
 export async function startScheduler(): Promise<void> {
-  logger.info('Starting job scheduler (setInterval-based, 6 timers)...');
+  logger.info('Starting job scheduler (setInterval-based, 7 timers)...');
 
   timers.set('sendReminders', setInterval(() => {
     checkUpcomingDeadlines().catch(err => logger.error('sendReminders failed', err));
@@ -136,7 +136,11 @@ export async function startScheduler(): Promise<void> {
     cleanupSoftDeletedRecords().catch(err => logger.error('softDeleteCleanup failed', err));
   }, 6 * 60 * 60 * 1000));
 
-  logger.info('Scheduler started with 6 setInterval timers');
+  timers.set('idempotencyCleanup', setInterval(() => {
+    cleanupIdempotencyKeys().catch(err => logger.error('idempotencyCleanup failed', err));
+  }, 6 * 60 * 60 * 1000));
+
+  logger.info('Scheduler started with 7 setInterval timers');
 }
 
 export async function stopScheduler(): Promise<void> {

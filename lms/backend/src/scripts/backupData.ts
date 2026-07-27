@@ -77,7 +77,7 @@ async function backup() {
     // ── 4. Firestore via Firebase Admin (if available) ──
     console.log('\n4. Backing up Firebase Auth + Firestore...');
     try {
-      const { getAdminAuth, getAdminFirestore, admin } = require('../database/admin');
+      const { getAdminAuth, getAdminFirestore } = require('../database/admin');
       const fbAuth = getAdminAuth();
 
       // Firebase Auth users

@@ -1,10 +1,12 @@
 import { Request, Response } from 'express';
 import * as reportFeedbackService from '../services/report-feedback.service';
 import { sendSuccess } from '../utils/response';
+import { ValidationError } from '../utils/errors';
 
 export async function createReport(req: Request, res: Response) {
+  if (!req.user) throw new ValidationError('Authentication required');
   const result = await reportFeedbackService.createReport({
-    userId: req.user!.uid,
+    userId: req.user.uid,
     userName: req.body.userName,
     userRole: req.body.userRole,
     className: req.body.className,
@@ -17,7 +19,7 @@ export async function createReport(req: Request, res: Response) {
 }
 
 export async function getReports(req: Request, res: Response) {
-  const result = await reportFeedbackService.getReports(req.query as any);
+  const result = await reportFeedbackService.getReports(req.query as Record<string, unknown>);
   sendSuccess(res, result);
 }
 
@@ -31,7 +33,7 @@ export async function updateReportStatus(req: Request, res: Response) {
   sendSuccess(res, null, 'Report updated');
 }
 
-export async function getReportStats(req: Request, res: Response) {
+export async function getReportStats(_req: Request, res: Response) {
   const result = await reportFeedbackService.getReportStats();
   sendSuccess(res, result);
 }

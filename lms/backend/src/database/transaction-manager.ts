@@ -26,6 +26,24 @@ export interface Transaction {
   db(): SqlQuery;
 }
 
+// ── Table whitelist ──
+
+const ALLOWED_TABLES = new Set([
+  'users', 'schools', 'subscriptions', 'textbooks', 'chapters', 'concepts',
+  'concept_notes', 'concept_videos', 'concept_questions', 'concept_resources',
+  'processing_jobs', 'raw_pages', 'classes', 'attendance', 'fee_structures',
+  'fee_payments', 'concept_mastery', 'lessons', 'assignments', 'grades',
+  'enrollments', 'leave_requests', 'suppliers', 'inventory_categories',
+  'inventory_items', 'inventory_usage_log', 'device_tokens', 'ai_usage',
+  'firestore_docs', 'audit_logs', 'revoked_tokens',
+]);
+
+function validateTableName(name: string): void {
+  if (!ALLOWED_TABLES.has(name)) {
+    throw new Error(`Invalid table name: "${name}"`);
+  }
+}
+
 // ── Helpers ──
 
 function serialize(v: unknown): unknown {
@@ -38,8 +56,11 @@ function serialize(v: unknown): unknown {
 
 class PgTransaction implements Transaction {
   private _ops: Array<() => Promise<void>> = [];
+  private _isolationLevel?: 'READ COMMITTED' | 'REPEATABLE READ' | 'SERIALIZABLE';
 
-  constructor(private client: PoolClient) {}
+  constructor(private client: PoolClient, isolationLevel?: 'READ COMMITTED' | 'REPEATABLE READ' | 'SERIALIZABLE') {
+    this._isolationLevel = isolationLevel;
+  }
 
   db(): SqlQuery {
     return {
@@ -49,6 +70,7 @@ class PgTransaction implements Transaction {
   }
 
   async get(collection: string, docId: string): Promise<unknown> {
+    validateTableName(collection);
     const { rows } = await this.client.query(
       `SELECT * FROM ${collection} WHERE id = $1 LIMIT 1`,
       [docId],
@@ -57,6 +79,7 @@ class PgTransaction implements Transaction {
   }
 
   async set(collection: string, docId: string, data: Record<string, unknown>): Promise<void> {
+    validateTableName(collection);
     this._ops.push(async () => {
       const entries = Object.entries(data);
       const keys = ['id', ...entries.map(([k]) => k)];
@@ -71,6 +94,7 @@ class PgTransaction implements Transaction {
   }
 
   async update(collection: string, docId: string, data: Record<string, unknown>): Promise<void> {
+    validateTableName(collection);
     this._ops.push(async () => {
       const entries = Object.entries(data);
       if (entries.length === 0) return;
@@ -84,6 +108,7 @@ class PgTransaction implements Transaction {
   }
 
   async delete(collection: string, docId: string): Promise<void> {
+    validateTableName(collection);
     this._ops.push(async () => {
       await this.client.query(`DELETE FROM ${collection} WHERE id = $1`, [docId]);
     });
@@ -91,6 +116,9 @@ class PgTransaction implements Transaction {
 
   async execute(): Promise<void> {
     await this.client.query('BEGIN');
+    if (this._isolationLevel) {
+      await this.client.query(`SET TRANSACTION ISOLATION LEVEL ${this._isolationLevel}`);
+    }
     try {
       for (const op of this._ops) {
         await op();
@@ -121,11 +149,12 @@ export class TransactionManager {
    */
   async runTransaction<T>(
     updateFunction: (transaction: Transaction) => Promise<T>,
+    options?: { isolationLevel?: 'READ COMMITTED' | 'REPEATABLE READ' | 'SERIALIZABLE' }
   ): Promise<T> {
     const pool = getConnectionPool();
     const client = await pool.connect();
     try {
-      const pgTx = new PgTransaction(client);
+      const pgTx = new PgTransaction(client, options?.isolationLevel);
       const r = await updateFunction(pgTx);
       await pgTx.execute();
       return r;

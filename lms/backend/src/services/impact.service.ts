@@ -1,6 +1,5 @@
 import { getSupabaseAdmin } from './supabase';
 import { ConflictError } from '../utils/errors';
-import { logger } from '../utils/logger';
 
 export interface DependencyCategory {
   label: string;
@@ -52,12 +51,6 @@ async function countWhere(collectionName: string, field: string, value: string):
     subjects: 'subjects', classes: 'classes', users: 'users',
   };
   if (TYPED[collectionName]) return countTyped(TYPED[collectionName], field, value);
-  return countNosql(collectionName, field, value);
-}
-
-async function countArrayWhere(collectionName: string, field: string, value: string): Promise<number> {
-  const TYPED: Record<string, string> = { users: 'users', classes: 'classes' };
-  if (TYPED[collectionName]) return countArrayTyped(TYPED[collectionName], field, value);
   return countNosql(collectionName, field, value);
 }
 
@@ -268,7 +261,6 @@ export async function getUserImpact(userId: string): Promise<ImpactReport> {
   const { data: userDoc, error: userErr } = await supabase().from('users').select('*').eq('id', userId).maybeSingle();
   if (userErr) throw new Error('Failed to fetch user: ' + userErr.message);
   const userName = userDoc?.display_name || userId;
-  const userData = userDoc?.data as Record<string, unknown> || {};
 
   const categories: DependencyCategory[] = [];
   let total = 0;

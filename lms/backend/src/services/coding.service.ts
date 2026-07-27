@@ -189,7 +189,7 @@ export async function getStreamProjectById(id: string) {
   return doc;
 }
 
-export async function updateStreamProject(id: string, data: Partial<StreamProject>, userId: string) {
+export async function updateStreamProject(id: string, data: Partial<StreamProject>, _userId: string) {
   const doc = await getNsDoc(NOSQL.stream, id);
   if (!doc) throw new NotFoundError('STREAM project not found');
   await upsertNsDoc(NOSQL.stream, id, { ...data, updatedAt: new Date().toISOString() });

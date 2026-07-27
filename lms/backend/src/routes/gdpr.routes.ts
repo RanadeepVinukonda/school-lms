@@ -2,7 +2,6 @@ import crypto from 'crypto';
 import { Router, Request, Response } from 'express';
 import { authenticate } from '../middlewares/auth.middleware';
 import { getSupabaseAdmin } from '../services/supabase';
-import { NotFoundError, ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
 const router = Router();

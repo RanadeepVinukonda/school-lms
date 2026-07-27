@@ -1,11 +1,19 @@
 import { Router } from 'express';
-import { z } from 'zod';
 import { authenticate } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/role.middleware';
 import { validate } from '../middlewares/validate.middleware';
 import { asyncHandler } from '../middlewares/asyncHandler';
 import { sendSuccess } from '../utils/response';
 import * as transportService from '../services/transport.service';
+import {
+  createRouteSchema,
+  updateRouteSchema,
+  createStopSchema,
+  updateStopSchema,
+  assignStudentSchema,
+  markAttendanceSchema,
+  attendanceQuerySchema,
+} from '../validators/transport.validator';
 
 const router = Router();
 
@@ -16,12 +24,7 @@ router.get('/routes', authenticate, asyncHandler(async (req, res) => {
 }));
 
 router.post('/routes', authenticate, requireRole('admin', 'super_admin'),
-  validate(z.object({
-    name: z.string().min(1, 'Route name is required'),
-    vehicle_number: z.string().optional(),
-    driver_name: z.string().optional(),
-    driver_phone: z.string().optional(),
-  })),
+  validate(createRouteSchema),
   asyncHandler(async (req, res) => {
     const result = await transportService.createRoute(req.user!.school_id || '', req.body);
     sendSuccess(res, result);
@@ -34,12 +37,7 @@ router.get('/routes/:id', authenticate, asyncHandler(async (req, res) => {
 }));
 
 router.put('/routes/:id', authenticate, requireRole('admin', 'super_admin'),
-  validate(z.object({
-    name: z.string().optional(),
-    vehicle_number: z.string().optional(),
-    driver_name: z.string().optional(),
-    driver_phone: z.string().optional(),
-  })),
+  validate(updateRouteSchema),
   asyncHandler(async (req, res) => {
     const result = await transportService.updateRoute(req.params.id, req.body);
     sendSuccess(res, result);
@@ -58,14 +56,7 @@ router.get('/routes/:routeId/stops', authenticate, asyncHandler(async (req, res)
 }));
 
 router.post('/stops', authenticate, requireRole('admin', 'super_admin'),
-  validate(z.object({
-    route_id: z.string().uuid(),
-    name: z.string().min(1, 'Stop name is required'),
-    pickup_time: z.string().optional(),
-    drop_time: z.string().optional(),
-    fare: z.number().optional(),
-    sequence: z.number().optional(),
-  })),
+  validate(createStopSchema),
   asyncHandler(async (req, res) => {
     const result = await transportService.createStop(req.user!.school_id || '', req.body);
     sendSuccess(res, result);
@@ -73,13 +64,7 @@ router.post('/stops', authenticate, requireRole('admin', 'super_admin'),
 );
 
 router.put('/stops/:id', authenticate, requireRole('admin', 'super_admin'),
-  validate(z.object({
-    name: z.string().optional(),
-    pickup_time: z.string().optional(),
-    drop_time: z.string().optional(),
-    fare: z.number().optional(),
-    sequence: z.number().optional(),
-  })),
+  validate(updateStopSchema),
   asyncHandler(async (req, res) => {
     const result = await transportService.updateStop(req.params.id, req.body);
     sendSuccess(res, result);
@@ -93,11 +78,7 @@ router.delete('/stops/:id', authenticate, requireRole('admin', 'super_admin'), a
 
 // ASSIGNMENTS endpoints
 router.post('/assignments', authenticate, requireRole('admin', 'super_admin', 'teacher'),
-  validate(z.object({
-    student_id: z.string().uuid(),
-    route_id: z.string().uuid(),
-    stop_id: z.string().uuid().optional(),
-  })),
+  validate(assignStudentSchema),
   asyncHandler(async (req, res) => {
     const result = await transportService.assignStudent(req.user!.school_id || '', req.body);
     sendSuccess(res, result);
@@ -116,12 +97,7 @@ router.delete('/assignments/:id', authenticate, requireRole('admin', 'super_admi
 
 // ATTENDANCE endpoints
 router.post('/attendance', authenticate, requireRole('admin', 'super_admin', 'teacher'),
-  validate(z.object({
-    student_id: z.string().uuid(),
-    route_id: z.string().uuid(),
-    status: z.enum(['boarded', 'alighted', 'absent']),
-    direction: z.enum(['morning', 'evening']),
-  })),
+  validate(markAttendanceSchema),
   asyncHandler(async (req, res) => {
     const result = await transportService.markAttendance(req.user!.school_id || '', req.user!.uid, req.body);
     sendSuccess(res, result);
@@ -129,11 +105,7 @@ router.post('/attendance', authenticate, requireRole('admin', 'super_admin', 'te
 );
 
 router.get('/attendance', authenticate,
-  validate(z.object({
-    routeId: z.string().uuid(),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
-    direction: z.enum(['morning', 'evening']),
-  }), 'query'),
+  validate(attendanceQuerySchema, 'query'),
   asyncHandler(async (req, res) => {
     const { routeId, date, direction } = req.query as any;
     const list = await transportService.getAttendance(req.user!.school_id || '', routeId, date, direction);

@@ -14,7 +14,7 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
   sendSuccess(res, results || { textbooks: [], concepts: [], courses: [] });
 }));
 
-router.post('/sync', authenticate, asyncHandler(async (req, res) => {
+router.post('/sync', authenticate, asyncHandler(async (_req, res) => {
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error('Database connection failed');
 

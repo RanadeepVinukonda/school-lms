@@ -1,6 +1,5 @@
 import PDFDocument from 'pdfkit';
 import { getSupabaseClient } from './supabase';
-import { logger } from '../utils/logger';
 
 export async function getReportById(reportId: string) {
   const supabase = getSupabaseClient();

@@ -20,7 +20,7 @@ export async function downloadReportPdf(req: Request, res: Response) {
   if (!report) { sendError(res, 'Report not found', 404); return; }
 
   res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename="${(report as any).type}-report-${report.id}.pdf"`);
+  res.setHeader('Content-Disposition', `attachment; filename="${String((report as Record<string, unknown>).type ?? 'unknown')}-report-${report.id}.pdf"`);
 
   const doc = generateReportPdf(report as Record<string, unknown>);
   doc.pipe(res);

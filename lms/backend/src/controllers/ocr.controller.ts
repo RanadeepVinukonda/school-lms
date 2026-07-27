@@ -1,9 +1,7 @@
 import { Request, Response } from 'express';
 import * as ocrService from '../services/ocr.service';
-import { sendSuccess, sendError } from '../utils/response';
-import { sendCreated } from '../utils/response';
+import { sendSuccess, sendCreated } from '../utils/response';
 import { logger } from '../utils/logger';
-import { getSupabaseAdmin, getSupabaseClient } from '../services/supabase';
 import { AppError, ValidationError } from '../utils/errors';
 
 export async function scanImage(req: Request, res: Response) {
@@ -49,7 +47,6 @@ export async function scanMultipleImages(req: Request, res: Response) {
 }
 
 export async function mapToConcept(req: Request, res: Response) {
-  const supabase = getSupabaseClient();
   const { text, textbookId, count, type } = req.body;
 
   if (!text || typeof text !== 'string') {
@@ -70,12 +67,12 @@ export async function mapToConcept(req: Request, res: Response) {
     return;
   }
 
-  const { data: chapters } = await supabase.from('chapters').select('id').eq('textbook_id', textbookId);
-  const chapterIds = (chapters || []).map((c: { id: string }) => c.id);
-  const { data: conceptRows } = chapterIds.length > 0
-    ? await supabase.from('concepts').select('id, title, summary').in('chapter_id', chapterIds)
-    : { data: [] };
-  const concepts: Array<{ id: string; title: string; summary: string }> = (conceptRows || []).map((c: { id: string; title?: string; summary?: string }) => ({
+  const chapters = await ocrService.getChaptersByTextbook(textbookId);
+  const chapterIds = chapters.map((c) => c.id);
+  const conceptRows = chapterIds.length > 0
+    ? await ocrService.getConceptsByChapterIds(chapterIds)
+    : [];
+  const concepts = conceptRows.map((c) => ({
     id: c.id, title: c.title || 'Untitled', summary: c.summary || '',
   }));
 
@@ -150,7 +147,7 @@ export async function pushQuiz(req: Request, res: Response) {
       explanation: (q.explanation as string) || '',
       difficulty: (q.difficulty as string) || 'medium',
     };
-    if (Array.isArray(q.options) && (q.options as any[]).length > 0) {
+    if (Array.isArray(q.options) && q.options.length > 0) {
       mapped.options = q.options;
     }
     return mapped;
@@ -186,8 +183,7 @@ export async function pushQuiz(req: Request, res: Response) {
     updatedAt: now,
   };
 
-  const supabase = getSupabaseAdmin();
-  await supabase.from('firestore_docs').upsert({ collection: 'quizV2', doc_id: id, data: doc }, { onConflict: 'collection,doc_id' });
+  await ocrService.upsertFirestoreDoc('quizV2', id, doc);
   logger.info('OCR quiz pushed to quizV2', { quizId: id, classId, questionCount: questions.length });
   sendCreated(res, doc);
 }
@@ -228,28 +224,26 @@ export async function pushAssignment(req: Request, res: Response) {
     updatedAt: now,
   };
 
-  const supabase = getSupabaseAdmin();
-  await supabase.from('firestore_docs').upsert({ collection: 'assignmentV2', doc_id: id, data: doc }, { onConflict: 'collection,doc_id' });
+  await ocrService.upsertFirestoreDoc('assignmentV2', id, doc);
   logger.info('OCR assignment pushed to assignmentV2', { assignmentId: id, classId });
   sendCreated(res, doc);
 }
 
 export async function getConceptsForTextbook(req: Request, res: Response) {
-  const supabase = getSupabaseClient();
   const { textbookId } = req.params;
 
   if (!textbookId) {
     throw new ValidationError('textbookId parameter is required');
   }
 
-  const { data: chapters } = await supabase.from('chapters').select('id, title').eq('textbook_id', textbookId);
-  const chapterIds = (chapters || []).map((c: { id: string }) => c.id);
-  const { data: conceptRows } = chapterIds.length > 0
-    ? await supabase.from('concepts').select('id, chapter_id, title, summary').in('chapter_id', chapterIds)
-    : { data: [] };
+  const chapters = await ocrService.getChaptersByTextbook(textbookId);
+  const chapterIds = chapters.map((c) => c.id);
+  const conceptRows = chapterIds.length > 0
+    ? await ocrService.getConceptsByChapterIds(chapterIds)
+    : [];
 
-  const chapterMap = Object.fromEntries((chapters || []).map((c: any) => [c.id, c.title]));
-  const allConcepts = (conceptRows || []).map((c: any) => ({
+  const chapterMap = Object.fromEntries(chapters.map((c) => [c.id, c.title]));
+  const allConcepts = conceptRows.map((c) => ({
     id: c.id,
     chapterId: c.chapter_id,
     chapterTitle: chapterMap[c.chapter_id] || 'Untitled Chapter',

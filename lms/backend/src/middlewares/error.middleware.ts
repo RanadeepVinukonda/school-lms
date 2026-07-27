@@ -40,29 +40,27 @@ export function errorHandler(
       requestId,
     });
 
-    console.log('ERROR_DBG', JSON.stringify({
-      name: err.constructor?.name,
+    const errorResponse: Record<string, unknown> = {
       message: err.message,
-      hasDetails: err.details !== undefined,
-      detailsType: typeof err.details,
-      detailsIsArray: Array.isArray(err.details),
-      detailsLen: Array.isArray(err.details) ? err.details.length : -1,
       code: err.code,
-    }));
+      requestId,
+      details: err.details,
+    };
+
+    if (process.env.NODE_ENV !== 'production') {
+      errorResponse._src = err.constructor?.name;
+      errorResponse._hasDetails = err.details !== undefined;
+      errorResponse._detailType = typeof err.details;
+      errorResponse._detailLen = Array.isArray(err.details) ? err.details.length : -1;
+    }
+
+    if (isDev) {
+      errorResponse.stack = err.stack;
+    }
 
     res.status(err.statusCode).json({
       success: false,
-      error: {
-        message: err.message,
-        code: err.code,
-        requestId,
-        _src: err.constructor?.name,
-        _hasDetails: err.details !== undefined,
-        _detailType: typeof err.details,
-        _detailLen: Array.isArray(err.details) ? err.details.length : -1,
-        details: err.details,
-        ...(isDev && { stack: err.stack }),
-      },
+      error: errorResponse,
     });
     return;
   }

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import * as academicYearService from '../services/academic-year.service';
 import { sendSuccess, sendCreated } from '../utils/response';
-import type { ReqWithUser, QueryParams } from '../types/common';
+import type { QueryParams } from '../types/common';
 
 export async function createAcademicYear(req: Request, res: Response) {
   const result = await academicYearService.createAcademicYear(req.body);
@@ -28,7 +28,7 @@ export async function listAcademicYears(req: Request, res: Response) {
   sendSuccess(res, result);
 }
 
-export async function getCurrentAcademicYear(req: Request, res: Response) {
+export async function getCurrentAcademicYear(_req: Request, res: Response) {
   const result = academicYearService.getCurrentAcademicYear();
   sendSuccess(res, {
     academicYear: result.name,
@@ -36,7 +36,7 @@ export async function getCurrentAcademicYear(req: Request, res: Response) {
   });
 }
 
-export async function promoteStudents(req: Request, res: Response) {
+export async function promoteStudents(_req: Request, res: Response) {
   const result = await academicYearService.promoteAllStudents();
   sendSuccess(res, result, `Promoted ${result.promoted} students, graduated ${result.graduated}`);
 }

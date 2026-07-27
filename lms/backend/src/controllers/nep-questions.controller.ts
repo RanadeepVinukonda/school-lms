@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import * as nepQuestionsService from '../services/nep-questions.service';
 import { sendSuccess, sendCreated } from '../utils/response';
+import { ValidationError } from '../utils/errors';
 
 export async function generateQuestions(req: Request, res: Response) {
   const { conceptId, conceptName, subject, types, difficulty, count } = req.body;
@@ -15,8 +16,9 @@ export async function getNEPQuestions(req: Request, res: Response) {
 }
 
 export async function saveQuestions(req: Request, res: Response) {
+  if (!req.user) throw new ValidationError('Authentication required');
   const { conceptId, questions } = req.body;
-  const saved = await nepQuestionsService.saveQuestions(conceptId, questions, req.user!.uid);
+  const saved = await nepQuestionsService.saveQuestions(conceptId, questions, req.user.uid);
   sendCreated(res, saved, `${saved.length} questions saved to concept bank`);
 }
 
@@ -27,8 +29,9 @@ export async function generateRubric(req: Request, res: Response) {
 }
 
 export async function saveRubric(req: Request, res: Response) {
+  if (!req.user) throw new ValidationError('Authentication required');
   const { assignmentId, title, criteria, totalMarks } = req.body;
-  const rubric = await nepQuestionsService.saveRubric({ assignmentId, title, criteria, totalMarks, userId: req.user!.uid });
+  const rubric = await nepQuestionsService.saveRubric({ assignmentId, title, criteria, totalMarks, userId: req.user.uid });
   sendCreated(res, rubric, 'Rubric saved');
 }
 

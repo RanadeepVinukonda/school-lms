@@ -3,10 +3,12 @@ import * as courseService from '../services/course.service';
 import { requireNoDependenciesOrThrow, getCourseImpact } from '../services/impact.service';
 import { logAudit, adminAuditEntry } from '../services/audit.service';
 import { sendSuccess, sendCreated } from '../utils/response';
+import { ValidationError } from '../utils/errors';
 import type { ReqWithUser, QueryParams } from '../types/common';
 
 export async function createCourse(req: Request, res: Response) {
-  const result = await courseService.createCourse({ ...req.body, schoolId: req.user!.school_id });
+  if (!req.user) throw new ValidationError('Authentication required');
+  const result = await courseService.createCourse({ ...req.body, schoolId: req.user.school_id });
   logAudit(adminAuditEntry(req as ReqWithUser, 'course.create', result.id, 'course', result.title, {
     newValue: result,
     summary: `Created course "${result.title}"`,
@@ -39,9 +41,10 @@ export async function getCourse(req: Request, res: Response) {
 }
 
 export async function listCourses(req: Request, res: Response) {
+  if (!req.user) throw new ValidationError('Authentication required');
   const result = await courseService.listCourses({
     ...(req.query as QueryParams),
-    schoolId: req.user!.school_id,
+    schoolId: req.user.school_id,
   });
   sendSuccess(res, result);
 }

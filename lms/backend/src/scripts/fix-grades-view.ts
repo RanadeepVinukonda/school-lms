@@ -63,7 +63,7 @@ async function main() {
     console.error('No Supabase admin client');
     process.exit(1);
   }
-  const { data, error } = await sup.rpc('exec_sql', { sql });
+  const { error } = await sup.rpc('exec_sql', { sql });
   if (error) {
     console.error('Failed:', error.message);
     process.exit(1);

@@ -3,18 +3,21 @@ import * as quizService from '../services/quiz.service';
 import { requireNoDependenciesOrThrow, getQuizImpact } from '../services/impact.service';
 import { logAudit, adminAuditEntry } from '../services/audit.service';
 import { sendSuccess, sendCreated } from '../utils/response';
+import { ValidationError } from '../utils/errors';
 import type { ReqWithUser, QueryParams } from '../types/common';
 
 export async function listAllQuizzes(req: Request, res: Response) {
+  if (!req.user) throw new ValidationError('Authentication required');
   const result = await quizService.listAllQuizzes({
     ...(req.query as QueryParams),
-    schoolId: req.user!.school_id,
+    schoolId: req.user.school_id,
   });
   sendSuccess(res, result);
 }
 
 export async function createQuiz(req: Request, res: Response) {
-  const result = await quizService.createQuiz({ ...req.body, schoolId: req.user!.school_id });
+  if (!req.user) throw new ValidationError('Authentication required');
+  const result = await quizService.createQuiz({ ...req.body, schoolId: req.user.school_id });
   logAudit(adminAuditEntry(req as ReqWithUser, 'quiz.create', result.id, 'quiz', result.title, {
     newValue: result,
     summary: `Created quiz "${result.title}"`,
@@ -47,17 +50,20 @@ export async function getQuiz(req: Request, res: Response) {
 }
 
 export async function startAttempt(req: Request, res: Response) {
-  const result = await quizService.startAttempt(req.params.quizId, req.user!.uid);
+  if (!req.user) throw new ValidationError('Authentication required');
+  const result = await quizService.startAttempt(req.params.quizId, req.user.uid);
   sendSuccess(res, result, 'Quiz attempt started');
 }
 
 export async function submitAttempt(req: Request, res: Response) {
-  const result = await quizService.submitAttempt(req.params.attemptId, req.user!.uid, req.body);
+  if (!req.user) throw new ValidationError('Authentication required');
+  const result = await quizService.submitAttempt(req.params.attemptId, req.user.uid, req.body);
   sendSuccess(res, result, 'Quiz submitted');
 }
 
 export async function getResults(req: Request, res: Response) {
-  const result = await quizService.getQuizResults(req.params.quizId, req.user!.uid);
+  if (!req.user) throw new ValidationError('Authentication required');
+  const result = await quizService.getQuizResults(req.params.quizId, req.user.uid);
   sendSuccess(res, result);
 }
 

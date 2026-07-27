@@ -1,13 +1,18 @@
 import { env } from '../config/env';
 import { AppError } from '../utils/errors';
 import { logger } from '../utils/logger';
+import { MemoryCache } from '../utils/cache';
+import { geminiChatCompletion } from './ai-providers/gemini.provider';
+import { openaiChatCompletion } from './ai-providers/openrouter.provider';
 
-interface ChatMessage {
+const aiResponseCache = new MemoryCache('ai-responses', { defaultTtlMs: 3600_000, maxSize: 100 });
+
+export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
 }
 
-interface ChatRequest {
+export interface ChatRequest {
   model?: string;
   messages: ChatMessage[];
   temperature?: number;
@@ -15,409 +20,7 @@ interface ChatRequest {
   jsonMode?: boolean;
 }
 
-interface ChatResponse {
-  choices: Array<{
-    message: {
-      content: string;
-    };
-  }>;
-}
-
-const MAX_RETRIES = 2;
-const BASE_DELAY_MS = 2000;
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function parseRetryAfter(errBody: string): number | null {
-  try {
-    const parsed = JSON.parse(errBody);
-    const s = parsed?.error?.metadata?.retry_after_seconds;
-    if (typeof s === 'number') return Math.ceil(s * 1000);
-    const raw = parsed?.error?.metadata?.raw;
-    if (typeof raw === 'string') {
-      const m = raw.match(/retry_after_seconds[=:](\d+)/);
-      if (m) return parseInt(m[1], 10) * 1000;
-    }
-    const msg = parsed?.error?.message;
-    if (typeof msg === 'string') {
-      const m = msg.match(/retry in\s*(\d+(?:\.\d+)?)\s*s/i);
-      if (m) return Math.ceil(parseFloat(m[1]) * 1000);
-    }
-  } catch { /* ignore parse errors */ }
-  return null;
-}
-
-function extractJsonBlock(raw: string): string {
-  const cleaned = raw.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/gm, '').trim();
-  const braceStart = cleaned.indexOf('{');
-  if (braceStart === -1) return cleaned;
-  let depth = 0;
-  let inString = false;
-  for (let i = braceStart; i < cleaned.length; i++) {
-    const c = cleaned[i];
-    if (c === '"' && (i === 0 || cleaned[i - 1] !== '\\')) inString = !inString;
-    if (inString) continue;
-    if (c === '{') depth++;
-    if (c === '}') {
-      depth--;
-      if (depth === 0) return cleaned.slice(braceStart, i + 1);
-    }
-  }
-  return cleaned;
-}
-
-function sanitizeJson(raw: string): string {
-  return raw.replace(/[\x00-\x1F\u200B-\u200F\uFEFF]/g, '');
-}
-
-/* ── Gemini provider ─────────────────────────────────────────── */
-
-function convertToGeminiMessages(messages: ChatMessage[]): {
-  systemInstruction?: { parts: Array<{ text: string }> };
-  contents: Array<{ role: string; parts: Array<{ text: string }> }>;
-} {
-  const systemMsgs = messages.filter((m) => m.role === 'system');
-  const systemInstruction = systemMsgs.length > 0
-    ? { parts: systemMsgs.map((m) => ({ text: m.content })) }
-    : undefined;
-
-  const contents = messages
-    .filter((m) => m.role !== 'system')
-    .map((m) => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    }));
-
-  return { systemInstruction, contents };
-}
-
-function extractGeminiError(errBody: string): number | null {
-  try {
-    const parsed = JSON.parse(errBody);
-    return parsed?.error?.code ?? null;
-  } catch {
-    return null;
-  }
-}
-
-async function geminiChatCompletion(
-  model: string,
-  messages: ChatMessage[],
-  temperature: number,
-  max_tokens: number,
-  jsonMode = false,
-): Promise<string> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
-  const { systemInstruction, contents } = convertToGeminiMessages(messages);
-
-  const generationConfig: Record<string, unknown> = {
-    temperature,
-    maxOutputTokens: max_tokens,
-  };
-  if (jsonMode) {
-    generationConfig.responseMimeType = 'application/json';
-  }
-
-  const body: Record<string, unknown> = {
-    contents,
-    generationConfig,
-  };
-
-  if (systemInstruction) {
-    body.systemInstruction = systemInstruction;
-  }
-
-  const timeoutMs = Math.max(60000, max_tokens * 8);
-
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-        signal: controller.signal,
-      });
-      clearTimeout(timer);
-
-      if (res.ok) {
-        const data = await res.json() as {
-          candidates?: Array<{
-            content?: { parts?: Array<{ text?: string }> };
-            finishReason?: string;
-          }>;
-        };
-        const candidate = data.candidates?.[0];
-        const text = candidate?.content?.parts?.map((p) => p.text ?? '').join('') || '';
-
-        if (candidate?.finishReason === 'SAFETY') {
-          throw new AppError(502, 'AI response blocked by content safety filters. Try different prompts.');
-        }
-
-        logger.info('Gemini response received', { model, attempt, finishReason: candidate?.finishReason, contentLength: text.length });
-
-        const jsonBlock = extractJsonBlock(text);
-        const sanitized = sanitizeJson(jsonBlock);
-        try {
-          const parsed = JSON.parse(sanitized);
-          const extracted = parsed.answer || parsed.message || parsed.response || parsed.content || parsed.text || sanitized;
-          return typeof extracted === 'string' ? extracted : sanitized;
-        } catch {
-          logger.warn('Gemini response was not valid JSON, returning raw', {});
-          return text;
-        }
-      }
-
-      const errBody = await res.text();
-      const httpCode = extractGeminiError(errBody);
-
-      if (res.status === 429 && attempt < MAX_RETRIES) {
-        const retryMs = parseRetryAfter(errBody) || BASE_DELAY_MS * Math.pow(2, attempt);
-        logger.warn(`Gemini rate limited, retrying in ${retryMs}ms`, { model, attempt: attempt + 1 });
-        await sleep(retryMs);
-        continue;
-      }
-
-      logger.error('Gemini API error', { status: res.status, body: errBody, model });
-      if (res.status === 403) {
-        throw new AppError(502, 'Gemini API key is invalid or billing not enabled. Check GEMINI_API_KEY.');
-      }
-      throw new AppError(502, `Gemini API error ${res.status}: ${errBody.slice(0, 500)}`);
-    } catch (err) {
-      clearTimeout(timer);
-      if (err instanceof AppError) throw err;
-      if (attempt < MAX_RETRIES) {
-        const delay = BASE_DELAY_MS * Math.pow(2, attempt);
-        logger.warn(`Gemini request failed, retrying in ${delay}ms`, { attempt: attempt + 1, error: err instanceof Error ? err.message : String(err) });
-        await sleep(delay);
-        continue;
-      }
-      throw new AppError(504, `Gemini request failed after ${MAX_RETRIES + 1} attempts: ${err instanceof Error ? err.message : String(err)}`);
-    }
-  }
-
-  throw new AppError(502, 'Gemini API returned 429 after retries');
-}
-
-/* ── OpenAI / OpenRouter provider ────────────────────────────── */
-
-async function openaiChatCompletion(
-  model: string,
-  messages: ChatMessage[],
-  temperature: number,
-  max_tokens: number,
-  jsonMode = true,
-): Promise<string> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
-    Authorization: `Bearer ${env.GEMINI_API_KEY}`,
-  };
-
-  if (env.AI_BASE_URL.includes('openrouter.ai')) {
-    headers['HTTP-Referer'] = 'https://school-lms-nine-phi.vercel.app';
-    headers['X-Title'] = 'School LMS';
-  }
-
-  let useResponseFormat = jsonMode;
-  let lastError: string | null = null;
-
-  const timeoutMs = Math.max(60000, max_tokens * 8);
-
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    const payload: Record<string, unknown> = {
-      model,
-      messages,
-      temperature,
-      max_tokens,
-    };
-    if (useResponseFormat) {
-      payload.response_format = { type: 'json_object' };
-    }
-
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    
-    try {
-      const res = await fetch(env.AI_BASE_URL, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
-      clearTimeout(timer);
-
-      if (res.ok) {
-        const data = await res.json() as ChatResponse;
-        const content = data.choices?.[0]?.message?.content || '';
-        logger.info('AI response received', { model, attempt, useResponseFormat, contentLength: content.length });
-
-        if (!jsonMode) {
-          return content;
-        }
-
-        const jsonBlock = extractJsonBlock(content);
-        const sanitized = sanitizeJson(jsonBlock);
-        try {
-          const parsed = JSON.parse(sanitized);
-          const text = parsed.answer || parsed.message || parsed.response || parsed.content || parsed.text || sanitized;
-          return typeof text === 'string' ? text : sanitized;
-        } catch {
-          logger.warn('AI response was not valid JSON, returning raw content', {});
-          return content;
-        }
-      }
-
-      const errBody = await res.text();
-
-      if (res.status === 429 && attempt < MAX_RETRIES) {
-        const retryMs = parseRetryAfter(errBody) || BASE_DELAY_MS * Math.pow(2, attempt);
-        logger.warn(`AI rate limited, retrying in ${retryMs}ms`, { model, attempt: attempt + 1 });
-        await sleep(retryMs);
-        lastError = errBody;
-        continue;
-      }
-
-      if (res.status === 400 && useResponseFormat && (errBody.includes('response_format') || errBody.includes('json_object'))) {
-        logger.warn('Model does not support response_format, retrying without it', { errBody: errBody.slice(0, 200) });
-        useResponseFormat = false;
-        continue;
-      }
-
-      logger.error('AI API error', { status: res.status, body: errBody, model, attempt });
-      if (res.status === 401) throw new AppError(502, 'AI service rejected the API key. Check GEMINI_API_KEY.');
-      if (res.status === 404 && model !== 'openrouter/free') {
-        logger.warn('AI model not found, retrying with openrouter/free', { model });
-        return openaiChatCompletion('openrouter/free', messages, temperature, max_tokens, jsonMode);
-      }
-      throw new AppError(502, `AI API error ${res.status}: ${errBody.slice(0, 500)}`);
-    } catch (err) {
-      clearTimeout(timer);
-      if (err instanceof AppError) throw err;
-      if (attempt < MAX_RETRIES) {
-        const delay = BASE_DELAY_MS * Math.pow(2, attempt);
-        logger.warn(`AI request failed, retrying in ${delay}ms`, { attempt: attempt + 1, error: err instanceof Error ? err.message : String(err) });
-        await sleep(delay);
-        lastError = String(err);
-        continue;
-      }
-      throw new AppError(504, `AI request failed after ${MAX_RETRIES + 1} attempts: ${err instanceof Error ? err.message : String(err)}`);
-    }
-  }
-
-  throw new AppError(502, `AI API returned 429 after ${MAX_RETRIES} retries: ${(lastError || '').slice(0, 200)}`);
-}
-
-/* ── Textbook/OCR-specific dispatcher ─────────────────────────── */
-
-export async function textbookChatCompletion(params: ChatRequest): Promise<string> {
-  const { model: _fallback = '', messages, temperature = 0.7, max_tokens = 2048, jsonMode = false } = params;
-
-  // Use GEMINI_API_KEY for textbook/OCR tasks when available
-  if (env.GEMINI_API_KEY) {
-    const geminiModel = toGeminiModel(env.AI_TEXTBOOK_MODEL || env.AI_MODEL || 'gemini-2.0-flash');
-    try {
-      return await geminiChatCompletion(geminiModel, messages, temperature, max_tokens, jsonMode);
-    } catch (err) {
-      if (err instanceof AppError && (err.message.includes('404') || err.message.includes('400') || err.message.includes('not found'))) {
-        logger.warn('Gemini model failed, falling back to gemini-2.0-flash', { model: geminiModel });
-        return geminiChatCompletion('gemini-2.0-flash', messages, temperature, max_tokens, jsonMode);
-      }
-      throw err;
-    }
-  }
-
-  const apiKey = env.AI_TEXTBOOK_API_KEY || env.GEMINI_API_KEY;
-  const baseUrl = env.AI_TEXTBOOK_BASE_URL || env.AI_BASE_URL;
-  const model = env.AI_TEXTBOOK_MODEL || env.AI_MODEL || 'openai/gpt-4o-mini';
-
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
-    Authorization: `Bearer ${apiKey}`,
-  };
-
-  if (baseUrl.includes('openrouter.ai')) {
-    headers['HTTP-Referer'] = 'https://school-lms-nine-phi.vercel.app';
-    headers['X-Title'] = 'School LMS';
-  }
-
-  let useResponseFormat = jsonMode;
-  let lastError: string | null = null;
-  const timeoutMs = Math.max(60000, max_tokens * 8);
-
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    const payload: Record<string, unknown> = { model, messages, temperature, max_tokens };
-    if (useResponseFormat) payload.response_format = { type: 'json_object' };
-
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-    try {
-      const res = await fetch(baseUrl, {
-        method: 'POST', headers, body: JSON.stringify(payload), signal: controller.signal,
-      });
-      clearTimeout(timer);
-
-      if (res.ok) {
-        const data = await res.json() as ChatResponse;
-        const content = data.choices?.[0]?.message?.content || '';
-        logger.info('Textbook AI response received', { model, attempt, contentLength: content.length });
-
-        if (!jsonMode) return content;
-        const jsonBlock = extractJsonBlock(content);
-        const sanitized = sanitizeJson(jsonBlock);
-        try {
-          const parsed = JSON.parse(sanitized);
-          const text = parsed.answer || parsed.message || parsed.response || parsed.content || parsed.text || sanitized;
-          return typeof text === 'string' ? text : sanitized;
-        } catch {
-          logger.warn('Textbook AI response was not valid JSON, returning raw', {});
-          return content;
-        }
-      }
-
-      const errBody = await res.text();
-      if (res.status === 429 && attempt < MAX_RETRIES) {
-        const retryMs = parseRetryAfter(errBody) || BASE_DELAY_MS * Math.pow(2, attempt);
-        logger.warn(`Textbook AI rate limited, retrying in ${retryMs}ms`, { model, attempt: attempt + 1 });
-        await sleep(retryMs);
-        lastError = errBody;
-        continue;
-      }
-      if (res.status === 400 && useResponseFormat && (errBody.includes('response_format') || errBody.includes('json_object'))) {
-        logger.warn('Textbook AI model does not support response_format, retrying without it', { errBody: errBody.slice(0, 200) });
-        useResponseFormat = false;
-        continue;
-      }
-      logger.error('Textbook AI API error', { status: res.status, body: errBody, model, attempt });
-      if (res.status === 401) throw new AppError(502, 'Textbook AI key rejected. Check AI_TEXTBOOK_API_KEY or GEMINI_API_KEY.');
-      if (res.status === 404 && model !== 'openrouter/free') {
-        logger.warn('Textbook AI model not found, retrying with openrouter/free', { model });
-        return textbookChatCompletion({ ...params, model: 'openrouter/free' });
-      }
-      throw new AppError(502, `Textbook AI error ${res.status}: ${errBody.slice(0, 500)}`);
-    } catch (err) {
-      clearTimeout(timer);
-      if (err instanceof AppError) throw err;
-      if (attempt < MAX_RETRIES) {
-        const delay = BASE_DELAY_MS * Math.pow(2, attempt);
-        logger.warn(`Textbook AI request failed, retrying in ${delay}ms`, { attempt: attempt + 1, error: err instanceof Error ? err.message : String(err) });
-        await sleep(delay);
-        lastError = String(err);
-        continue;
-      }
-      throw new AppError(504, `Textbook AI failed after ${MAX_RETRIES + 1} attempts: ${err instanceof Error ? err.message : String(err)}`);
-    }
-  }
-  throw new AppError(502, `Textbook AI returned 429 after ${MAX_RETRIES} retries: ${(lastError || '').slice(0, 200)}`);
-}
-
-/* ── Dispatcher ──────────────────────────────────────────────── */
+export { textbookChatCompletion } from './ai-providers/openrouter.provider';
 
 function toGeminiModel(model: string): string {
   const m = model.trim().replace(/^google\//, '');
@@ -427,26 +30,31 @@ function toGeminiModel(model: string): string {
 export async function chatCompletion(params: ChatRequest): Promise<string> {
   const { model = env.AI_MODEL, messages, temperature = 0.7, max_tokens = 2048, jsonMode = false } = params;
 
+  const cacheKey = `ai:${JSON.stringify(messages.slice(0, 2))}`;
+  const cached = aiResponseCache.get<string>(cacheKey);
+  if (cached) return cached;
+
   if (!env.GEMINI_API_KEY) {
     throw new AppError(502, 'No AI provider configured. Set GEMINI_API_KEY.');
   }
 
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      if (env.GEMINI_API_KEY) {
-        return await geminiChatCompletion(toGeminiModel(model), messages, temperature, max_tokens, jsonMode);
-      }
-      return await openaiChatCompletion(model, messages, temperature, max_tokens, jsonMode);
-    } catch (err) {
-      // Retry on transient network errors
-      if (err instanceof TypeError && err.message.toLowerCase().includes('fetch') && attempt < MAX_RETRIES) {
-        const delay = BASE_DELAY_MS * Math.pow(2, attempt);
-        logger.warn(`chatCompletion network error, retrying in ${delay}ms`, { attempt: attempt + 1, error: err.message });
-        await sleep(delay);
-        continue;
-      }
-      throw err;
+  try {
+    if (env.GEMINI_API_KEY) {
+      const result = await geminiChatCompletion(toGeminiModel(model), messages, temperature, max_tokens, jsonMode);
+      aiResponseCache.set(cacheKey, result);
+      return result;
     }
+    const result = await openaiChatCompletion(model, messages, temperature, max_tokens, jsonMode);
+    aiResponseCache.set(cacheKey, result);
+    return result;
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('Circuit breaker') && err.message.includes('OPEN')) {
+      logger.warn('AI circuit breaker OPEN, returning fallback response');
+      const fallback = jsonMode
+        ? '{"answer":"I am temporarily unable to process AI requests. Please try again in a moment."}'
+        : 'I am temporarily unable to process AI requests. Please try again in a moment.';
+      return fallback;
+    }
+    throw err;
   }
-  throw new AppError(504, 'chatCompletion failed after retries');
 }

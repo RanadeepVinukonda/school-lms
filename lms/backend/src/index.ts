@@ -1,16 +1,14 @@
-// @ts-nocheck — pre-existing errors unrelated to sprint changes
-import * as Sentry from '@sentry/node';
+import type { Server } from 'http';
 import app from './app';
 import { env } from './config/env';
+import { initTracing } from './config/tracing';
 import { logger } from './utils/logger';
 import { startScheduler, stopScheduler } from './jobs/scheduler';
 import { closeConnectionPool } from './database/connection-manager';
 
-if (env.SENTRY_DSN) {
-  Sentry.init({ dsn: env.SENTRY_DSN, environment: env.NODE_ENV });
-}
+initTracing();
 
-let server: any;
+let server: Server | undefined;
 
 function startServer() {
   try {
@@ -23,7 +21,7 @@ function startServer() {
       startScheduler().catch((err) => logger.error('Scheduler start failed', err));
     });
   } catch (error) {
-    logger.error('Failed to start server', error);
+    logger.error('Failed to start server', error as Record<string, unknown>);
     process.exit(1);
   }
 }
@@ -33,7 +31,7 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
-process.on('unhandledRejection', (reason: Error | unknown) => {
+process.on('unhandledRejection', (reason: unknown) => {
   logger.error('Unhandled Rejection', {
     message: reason instanceof Error ? reason.message : 'Unknown rejection',
     stack: reason instanceof Error ? reason.stack : undefined,

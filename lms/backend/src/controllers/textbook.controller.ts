@@ -1,25 +1,27 @@
 import { Request, Response } from 'express';
 import * as textbookService from '../services/textbook.service';
-import { sendSuccess, sendCreated, sendAccepted } from '../utils/response';
+import { sendSuccess, sendAccepted } from '../utils/response';
 import { logger } from '../utils/logger';
+import { requireUser } from '../types/common';
 
 import fs from 'fs/promises';
 
 export async function createTextbook(req: Request, res: Response) {
   try {
+    const user = requireUser(req);
     const result = await textbookService.createTextbook({
       ...req.body,
       pdfFilePath: req.file?.path,
-      teacherId: req.user!.uid,
-      teacherRole: req.user!.role,
-      schoolId: req.user!.school_id,
+      teacherId: user.uid,
+      teacherRole: user.role,
+      schoolId: user.school_id,
     });
     sendAccepted(res, result, 'Textbook upload accepted — processing');
   } finally {
     if (req.file?.path) {
       await fs.unlink(req.file.path).catch((err) => {
         logger.warn('Failed to cleanup uploaded file after textbook creation', {
-          filePath: req.file!.path,
+          filePath: req.file?.path,
           error: err instanceof Error ? err.message : String(err),
         });
       });
@@ -34,7 +36,8 @@ export async function getTextbook(req: Request, res: Response) {
 
 // List all textbooks (no filters)
 export async function listTextbooks(req: Request, res: Response) {
-  const result = await textbookService.listAllTextbooks(req.user!.school_id);
+  const user = requireUser(req);
+  const result = await textbookService.listAllTextbooks(user.school_id);
   sendSuccess(res, result);
 }
 
@@ -51,10 +54,11 @@ export async function listConcepts(req: Request, res: Response) {
 }
 
 export async function getTextbooksByClassAndSubject(req: Request, res: Response) {
+  const user = requireUser(req);
   const result = await textbookService.getTextbooksByClassAndSubject(
     req.params.classId,
     req.params.subjectId,
-    req.user!.school_id,
+    user.school_id,
   );
   sendSuccess(res, result);
 }
@@ -65,10 +69,11 @@ export async function deleteTextbook(req: Request, res: Response) {
 }
 
 export async function reprocessTextbook(req: Request, res: Response) {
+  const user = requireUser(req);
   const result = await textbookService.reprocessTextbook(
     req.params.textbookId,
-    req.user!.uid,
-    req.user!.role
+    user.uid,
+    user.role
   );
   sendAccepted(res, result, 'Textbook reprocessing triggered');
 }

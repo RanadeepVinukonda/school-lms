@@ -1,11 +1,20 @@
 import { Router } from 'express';
-import { z } from 'zod';
 import { authenticate } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/role.middleware';
 import { validate } from '../middlewares/validate.middleware';
 import { asyncHandler } from '../middlewares/asyncHandler';
 import { sendSuccess } from '../utils/response';
 import * as inventoryService from '../services/inventory.service';
+import {
+  createSupplierSchema,
+  updateSupplierSchema,
+  createCategorySchema,
+  updateCategorySchema,
+  createItemSchema,
+  updateItemSchema,
+  logUsageSchema,
+  usageQuerySchema,
+} from '../validators/inventory.validator';
 
 const router = Router();
 
@@ -16,14 +25,7 @@ router.get('/suppliers', authenticate, asyncHandler(async (req, res) => {
 }));
 
 router.post('/suppliers', authenticate, requireRole('admin', 'super_admin'),
-  validate(z.object({
-    name: z.string().min(1, 'Supplier name is required'),
-    contact_person: z.string().optional(),
-    phone: z.string().optional(),
-    email: z.string().email('Invalid email').or(z.literal('')),
-    address: z.string().optional(),
-    catalog_items: z.array(z.string()).optional(),
-  })),
+  validate(createSupplierSchema),
   asyncHandler(async (req, res) => {
     const result = await inventoryService.createSupplier(req.user!.school_id || '', req.body);
     sendSuccess(res, result);
@@ -31,14 +33,7 @@ router.post('/suppliers', authenticate, requireRole('admin', 'super_admin'),
 );
 
 router.put('/suppliers/:id', authenticate, requireRole('admin', 'super_admin'),
-  validate(z.object({
-    name: z.string().optional(),
-    contact_person: z.string().optional(),
-    phone: z.string().optional(),
-    email: z.string().email('Invalid email').or(z.literal('')).optional(),
-    address: z.string().optional(),
-    catalog_items: z.array(z.string()).optional(),
-  })),
+  validate(updateSupplierSchema),
   asyncHandler(async (req, res) => {
     const result = await inventoryService.updateSupplier(req.params.id, req.body);
     sendSuccess(res, result);
@@ -57,10 +52,7 @@ router.get('/categories', authenticate, asyncHandler(async (req, res) => {
 }));
 
 router.post('/categories', authenticate, requireRole('admin', 'super_admin'),
-  validate(z.object({
-    name: z.string().min(1, 'Category name is required'),
-    description: z.string().optional(),
-  })),
+  validate(createCategorySchema),
   asyncHandler(async (req, res) => {
     const result = await inventoryService.createCategory(req.user!.school_id || '', req.body);
     sendSuccess(res, result);
@@ -68,10 +60,7 @@ router.post('/categories', authenticate, requireRole('admin', 'super_admin'),
 );
 
 router.put('/categories/:id', authenticate, requireRole('admin', 'super_admin'),
-  validate(z.object({
-    name: z.string().optional(),
-    description: z.string().optional(),
-  })),
+  validate(updateCategorySchema),
   asyncHandler(async (req, res) => {
     const result = await inventoryService.updateCategory(req.params.id, req.body);
     sendSuccess(res, result);
@@ -95,14 +84,7 @@ router.get('/items/:id', authenticate, asyncHandler(async (req, res) => {
 }));
 
 router.post('/items', authenticate, requireRole('admin', 'super_admin'),
-  validate(z.object({
-    name: z.string().min(1, 'Item name is required'),
-    category_id: z.string().uuid().optional(),
-    quantity: z.number().int().nonnegative('Quantity cannot be negative'),
-    unit: z.string().optional(),
-    reorder_level: z.number().int().optional(),
-    supplier_id: z.string().uuid().optional(),
-  })),
+  validate(createItemSchema),
   asyncHandler(async (req, res) => {
     const result = await inventoryService.createItem(req.user!.school_id || '', req.body);
     sendSuccess(res, result);
@@ -110,14 +92,7 @@ router.post('/items', authenticate, requireRole('admin', 'super_admin'),
 );
 
 router.put('/items/:id', authenticate, requireRole('admin', 'super_admin'),
-  validate(z.object({
-    name: z.string().optional(),
-    category_id: z.string().uuid().optional(),
-    quantity: z.number().int().optional(),
-    unit: z.string().optional(),
-    reorder_level: z.number().int().optional(),
-    supplier_id: z.string().uuid().optional(),
-  })),
+  validate(updateItemSchema),
   asyncHandler(async (req, res) => {
     const result = await inventoryService.updateItem(req.params.id, req.body);
     sendSuccess(res, result);
@@ -131,11 +106,7 @@ router.delete('/items/:id', authenticate, requireRole('admin', 'super_admin'), a
 
 // USAGE LOGS
 router.post('/usage', authenticate, requireRole('admin', 'super_admin'),
-  validate(z.object({
-    item_id: z.string().uuid(),
-    quantity_changed: z.number().int(),
-    reason: z.string().optional(),
-  })),
+  validate(logUsageSchema),
   asyncHandler(async (req, res) => {
     const result = await inventoryService.logUsage(req.user!.school_id || '', req.user!.uid, req.body);
     sendSuccess(res, result);
@@ -143,9 +114,7 @@ router.post('/usage', authenticate, requireRole('admin', 'super_admin'),
 );
 
 router.get('/usage', authenticate,
-  validate(z.object({
-    itemId: z.string().uuid().optional(),
-  }), 'query'),
+  validate(usageQuerySchema, 'query'),
   asyncHandler(async (req, res) => {
     const { itemId } = req.query as any;
     const list = await inventoryService.getUsageLogs(req.user!.school_id || '', itemId);

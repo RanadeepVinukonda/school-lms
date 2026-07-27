@@ -3,18 +3,21 @@ import * as examService from '../services/exam.service';
 import { requireNoDependenciesOrThrow, getExamImpact } from '../services/impact.service';
 import { logAudit, adminAuditEntry } from '../services/audit.service';
 import { sendSuccess, sendCreated } from '../utils/response';
+import { ValidationError } from '../utils/errors';
 import type { ReqWithUser, QueryParams } from '../types/common';
 
 export async function listAllExams(req: Request, res: Response) {
+  if (!req.user) throw new ValidationError('Authentication required');
   const result = await examService.listAllExams({
     ...(req.query as QueryParams),
-    schoolId: req.user!.school_id,
+    schoolId: req.user.school_id,
   });
   sendSuccess(res, result);
 }
 
 export async function createExam(req: Request, res: Response) {
-  const result = await examService.createExam({ ...req.body, schoolId: req.user!.school_id });
+  if (!req.user) throw new ValidationError('Authentication required');
+  const result = await examService.createExam({ ...req.body, schoolId: req.user.school_id });
   logAudit(adminAuditEntry(req as ReqWithUser, 'exam.create', result.id, 'exam', result.title, {
     newValue: result,
     summary: `Created exam "${result.title}"`,
@@ -52,17 +55,20 @@ export async function scheduleExam(req: Request, res: Response) {
 }
 
 export async function startExamAttempt(req: Request, res: Response) {
-  const result = await examService.startExamAttempt(req.params.examId, req.user!.uid);
+  if (!req.user) throw new ValidationError('Authentication required');
+  const result = await examService.startExamAttempt(req.params.examId, req.user.uid);
   sendSuccess(res, result, 'Exam attempt started');
 }
 
 export async function submitExamAttempt(req: Request, res: Response) {
-  const result = await examService.submitExamAttempt(req.params.attemptId, req.user!.uid, req.body);
+  if (!req.user) throw new ValidationError('Authentication required');
+  const result = await examService.submitExamAttempt(req.params.attemptId, req.user.uid, req.body);
   sendSuccess(res, result, 'Exam submitted');
 }
 
 export async function gradeExamAttempt(req: Request, res: Response) {
-  const result = await examService.gradeExamAttempt(req.params.attemptId, req.user!.uid, req.body);
+  if (!req.user) throw new ValidationError('Authentication required');
+  const result = await examService.gradeExamAttempt(req.params.attemptId, req.user.uid, req.body);
   logAudit(adminAuditEntry(req as ReqWithUser, 'grade.update', req.params.attemptId, 'examAttempt', req.params.attemptId, {
     newValue: req.body,
     summary: `Graded exam attempt ${req.params.attemptId}`,
@@ -71,7 +77,8 @@ export async function gradeExamAttempt(req: Request, res: Response) {
 }
 
 export async function getExamResults(req: Request, res: Response) {
-  const result = await examService.getExamResults(req.params.examId, req.user!.uid);
+  if (!req.user) throw new ValidationError('Authentication required');
+  const result = await examService.getExamResults(req.params.examId, req.user.uid);
   sendSuccess(res, result);
 }
 

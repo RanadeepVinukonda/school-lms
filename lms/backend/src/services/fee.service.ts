@@ -5,6 +5,8 @@ import { BaseService, DbRecord } from '../lib/base-service';
 import { deriveAcademicYear } from '../middlewares/academicYear.middleware';
 import { createBulkNotifications } from './notification.service';
 import { logger } from '../utils/logger';
+import { buildOutstandingReport } from '../utils/fee-report';
+import { feeCache } from '../utils/cache';
 
 interface FeeStructureRecord extends DbRecord {
   school_id?: string;
@@ -52,12 +54,12 @@ export async function createFeeSchedule(data: {
   // notify students and parents in the class
   notifyFeeReminder(data.schoolId, data.classId, data.name, data.dueDate)
     .catch((err) => logger.warn('Failed to notify fee reminder', { error: err?.message || err }));
+  feeCache.invalidatePattern(`.*${data.schoolId}.*`);
   return result;
 }
 
 async function notifyFeeReminder(schoolId: string, classId: string, name: string, dueDate?: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return;
-  const dueText = dueDate ? ` due by ${dueDate}` : '';
   const { data: students } = await supabase
     .from('users').select('id').eq('school_id', schoolId).eq('class_id', classId).eq('role', 'student');
   const userIds: string[] = (students || []).map(s => s.id as string);
@@ -151,6 +153,7 @@ export async function recordPayment(data: {
     );
 
     await client.query('COMMIT');
+    feeCache.clear();
     return result[0];
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {});
@@ -212,36 +215,4 @@ export async function getOutstandingReport(schoolId?: string) {
   }
 
   return buildOutstandingReport(structures, payments || [], students, classMap);
-}
-
-function buildOutstandingReport(structures: any[], payments: any[], students: any[], classMap: Record<string, string>) {
-  const report = (students || []).map((s: any) => {
-    const studentClassId = s.class_id || (Array.isArray(s.class_ids) ? s.class_ids[0] : null);
-    const classStructures = (structures || []).filter((f: any) =>
-      !f.class_id || f.class_id === studentClassId
-    );
-    const totalDue = classStructures.reduce((sum: number, f: any) => sum + Number(f.amount), 0);
-    const studentPays = (payments || []).filter((p: any) => p.student_id === s.id);
-    const totalPaid = studentPays.reduce((sum: number, p: any) => sum + Number(p.amount), 0);
-    const schedules = classStructures.map((f: any) => {
-      const paid = studentPays.filter((p: any) => p.fee_structure_id === f.id);
-      return {
-        scheduleId: f.id,
-        name: f.name,
-        amount: Number(f.amount),
-        paid: paid.reduce((s: number, p: any) => s + Number(p.amount), 0),
-        dueDate: f.due_date || f.dueDate,
-      };
-    });
-    return {
-      studentId: s.id,
-      studentName: s.display_name || s.id,
-      className: classMap[studentClassId] || '-',
-      totalDue,
-      totalPaid,
-      balance: totalDue - totalPaid,
-      schedules,
-    };
-  });
-  return report.filter((r: { totalDue: number; totalPaid: number }) => r.totalDue > 0 || r.totalPaid > 0);
 }

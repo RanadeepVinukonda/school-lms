@@ -4,10 +4,12 @@ import * as classService from '../services/class.service';
 import { requireNoDependenciesOrThrow, getClassImpact } from '../services/impact.service';
 import { logAudit, adminAuditEntry } from '../services/audit.service';
 import { sendSuccess, sendCreated } from '../utils/response';
+import { ValidationError } from '../utils/errors';
 import type { ReqWithUser, QueryParams } from '../types/common';
 
 export async function createClass(req: Request, res: Response) {
-  const result = await classService.createClass({ ...req.body, schoolId: req.user!.school_id });
+  if (!req.user) throw new ValidationError('Authentication required');
+  const result = await classService.createClass({ ...req.body, schoolId: req.user.school_id });
   logAudit(adminAuditEntry(req as ReqWithUser, 'class.create', result.id, 'class', result.name || 'Unknown', {
     newValue: result,
     summary: `Created class "${result.name}"`,
@@ -19,7 +21,7 @@ export async function updateClass(req: Request, res: Response) {
   const oldResult = await classService.getClassById(req.params.classId);
   const old = (oldResult.success && oldResult.data) ? oldResult.data : {};
   const result = await classService.updateClass(req.params.classId, req.body);
-  logAudit(adminAuditEntry(req as ReqWithUser, 'class.update', req.params.classId, 'class', old.name || 'Unknown', {
+  logAudit(adminAuditEntry(req as ReqWithUser, 'class.update', req.params.classId, 'class', (old.name || 'Unknown') as string, {
     oldValue: old,
     newValue: result,
     summary: `Updated class "${old.name || req.params.classId}"`,
@@ -32,16 +34,17 @@ export async function deleteClass(req: Request, res: Response) {
   const cls = (clsResult.success && clsResult.data) ? clsResult.data : { name: 'Unknown' };
   await requireNoDependenciesOrThrow('class', req.params.classId, getClassImpact);
   await classService.deleteClass(req.params.classId);
-  logAudit(adminAuditEntry(req as ReqWithUser, 'class.delete', req.params.classId, 'class', cls.name));
+  logAudit(adminAuditEntry(req as ReqWithUser, 'class.delete', req.params.classId, 'class', cls.name as string));
   sendSuccess(res, null, 'Class deleted');
 }
 
 export async function listClasses(req: Request, res: Response) {
+  if (!req.user) throw new ValidationError('Authentication required');
   const academicYear = (req.query.academicYear as string) || req.activeAcademicYear;
   const result = await classService.listClasses({
     ...(req.query as QueryParams),
     academicYear,
-    schoolId: req.user!.school_id,
+    schoolId: req.user.school_id,
   });
   sendSuccess(res, result);
 }

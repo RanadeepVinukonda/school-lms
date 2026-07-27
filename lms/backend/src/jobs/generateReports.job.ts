@@ -60,7 +60,7 @@ export async function generateMonthlyReport() {
   return report;
 }
 
-async function gatherReportData(startDate: string, endDate: string) {
+async function gatherReportData(startDate: string, _endDate: string) {
   const supabase = getSupabaseAdmin()!;
 
   const { data: allUsers } = await supabase.from('users').select('id, role');

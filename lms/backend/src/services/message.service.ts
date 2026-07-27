@@ -201,7 +201,6 @@ export async function markConversationRead(conversationId: string, userId: strin
     .not('data', 'cs', `{"readBy": ["${userId}"]}`);
 
   const tm = new TransactionManager();
-  const now = new Date().toISOString();
   await tm.runTransaction(async (tx) => {
     for (const msgRow of msgRows || []) {
       const msgData = msgRow.data as Record<string, unknown>;

@@ -6,7 +6,8 @@ import { logger } from '../utils/logger';
 import { TransactionManager } from '../database/transaction-manager';
 
 async function lessonById(supabase: ReturnType<typeof getSupabaseClient>, lessonId: string) {
-  const { data, error } = await supabase!.from('lessons').select('*').eq('id', lessonId).maybeSingle();
+  if (!supabase) throw new Error('Supabase client not configured');
+  const { data, error } = await supabase.from('lessons').select('*').eq('id', lessonId).maybeSingle();
   if (error) throw error;
   if (!data) return null;
   return { id: data.id, ...buildDocData(data as Record<string, unknown>, 'lessons') } as any;

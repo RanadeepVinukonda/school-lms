@@ -53,7 +53,8 @@ export async function syncRoster(schoolId: string, accessToken: string, classroo
           class_id: targetClassId
         }).select().single();
         if (createUserErr) throw new Error(`Failed to create user: ${createUserErr.message}`);
-        userId = newUser!.id;
+        if (!newUser) throw new Error('Failed to create user: no data returned');
+        userId = newUser.id;
       }
 
       // Add to school student mapping if not exists
@@ -82,7 +83,7 @@ export async function pushGrade(
   accessToken: string,
   classroomCourseId: string,
   courseWorkId: string,
-  studentEmail: string,
+  _studentEmail: string,
   grade: number
 ) {
   try {

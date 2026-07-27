@@ -1,22 +1,6 @@
 import { logger } from '../utils/logger';
 import { chatCompletion } from './ai.service';
 
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || '';
-const YOUTUBE_BASE = 'https://www.googleapis.com/youtube/v3';
-
-function parseDuration(isoDuration: string): string {
-  const match = isoDuration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
-  if (!match) return '0:00';
-  const hours = (match[1] || '').replace('H', '');
-  const minutes = (match[2] || '').replace('M', '');
-  const seconds = (match[3] || '').replace('S', '');
-  const h = hours ? parseInt(hours) : 0;
-  const m = minutes ? parseInt(minutes) : 0;
-  const s = seconds ? parseInt(seconds) : 0;
-  if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
-
 import ytSearch from 'yt-search';
 
 function timeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -50,7 +34,7 @@ export async function searchVideos(query: string, maxResults = 5) {
   }
 }
 
-export async function searchVideosForConcept(subject: string, chapterTitle: string, conceptTitle: string) {
+export async function searchVideosForConcept(subject: string, _chapterTitle: string, conceptTitle: string) {
   const query = `${subject} ${conceptTitle} tutorial`;
   const allVideos = await searchVideos(query, 3);
   const scored = allVideos.map((v: { title: string; description: string }) => {

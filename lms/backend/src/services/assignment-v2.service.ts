@@ -3,62 +3,11 @@ import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
-import { deleteDocument } from './document.service';
-import { computeLevel, computeComplexityHandled, type Difficulty, type StudentLevel } from './ai-level.service';
+import { computeLevel, computeComplexityHandled, type Difficulty } from './ai-level.service';
+import { nosqlGet, nosqlSet, nosqlUpdate, nosqlQuery } from './nosql.service';
 
 const ASSIGNMENT_V2 = 'assignmentV2';
 const ASSIGNMENT_SUB_V2 = 'assignmentSubmissionV2';
-
-async function nosqlGet(col: string, id: string): Promise<{ exists: boolean; data: Record<string, unknown> | null }> {
-  const supabase = getSupabaseAdmin();
-  const { data: row, error } = await supabase.from('firestore_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
-  if (error) throw error;
-  return { exists: !!row, data: (row?.data as Record<string, unknown>) ?? null };
-}
-
-async function nosqlSet(col: string, id: string, data: Record<string, unknown>): Promise<void> {
-  const supabase = getSupabaseAdmin();
-  const { error } = await supabase.from('firestore_docs').upsert({
-    collection: col, doc_id: id, data,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'collection,doc_id' });
-  if (error) throw error;
-}
-
-async function nosqlUpdate(col: string, id: string, updates: Record<string, unknown>): Promise<void> {
-  const supabase = getSupabaseAdmin();
-  const { data: existing, error } = await supabase.from('firestore_docs').select('data').eq('collection', col).eq('doc_id', id).maybeSingle();
-  if (error) throw error;
-  const merged = { ...((existing?.data as Record<string, unknown>) || {}), ...updates };
-  const { error: upsertError } = await supabase.from('firestore_docs').upsert({
-    collection: col, doc_id: id, data: merged,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'collection,doc_id' });
-  if (upsertError) throw upsertError;
-}
-
-async function nosqlDelete(col: string, id: string): Promise<void> {
-  await deleteDocument(col, id);
-}
-
-async function nosqlQuery(col: string, filters: Array<{ field: string; value: unknown }>, options?: { orderBy?: string; orderDir?: 'asc' | 'desc'; limit?: number; offset?: number }): Promise<Array<{ id: string; [key: string]: unknown }>> {
-  const supabase = getSupabaseAdmin();
-  let q: any = supabase.from('firestore_docs').select('*').eq('collection', col);
-  for (const f of filters) {
-    q = q.contains('data', { [f.field]: f.value });
-  }
-  if (options?.orderBy) {
-    q = q.order(options.orderBy === 'createdAt' ? 'created_at' : `data->>${options.orderBy}`, { ascending: options.orderDir !== 'desc' });
-  }
-  if (options?.limit !== undefined && options?.offset !== undefined) {
-    q = q.range(options.offset, options.offset + options.limit - 1);
-  } else if (options?.limit !== undefined) {
-    q = q.limit(options.limit);
-  }
-  const { data: rows, error } = await q;
-  if (error) throw error;
-  return (rows || []).map((r: any) => ({ id: r.doc_id, ...r.data }));
-}
 
 export async function createAssignment(data: {
   title: string;

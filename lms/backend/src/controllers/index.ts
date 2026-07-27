@@ -1,0 +1,12 @@
+export * as authController from './auth.controller';
+export * as attendanceController from './attendance.controller';
+export * as classController from './class.controller';
+export * as enrollmentController from './enrollment.controller';
+export * as feeController from './fee.controller';
+export * as gradeController from './grade.controller';
+export * as ocrController from './ocr.controller';
+export * as parentController from './parent.controller';
+export * as quizV2Controller from './quiz-v2.controller';
+export * as schoolsController from './schools.controller';
+export * as textbookController from './textbook.controller';
+export * as userController from './user.controller';

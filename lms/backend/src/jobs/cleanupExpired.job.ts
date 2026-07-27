@@ -1,4 +1,3 @@
-// @ts-nocheck — pre-existing type errors
 import { getSupabaseAdmin } from '../services/supabase';
 import { logger } from '../utils/logger';
 import { TransactionManager } from '../database/transaction-manager';
@@ -16,7 +15,7 @@ export async function cleanupSoftDeletedRecords() {
 
   for (const table of SOFT_DELETE_TABLES) {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from(table)
         .delete()
         .lt('deleted_at', cutoff);
@@ -26,10 +25,6 @@ export async function cleanupSoftDeletedRecords() {
         continue;
       }
 
-      const count = (data as unknown as Array<unknown> | null)?.length ?? 0;
-      if (count > 0) {
-        logger.info(`Purged ${count} soft-deleted records from ${table}`);
-      }
     } catch (err) {
       logger.error(`Failed to purge soft-deleted records from ${table}`, { error: err });
     }
@@ -112,6 +107,6 @@ export async function cleanupExpiredData() {
       logger.info(`Marked ${inProgressExamAttempts.length} abandoned exam attempts`);
     }
   } catch (error) {
-    logger.error('Failed to cleanup expired data', error);
+    logger.error('Failed to cleanup expired data', error as Record<string, unknown>);
   }
 }

@@ -1,62 +1,44 @@
 import { Request, Response } from 'express';
-import { getSupabaseAdmin } from '../services/supabase';
+import * as parentService from '../services/parent.service';
 import * as analyticsService from '../services/analytics.service';
 import * as gradeService from '../services/grade.service';
 import { chatCompletion } from '../services/ai.service';
 import { sendSuccess } from '../utils/response';
-import { NotFoundError } from '../utils/errors';
+import { ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { env } from '../config/env';
 
 export async function getChildren(req: Request, res: Response) {
-  const supabase = getSupabaseAdmin();
-  const parentId = req.user!.uid;
+  if (!req.user) throw new ValidationError('Authentication required');
+  const parentId = req.user.uid;
 
-  const { data: parentDoc } = await supabase.from('users').select('children_ids').eq('id', parentId).maybeSingle();
-  if (!parentDoc) throw new NotFoundError('Parent not found');
-
-  const childrenIds: string[] = (parentDoc.children_ids as string[]) ?? [];
+  const childrenIds = await parentService.getParentChildrenIds(parentId);
   if (childrenIds.length === 0) {
     sendSuccess(res, []);
     return;
   }
 
-  const { data: childRows } = await supabase.from('users').select('*').in('id', childrenIds);
-  const children = await Promise.all(
-    (childRows || []).map(async (row) => {
-      let classInfo: { name?: string; grade?: number; section?: string } | null = null;
-      if (row.class_id) {
-        const { data: cls } = await supabase.from('classes').select('name, grade, section').eq('id', row.class_id).maybeSingle();
-        if (cls) classInfo = cls;
-      }
-      const { password, ...rest } = row;
-      return { id: row.id, ...rest, classInfo };
-    }),
-  );
-
+  const children = await parentService.getChildDetails(childrenIds);
   sendSuccess(res, children);
 }
 
 export async function getChildDashboard(req: Request, res: Response) {
-  const supabase = getSupabaseAdmin();
+  if (!req.user) throw new ValidationError('Authentication required');
   const { studentId } = req.params;
-  const parentId = req.user!.uid;
+  const parentId = req.user.uid;
 
-  const { data: parentDoc } = await supabase.from('users').select('children_ids').eq('id', parentId).maybeSingle();
-  const childrenIds: string[] = (parentDoc?.children_ids as string[]) ?? [];
-  if (!childrenIds.includes(studentId)) {
+  const isChild = await parentService.verifyChildOwnership(parentId, studentId);
+  if (!isChild) {
     res.status(403).json({ success: false, error: { message: 'This student is not your child' } });
     return;
   }
 
-  const { data: studentRow } = await supabase.from('users').select('*').eq('id', studentId).maybeSingle();
-  if (!studentRow) throw new NotFoundError('Student not found');
-  const { password: _sp, ...student } = studentRow;
+  const student = await parentService.getChildProfile(studentId);
 
-  let grades: any[] = [];
+  let grades: Array<Record<string, unknown>> = [];
   let performance: Record<string, unknown> | null = null;
   try {
-    grades = await gradeService.getStudentGrades(studentId);
+    grades = await gradeService.getStudentGrades(studentId) as Array<Record<string, unknown>>;
   } catch (err) {
     logger.warn('Failed to fetch student grades for dashboard', { studentId, error: err });
   }
@@ -66,15 +48,13 @@ export async function getChildDashboard(req: Request, res: Response) {
     logger.warn('Failed to fetch student performance for dashboard', { studentId, error: err });
   }
 
-  let className: string | null = null;
-  if (studentRow.class_id) {
-    const { data: cls } = await supabase.from('classes').select('name').eq('id', studentRow.class_id).maybeSingle();
-    if (cls) className = cls.name;
-  }
+  const className = student.class_id
+    ? await parentService.getChildClassName(student.class_id)
+    : null;
 
-  const scoredGrades = grades.filter((g: { percentage?: number }) => g.percentage != null);
+  const scoredGrades = grades.filter((g) => g.percentage != null);
   const avgScore = scoredGrades.length > 0
-    ? Math.round(scoredGrades.reduce((s: number, g: any) => s + g.percentage, 0) / scoredGrades.length)
+    ? Math.round(scoredGrades.reduce((s: number, g) => s + (g.percentage as number), 0) / scoredGrades.length)
     : 0;
 
   sendSuccess(res, {
@@ -88,13 +68,12 @@ export async function getChildDashboard(req: Request, res: Response) {
 }
 
 export async function getChildProgress(req: Request, res: Response) {
-  const supabase = getSupabaseAdmin();
+  if (!req.user) throw new ValidationError('Authentication required');
   const { studentId } = req.params;
-  const parentId = req.user!.uid;
+  const parentId = req.user.uid;
 
-  const { data: parentDoc } = await supabase.from('users').select('children_ids').eq('id', parentId).maybeSingle();
-  const childrenIds: string[] = (parentDoc?.children_ids as string[]) ?? [];
-  if (!childrenIds.includes(studentId)) {
+  const isChild = await parentService.verifyChildOwnership(parentId, studentId);
+  if (!isChild) {
     res.status(403).json({ success: false, error: { message: 'This student is not your child' } });
     return;
   }
@@ -109,20 +88,17 @@ export async function getChildProgress(req: Request, res: Response) {
 }
 
 export async function getChildReport(req: Request, res: Response) {
-  const supabase = getSupabaseAdmin();
+  if (!req.user) throw new ValidationError('Authentication required');
   const { studentId } = req.params;
-  const parentId = req.user!.uid;
+  const parentId = req.user.uid;
 
-  const { data: parentDoc } = await supabase.from('users').select('children_ids').eq('id', parentId).maybeSingle();
-  const childrenIds: string[] = (parentDoc?.children_ids as string[]) ?? [];
-  if (!childrenIds.includes(studentId)) {
+  const isChild = await parentService.verifyChildOwnership(parentId, studentId);
+  if (!isChild) {
     res.status(403).json({ success: false, error: { message: 'This student is not your child' } });
     return;
   }
 
-  const { data: studentRow } = await supabase.from('users').select('display_name').eq('id', studentId).maybeSingle();
-  if (!studentRow) throw new NotFoundError('Student not found');
-  const studentName = studentRow.display_name || 'Student';
+  const studentName = await parentService.getChildDisplayName(studentId);
 
   const performance = await analyticsService.getStudentPerformance(studentId);
   const recentGrades = await gradeService.getStudentGrades(studentId);
@@ -133,7 +109,7 @@ Student Name: ${studentName}
 Overall Average Score: ${performance?.overallAvgScore ?? 'N/A'}%
 Total Assessments Completed: ${performance?.totalAttempts ?? 0}
 Recent Activity: ${JSON.stringify(performance?.recentActivity ?? [])}
-Recent Grades: ${JSON.stringify((recentGrades as any[]).slice(0, 15))}
+Recent Grades: ${JSON.stringify((recentGrades as Record<string, unknown>[]).slice(0, 15))}
 
 Generate a JSON report with this exact structure:
 {
@@ -166,18 +142,16 @@ Generate a JSON report with this exact structure:
   } catch (err) {
     logger.warn('AI report generation failed, returning data-driven fallback', { studentId, error: err });
     const activity = (performance?.recentActivity ?? []) as Array<Record<string, unknown>>;
-    const quizzes = (performance?.quizzes ?? []) as Array<Record<string, unknown>>;
-    const assignments = (performance?.assignments ?? []) as Array<Record<string, unknown>>;
 
-    const highScores = activity.filter((a: any) => a.score >= 75);
-    const lowScores = activity.filter((a: any) => a.score < 50);
+    const highScores = activity.filter((a) => (a.score as number) >= 75);
+    const lowScores = activity.filter((a) => (a.score as number) < 50);
 
     const strengths = highScores.length > 0
-      ? highScores.map((a: any) => `Strong performance in "${a.title}" (${a.score}%)`)
+      ? highScores.map((a) => `Strong performance in "${a.title}" (${a.score}%)`)
       : (activity.length > 0 ? ['Consistently completing assigned coursework'] : ['Engaging with the learning platform']);
 
     const learningGaps = lowScores.length > 0
-      ? lowScores.map((a: any) => `Needs improvement in "${a.title}" (${a.score}%)`)
+      ? lowScores.map((a) => `Needs improvement in "${a.title}" (${a.score}%)`)
       : (activity.length > 0 ? ['Continue to review and reinforce concepts'] : ['Begin attempting assessments to identify areas for growth']);
 
     const recs: Array<{ area: string; suggestion: string; priority: string }> = [];
@@ -185,7 +159,7 @@ Generate a JSON report with this exact structure:
     if (avg < 50) recs.push({ area: 'Core Concepts', suggestion: 'Focus on strengthening foundational concepts. Consider requesting extra help sessions.', priority: 'high' as const });
     else if (avg < 75) recs.push({ area: 'Review', suggestion: 'Regular revision of class notes and completing practice problems will help improve scores.', priority: 'medium' as const });
     else recs.push({ area: 'Enrichment', suggestion: 'Student is performing well. Encourage advanced practice and exploration of topics.', priority: 'low' as const });
-    if (lowScores.length > 0) recs.push({ area: 'Targeted Practice', suggestion: `Focus on improving in: ${lowScores.map((a: any) => `"${a.title}"`).join(', ')}`, priority: 'high' as const });
+    if (lowScores.length > 0) recs.push({ area: 'Targeted Practice', suggestion: `Focus on improving in: ${lowScores.map((a) => `"${a.title}"`).join(', ')}`, priority: 'high' as const });
 
     const totalAssessments = performance?.totalAttempts ?? 0;
     const overviewText = totalAssessments > 0
@@ -209,35 +183,33 @@ Generate a JSON report with this exact structure:
     studentName,
     generatedAt: new Date().toISOString(),
     report,
-    recentGrades: (recentGrades as any[]).slice(0, 10),
+    recentGrades: (recentGrades as Record<string, unknown>[]).slice(0, 10),
   });
 }
 
 export async function getRecommendations(req: Request, res: Response) {
-  const supabase = getSupabaseAdmin();
-  const parentId = req.user!.uid;
+  if (!req.user) throw new ValidationError('Authentication required');
+  const parentId = req.user.uid;
 
-  const { data: parentDoc } = await supabase.from('users').select('children_ids').eq('id', parentId).maybeSingle();
-  if (!parentDoc) throw new NotFoundError('Parent not found');
-  const childrenIds: string[] = (parentDoc.children_ids as string[]) ?? [];
-
+  const childrenIds = await parentService.getParentChildrenIds(parentId);
   if (childrenIds.length === 0) {
     sendSuccess(res, { recommendations: [] });
     return;
   }
 
+  const nameMap = await parentService.getChildDisplayNames(childrenIds);
+
   const allRecommendations: Array<{ studentId: string; studentName: string; averageScore: number; totalAssessments: number; recommendations: Array<{ area: string; suggestion: string; priority: string }> }> = [];
 
   for (const childId of childrenIds) {
-    const { data: studentRow } = await supabase.from('users').select('display_name').eq('id', childId).maybeSingle();
-    if (!studentRow) continue;
-    const studentName = studentRow.display_name || 'Student';
+    const studentName = nameMap.get(childId);
+    if (!studentName) continue;
 
-    const performance = (await analyticsService.getStudentPerformance(childId)) as any;
+    const performance = (await analyticsService.getStudentPerformance(childId)) as Record<string, unknown> | null;
     const scores = [
-      ...((performance?.quizzes ?? []) as any[]).map((q: any) => q.percentage),
-      ...((performance?.assignments ?? []) as any[]).map((a: any) => a.percentage),
-      ...((performance?.exams ?? []) as any[]).map((e: any) => e.percentage),
+      ...((performance?.quizzes ?? []) as Record<string, unknown>[]).map((q) => q.percentage as number),
+      ...((performance?.assignments ?? []) as Record<string, unknown>[]).map((a) => a.percentage as number),
+      ...((performance?.exams ?? []) as Record<string, unknown>[]).map((e) => e.percentage as number),
     ].filter((p: number) => p > 0);
 
     const avgScore = scores.length > 0
@@ -245,16 +217,19 @@ export async function getRecommendations(req: Request, res: Response) {
       : 0;
 
     const weakSubjects: string[] = [];
-    if ((performance?.quizzes ?? []).length > 0) {
-      const quizAvg = (performance.quizzes as any[]).reduce((s: number, q: any) => s + q.percentage, 0) / performance.quizzes.length;
+    if (((performance?.quizzes ?? []) as unknown[]).length > 0) {
+      const quizzes = performance!.quizzes as Record<string, unknown>[];
+      const quizAvg = quizzes.reduce((s: number, q) => s + (q.percentage as number), 0) / quizzes.length;
       if (quizAvg < 60) weakSubjects.push('Quizzes');
     }
-    if ((performance?.assignments ?? []).length > 0) {
-      const asgnAvg = (performance.assignments as any[]).reduce((s: number, a: any) => s + a.percentage, 0) / performance.assignments.length;
+    if (((performance?.assignments ?? []) as unknown[]).length > 0) {
+      const assignments = performance!.assignments as Record<string, unknown>[];
+      const asgnAvg = assignments.reduce((s: number, a) => s + (a.percentage as number), 0) / assignments.length;
       if (asgnAvg < 60) weakSubjects.push('Assignments');
     }
-    if ((performance?.exams ?? []).length > 0) {
-      const examAvg = (performance.exams as any[]).reduce((s: number, e: any) => s + e.percentage, 0) / performance.exams.length;
+    if (((performance?.exams ?? []) as unknown[]).length > 0) {
+      const exams = performance!.exams as Record<string, unknown>[];
+      const examAvg = exams.reduce((s: number, e) => s + (e.percentage as number), 0) / exams.length;
       if (examAvg < 60) weakSubjects.push('Exams');
     }
 
@@ -279,7 +254,7 @@ export async function getRecommendations(req: Request, res: Response) {
       studentId: childId,
       studentName,
       averageScore: avgScore,
-      totalAssessments: performance?.totalAttempts ?? 0,
+      totalAssessments: (performance?.totalAttempts as number) ?? 0,
       recommendations: recs,
     });
   }

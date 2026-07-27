@@ -1,11 +1,13 @@
 import { Request, Response } from 'express';
 import * as attendanceService from '../services/attendance.service';
-import { sendSuccess, sendCreated, sendError } from '../utils/response';
+import { sendSuccess, sendCreated } from '../utils/response';
+import { ValidationError } from '../utils/errors';
 
 export async function markAttendance(req: Request, res: Response) {
+  if (!req.user) throw new ValidationError('Authentication required');
   const result = await attendanceService.markAttendance({
     ...req.body,
-    schoolId: req.user!.school_id,
+    schoolId: req.user.school_id,
   });
   sendCreated(res, result, 'Attendance marked');
 }

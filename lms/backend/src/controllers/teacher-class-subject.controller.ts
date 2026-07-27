@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import * as tcsService from '../services/teacher-class-subject.service';
 import { getSupabaseClient } from '../services/supabase';
 import { sendSuccess, sendCreated } from '../utils/response';
+import { requireUser } from '../types/common';
 
 export async function assignTeacher(req: Request, res: Response) {
   const result = await tcsService.assignTeacher(req.body);
@@ -9,8 +10,9 @@ export async function assignTeacher(req: Request, res: Response) {
 }
 
 export async function setupTeacher(req: Request, res: Response) {
+  const user = requireUser(req);
   const { classIds, subjectAssignments } = req.body;
-  const uid = req.user!.uid;
+  const uid = user.uid;
   const results = [];
   for (const sa of subjectAssignments) {
     const result = await tcsService.assignTeacher({
@@ -31,12 +33,14 @@ export async function setupTeacher(req: Request, res: Response) {
 }
 
 export async function getMyAssignments(req: Request, res: Response) {
-  const result = await tcsService.getTeacherAssignments(req.user!.uid);
+  const user = requireUser(req);
+  const result = await tcsService.getTeacherAssignments(user.uid);
   sendSuccess(res, result);
 }
 
 export async function getAssignmentForClass(req: Request, res: Response) {
-  const result = await tcsService.getTeacherAssignment(req.user!.uid, req.params.classId);
+  const user = requireUser(req);
+  const result = await tcsService.getTeacherAssignment(user.uid, req.params.classId);
   sendSuccess(res, result);
 }
 
@@ -45,7 +49,7 @@ export async function getUnassignedSubjects(req: Request, res: Response) {
   sendSuccess(res, result);
 }
 
-export async function getAllAssignments(req: Request, res: Response) {
+export async function getAllAssignments(_req: Request, res: Response) {
   const result = await tcsService.getAllAssignments();
   sendSuccess(res, result);
 }

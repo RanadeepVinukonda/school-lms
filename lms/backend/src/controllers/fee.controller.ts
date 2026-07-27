@@ -3,9 +3,11 @@ import * as feeService from '../services/fee.service';
 import * as receiptService from '../services/receipt.service';
 import { sendSuccess, sendCreated } from '../utils/response';
 import { logger } from '../utils/logger';
+import { requireUser } from '../types/common';
 
 export async function createFeeSchedule(req: Request, res: Response) {
-  const result = await feeService.createFeeSchedule({ ...req.body, schoolId: req.user!.school_id });
+  const user = requireUser(req);
+  const result = await feeService.createFeeSchedule({ ...req.body, schoolId: user.school_id });
   sendCreated(res, result, 'Fee schedule created');
 }
 
@@ -22,8 +24,9 @@ export async function downloadReceipt(req: Request, res: Response) {
 }
 
 export async function listFeeSchedules(req: Request, res: Response) {
+  const user = requireUser(req);
   const academicYear = (req.query.academicYear as string) || req.activeAcademicYear;
-  const result = await feeService.listFeeSchedules(req.user!.school_id, academicYear, req.query.classId as string);
+  const result = await feeService.listFeeSchedules(user.school_id, academicYear, req.query.classId as string);
 
   sendSuccess(res, result);
 }
@@ -34,16 +37,19 @@ export async function getFeeSchedule(req: Request, res: Response) {
 }
 
 export async function recordPayment(req: Request, res: Response) {
-  const result = await feeService.recordPayment({ ...req.body, schoolId: req.user!.school_id });
+  const user = requireUser(req);
+  const result = await feeService.recordPayment({ ...req.body, schoolId: user.school_id });
   sendCreated(res, result, 'Payment recorded');
 }
 
 export async function getStudentPayments(req: Request, res: Response) {
-  const result = await feeService.getStudentPayments(req.params.studentId, req.user!.school_id);
+  const user = requireUser(req);
+  const result = await feeService.getStudentPayments(req.params.studentId, user.school_id);
   sendSuccess(res, result);
 }
 
 export async function getOutstandingReport(req: Request, res: Response) {
-  const result = await feeService.getOutstandingReport(req.user!.school_id);
+  const user = requireUser(req);
+  const result = await feeService.getOutstandingReport(user.school_id);
   sendSuccess(res, result);
 }

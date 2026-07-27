@@ -42,7 +42,7 @@ export const schoolRateLimit = rateLimit({
   ...defaults,
   windowMs: 60 * 1000,
   max: 1000,
-  keyGenerator: (req) => (req as any).user?.school_id || (req as any).ip || 'unknown',
+  keyGenerator: (req) => (req.user as Record<string, unknown> | undefined)?.school_id as string || req.ip || 'unknown',
   handler: (_req, _res, next) => {
     next(new AppError(429, 'School rate limit exceeded. Please slow down.'));
   },
@@ -52,8 +52,24 @@ export const aiRateLimit = rateLimit({
   ...defaults,
   windowMs: env.AI_RATE_LIMIT_WINDOW_MS,
   max: env.AI_RATE_LIMIT_MAX,
-  keyGenerator: (req) => (req as any).user?.id || (req as any).ip || 'unknown',
+  keyGenerator: (req) => (req.user as Record<string, unknown> | undefined)?.id as string || req.ip || 'unknown',
   handler: (_req, _res, next) => {
     next(new AppError(429, 'AI rate limit exceeded. Please slow down.'));
+  },
+});
+
+export const authIpRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: env.AUTH_RATE_LIMIT_MAX * 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.ip || req.socket.remoteAddress || 'unknown',
+  skip: () => env.NODE_ENV === 'test',
+  message: {
+    success: false,
+    error: {
+      message: 'Too many authentication attempts from this IP. Please try again later.',
+      code: 'RATE_LIMIT',
+    },
   },
 });

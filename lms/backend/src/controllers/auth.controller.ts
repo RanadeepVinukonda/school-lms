@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import crypto from 'crypto';
 import * as authService from '../services/auth.service';
 import { sendSuccess, sendCreated } from '../utils/response';
 import { env } from '../config/env';
 import { getSupabaseAdmin } from '../services/supabase';
+import { requireUser } from '../types/common';
 
 function parseCookies(cookieHeader?: string): Record<string, string> {
   const cookies: Record<string, string> = {};
@@ -45,12 +45,14 @@ export async function login(req: Request, res: Response) {
 
 export async function getProfile(req: Request, res: Response) {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  const result = await authService.getUserProfile(req.user!.uid);
+  const user = requireUser(req);
+  const result = await authService.getUserProfile(user.uid);
   sendSuccess(res, result);
 }
 
 export async function updateProfile(req: Request, res: Response) {
-  const result = await authService.updateUserProfile(req.user!.uid, req.body);
+  const user = requireUser(req);
+  const result = await authService.updateUserProfile(user.uid, req.body);
   sendSuccess(res, result, 'Profile updated');
 }
 
@@ -65,7 +67,8 @@ export async function resetPassword(req: Request, res: Response) {
 }
 
 export async function changePassword(req: Request, res: Response) {
-  await authService.changePassword(req.user!.uid, req.body.currentPassword, req.body.newPassword);
+  const user = requireUser(req);
+  await authService.changePassword(user.uid, req.body.currentPassword, req.body.newPassword);
   sendSuccess(res, null, 'Password changed successfully');
 }
 
@@ -80,7 +83,7 @@ export async function verifyHash(req: Request, res: Response) {
   res.redirect(302, `${frontendUrl}/reset-password${req.url.includes('#') ? '' : '#'}${req.url.split('#')[1] || ''}`);
 }
 
-export async function verifyToken(req: Request, res: Response) {
+export async function verifyToken(_req: Request, res: Response) {
   sendSuccess(res, { valid: true });
 }
 
@@ -89,15 +92,7 @@ export async function logout(req: Request, res: Response) {
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split('Bearer ')[1];
     if (token) {
-      try {
-        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-        const supabase = getSupabaseAdmin();
-        if (supabase) {
-          await supabase.from('revoked_tokens').insert({ token_hash: tokenHash });
-        }
-      } catch {
-        // ignore
-      }
+      await authService.logout(token);
     }
   }
   res.clearCookie('token', { path: '/', ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}) });

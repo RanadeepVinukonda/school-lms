@@ -1,9 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from './supabase';
+import { getConnectionPool } from '../database/connection-manager';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 import { ServiceResult, success, failure } from '../types/service-result';
+import { classCache } from '../utils/cache';
 
 /** Create a new class with zero student count. */
 export async function createClass(data: {
@@ -51,6 +53,7 @@ export async function createClass(data: {
   if (error) throw error;
 
   logger.info('Class created', { classId, name: data.name, code: data.code });
+  classCache.invalidate(classId);
 
   return { ...classData, studentCount: 0 };
 }
@@ -60,7 +63,7 @@ export async function updateClass(classId: string, data: Record<string, unknown>
   const supabase = getSupabaseAdmin()!;
   const { data: existing, error: fetchErr } = await supabase
     .from('classes')
-    .select('id')
+    .select('id, version')
     .eq('id', classId)
     .maybeSingle();
   if (fetchErr) throw fetchErr;
@@ -69,17 +72,24 @@ export async function updateClass(classId: string, data: Record<string, unknown>
     throw new NotFoundError('Class not found');
   }
 
-  const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  const currentVersion = existing.version ?? 0;
+  const updateData: Record<string, unknown> = { updated_at: new Date().toISOString(), version: currentVersion + 1 };
   for (const [k, v] of Object.entries(data)) {
-    updateData[k] = v;
+    if (k !== 'version') updateData[k] = v;
   }
 
-  const { error } = await supabase.from('classes').update(updateData).eq('id', classId);
+  const { data: updated, error } = await supabase
+    .from('classes')
+    .update(updateData)
+    .eq('id', classId)
+    .eq('version', currentVersion)
+    .select()
+    .single();
   if (error) throw error;
+  if (!updated) throw new Error('Concurrent modification detected. Please retry.');
 
-  const { data: updated, error: fetchErr2 } = await supabase.from('classes').select('*').eq('id', classId).single();
-  if (fetchErr2) throw fetchErr2;
   logger.info('Class updated', { classId });
+  classCache.invalidate(classId);
 
   return updated;
 }
@@ -102,6 +112,7 @@ export async function deleteClass(classId: string) {
   if (error) throw error;
 
   logger.info('Class deleted', { classId });
+  classCache.invalidate(classId);
 }
 
 /** List classes with optional filters (status, academicYear, teacherId, search, schoolId), paginated. */
@@ -113,7 +124,7 @@ export async function listClasses(query: {
   academicYear?: string;
   search?: string;
   schoolId?: string;
-}): Promise<ServiceResult<{ items: any[]; total: number; page: number; limit: number }>> {
+}): Promise<ServiceResult<{ items: Record<string, unknown>[]; total: number; page: number; limit: number }>> {
   try {
     const { page, limit } = parsePagination(query);
     const offset = (page - 1) * limit;
@@ -139,13 +150,13 @@ export async function listClasses(query: {
     if (error) return failure(error.message, 'DB_ERROR');
 
     return success({ items: items || [], total: count || 0, page, limit });
-  } catch (err: any) {
-    return failure(err.message, 'LIST_CLASSES_ERROR');
+  } catch (err: unknown) {
+    return failure(err instanceof Error ? err.message : String(err), 'LIST_CLASSES_ERROR');
   }
 }
 
 /** Fetch a single class by id. Throws NotFoundError if missing. */
-export async function getClassById(classId: string): Promise<ServiceResult<any>> {
+export async function getClassById(classId: string): Promise<ServiceResult<Record<string, unknown>>> {
   try {
     const supabase = getSupabaseAdmin()!;
     const { data, error } = await supabase
@@ -158,8 +169,8 @@ export async function getClassById(classId: string): Promise<ServiceResult<any>>
     if (!data) return failure('Class not found', 'NOT_FOUND');
 
     return success(data);
-  } catch (err: any) {
-    return failure(err.message, 'GET_CLASS_ERROR');
+  } catch (err: unknown) {
+    return failure(err instanceof Error ? err.message : String(err), 'GET_CLASS_ERROR');
   }
 }
 
@@ -172,43 +183,56 @@ export async function addStudents(classId: string, studentIds: string[]) {
     .eq('id', classId)
     .maybeSingle();
   if (fetchErr) throw fetchErr;
+  if (!classDoc) throw new NotFoundError('Class not found');
 
-  if (!classDoc) {
-    throw new NotFoundError('Class not found');
-  }
+  const pool = getConnectionPool();
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
 
-  for (const studentId of studentIds) {
-    const { data: userDoc, error } = await supabase
-      .from('users')
-      .select('id, class_ids')
-      .eq('id', studentId)
-      .maybeSingle();
-    if (error) throw error;
-
-    if (userDoc) {
-      const classIds = userDoc.class_ids || [];
-      if (!classIds.includes(classId)) {
-        const { error: updateError } = await supabase
-          .from('users')
-          .update({ class_ids: [...classIds, classId], class_id: classId, updated_at: new Date().toISOString() })
-          .eq('id', studentId);
-        if (updateError) throw updateError;
-      }
+    for (const sid of studentIds) {
+      await client.query(
+        `UPDATE users
+         SET class_ids = CASE
+           WHEN $2 = ANY(class_ids) THEN class_ids
+           ELSE array_append(class_ids, $2)
+         END,
+         class_id = $2,
+         updated_at = NOW()
+         WHERE id = $1`,
+        [sid, classId]
+      );
     }
-  }
 
-  const { data: currentClass, error: fetchErr2 } = await supabase.from('classes').select('student_ids').eq('id', classId).single();
-  if (fetchErr2) throw fetchErr2;
-  const currentStudentIds = currentClass?.student_ids || [];
-  const newStudentIds = [...new Set([...currentStudentIds, ...studentIds])];
-  
-  const { error } = await supabase.from('classes').update({
-    student_ids: newStudentIds,
-    student_count: newStudentIds.length,
-    updated_at: new Date().toISOString(),
-  }).eq('id', classId);
-  
-  if (error) throw error;
+    const { rows: classVersion } = await client.query(
+      'SELECT version FROM classes WHERE id = $1',
+      [classId]
+    );
+    const currentVersion = (classVersion[0]?.version as number) ?? 0;
+
+    await client.query(
+      `UPDATE classes
+       SET student_ids = (
+         SELECT COALESCE(array_agg(DISTINCT sid), '{}')
+         FROM unnest(COALESCE(student_ids, '{}') || $2::text[]) AS sid
+       ),
+       student_count = (
+         SELECT COUNT(DISTINCT sid)
+         FROM unnest(COALESCE(student_ids, '{}') || $2::text[]) AS sid
+       ),
+       version = $3,
+       updated_at = NOW()
+       WHERE id = $1 AND version = $4`,
+      [classId, studentIds, currentVersion + 1, currentVersion]
+    );
+
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
 
   logger.info('Students added to class', { classId, count: studentIds.length });
 }
@@ -222,24 +246,53 @@ export async function removeStudents(classId: string, studentIds: string[]) {
     .eq('id', classId)
     .maybeSingle();
   if (fetchErr) throw fetchErr;
+  if (!classDoc) throw new NotFoundError('Class not found');
 
-  if (!classDoc) {
-    throw new NotFoundError('Class not found');
-  }
+  const pool = getConnectionPool();
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
 
-  for (const studentId of studentIds) {
-    const { data: userDoc, error } = await supabase
-      .from('users')
-      .select('id, class_ids')
-      .eq('id', studentId)
-      .maybeSingle();
-    if (error) throw error;
-
-    if (userDoc) {
-      const newClassIds = (userDoc.class_ids || []).filter((id: string) => id !== classId);
-      const { error } = await supabase.from('users').update({ class_ids: newClassIds }).eq('id', studentId);
-      if (error) throw new Error(`Failed to update users: ${error.message}`);
+    for (const sid of studentIds) {
+      await client.query(
+        `UPDATE users
+         SET class_ids = array_remove(class_ids, $2),
+             updated_at = NOW()
+         WHERE id = $1`,
+        [sid, classId]
+      );
     }
+
+    const { rows: classVersion } = await client.query(
+      'SELECT version FROM classes WHERE id = $1',
+      [classId]
+    );
+    const currentVersion = (classVersion[0]?.version as number) ?? 0;
+
+    await client.query(
+      `UPDATE classes
+       SET student_ids = (
+         SELECT COALESCE(array_agg(DISTINCT sid), '{}')
+         FROM unnest(COALESCE(student_ids, '{}')) AS sid
+         WHERE sid <> ALL($2::text[])
+       ),
+       student_count = (
+         SELECT COUNT(DISTINCT sid)
+         FROM unnest(COALESCE(student_ids, '{}')) AS sid
+         WHERE sid <> ALL($2::text[])
+       ),
+       version = $3,
+       updated_at = NOW()
+       WHERE id = $1 AND version = $4`,
+      [classId, studentIds, currentVersion + 1, currentVersion]
+    );
+
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally {
+    client.release();
   }
 
   logger.info('Students removed from class', { classId, count: studentIds.length });
@@ -255,7 +308,7 @@ export async function getRoster(classId: string) {
     .overlaps('class_ids', [classId]);
   if (error) throw error;
 
-  return (snapshot || []).map((doc: any) => ({
+  return (snapshot || []).map((doc: { id: string; display_name: string; email: string; role: string; student_id: string; roll_no: string; class_ids: string[] }) => ({
     id: doc.id,
     display_name: doc.display_name,
     email: doc.email,

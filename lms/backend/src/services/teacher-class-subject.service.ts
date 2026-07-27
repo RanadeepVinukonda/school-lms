@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from './supabase';
-import { NotFoundError, ConflictError, AppError } from '../utils/errors';
+import { NotFoundError, AppError } from '../utils/errors';
 import { deleteDocument } from './document.service';
 import { logger } from '../utils/logger';
 
@@ -12,13 +12,6 @@ export interface TeacherClassSubject {
   textbookId?: string;
   createdAt?: string;
   updatedAt?: string;
-}
-
-async function nosqlDoc(collection: string, docId: string) {
-  const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase.from('firestore_docs').select('doc_id, data').eq('collection', collection).eq('doc_id', docId).maybeSingle();
-  if (error) throw new Error('Failed to fetch document: ' + error.message);
-  return data || null;
 }
 
 /** Assign a teacher to a (class × subject). Enforces: one teacher per subject per class. */
@@ -146,9 +139,12 @@ export async function getAllAssignments() {
     Promise.all(subjectIds.map(async (id) => { const { data, error: e } = await supabase.from('subjects').select('id, name').eq('id', id).maybeSingle(); if (e) throw new Error('Failed to fetch subject: ' + e.message); return data; })),
   ]);
 
-  const teacherMap = new Map(teacherRes.filter(Boolean).map((s) => [s!.id, s!.display_name || s!.id]));
-  const classMap = new Map(classRes.filter(Boolean).map((s) => [s!.id, `${s!.name || ''}${(s as any).section ? ` - ${(s as any).section}` : ''}`.trim() || s!.id]));
-  const subjectMap = new Map(subjectRes.filter(Boolean).map((s) => [s!.id, s!.name || s!.id]));
+  const validTeachers = teacherRes.filter((s): s is NonNullable<typeof s> => s != null);
+  const validClasses = classRes.filter((s): s is NonNullable<typeof s> => s != null);
+  const validSubjects = subjectRes.filter((s): s is NonNullable<typeof s> => s != null);
+  const teacherMap = new Map(validTeachers.map((s) => [s.id, s.display_name || s.id]));
+  const classMap = new Map(validClasses.map((s) => [s.id, `${s.name || ''}${(s as any).section ? ` - ${(s as any).section}` : ''}`.trim() || s.id]));
+  const subjectMap = new Map(validSubjects.map((s) => [s.id, s.name || s.id]));
 
   return assignments.map((a) => ({
     ...a,

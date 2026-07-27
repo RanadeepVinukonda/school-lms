@@ -1,0 +1,279 @@
+import { v4 as uuidv4 } from 'uuid';
+import { getSupabaseAdmin } from './supabase';
+import { NotFoundError, ForbiddenError } from '../utils/errors';
+import { logger } from '../utils/logger';
+import { computeLevel, computeComplexityHandled } from './ai-level.service';
+import type { Difficulty } from './ai-level.service';
+import * as gamificationService from './gamification.service';
+import { computeMastery } from './adaptive/mastery.service';
+import { createNotification, createBulkNotifications } from './notification.service';
+import { nosqlGet } from './nosql.service';
+import { TransactionManager } from '../database/transaction-manager';
+import { QV2, QAV2, POINTS_BY_DIFFICULTY, fallbackText, getConceptQuestions } from './quiz-v2.service';
+
+interface QuestionBankItem {
+  id: string;
+  type: string;
+  difficulty: Difficulty;
+  text: string;
+  options?: string[];
+  correctAnswer: string;
+  explanation: string;
+  points: number;
+}
+
+interface GradedAnswer {
+  questionId: string;
+  questionText?: string;
+  answer: string | string[];
+  isCorrect: boolean;
+  pointsEarned: number;
+  timeSpent: number;
+  correctAnswer?: string;
+  explanation?: string;
+  skipped?: boolean;
+}
+
+interface QuizAttemptResult {
+  answers: GradedAnswer[];
+  score: number;
+  totalPoints: number;
+  percentage: number;
+  submittedAt: string;
+  timeSpent: number;
+  status: string;
+}
+
+export async function submitQuizAttempt(attemptId: string, studentId: string, data: {
+  answers: Array<{
+    questionId: string;
+    answer: string | string[];
+    timeSpent?: number;
+    skipped?: boolean;
+  }>;
+}) {
+  const supabase = getSupabaseAdmin()!;
+  const attemptData = (await nosqlGet(QAV2, attemptId)).data as Record<string, unknown> | null;
+  if (!attemptData) throw new NotFoundError('Attempt not found');
+  if (attemptData.studentId !== studentId) throw new ForbiddenError('Not your attempt');
+  if (attemptData.status !== 'in_progress') throw new ForbiddenError('Attempt already submitted');
+
+  const quizData = (await nosqlGet(QV2, attemptData.quizId as string)).data as Record<string, unknown> | null;
+  if (!quizData) throw new NotFoundError('Quiz not found');
+
+  const storedStartedAt = attemptData.startedAt as string;
+  if (!storedStartedAt) throw new ForbiddenError('Invalid attempt state');
+  const submittedAt = new Date().toISOString();
+  const elapsedMinutes = (new Date(submittedAt).getTime() - new Date(storedStartedAt).getTime()) / 60000;
+  const graceMinutes = 5;
+  if (elapsedMinutes > ((quizData.timeLimitMinutes as number) + graceMinutes)) throw new ForbiddenError('Time limit exceeded');
+
+  let questionBank: QuestionBankItem[];
+  const storedQuestions = quizData.questions as Array<Record<string, unknown>> | undefined;
+  if (Array.isArray(storedQuestions) && storedQuestions.length > 0) {
+    questionBank = storedQuestions.map((q) => ({
+      id: (q.id as string) || uuidv4(), type: (q.type as string) || 'short_answer',
+      difficulty: (q.difficulty as Difficulty) || 'medium',
+      text: ((q.text || q.question) as string) || fallbackText(q.type as string, q.options as string[]), options: q.options as string[] | undefined,
+      correctAnswer: (q.correctAnswer as string) || '', explanation: (q.explanation as string) || '',
+      points: (q.points as number) || 1,
+    }));
+  } else {
+    const rows = await getConceptQuestions(quizData.conceptId as string);
+    questionBank = rows.map((r) => ({
+      id: r.id, type: r.type || 'short_answer',
+      difficulty: (r.difficulty as Difficulty) || 'medium',
+      text: (r.text || r.question || fallbackText(r.type, r.options)) as string, options: r.options as string[] | undefined,
+      correctAnswer: (r.correct_answer || r.correctAnswer || '') as string, explanation: (r.explanation || '') as string,
+      points: r.points || 1,
+    }));
+  }
+
+  let score = 0;
+  const gradedAnswers: GradedAnswer[] = data.answers.map((answer) => {
+    const question = questionBank.find((q) => q.id === answer.questionId);
+    if (!question) {
+      return { questionId: answer.questionId, answer: answer.answer, isCorrect: false, pointsEarned: 0, timeSpent: answer.timeSpent || 0 };
+    }
+
+    if (answer.skipped) {
+      return {
+        questionId: answer.questionId, questionText: question.text, answer: answer.answer,
+        isCorrect: false, pointsEarned: 0, timeSpent: answer.timeSpent || 0,
+        correctAnswer: question.correctAnswer, explanation: question.explanation,
+        skipped: true,
+      };
+    }
+
+    let isCorrect = false;
+    const normalize = (v: unknown) => v?.toString().toLowerCase().trim() || '';
+    const qType = question.type;
+    const normalizedCorrect = normalize(question.correctAnswer);
+    const normalizedAnswer = normalize(answer.answer);
+
+    if (!normalizedCorrect && normalizedAnswer) {
+      isCorrect = true;
+    } else if (['multiple_choice', 'mcq', 'true_false', 'passage'].includes(qType)) {
+      isCorrect = normalizedAnswer === normalizedCorrect;
+    } else if (['short_answer', 'fill_blank'].includes(qType)) {
+      isCorrect = normalizedAnswer === normalizedCorrect;
+    } else if (['numerical', 'matching'].includes(qType)) {
+      isCorrect = normalizedAnswer === normalizedCorrect;
+    } else if (qType === 'descriptive') {
+      isCorrect = answer.answer.toString().trim().length > 5;
+    }
+
+    const pointsEarned = isCorrect ? (POINTS_BY_DIFFICULTY[question.difficulty || 'medium'] || 1) : 0;
+    if (isCorrect) score += pointsEarned;
+
+    return {
+      questionId: answer.questionId, questionText: question.text, answer: answer.answer,
+      isCorrect, pointsEarned, timeSpent: answer.timeSpent || 0,
+      correctAnswer: question.correctAnswer, explanation: question.explanation,
+    };
+  });
+
+  const isRepublished = !!(quizData.isRepublished);
+
+  const timeSpent = data.answers.reduce((sum, a) => sum + (a.timeSpent || 0), 0);
+  let totalPoints = (attemptData.totalPoints as number) || 0;
+
+  if (isRepublished) {
+    const skippedIds = new Set(gradedAnswers.filter((a) => a.skipped).map((a) => a.questionId));
+    const skippedPointValues = questionBank
+      .filter((q) => skippedIds.has(q.id))
+      .reduce((sum, q) => sum + (POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1), 0);
+    totalPoints = Math.max(totalPoints - skippedPointValues, 0);
+  }
+
+  const percentage = totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0;
+
+  const activeAnswers = isRepublished
+    ? gradedAnswers.filter((a) => !a.skipped)
+    : gradedAnswers;
+  const accuracy = totalPoints > 0 ? score / totalPoints : 0;
+  const avgReactionTime = activeAnswers.length > 0
+    ? activeAnswers.reduce((sum, a) => sum + (a.timeSpent || 0), 0) / activeAnswers.length
+    : 0;
+
+  const difficultyMap: Record<string, Difficulty> = {};
+  for (const q of questionBank) { difficultyMap[q.id] = q.difficulty || 'easy'; }
+  const complexityHandled = computeComplexityHandled(
+    activeAnswers.map((a) => ({ questionId: a.questionId, correct: a.isCorrect })),
+    difficultyMap,
+  );
+  const newLevel = computeLevel(accuracy, avgReactionTime, complexityHandled);
+
+  const result: QuizAttemptResult = {
+    answers: gradedAnswers,
+    score,
+    totalPoints,
+    percentage,
+    submittedAt,
+    timeSpent,
+    status: 'submitted',
+  };
+
+  const tm = new TransactionManager();
+  await tm.runTransaction(async (tx) => {
+    const userRow = await tx.db().query(
+      'SELECT data FROM users WHERE id = $1 LIMIT 1',
+      [studentId],
+    );
+    const existingData = (userRow.rows[0]?.data as Record<string, unknown>) || {};
+    await tx.db().query(
+      'UPDATE users SET data = $1 WHERE id = $2',
+      [JSON.stringify({ ...existingData, level: newLevel }), studentId],
+    );
+
+    const attemptExisting = await tx.db().query(
+      'SELECT data FROM firestore_docs WHERE collection = $1 AND doc_id = $2 LIMIT 1',
+      [QAV2, attemptId],
+    );
+    const attemptMerged = { ...((attemptExisting.rows[0]?.data as Record<string, unknown>) || {}), ...result };
+    await tx.db().query(
+      `INSERT INTO firestore_docs (collection, doc_id, data, created_at, updated_at)
+       VALUES ($1, $2, $3, NOW(), NOW())
+       ON CONFLICT (collection, doc_id) DO UPDATE SET data = $3, updated_at = NOW()`,
+      [QAV2, attemptId, JSON.stringify(attemptMerged)],
+    );
+
+    const now = new Date().toISOString();
+    const gradeId = uuidv4();
+    const gradeData = {
+      studentId,
+      courseId: quizData.courseId,
+      subjectId: quizData.subjectId,
+      classId: quizData.classId,
+      itemName: quizData.title,
+      score,
+      totalPoints,
+      percentage,
+      gradedBy: 'auto',
+      createdAt: now,
+      updatedAt: now,
+    };
+    await tx.db().query(
+      `INSERT INTO firestore_docs (collection, doc_id, data, created_at, updated_at)
+       VALUES ($1, $2, $3, NOW(), NOW())`,
+      ['grades', gradeId, JSON.stringify(gradeData)],
+    );
+  });
+
+  try {
+    const quizTitle = (quizData.title as string) || 'Quiz';
+    await createNotification({
+      userId: studentId, type: 'grade', title: 'Quiz Result',
+      body: `You scored ${score}/${totalPoints} (${percentage}%) in ${quizTitle}.`,
+      data: { quizId: attemptData.quizId, attemptId, link: `/quizzes/${attemptData.quizId}/results` },
+    });
+    const { data: parentRows } = await supabase
+      .from('users')
+      .select('id')
+      .eq('role', 'parent')
+      .contains('children_ids', [studentId]);
+    if (parentRows && parentRows.length > 0) {
+      const parentNotifs = parentRows.map((p) => ({
+        userId: p.id, type: 'grade', title: 'Quiz Completed',
+        body: `Your child scored ${score}/${totalPoints} (${percentage}%) in ${quizTitle}.`,
+        data: { quizId: attemptData.quizId, studentId, link: `/quizzes/${attemptData.quizId}/results` },
+      }));
+      await createBulkNotifications(parentNotifs);
+    }
+  } catch (err) {
+    logger.warn('Failed to send quiz result notifications', { attemptId, error: err });
+  }
+
+  logger.info('Quiz V2 attempt submitted', { attemptId, studentId, score, percentage, newLevel });
+
+  const allNewBadges: string[] = [];
+  const collect = (r: string[] | { newBadges?: string[] }) => {
+    const ids = Array.isArray(r) ? r : r?.newBadges;
+    if (ids) for (const b of ids) if (!allNewBadges.includes(b)) allNewBadges.push(b);
+  };
+
+  try {
+    collect(await gamificationService.recordAssessmentResult(studentId, percentage));
+    collect(await gamificationService.awardXp(studentId, gamificationService.XP_REWARDS.assessmentComplete, `Completed quiz: ${quizData.title}`));
+    collect(await gamificationService.awardCoins(studentId, gamificationService.COIN_REWARDS.assessmentComplete, `Completed quiz: ${quizData.title}`));
+    if (percentage >= 80) {
+      collect(await gamificationService.awardXp(studentId, gamificationService.XP_REWARDS.highAccuracy, `High accuracy (${percentage}%) on ${quizData.title}`));
+      collect(await gamificationService.awardCoins(studentId, gamificationService.COIN_REWARDS.highAccuracy, `High accuracy (${percentage}%) on ${quizData.title}`));
+    }
+    if (percentage === 100) {
+      collect(await gamificationService.awardXp(studentId, gamificationService.XP_REWARDS.perfectScore, `Perfect score on ${quizData.title}`));
+      collect(await gamificationService.awardCoins(studentId, gamificationService.COIN_REWARDS.perfectScore, `Perfect score on ${quizData.title}`));
+    }
+    await gamificationService.updateStreak(studentId);
+  } catch (gamErr) {
+    logger.error('Gamification reward failed', { studentId, quizId: attemptData.quizId, error: gamErr });
+  }
+
+  if (quizData.conceptId) {
+    computeMastery(studentId, quizData.conceptId as string, accuracy).catch(err =>
+      logger.error('Mastery update failed', { studentId, conceptId: quizData.conceptId, error: err })
+    );
+  }
+
+  return { id: attemptId, ...attemptData, ...result, level: newLevel, newBadges: allNewBadges };
+}

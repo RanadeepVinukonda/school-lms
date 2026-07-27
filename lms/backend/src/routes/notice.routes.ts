@@ -24,7 +24,7 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
       }
     }
   } else if (user.class_id) {
-    classIds = [user.class_id];
+    classIds = [user.class_id as string];
   }
   const items = await noticeService.getNotices(user.school_id || '', classIds.length > 0 ? classIds : undefined);
   sendSuccess(res, items);

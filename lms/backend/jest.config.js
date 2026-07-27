@@ -9,9 +9,21 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
   moduleFileExtensions: ['ts', 'js', 'json'],
   moduleNameMapper: { '^(\\.{1,2}/.*)\\.js$': '$1' },
-  transform: { '^.+\\.tsx?$': ['ts-jest', { diagnostics: false }] },
+  transform: { '^.+\\.tsx?$': ['ts-jest', { diagnostics: true }] },
   collectCoverageFrom: [
     'src/services/**/*.ts',
+    'src/controllers/**/*.ts',
+    'src/middlewares/**/*.ts',
+    'src/utils/**/*.ts',
     '!src/services/supabase.ts',
+    '!src/**/__tests__/**',
   ],
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+  },
 };

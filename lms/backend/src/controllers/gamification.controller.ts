@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import * as gamificationService from '../services/gamification.service';
 import { sendSuccess, sendCreated } from '../utils/response';
-import type { ReqWithUser } from '../types/common';
+import { requireUser } from '../types/common';
 
 export async function getProfile(req: Request, res: Response) {
   const { userId } = req.params;
@@ -11,8 +11,8 @@ export async function getProfile(req: Request, res: Response) {
 
 export async function getMyProfile(req: Request, res: Response) {
   try {
-    const userId = (req as ReqWithUser).user!.uid;
-    const profile = await gamificationService.getProfile(userId);
+    const user = requireUser(req);
+    const profile = await gamificationService.getProfile(user.uid);
     sendSuccess(res, profile);
   } catch {
     sendSuccess(res, { xp: 0, coins: 0, level: 1, streak: 0, badges: [] });
@@ -44,8 +44,8 @@ export async function getUserBadges(req: Request, res: Response) {
 
 export async function getMyBadges(req: Request, res: Response) {
   try {
-    const userId = (req as ReqWithUser).user!.uid;
-    const badges = await gamificationService.getUserBadges(userId);
+    const user = requireUser(req);
+    const badges = await gamificationService.getUserBadges(user.uid);
     sendSuccess(res, badges);
   } catch {
     sendSuccess(res, []);
@@ -67,8 +67,8 @@ export async function getClassLeaderboard(req: Request, res: Response) {
 
 export async function getDailyChallenges(req: Request, res: Response) {
   try {
-    const userId = (req as ReqWithUser).user!.uid;
-    const challenges = await gamificationService.getDailyChallenges(userId);
+    const user = requireUser(req);
+    const challenges = await gamificationService.getDailyChallenges(user.uid);
     sendSuccess(res, challenges);
   } catch {
     sendSuccess(res, []);
@@ -76,16 +76,16 @@ export async function getDailyChallenges(req: Request, res: Response) {
 }
 
 export async function completeDailyChallenge(req: Request, res: Response) {
-  const userId = (req as ReqWithUser).user!.uid;
+  const user = requireUser(req);
   const { id } = req.params;
-  const result = await gamificationService.completeDailyChallenge(userId, id);
+  const result = await gamificationService.completeDailyChallenge(user.uid, id);
   sendSuccess(res, result, 'Daily challenge completed');
 }
 
 export async function getWeeklyChallenges(req: Request, res: Response) {
   try {
-    const userId = (req as ReqWithUser).user!.uid;
-    const challenges = await gamificationService.getWeeklyChallenges(userId);
+    const user = requireUser(req);
+    const challenges = await gamificationService.getWeeklyChallenges(user.uid);
     sendSuccess(res, challenges);
   } catch {
     sendSuccess(res, []);
@@ -93,16 +93,16 @@ export async function getWeeklyChallenges(req: Request, res: Response) {
 }
 
 export async function completeWeeklyChallenge(req: Request, res: Response) {
-  const userId = (req as ReqWithUser).user!.uid;
+  const user = requireUser(req);
   const { id } = req.params;
-  const result = await gamificationService.completeWeeklyChallenge(userId, id);
+  const result = await gamificationService.completeWeeklyChallenge(user.uid, id);
   sendSuccess(res, result, 'Weekly challenge completed');
 }
 
 export async function getMonthlyChallenges(req: Request, res: Response) {
   try {
-    const userId = (req as ReqWithUser).user!.uid;
-    const challenges = await gamificationService.getMonthlyChallenges(userId);
+    const user = requireUser(req);
+    const challenges = await gamificationService.getMonthlyChallenges(user.uid);
     sendSuccess(res, challenges);
   } catch {
     sendSuccess(res, []);
@@ -110,9 +110,9 @@ export async function getMonthlyChallenges(req: Request, res: Response) {
 }
 
 export async function completeMonthlyChallenge(req: Request, res: Response) {
-  const userId = (req as ReqWithUser).user!.uid;
+  const user = requireUser(req);
   const { id } = req.params;
-  const result = await gamificationService.completeMonthlyChallenge(userId, id);
+  const result = await gamificationService.completeMonthlyChallenge(user.uid, id);
   sendSuccess(res, result, 'Monthly challenge completed');
 }
 
@@ -124,8 +124,8 @@ export async function getStreak(req: Request, res: Response) {
 
 export async function updateStreak(req: Request, res: Response) {
   try {
-    const userId = (req as ReqWithUser).user!.uid;
-    const result = await gamificationService.updateStreak(userId);
+    const user = requireUser(req);
+    const result = await gamificationService.updateStreak(user.uid);
     sendSuccess(res, result, 'Streak updated');
   } catch {
     sendSuccess(res, { streak: 0 });
