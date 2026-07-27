@@ -104,7 +104,7 @@ app.use(cacheControlMiddleware);
 if (process.env.NODE_ENV !== 'test') {
   app.use(csrfProtection);
   app.get('/csrf-token', csrfTokenHandler);
-  app.use(idempotency);
+  app.use(idempotency());
 }
 
 app.use('/auth', authRateLimit);
