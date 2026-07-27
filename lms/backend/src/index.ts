@@ -28,6 +28,9 @@ function startServer() {
 
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception', { message: error.message, stack: error.stack });
+  if (error.message.includes('Release called on client which has already been released')) {
+    return;
+  }
   process.exit(1);
 });
 

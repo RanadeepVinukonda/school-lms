@@ -288,14 +288,12 @@ router.get('/deep', async (_req: Request, res: Response) => {
 router.get('/ready', async (_req: Request, res: Response) => {
   const start = Date.now();
   try {
-    const { getConnectionPool } = await import('../database/connection-manager');
-    const pool = getConnectionPool();
-    const client = await pool.connect();
-    try {
-      await client.query('SELECT 1');
+    const { healthCheck } = await import('../database/connection-manager');
+    const ok = await healthCheck();
+    if (ok) {
       res.status(200).json({ status: 'ready', latency_ms: Date.now() - start });
-    } finally {
-      client.release();
+    } else {
+      res.status(503).json({ status: 'not_ready', error: 'Database health check failed', latency_ms: Date.now() - start });
     }
   } catch (err) {
     res.status(503).json({ status: 'not_ready', error: (err as Error).message, latency_ms: Date.now() - start });
