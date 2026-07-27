@@ -137,8 +137,7 @@ export default function AdminTimetablePage() {
     },
     onSuccess: () => {
       toast.success(`${selectedDay} timetable saved`);
-      queryClient.refetchQueries({ queryKey: ['timetable', selectedClassId] });
-      refetchDay();
+      queryClient.invalidateQueries({ queryKey: ['timetable'] });
     },
     onError: (err: any) => toast.error(err.message || 'Failed to save timetable'),
   });
