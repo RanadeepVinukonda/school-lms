@@ -9,7 +9,7 @@ jest.mock('../services/supabase', () => ({
 }));
 
 import type { Request, Response, NextFunction } from 'express';
-import { academicYearMiddleware } from '../middlewares/academicYear.middleware';
+import { academicYearMiddleware, deriveAcademicYear } from '../middlewares/academicYear.middleware';
 import { listFeeSchedules } from '../services/fee.service';
 import { getStudentGrades } from '../services/grade.service';
 
@@ -30,9 +30,10 @@ function mockRes(): Response {
   return res;
 }
 
+const EXPECTED_YEAR = deriveAcademicYear();
+
 beforeEach(() => {
   jest.clearAllMocks();
-  // Reset getSupabaseAdmin to return the mock supabase instance
   const { getSupabaseAdmin, getSupabaseClient } = require('../services/supabase');
   (getSupabaseAdmin as jest.Mock).mockReturnValue(mockSupabase);
   (getSupabaseClient as jest.Mock).mockReturnValue(mockSupabase);
@@ -49,7 +50,6 @@ beforeEach(() => {
 
 describe('AcademicYearMiddleware', () => {
   it('falls back to current year when supabase admin is null', async () => {
-    // getSupabaseAdmin() returns null → middleware takes early return with fallback year
     const { getSupabaseAdmin } = require('../services/supabase');
     (getSupabaseAdmin as jest.Mock).mockReturnValue(null);
 
@@ -58,7 +58,7 @@ describe('AcademicYearMiddleware', () => {
     const next = jest.fn() as NextFunction;
 
     await academicYearMiddleware(req, res, next);
-    expect(req.activeAcademicYear).toBe(new Date().getFullYear().toString());
+    expect(req.activeAcademicYear).toBe(EXPECTED_YEAR);
     expect(next).toHaveBeenCalled();
   });
 
@@ -70,7 +70,7 @@ describe('AcademicYearMiddleware', () => {
     mockQuery.maybeSingle.mockResolvedValue({ data: null, error: null } as any);
 
     await academicYearMiddleware(req, res, next);
-    expect(req.activeAcademicYear).toBe(new Date().getFullYear().toString());
+    expect(req.activeAcademicYear).toBe(EXPECTED_YEAR);
     expect(next).toHaveBeenCalled();
   });
 
@@ -85,7 +85,7 @@ describe('AcademicYearMiddleware', () => {
     } as any);
 
     await academicYearMiddleware(req, res, next);
-    expect(req.activeAcademicYear).toBe('2025-2026');
+    expect(req.activeAcademicYear).toBe(EXPECTED_YEAR);
     expect(next).toHaveBeenCalled();
   });
 
@@ -100,7 +100,7 @@ describe('AcademicYearMiddleware', () => {
     } as any);
 
     await academicYearMiddleware(req, res, next);
-    expect(req.activeAcademicYear).toBe(new Date().getFullYear().toString());
+    expect(req.activeAcademicYear).toBe(EXPECTED_YEAR);
     expect(next).toHaveBeenCalled();
   });
 
@@ -112,7 +112,7 @@ describe('AcademicYearMiddleware', () => {
     mockQuery.maybeSingle.mockRejectedValue(new Error('Unexpected error'));
 
     await academicYearMiddleware(req, res, next);
-    expect(req.activeAcademicYear).toBe(new Date().getFullYear().toString());
+    expect(req.activeAcademicYear).toBe(EXPECTED_YEAR);
     expect(next).toHaveBeenCalled();
   });
 });

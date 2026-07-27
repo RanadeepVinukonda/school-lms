@@ -14,7 +14,7 @@ export function errorHandler(
   const requestId = req.headers['x-request-id'] as string | undefined;
 
   if (err instanceof multer.MulterError) {
-    const message = err.code === 'LIMIT_FILE_SIZE'
+    const message = (err as multer.MulterError).code === 'LIMIT_FILE_SIZE'
       ? 'File exceeds maximum allowed size. Images: 10MB, Videos: 50MB.'
       : err.message;
     res.status(413).json({

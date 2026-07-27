@@ -64,6 +64,7 @@ describe('Unified Test Engine', () => {
     teacherId: mockTeacherId,
     timeLimitMinutes: 30,
     selectedModels: ['multiple_choice'] as any[],
+    typeMap: {} as Record<string, string[]>,
     questionCount: 5,
     passingScore: 40,
     maxAttempts: 3,

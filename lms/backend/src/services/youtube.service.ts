@@ -12,10 +12,10 @@ function timeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 
 export async function searchVideos(query: string, maxResults = 5) {
   try {
-    const r = await timeout(ytSearch(query), 10000);
+    const r = await timeout(ytSearch(query), 10000) as { videos: Array<{ videoId: string; title: string; thumbnail: string; timestamp: string; author?: { name: string }; description: string }> };
     const videos = r.videos.slice(0, maxResults);
-    
-    return videos.map((v, index) => {
+
+    return videos.map((v: typeof videos[number], index: number) => {
       return {
         id: `yt_${v.videoId}`,
         youtubeId: v.videoId,

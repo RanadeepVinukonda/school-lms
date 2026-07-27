@@ -45,11 +45,13 @@ describe('user.service', () => {
 
   describe('createUser', () => {
     it('creates a student user with generated studentId', async () => {
-      // For student creation: class lookup returns a valid class
-      mockQuery.maybeSingle.mockResolvedValue(({
-        data: { id: 'class-1', grade: '10', section: 'A', academic_year: '2025', code: '10A' },
-        error: null,
-      }) as any);
+      // For student creation: 1st call = class lookup, 2nd call = roll number check (null = no duplicate)
+      mockQuery.maybeSingle
+        .mockResolvedValueOnce({
+          data: { id: 'class-1', grade: '10', section: 'A', academic_year: '2025', code: '10A' },
+          error: null,
+        })
+        .mockResolvedValueOnce({ data: null, error: null });
       const result = await createUser({
         displayName: 'Jane', role: 'student', classId: 'class-1', rollNo: 1,
       });
@@ -64,11 +66,14 @@ describe('user.service', () => {
 
   describe('toggleActive', () => {
     it('toggles isActive and calls updateUser on auth', async () => {
-      // First call: fetch existing user (is_active: false)
-      // Second call: fetch updated user (is_active: true)
+      // toggleActive calls getUserDoc (1), then updateUser internally calls getUserDoc (2) + maybeSingle (3)
+      // Provide enough mock values for the full chain
+      const existingUser = { id: 'u1', is_active: false, version: 0, displayName: 'Test', role: 'student' };
+      const updatedUser = { id: 'u1', is_active: true, version: 1, displayName: 'Test', role: 'student' };
       mockQuery.maybeSingle
-        .mockResolvedValueOnce({ data: { id: 'u1', is_active: false, displayName: 'Test', role: 'student' }, error: null })
-        .mockResolvedValueOnce({ data: { id: 'u1', is_active: true, displayName: 'Test', role: 'student' }, error: null });
+        .mockResolvedValueOnce({ data: existingUser, error: null })  // getUserDoc in toggleActive
+        .mockResolvedValueOnce({ data: existingUser, error: null })  // getUserDoc in updateUser
+        .mockResolvedValue({ data: updatedUser, error: null });      // all remaining calls
       const result = await toggleActive('u1');
       expect(result!.is_active).toBe(true);
     });

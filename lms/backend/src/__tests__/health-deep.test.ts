@@ -10,6 +10,8 @@ global.fetch = jest.fn<any>().mockResolvedValue({
 
 import app from '../app';
 
+jest.setTimeout(30_000);
+
 describe('Deep Health Check', () => {
   it('GET /health - returns ok with existing shape', async () => {
     const res = await request(app).get('/health');

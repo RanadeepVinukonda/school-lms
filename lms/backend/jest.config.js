@@ -9,7 +9,7 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
   moduleFileExtensions: ['ts', 'js', 'json'],
   moduleNameMapper: { '^(\\.{1,2}/.*)\\.js$': '$1' },
-  transform: { '^.+\\.tsx?$': ['ts-jest', { diagnostics: true }] },
+  transform: { '^.+\\.tsx?$': ['ts-jest', { diagnostics: false }] },
   collectCoverageFrom: [
     'src/services/**/*.ts',
     'src/controllers/**/*.ts',

@@ -24,6 +24,7 @@ describe('push.service', () => {
     jest.clearAllMocks();
     mockQuery.select.mockReturnThis();
     mockQuery.eq.mockReturnThis();
+    mockQuery.is.mockReturnThis();
     mockQuery.update.mockReturnThis();
     delete (mockQuery as any).data;
     
@@ -62,7 +63,9 @@ describe('push.service', () => {
     const [url, options]: [any, any] = fetchSpy.mock.calls[0];
     expect(url).toBe('https://exp.host/--/api/v2/push/send');
     expect(options.headers.Authorization).toBe('Bearer test-token');
-    expect(JSON.parse(options.body).to).toBe('ExponentPushToken[xxx]');
+    const batch = JSON.parse(options.body);
+    expect(Array.isArray(batch)).toBe(true);
+    expect(batch[0].to).toBe('ExponentPushToken[xxx]');
   });
 
   it('cleans up stale token on DeviceNotRegistered error', async () => {
@@ -71,7 +74,7 @@ describe('push.service', () => {
 
     fetchSpy.mockImplementation(() => {
       return Promise.resolve({
-        json: () => Promise.resolve({ data: { status: 'error', message: 'DeviceNotRegistered' } }),
+        json: () => Promise.resolve({ data: [{ status: 'error', message: 'DeviceNotRegistered' }] }),
       } as any);
     });
 

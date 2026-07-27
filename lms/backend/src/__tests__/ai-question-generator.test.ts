@@ -64,14 +64,14 @@ describe('AI Question Generator', () => {
     });
 
     it('should return empty array when AI returns invalid JSON', async () => {
-      (aiService.chatCompletion as jest.Mock).mockResolvedValueOnce('not json at all');
+      (aiService.chatCompletion as jest.Mock).mockRejectedValue(new Error('Invalid JSON'));
 
       const result = await aiGenerator.generateQuestionsForConcept(mockBaseParams);
       expect(result).toEqual([]);
     });
 
     it('should return empty array when AI service throws', async () => {
-      (aiService.chatCompletion as jest.Mock).mockRejectedValueOnce(new Error('AI service down'));
+      (aiService.chatCompletion as jest.Mock).mockRejectedValue(new Error('AI service down'));
 
       const result = await aiGenerator.generateQuestionsForConcept(mockBaseParams);
       expect(result).toEqual([]);

@@ -52,6 +52,7 @@ describe('Edge Cases', () => {
     teacherId: mockTeacherId,
     timeLimitMinutes: 30,
     selectedModels: [] as any[],
+    typeMap: {} as Record<string, string[]>,
     questionCount: 0,
   };
 
