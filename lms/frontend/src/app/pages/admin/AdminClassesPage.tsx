@@ -458,8 +458,7 @@ export default function AdminClassesPage() {
         classId: assignClassId,
         subjectId: assignSubjectId,
       });
-      console.log("Assignment Response:", res);
-      console.log("Teacher Returned:", teacherId);
+      console.log("Assign Response:", res);
 
       await Promise.all([refetchTCAssignments(), refetchUsers()]);
       setShowAssign(false);
