@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -72,12 +72,18 @@ export default function AdminFeePage() {
     return students.find((s) => s.id === paymentData.studentId) || null;
   }, [students, paymentData.studentId]);
 
+  useEffect(() => { console.log('[FeeDebug] Selected Student:', selectedStudent); }, [selectedStudent]);
+  useEffect(() => { console.log('[FeeDebug] Student Class:', selectedStudent?.classId, 'Student ClassIds:', selectedStudent?.classIds, 'Student Academic Year:', selectedStudent?.academicYear); }, [selectedStudent?.classId, selectedStudent?.classIds, selectedStudent?.academicYear]);
+  useEffect(() => { console.log('[FeeDebug] All Fee Schedules:', allSchedulesData); }, [allSchedulesData]);
+
   const schedulesData = useMemo(() => {
     const all = allSchedulesData || [];
-    if (!selectedStudent) return all;
+    if (!selectedStudent) { console.log('[FeeDebug] No student selected, returning all schedules:', all.length); return all; }
     const studentClassId = selectedStudent.classId || (selectedStudent.classIds?.[0]);
-    if (!studentClassId) return all;
-    return all.filter((s) => (s as any).class_id === studentClassId || s.classId === studentClassId);
+    if (!studentClassId) { console.log('[FeeDebug] Student has no classId, returning all schedules:', all.length); return all; }
+    const filtered = all.filter((s) => (s as any).class_id === studentClassId || s.classId === studentClassId);
+    console.log('[FeeDebug] Filtered Fee Schedules:', filtered, 'studentClassId:', studentClassId, 'totalSchedules:', all.length);
+    return filtered;
   }, [allSchedulesData, selectedStudent]);
 
   const { data: outstandingData, isLoading: outLoading, isError: outError, refetch: refetchOut } = useQuery({
