@@ -25,7 +25,7 @@ import { inngest } from './jobs/inngest/client';
 import { serve } from 'inngest/express';
 import { textbookPipeline } from './jobs/inngest/functions/textbook-pipeline';
 import swaggerUi from 'swagger-ui-express';
-import { swaggerSpec } from './config/swagger';
+import { getSwaggerSpec } from './config/swagger';
 import { env } from './config/env';
 import healthRoute from './routes/health.routes';
 import routes from './routes/index';
@@ -88,8 +88,10 @@ if (env.API_DOCS_ENABLED) {
       res.status(401).json({ success: false, error: { message: 'Authentication required for API docs' } });
     });
   }
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-  app.get('/api-docs.json', (_req, res) => res.json(swaggerSpec));
+  app.use('/api-docs', swaggerUi.serve, (_req: any, res: any, next: any) => {
+    swaggerUi.setup(getSwaggerSpec())(_req, res, next);
+  });
+  app.get('/api-docs.json', (_req, res) => res.json(getSwaggerSpec()));
 }
 
 if (process.env.NODE_ENV !== 'test') {

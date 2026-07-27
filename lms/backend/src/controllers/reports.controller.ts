@@ -22,6 +22,6 @@ export async function downloadReportPdf(req: Request, res: Response) {
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="${String((report as Record<string, unknown>).type ?? 'unknown')}-report-${report.id}.pdf"`);
 
-  const doc = generateReportPdf(report as Record<string, unknown>);
+  const doc = await generateReportPdf(report as Record<string, unknown>);
   doc.pipe(res);
 }

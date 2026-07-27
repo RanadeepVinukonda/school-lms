@@ -121,4 +121,8 @@ const options: swaggerJsdoc.Options = {
   ],
 };
 
-export const swaggerSpec = swaggerJsdoc(options);
+let _spec: ReturnType<typeof swaggerJsdoc> | null = null;
+export function getSwaggerSpec() {
+  if (!_spec) _spec = swaggerJsdoc(options);
+  return _spec;
+}

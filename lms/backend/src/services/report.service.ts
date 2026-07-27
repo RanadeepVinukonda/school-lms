@@ -1,4 +1,3 @@
-import PDFDocument from 'pdfkit';
 import { getSupabaseClient } from './supabase';
 
 export async function getReportById(reportId: string) {
@@ -23,7 +22,8 @@ export async function getLatestReport(type: string) {
   return { id: row.doc_id, ...row.data as Record<string, unknown> };
 }
 
-export function generateReportPdf(report: Record<string, unknown>): PDFKit.PDFDocument {
+export async function generateReportPdf(report: Record<string, unknown>) {
+  const PDFDocument = (await import('pdfkit')).default;
   const doc = new PDFDocument({ margin: 50 });
 
   doc.fontSize(20).text(`${String(report.type || 'Report').toUpperCase()} REPORT`, { align: 'center' });

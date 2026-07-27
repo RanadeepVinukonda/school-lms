@@ -1,4 +1,3 @@
-import PDFDocument from 'pdfkit';
 import { getSupabaseAdmin } from './supabase';
 import { logger } from '../utils/logger';
 
@@ -87,6 +86,7 @@ export async function generatePayslipPdf(schoolId: string, payrollId: string): P
   const { data: school, error: schoolErr } = await supabase.from('schools').select('name').limit(1).maybeSingle();
   if (schoolErr) throw new Error('Failed to fetch school: ' + schoolErr.message);
 
+  const PDFDocument = (await import('pdfkit')).default;
   const doc = new PDFDocument({ margin: 50 });
   const buffers: Buffer[] = [];
   doc.on('data', (chunk: Buffer) => buffers.push(chunk));

@@ -1,4 +1,9 @@
-import Tesseract, { createWorker, PSM } from 'tesseract.js';
+let TesseractLib: typeof import('tesseract.js') | null = null;
+
+async function loadTesseract() {
+  if (!TesseractLib) TesseractLib = await import('tesseract.js');
+  return TesseractLib;
+}
 
 function tryParseJson(raw: string, fallback: any): any {
   try { return JSON.parse(raw); } catch { /* not JSON */ }
@@ -49,19 +54,20 @@ export interface OCRMappingResult {
   questions: GeneratedQuestion[];
 }
 
-let worker: Tesseract.Worker | null = null;
+let worker: any = null;
 
-async function getWorker(): Promise<Tesseract.Worker> {
+async function getWorker() {
   if (!worker) {
-    worker = await createWorker('eng', 3, {
-      logger: (m) => {
+    const T = await loadTesseract();
+    worker = await T.createWorker('eng', 3, {
+      logger: (m: any) => {
         if (m.status === 'loading tesseract core') logger.debug('OCR: loading core');
         else if (m.status === 'initializing tesseract') logger.debug('OCR: initializing');
         else if (m.status === 'loading language traineddata') logger.debug('OCR: loading language data');
         else if (m.status === 'initializing api') logger.debug('OCR: initializing API');
       },
     });
-    await worker.setParameters({ tessedit_pageseg_mode: PSM.AUTO });
+    await worker.setParameters({ tessedit_pageseg_mode: T.PSM.AUTO });
     logger.info('OCR worker created (LSTM+Legacy, PSM AUTO)');
   }
   return worker;
@@ -156,7 +162,7 @@ export async function extractText(imageBuffer: Buffer): Promise<OCRResult> {
     const w = await getWorker();
     const { data } = await w.recognize(imageBuffer);
 
-    const blocks: OCRBlock[] = (data.blocks || []).map((block) => ({
+    const blocks: OCRBlock[] = (data.blocks || []).map((block: any) => ({
       text: block.text,
       bbox: {
         x: block.bbox.x0,

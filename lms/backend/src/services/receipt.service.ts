@@ -1,4 +1,3 @@
-import PDFDocument from 'pdfkit';
 import { getSupabaseAdmin } from './supabase';
 import { NotFoundError } from '../utils/errors';
 
@@ -13,6 +12,7 @@ export async function generateReceipt(paymentId: string): Promise<Buffer> {
   const { data: student } = await supabase.from('users').select('display_name, email').eq('id', payment.student_id).maybeSingle();
   const { data: school } = await supabase.from('schools').select('name').limit(1).maybeSingle();
 
+  const PDFDocument = (await import('pdfkit')).default;
   const doc = new PDFDocument({ margin: 50 });
   const buffers: Buffer[] = [];
   doc.on('data', (chunk: Buffer) => buffers.push(chunk));
