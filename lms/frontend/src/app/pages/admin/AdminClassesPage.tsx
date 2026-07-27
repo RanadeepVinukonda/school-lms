@@ -475,8 +475,8 @@ export default function AdminClassesPage() {
     if (!assignment) return;
     try {
       await teacherClassSubjectService.remove(assignment.id);
+      await refetchTCAssignments();
       toast.success('Teacher assignment removed');
-      refetchTCAssignments();
     } catch (err: any) {
       toast.error(err.message || 'Failed to remove assignment');
     }
