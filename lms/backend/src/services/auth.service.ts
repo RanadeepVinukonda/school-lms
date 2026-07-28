@@ -89,7 +89,100 @@ function stripCountry(phone: string): string {
   return phone.replace(/^\+?\d{1,3}/, '');
 }
 
-/** Send OTP to phone number via Supabase. */
+async function getStoredOtp(phone: string): Promise<string | null> {
+  const supabase = getSupabaseAdmin();
+  const key = `otp:${phone}`;
+  const { data } = await supabase
+    .from('firestore_docs')
+    .select('data')
+    .eq('collection', 'otp_codes')
+    .eq('doc_id', key)
+    .maybeSingle();
+  if (!data) return null;
+  const d = data.data as Record<string, unknown>;
+  if (Date.now() > (d.expiresAt as number)) {
+    await supabase.from('firestore_docs').delete().eq('collection', 'otp_codes').eq('doc_id', key);
+    return null;
+  }
+  return d.code as string;
+}
+
+async function storeOtp(phone: string, code: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  const key = `otp:${phone}`;
+  await supabase.from('firestore_docs').upsert({
+    collection: 'otp_codes',
+    doc_id: key,
+    data: { code, phone, expiresAt: Date.now() + 5 * 60 * 1000, createdAt: Date.now() },
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'collection,doc_id' });
+}
+
+async function ensureAuthUser(phone: string, uid: string, role: string): Promise<string> {
+  const supabase = getSupabaseAdmin();
+  const email = `ph_${phone.replace(/[^0-9]/g, '')}@school.edu`;
+
+  const { data: authUser } = await supabase.auth.admin.getUserById(uid).catch(() => ({ data: null }));
+  if (authUser?.user) return uid;
+
+  const newId = uid || crypto.randomUUID();
+  const pwd = crypto.randomUUID();
+  const { data: created, error: createErr } = await supabase.auth.admin.createUser({
+    email,
+    password: pwd,
+    email_confirm: true,
+    user_metadata: { phone, role },
+  });
+  if (createErr) throw new Error(`Failed to create auth user: ${createErr.message}`);
+
+  const authUid = created.user?.id || newId;
+  const placeholderEmail = `ph_${phone.replace(/[^0-9]/g, '')}@school.edu`;
+
+  const { error: upsertErr } = await supabase.from('users').upsert({
+    id: authUid,
+    email: placeholderEmail,
+    display_name: phone,
+    role: role || 'student',
+    phone_number: phone,
+    is_active: true,
+    school_id: '00000000-0000-0000-0000-000000000001',
+    class_ids: [],
+    children_ids: [],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'id' });
+  if (upsertErr) throw new Error(`Failed to upsert user: ${upsertErr.message}`);
+
+  return authUid;
+}
+
+async function createSessionToken(uid: string): Promise<{ access_token: string; refresh_token: string } | null> {
+  const supabase = getSupabaseAdmin();
+  const { data: { session }, error } = await (supabase.auth.admin as any).createSession({ user_id: uid });
+  if (error || !session) {
+    // Fallback: try REST API
+    const res = await fetch(
+      `${env.SUPABASE_URL}/auth/v1/admin/users/${uid}/sessions`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      }
+    );
+    if (!res.ok) return null;
+    const body = await res.json();
+    return {
+      access_token: body.access_token || body.accessToken,
+      refresh_token: body.refresh_token || body.refreshToken,
+    };
+  }
+  return { access_token: session.access_token, refresh_token: session.refresh_token };
+}
+
+/** Send OTP — generates local 6-digit code, logs to console. No SMS provider needed. */
 export async function sendOtp(phone: string): Promise<ServiceResult<{ message: string }>> {
   try {
     const isAdmin = stripCountry(phone) === stripCountry(env.ADMIN_PHONE);
@@ -98,138 +191,63 @@ export async function sendOtp(phone: string): Promise<ServiceResult<{ message: s
       return success({ message: 'OTP sent successfully' });
     }
 
-    const existing = await getUserByPhone(phone);
-    if (!existing) {
-      return failure('No account found with this phone number', 'NOT_FOUND');
-    }
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    await storeOtp(phone, code);
+    logger.info('OTP generated', { phone, code });
 
-    const response = await fetch(
-      `${env.SUPABASE_URL}/auth/v1/otp`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: env.SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify({ phone }),
-      }
-    );
-
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      return failure((body as { error_description?: string }).error_description || 'Failed to send OTP', 'OTP_ERROR');
-    }
-
-    logger.info('OTP sent', { phone });
     return success({ message: 'OTP sent successfully' });
   } catch (err: any) {
     return failure(err.message, 'OTP_ERROR');
   }
 }
 
-/** Verify OTP and return session tokens. */
+/** Verify locally-stored OTP and return session tokens. */
 export async function verifyOtp(phone: string, token: string): Promise<ServiceResult<{ user: UserProfile; uid: string; token: string; refresh_token: string }>> {
   try {
+    const supabase = getSupabaseAdmin();
     const isAdmin = stripCountry(phone) === stripCountry(env.ADMIN_PHONE);
 
     if (isAdmin && token === '000000') {
       logger.info('Admin OTP bypass', { phone });
-      const supabase = getSupabaseAdmin();
-      const { data: existing } = await supabase
-        .from('users')
-        .select('*')
-        .filter('phone_number', 'eq', phone)
-        .maybeSingle();
-
-      let uid: string;
-      if (existing) {
-        uid = existing.id;
-      } else {
-        uid = crypto.randomUUID();
-        const placeholderEmail = `ph_${phone.replace(/[^0-9]/g, '')}@school.edu`;
-        const newUser = {
-          id: uid,
-          email: placeholderEmail,
-          display_name: phone,
-          role: 'super_admin',
-          phone_number: phone,
-          is_active: true,
-          school_id: '00000000-0000-0000-0000-000000000001',
-          class_ids: [],
-          children_ids: [],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        const { error: insertErr } = await supabase.from('users').insert(newUser);
-        if (insertErr) return failure(insertErr.message, 'DB_ERROR');
+    } else {
+      const stored = await getStoredOtp(phone);
+      if (!stored || stored !== token) {
+        return failure('Invalid or expired OTP', 'OTP_ERROR');
       }
-
-
-      // Create session via Supabase REST API
-      const sesRes = await fetch(
-        `${env.SUPABASE_URL}/auth/v1/admin/users/${uid}/sessions`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-            Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-          },
-        }
-      );
-      const sesBody = await sesRes.json().catch(() => ({}));
-      const access_token = (sesBody as any)?.access_token || (sesBody as any)?.accessToken;
-      const refresh_token = (sesBody as any)?.refresh_token || (sesBody as any)?.refreshToken;
-      if (!access_token) return failure('Failed to create session', 'SESSION_ERROR');
-
-      const userData = mapUserRow(existing || { id: uid, role: 'super_admin', phone_number: phone });
-      await supabase.from('users').update({ role: 'super_admin' }).eq('id', uid);
-
-      return success({
-        user: userData,
-        uid,
-        token: access_token,
-        refresh_token,
-      });
+      // Delete used OTP
+      await supabase.from('firestore_docs').delete().eq('collection', 'otp_codes').eq('doc_id', `otp:${phone}`);
     }
 
-    const response = await fetch(
-      `${env.SUPABASE_URL}/auth/v1/otp`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: env.SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify({ phone, token, type: 'sms' }),
-      }
-    );
-
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      return failure((body as { error_description?: string }).error_description || 'Invalid or expired OTP', 'OTP_ERROR');
-    }
-
-    const result = await response.json() as { user?: { id: string }; access_token?: string; refresh_token?: string };
-    const uid = result.user?.id;
-    if (!uid) return failure('OTP verification failed', 'OTP_ERROR');
-
-    const supabase = getSupabaseAdmin();
-    let { data: userRow, error: userError } = await supabase
+    // Find or create user in users table
+    let { data: existingUser } = await supabase
       .from('users')
       .select('*')
-      .eq('id', uid)
+      .filter('phone_number', 'eq', phone)
       .maybeSingle();
 
-    const placeholderEmail = `ph_${phone.replace(/[^0-9]/g, '')}@school.edu`;
-    if (!userRow || userError) {
-      const { data: authUser } = await supabase.auth.admin.getUserById(uid);
-      const meta = authUser?.user?.user_metadata || {};
-      const newUser = {
+    let uid: string;
+    let role = 'student';
+
+    if (existingUser) {
+      uid = existingUser.id;
+      role = existingUser.role || 'student';
+    } else {
+      uid = crypto.randomUUID();
+      role = isAdmin ? 'super_admin' : 'student';
+    }
+
+    // Ensure auth user exists in Supabase Auth
+    const authUid = await ensureAuthUser(phone, uid, role);
+    uid = authUid;
+
+    // Ensure users table record exists
+    if (!existingUser) {
+      const placeholderEmail = `ph_${phone.replace(/[^0-9]/g, '')}@school.edu`;
+      const { error: insertErr } = await supabase.from('users').insert({
         id: uid,
         email: placeholderEmail,
-        display_name: (meta.display_name as string) || phone,
-        role: (meta.role as string) || 'student',
+        display_name: phone,
+        role,
         phone_number: phone,
         is_active: true,
         school_id: '00000000-0000-0000-0000-000000000001',
@@ -237,24 +255,29 @@ export async function verifyOtp(phone: string, token: string): Promise<ServiceRe
         children_ids: [],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      };
-      const { error: insertError } = await supabase.from('users').insert(newUser);
-      if (insertError) return failure(insertError.message, 'DB_ERROR');
-      userRow = newUser;
+      });
+      if (insertErr) return failure(insertErr.message, 'DB_ERROR');
     }
 
-    const userData = mapUserRow(userRow as Record<string, unknown>);
-    if (stripCountry(phone) === stripCountry(env.ADMIN_PHONE) && userData.role !== 'super_admin') {
-      const supabaseAdmin = getSupabaseAdmin();
-      await supabaseAdmin.from('users').update({ role: 'super_admin' }).eq('id', uid);
-      userData.role = 'super_admin';
+    // Ensure admin gets super_admin role
+    if (isAdmin) {
+      await supabase.from('users').update({ role: 'super_admin' }).eq('id', uid);
+      role = 'super_admin';
     }
-    logger.info('User logged in via OTP', { uid, phone });
+
+    // Create session token
+    const session = await createSessionToken(uid);
+    if (!session) return failure('Failed to create session', 'SESSION_ERROR');
+
+    const { data: userRow } = await supabase.from('users').select('*').eq('id', uid).single();
+    const userData = mapUserRow((userRow || { id: uid, role }) as Record<string, unknown>);
+
+    logger.info('User logged in', { uid, phone, role });
     return success({
       user: userData,
       uid,
-      token: result.access_token || '',
-      refresh_token: result.refresh_token || '',
+      token: session.access_token,
+      refresh_token: session.refresh_token,
     });
   } catch (err: any) {
     return failure(err.message, 'OTP_ERROR');
