@@ -536,7 +536,7 @@ export default function AdminClassesPage() {
       const studentData = res.data as any;
       setCreatedCredentials({
         displayName: studentData.displayName,
-        email: studentData.phone_number || studentData.phoneNumber || studentData.email,
+        email: (studentData as any).phone_number || studentData.phoneNumber || studentData.email,
         generatedPassword: studentData.generatedPassword,
         studentId: studentData.studentId,
       });
@@ -597,7 +597,7 @@ export default function AdminClassesPage() {
   const filteredTeachers = useMemo(() => {
     return teachers.filter((t) => {
       const q = teacherSearch.toLowerCase();
-      return (t.displayName?.toLowerCase() || '').includes(q) || (t.phone_number?.toLowerCase() || '').includes(q) || (t.phoneNumber?.toLowerCase() || '').includes(q);
+      return (t.displayName?.toLowerCase() || '').includes(q) || ((t as any).phone_number?.toLowerCase() || '').includes(q) || (t.phone?.toLowerCase() || '').includes(q);
     });
   }, [teachers, teacherSearch]);
 
@@ -1045,7 +1045,7 @@ export default function AdminClassesPage() {
                         return (
                           <tr key={teacher.id} className="hover:bg-muted/20 transition-colors text-body-md">
                             <td className="px-4 py-3 font-semibold">{teacher.displayName}</td>
-                            <td className="px-4 py-3 font-mono text-sm select-all">{teacher.phone_number || teacher.phoneNumber || '—'}</td>
+                              <td className="px-4 py-3 font-mono text-sm select-all">{(teacher as any).phone_number || teacher.phone || '—'}</td>
                             <td className="px-4 py-3">
                               {teacherAssignments.length === 0 ? (
                                 <span className="text-label-xs text-muted-foreground/60">No assignments</span>
@@ -1156,7 +1156,7 @@ export default function AdminClassesPage() {
                               <td className="px-4 py-3 font-mono text-sm font-semibold text-primary">{student.studentId || '\u2014'}</td>
                               <td className="px-4 py-3">{classObj ? classObj.name : '\u2014'}</td>
                               <td className="px-4 py-3 font-semibold">{student.rollNo ?? '\u2014'}</td>
-                              <td className="px-4 py-3 font-mono text-xs text-muted-foreground select-all">{student.phone_number || student.phoneNumber || '—'}</td>
+                              <td className="px-4 py-3 font-mono text-xs text-muted-foreground select-all">{(student as any).phone_number || student.phone || '—'}</td>
                               <td className="px-4 py-3">
                                 <Badge variant={student.isActive === false ? 'destructive' : 'success'} className="text-[10px]">
                                   {student.isActive === false ? 'Inactive' : 'Active'}

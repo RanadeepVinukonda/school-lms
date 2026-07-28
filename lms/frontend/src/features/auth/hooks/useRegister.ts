@@ -35,12 +35,6 @@ export function useRegister() {
         return { otpSent: true, phone: data.phone, displayName: data.displayName, role: data.role };
       }
 
-      await authService.register({
-        email: data.email!,
-        password: data.password!,
-        displayName: data.displayName,
-        role: data.role,
-      });
       const { data: authData, error } = await supabase.auth.signInWithPassword({
         email: data.email!,
         password: data.password!,
