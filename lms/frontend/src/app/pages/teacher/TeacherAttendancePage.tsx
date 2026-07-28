@@ -49,7 +49,7 @@ export default function TeacherAttendancePage() {
     enabled: !!selectedClass,
   });
 
-  const { data: todayAttendanceRecords = [] } = useQuery({
+  const { data: todayAttendanceRecords = [], refetch: refetchTodayAttendance } = useQuery({
     queryKey: ['teacher-today-attendance', selectedClass, selectedDate],
     queryFn: async () => {
       const res = await attendanceService.getClassAttendance(selectedClass, selectedDate);
@@ -83,9 +83,8 @@ export default function TeacherAttendancePage() {
         toast.success(_('Attendance marked'));
       }
       setSelectedStudentIds([]);
-      queryClient.invalidateQueries({ queryKey: ['teacher-today-attendance', selectedClass, selectedDate] });
-      queryClient.invalidateQueries({ queryKey: ['teacher-attendance-report'] });
-      queryClient.invalidateQueries({ queryKey: ['teacher-attendance'] });
+      refetchTodayAttendance();
+      refetchReport();
     },
     onError: (err: any) => toast.error(err.message || _('Failed to mark attendance')),
   });
