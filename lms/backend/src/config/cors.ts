@@ -4,7 +4,8 @@ import { logger } from '../utils/logger';
 
 const PRODUCTION_ORIGINS = [
   'https://app.school-lms.com',
-  env.FRONTEND_URL, // allow whatever FRONTEND_URL is set to (for flexible deploys)
+  'https://genesis-frontend-teal.vercel.app',
+  env.FRONTEND_URL,
   // Capacitor / mobile app origins
   'http://localhost',
   'capacitor://localhost',
