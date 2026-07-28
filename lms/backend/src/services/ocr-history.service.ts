@@ -132,6 +132,8 @@ export async function generateQuestionsFromText(
 ): Promise<GeneratedQuestion[]> {
   const prompt = `You are an educational assessment generator. Based on the following textbook content, generate ${count} interactive assessment questions.
 
+CRITICAL: Generate all questions in the SAME LANGUAGE as the textbook content below. If the textbook is in Hindi, write questions in Hindi. If it's in English, write in English. Match the language exactly.
+
 Textbook content:
 """
 ${extractedText.slice(0, 8000)}
@@ -149,20 +151,7 @@ Return a JSON object with a "questions" array. Each question object has:
 - explanation: brief explanation of the answer
 - difficulty: "easy" | "medium" | "hard"
 
-Example:
-{
-  "questions": [
-    {
-      "id": "q1",
-      "type": "mcq",
-      "question": "What is the capital of France?",
-      "options": ["London", "Paris", "Berlin", "Madrid"],
-      "correctAnswer": "Paris",
-      "explanation": "Paris is the capital city of France.",
-      "difficulty": "easy"
-    }
-  ]
-}`;
+Remember: the questions must be in the SAME language as the textbook content provided above.`;
 
   try {
     const response = await textbookChatCompletion({

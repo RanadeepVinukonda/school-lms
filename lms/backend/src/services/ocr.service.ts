@@ -59,7 +59,7 @@ let worker: any = null;
 async function getWorker() {
   if (!worker) {
     const T = await loadTesseract();
-    worker = await T.createWorker('eng', 3, {
+    worker = await T.createWorker('eng+hin', 3, {
       logger: (m: any) => {
         if (m.status === 'loading tesseract core') logger.debug('OCR: loading core');
         else if (m.status === 'initializing tesseract') logger.debug('OCR: initializing');
@@ -87,6 +87,8 @@ export async function processChatMessage(
 
 For general questions and chat, just give a helpful answer in plain text.
 
+CRITICAL LANGUAGE RULE: If extracted textbook text is provided, ALWAYS generate questions and responses in the SAME LANGUAGE as that text. Detect the language from the extracted content and use it consistently.
+
 Only use structured JSON when the user explicitly asks for:
 - "quiz" → {"action":"quiz","data":{"questions":[{"id":"q1","type":"mcq","question":"...","options":["A","B","C","D"],"correctAnswer":"A","explanation":"...","difficulty":"easy","points":1}, {"id":"q2","type":"true_false","question":"...","correctAnswer":"True","explanation":"...","difficulty":"medium","points":1}, {"id":"q3","type":"short_answer","question":"...","correctAnswer":"...","explanation":"...","difficulty":"hard","points":2}, {"id":"q4","type":"matching","question":"Match the following","options":["Term1 - Definition1","Term2 - Definition2"],"correctAnswer":"Term1:Definition1|Term2:Definition2","explanation":"...","difficulty":"medium","points":2}]}}
 - "assignment" → {"action":"assignment","data":{...}}
@@ -94,7 +96,7 @@ Only use structured JSON when the user explicitly asks for:
 
 Support all question types: mcq, true_false, short_answer, and matching. When the user asks for matching questions, generate them with options in "Left - Right" format.
 
-Extracted text from images (if any) is below. Use it as context.`;
+Extracted text from images (if any) is below. Use it as context. Remember: write questions in the same language as the extracted text.`;
 
   const userContent = imageBuffers.length > 0
     ? `Extracted text from uploaded images:\n"""\n${extractedText.slice(0, 8000)}\n"""\n\nTeacher's message: ${messages[messages.length - 1]?.content || ''}`
