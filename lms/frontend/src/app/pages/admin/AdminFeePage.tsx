@@ -100,13 +100,13 @@ export default function AdminFeePage() {
 
   const createScheduleMutation = useMutation({
     mutationFn: (data: typeof newSchedule) => feeService.createFeeSchedule(data),
-    onSuccess: () => { toast.success('Fee schedule created'); setNewSchedule({ name: '', amount: 0, dueDate: '', classId: '', academicYear: '', description: '' }); queryClient.invalidateQueries({ queryKey: ['fee-schedules'] }); queryClient.invalidateQueries({ queryKey: ['fee-outstanding'] }); },
+    onSuccess: () => { toast.success('Fee schedule created'); setNewSchedule({ name: '', amount: 0, dueDate: '', classId: '', academicYear: '', description: '' }); queryClient.invalidateQueries({ queryKey: ['fee-schedules'] }); refetchOut(); },
     onError: (err: any) => toast.error(err.message || 'Failed to create schedule'),
   });
 
   const recordPaymentMutation = useMutation({
     mutationFn: (data: typeof paymentData) => feeService.recordPayment(data),
-    onSuccess: () => { toast.success('Payment recorded'); setPaymentData({ studentId: '', feeScheduleId: '', amountPaid: 0, paymentMethod: 'cash', transactionId: '' }); queryClient.invalidateQueries({ queryKey: ['student-payments'] }); queryClient.invalidateQueries({ queryKey: ['fee-outstanding'] }); },
+    onSuccess: () => { toast.success('Payment recorded'); setPaymentData({ studentId: '', feeScheduleId: '', amountPaid: 0, paymentMethod: 'cash', transactionId: '' }); queryClient.invalidateQueries({ queryKey: ['student-payments'] }); refetchOut(); },
     onError: (err: any) => toast.error(err.message || 'Failed to record payment'),
   });
 
