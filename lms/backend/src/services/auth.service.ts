@@ -178,7 +178,7 @@ async function ensureAuthUser(phone: string, uid: string, role: string): Promise
   return { uid: authUid, email };
 }
 
-async function createSessionToken(uid: string, email: string, phone: string): Promise<{ access_token: string; refresh_token: string } | null> {
+async function createSessionToken(email: string, phone: string): Promise<{ access_token: string; refresh_token: string } | null> {
   const supabase = getSupabaseAdmin();
   const pwd = derivePassword(phone);
   const { data: { session }, error } = await supabase.auth.signInWithPassword({ email, password: pwd });
@@ -264,7 +264,7 @@ export async function verifyOtp(phone: string, token: string): Promise<ServiceRe
     }
 
     // Create session token
-    const session = await createSessionToken(uid, authEmail, phone);
+    const session = await createSessionToken(authEmail, phone);
     if (!session) return failure('Failed to create session', 'SESSION_ERROR');
 
     const { data: userRow } = await supabase.from('users').select('*').eq('id', uid).single();
