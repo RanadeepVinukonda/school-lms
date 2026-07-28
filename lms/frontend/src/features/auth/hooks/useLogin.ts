@@ -122,7 +122,8 @@ export function useLogin() {
         if (!res.data?.success) {
           throw new Error(res.data?.message || 'Failed to send OTP');
         }
-        return { otpSent: true, phone: data.phone };
+        const code = res.data?.data?.data?.code;
+        return { otpSent: true, phone: data.phone, code };
       }
 
       const { data: authData, error } = await supabase.auth.signInWithPassword({

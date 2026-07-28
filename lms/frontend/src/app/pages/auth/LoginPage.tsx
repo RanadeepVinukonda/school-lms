@@ -25,6 +25,7 @@ const countryCodes = [
 export default function LoginPage() {
   const [otpStep, setOtpStep] = useState<string | null>(null);
   const [otpPhone, setOtpPhone] = useState('');
+  const [otpCode, setOtpCode] = useState('');
   const [countryCode, setCountryCode] = useState('+91');
   const loginMutation = useLogin();
   const verifyOtpMutation = useVerifyOtp();
@@ -38,6 +39,7 @@ export default function LoginPage() {
       onSuccess: (result) => {
         if (result && 'otpSent' in result) {
           setOtpPhone(fullPhone);
+          setOtpCode((result as any).code || '');
           setOtpStep('verify');
         }
       },
@@ -56,7 +58,7 @@ export default function LoginPage() {
           <CardHeader className="space-y-1 pb-6">
             <CardTitle className="text-headline-sm text-center font-bold">Verify OTP</CardTitle>
             <CardDescription className="text-center text-body-md text-muted-foreground">
-              Enter the 6-digit code sent to {otpPhone}
+              {otpCode ? `Your OTP: ${otpCode}` : `Enter the 6-digit code sent to ${otpPhone}`}
             </CardDescription>
           </CardHeader>
           <CardContent>

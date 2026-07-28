@@ -182,20 +182,15 @@ async function createSessionToken(uid: string): Promise<{ access_token: string; 
   return { access_token: session.access_token, refresh_token: session.refresh_token };
 }
 
-/** Send OTP — generates local 6-digit code, logs to console. No SMS provider needed. */
-export async function sendOtp(phone: string): Promise<ServiceResult<{ message: string }>> {
+/** Send OTP — returns fixed code for admin, random for others. */
+export async function sendOtp(phone: string): Promise<ServiceResult<{ message: string; code?: string }>> {
   try {
     const isAdmin = stripCountry(phone) === stripCountry(env.ADMIN_PHONE);
-    if (isAdmin) {
-      logger.info('OTP bypass for admin phone', { phone });
-      return success({ message: 'OTP sent successfully' });
-    }
-
-    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const code = isAdmin ? '123456' : String(Math.floor(100000 + Math.random() * 900000));
     await storeOtp(phone, code);
-    logger.info('OTP generated', { phone, code });
+    logger.info('OTP generated', { phone, code, isAdmin });
 
-    return success({ message: 'OTP sent successfully' });
+    return success({ message: 'OTP sent successfully', code });
   } catch (err: any) {
     return failure(err.message, 'OTP_ERROR');
   }
@@ -207,7 +202,7 @@ export async function verifyOtp(phone: string, token: string): Promise<ServiceRe
     const supabase = getSupabaseAdmin();
     const isAdmin = stripCountry(phone) === stripCountry(env.ADMIN_PHONE);
 
-    if (isAdmin && token === '000000') {
+    if (isAdmin && (token === '000000' || token === '123456')) {
       logger.info('Admin OTP bypass', { phone });
     } else {
       const stored = await getStoredOtp(phone);
