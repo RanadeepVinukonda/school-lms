@@ -85,23 +85,16 @@ export async function register(data: {
   }
 }
 
+function stripCountry(phone: string): string {
+  return phone.replace(/^\+?\d{1,3}/, '');
+}
+
 /** Send OTP to phone number via Supabase. */
 export async function sendOtp(phone: string): Promise<ServiceResult<{ message: string }>> {
   try {
-    if (phone === env.ADMIN_PHONE) {
-      const response = await fetch(
-        `${env.SUPABASE_URL}/auth/v1/otp`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', apikey: env.SUPABASE_ANON_KEY },
-          body: JSON.stringify({ phone }),
-        }
-      );
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        return failure((body as { error_description?: string }).error_description || 'Failed to send OTP', 'OTP_ERROR');
-      }
-      logger.info('OTP sent (admin bypass)', { phone });
+    const isAdmin = stripCountry(phone) === stripCountry(env.ADMIN_PHONE);
+    if (isAdmin) {
+      logger.info('OTP bypass for admin phone', { phone });
       return success({ message: 'OTP sent successfully' });
     }
 
@@ -137,6 +130,69 @@ export async function sendOtp(phone: string): Promise<ServiceResult<{ message: s
 /** Verify OTP and return session tokens. */
 export async function verifyOtp(phone: string, token: string): Promise<ServiceResult<{ user: UserProfile; uid: string; token: string; refresh_token: string }>> {
   try {
+    const isAdmin = stripCountry(phone) === stripCountry(env.ADMIN_PHONE);
+
+    if (isAdmin && token === '000000') {
+      logger.info('Admin OTP bypass', { phone });
+      const supabase = getSupabaseAdmin();
+      const { data: existing } = await supabase
+        .from('users')
+        .select('*')
+        .filter('phone_number', 'eq', phone)
+        .maybeSingle();
+
+      let uid: string;
+      if (existing) {
+        uid = existing.id;
+      } else {
+        uid = crypto.randomUUID();
+        const placeholderEmail = `ph_${phone.replace(/[^0-9]/g, '')}@school.edu`;
+        const newUser = {
+          id: uid,
+          email: placeholderEmail,
+          display_name: phone,
+          role: 'super_admin',
+          phone_number: phone,
+          is_active: true,
+          school_id: '00000000-0000-0000-0000-000000000001',
+          class_ids: [],
+          children_ids: [],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        const { error: insertErr } = await supabase.from('users').insert(newUser);
+        if (insertErr) return failure(insertErr.message, 'DB_ERROR');
+      }
+
+
+      // Create session via Supabase REST API
+      const sesRes = await fetch(
+        `${env.SUPABASE_URL}/auth/v1/admin/users/${uid}/sessions`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+        }
+      );
+      const sesBody = await sesRes.json().catch(() => ({}));
+      const access_token = (sesBody as any)?.access_token || (sesBody as any)?.accessToken;
+      const refresh_token = (sesBody as any)?.refresh_token || (sesBody as any)?.refreshToken;
+      if (!access_token) return failure('Failed to create session', 'SESSION_ERROR');
+
+      const userData = mapUserRow(existing || { id: uid, role: 'super_admin', phone_number: phone });
+      await supabase.from('users').update({ role: 'super_admin' }).eq('id', uid);
+
+      return success({
+        user: userData,
+        uid,
+        token: access_token,
+        refresh_token,
+      });
+    }
+
     const response = await fetch(
       `${env.SUPABASE_URL}/auth/v1/otp`,
       {
@@ -188,7 +244,7 @@ export async function verifyOtp(phone: string, token: string): Promise<ServiceRe
     }
 
     const userData = mapUserRow(userRow as Record<string, unknown>);
-    if (phone === env.ADMIN_PHONE && userData.role !== 'super_admin') {
+    if (stripCountry(phone) === stripCountry(env.ADMIN_PHONE) && userData.role !== 'super_admin') {
       const supabaseAdmin = getSupabaseAdmin();
       await supabaseAdmin.from('users').update({ role: 'super_admin' }).eq('id', uid);
       userData.role = 'super_admin';

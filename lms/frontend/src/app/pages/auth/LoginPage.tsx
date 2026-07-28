@@ -9,9 +9,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { SEOHead } from '@/components/common/SEOHead';
 import { useLogin, useVerifyOtp } from '@/features/auth/hooks/useLogin';
 
+const countryCodes = [
+  { code: '+91', label: 'IN +91' },
+  { code: '+1', label: 'US +1' },
+  { code: '+44', label: 'UK +44' },
+  { code: '+61', label: 'AU +61' },
+  { code: '+971', label: 'AE +971' },
+  { code: '+966', label: 'SA +966' },
+  { code: '+92', label: 'PK +92' },
+  { code: '+880', label: 'BD +880' },
+  { code: '+977', label: 'NP +977' },
+  { code: '+94', label: 'LK +94' },
+];
+
 export default function LoginPage() {
   const [otpStep, setOtpStep] = useState<string | null>(null);
   const [otpPhone, setOtpPhone] = useState('');
+  const [countryCode, setCountryCode] = useState('+91');
   const loginMutation = useLogin();
   const verifyOtpMutation = useVerifyOtp();
 
@@ -19,10 +33,11 @@ export default function LoginPage() {
   const otpForm = useForm<{ token: string }>({ defaultValues: { token: '' } });
 
   async function onSendOtp(data: { phone: string }) {
-    loginMutation.mutate({ phone: data.phone }, {
+    const fullPhone = `${countryCode}${data.phone}`;
+    loginMutation.mutate({ phone: fullPhone }, {
       onSuccess: (result) => {
         if (result && 'otpSent' in result) {
-          setOtpPhone(data.phone);
+          setOtpPhone(fullPhone);
           setOtpStep('verify');
         }
       },
@@ -90,14 +105,26 @@ export default function LoginPage() {
           <form onSubmit={phoneForm.handleSubmit(onSendOtp)} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="login-phone" className="text-title-sm font-semibold">Phone Number</Label>
-              <Input
-                id="login-phone"
-                type="tel"
-                placeholder="+919000000001"
-                {...phoneForm.register('phone', { required: 'Phone number is required', pattern: { value: /^\+?\d{10,15}$/, message: 'Invalid phone number' } })}
-                disabled={loginMutation.isPending}
-                autoComplete="tel"
-              />
+              <div className="flex gap-2">
+                <select
+                  value={countryCode}
+                  onChange={(e) => setCountryCode(e.target.value)}
+                  className="flex h-10 w-[110px] shrink-0 rounded-lg border border-input bg-background px-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {countryCodes.map((c) => (
+                    <option key={c.code} value={c.code}>{c.label}</option>
+                  ))}
+                </select>
+                <Input
+                  id="login-phone"
+                  type="tel"
+                  placeholder="9000000001"
+                  className="flex-1"
+                  {...phoneForm.register('phone', { required: 'Phone is required', pattern: { value: /^\d{7,15}$/, message: 'Enter a valid phone number' } })}
+                  disabled={loginMutation.isPending}
+                  autoComplete="tel-national"
+                />
+              </div>
               {phoneForm.formState.errors.phone && (
                 <p className="text-label-sm text-error">{phoneForm.formState.errors.phone.message}</p>
               )}

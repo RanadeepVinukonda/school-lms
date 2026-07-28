@@ -6,7 +6,7 @@ import api, { startTokenRefresh } from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
 import { getPrimaryRole } from '@/lib/roleHelpers';
-import type { LoginInput, OtpVerifyInput, ApiError, UserRole } from '@/types';
+import type { LoginInput, OtpVerifyInput, ApiError } from '@/types';
 
 function setupDashboard(role: string): string {
   const primaryRole = getPrimaryRole(role);
@@ -118,10 +118,10 @@ export function useLogin() {
   return useMutation({
     mutationFn: async (data: LoginInput) => {
       if (data.phone) {
-        const { data: authData, error } = await supabase.auth.signInWithOtp({
-          phone: data.phone,
-        });
-        if (error) throw error;
+        const res = await api.post('/auth/send-otp', { phone: data.phone });
+        if (!res.data?.success) {
+          throw new Error(res.data?.message || 'Failed to send OTP');
+        }
         return { otpSent: true, phone: data.phone };
       }
 
@@ -152,16 +152,13 @@ export function useVerifyOtp() {
 
   return useMutation({
     mutationFn: async (data: OtpVerifyInput) => {
-      const { data: authData, error } = await supabase.auth.verifyOtp({
-        phone: data.phone,
-        token: data.token,
-        type: 'sms',
-      });
-      if (error) throw error;
-      if (!authData.user) throw new Error('Verification failed');
-      if (!authData.session) throw new Error('No session returned');
-
-      return fetchProfile(authData.user.id, authData.session.access_token, authData.session.refresh_token);
+      const res = await api.post('/auth/verify-otp', { phone: data.phone, token: data.token });
+      const body = res.data?.data;
+      if (!body?.success || !body?.data) {
+        throw new Error(body?.message || 'Invalid or expired OTP');
+      }
+      const { uid, token, refresh_token, user } = body.data;
+      return { ...user, uid, token, refreshToken: refresh_token };
     },
     onSuccess: (result) => {
       handleLoginSuccess(result, navigate, location, setToken, setUser);
