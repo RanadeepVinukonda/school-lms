@@ -30,7 +30,7 @@ function toGeminiModel(model: string): string {
 export async function chatCompletion(params: ChatRequest): Promise<string> {
   const { model = env.AI_MODEL, messages, temperature = 0.7, max_tokens = 2048, jsonMode = false } = params;
 
-  const cacheKey = `ai:${JSON.stringify(messages.slice(0, 2))}`;
+  const cacheKey = `ai:${JSON.stringify(messages)}`;
   const cached = aiResponseCache.get<string>(cacheKey);
   if (cached) return cached;
 
