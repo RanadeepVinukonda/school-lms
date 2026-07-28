@@ -5,10 +5,12 @@ import { ValidationError } from '../utils/errors';
 
 export async function createReport(req: Request, res: Response) {
   if (!req.user) throw new ValidationError('Authentication required');
+  if (!req.body.classId) throw new ValidationError('Class is required');
   const result = await reportFeedbackService.createReport({
     userId: req.user.uid,
     userName: req.body.userName,
     userRole: req.body.userRole,
+    classId: req.body.classId,
     className: req.body.className,
     title: req.body.title,
     description: req.body.description,

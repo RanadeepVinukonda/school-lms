@@ -75,6 +75,7 @@ export default function ReportFeedbackForm({ className: classnameProp, onSuccess
     e.preventDefault();
     if (!form.title.trim()) { toast.error(_('Title is required')); return; }
     if (!form.description.trim()) { toast.error(_('Description is required')); return; }
+    if (!form.classId) { toast.error(_('Please select a class')); return; }
     mutation.mutate();
   };
 
@@ -156,14 +157,15 @@ export default function ReportFeedbackForm({ className: classnameProp, onSuccess
           </div>
 
           <div>
-            <Label className="mb-1.5 block" htmlFor="report-class">{_('Child\'s Class')}</Label>
+            <Label className="mb-1.5 block" htmlFor="report-class">{_('Child\'s Class *')}</Label>
             <select
               id="report-class"
               value={form.classId}
               onChange={(e) => setForm({ ...form, classId: e.target.value })}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              required
             >
-              <option value="">{_('Select class (optional)')}</option>
+              <option value="">{_('Select class')}</option>
               {classList.map((cls: any) => (
                 <option key={cls.id} value={cls.id}>{cls.name}</option>
               ))}

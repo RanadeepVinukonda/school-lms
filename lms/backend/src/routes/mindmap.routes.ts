@@ -35,7 +35,13 @@ const pinResourceSchema = z.object({
   resourceType: z.string().min(1),
 }).passthrough();
 
+const generateTextbookMindMapSchema = z.object({
+  textbookId: z.string().min(1),
+  language: z.string().optional(),
+}).passthrough();
+
 router.post('/generate', authenticate, validate(generateMindMapSchema), asyncHandler(mindmapController.generateMindMap));
+router.post('/generate-textbook', authenticate, validate(generateTextbookMindMapSchema), asyncHandler(mindmapController.generateTextbookMindMap));
 router.post('/', authenticate, validate(createMindMapSchema), asyncHandler(mindmapController.createMindMap));
 router.get('/user', authenticate, asyncHandler(mindmapController.getUserMindMaps));
 router.get('/shared', authenticate, asyncHandler(mindmapController.getSharedMindMaps));

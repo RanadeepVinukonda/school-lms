@@ -41,8 +41,6 @@ const StudentConceptPage = lazyRetry(() => import('@/app/pages/student/StudentCo
 const StudentGamificationPage = lazyRetry(() => import('@/app/pages/student/StudentGamificationPage'));
 const StudentLeaderboardPage = lazyRetry(() => import('@/app/pages/student/StudentLeaderboardPage'));
 const StudentAITutorPage = lazyRetry(() => import('@/app/pages/student/StudentAITutorPage'));
-const StudentCodingPage = lazyRetry(() => import('@/app/pages/student/StudentCodingPage'));
-const StudentCodingEditorPage = lazyRetry(() => import('@/app/pages/student/StudentCodingEditorPage'));
 const StudentOCRPage = lazyRetry(() => import('@/app/pages/student/StudentOCRPage'));
 const SubjectsPage = lazyRetry(() => import('@/app/pages/student/SubjectsPage'));
 const SubjectDetailPage = lazyRetry(() => import('@/app/pages/student/SubjectDetailPage'));
@@ -121,6 +119,7 @@ const ParentChildDetailPage = lazyRetry(() => import('@/app/pages/parent/ParentC
 const ParentReportsPage = lazyRetry(() => import('@/app/pages/parent/ParentReportsPage'));
 const ParentProfilePage = lazyRetry(() => import('@/app/pages/parent/ParentProfilePage'));
 const ParentNoticeBoardPage = lazyRetry(() => import('@/app/pages/parent/ParentNoticeBoardPage'));
+const ParentProfileEditPage = lazyRetry(() => import('@/app/pages/parent/ParentProfileEditPage'));
 const ParentReportPage = lazyRetry(() => import('@/app/pages/parent/ParentReportPage'));
 
 export const router = createBrowserRouter([
@@ -168,8 +167,6 @@ export const router = createBrowserRouter([
       { path: ROUTES.STUDENT_AI_TUTOR, element: <Suspense fallback={<PageFallback />}><StudentAITutorPage /></Suspense> },
       { path: ROUTES.STUDENT_GAMIFICATION, element: <Suspense fallback={<PageFallback />}><StudentGamificationPage /></Suspense> },
       { path: ROUTES.STUDENT_LEADERBOARD, element: <Suspense fallback={<PageFallback />}><StudentLeaderboardPage /></Suspense> },
-      { path: ROUTES.STUDENT_CODING, element: <Suspense fallback={<PageFallback />}><StudentCodingPage /></Suspense> },
-      { path: ROUTES.STUDENT_CODING_EDITOR(':id'), element: <Suspense fallback={<PageFallback />}><StudentCodingEditorPage /></Suspense> },
       { path: ROUTES.STUDENT_OCR, element: <Suspense fallback={<PageFallback />}><StudentOCRPage /></Suspense> },
       { path: ROUTES.STUDENT_SUBJECTS, element: <Suspense fallback={<PageFallback />}><SubjectsPage /></Suspense> },
       { path: ROUTES.STUDENT_SUBJECT(':id'), element: <Suspense fallback={<PageFallback />}><SubjectDetailPage /></Suspense> },
@@ -278,6 +275,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.PARENT_CHILD(':studentId'), element: <Suspense fallback={<PageFallback />}><ParentChildDetailPage /></Suspense> },
       { path: ROUTES.PARENT_REPORTS, element: <Suspense fallback={<PageFallback />}><ParentReportsPage /></Suspense> },
       { path: ROUTES.PARENT_PROFILE, element: <Suspense fallback={<PageFallback />}><ParentProfilePage /></Suspense> },
+      { path: ROUTES.PARENT_PROFILE_EDIT, element: <Suspense fallback={<PageFallback />}><ParentProfileEditPage /></Suspense> },
       { path: ROUTES.PARENT_NOTICEBOARD, element: <Suspense fallback={<PageFallback />}><ParentNoticeBoardPage /></Suspense> },
       { path: ROUTES.PARENT_REPORT, element: <Suspense fallback={<PageFallback />}><ParentReportPage /></Suspense> },
     ],

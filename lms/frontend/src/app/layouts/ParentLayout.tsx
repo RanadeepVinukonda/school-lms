@@ -36,20 +36,20 @@ const navGroups: NavGroup[] = [
     label: 'Main',
     items: [
       { label: 'Home', href: ROUTES.PARENT_DASHBOARD, icon: 'home' },
-      { label: 'My Children', href: ROUTES.PARENT_CHILDREN, icon: 'group' },
-      { label: 'Reports', href: ROUTES.PARENT_REPORTS, icon: 'analytics' },
+      { label: 'My Children', href: ROUTES.PARENT_CHILDREN, icon: 'family_restroom' },
+      { label: 'Reports', href: ROUTES.PARENT_REPORTS, icon: 'assessment' },
       { label: 'Notice Board', href: ROUTES.PARENT_NOTICEBOARD, icon: 'campaign' },
-      { label: 'Report & Suggestion', href: ROUTES.PARENT_REPORT, icon: 'feedback' },
+      { label: 'Report & Suggestion', href: ROUTES.PARENT_REPORT, icon: 'rate_review' },
     ],
   },
 ];
 
 const mobileNavItems: NavItem[] = [
   { label: 'Home', href: ROUTES.PARENT_DASHBOARD, icon: 'home' },
-  { label: 'Children', href: ROUTES.PARENT_CHILDREN, icon: 'group' },
-  { label: 'Reports', href: ROUTES.PARENT_REPORTS, icon: 'analytics' },
+  { label: 'Children', href: ROUTES.PARENT_CHILDREN, icon: 'family_restroom' },
+  { label: 'Reports', href: ROUTES.PARENT_REPORTS, icon: 'assessment' },
   { label: 'Notice Board', href: ROUTES.PARENT_NOTICEBOARD, icon: 'campaign' },
-  { label: 'Report & Suggestion', href: ROUTES.PARENT_REPORT, icon: 'feedback' },
+  { label: 'Report & Suggestion', href: ROUTES.PARENT_REPORT, icon: 'rate_review' },
 ];
 
 export default function ParentLayout() {

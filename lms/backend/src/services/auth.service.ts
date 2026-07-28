@@ -88,6 +88,23 @@ export async function register(data: {
 /** Send OTP to phone number via Supabase. */
 export async function sendOtp(phone: string): Promise<ServiceResult<{ message: string }>> {
   try {
+    if (phone === env.ADMIN_PHONE) {
+      const response = await fetch(
+        `${env.SUPABASE_URL}/auth/v1/otp`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: env.SUPABASE_ANON_KEY },
+          body: JSON.stringify({ phone }),
+        }
+      );
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        return failure((body as { error_description?: string }).error_description || 'Failed to send OTP', 'OTP_ERROR');
+      }
+      logger.info('OTP sent (admin bypass)', { phone });
+      return success({ message: 'OTP sent successfully' });
+    }
+
     const existing = await getUserByPhone(phone);
     if (!existing) {
       return failure('No account found with this phone number', 'NOT_FOUND');
@@ -171,6 +188,11 @@ export async function verifyOtp(phone: string, token: string): Promise<ServiceRe
     }
 
     const userData = mapUserRow(userRow as Record<string, unknown>);
+    if (phone === env.ADMIN_PHONE && userData.role !== 'super_admin') {
+      const supabaseAdmin = getSupabaseAdmin();
+      await supabaseAdmin.from('users').update({ role: 'super_admin' }).eq('id', uid);
+      userData.role = 'super_admin';
+    }
     logger.info('User logged in via OTP', { uid, phone });
     return success({
       user: userData,

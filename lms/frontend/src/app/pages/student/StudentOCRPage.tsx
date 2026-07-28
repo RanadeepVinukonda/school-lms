@@ -1,154 +1,187 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
+import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CameraCapture from '@/components/ocr/CameraCapture';
-import { scanImage, mapToConcept } from '@/services/ocrService';
+import { QuestionCard } from '@/components/ocr/QuestionCard';
+import { scanImage, mapToConcept, pushQuiz } from '@/services/ocrService';
+import api from '@/services/api';
 import type { OCRResult, GeneratedQuestion } from '@/types/ocr';
-
-function QuestionCard({ q, index }: { q: GeneratedQuestion; index: number }) {
-  const { _ } = useTranslation();
-  const [showAnswer, setShowAnswer] = useState(false);
-  return (
-    <div className="p-4 rounded-lg border border-outline-variant">
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <span className="text-sm font-semibold">Q{index + 1}. {q.question}</span>
-        <Badge variant="secondary" className="text-label-xs shrink-0">{q.type.replace('_', ' ')}</Badge>
-      </div>
-      {q.options && (
-        <div className="space-y-1.5 mt-2">
-          {q.options.map((opt, j) => (
-            <div key={j} className="px-3 py-2 rounded-lg border border-outline-variant text-sm">{opt}</div>
-          ))}
-        </div>
-      )}
-      <div className="mt-3 pt-3 border-t border-border">
-        <button
-          onClick={() => setShowAnswer(!showAnswer)}
-          className="flex items-center gap-1.5 text-label-xs text-primary hover:text-primary/80 transition-colors"
-        >
-          <Icon name={showAnswer ? 'visibility_off' : 'visibility'} size={14} />
-          {showAnswer ? _('Hide Answer') : _('Show Answer')}
-        </button>
-        {showAnswer && (
-          <div className="mt-2 p-3 rounded-lg bg-success/5 border border-success/20">
-            <p className="text-label-xs font-semibold text-success mb-1">{_('Correct Answer:')}</p>
-            <p className="text-sm">{q.correctAnswer}</p>
-            {q.explanation && (
-              <p className="text-label-xs text-muted-foreground mt-1.5 pt-1.5 border-t border-success/10">{q.explanation}</p>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default function StudentOCRPage() {
   const { _ } = useTranslation();
+  const [mode, setMode] = useState<'image' | 'text'>('image');
+  const [textInput, setTextInput] = useState('');
   const [ocrResult, setOcrResult] = useState<OCRResult | null>(null);
   const [questions, setQuestions] = useState<GeneratedQuestion[]>([]);
   const [conceptName, setConceptName] = useState<string>('');
   const [questionCount, setQuestionCount] = useState(5);
-  const [isScanning, setIsScanning] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [step, setStep] = useState<'capture' | 'scanning' | 'result' | 'quiz'>('capture');
-
-  const generateQuiz = useCallback(async () => {
-    if (!ocrResult) return;
+  const [step, setStep] = useState<'capture' | 'scanning' | 'quiz'>('capture');
+  const [selectedClassId, setSelectedClassId] = useState('');
+  const { data: classes } = useQuery({
+    queryKey: ['classes-list-for-ocr'],
+    queryFn: () => api.get('/classes').then((r) => r.data.data),
+    enabled: step === 'quiz' && questions.length > 0,
+  });
+  const classList = Array.isArray(classes) ? classes : classes?.items || [];
+  const generateQuiz = useCallback(async (text: string, count?: number) => {
     setIsProcessing(true);
     setError(null);
     setQuestions([]);
     try {
-      const mappingResult = await mapToConcept(ocrResult.text, 'auto', questionCount);
+      const mappingResult = await mapToConcept(text, 'auto', count ?? questionCount);
       if (mappingResult) {
         setConceptName(mappingResult.conceptName || 'Detected Content');
-        if (mappingResult.questions && mappingResult.questions.length > 0) {
-          setQuestions(mappingResult.questions);
-        }
+        if (mappingResult.questions && mappingResult.questions.length > 0) setQuestions(mappingResult.questions);
       }
-    } catch (err: any) {
-      setError(err?.message || 'Could not generate quiz. Please try again.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Could not generate quiz. Please try again.');
     }
     setIsProcessing(false);
-  }, [ocrResult, questionCount]);
-
-  const handleCapture = useCallback(async (blob: Blob) => {
-    setIsScanning(true);
-    setStep('scanning');
-    setError(null);
-    try {
-      const file = new File([blob], 'page.jpg', { type: 'image/jpeg' });
-      const result = await scanImage(file);
-      setOcrResult(result);
-      setIsScanning(false);
-      setStep('quiz');
-    } catch (err: any) {
-      setError(err?.message || 'Could not process the image. Please try again.');
-      setIsScanning(false);
-      setStep('capture');
-    }
-  }, []);
-
-  const handleFileUpload = useCallback(async (file: File) => {
-    setIsScanning(true);
+    setStep('quiz');
+  }, [questionCount]);
+  const processOcrResult = useCallback(async (file: File) => {
     setStep('scanning');
     setError(null);
     try {
       const result = await scanImage(file);
       setOcrResult(result);
-      setIsScanning(false);
-      setStep('quiz');
-    } catch (err: any) {
-      setError(err?.message || 'Could not process the image. Please try again.');
-      setIsScanning(false);
+      await generateQuiz(result.text);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Could not process the image. Please try again.');
       setStep('capture');
     }
+  }, [generateQuiz]);
+  const handleCapture = useCallback((blob: Blob) => {
+    const file = new File([blob], 'page.jpg', { type: 'image/jpeg' });
+    processOcrResult(file);
+  }, [processOcrResult]);
+  const handleFileUpload = useCallback((file: File) => {
+    processOcrResult(file);
+  }, [processOcrResult]);
+  const handleTextSubmit = useCallback(() => {
+    if (!textInput.trim()) return;
+    setOcrResult({ text: textInput, confidence: 100, blocks: [] });
+    setStep('scanning');
+    setError(null);
+    mapToConcept(textInput, 'auto', questionCount)
+      .then((result) => {
+        if (result) {
+          setConceptName(result.conceptName || 'Input Text');
+          if (result.questions && result.questions.length > 0) setQuestions(result.questions);
+        }
+        setStep('quiz');
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : 'Could not generate quiz.');
+        setStep('capture');
+      })
+      .finally(() => setIsProcessing(false));
+  }, [textInput, questionCount]);
+  const handleEditQuestion = useCallback((id: string, field: string, value: string | string[]) => {
+    setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, [field]: value } : q)));
   }, []);
+  const handleDeleteQuestion = useCallback((id: string) => {
+    setQuestions((prev) => prev.filter((q) => q.id !== id));
+  }, []);
+  const handlePushQuiz = async () => {
+    if (!selectedClassId || questions.length === 0) return;
+    try {
+      await pushQuiz({ questions, conceptName }, selectedClassId);
+      toast.success('Quiz pushed to class successfully!');
+      reset();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to push quiz');
+    }
+  };
 
   const reset = useCallback(() => {
     setOcrResult(null);
     setQuestions([]);
     setConceptName('');
+    setSelectedClassId('');
     setError(null);
     setStep('capture');
   }, []);
-
   return (
     <>
       <SEOHead title={_('Scan Textbook Page')} description={_('Scan textbook pages and take quick quizzes')} />
       <motion.div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
         <div>
           <h1 className="text-title-lg font-bold">{_('Scan a Page')}</h1>
-          <p className="text-on-surface-variant mt-1">{_('Capture a textbook page and get a quick quiz instantly')}</p>
+          <p className="text-on-surface-variant mt-1">{_('Capture a textbook page or paste text and get a quick quiz instantly')}</p>
         </div>
-
         <AnimatePresence mode="wait">
           {step === 'capture' && (
             <motion.div key="capture" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <CameraCapture onCapture={handleCapture} onFileUpload={handleFileUpload} />
+              <div className="flex gap-2 p-1 bg-muted rounded-lg w-fit mb-4">
+                <button
+                  onClick={() => setMode('image')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${mode === 'image' ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
+                >
+                  <Icon name="camera_alt" size={16} className="mr-1.5 inline" />
+                  Image Mode
+                </button>
+                <button
+                  onClick={() => setMode('text')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${mode === 'text' ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
+                >
+                  <Icon name="text_fields" size={16} className="mr-1.5 inline" />
+                  Text Mode
+                </button>
+              </div>
+              {mode === 'image' && <CameraCapture onCapture={handleCapture} onFileUpload={handleFileUpload} />}
+              {mode === 'text' && (
+                <Card>
+                  <CardContent className="space-y-4 pt-6">
+                    <Textarea
+                      placeholder={_('Paste or type your study material here...')}
+                      value={textInput}
+                      onChange={(e) => setTextInput(e.target.value)}
+                      rows={8}
+                    />
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <label className="text-label-xs text-muted-foreground">{_('Questions:')}</label>
+                        <select
+                          value={questionCount}
+                          onChange={(e) => setQuestionCount(Number(e.target.value))}
+                          className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                        >
+                          {[3, 5, 10, 15, 20].map((n) => <option key={n} value={n}>{n}</option>)}
+                        </select>
+                      </div>
+                      <Button onClick={handleTextSubmit} disabled={!textInput.trim() || isProcessing}>
+                        <Icon name="auto_awesome" size={16} className="mr-1" />
+                        Generate Quiz from Text
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </motion.div>
           )}
 
           {step === 'scanning' && (
             <motion.div key="scanning" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <Card>
-                <CardContent className="py-12">
-                  <div className="flex flex-col items-center gap-4">
-                    <Icon name="document_scanner" size={48} className="text-primary" />
-                    <Progress className="w-64" />
-                    <p className="text-sm text-on-surface-variant">
-                      {isProcessing ? _('Generating quiz questions...') : _('Scanning and extracting text...')}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+              <Card><CardContent className="py-12">
+                <div className="flex flex-col items-center gap-4">
+                  <Icon name="document_scanner" size={48} className="text-primary" />
+                  <Progress className="w-64" />
+                  <p className="text-sm text-on-surface-variant">{isProcessing ? _('Generating quiz questions...') : _('Scanning and extracting text...')}</p>
+                </div>
+              </CardContent></Card>
             </motion.div>
           )}
 
@@ -177,12 +210,10 @@ export default function StudentOCRPage() {
                         className="h-8 rounded-md border border-input bg-background px-2 text-sm"
                         disabled={isProcessing}
                       >
-                        {[3, 5, 10, 15, 20].map((n) => (
-                          <option key={n} value={n}>{n}</option>
-                        ))}
+                        {[3, 5, 10, 15, 20].map((n) => <option key={n} value={n}>{n}</option>)}
                       </select>
                     </div>
-                    <Button size="sm" onClick={generateQuiz} disabled={isProcessing}>
+                    <Button size="sm" onClick={() => generateQuiz(ocrResult?.text || '')} disabled={isProcessing}>
                       <Icon name="auto_awesome" size={16} className="mr-1" />
                       {isProcessing ? _('Generating...') : _('Generate Quiz')}
                     </Button>
@@ -194,23 +225,54 @@ export default function StudentOCRPage() {
                 </CardContent>
               </Card>
 
-              {questions.length > 0 ? (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Icon name="quiz" size={20} />
-                      {_('Quick Quiz')} ({questions.length} {_('questions')})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {questions.map((q, i) => (
-                        <QuestionCard key={q.id} q={q} index={i} />
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : ocrResult && !isProcessing && (
+              {questions.length > 0 && (
+                <>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Icon name="quiz" size={20} />
+                        {_('Quick Quiz')} ({questions.length} {_('questions')})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {questions.map((q, i) => (
+                          <QuestionCard key={q.id} q={q} index={i} onEdit={handleEditQuestion} onDelete={handleDeleteQuestion} />
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Icon name="send" size={20} />
+                        {_('Push to Class')}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-label-xs text-muted-foreground">{_('Select a class')}</label>
+                        <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+                          <SelectTrigger className="h-10">
+                            <SelectValue placeholder={_('Choose a class...')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {classList.map((cls: { id: string; name?: string; className?: string }) => (
+                              <SelectItem key={cls.id} value={cls.id}>{cls.name || cls.className || cls.id}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button onClick={handlePushQuiz} disabled={!selectedClassId || questions.length === 0} className="w-full">
+                        <Icon name="send" size={16} className="mr-1" />
+                        Push to Quiz
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
+
+              {questions.length === 0 && ocrResult && !isProcessing && (
                 <Card>
                   <CardContent className="py-8 flex flex-col items-center gap-3">
                     <Icon name="auto_stories" size={36} className="text-muted-foreground/50" />

@@ -138,8 +138,8 @@ export default function ParentReportsPage() {
                             <p className="text-sm text-muted-foreground">Class: {r.student?.class || 'N/A'} &middot; Academic Year: {r.academicYear}</p>
                             <div className="mt-3 flex items-center justify-center gap-6">
                               <div>
-                                <p className="text-display-xs font-bold">{r.gpa}</p>
-                                <p className="text-label-xs text-muted-foreground">GPA</p>
+                                <p className="text-display-sm font-bold">{r.overallPercentage}%</p>
+                                <p className="text-label-xs text-muted-foreground">Overall Score</p>
                               </div>
                               <div className="h-14 w-14 rounded-full bg-primary flex items-center justify-center">
                                 <span className="text-headline-sm font-bold text-white">{r.letterGrade}</span>

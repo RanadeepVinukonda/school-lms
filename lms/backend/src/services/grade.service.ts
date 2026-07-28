@@ -218,9 +218,10 @@ export async function generateReport(studentId: string, academicYear: string, te
     studentId, academicYear, term,
     grades: gradesList,
     summary: {
-      totalCourses: gradesList.length, totalScore, totalPoints,
-      overallPercentage, gpa: calculateGPA(overallPercentage),
+      overallPercentage,
       letterGrade: calculateLetterGrade(overallPercentage),
+      gpa: calculateGPA(overallPercentage),
+      totalCourses: gradesList.length, totalScore, totalPoints,
     },
   };
 }

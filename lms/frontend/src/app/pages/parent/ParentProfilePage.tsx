@@ -1,10 +1,12 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Icon } from '@/components/ui/Icon';
 import { getInitials } from '@/lib/utils';
@@ -12,6 +14,8 @@ import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { getUser, getUserByRole } from '@/services/dataService';
 import { getChildren } from '@/services/parentService';
+import { ROUTES } from '@/lib/constants';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface ProfileData {
   user: import('@/services/dataService').UserDoc;
@@ -20,6 +24,7 @@ interface ProfileData {
 }
 
 export default function ParentProfilePage() {
+  const { _ } = useTranslation();
   const authUser = useAuthStore((s) => s.user);
 
   const { data: raw, isLoading, error, refetch } = useQuery({
@@ -84,6 +89,11 @@ export default function ParentProfilePage() {
                             <Badge variant="secondary" className="text-label-xs">{profileData.user.id}</Badge>
                           )}
                         </div>
+                        <Link to={ROUTES.PARENT_PROFILE_EDIT}>
+                          <Button variant="outline" size="sm" className="mt-2">
+                            <Icon name="edit" size={15} className="mr-1" />{_('Edit Profile')}
+                          </Button>
+                        </Link>
                       </div>
                     </div>
                   </CardContent>

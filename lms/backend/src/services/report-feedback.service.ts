@@ -30,6 +30,7 @@ export async function createReport(data: {
   userId: string;
   userName: string;
   userRole: string;
+  classId?: string;
   className?: string;
   title: string;
   description: string;
@@ -42,6 +43,7 @@ export async function createReport(data: {
     user_id: data.userId,
     user_name: data.userName,
     user_role: data.userRole,
+    class_id: data.classId || null,
     class_name: data.className || null,
     title: data.title,
     description: data.description,

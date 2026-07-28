@@ -486,7 +486,7 @@ export default function AdminClassesPage() {
 // INLINE REGISTER STUDENT FOR A CLASS
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [addStudentClassId, setAddStudentClassId] = useState('');
-  const [studentForm, setStudentForm] = useState({ displayName: '', rollNo: '', gender: '' });
+  const [studentForm, setStudentForm] = useState({ displayName: '', phone: '', rollNo: '', gender: '' });
   const [studentRegisterLoading, setStudentRegisterLoading] = useState(false);
 
   const getNextRollNo = (classId: string) => {
@@ -502,6 +502,7 @@ export default function AdminClassesPage() {
     const nextRoll = getNextRollNo(cls.id);
     setStudentForm({
       displayName: '',
+      phone: '',
       rollNo: String(nextRoll),
       gender: '',
     });
@@ -513,10 +514,19 @@ export default function AdminClassesPage() {
       toast.error('Please enter name and roll number');
       return;
     }
+    if (!studentForm.phone.trim()) {
+      toast.error('Please enter a phone number');
+      return;
+    }
+    if (!/^\+?\d{10,15}$/.test(studentForm.phone.trim())) {
+      toast.error('Invalid phone number');
+      return;
+    }
     setStudentRegisterLoading(true);
     try {
       const res = await userService.create({
         displayName: studentForm.displayName,
+        phone: studentForm.phone.trim(),
         role: 'student',
         classId: addStudentClassId,
         rollNo: parseInt(studentForm.rollNo, 10),
@@ -526,7 +536,7 @@ export default function AdminClassesPage() {
       const studentData = res.data as any;
       setCreatedCredentials({
         displayName: studentData.displayName,
-        email: studentData.email,
+        email: studentData.phone_number || studentData.phoneNumber || studentData.email,
         generatedPassword: studentData.generatedPassword,
         studentId: studentData.studentId,
       });
@@ -576,7 +586,7 @@ export default function AdminClassesPage() {
   // -------------------------------------------------------------
   const [teacherSearch, setTeacherSearch] = useState('');
   const [showCreateTeacher, setShowCreateTeacher] = useState(false);
-  const [teacherForm, setTeacherForm] = useState({ displayName: '', email: '' });
+  const [teacherForm, setTeacherForm] = useState({ displayName: '', phone: '' });
   const [teacherRegisterLoading, setTeacherRegisterLoading] = useState(false);
   const [userDeleteTarget, setUserDeleteTarget] = useState<UserDoc | null>(null);
   const [userDeleteLoading, setUserDeleteLoading] = useState(false);
@@ -587,7 +597,7 @@ export default function AdminClassesPage() {
   const filteredTeachers = useMemo(() => {
     return teachers.filter((t) => {
       const q = teacherSearch.toLowerCase();
-      return (t.displayName?.toLowerCase() || '').includes(q) || (t.email?.toLowerCase() || '').includes(q);
+      return (t.displayName?.toLowerCase() || '').includes(q) || (t.phone_number?.toLowerCase() || '').includes(q) || (t.phoneNumber?.toLowerCase() || '').includes(q);
     });
   }, [teachers, teacherSearch]);
 
@@ -596,26 +606,31 @@ export default function AdminClassesPage() {
       toast.error('Please enter teacher name');
       return;
     }
+    if (!teacherForm.phone.trim()) {
+      toast.error('Please enter a phone number');
+      return;
+    }
+    if (!/^\+?\d{10,15}$/.test(teacherForm.phone.trim())) {
+      toast.error('Invalid phone number');
+      return;
+    }
     setTeacherRegisterLoading(true);
     try {
-      const cleanName = (teacherForm.displayName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      const defaultEmail = teacherForm.email.trim() || `${cleanName}@school.edu`;
-
       const res = await userService.create({
         displayName: teacherForm.displayName,
-        email: defaultEmail,
+        phone: teacherForm.phone.trim(),
         role: 'teacher',
       });
 
       const teacherData = res.data as any;
       setCreatedCredentials({
         displayName: teacherData.displayName,
-        email: teacherData.email,
+        email: teacherData.phone_number || teacherData.phoneNumber || teacherData.email,
         generatedPassword: teacherData.generatedPassword,
       });
 
       setShowCreateTeacher(false);
-      setTeacherForm({ displayName: '', email: '' });
+      setTeacherForm({ displayName: '', phone: '' });
       if (!teacherData.generatedPassword) {
         toast.success('Teacher exists — account reused');
       } else {
@@ -1014,7 +1029,7 @@ export default function AdminClassesPage() {
                     <thead>
                       <tr className="border-b border-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
                         <th className="text-left px-4 py-3">Name</th>
-                        <th className="text-left px-4 py-3">Email Login</th>
+                          <th className="text-left px-4 py-3">Phone</th>
                         <th className="text-left px-4 py-3">Assigned Classes</th>
                         <th className="text-left px-4 py-3">Status</th>
                         <th className="text-right px-4 py-3">Actions</th>
@@ -1030,7 +1045,7 @@ export default function AdminClassesPage() {
                         return (
                           <tr key={teacher.id} className="hover:bg-muted/20 transition-colors text-body-md">
                             <td className="px-4 py-3 font-semibold">{teacher.displayName}</td>
-                            <td className="px-4 py-3 font-mono text-sm select-all">{teacher.email}</td>
+                            <td className="px-4 py-3 font-mono text-sm select-all">{teacher.phone_number || teacher.phoneNumber || '—'}</td>
                             <td className="px-4 py-3">
                               {teacherAssignments.length === 0 ? (
                                 <span className="text-label-xs text-muted-foreground/60">No assignments</span>
@@ -1127,7 +1142,7 @@ export default function AdminClassesPage() {
                           <th className="text-left px-4 py-3">Student ID</th>
                           <th className="text-left px-4 py-3">Class</th>
                           <th className="text-left px-4 py-3">Roll No</th>
-                          <th className="text-left px-4 py-3">Email Login</th>
+                        <th className="text-left px-4 py-3">Phone</th>
                           <th className="text-left px-4 py-3">Status</th>
                           <th className="text-right px-4 py-3">Actions</th>
                         </tr>
@@ -1141,7 +1156,7 @@ export default function AdminClassesPage() {
                               <td className="px-4 py-3 font-mono text-sm font-semibold text-primary">{student.studentId || '\u2014'}</td>
                               <td className="px-4 py-3">{classObj ? classObj.name : '\u2014'}</td>
                               <td className="px-4 py-3 font-semibold">{student.rollNo ?? '\u2014'}</td>
-                              <td className="px-4 py-3 font-mono text-xs text-muted-foreground select-all">{student.email}</td>
+                              <td className="px-4 py-3 font-mono text-xs text-muted-foreground select-all">{student.phone_number || student.phoneNumber || '—'}</td>
                               <td className="px-4 py-3">
                                 <Badge variant={student.isActive === false ? 'destructive' : 'success'} className="text-[10px]">
                                   {student.isActive === false ? 'Inactive' : 'Active'}
@@ -1427,6 +1442,11 @@ export default function AdminClassesPage() {
               <Input placeholder="John Doe" value={studentForm.displayName} onChange={(e) => setStudentForm((f) => ({ ...f, displayName: e.target.value }))} />
             </div>
             <div className="space-y-2">
+              <Label>Phone Number</Label>
+              <Input placeholder="+2341234567890" value={studentForm.phone} onChange={(e) => setStudentForm((f) => ({ ...f, phone: e.target.value }))} />
+              <p className="text-[11px] text-muted-foreground">10–15 digits, with optional leading +</p>
+            </div>
+            <div className="space-y-2">
               <Label>Roll Number</Label>
               <Input type="number" value={studentForm.rollNo} onChange={(e) => setStudentForm((f) => ({ ...f, rollNo: e.target.value }))} />
             </div>
@@ -1443,7 +1463,7 @@ export default function AdminClassesPage() {
                 onChange={(v: string) => setStudentForm((f) => ({ ...f, gender: v }))}
               />
             </div>
-            <Button className="w-full" onClick={handleRegisterStudent} disabled={studentRegisterLoading || !studentForm.displayName || !studentForm.gender}>
+            <Button className="w-full" onClick={handleRegisterStudent} disabled={studentRegisterLoading || !studentForm.displayName || !studentForm.gender || !studentForm.phone.trim()}>
               {studentRegisterLoading ? 'Registering...' : 'Register Student'}
             </Button>
           </div>
@@ -1451,7 +1471,7 @@ export default function AdminClassesPage() {
       </Dialog>
 
       {/* REGISTER TEACHER DIALOG */}
-      <Dialog open={showCreateTeacher} onOpenChange={(o) => { if (!o) { setShowCreateTeacher(false); setTeacherForm({ displayName: '', email: '' }); } }}>
+      <Dialog open={showCreateTeacher} onOpenChange={(o) => { if (!o) { setShowCreateTeacher(false); setTeacherForm({ displayName: '', phone: '' }); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Register Teacher</DialogTitle>
@@ -1463,11 +1483,11 @@ export default function AdminClassesPage() {
               <Input placeholder="Jane Doe" value={teacherForm.displayName} onChange={(e) => setTeacherForm((f) => ({ ...f, displayName: e.target.value }))} />
             </div>
             <div className="space-y-2">
-              <Label>Email Address (Optional)</Label>
-              <Input placeholder="jane.doe@school.edu" value={teacherForm.email} onChange={(e) => setTeacherForm((f) => ({ ...f, email: e.target.value }))} />
-              <p className="text-[11px] text-muted-foreground">If left blank, a default email will be generated automatically.</p>
+              <Label>Phone Number</Label>
+              <Input placeholder="+2341234567890" value={teacherForm.phone} onChange={(e) => setTeacherForm((f) => ({ ...f, phone: e.target.value }))} />
+              <p className="text-[11px] text-muted-foreground">10–15 digits, with optional leading +</p>
             </div>
-            <Button className="w-full" onClick={handleCreateTeacher} disabled={teacherRegisterLoading || !teacherForm.displayName}>
+            <Button className="w-full" onClick={handleCreateTeacher} disabled={teacherRegisterLoading || !teacherForm.displayName || !teacherForm.phone.trim()}>
               {teacherRegisterLoading ? 'Registering...' : 'Register Teacher'}
             </Button>
           </div>
@@ -1599,7 +1619,7 @@ export default function AdminClassesPage() {
                 </div>
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border-b border-border/60 pb-2">
-                <span className="font-bold text-muted-foreground">Email:</span>
+                <span className="font-bold text-muted-foreground">Phone:</span>
                 <span className="sm:col-span-1 col-span-2 select-all">{createdCredentials.email}</span>
               </div>
               {createdCredentials.generatedPassword && (

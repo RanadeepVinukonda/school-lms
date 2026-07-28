@@ -16,11 +16,13 @@ import { getTextbook, getChaptersForTextbook, getConceptsForChapter, getAllConce
 import { getSubject } from '@/services/dataService';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
+import { TextbookMindMap } from '@/components/textbook/TextbookMindMap';
 
 export default function TextbookDetailPage() {
   const { _ } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const [expandedChapter, setExpandedChapter] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'roadmap' | 'mindmap'>('roadmap');
   const authUser = useAuthStore((state) => state.user);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -154,15 +156,43 @@ export default function TextbookDetailPage() {
                 </Card>
               </motion.div>
 
-              {/* Learning Roadmap */}
+              {/* Tab Switcher */}
               <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
-                <div className="mb-6">
-                  <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">{_('ROADMAP')}</p>
-                  <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">{_('Learning Roadmap')}</h2>
+                <div className="flex gap-1 p-1 bg-surface-variant/50 rounded-xl w-fit">
+                  <button
+                    onClick={() => setActiveTab('roadmap')}
+                    className={cn(
+                      'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                      activeTab === 'roadmap'
+                        ? 'bg-card shadow-sm text-foreground'
+                        : 'text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    <Icon name="route" size={16} />
+                    {_('Roadmap')}
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('mindmap')}
+                    className={cn(
+                      'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                      activeTab === 'mindmap'
+                        ? 'bg-card shadow-sm text-foreground'
+                        : 'text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    <Icon name="account_tree" size={16} />
+                    {_('Mind Map')}
+                  </button>
                 </div>
-                <div className="relative pl-16">
-                  {/* Vertical timeline line */}
-                  <div className="absolute left-[31px] top-3 bottom-3 w-0.5 bg-border" />
+              </motion.div>
+
+              {/* Tab Content */}
+              {activeTab === 'roadmap' ? (
+                /* Learning Roadmap */
+                <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                  <div className="relative pl-16">
+                    {/* Vertical timeline line */}
+                    <div className="absolute left-[31px] top-3 bottom-3 w-0.5 bg-border" />
 
                   {d.chapters.map((ch, ci) => (
                     <motion.div
@@ -305,6 +335,12 @@ export default function TextbookDetailPage() {
                   ))}
                 </div>
               </motion.div>
+              ) : (
+                /* Mind Map */
+                <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                  {id && <TextbookMindMap textbookId={id} />}
+                </motion.div>
+              )}
             </div>
           )}
         </DataFetchWrapper>

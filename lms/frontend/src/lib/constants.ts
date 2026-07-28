@@ -100,6 +100,7 @@ export const ROUTES = {
   PARENT_CHILD: (id: string) => `/parent/children/${id}`,
   PARENT_REPORTS: '/parent/reports',
   PARENT_PROFILE: '/parent/profile',
+  PARENT_PROFILE_EDIT: '/parent/profile/edit',
   PARENT_NOTICEBOARD: '/parent/noticeboard',
 
   STUDENT_CODING: '/student/coding',

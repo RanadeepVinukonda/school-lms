@@ -53,9 +53,82 @@ export async function getDailyChallenges(userId: string) {
   if (rows && rows.length > 0) {
     return rows.map((r: any) => ({ id: r.doc_id, ...r.data }));
   }
-  const count = Math.min(DAILY_CHALLENGE_TEMPLATES.length, 3);
-  const shuffled = [...DAILY_CHALLENGE_TEMPLATES].sort(() => Math.random() - 0.5).slice(0, count);
-  const challenges = shuffled.map((t) => ({
+
+  let activityChallenges: typeof DAILY_CHALLENGE_TEMPLATES = [];
+  try {
+    const { data: recentLessons } = await supabase.from('firestore_docs')
+      .select('data')
+      .eq('collection', 'conceptProgress')
+      .contains('data', { userId })
+      .order('updated_at', { ascending: false })
+      .limit(20);
+
+    const { data: recentQuizzes } = await supabase.from('firestore_docs')
+      .select('data')
+      .eq('collection', 'quizAttempts')
+      .contains('data', { userId })
+      .order('updated_at', { ascending: false })
+      .limit(10);
+
+    const viewedLessons = (recentLessons || [])
+      .filter((r: any) => r.data?.lessonCompleted)
+      .map((r: any) => r.data);
+    if (viewedLessons.length > 0) {
+      const count = Math.min(viewedLessons.length, 5);
+      activityChallenges.push({
+        title: 'Review Master',
+        description: `Review ${count} lessons you've completed`,
+        xpReward: 25 + count * 5,
+        coinReward: 10 + count * 2,
+        type: 'lessons',
+        target: count,
+      });
+    }
+
+    const quizAttempts = (recentQuizzes || []).map((r: any) => r.data);
+    const lowScoreQuizzes = quizAttempts.filter((q: any) => (q.score || 0) < 80);
+    if (lowScoreQuizzes.length > 0) {
+      activityChallenges.push({
+        title: 'Score Booster',
+        description: 'Score 80% or higher on a quiz you attempted before',
+        xpReward: 40,
+        coinReward: 20,
+        type: 'quiz_accuracy',
+        target: 80,
+      });
+    }
+
+    const exploredConcepts = (recentLessons || [])
+      .filter((r: any) => r.data?.lastAccessed)
+      .map((r: any) => r.data?.conceptId)
+      .filter(Boolean);
+    if (exploredConcepts.length >= 3) {
+      activityChallenges.push({
+        title: 'Concept Deep Dive',
+        description: `Practice quiz on ${Math.min(exploredConcepts.length, 5)} concepts you explored`,
+        xpReward: 35,
+        coinReward: 15,
+        type: 'concept_quizzes',
+        target: Math.min(exploredConcepts.length, 5),
+      });
+    }
+  } catch (err) {
+    logger.warn('Failed to fetch activity for personalized challenges, falling back to generic', { userId, error: (err as Error).message });
+  }
+
+  const needed = 3;
+  let selected: typeof DAILY_CHALLENGE_TEMPLATES;
+  if (activityChallenges.length >= needed) {
+    selected = activityChallenges.slice(0, needed);
+  } else {
+    const remaining = needed - activityChallenges.length;
+    const genericFiller = [...DAILY_CHALLENGE_TEMPLATES]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, remaining);
+    selected = [...activityChallenges, ...genericFiller];
+  }
+
+  const challenges = selected.map((t) => ({
     id: uuidv4(),
     userId,
     date: today,

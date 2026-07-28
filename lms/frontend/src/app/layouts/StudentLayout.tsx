@@ -32,7 +32,6 @@ const navItems: NavItem[] = [
   { label: 'Profile', href: ROUTES.STUDENT_PROFILE, icon: 'person' },
   { label: 'Rewards', href: ROUTES.STUDENT_GAMIFICATION, icon: 'emoji_events' },
   { label: 'Leaderboard', href: ROUTES.STUDENT_LEADERBOARD, icon: 'leaderboard' },
-  { label: 'Coding', href: ROUTES.STUDENT_CODING, icon: 'code' },
   { label: 'Report & Suggestion', href: ROUTES.STUDENT_REPORT, icon: 'feedback' },
 
   { label: 'Notice Board', href: ROUTES.STUDENT_NOTICEBOARD, icon: 'campaign' },

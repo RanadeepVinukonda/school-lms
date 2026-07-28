@@ -208,6 +208,50 @@ export async function generateMindMapFromText(
   return { id, ...mindMap };
 }
 
+export async function generateTextbookMindMap(
+  userId: string,
+  textbookId: string,
+  language?: string,
+): Promise<MindMap> {
+  const supabase = getSupabaseAdmin()!;
+
+  const { data: chapters } = await supabase
+    .from('chapters')
+    .select('id, title, order')
+    .eq('textbook_id', textbookId)
+    .order('order');
+
+  if (!chapters || chapters.length === 0) {
+    throw new NotFoundError('No chapters found for this textbook');
+  }
+
+  const allTextParts: string[] = [];
+
+  for (const chapter of chapters) {
+    allTextParts.push(`Chapter ${chapter.order}: ${chapter.title}`);
+
+    const { data: concepts } = await supabase
+      .from('concepts')
+      .select('id, title, summary, learning_objectives')
+      .eq('chapter_id', chapter.id)
+      .order('order');
+
+    if (concepts) {
+      for (const concept of concepts) {
+        const parts = [concept.title];
+        if (concept.summary) parts.push(concept.summary);
+        if (concept.learning_objectives) parts.push(concept.learning_objectives);
+        allTextParts.push(parts.join('. '));
+      }
+    }
+  }
+
+  const aggregatedText = allTextParts.join('\n\n');
+  const title = `Textbook Mind Map (${chapters.length} chapters)`;
+
+  return generateMindMapFromText(userId, aggregatedText, title, language);
+}
+
 export async function pinResource(
   mindmapId: string,
   userId: string,

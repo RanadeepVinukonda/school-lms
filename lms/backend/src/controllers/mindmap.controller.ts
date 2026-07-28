@@ -57,6 +57,13 @@ export async function shareMindMap(req: Request, res: Response) {
   sendSuccess(res, mindMap, 'Mind map shared');
 }
 
+export async function generateTextbookMindMap(req: Request, res: Response) {
+  if (!req.user) throw new ValidationError('Authentication required');
+  const { textbookId, language } = req.body;
+  const mindMap = await mindmapService.generateTextbookMindMap(req.user.uid, textbookId, language);
+  sendCreated(res, mindMap, 'Textbook mind map generated');
+}
+
 export async function pinResource(req: Request, res: Response) {
   if (!req.user) throw new ValidationError('Authentication required');
   const { nodeId, resourceId, resourceType } = req.body;
