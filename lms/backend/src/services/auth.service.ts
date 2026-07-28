@@ -88,6 +88,11 @@ export async function register(data: {
 /** Send OTP to phone number via Supabase. */
 export async function sendOtp(phone: string): Promise<ServiceResult<{ message: string }>> {
   try {
+    const existing = await getUserByPhone(phone);
+    if (!existing) {
+      return failure('No account found with this phone number', 'NOT_FOUND');
+    }
+
     const response = await fetch(
       `${env.SUPABASE_URL}/auth/v1/otp`,
       {
