@@ -9,7 +9,7 @@
     "start": "node dist/index.js",
     "lint": "eslint src/",
     "db:cleanup": "tsx src/scripts/cleanupDemoData.ts",
-    "test": "jest",
+    "test": "jest --forceExit",
     "test:coverage": "jest --coverage",
     "test:watch": "jest --watch",
     "db:generate": "drizzle-kit generate",
