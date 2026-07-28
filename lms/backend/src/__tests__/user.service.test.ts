@@ -15,6 +15,7 @@ jest.mock('../database/auth', () => ({
   deleteUser: jest.fn(() => Promise.resolve()),
   getUserById: jest.fn(() => Promise.resolve({ uid: 'user-1' })),
   getUserByEmail: jest.fn(() => Promise.resolve(null)),
+  getUserByPhone: jest.fn(() => Promise.resolve(null)),
   setCustomClaims: jest.fn(() => Promise.resolve()),
 }));
 
@@ -53,7 +54,7 @@ describe('user.service', () => {
         })
         .mockResolvedValueOnce({ data: null, error: null });
       const result = await createUser({
-        displayName: 'Jane', role: 'student', classId: 'class-1', rollNo: 1,
+        phone: '+918888888888', displayName: 'Jane', role: 'student', classId: 'class-1', rollNo: 1,
       });
       expect(result.display_name).toBe('Jane');
       expect(result.role).toBe('student');
