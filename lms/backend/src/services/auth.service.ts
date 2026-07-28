@@ -92,15 +92,23 @@ function stripCountry(phone: string): string {
 async function getStoredOtp(phone: string): Promise<string | null> {
   const supabase = getSupabaseAdmin();
   const key = `otp:${phone}`;
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('firestore_docs')
     .select('data')
     .eq('collection', 'otp_codes')
     .eq('doc_id', key)
     .maybeSingle();
-  if (!data) return null;
+  if (error) {
+    logger.error('getStoredOtp query failed', { phone, key, error: error.message });
+    return null;
+  }
+  if (!data) {
+    logger.warn('getStoredOtp: no OTP found', { phone, key });
+    return null;
+  }
   const d = data.data as Record<string, unknown>;
   if (Date.now() > (d.expiresAt as number)) {
+    logger.warn('getStoredOtp: OTP expired', { phone, key, expiresAt: d.expiresAt, now: Date.now() });
     await supabase.from('firestore_docs').delete().eq('collection', 'otp_codes').eq('doc_id', key);
     return null;
   }
@@ -110,12 +118,16 @@ async function getStoredOtp(phone: string): Promise<string | null> {
 async function storeOtp(phone: string, code: string): Promise<void> {
   const supabase = getSupabaseAdmin();
   const key = `otp:${phone}`;
-  await supabase.from('firestore_docs').upsert({
+  const { error } = await supabase.from('firestore_docs').upsert({
     collection: 'otp_codes',
     doc_id: key,
     data: { code, phone, expiresAt: Date.now() + 5 * 60 * 1000, createdAt: Date.now() },
     updated_at: new Date().toISOString(),
   }, { onConflict: 'collection,doc_id' });
+  if (error) {
+    logger.error('storeOtp upsert failed', { phone, key, error: error.message });
+    throw new Error(`Failed to store OTP: ${error.message}`);
+  }
 }
 
 async function ensureAuthUser(phone: string, uid: string, role: string): Promise<string> {
