@@ -10,6 +10,20 @@ jobs:
   backend:
     name: Backend
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: lms_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     defaults:
       run:
         working-directory: lms/backend
@@ -25,7 +39,13 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run lint
       - run: npx tsc --noEmit
-      - run: npm test -- --passWithNoTests
+      - run: npm test
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/lms_test
+          JWT_SECRET: test-secret
+          SUPABASE_URL: http://localhost
+          SUPABASE_ANON_KEY: test
+          SUPABASE_SERVICE_ROLE_KEY: test
 
   frontend:
     name: Frontend

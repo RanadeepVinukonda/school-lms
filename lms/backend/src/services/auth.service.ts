@@ -86,7 +86,7 @@ export async function register(data: {
 }
 
 function stripCountry(phone: string): string {
-  return phone.replace(/^\+?\d{1,3}/, '');
+  return phone.replace(/^\+\d{1,3}/, '');
 }
 
 async function getStoredOtp(phone: string): Promise<string | null> {
