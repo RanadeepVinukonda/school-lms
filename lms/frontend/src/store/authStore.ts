@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '@/supabase/config';
-import api from '@/services/api';
+import api, { startTokenRefresh, stopTokenRefresh } from '@/services/api';
 import { hasRole as userHasRole } from '@/lib/roleHelpers';
 import type { UserProfile, UserRole } from '@/types';
 
@@ -89,6 +89,7 @@ export const useAuthStore = create<AuthStore>()(
     return roles.some(r => userHasRole(user.role, r));
   },
   logout: async () => {
+    stopTokenRefresh();
     cachedEffectiveRole = null;
     await supabase.auth.signOut();
     initPromise = null;
@@ -133,6 +134,7 @@ export const useAuthStore = create<AuthStore>()(
             isAuthenticated: true,
             isLoading: false,
           });
+          startTokenRefresh();
           return;
         }
       } catch {
@@ -160,6 +162,7 @@ export const useAuthStore = create<AuthStore>()(
               isAuthenticated: true,
               isLoading: false,
             });
+            startTokenRefresh();
             return;
           }
         }

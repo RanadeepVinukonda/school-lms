@@ -37,7 +37,7 @@ export default function TeacherVideoLibraryPage() {
             <TabsList className="w-full overflow-x-auto inline-flex">
               <TabsTrigger value="search" className="gap-2">
                 <Icon name="search" size={16} />
-                <span className="hidden sm:inline">{_('Search YouTube')}</span>
+                <span className="hidden sm:inline">{_('Search Educational Videos')}</span>
                 <span className="sm:hidden">{_('Search')}</span>
               </TabsTrigger>
               <TabsTrigger value="library" className="gap-2">

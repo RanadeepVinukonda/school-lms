@@ -12,7 +12,9 @@ const pool = new Pool({
   try {
     await client.query('BEGIN');
 
-    const delResult = await client.query("DELETE FROM users WHERE id != '00000000-0000-0000-0000-000000000002'");
+    const delResult = await client.query("DELETE FROM users WHERE email != 'admin@school.com'");
+    const delSchools = await client.query("DELETE FROM schools WHERE id != '00000000-0000-0000-0000-000000000001'");
+    console.log('Deleted non-admin schools:', delSchools.rowCount);
     console.log('Deleted non-admin users:', delResult.rowCount);
 
     const tables = [
@@ -39,7 +41,10 @@ const pool = new Pool({
       'subscriptions',
       'whiteboards','mindmaps','mindmap_shares','mindmap_resources',
       'user_badges','user_streaks','user_challenge_completions',
-      'gamification_profiles','daily_challenges','weekly_challenges','monthly_challenges'
+      'gamification_profiles','daily_challenges','weekly_challenges','monthly_challenges',
+      'otp_codes','audit_logs','auditLogs',
+      'assignments','quizzes','quizv2','exams','grades','submissions','corrections',
+      'lessons','enrollments','notifications'
     ];
 
     for (const t of tables) {

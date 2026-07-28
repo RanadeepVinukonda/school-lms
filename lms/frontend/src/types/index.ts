@@ -44,15 +44,25 @@ export interface User {
 }
 
 export interface LoginInput {
-  email: string;
-  password: string;
+  email?: string;
+  password?: string;
+  phone?: string;
+  rememberMe?: boolean;
 }
 
 export interface RegisterInput {
-  email: string;
-  password: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+  phone?: string;
   displayName: string;
   role: UserRole;
+  termsAccepted?: boolean;
+}
+
+export interface OtpVerifyInput {
+  phone: string;
+  token: string;
 }
 
 export interface Announcement {

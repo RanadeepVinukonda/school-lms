@@ -52,22 +52,23 @@ async function retryOnRateLimit<T>(fn: () => Promise<T>, maxRetries = 3): Promis
 }
 
 export async function createUser(params: {
-  email: string;
-  password: string;
+  phone: string;
   displayName: string;
-  phoneNumber?: string;
   photoURL?: string;
   role?: string;
 }): Promise<AuthUser> {
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error('Supabase not configured');
+
+  const placeholderEmail = `ph_${params.phone.replace(/[^0-9]/g, '')}@school.edu`;
+
   const { data, error } = await retryOnRateLimit(() => supabase.auth.admin.createUser({
-    email: params.email,
-    password: params.password,
+    email: placeholderEmail,
+    phone: params.phone,
     email_confirm: true,
     user_metadata: {
       display_name: params.displayName,
-      phone_number: params.phoneNumber || '',
+      phone_number: params.phone,
       photo_url: params.photoURL || '',
     },
     app_metadata: params.role ? { [USER_META_ROLE]: params.role } : undefined,
@@ -79,10 +80,8 @@ export async function createUser(params: {
 export async function updateUser(
   uid: string,
   params: {
-    email?: string;
-    password?: string;
+    phone?: string;
     displayName?: string;
-    phoneNumber?: string;
     photoURL?: string;
     disabled?: boolean;
     role?: string;
@@ -91,13 +90,11 @@ export async function updateUser(
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error('Supabase not configured');
   const updateBody: Record<string, unknown> = {};
-  if (params.email) updateBody.email = params.email;
-  if (params.password) updateBody.password = params.password;
   if (params.disabled !== undefined) updateBody.ban_duration = params.disabled ? '24h' : 'none';
 
   const meta: Record<string, string> = {};
   if (params.displayName) meta.display_name = params.displayName;
-  if (params.phoneNumber) meta.phone_number = params.phoneNumber;
+  if (params.phone) meta.phone_number = params.phone;
   if (params.photoURL) meta.photo_url = params.photoURL;
   if (Object.keys(meta).length > 0) updateBody.user_metadata = meta;
 
@@ -117,11 +114,26 @@ export async function deleteUser(uid: string): Promise<void> {
   if (error) throw new Error('Failed to delete user: ' + error.message);
 }
 
+export async function getUserByPhone(phone: string): Promise<AuthUser | null> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data: dbUser } = await supabase.from('users').select('id, email, display_name, role, phone_number, photo_url, is_active').eq('phone_number', phone).maybeSingle();
+  if (!dbUser) return null;
+  return {
+    uid: dbUser.id,
+    email: dbUser.email || '',
+    displayName: dbUser.display_name || '',
+    role: dbUser.role || '',
+    phoneNumber: dbUser.phone_number || '',
+    photoURL: dbUser.photo_url || '',
+    disabled: dbUser.is_active === false,
+  };
+}
+
 export async function setCustomClaims(
   uid: string,
   claims: Record<string, unknown>
 ): Promise<void> {
-  // ponytail: store claims in app_metadata — not identical to Firebase custom claims but sufficient
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error('Supabase not configured');
   const { error } = await retryOnRateLimit(() => supabase.auth.admin.updateUserById(uid, {
@@ -135,25 +147,6 @@ export async function revokeTokens(uid: string): Promise<void> {
   if (!supabase) throw new Error('Supabase not configured');
   const { error } = await supabase.auth.admin.signOut(uid);
   if (error) throw new Error('Failed to revoke tokens: ' + error.message);
-}
-
-export async function getUserByEmail(email: string): Promise<AuthUser | null> {
-  const supabase = getSupabaseAdmin();
-  if (!supabase) throw new Error('Supabase not configured');
-  // Query users table only — avoids Auth admin API rate limits entirely.
-  // The DB row is always created alongside the Auth user, so a missing DB row
-  // means the Auth user does not exist (or was orphaned — handled by createUser).
-  const { data: dbUser } = await supabase.from('users').select('id, email, display_name, role, phone_number, photo_url, is_active').eq('email', email).maybeSingle();
-  if (!dbUser) return null;
-  return {
-    uid: dbUser.id,
-    email: dbUser.email || '',
-    displayName: dbUser.display_name || '',
-    role: dbUser.role || '',
-    phoneNumber: dbUser.phone_number || '',
-    photoURL: dbUser.photo_url || '',
-    disabled: dbUser.is_active === false,
-  };
 }
 
 export async function getUserById(uid: string): Promise<AuthUser | null> {
@@ -189,10 +182,9 @@ export class SupabaseAuthProvider {
     };
   }
 
-  async createUser(properties: { email: string; password?: string; displayName?: string }): Promise<any> {
+  async createUser(properties: { phone: string; email?: string; displayName?: string; photoURL?: string }): Promise<any> {
     const user = await createUser({
-      email: properties.email,
-      password: properties.password || 'TemporaryPassword123!',
+      phone: properties.phone,
       displayName: properties.displayName || '',
     });
     return {

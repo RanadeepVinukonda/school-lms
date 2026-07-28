@@ -1,38 +1,9 @@
 import { getSupabaseAdmin } from './supabase';
-import { createUser, getUserByEmail, getUserById, setCustomClaims } from '../database/auth';
-import { validatePassword } from '../utils/passwordValidation';
-import { NotFoundError, UnauthorizedError } from '../utils/errors';
+import { getUserByPhone } from '../database/auth';
+import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { env } from '../config/env';
 import { ServiceResult, success, failure } from '../types/service-result';
-
-// ── Account lockout ──
-
-const MAX_FAILED = 5;
-const LOCKOUT_MS = 15 * 60 * 1000;
-const failedLogins = new Map<string, { count: number; lockedUntil: number }>();
-
-export function checkAccountLockout(email: string): { locked: boolean; retryAfterMs?: number } {
-  const entry = failedLogins.get(email.toLowerCase());
-  if (!entry) return { locked: false };
-  if (Date.now() < entry.lockedUntil) return { locked: true, retryAfterMs: entry.lockedUntil - Date.now() };
-  failedLogins.delete(email.toLowerCase());
-  return { locked: false };
-}
-
-export function recordFailedLogin(email: string): void {
-  const key = email.toLowerCase();
-  const entry = failedLogins.get(key);
-  const count = (entry?.count ?? 0) + 1;
-  failedLogins.set(key, {
-    count,
-    lockedUntil: count >= MAX_FAILED ? Date.now() + LOCKOUT_MS : 0,
-  });
-}
-
-export function clearFailedLogins(email: string): void {
-  failedLogins.delete(email.toLowerCase());
-}
 
 export interface UserProfile {
   id: string;
@@ -85,139 +56,130 @@ function mapUserRow(row: Record<string, unknown>): UserProfile {
   };
 }
 
-/** Register a new user in both Firebase Auth and Supabase. */
+/** Register a new user via phone OTP flow. */
 export async function register(data: {
-  email: string;
-  password: string;
+  phone: string;
   displayName: string;
   role: string;
-  phoneNumber?: string;
   photoURL?: string;
 }): Promise<ServiceResult<UserProfile>> {
   try {
-    const pwCheck = validatePassword(data.password);
-    if (!pwCheck.valid) return failure(pwCheck.errors.join('; '), 'VALIDATION');
-
-    const existingUser = await getUserByEmail(data.email);
-    if (existingUser) {
-      if (data.role === 'parent' && existingUser.role === 'teacher') {
-        logger.info('Teacher re-registered as parent', { uid: existingUser.uid, email: data.email });
-        return success({
-          id: existingUser.uid,
-          email: data.email,
-          displayName: data.displayName,
-          role: existingUser.role,
-          isActive: true,
-        });
-      }
-      return failure('A user with this email already exists', 'CONFLICT');
+    const existing = await getUserByPhone(data.phone);
+    if (existing) {
+      return failure('A user with this phone number already exists', 'CONFLICT');
     }
 
-    const authUser = await createUser({
-      email: data.email,
-      password: data.password,
-      displayName: data.displayName,
-      phoneNumber: data.phoneNumber,
-      photoURL: data.photoURL,
-    });
-
-    await setCustomClaims(authUser.uid, { role: data.role });
-
     const now = new Date().toISOString();
+    const placeholderEmail = `ph_${data.phone.replace(/[^0-9]/g, '')}@school.edu`;
+
     const userData: UserProfile = {
-      id: authUser.uid,
-      email: data.email,
-      displayName: data.displayName,
-      role: data.role,
-      phoneNumber: data.phoneNumber || '',
-      photoURL: data.photoURL || '',
-      isActive: true,
-      createdAt: now,
-      updatedAt: now,
+      id: '', email: placeholderEmail, displayName: data.displayName,
+      role: data.role, phoneNumber: data.phone, photoURL: data.photoURL || '',
+      isActive: true, createdAt: now, updatedAt: now,
     };
 
-    const dbData: Record<string, unknown> = {
-      id: userData.id,
-      email: userData.email,
-      display_name: userData.displayName,
-      role: userData.role,
-      phone_number: userData.phoneNumber,
-      photo_url: userData.photoURL,
-      is_active: userData.isActive,
-      created_at: now,
-      updated_at: now,
-    };
-
-    const supabase = getSupabaseAdmin();
-    const { error } = await supabase.from('users').insert(dbData);
-    if (error) return failure(error.message, 'DB_ERROR');
-
-    logger.info('User registered', { uid: userData.id, email: data.email, role: data.role });
+    logger.info('Phone registration initiated', { phone: data.phone, role: data.role });
     return success(userData);
   } catch (err: any) {
     return failure(err.message, 'REGISTER_ERROR');
   }
 }
 
-/** Authenticate a user by email and password using Supabase Auth REST API. */
-export async function login(email: string, password: string): Promise<ServiceResult<{ user: UserProfile; uid: string; token: string }>> {
+/** Send OTP to phone number via Supabase. */
+export async function sendOtp(phone: string): Promise<ServiceResult<{ message: string }>> {
   try {
-    const lockout = checkAccountLockout(email);
-    if (lockout.locked) {
-      return failure(`Account locked. Try again in ${Math.ceil((lockout.retryAfterMs || 0) / 60000)} minutes`, 'LOCKED');
-    }
-
     const response = await fetch(
-      `${env.SUPABASE_URL}/auth/v1/token?grant_type=password`,
+      `${env.SUPABASE_URL}/auth/v1/otp`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           apikey: env.SUPABASE_ANON_KEY,
         },
-        body: JSON.stringify({ email: email.toLowerCase(), password }),
+        body: JSON.stringify({ phone }),
       }
     );
 
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      recordFailedLogin(email);
-      return failure((body as { error_description?: string }).error_description || 'Invalid email or password', 'AUTH_FAILED');
+      return failure((body as { error_description?: string }).error_description || 'Failed to send OTP', 'OTP_ERROR');
+    }
+
+    logger.info('OTP sent', { phone });
+    return success({ message: 'OTP sent successfully' });
+  } catch (err: any) {
+    return failure(err.message, 'OTP_ERROR');
+  }
+}
+
+/** Verify OTP and return session tokens. */
+export async function verifyOtp(phone: string, token: string): Promise<ServiceResult<{ user: UserProfile; uid: string; token: string; refresh_token: string }>> {
+  try {
+    const response = await fetch(
+      `${env.SUPABASE_URL}/auth/v1/otp`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: env.SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ phone, token, type: 'sms' }),
+      }
+    );
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      return failure((body as { error_description?: string }).error_description || 'Invalid or expired OTP', 'OTP_ERROR');
     }
 
     const result = await response.json() as { user?: { id: string }; access_token?: string; refresh_token?: string };
     const uid = result.user?.id;
-    if (!uid) return failure('Authentication failed', 'AUTH_FAILED');
+    if (!uid) return failure('OTP verification failed', 'OTP_ERROR');
 
     const supabase = getSupabaseAdmin();
-    const { data: userRow, error: userError } = await supabase
+    let { data: userRow, error: userError } = await supabase
       .from('users')
       .select('*')
       .eq('id', uid)
       .maybeSingle();
 
-    if (userError || !userRow) {
-      return failure('User not found', 'NOT_FOUND');
+    const placeholderEmail = `ph_${phone.replace(/[^0-9]/g, '')}@school.edu`;
+    if (!userRow || userError) {
+      const { data: authUser } = await supabase.auth.admin.getUserById(uid);
+      const meta = authUser?.user?.user_metadata || {};
+      const newUser = {
+        id: uid,
+        email: placeholderEmail,
+        display_name: (meta.display_name as string) || phone,
+        role: (meta.role as string) || 'student',
+        phone_number: phone,
+        is_active: true,
+        school_id: '00000000-0000-0000-0000-000000000001',
+        class_ids: [],
+        children_ids: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      const { error: insertError } = await supabase.from('users').insert(newUser);
+      if (insertError) return failure(insertError.message, 'DB_ERROR');
+      userRow = newUser;
     }
 
-    const userData = mapUserRow(userRow);
-    if (!userData.isActive) {
-      return failure('Account is disabled', 'DISABLED');
-    }
-
-    clearFailedLogins(email);
-    logger.info('User logged in', { uid, email });
-    return success({ user: userData, uid, token: result.access_token || '' });
+    const userData = mapUserRow(userRow as Record<string, unknown>);
+    logger.info('User logged in via OTP', { uid, phone });
+    return success({
+      user: userData,
+      uid,
+      token: result.access_token || '',
+      refresh_token: result.refresh_token || '',
+    });
   } catch (err: any) {
-    return failure(err.message, 'LOGIN_ERROR');
+    return failure(err.message, 'OTP_ERROR');
   }
 }
 
 /** Verify a user's token by uid. Returns user profile. */
 export async function verifyUserToken(uid: string): Promise<UserProfile> {
-  const user = await getUserById(uid);
-  if (!user) throw new UnauthorizedError('User not found');
-
   const supabase = getSupabaseAdmin();
   const { data: userRow, error } = await supabase
     .from('users')
@@ -229,7 +191,7 @@ export async function verifyUserToken(uid: string): Promise<UserProfile> {
   return mapUserRow(userRow);
 }
 
-export { forgotPassword, resetWithToken, resetPassword, changePassword, refreshToken, logout } from './auth-token.service';
+export { refreshToken, logout } from './auth-token.service';
 
 /** Fetch user profile by uid. */
 export async function getUserProfile(uid: string): Promise<ServiceResult<UserProfile>> {

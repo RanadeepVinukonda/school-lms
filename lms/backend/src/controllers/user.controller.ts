@@ -68,9 +68,6 @@ export async function createUser(req: Request, res: Response) {
   const authUser = requireUser(req);
   const rawResult = await userService.createUser({ ...req.body, schoolId: authUser.school_id });
   const result = mapUserRow(rawResult);
-  if (rawResult.generatedPassword) {
-    result.generatedPassword = rawResult.generatedPassword;
-  }
   logAudit(adminAuditEntry(req as ReqWithUser, 'user.create', result.id, 'user', result.displayName, {
     newValue: { email: result.email, role: result.role, displayName: result.displayName },
     summary: `Created user "${result.displayName}" (${result.role})`,

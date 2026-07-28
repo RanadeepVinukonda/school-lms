@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import * as authService from '../services/auth.service';
-import { sendSuccess, sendCreated } from '../utils/response';
+import { sendSuccess } from '../utils/response';
 import { env } from '../config/env';
 import { getSupabaseAdmin } from '../services/supabase';
 import { requireUser } from '../types/common';
@@ -19,30 +19,6 @@ function parseCookies(cookieHeader?: string): Record<string, string> {
   return cookies;
 }
 
-export async function register(req: Request, res: Response) {
-  const result = await authService.register(req.body);
-  sendCreated(res, result, 'Registration successful');
-}
-
-export async function login(req: Request, res: Response) {
-  const { email, password } = req.body;
-  const result = await authService.login(email, password);
-
-  if (result.success && result.data) {
-    const maxAge = 7 * 24 * 60 * 60 * 1000;
-    res.cookie('token', result.data.token, {
-      httpOnly: true,
-      secure: env.COOKIE_SECURE,
-      sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax',
-      path: '/',
-      maxAge,
-      ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
-    });
-  }
-
-  sendSuccess(res, result, 'Login successful');
-}
-
 export async function getProfile(req: Request, res: Response) {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   const user = requireUser(req);
@@ -54,33 +30,6 @@ export async function updateProfile(req: Request, res: Response) {
   const user = requireUser(req);
   const result = await authService.updateUserProfile(user.uid, req.body);
   sendSuccess(res, result, 'Profile updated');
-}
-
-export async function forgotPassword(req: Request, res: Response) {
-  const result = await authService.forgotPassword(req.body.email);
-  sendSuccess(res, result);
-}
-
-export async function resetPassword(req: Request, res: Response) {
-  await authService.resetPassword(req.body.uid, req.body.newPassword);
-  sendSuccess(res, null, 'Password reset successful');
-}
-
-export async function changePassword(req: Request, res: Response) {
-  const user = requireUser(req);
-  await authService.changePassword(user.uid, req.body.currentPassword, req.body.newPassword);
-  sendSuccess(res, null, 'Password changed successfully');
-}
-
-export async function resetWithToken(req: Request, res: Response) {
-  const { accessToken, newPassword } = req.body;
-  await authService.resetWithToken(accessToken, newPassword);
-  sendSuccess(res, null, 'Password reset successful');
-}
-
-export async function verifyHash(req: Request, res: Response) {
-  const frontendUrl = env.FRONTEND_URL || '';
-  res.redirect(302, `${frontendUrl}/reset-password${req.url.includes('#') ? '' : '#'}${req.url.split('#')[1] || ''}`);
 }
 
 export async function verifyToken(_req: Request, res: Response) {
@@ -100,7 +49,6 @@ export async function logout(req: Request, res: Response) {
 }
 
 export async function refresh(req: Request, res: Response) {
-  // Accept both snake_case (frontend sends) and camelCase (schema validates)
   const refresh_token = req.body.refresh_token || req.body.refreshToken;
   const result = await authService.refreshToken(refresh_token);
 
@@ -115,6 +63,31 @@ export async function refresh(req: Request, res: Response) {
   });
 
   sendSuccess(res, result, 'Token refreshed');
+}
+
+export async function sendOtp(req: Request, res: Response) {
+  const { phone } = req.body;
+  const result = await authService.sendOtp(phone);
+  sendSuccess(res, result, 'OTP sent');
+}
+
+export async function verifyOtpLogin(req: Request, res: Response) {
+  const { phone, token } = req.body;
+  const result = await authService.verifyOtp(phone, token);
+
+  if (result.success && result.data) {
+    const maxAge = 7 * 24 * 60 * 60 * 1000;
+    res.cookie('token', result.data.token, {
+      httpOnly: true,
+      secure: env.COOKIE_SECURE,
+      sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      path: '/',
+      maxAge,
+      ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
+    });
+  }
+
+  sendSuccess(res, result, 'Login successful');
 }
 
 export async function getSession(req: Request, res: Response) {

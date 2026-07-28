@@ -4,9 +4,8 @@ import {
   createUser as cu,
   updateUser as uu,
   deleteUser as du,
-  setCustomClaims as scc,
   revokeTokens as rt,
-  getUserByEmail as gube,
+  getUserByPhone as gubp,
   getUserById as gubi,
   listUsers as lu,
 } from './auth';
@@ -14,8 +13,7 @@ import { getSupabaseAdmin } from '../services/supabase';
 
 export {
   vt as verifyToken, cu as createUser, uu as updateUser, du as deleteUser,
-  scc as setCustomClaims, rt as revokeTokens, gube as getUserByEmail,
-  gubi as getUserById, lu as listUsers,
+  rt as revokeTokens, gubp as getUserByPhone, gubi as getUserById, lu as listUsers,
 };
 export type { AuthUser } from './auth';
 
@@ -28,14 +26,13 @@ export function getAdminAuth() {
     updateUser: (uid: string, params: any) => uu(uid, params),
     deleteUser: (uid: string) => du(uid),
     getUser: (uid: string) => gubi(uid),
-    getUserByEmail: (email: string) => gube(email),
+    getUserByPhone: (phone: string) => gubp(phone),
     listUsers: (maxResults?: number) => lu(maxResults),
     deleteUsers: async (uids: string[]) => {
       for (const uid of uids) {
         await du(uid);
       }
     },
-    setCustomUserClaims: (uid: string, claims: any) => scc(uid, claims),
   } as any;
 }
 // Legacy alias for scripts that import `admin` directly

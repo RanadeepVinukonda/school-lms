@@ -1,12 +1,10 @@
 import { getSupabaseAdmin } from './supabase';
-import { createUser as createAuthUser, updateUser as updateAuthUser, deleteUser, getUserByEmail, setCustomClaims } from '../database/auth';
+import { createUser as createAuthUser, updateUser as updateAuthUser, deleteUser, getUserByPhone } from '../database/auth';
 import { NotFoundError, ValidationError, ConflictError } from '../utils/errors';
 import { deriveAcademicYear } from '../middlewares/academicYear.middleware';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 import { generateStudentId } from '../utils/studentIdGenerator.js';
-import { generatePassword } from '../utils/passwordGenerator.js';
-import { validatePassword } from '../utils/passwordValidation';
 import { createNotification, createBulkNotifications } from './notification.service';
 import { userCache } from '../utils/cache';
 
@@ -38,7 +36,7 @@ export async function listUsers(query: {
 
   if (query.search) {
     const s = query.search.toLowerCase();
-    q = q.or(`display_name.ilike.%${s}%,email.ilike.%${s}%`);
+    q = q.or(`display_name.ilike.%${s}%,email.ilike.%${s}%,phone_number.ilike.%${s}%`);
   }
 
   const { data: rows, count } = await q.range(offset, offset + limit - 1);
@@ -52,8 +50,8 @@ export async function getUserByIdService(uid: string) {
 }
 
 export async function createUser(data: {
-  email?: string; password?: string; displayName: string; role: string;
-  phoneNumber?: string; photoURL?: string; classIds?: string[]; classId?: string;
+  phone: string; displayName: string; role: string;
+  photoURL?: string; classIds?: string[]; classId?: string;
   rollNo?: number; gender?: string; childrenIds?: string[]; schoolId?: string; academicYear?: string;
 }) {
   const supabase = getSupabaseAdmin();
@@ -67,7 +65,6 @@ export async function createUser(data: {
     const { data: classRow } = await supabase.from('classes').select('*').eq('id', data.classId).maybeSingle();
     if (!classRow) throw new NotFoundError('Assigned Class not found');
 
-    // Check for duplicate roll number within the same class and academic year
     const acYear = data.academicYear || classRow.academic_year || new Date().getFullYear().toString();
     const { data: existingWithRoll } = await supabase
       .from('users')
@@ -89,30 +86,7 @@ export async function createUser(data: {
     studentClassId = data.classId;
   }
 
-  let generatedEmail = data.email || (data.role === 'student'
-    ? `${studentId.toLowerCase()}@school.edu`
-    : `${data.displayName.toLowerCase().replace(/[^a-z0-9]/g, '')}@school.edu`);
-  if (!data.email) {
-    // Batch-check existing emails via DB to avoid Auth API rate limits
-    const baseEmail = generatedEmail.replace('@school.edu', '');
-    const { data: existingRows } = await supabase.from('users').select('email').like('email', `${baseEmail}%@school.edu`);
-    const existingEmails = new Set((existingRows || []).map(r => r.email));
-    let suffix = 0;
-    let unique = generatedEmail;
-    while (existingEmails.has(unique)) {
-      suffix++;
-      unique = `${baseEmail}${suffix}@school.edu`;
-    }
-    generatedEmail = unique;
-  }
-
-  const generatedPassword = data.password || generatePassword();
-
-  // Validate caller-supplied password (generated passwords are always valid)
-  if (data.password) {
-    const pwCheck = validatePassword(data.password);
-    if (!pwCheck.valid) throw new ValidationError(pwCheck.errors.join('; '));
-  }
+  const placeholderEmail = `ph_${data.phone.replace(/[^0-9]/g, '')}@school.edu`;
 
   let resolvedChildrenIds = data.childrenIds || [];
   if (resolvedChildrenIds.length > 0) {
@@ -125,67 +99,44 @@ export async function createUser(data: {
     resolvedChildrenIds = resolved;
   }
 
-  if (generatedEmail) {
-    const existingUser = await getUserByEmail(generatedEmail);
-    if (existingUser) {
-      if (data.role === 'parent' && existingUser.role === 'teacher') {
-        const now = new Date().toISOString();
-        const updateData: Record<string, unknown> = { updated_at: now };
-        if (data.childrenIds?.length) updateData.childrenIds = resolvedChildrenIds;
-        const { error: updateErr } = await supabase.from('users').update(updateData).eq('id', existingUser.uid);
-        if (updateErr) throw new Error(`Failed to update user: ${updateErr.message}`);
-        logger.info('Teacher updated with childrenIds by admin', { uid: existingUser.uid, email: generatedEmail });
-        const { data: uRow } = await supabase.from('users').select('*').eq('id', existingUser.uid).maybeSingle();
-        if (uRow) return stripPw(uRow);
-      }
-      const { data: uRow } = await supabase.from('users').select('*').eq('id', existingUser.uid).maybeSingle();
-      if (uRow) {
-        logger.info('Existing user reused by admin (no role change)', { uid: existingUser.uid, email: generatedEmail, role: existingUser.role });
-        return stripPw(uRow);
-      }
-      const now2 = new Date().toISOString();
-      const userData2 = {
-        id: existingUser.uid, email: generatedEmail, display_name: data.displayName,
-        role: data.role, phone_number: data.phoneNumber || '', photo_url: data.photoURL || '',
-        class_ids: finalClassIds, class_id: studentClassId || null,
-        student_id: studentId || null, roll_no: data.rollNo || null,
-        academic_year: deriveAcademicYear(), gender: data.gender || null,
-        children_ids: resolvedChildrenIds, is_active: true, school_id: data.schoolId || null,
-        created_at: now2, updated_at: now2,
-      };
-      const { error } = await supabase.from('users').upsert(userData2, { onConflict: 'id' });
-      if (error) throw error;
-      await updateUser(existingUser.uid, { password: generatedPassword });
-      await setCustomClaims(existingUser.uid, { role: data.role });
-      logger.info('User doc created (auth user existed)', { uid: existingUser.uid, email: generatedEmail, role: data.role });
-      if (data.role === 'student') {
-        const { error: rpcErr } = await supabase.rpc('increment_student_count', { class_id: data.classId!, delta: 1 });
-        if (rpcErr) {
-          logger.warn('increment_student_count RPC failed (non-critical)', { classId: data.classId, error: rpcErr.message });
-        }
-      }
-      return { ...userData2, generatedPassword };
+  const existingUser = await getUserByPhone(data.phone);
+  if (existingUser) {
+    const now = new Date().toISOString();
+    const userData2 = {
+      id: existingUser.uid, email: placeholderEmail, display_name: data.displayName,
+      role: data.role, phone_number: data.phone, photo_url: data.photoURL || '',
+      class_ids: finalClassIds, class_id: studentClassId || null,
+      student_id: studentId || null, roll_no: data.rollNo || null,
+      academic_year: deriveAcademicYear(), gender: data.gender || null,
+      children_ids: resolvedChildrenIds, is_active: true, school_id: data.schoolId || null,
+      created_at: now, updated_at: now,
+    };
+    const { error } = await supabase.from('users').upsert(userData2, { onConflict: 'id' });
+    if (error) throw error;
+    logger.info('User updated by admin', { uid: existingUser.uid, phone: data.phone, role: data.role });
+    if (data.role === 'student') {
+      const { error: rpcErr } = await supabase.rpc('increment_student_count', { class_id: data.classId!, delta: 1 });
+      if (rpcErr) logger.warn('increment_student_count RPC failed', { classId: data.classId, error: rpcErr.message });
     }
+    return stripPw(userData2);
   }
 
   let authUser: Awaited<ReturnType<typeof createAuthUser>>;
   try {
     authUser = await createAuthUser({
-      email: generatedEmail, password: generatedPassword,
-      displayName: data.displayName, phoneNumber: data.phoneNumber, photoURL: data.photoURL,
+      phone: data.phone, displayName: data.displayName, photoURL: data.photoURL,
     });
   } catch (err: any) {
-    logger.error('Auth user creation failed', { email: generatedEmail, role: data.role, error: err.message, stack: err.stack });
-    // If user already exists in Auth but DB row is missing, look up via Auth API and create DB row
+    logger.error('Auth user creation failed', { phone: data.phone, role: data.role, error: err.message, stack: err.stack });
     if (err.message?.toLowerCase().includes('already exists') || err.message?.toLowerCase().includes('already registered')) {
       const supabase = getSupabaseAdmin();
       const { data: authUsers } = await supabase.auth.admin.listUsers();
-      const authUser = authUsers?.users?.find((u: any) => u.email === generatedEmail);
+      const authUser = authUsers?.users?.find((u: any) => u.phone === data.phone);
       if (authUser) {
         const now = new Date().toISOString();
         const userData = {
-          id: authUser.id, email: generatedEmail, display_name: data.displayName,
-          role: data.role, phone_number: data.phoneNumber || '', photo_url: data.photoURL || '',
+          id: authUser.id, email: placeholderEmail, display_name: data.displayName,
+          role: data.role, phone_number: data.phone, photo_url: data.photoURL || '',
           class_ids: finalClassIds, class_id: studentClassId || null,
           student_id: studentId || null, roll_no: data.rollNo || null,
           academic_year: deriveAcademicYear(), gender: data.gender || null,
@@ -194,9 +145,8 @@ export async function createUser(data: {
         };
         const { error: upsertErr } = await supabase.from('users').upsert(userData, { onConflict: 'id' });
         if (upsertErr) throw upsertErr;
-        await setCustomClaims(authUser.id, { role: data.role });
-        logger.info('User recovered (auth existed, DB row created)', { uid: authUser.id, email: generatedEmail, role: data.role });
-        return { ...userData, generatedPassword };
+        logger.info('User recovered (auth existed, DB row created)', { uid: authUser.id, phone: data.phone, role: data.role });
+        return stripPw(userData);
       }
     }
     if (err.message?.toLowerCase().includes('supabase') || err.message?.toLowerCase().includes('not configured')) {
@@ -207,8 +157,8 @@ export async function createUser(data: {
 
   const now = new Date().toISOString();
   const userData: Record<string, unknown> = {
-    id: authUser.uid, email: generatedEmail, display_name: data.displayName,
-    role: data.role, phone_number: data.phoneNumber || '', photo_url: data.photoURL || '',
+    id: authUser.uid, email: placeholderEmail, display_name: data.displayName,
+    role: data.role, phone_number: data.phone, photo_url: data.photoURL || '',
     class_ids: finalClassIds, class_id: studentClassId || null,
     student_id: studentId || null, roll_no: data.rollNo || null,
     academic_year: deriveAcademicYear(), gender: data.gender || null,
@@ -217,14 +167,11 @@ export async function createUser(data: {
   };
   const { error } = await supabase.from('users').upsert(userData, { onConflict: 'id' });
   if (error) throw error;
-  await setCustomClaims(authUser.uid, { role: data.role });
-  logger.info('User created by admin', { uid: authUser.uid, email: generatedEmail, role: data.role });
+  logger.info('User created by admin', { uid: authUser.uid, phone: data.phone, role: data.role });
 
   if (data.role === 'student') {
     const { error: rpcErr } = await supabase.rpc('increment_student_count', { class_id: data.classId!, delta: 1 });
-    if (rpcErr) {
-      logger.warn('increment_student_count RPC failed (non-critical)', { classId: data.classId, error: rpcErr.message });
-    }
+    if (rpcErr) logger.warn('increment_student_count RPC failed', { classId: data.classId, error: rpcErr.message });
   }
 
   try {
@@ -253,8 +200,7 @@ export async function createUser(data: {
     logger.warn('Failed to send welcome notification', { uid: authUser.uid, role: data.role, error: err });
   }
 
-  const { password: _pw, ...userDataSafe } = userData;
-  return { ...userDataSafe, generatedPassword } as unknown as Record<string, unknown> & { generatedPassword: string };
+  return stripPw(userData);
 }
 
 export async function updateUser(uid: string, data: {

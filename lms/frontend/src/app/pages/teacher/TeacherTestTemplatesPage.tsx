@@ -37,8 +37,42 @@ export default function TeacherTestTemplatesPage() {
   const navigate = useNavigate();
   const [showCreate, setShowCreate] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [previewQuestions, setPreviewQuestions] = useState<CompiledQuestion[]>([]);
+  const [previewQuestions, setPreviewQuestions] = useState<any[]>([]);
   const [previewTitle, setPreviewTitle] = useState('');
+
+  function handleEditPreviewQuestion(index: number, field: string, value: any) {
+    setPreviewQuestions((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
+  }
+
+  function handleEditPreviewOption(index: number, optionIndex: number, value: string) {
+    setPreviewQuestions((prev) => {
+      const next = [...prev];
+      const q = { ...next[index] };
+      const opts = [...(q.options || [])];
+      opts[optionIndex] = value;
+      q.options = opts;
+      next[index] = q;
+      return next;
+    });
+  }
+
+  function handleDeletePreviewQuestion(index: number) {
+    setPreviewQuestions((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function handleMovePreviewQuestion(index: number, direction: 'up' | 'down') {
+    setPreviewQuestions((prev) => {
+      const next = [...prev];
+      const target = direction === 'up' ? index - 1 : index + 1;
+      if (target < 0 || target >= next.length) return prev;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  }
   const [compilingId, setCompilingId] = useState<string | null>(null);
 
   const [title, setTitle] = useState('');
@@ -300,27 +334,108 @@ export default function TeacherTestTemplatesPage() {
               {previewQuestions.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">{_('No questions matched the criteria. Adjust your template settings.')}</p>
               ) : (
-                previewQuestions.map((q, i) => (
+                previewQuestions.map((q: any, i: number) => (
                   <Card key={q.id || i} className="border-border/60">
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <span className="text-sm font-bold text-muted-foreground mt-0.5 min-w-[24px]">{i + 1}.</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge variant="outline" className="text-[10px] capitalize">{q.type?.replace(/_/g, ' ')}</Badge>
-                            <Badge variant="secondary" className="text-[10px]">{q.difficulty}</Badge>
-                            <span className="text-xs text-muted-foreground">{q.points} {_('pt')}{q.points !== 1 ? _('s') : ''}</span>
-                          </div>
-                          <p className="text-sm">{q.questionText}</p>
-                          {q.options && q.options.length > 0 && (
-                            <div className="mt-2 space-y-1">
-                              {q.options.map((opt, oi) => (
-                                <p key={oi} className="text-xs text-muted-foreground pl-3 border-l-2 border-border">{String.fromCharCode(65 + oi)}. {opt}</p>
-                              ))}
-                            </div>
-                          )}
+                    <CardContent className="p-3 space-y-2">
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">{i + 1}</span>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => handleMovePreviewQuestion(i, 'up')} disabled={i === 0} className="h-5 w-5 p-0">
+                            <Icon name="arrow_upward" size={12} />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleMovePreviewQuestion(i, 'down')} disabled={i === previewQuestions.length - 1} className="h-5 w-5 p-0">
+                            <Icon name="arrow_downward" size={12} />
+                          </Button>
                         </div>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeletePreviewQuestion(i)} className="h-5 w-5 p-0 text-destructive">
+                          <Icon name="delete" size={12} />
+                        </Button>
                       </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <select
+                          value={q.type || 'multiple_choice'}
+                          onChange={(e) => handleEditPreviewQuestion(i, 'type', e.target.value)}
+                          className="rounded border border-border bg-background px-2 py-1 text-[10px]"
+                        >
+                          <option value="multiple_choice">Multiple Choice</option>
+                          <option value="true_false">True / False</option>
+                          <option value="short_answer">Short Answer</option>
+                          <option value="fill_blank">Fill Blank</option>
+                        </select>
+
+                        <select
+                          value={q.difficulty || 'medium'}
+                          onChange={(e) => handleEditPreviewQuestion(i, 'difficulty', e.target.value)}
+                          className="rounded border border-border bg-background px-2 py-1 text-[10px]"
+                        >
+                          <option value="easy">Easy</option>
+                          <option value="medium">Medium</option>
+                          <option value="hard">Hard</option>
+                        </select>
+
+                        <Input
+                          type="number"
+                          min={1}
+                          value={q.points ?? 1}
+                          onChange={(e) => handleEditPreviewQuestion(i, 'points', parseInt(e.target.value) || 1)}
+                          className="h-7 text-[10px]"
+                          placeholder={_('Points')}
+                        />
+                      </div>
+
+                      <Input
+                        value={q.questionText || q.text || ''}
+                        onChange={(e) => handleEditPreviewQuestion(i, 'questionText', e.target.value)}
+                        className="text-xs"
+                        placeholder={_('Question text...')}
+                      />
+
+                      {(q.type === 'multiple_choice' || q.type === 'mcq') && q.options && Array.isArray(q.options) && (
+                        <div className="space-y-1">
+                          {q.options.map((opt: string, oi: number) => (
+                            <div key={oi} className="flex items-center gap-1">
+                              <span className="text-[10px] font-mono text-muted-foreground w-4">{String.fromCharCode(65 + oi)}.</span>
+                              <Input
+                                value={opt || ''}
+                                onChange={(e) => handleEditPreviewOption(i, oi, e.target.value)}
+                                className="h-7 text-[10px] flex-1"
+                                placeholder={`${_('Option')} ${String.fromCharCode(65 + oi)}`}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {(q.type === 'true_false') && (
+                        <select
+                          value={q.correctAnswer || ''}
+                          onChange={(e) => handleEditPreviewQuestion(i, 'correctAnswer', e.target.value)}
+                          className="w-full rounded border border-border bg-background px-2 py-1 text-xs"
+                        >
+                          <option value="">{_('Select correct answer...')}</option>
+                          <option value="true">True</option>
+                          <option value="false">False</option>
+                        </select>
+                      )}
+
+                      {(q.type === 'short_answer' || q.type === 'fill_blank') && (
+                        <Input
+                          value={q.correctAnswer || ''}
+                          onChange={(e) => handleEditPreviewQuestion(i, 'correctAnswer', e.target.value)}
+                          className="h-7 text-xs"
+                          placeholder={_('Correct answer...')}
+                        />
+                      )}
+
+                      {(q.type === 'multiple_choice' || q.type === 'mcq') && (
+                        <Input
+                          value={q.correctAnswer || ''}
+                          onChange={(e) => handleEditPreviewQuestion(i, 'correctAnswer', e.target.value)}
+                          className="h-7 text-xs"
+                          placeholder={_('Correct answer (A, B, C, or D)...')}
+                        />
+                      )}
                     </CardContent>
                   </Card>
                 ))

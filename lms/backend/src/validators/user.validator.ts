@@ -1,24 +1,12 @@
 import { z } from 'zod';
 
 export const createUserSchema = z.object({
-  email: z
-    .string()
-    .email('Invalid email address')
-    .max(255, 'Email must be at most 255 characters')
-    .optional()
-    .or(z.literal('')),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .max(128, 'Password must be at most 128 characters')
-    .optional()
-    .or(z.literal('')),
+  phone: z.string().regex(/^\+?\d{10,15}$/, 'Invalid phone number'),
   displayName: z
     .string()
     .min(2, 'Name must be at least 2 characters')
     .max(100, 'Name must be at most 100 characters'),
   role: z.enum(['student', 'teacher', 'admin', 'parent']),
-  phoneNumber: z.string().max(20).optional(),
   photoURL: z.string().url('Invalid photo URL').optional(),
   classIds: z.array(z.string()).optional(),
   classId: z.string().optional(),

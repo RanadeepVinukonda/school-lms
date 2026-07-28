@@ -3,36 +3,42 @@ import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { deleteDocument } from './document.service';
-import { searchVideos } from './youtube.service';
+import { searchEducationalVideos } from './educational-video.service';
 
 export async function addVideo(data: {
   teacherId: string;
   title: string;
-  youtubeId: string;
+  videoId: string;
+  source: string;
+  sourceLabel: string;
   thumbnail: string;
   duration: string;
   channelName: string;
   description: string;
   embedUrl: string;
+  url: string;
   textbookId?: string;
   chapterId?: string;
   conceptId?: string;
   tags?: string[];
 }) {
   const supabase = getSupabaseAdmin();
-  const videoId = uuidv4();
+  const docId = uuidv4();
   const now = new Date().toISOString();
 
   const videoData = {
-    id: videoId,
+    id: docId,
     teacherId: data.teacherId,
     title: data.title,
-    youtubeId: data.youtubeId,
+    videoId: data.videoId,
+    source: data.source,
+    sourceLabel: data.sourceLabel,
     thumbnail: data.thumbnail,
     duration: data.duration,
     channelName: data.channelName,
     description: data.description,
     embedUrl: data.embedUrl,
+    url: data.url,
     textbookId: data.textbookId || null,
     chapterId: data.chapterId || null,
     conceptId: data.conceptId || null,
@@ -42,11 +48,11 @@ export async function addVideo(data: {
   };
 
   const { error: insertError } = await supabase.from('firestore_docs').insert({
-    collection: 'teacherVideos', doc_id: videoId, data: videoData, updated_at: now,
+    collection: 'teacherVideos', doc_id: docId, data: videoData, updated_at: now,
   });
   if (insertError) throw new Error(`Failed to insert video: ${insertError.message}`);
 
-  logger.info('Teacher video added', { videoId, teacherId: data.teacherId });
+  logger.info('Teacher video added', { docId, teacherId: data.teacherId, source: data.source });
 
   return videoData;
 }
@@ -126,19 +132,22 @@ export async function attachVideoToConcept(videoId: string, teacherId: string, d
 }
 
 export async function searchAndSave(teacherId: string, query: string, maxResults?: number) {
-  const results = await searchVideos(query, maxResults || 5);
+  const results = await searchEducationalVideos(query, maxResults || 8);
 
   const saved = [];
   for (const video of results) {
     const savedVideo = await addVideo({
       teacherId,
       title: video.title,
-      youtubeId: video.youtubeId,
+      videoId: video.videoId,
+      source: video.source,
+      sourceLabel: video.sourceLabel,
       thumbnail: video.thumbnail,
       duration: video.duration,
       channelName: video.channelName,
       description: video.description,
       embedUrl: video.embedUrl,
+      url: video.url,
     });
     saved.push(savedVideo);
   }

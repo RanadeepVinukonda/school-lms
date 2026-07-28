@@ -72,6 +72,89 @@ export default function TeacherExamsPage() {
 
   const [reviewQuestions, setReviewQuestions] = useState<any[]>([]);
 
+  function handleEditQuestion(index: number, field: string, value: any) {
+    setReviewQuestions((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
+  }
+
+  function handleEditOption(index: number, optionIndex: number, value: string) {
+    setReviewQuestions((prev) => {
+      const next = [...prev];
+      const q = { ...next[index] };
+      const opts = [...(q.options || [])];
+      opts[optionIndex] = value;
+      q.options = opts;
+      next[index] = q;
+      return next;
+    });
+  }
+
+  function handleDeleteQuestion(index: number) {
+    setReviewQuestions((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function handleMoveQuestion(index: number, direction: 'up' | 'down') {
+    setReviewQuestions((prev) => {
+      const next = [...prev];
+      const target = direction === 'up' ? index - 1 : index + 1;
+      if (target < 0 || target >= next.length) return prev;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  }
+
+  function handleAddQuestion() {
+    const newQ = {
+      id: `manual_${Date.now()}`,
+      type: 'multiple_choice',
+      text: '',
+      options: ['', '', '', ''],
+      correctAnswer: '',
+      difficulty: 'medium',
+      points: 1,
+      explanation: '',
+      conceptId: '',
+    };
+    setReviewQuestions((prev) => [...prev, newQ]);
+  }
+
+  function handleRegenerateQuestion(index: number) {
+    const q = reviewQuestions[index];
+    if (!q.conceptId) {
+      toast.error(_('Cannot regenerate: no conceptId on question'));
+      return;
+    }
+    api
+      .post('/ai-question-generator/generate', {
+        conceptId: q.conceptId,
+        types: [q.type],
+        count: 1,
+        difficulty: q.difficulty || 'medium',
+      })
+      .then((res) => {
+        const newQs = res.data?.data?.questions || res.data?.data || [];
+        if (newQs.length > 0) {
+          const newQ = newQs[0];
+          handleEditQuestion(index, 'text', newQ.question || newQ.text || '');
+          handleEditQuestion(index, 'options', newQ.options || []);
+          handleEditQuestion(index, 'correctAnswer', newQ.answer || newQ.correctAnswer || '');
+          handleEditQuestion(index, 'explanation', newQ.explanation || '');
+          toast.success(_('Question regenerated'));
+        } else {
+          toast.error(_('AI returned no questions'));
+        }
+      })
+      .catch(() => toast.error(_('Failed to regenerate question')));
+  }
+
+  const totalEditablePoints = useMemo(
+    () => reviewQuestions.reduce((sum, q) => sum + (Number(q.points) || 1), 0),
+    [reviewQuestions],
+  );
+
   const { data: assignments, isLoading: assignmentsLoading, error: assignmentsError } = useQuery({
     queryKey: ['teacher-assignments', user?.id],
     queryFn: () => api.get('/teacher-class-subject/my').then((r) => r.data.data),
@@ -777,37 +860,146 @@ export default function TeacherExamsPage() {
               </div>
 
               {reviewQuestions.length > 0 && (
-                <div className="border rounded-lg p-3 bg-background space-y-3 max-h-80 overflow-y-auto">
+                <div className="border rounded-lg p-3 bg-background space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold text-primary">{_('Preview')} ({reviewQuestions.length} {_('questions')})</p>
+                    <p className="text-xs font-semibold text-primary">
+                      {_('Preview')} ({reviewQuestions.length} {_('questions')}, {totalEditablePoints} {_('points')})
+                    </p>
                     {reviewQuestions.length < questionCount && (
                       <p className="text-[10px] text-amber-600">{_('Warning: fewer questions than requested')}</p>
                     )}
-                    <Button variant="ghost" size="sm" onClick={() => setReviewQuestions([])}>
-                      <Icon name="close" size={16} />
-                    </Button>
-                  </div>
-                  {reviewQuestions.map((q: any, i: number) => (
-                    <div key={q.id || i} className="rounded-lg border border-border/60 p-3 space-y-1.5">
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">{i + 1}</span>
-                        <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-medium">{q.type?.replace(/_/g, ' ')}</span>
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${q.difficulty === 'easy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : q.difficulty === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : q.difficulty === 'hard' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'}`}>{q.difficulty}</span>
-                        {q.hots && <span className="px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[10px] font-bold">HOTS</span>}
-                      </div>
-                      <p className="text-xs text-foreground leading-relaxed">{q.text}</p>
-                      {q.options && q.options.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 pt-0.5">
-                          {q.options.map((opt: string, oi: number) => (
-                            <span key={oi} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{String.fromCharCode(65 + oi)}. {opt}</span>
-                          ))}
-                        </div>
-                      )}
-                      {q.correctAnswer && (
-                        <p className="text-[10px] text-green-600 dark:text-green-400 font-medium">{_('Answer')}: {Array.isArray(q.correctAnswer) ? q.correctAnswer.join(', ') : q.correctAnswer}</p>
-                      )}
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={handleAddQuestion} className="gap-1 h-7 text-[10px]">
+                        <Icon name="add" size={12} />
+                        {_('Add')}
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setReviewQuestions([])} className="h-7">
+                        <Icon name="close" size={14} />
+                      </Button>
                     </div>
-                  ))}
+                  </div>
+                  <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                    {reviewQuestions.map((q: any, i: number) => (
+                      <div key={q.id || i} className="rounded-lg border border-border/60 p-3 space-y-2">
+                        <div className="flex items-center gap-2 text-xs mb-1">
+                          <span className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">{i + 1}</span>
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="sm" onClick={() => handleMoveQuestion(i, 'up')} disabled={i === 0} className="h-5 w-5 p-0">
+                              <Icon name="arrow_upward" size={12} />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleMoveQuestion(i, 'down')} disabled={i === reviewQuestions.length - 1} className="h-5 w-5 p-0">
+                              <Icon name="arrow_downward" size={12} />
+                            </Button>
+                          </div>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteQuestion(i)} className="h-5 w-5 p-0 text-destructive">
+                            <Icon name="delete" size={12} />
+                          </Button>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          <select
+                            value={q.type || 'multiple_choice'}
+                            onChange={(e) => handleEditQuestion(i, 'type', e.target.value)}
+                            className="rounded border border-border bg-background px-2 py-1 text-[10px]"
+                          >
+                            {QUESTION_MODEL_OPTIONS.map((opt) => (
+                              <option key={opt.value} value={opt.value}>{_('MCQ')}</option>
+                            ))}
+                            <option value="multiple_choice">Multiple Choice</option>
+                            <option value="true_false">True / False</option>
+                            <option value="short_answer">Short Answer</option>
+                            <option value="fill_blank">Fill Blank</option>
+                          </select>
+
+                          <select
+                            value={q.difficulty || 'medium'}
+                            onChange={(e) => handleEditQuestion(i, 'difficulty', e.target.value)}
+                            className="rounded border border-border bg-background px-2 py-1 text-[10px]"
+                          >
+                            <option value="easy">Easy</option>
+                            <option value="medium">Medium</option>
+                            <option value="hard">Hard</option>
+                          </select>
+
+                          <Input
+                            type="number"
+                            min={1}
+                            value={q.points ?? 1}
+                            onChange={(e) => handleEditQuestion(i, 'points', parseInt(e.target.value) || 1)}
+                            className="h-7 text-[10px]"
+                            placeholder={_('Points')}
+                          />
+                        </div>
+
+                        <Input
+                          value={q.text || ''}
+                          onChange={(e) => handleEditQuestion(i, 'text', e.target.value)}
+                          className="text-xs"
+                          placeholder={_('Question text...')}
+                        />
+
+                        {(q.type === 'multiple_choice' || q.type === 'mcq') && q.options && Array.isArray(q.options) && (
+                          <div className="space-y-1">
+                            {q.options.map((opt: string, oi: number) => (
+                              <div key={oi} className="flex items-center gap-1">
+                                <span className="text-[10px] font-mono text-muted-foreground w-4">{String.fromCharCode(65 + oi)}.</span>
+                                <Input
+                                  value={opt || ''}
+                                  onChange={(e) => handleEditOption(i, oi, e.target.value)}
+                                  className="h-7 text-[10px] flex-1"
+                                  placeholder={`${_('Option')} ${String.fromCharCode(65 + oi)}`}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {q.type === 'true_false' && (
+                          <select
+                            value={q.correctAnswer || ''}
+                            onChange={(e) => handleEditQuestion(i, 'correctAnswer', e.target.value)}
+                            className="w-full rounded border border-border bg-background px-2 py-1 text-xs"
+                          >
+                            <option value="">{_('Select correct answer...')}</option>
+                            <option value="true">True</option>
+                            <option value="false">False</option>
+                          </select>
+                        )}
+
+                        {(q.type === 'short_answer' || q.type === 'fill_blank') && (
+                          <Input
+                            value={q.correctAnswer || ''}
+                            onChange={(e) => handleEditQuestion(i, 'correctAnswer', e.target.value)}
+                            className="h-7 text-xs"
+                            placeholder={_('Correct answer...')}
+                          />
+                        )}
+
+                        {(q.type === 'multiple_choice' || q.type === 'mcq') && (
+                          <Input
+                            value={q.correctAnswer || ''}
+                            onChange={(e) => handleEditQuestion(i, 'correctAnswer', e.target.value)}
+                            className="h-7 text-xs"
+                            placeholder={_('Correct answer (A, B, C, or D)...')}
+                          />
+                        )}
+
+                        {q.explanation !== undefined && (
+                          <Input
+                            value={q.explanation || ''}
+                            onChange={(e) => handleEditQuestion(i, 'explanation', e.target.value)}
+                            className="h-7 text-[10px] text-muted-foreground"
+                            placeholder={_('Explanation (optional)...')}
+                          />
+                        )}
+
+                        <Button variant="outline" size="sm" onClick={() => handleRegenerateQuestion(i)} className="gap-1 h-6 text-[10px]">
+                          <Icon name="refresh" size={10} />
+                          {_('Regenerate')}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </CardContent>

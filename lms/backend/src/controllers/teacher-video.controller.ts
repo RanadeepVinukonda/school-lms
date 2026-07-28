@@ -5,7 +5,26 @@ import { requireUser } from '../types/common';
 
 export async function addVideo(req: Request, res: Response) {
   const user = requireUser(req);
-  const result = await teacherVideoService.addVideo({ ...req.body, teacherId: user.uid });
+
+  const body = {
+    teacherId: user.uid,
+    title: req.body.title || '',
+    videoId: req.body.videoId || req.body.youtubeId || '',
+    source: req.body.source || 'youtube',
+    sourceLabel: req.body.sourceLabel || 'YouTube',
+    thumbnail: req.body.thumbnail || '',
+    duration: req.body.duration || '0:00',
+    channelName: req.body.channelName || req.body.channelTitle || '',
+    description: req.body.description || '',
+    embedUrl: req.body.embedUrl || req.body.url || '',
+    url: req.body.url || req.body.embedUrl || '',
+    textbookId: req.body.textbookId,
+    chapterId: req.body.chapterId,
+    conceptId: req.body.conceptId,
+    tags: req.body.tags,
+  };
+
+  const result = await teacherVideoService.addVideo(body);
   sendCreated(res, result, 'Video added to library');
 }
 

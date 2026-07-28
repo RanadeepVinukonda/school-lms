@@ -10,9 +10,19 @@ const router = Router();
 
 const addVideoSchema = z.object({
   title: z.string().min(1),
-  url: z.string().url(),
-  subjectId: z.string().min(1),
+  videoId: z.string().optional(),
+  youtubeId: z.string().optional(),
+  source: z.string().optional(),
+  sourceLabel: z.string().optional(),
+  thumbnail: z.string().optional(),
+  duration: z.string().optional(),
+  channelName: z.string().optional(),
   description: z.string().optional(),
+  embedUrl: z.string().optional(),
+  url: z.string().optional(),
+  textbookId: z.string().optional(),
+  chapterId: z.string().optional(),
+  conceptId: z.string().optional(),
 }).passthrough();
 
 const attachToConceptSchema = z.object({
@@ -21,7 +31,7 @@ const attachToConceptSchema = z.object({
 
 const searchAndSaveSchema = z.object({
   query: z.string().min(1),
-  subjectId: z.string().min(1),
+  maxResults: z.coerce.number().optional(),
 }).passthrough();
 
 router.post('/', authenticate, requireRole('teacher'), validate(addVideoSchema), asyncHandler(teacherVideoController.addVideo));

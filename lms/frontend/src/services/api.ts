@@ -176,6 +176,46 @@ api.interceptors.response.use(
   }
 );
 
+// ---------- Proactive token refresh ----------
+let refreshTimerId: ReturnType<typeof setInterval> | null = null;
+
+function decodeAndGetExp(token: string): number {
+  const payload = decodeJwtPayload(token);
+  return payload?.exp ? (payload.exp as number) * 1000 : 0;
+}
+
+async function tryRefreshToken(): Promise<boolean> {
+  try {
+    const { data: { session } } = await withTimeout(supabase.auth.refreshSession(), AUTH_TIMEOUT_MS);
+    if (session?.access_token) {
+      cachedToken = session.access_token;
+      tokenExpiresAt = decodeAndGetExp(session.access_token);
+      return true;
+    }
+  } catch { /* ignore */ }
+  return false;
+}
+
+export function startTokenRefresh(): void {
+  stopTokenRefresh();
+  refreshTimerId = setInterval(async () => {
+    const token = cachedToken || useAuthStore.getState().token;
+    if (!token) return;
+    const exp = tokenExpiresAt || decodeAndGetExp(token);
+    // Refresh if within 10 minutes of expiry
+    if (exp > 0 && exp - Date.now() < 10 * 60 * 1000) {
+      await tryRefreshToken();
+    }
+  }, 5 * 60 * 1000);
+}
+
+export function stopTokenRefresh(): void {
+  if (refreshTimerId !== null) {
+    clearInterval(refreshTimerId);
+    refreshTimerId = null;
+  }
+}
+
 // ---------- Auth token interceptor ----------
 api.interceptors.request.use(async (config) => {
   // Skip auth for the refresh endpoint itself

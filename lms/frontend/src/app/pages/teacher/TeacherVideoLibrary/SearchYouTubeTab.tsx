@@ -10,7 +10,7 @@ import { Icon } from '@/components/ui/Icon';
 import { staggerContainer } from '@/lib/motion';
 import api from '@/services/api';
 import { VideoCard } from './VideoCard';
-import type { TeacherVideo, YouTubeSearchResult } from './types';
+import type { TeacherVideo, EducationalVideoSearchResult } from './types';
 
 export function SearchYouTubeTab() {
   const { _ } = useTranslation();
@@ -24,24 +24,27 @@ export function SearchYouTubeTab() {
   });
 
   const searchResultsQuery = useQuery({
-    queryKey: ['youtube-search', searchQuery],
+    queryKey: ['educational-video-search', searchQuery],
     queryFn: () =>
       api
-        .get('/api/youtube/search', { params: { query: searchQuery, maxResults: 12 } })
-        .then((r) => r.data.data as YouTubeSearchResult[]),
+        .get('/api/educational-video/search', { params: { query: searchQuery, maxResults: 12 } })
+        .then((r) => r.data.data as EducationalVideoSearchResult[]),
     enabled: searchQuery.length > 0,
   });
 
   const saveMutation = useMutation({
-    mutationFn: (video: YouTubeSearchResult) =>
+    mutationFn: (video: EducationalVideoSearchResult) =>
       api.post('/api/teacher-videos', {
         title: video.title,
-        youtubeId: video.youtubeId,
+        videoId: video.videoId,
+        source: video.source,
+        sourceLabel: video.sourceLabel,
         thumbnail: video.thumbnail,
         duration: video.duration,
         channelName: video.channelName,
         description: video.description,
         embedUrl: video.embedUrl,
+        url: video.url,
       }),
     onSuccess: () => {
       toast.success(_('Video saved to your library'));
@@ -57,13 +60,13 @@ export function SearchYouTubeTab() {
       const count = res.data?.data?.length ?? 0;
       toast.success(`${_('Saved')} ${count} ${_('video')}${count !== 1 ? _('s') : ''}`);
       queryClient.invalidateQueries({ queryKey: ['teacher-videos'] });
-      queryClient.invalidateQueries({ queryKey: ['youtube-search'] });
+      queryClient.invalidateQueries({ queryKey: ['educational-video-search'] });
     },
     onError: () => toast.error(_('Failed to search and save videos')),
   });
 
   const savedVideoIds = new Set(
-    (savedVideosQuery.data ?? []).map((v) => v.youtubeId),
+    (savedVideosQuery.data ?? []).map((v) => v.videoId || v.youtubeId),
   );
 
   const handleSearch = useCallback((e: React.FormEvent) => {
@@ -77,7 +80,7 @@ export function SearchYouTubeTab() {
         <div className="relative flex-1">
           <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder={_('Search YouTube for educational videos...')}
+            placeholder={_('Search educational videos...')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="pl-10"
@@ -106,9 +109,9 @@ export function SearchYouTubeTab() {
           <div className="mb-5 text-muted-foreground/40">
             <Icon name="smart_display" size={64} />
           </div>
-          <h3 className="text-headline-sm mb-1">{_('Search YouTube Videos')}</h3>
+          <h3 className="text-headline-sm mb-1">{_('Search Educational Videos')}</h3>
           <p className="text-body-md text-muted-foreground max-w-sm">
-            {_('Find educational videos to add to your library. Search by topic, keyword, or subject.')}
+            {_('Find videos from Khan Academy, Wikimedia Commons, and YouTube. Search by topic, keyword, or subject.')}
           </p>
         </div>
       )}
@@ -132,9 +135,9 @@ export function SearchYouTubeTab() {
             <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
               {results.map((video) => (
                 <VideoCard
-                  key={video.youtubeId}
+                  key={video.id || video.videoId}
                   video={video}
-                  saved={savedVideoIds.has(video.youtubeId)}
+                  saved={savedVideoIds.has(video.videoId)}
                   onSave={() => saveMutation.mutate(video)}
                 />
               ))}

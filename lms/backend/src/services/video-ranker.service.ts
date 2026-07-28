@@ -1,4 +1,4 @@
-import { searchVideos } from './youtube.service';
+import { searchEducationalVideos } from './educational-video.service';
 import { getEmbedding, cosineSimilarity } from './transformers.service';
 import { getSupabaseAdmin } from './supabase';
 import { logger } from '../utils/logger';
@@ -10,7 +10,7 @@ async function generateSearchQueries(conceptTitle: string, subjectName: string):
       messages: [
         {
           role: 'system',
-          content: 'You are an educational assistant. Output 4 distinct, highly relevant YouTube search queries for a student trying to learn the concept. Output ONLY as a raw JSON string array, like: ["query 1", "query 2"]',
+          content: 'You are an educational assistant. Output 4 distinct, highly relevant educational video search queries for a student trying to learn the concept. Output ONLY as a raw JSON string array, like: ["query 1", "query 2"]',
         },
         {
           role: 'user',
@@ -75,17 +75,18 @@ export async function searchAndRankVideos(
     }
   }
 
-  // Real-time YouTube search + local embedding ranking
+  // Multi-source educational video search + local embedding ranking
   const queries = await generateSearchQueries(conceptTitle, subjectName);
 
   const videoMap = new Map<string, any>();
 
   for (const query of queries) {
     try {
-      const results = await searchVideos(query, 5);
+      const results = await searchEducationalVideos(query, 5);
       for (const video of results) {
-        if (!videoMap.has(video.youtubeId)) {
-          videoMap.set(video.youtubeId, video);
+        const key = video.videoId || video.id;
+        if (!videoMap.has(key)) {
+          videoMap.set(key, video);
         }
       }
     } catch (err: any) {
@@ -103,16 +104,16 @@ export async function searchAndRankVideos(
     const conceptVector = await getEmbedding(conceptText);
 
     const scoredVideos = await Promise.all(
-      uniqueVideos.map(async (video) => {
+      uniqueVideos.map(async (video: any) => {
         try {
           const videoText = `${video.title}. ${video.description}`.slice(0, 1000);
           const videoVector = await getEmbedding(videoText);
           const score = cosineSimilarity(conceptVector, videoVector);
 
-          return { ...video, score, embedding: videoVector };
+          return { ...video, score, embedding: videoVector, source: video.source || 'youtube', sourceLabel: video.sourceLabel || 'YouTube' };
         } catch (err) {
           logger.error('Error generating embedding for video comparison', { title: video.title, err });
-          return { ...video, score: 0.1, embedding: [] };
+          return { ...video, score: 0.1, embedding: [], source: video.source || 'youtube', sourceLabel: video.sourceLabel || 'YouTube' };
         }
       })
     );
@@ -128,6 +129,6 @@ export async function searchAndRankVideos(
     return scoredVideos.slice(0, maxRankCount);
   } catch (err) {
     logger.error('Failed to calculate vector similarity for videos, returning default ranked list', { err });
-    return uniqueVideos.slice(0, maxRankCount).map(v => ({ ...v, score: 0.5, embedding: [] }));
+    return uniqueVideos.slice(0, maxRankCount).map((v: any) => ({ ...v, score: 0.5, embedding: [], source: v.source || 'youtube', sourceLabel: v.sourceLabel || 'YouTube' }));
   }
 }

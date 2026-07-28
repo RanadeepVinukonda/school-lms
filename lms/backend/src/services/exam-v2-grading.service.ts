@@ -60,37 +60,55 @@ export async function startExamAttempt(examId: string, studentId: string, select
     points: number;
   }> = [];
 
-  for (const c of concepts) {
-    const questions = await getQuestionsForConcept(c.id);
-    const questionBank = questions.map((q: any) => ({
+  const storedQuestions = examData.questions as any[] | undefined;
+  if (storedQuestions && storedQuestions.length > 0) {
+    allSelected = storedQuestions.map((q: any) => ({
       id: q.id,
+      conceptId: q.conceptId || concepts[0]?.id || '',
       type: q.type,
       difficulty: q.difficulty as Difficulty | undefined,
-      text: q.text || q.question,
+      text: q.text,
       options: q.options as string[] | undefined,
-      correctAnswer: q.correct_answer || q.correctAnswer || q.answer || '',
-      explanation: q.explanation,
-      points: q.points || 1,
+      correctAnswer: q.correctAnswer || '',
+      explanation: q.explanation || '',
+      points: q.points || POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1,
     }));
-
-    let available = questionBank.filter((q) => effectiveModels.includes(q.type));
-
-    available = available.filter((q) => {
-      const qRank = q.difficulty ? DIFFICULTY_RANK[q.difficulty] : 0;
-      if (studentLevel === 'advanced') return qRank >= 1;
-      if (studentLevel === 'intermediate') return qRank >= 0;
-      return qRank <= 0;
-    });
-
-    available = [...available].sort(() => Math.random() - 0.5);
-    const selected = available.slice(0, Math.min((examData.questionCountPerConcept as number) || 1, available.length));
-    for (const q of selected) {
-      allSelected.push({ ...q, conceptId: c.id });
+    if (examData.shuffleQuestions !== false) {
+      allSelected = [...allSelected].sort(() => Math.random() - 0.5);
     }
-  }
+  } else {
+    for (const c of concepts) {
+      const questions = await getQuestionsForConcept(c.id);
+      const questionBank = questions.map((q: any) => ({
+        id: q.id,
+        type: q.type,
+        difficulty: q.difficulty as Difficulty | undefined,
+        text: q.text || q.question,
+        options: q.options as string[] | undefined,
+        correctAnswer: q.correct_answer || q.correctAnswer || q.answer || '',
+        explanation: q.explanation,
+        points: q.points || 1,
+      }));
 
-  if (examData.shuffleQuestions !== false) {
-    allSelected = [...allSelected].sort(() => Math.random() - 0.5);
+      let available = questionBank.filter((q) => effectiveModels.includes(q.type));
+
+      available = available.filter((q) => {
+        const qRank = q.difficulty ? DIFFICULTY_RANK[q.difficulty] : 0;
+        if (studentLevel === 'advanced') return qRank >= 1;
+        if (studentLevel === 'intermediate') return qRank >= 0;
+        return qRank <= 0;
+      });
+
+      available = [...available].sort(() => Math.random() - 0.5);
+      const selected = available.slice(0, Math.min((examData.questionCountPerConcept as number) || 1, available.length));
+      for (const q of selected) {
+        allSelected.push({ ...q, conceptId: c.id });
+      }
+    }
+
+    if (examData.shuffleQuestions !== false) {
+      allSelected = [...allSelected].sort(() => Math.random() - 0.5);
+    }
   }
 
   const totalPoints = allSelected.reduce((sum, q) => sum + (q.points || POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1), 0);
@@ -153,24 +171,36 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
   const graceMinutes = 5;
   if (elapsedMinutes > ((examData.timeLimitMinutes as number) + graceMinutes)) throw new ForbiddenError('Time limit exceeded');
 
-  const concepts = await getConceptsForChapter(examData.textbookId as string, examData.chapterId as string);
-  const allQuestionBank: Array<{
+  const storedQuestions = examData.questions as any[] | undefined;
+  let allQuestionBank: Array<{
     id: string;
     type: string;
     difficulty?: Difficulty;
     correctAnswer: string;
     points: number;
   }> = [];
-  for (const c of concepts) {
-    const questions = await getQuestionsForConcept(c.id);
-    for (const q of questions) {
-      allQuestionBank.push({
-        id: q.id,
-        type: q.type,
-        difficulty: q.difficulty,
-        correctAnswer: q.correct_answer || q.correctAnswer || q.answer || '',
-        points: q.points || 1,
-      });
+
+  if (storedQuestions && storedQuestions.length > 0) {
+    allQuestionBank = storedQuestions.map((q: any) => ({
+      id: q.id,
+      type: q.type,
+      difficulty: q.difficulty as Difficulty | undefined,
+      correctAnswer: q.correctAnswer || '',
+      points: q.points || 1,
+    }));
+  } else {
+    const concepts = await getConceptsForChapter(examData.textbookId as string, examData.chapterId as string);
+    for (const c of concepts) {
+      const questions = await getQuestionsForConcept(c.id);
+      for (const q of questions) {
+        allQuestionBank.push({
+          id: q.id,
+          type: q.type,
+          difficulty: q.difficulty,
+          correctAnswer: q.correct_answer || q.correctAnswer || q.answer || '',
+          points: q.points || 1,
+        });
+      }
     }
   }
 
@@ -250,9 +280,12 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
     logger.error('Gamification reward failed', { studentId, examId: attemptData.examId, error: gamErr });
   }
 
-  const accuracy2 = totalPoints > 0 ? score / totalPoints : 0;
-  for (const c of concepts) {
-    computeMastery(studentId, c.id, accuracy2).catch(err =>
+  const masteryAccuracy = totalPoints > 0 ? score / totalPoints : 0;
+  const chapterConcepts = storedQuestions?.length
+    ? await getConceptsForChapter(examData.textbookId as string, examData.chapterId as string)
+    : await getConceptsForChapter(examData.textbookId as string, examData.chapterId as string);
+  for (const c of chapterConcepts) {
+    computeMastery(studentId, c.id, masteryAccuracy).catch(err =>
       logger.error('Exam V2 mastery update failed', { studentId, conceptId: c.id, error: err })
     );
   }

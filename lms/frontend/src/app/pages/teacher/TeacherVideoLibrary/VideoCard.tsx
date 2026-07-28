@@ -5,23 +5,50 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { cardStackReveal } from '@/lib/motion';
 import { useTranslation } from '@/hooks/useTranslation';
-import type { TeacherVideo, YouTubeSearchResult } from './types';
+import type { TeacherVideo, EducationalVideoSearchResult, YouTubeSearchResult } from './types';
+
+type VideoCardVideo = TeacherVideo | EducationalVideoSearchResult | YouTubeSearchResult;
 
 interface VideoCardProps {
-  video: TeacherVideo | YouTubeSearchResult;
+  video: VideoCardVideo;
   onDelete?: () => void;
   onAttach?: () => void;
   onSave?: () => void;
   saved?: boolean;
 }
 
+const SOURCE_STYLES: Record<string, string> = {
+  khan_academy: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  wikimedia: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  youtube: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+};
+
+function getSourceLabel(video: VideoCardVideo): string {
+  return (video as any).sourceLabel || (video as any).source || 'YouTube';
+}
+
+function getSource(video: VideoCardVideo): string {
+  return (video as any).source || 'youtube';
+}
+
+function getThumbnail(video: VideoCardVideo): string {
+  return video.thumbnail || `https://img.youtube.com/vi/${(video as any).youtubeId || (video as any).videoId}/hqdefault.jpg`;
+}
+
 export function VideoCard({ video, onDelete, onAttach, onSave, saved }: VideoCardProps) {
   const { _ } = useTranslation();
+  const source = getSource(video);
+  const sourceLabel = getSourceLabel(video);
   return (
     <motion.div variants={cardStackReveal} custom={0}>
       <Card className="border-border/60 overflow-hidden hover:shadow-md transition-shadow group h-full">
         <div className="aspect-video bg-muted relative overflow-hidden">
-          <img src={video.thumbnail} alt={video.title} className="w-full h-full object-cover" loading="lazy" />
+          <img src={getThumbnail(video)} alt={video.title} className="w-full h-full object-cover" loading="lazy" />
+          <div className="absolute top-2 left-2 flex gap-1">
+            <Badge className={`text-[10px] px-1.5 py-0.5 font-medium border-0 ${SOURCE_STYLES[source] || SOURCE_STYLES.youtube}`}>
+              {sourceLabel}
+            </Badge>
+          </div>
           <Badge className="absolute bottom-2 right-2 bg-background/80 text-foreground backdrop-blur-sm border-0">
             {video.duration}
           </Badge>

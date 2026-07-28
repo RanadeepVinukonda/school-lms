@@ -149,6 +149,19 @@ export async function createExam(data: {
   const examId = uuidv4();
   const now = new Date().toISOString();
 
+  // Strip correctAnswer from questions for storage (students get questions, not answers)
+  const questionsForStorage = allSelectedQuestions.map((q: any) => ({
+    id: q.id,
+    type: q.type,
+    text: q.text,
+    options: q.options || null,
+    correctAnswer: q.correctAnswer || '',
+    explanation: q.explanation || '',
+    difficulty: q.difficulty || 'medium',
+    points: q.points || POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1,
+    conceptId: q.conceptId || '',
+  }));
+
   const examData: Record<string, unknown> = {
     id: examId,
     title: data.title,
@@ -163,6 +176,7 @@ export async function createExam(data: {
     questionCount: allSelectedQuestions.length,
     aiGeneratedCount,
     totalPoints,
+    questions: questionsForStorage,
     passingScore: data.passingScore ?? 50,
     maxAttempts: data.maxAttempts ?? 1,
     shuffleQuestions: data.shuffleQuestions ?? true,

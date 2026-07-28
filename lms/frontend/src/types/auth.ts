@@ -19,15 +19,17 @@ export interface AuthState {
 }
 
 export interface LoginInput {
-  email: string;
-  password: string;
+  email?: string;
+  password?: string;
+  phone?: string;
   rememberMe?: boolean;
 }
 
 export interface RegisterInput {
-  email: string;
-  password: string;
-  confirmPassword: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+  phone?: string;
   displayName: string;
   role: UserRole;
   termsAccepted: boolean;
@@ -40,4 +42,13 @@ export interface ForgotPasswordInput {
 export interface ResetPasswordInput {
   password: string;
   confirmPassword: string;
+}
+
+export interface OtpLoginInput {
+  phone: string;
+}
+
+export interface OtpVerifyInput {
+  phone: string;
+  token: string;
 }
