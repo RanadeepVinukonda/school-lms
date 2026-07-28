@@ -1,6 +1,6 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { createMockSupabase, resetMockQuery } from './helpers/mock-factory';
-import { ValidationError, UnauthorizedError, NotFoundError } from '../utils/errors';
+import { NotFoundError } from '../utils/errors';
 
 let _mockSupabase: any;
 jest.mock('../services/supabase', () => {
@@ -15,6 +15,7 @@ jest.mock('../services/supabase', () => {
 jest.mock('../database/auth', () => ({
   createUser: jest.fn(async (data: any) => ({ uid: `uid-${data.email}`, email: data.email })),
   getUserByEmail: jest.fn(async (email: string) => email === 'exists@test.com' ? { uid: 'existing', email, role: 'teacher' } : null),
+  getUserByPhone: jest.fn(async (phone: string) => phone === '+919999999999' ? { uid: 'existing-phone', phone, role: 'teacher' } : null),
   getUserById: jest.fn(async (uid: string) => uid === 'user-1' ? { uid, email: 'test@test.com' } : null),
   updateUser: jest.fn(async () => {}),
   setCustomClaims: jest.fn(async () => {}),
@@ -42,7 +43,7 @@ jest.mock('@supabase/supabase-js', () => ({
   })),
 }));
 
-import { register, login, forgotPassword, resetPassword, changePassword, refreshToken, getUserProfile, updateUserProfile, verifyUserToken } from '../services/auth.service';
+import { register, refreshToken, getUserProfile, updateUserProfile, verifyUserToken } from '../services/auth.service';
 import { getSupabaseAdmin } from '../services/supabase';
 
 function mockFetch(data: any, ok = true) {
@@ -61,101 +62,23 @@ describe('auth.service', () => {
   });
 
   describe('register', () => {
-    it('returns failure for weak password', async () => {
-      const r = await register({ email: 'a@b.com', password: 'weak', displayName: 'A', role: 'student' });
+    it('returns failure when phone already registered', async () => {
+      const r = await register({ phone: '+919999999999', displayName: 'A', role: 'student' });
       expect(r.success).toBe(false);
     });
 
     it('registers a new user', async () => {
-      const fetch = jest.requireMock('@supabase/supabase-js');
-      (_mockSupabase.supabase.from('users').insert as jest.Mock).mockResolvedValue({ error: null } as any);
-
-      const r = await register({ email: 'new@test.com', password: 'Strong1!pass', displayName: 'New', role: 'student' });
+      const r = await register({ phone: '+918888888888', displayName: 'New', role: 'student' });
       expect(r.success).toBe(true);
       if (r.success) {
-        expect(r.data.email).toBe('new@test.com');
+        expect(r.data.phoneNumber).toBe('+918888888888');
         expect(r.data.role).toBe('student');
       }
     });
 
     it('returns CONFLICT when user exists', async () => {
-      const r = await register({ email: 'exists@test.com', password: 'Strong1!x', displayName: 'X', role: 'student' });
+      const r = await register({ phone: '+919999999999', displayName: 'X', role: 'student' });
       expect(r.success).toBe(false);
-    });
-  });
-
-  describe('login', () => {
-    it('returns user on valid credentials', async () => {
-      global.fetch = mockFetch({
-        user: { id: 'user-1' },
-        access_token: 'token-123',
-        refresh_token: 'refresh-123',
-      }) as any;
-
-      const supabase = _mockSupabase.supabase;
-      (supabase.from('users').select('*').eq('id', 'user-1') as any).maybeSingle.mockResolvedValue({
-        data: { id: 'user-1', email: 'a@b.com', display_name: 'A', role: 'student', is_active: true },
-        error: null,
-      } as any);
-
-      const r = await login('a@b.com', 'Strong1!x');
-      expect(r.success).toBe(true);
-    });
-
-    it('returns failure when user disabled', async () => {
-      global.fetch = mockFetch({
-        user: { id: 'user-2' },
-        access_token: 'tok',
-      }) as any;
-
-      const supabase = _mockSupabase.supabase;
-      (supabase.from('users').select('*').eq('id', 'user-2') as any).maybeSingle.mockResolvedValue({
-        data: { id: 'user-2', email: 'b@c.com', is_active: false },
-        error: null,
-      } as any);
-
-      const r = await login('b@c.com', 'Strong1!x');
-      expect(r.success).toBe(false);
-    });
-  });
-
-  describe('forgotPassword', () => {
-    it('sends reset email', async () => {
-      global.fetch = mockFetch({}, true) as any;
-      const r = await forgotPassword('test@test.com');
-      expect(r.message).toContain('reset link');
-    });
-  });
-
-  describe('resetPassword', () => {
-    it('resets via admin API', async () => {
-      global.fetch = mockFetch({}, true) as any;
-      await expect(resetPassword('uid-1', 'NewStrong1!x')).resolves.not.toThrow();
-    });
-
-    it('throws on weak password', async () => {
-      await expect(resetPassword('uid-1', 'weak')).rejects.toThrow(ValidationError);
-    });
-  });
-
-  describe('changePassword', () => {
-    it('changes password', async () => {
-      const supabase = _mockSupabase.supabase;
-      (supabase.from('users').select('*').eq('id', 'uid-1') as any).maybeSingle.mockResolvedValue({
-        data: { id: 'uid-1', email: 'a@b.com', display_name: 'U', role: 'student', is_active: true },
-        error: null,
-      } as any);
-
-      await expect(changePassword('uid-1', 'OldPass1!', 'NewPass1!')).resolves.not.toThrow();
-    });
-
-    it('throws when user not found', async () => {
-      const supabase = _mockSupabase.supabase;
-      (supabase.from('users').select('*').eq('id', 'missing') as any).maybeSingle.mockResolvedValue({
-        data: null, error: null,
-      } as any);
-
-      await expect(changePassword('missing', 'X', 'Strong1!x')).rejects.toThrow(NotFoundError);
     });
   });
 
@@ -199,7 +122,7 @@ describe('auth.service', () => {
     });
 
     it('throws on unknown user', async () => {
-      await expect(verifyUserToken('nobody')).rejects.toThrow(UnauthorizedError);
+      await expect(verifyUserToken('nobody')).rejects.toThrow(NotFoundError);
     });
   });
 
