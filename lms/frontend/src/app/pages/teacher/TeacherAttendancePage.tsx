@@ -85,6 +85,7 @@ export default function TeacherAttendancePage() {
       setSelectedStudentIds([]);
       refetchTodayAttendance();
       refetchReport();
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
     },
     onError: (err: any) => toast.error(err.message || _('Failed to mark attendance')),
   });

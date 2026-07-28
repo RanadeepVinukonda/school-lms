@@ -3,6 +3,13 @@ import * as mindmapService from '../services/mindmap.service';
 import { sendSuccess, sendCreated, sendNoContent } from '../utils/response';
 import { ValidationError } from '../utils/errors';
 
+export async function generateMindMap(req: Request, res: Response) {
+  if (!req.user) throw new ValidationError('Authentication required');
+  const { text, title, language } = req.body;
+  const mindMap = await mindmapService.generateMindMapFromText(req.user.uid, text, title, language);
+  sendCreated(res, mindMap, 'Mind map generated');
+}
+
 export async function createMindMap(req: Request, res: Response) {
   if (!req.user) throw new ValidationError('Authentication required');
   const { title, description } = req.body;

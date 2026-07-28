@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { deleteDocument } from './document.service';
+import { chatCompletion } from './ai.service';
 
 export interface MindMapNode {
   id: string;
@@ -142,6 +143,69 @@ export async function shareMindMap(
   const updated = { ...existing, sharedWith: merged, updatedAt: new Date().toISOString() };
   await setDoc(mindmapId, updated as unknown as Record<string, unknown>);
   return updated;
+}
+
+export async function generateMindMapFromText(
+  userId: string,
+  text: string,
+  title: string,
+  language?: string,
+): Promise<MindMap> {
+  const promptText = language && language !== 'en'
+    ? `Extract key concepts and their relationships from this text. Return JSON strictly with format: { "nodes": [{ "id": "n1", "label": "concept name", "type": "concept" }, ...], "edges": [{ "id": "e1", "source": "n1", "target": "n2", "label": "relationship" }] }. Respond in ${language} language. Text: "${text.slice(0, 3000)}"`
+    : `Extract key concepts and their relationships from this text. Return JSON strictly with format: { "nodes": [{ "id": "n1", "label": "concept name", "type": "concept" }, ...], "edges": [{ "id": "e1", "source": "n1", "target": "n2", "label": "relationship" }] }. Text: "${text.slice(0, 3000)}"`;
+
+  const response = await chatCompletion({
+    messages: [
+      { role: 'system', content: 'You are a mindmap generator. Return ONLY valid JSON.' },
+      { role: 'user', content: promptText },
+    ],
+    temperature: 0.3,
+    max_tokens: 2000,
+    jsonMode: true,
+  });
+
+  let parsed: { nodes: any[]; edges: any[] };
+  try {
+    const cleaned = response.replace(/```json\s*|\s*```/g, '').trim();
+    parsed = JSON.parse(cleaned);
+  } catch {
+    parsed = { nodes: [{ id: 'n1', label: title, type: 'concept' as const }], edges: [] };
+  }
+
+  const nodes = (parsed.nodes || []).map((n: any, idx: number) => ({
+    id: n.id || `n${idx}`,
+    label: n.label || 'Concept',
+    type: 'concept' as const,
+    x: 200 + Math.floor(idx / 5) * 250,
+    y: 100 + (idx % 5) * 120,
+    color: undefined,
+    resourceId: undefined,
+    resourceType: undefined,
+  }));
+
+  const edges = (parsed.edges || []).map((e: any, idx: number) => ({
+    id: e.id || `e${idx}`,
+    source: e.source,
+    target: e.target,
+    label: e.label || '',
+  }));
+
+  const now = new Date().toISOString();
+  const mindMap: Omit<MindMap, 'id'> = {
+    title,
+    description: `AI-generated from text: ${text.slice(0, 100)}...`,
+    ownerId: userId,
+    nodes,
+    edges,
+    sharedWith: [],
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const id = uuidv4();
+  await setDoc(id, mindMap as unknown as Record<string, unknown>);
+  return { id, ...mindMap };
 }
 
 export async function pinResource(

@@ -3,6 +3,10 @@ import type { ApiResponse } from '@/types';
 import type { MindMap, MindMapNode, MindMapEdge } from '@/types/mindmap';
 
 export const mindmapService = {
+  async generate(text: string, title: string, language?: string) {
+    const res = await api.post<ApiResponse<MindMap>>('/mindmaps/generate', { text, title, language });
+    return res.data.data;
+  },
   async create(title: string, description?: string) {
     const res = await api.post<ApiResponse<MindMap>>('/mindmaps', { title, description });
     return res.data.data;

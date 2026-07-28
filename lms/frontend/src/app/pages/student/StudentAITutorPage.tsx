@@ -11,6 +11,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore, ChatMsg } from '@/store/chatStore';
+import { useLanguageStore } from '@/store/languageStore';
 
 const suggestedQuestions = [
   'Explain the concept of photosynthesis',
@@ -340,6 +341,8 @@ export default function StudentAITutorPage() {
     scrollToBottom();
   }, [messages, isLoading, scrollToBottom]);
 
+  const language = useLanguageStore((s) => s.language);
+
   const sendMessage = useCallback(async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
@@ -358,7 +361,7 @@ export default function StudentAITutorPage() {
     const history = messages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }));
 
     try {
-      const { reply } = await sendChatMessage(trimmed, history);
+      const { reply } = await sendChatMessage(trimmed, history, { language });
       addMessage(userId, {
         id: crypto.randomUUID(),
         role: 'assistant',
@@ -370,13 +373,18 @@ export default function StudentAITutorPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, messages, userId, addMessage]);
+  }, [isLoading, messages, userId, addMessage, language]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage(input);
     }
+  };
+
+  const langToSpeech = (l: string) => {
+    const map: Record<string, string> = { hi: 'hi-IN', te: 'te-IN', ta: 'ta-IN', kn: 'kn-IN' };
+    return map[l] || 'en-US';
   };
 
   const startListening = useCallback(() => {
@@ -387,7 +395,7 @@ export default function StudentAITutorPage() {
     }
 
     const recognition = new SR();
-    recognition.lang = 'en-US';
+    recognition.lang = langToSpeech(language);
     recognition.continuous = false;
     recognition.interimResults = false;
 
@@ -409,7 +417,7 @@ export default function StudentAITutorPage() {
     recognitionRef.current = recognition;
     recognition.start();
     setIsListening(true);
-  }, []);
+  }, [language, _]);
 
   const stopListening = useCallback(() => {
     recognitionRef.current?.stop();
@@ -420,7 +428,7 @@ export default function StudentAITutorPage() {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text.replace(/<[^>]*>/g, '').replace(/```[\s\S]*?```/g, '').replace(/\$\$[\s\S]*?\$\$/g, ''));
-      utterance.lang = 'en-US';
+      utterance.lang = langToSpeech(language);
       utterance.rate = 1;
       utterance.pitch = 1;
       utterance.onend = () => setSpeakingId(null);
@@ -428,7 +436,7 @@ export default function StudentAITutorPage() {
       setSpeakingId(messageId);
       window.speechSynthesis.speak(utterance);
     }
-  }, []);
+  }, [language]);
 
   const stopSpeaking = useCallback(() => {
     if ('speechSynthesis' in window) {

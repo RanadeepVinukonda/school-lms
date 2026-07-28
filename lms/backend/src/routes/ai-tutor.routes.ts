@@ -45,13 +45,13 @@ router.post('/chat', authenticate, validate(chatSchema), asyncHandler(async (req
   const lang = language || (session?.language as string) || 'en';
   const lastMessages = (session?.messages as Array<{ role: string; content: string }>) || [];
 
-  let systemPrompt = 'You are a helpful AI tutor for school students. Answer questions clearly and concisely.';
+  let systemPrompt = 'You are a helpful AI tutor for school students. When explaining how to solve a problem, always show MULTIPLE solution methods ranked from easiest to most advanced. For each method: start with a bold header "Method X: [name]" then explain step by step. End with which method is recommended for beginners. Answer clearly and concisely.';
   if (conceptId) {
     const ctx = await getConceptContext(conceptId);
     if (ctx) systemPrompt = ctx;
   }
   if (lang !== 'en') {
-    systemPrompt += `\n\nPlease respond in ${lang}.`;
+    systemPrompt += `\n\nIMPORTANT: You MUST respond entirely in ${lang} language. Use ${lang} vocabulary, grammar, and sentence structure throughout. Do NOT mix languages. If you don't know a technical term in ${lang}, explain it in ${lang} rather than switching to English.`;
   }
 
   const response = await chatCompletion({

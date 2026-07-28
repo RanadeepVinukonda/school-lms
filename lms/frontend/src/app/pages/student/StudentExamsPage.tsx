@@ -70,6 +70,7 @@ export default function StudentExamsPage() {
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-exams', user?.id, user?.classId],
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       if (!user?.classId) return { upcoming: [], past: [], subjects: [] };
       const [allSubjects, studentClass, corrections] = await Promise.all([

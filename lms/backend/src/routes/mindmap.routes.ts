@@ -13,6 +13,12 @@ const createMindMapSchema = z.object({
   edges: z.any().optional(),
 }).passthrough();
 
+const generateMindMapSchema = z.object({
+  text: z.string().min(10).max(10000),
+  title: z.string().min(1).max(200),
+  language: z.string().optional(),
+}).passthrough();
+
 const updateMindMapSchema = z.object({
   title: z.string().optional(),
   nodes: z.any().optional(),
@@ -29,6 +35,7 @@ const pinResourceSchema = z.object({
   resourceType: z.string().min(1),
 }).passthrough();
 
+router.post('/generate', authenticate, validate(generateMindMapSchema), asyncHandler(mindmapController.generateMindMap));
 router.post('/', authenticate, validate(createMindMapSchema), asyncHandler(mindmapController.createMindMap));
 router.get('/user', authenticate, asyncHandler(mindmapController.getUserMindMaps));
 router.get('/shared', authenticate, asyncHandler(mindmapController.getSharedMindMaps));

@@ -13,5 +13,6 @@ router.get('/children/:studentId/dashboard', asyncHandler(parentController.getCh
 router.get('/children/:studentId/progress', asyncHandler(parentController.getChildProgress));
 router.get('/children/:studentId/report', asyncHandler(parentController.getChildReport));
 router.get('/recommendations', asyncHandler(parentController.getRecommendations));
+router.get('/children/:studentId/yearly-report', asyncHandler(parentController.getYearlyReport));
 
 export default router;

@@ -90,6 +90,7 @@ const TeacherRubricPage = lazyRetry(() => import('@/app/pages/teacher/TeacherRub
 const TeacherNoticeBoardPage = lazyRetry(() => import('@/app/pages/teacher/TeacherNoticeBoardPage'));
 const TeacherTimetablePage = lazyRetry(() => import('@/app/pages/teacher/TeacherTimetablePage'));
 const TeacherOCRPage = lazyRetry(() => import('@/app/pages/teacher/TeacherOCRPage'));
+const TeacherMindMapPage = lazyRetry(() => import('@/app/pages/teacher/TeacherMindMapPage'));
 const TeacherReportPage = lazyRetry(() => import('@/app/pages/teacher/TeacherReportPage'));
 const TeacherUnifiedTestPage = lazyRetry(() => import('@/app/pages/teacher/TeacherUnifiedTestPage'));
 
@@ -218,6 +219,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.TEACHER_CODING_EDITOR(':id'), element: <Suspense fallback={<PageFallback />}><TeacherCodingEditorPage /></Suspense> },
       { path: ROUTES.TEACHER_NEP_QUESTIONS, element: <Suspense fallback={<PageFallback />}><TeacherNEPQuestionsPage /></Suspense> },
       { path: ROUTES.TEACHER_RUBRICS, element: <Suspense fallback={<PageFallback />}><TeacherRubricPage /></Suspense> },
+      { path: ROUTES.TEACHER_MINDMAP, element: <Suspense fallback={<PageFallback />}><TeacherMindMapPage /></Suspense> },
       { path: ROUTES.TEACHER_OCR, element: <Suspense fallback={<PageFallback />}><TeacherOCRPage /></Suspense> },
       { path: ROUTES.TEACHER_UNIFIED_TEST, element: <Suspense fallback={<PageFallback />}><TeacherUnifiedTestPage /></Suspense> },
       { path: ROUTES.TEACHER_NOTICEBOARD, element: <Suspense fallback={<PageFallback />}><TeacherNoticeBoardPage /></Suspense> },

@@ -37,6 +37,7 @@ export default function ParentDashboardPage() {
 
   const { isLoading, error, refetch, data } = useQuery({
     queryKey: ['parent-dashboard', user?.id],
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const children = await getChildren();
       return { children };

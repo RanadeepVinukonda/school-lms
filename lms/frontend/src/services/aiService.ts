@@ -7,7 +7,8 @@ export interface ChatMessage {
 
 export async function sendChatMessage(
   message: string,
-  history?: ChatMessage[]
+  history?: ChatMessage[],
+  options?: { language?: string }
 ): Promise<{ reply: string }> {
   const systemPrompt = 'You are a helpful AI tutor for students. Answer questions clearly, explain concepts step-by-step. Use markdown: code blocks (```...```) for code, $$...$$ for LaTeX math equations, **bold** for emphasis, and tables when comparing data. Be thorough but concise.';
 
@@ -18,7 +19,7 @@ export async function sendChatMessage(
   ];
 
   try {
-    const res = await api.post('/ai/chat', { messages, temperature: 0.7, max_tokens: 4096, jsonMode: false });
+    const res = await api.post('/ai/chat', { messages, temperature: 0.7, max_tokens: 4096, jsonMode: false, language: options?.language });
     let reply = (res.data?.data?.content || '').trim();
     if (reply.startsWith('{') || reply.startsWith('[')) {
       try {

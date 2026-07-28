@@ -171,6 +171,7 @@ export default function TeacherExamsPage() {
     },
     onSuccess: () => {
       toast.success(_('Exam created successfully'));
+      queryClient.invalidateQueries({ queryKey: ['exams'] });
       setTitle('');
       setDescription('');
       setTimeLimitMinutes(60);

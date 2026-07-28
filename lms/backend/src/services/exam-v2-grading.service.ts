@@ -4,6 +4,7 @@ import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { computeLevel, computeComplexityHandled } from './ai-level.service';
 import type { Difficulty, StudentLevel } from './ai-level.service';
+import { computeMastery } from './adaptive/mastery.service';
 import * as gamificationService from './gamification.service';
 import { nosqlGet, nosqlSet, nosqlUpdate, nosqlQuery } from './nosql.service';
 
@@ -247,6 +248,13 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
     await gamificationService.updateStreak(studentId);
   } catch (gamErr) {
     logger.error('Gamification reward failed', { studentId, examId: attemptData.examId, error: gamErr });
+  }
+
+  const accuracy2 = totalPoints > 0 ? score / totalPoints : 0;
+  for (const c of concepts) {
+    computeMastery(studentId, c.id, accuracy2).catch(err =>
+      logger.error('Exam V2 mastery update failed', { studentId, conceptId: c.id, error: err })
+    );
   }
 
   return { id: attemptId, ...attemptData, ...result, level: newLevel, newBadges: allNewBadges };

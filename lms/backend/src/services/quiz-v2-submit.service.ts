@@ -6,6 +6,7 @@ import { computeLevel, computeComplexityHandled } from './ai-level.service';
 import type { Difficulty } from './ai-level.service';
 import * as gamificationService from './gamification.service';
 import { computeMastery } from './adaptive/mastery.service';
+import { getRecommendations } from './adaptive/recommendation.service';
 import { createNotification, createBulkNotifications } from './notification.service';
 import { nosqlGet } from './nosql.service';
 import { TransactionManager } from '../database/transaction-manager';
@@ -273,6 +274,21 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     computeMastery(studentId, quizData.conceptId as string, accuracy).catch(err =>
       logger.error('Mastery update failed', { studentId, conceptId: quizData.conceptId, error: err })
     );
+  }
+
+  if (percentage < 70) {
+    getRecommendations(studentId, quizData.schoolId as string).catch(err =>
+      logger.warn('Failed to get recommendations', { studentId, error: err })
+    );
+    if (quizData.conceptId) {
+      createNotification({
+        userId: studentId,
+        type: 'warning',
+        title: 'Improve Your Score',
+        body: `You scored ${percentage}%. Practice the concept to improve your understanding.`,
+        data: { link: `/student/adaptive-quiz/${quizData.conceptId}`, quizId: attemptData.quizId },
+      }).catch(err => logger.warn('Failed to send improvement notification', { error: err }));
+    }
   }
 
   return { id: attemptId, ...attemptData, ...result, level: newLevel, newBadges: allNewBadges };

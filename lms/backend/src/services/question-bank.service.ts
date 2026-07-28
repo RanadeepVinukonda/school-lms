@@ -24,6 +24,7 @@ interface CreateQuestionData {
   bloomLevel?: string;
   hots?: boolean;
   topic?: string;
+  language?: string;
 }
 
 const QB = 'questionBank';
@@ -45,6 +46,7 @@ export async function createQuestion(data: CreateQuestionData & { createdBy: str
     bloomLevel: data.bloomLevel || null,
     hots: data.hots === true || false,
     topic: data.topic || null,
+    language: data.language || 'en',
     createdAt: now,
     updatedAt: now,
   };

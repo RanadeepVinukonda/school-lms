@@ -104,6 +104,26 @@ export default function StudentDashboardPage() {
     callback: () => { refetch(); },
   });
 
+  const { data: recommendations } = useQuery({
+    queryKey: ['adaptive-recommendations', studentId],
+    enabled: !!studentId,
+    queryFn: async () => {
+      const res = await api.get(`/adaptive/recommendations/${studentId}`);
+      return res.data.data as Array<{ conceptId: string; conceptTitle: string; masteryScore: number; priorityScore: number }>;
+    },
+    refetchOnWindowFocus: true,
+  });
+
+  const { data: overdueConcepts } = useQuery({
+    queryKey: ['adaptive-overdue', studentId],
+    enabled: !!studentId,
+    queryFn: async () => {
+      const res = await api.get(`/adaptive/overdue/${studentId}`);
+      return res.data.data as Array<{ conceptId: string; conceptTitle: string; daysSinceReview: number; masteryScore: number }>;
+    },
+    refetchOnWindowFocus: true,
+  });
+
   useRealtimeInvalidation([
     { table: 'grades', queryKey: ['student-dashboard', studentId ?? ''] },
     { table: 'corrections', queryKey: ['student-dashboard', studentId ?? ''] },
@@ -205,6 +225,56 @@ export default function StudentDashboardPage() {
                   ))}
                 </motion.div>
               </section>
+
+              {(recommendations && recommendations.length > 0) || (overdueConcepts && overdueConcepts.length > 0) ? (
+                <section>
+                  <SectionTitle label={_('Improvement')} title={_('Recommended for You')} />
+                  <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }} className="space-y-3">
+                    {recommendations?.slice(0, 3).map((rec) => (
+                      <motion.div key={rec.conceptId} variants={cardStackReveal} custom={0}>
+                        <Card className="border-warning/30 bg-warning/5">
+                          <CardContent className="p-4 flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl bg-warning-container flex items-center justify-center shrink-0">
+                              <Icon name="psychology" size={20} className="text-warning" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-title-sm font-semibold truncate">{rec.conceptTitle || _('Concept')}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <Badge variant="warning" className="text-[10px]">{Math.round(rec.masteryScore * 100)}% {_('mastery')}</Badge>
+                              </div>
+                            </div>
+                            <Button size="sm" variant="outline" asChild>
+                              <Link to={`/student/adaptive-quiz/${rec.conceptId}`}>
+                                <Icon name="play_arrow" size={14} className="mr-1" />{_('Practice')}
+                              </Link>
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    ))}
+                    {overdueConcepts?.slice(0, 2).map((oc) => (
+                      <motion.div key={oc.conceptId} variants={cardStackReveal} custom={0}>
+                        <Card className="border-error/30 bg-error/5">
+                          <CardContent className="p-4 flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl bg-error-container flex items-center justify-center shrink-0">
+                              <Icon name="schedule" size={20} className="text-error" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-title-sm font-semibold truncate">{oc.conceptTitle || _('Concept')}</p>
+                              <p className="text-label-sm text-muted-foreground">{oc.daysSinceReview} {_('days since review')}</p>
+                            </div>
+                            <Button size="sm" variant="outline" asChild>
+                              <Link to={`/student/adaptive-quiz/${oc.conceptId}`}>
+                                <Icon name="refresh" size={14} className="mr-1" />{_('Review')}
+                              </Link>
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                </section>
+              ) : null}
 
               <section>
                 <SectionTitle label={_('Results')} title={_('Recent assessment scores')} />

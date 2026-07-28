@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ForbiddenError, ConflictError, ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { createBulkNotifications, createNotification } from './notification.service';
+import { computeMastery } from './adaptive/mastery.service';
 
 export async function scheduleExam(examId: string, data: {
   startDate: string;
@@ -268,6 +269,30 @@ export async function gradeExamAttempt(attemptId: string, graderId: string, data
   }
 
   logger.info('Exam attempt graded', { attemptId, graderId });
+
+  computeMastery(attempt.student_id as string, attempt.exam_id as string, (data.score / (attempt.total_points || 1))).catch(err =>
+    logger.error('Mastery update failed after exam grading', { studentId: attempt.student_id, examId: attempt.exam_id, error: err })
+  );
+
+  try {
+    const supabase2 = getSupabaseAdmin()!;
+    const { data: examData } = await supabase2.from('exams').select('title').eq('id', attempt.exam_id).maybeSingle();
+    const { data: studentData } = await supabase2.from('users').select('display_name').eq('id', attempt.student_id).maybeSingle();
+    const studentName = (studentData as any)?.display_name || 'Student';
+    const examTitle = (examData as any)?.title || 'Exam';
+    const { data: parentRows } = await supabase2.from('users').select('id').contains('data', { children_ids: [attempt.student_id] }).limit(10);
+    if (parentRows && parentRows.length > 0) {
+      await createBulkNotifications(parentRows.map((p: any) => ({
+        userId: p.id,
+        type: 'grade' as const,
+        title: 'Exam Graded',
+        body: `${studentName} scored ${data.score} points on ${examTitle}`,
+        data: { studentId: attempt.student_id, examId: attempt.exam_id },
+      })));
+    }
+  } catch (err) {
+    logger.warn('Failed to send parent notification', { error: err });
+  }
 
   const { data: updated, error: readError } = await supabase
     .from('exam_attempts')

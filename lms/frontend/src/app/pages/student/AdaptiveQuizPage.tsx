@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
 import { motion } from 'framer-motion';
@@ -14,6 +14,7 @@ import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import { getTextbook, getChaptersForTextbook, getConceptsForChapter } from '@/services/textbookService';
 import type { GeneratedQuestion } from '@/types/textbook';
+import api from '@/services/api';
 
 const DIFFICULTY_MAP: Record<string, 'easy' | 'medium' | 'hard'> = {
   beginner: 'easy',
@@ -152,6 +153,12 @@ export default function AdaptiveQuizPage() {
     if (finalScore >= 50) return 'intermediate';
     return 'beginner';
   }, [finalScore]);
+
+  useEffect(() => {
+    if (phase === 'result' && conceptId) {
+      api.post('/adaptive/mastery', { conceptId, accuracy: finalScore / 100 }).catch(() => {});
+    }
+  }, [phase, conceptId, finalScore]);
 
   const currentQuestion = currentBatch[currentIndex];
 

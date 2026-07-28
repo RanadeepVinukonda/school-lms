@@ -54,6 +54,7 @@ export const ROUTES = {
   TEACHER_TEST_SCHEDULE: '/teacher/test-schedule',
   TEACHER_PYQ: '/teacher/pyq',
   TEACHER_ATTENDANCE: '/teacher/attendance',
+  TEACHER_MINDMAP: '/teacher/mindmap',
   TEACHER_OCR: '/teacher/ocr',
   TEACHER_UNIFIED_TEST: '/teacher/unified-test',
 

@@ -105,6 +105,24 @@ export async function updateGrade(gradeId: string, data: {
       error: err instanceof Error ? err.message : String(err),
     });
   }
+
+  try {
+    const supabase = getSupabaseAdmin();
+    const studentId = existing.studentId || (existing as any).student_id;
+    const { data: parentRows } = await supabase.from('users').select('id').contains('data', { children_ids: [studentId] }).limit(10);
+    if (parentRows && parentRows.length > 0) {
+      await createBulkNotifications(parentRows.map((p: any) => ({
+        userId: p.id,
+        type: 'grade' as const,
+        title: 'Grade Updated',
+        body: `Your child's grade has been updated: ${data.score}/${data.totalPoints} (${percentage}%)`,
+        data: { gradeId, courseId: existing.courseId || (existing as any).course_id },
+      })));
+    }
+  } catch (err) {
+    logger.warn('Failed to send parent grade notification', { gradeId, error: err });
+  }
+
   logger.info('Grade updated', { gradeId, gradedBy: data.gradedBy });
   return { ...toGradeResponse(existing), score: data.score, totalPoints: data.totalPoints, letterGrade, percentage };
 }
@@ -151,6 +169,24 @@ export async function bulkUpdate(grades: Array<{
       data: { courseId, link: `/student/subjects/${courseId}` },
     }));
     if (notifications.length > 0) await createBulkNotifications(notifications);
+
+    const supabase2 = getSupabaseAdmin();
+    const parentNotifs: Array<{ userId: string; type: 'grade'; title: string; body: string; data: Record<string, unknown> }> = [];
+    for (const r of results) {
+      const { data: parentRows } = await supabase2.from('users').select('id').contains('data', { children_ids: [r.studentId] }).limit(10);
+      if (parentRows) {
+        for (const p of parentRows) {
+          parentNotifs.push({
+            userId: p.id,
+            type: 'grade',
+            title: 'Grades Published',
+            body: `Your child's grades have been published for ${courseId}`,
+            data: { courseId, studentId: r.studentId },
+          });
+        }
+      }
+    }
+    if (parentNotifs.length > 0) await createBulkNotifications(parentNotifs);
   } catch (err) {
     logger.warn('Failed to send bulk grade notifications', {
       courseId, count: grades.length,

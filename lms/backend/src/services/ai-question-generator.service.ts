@@ -63,15 +63,16 @@ export async function generateQuestionsForConcept(params: {
   types: string[];
   count: number;
   difficulty?: 'easy' | 'medium' | 'hard' | 'mixed';
+  language?: string;
 }): Promise<GeneratedQuestion[]> {
-  const { conceptId, conceptName, types, difficulty } = params;
+  const { conceptId, conceptName, types, difficulty, language } = params;
   const allQuestions: GeneratedQuestion[] = [];
   let remaining = params.count;
   const maxRetries = 2;
 
   for (let attempt = 0; attempt <= maxRetries && remaining > 0; attempt++) {
     try {
-      const prompt = buildPrompt(conceptName, types, remaining, difficulty, attempt > 0);
+      const prompt = buildPrompt(conceptName, types, remaining, difficulty, attempt > 0, language);
       const raw = await chatCompletion({
         model: env.AI_MODEL,
         messages: [
@@ -132,6 +133,7 @@ export async function generateQuestionsFromTextbook(params: {
   conceptId?: string;
   types: string[];
   totalCount: number;
+  language?: string;
 }): Promise<GeneratedQuestion[]> {
   const supabase = getSupabaseAdmin();
   if (!supabase) return [];
@@ -158,6 +160,7 @@ export async function generateQuestionsFromTextbook(params: {
       conceptName: concept.title || concept.data?.title || 'Untitled Concept',
       types: params.types,
       count: Math.min(perConcept, params.totalCount - allQuestions.length),
+      language: params.language,
     });
     allQuestions.push(...questions);
   }
@@ -250,6 +253,7 @@ function buildPrompt(
   count: number,
   difficulty?: string,
   isRetry?: boolean,
+  language?: string,
 ): string {
   const typeDescriptions = resolveTypes(types)
     .map((t) => `- ${t}: ${QUESTION_TYPE_INSTRUCTIONS[t] || t}`)
@@ -296,5 +300,5 @@ Return ONLY valid JSON in this exact format:
   ]
 }
 
-Generate exactly ${count} questions. Return ONLY the JSON, no other text.${isRetry ? '\n\nIMPORTANT: The previous generation did NOT produce enough valid questions. You MUST generate EXACTLY the requested number this time. Do not skip any question. Every question must be complete and valid.' : ''}`;
+Generate exactly ${count} questions. Return ONLY the JSON, no other text.${isRetry ? '\n\nIMPORTANT: The previous generation did NOT produce enough valid questions. You MUST generate EXACTLY the requested number this time. Do not skip any question. Every question must be complete and valid.' : ''}${language && language !== 'en' ? `\n\nCRITICAL: Generate ALL questions in ${language} language. Questions, options, answers, and explanations must all be in ${language}. Do NOT use English for any part of the output.` : ''}`;
 }
