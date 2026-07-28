@@ -146,10 +146,10 @@ export async function recordPayment(data: {
     }
 
     const { rows: result } = await client.query(
-      `INSERT INTO fee_payments (student_id, fee_structure_id, amount, school_id, payment_method, transaction_id, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO fee_payments (student_id, fee_structure_id, amount, school_id)
+       VALUES ($1, $2, $3, $4)
        RETURNING *`,
-      [data.studentId, data.feeScheduleId, data.amountPaid, data.schoolId || null, data.paymentMethod || null, data.transactionId || null, data.status || 'completed'],
+      [data.studentId, data.feeScheduleId, data.amountPaid, data.schoolId || null],
     );
 
     await client.query('COMMIT');
