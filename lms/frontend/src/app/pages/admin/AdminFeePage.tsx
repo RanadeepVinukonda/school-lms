@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input';
 import { Icon } from '@/components/ui/Icon';
 import { AcademicYearSelect } from '@/components/ui/academic-year-select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { useActiveAcademicYear } from '@/context/ActiveAcademicYearContext';
 import { feeService } from '@/services/feeService';
 import { getAllClasses, getAllUsers } from '@/services/dataService';
 
@@ -48,7 +47,6 @@ function OutstandingRow({ item }: { item: any }) {
 export default function AdminFeePage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('schedules');
-  const { activeYear } = useActiveAcademicYear();
 
   const [newSchedule, setNewSchedule] = useState({ name: '', amount: 0, dueDate: '', classId: '', academicYear: '', description: '' });
   const [paymentData, setPaymentData] = useState({ studentId: '', feeScheduleId: '', amountPaid: 0, paymentMethod: 'cash', transactionId: '' });
@@ -65,8 +63,8 @@ export default function AdminFeePage() {
   }, [students, paymentStudentLookup]);
 
   const { data: allSchedulesData, isLoading: schedLoading, isError: schedError, refetch: refetchSched } = useQuery({
-    queryKey: ['fee-schedules', activeYear],
-    queryFn: () => feeService.listFeeSchedules(undefined, activeYear).then((r) => r.data),
+    queryKey: ['fee-schedules'],
+    queryFn: () => feeService.listFeeSchedules().then((r) => r.data),
   });
 
   const selectedStudent = useMemo(() => {

@@ -25,7 +25,7 @@ export async function downloadReceipt(req: Request, res: Response) {
 
 export async function listFeeSchedules(req: Request, res: Response) {
   const user = requireUser(req);
-  const academicYear = (req.query.academicYear as string) || req.activeAcademicYear;
+  const academicYear = req.query.academicYear as string | undefined;
   const result = await feeService.listFeeSchedules(user.school_id, academicYear, req.query.classId as string);
 
   sendSuccess(res, result);
