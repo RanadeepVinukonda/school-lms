@@ -2,7 +2,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from './supabase';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
-import { TransactionManager } from '../database/transaction-manager';
 import { nosqlSet, ensureProfile } from './gamification-helpers.service';
 import { awardXp, awardCoins } from './gamification.service';
 
@@ -66,27 +65,14 @@ export async function getDailyChallenges(userId: string) {
     createdAt: new Date().toISOString(),
   }));
 
-  try {
-    const tm = new TransactionManager();
-    await tm.runTransaction(async (tx) => {
-      for (const c of challenges) {
-        tx.set('gamificationDailyChallenges', c.id, c);
-      }
-    });
-  } catch (txError) {
-    logger.warn('TransactionManager unavailable for daily challenges, using fallback inserts', {
-      error: txError instanceof Error ? txError.message : String(txError),
-    });
-    const now = new Date().toISOString();
-    for (const c of challenges) {
-      const { error } = await supabase.from('firestore_docs').upsert(
-        { collection: 'gamificationDailyChallenges', doc_id: c.id, data: c, updated_at: now },
-        { onConflict: 'collection,doc_id' }
-      );
-      if (error) {
-        logger.error('Failed to write daily challenge nosql_doc', { challengeId: c.id, error: error.message });
-        throw error;
-      }
+  const now = new Date().toISOString();
+  for (const c of challenges) {
+    const { error } = await supabase.from('firestore_docs').upsert(
+      { collection: 'gamificationDailyChallenges', doc_id: c.id, data: c, updated_at: now },
+      { onConflict: 'collection,doc_id' }
+    );
+    if (error) {
+      logger.error('Failed to write daily challenge', { challengeId: c.id, error: error.message });
     }
   }
 
@@ -147,28 +133,14 @@ async function getOrCreatePeriodChallenges(
     createdAt: new Date().toISOString(),
   }));
 
-  try {
-    const tm = new TransactionManager();
-    await tm.runTransaction(async (tx) => {
-      for (const c of challenges) {
-        tx.set(collectionName, c.id, c);
-      }
-    });
-  } catch (txError) {
-    logger.warn('TransactionManager unavailable for period challenges, using fallback inserts', {
-      collection: collectionName,
-      error: txError instanceof Error ? txError.message : String(txError),
-    });
-    const now = new Date().toISOString();
-    for (const c of challenges) {
-      const { error } = await supabase.from('firestore_docs').upsert(
-        { collection: collectionName, doc_id: c.id, data: c, updated_at: now },
-        { onConflict: 'collection,doc_id' }
-      );
-      if (error) {
-        logger.error('Failed to write period challenge nosql_doc', { challengeId: c.id, collection: collectionName, error: error.message });
-        throw error;
-      }
+  const now = new Date().toISOString();
+  for (const c of challenges) {
+    const { error } = await supabase.from('firestore_docs').upsert(
+      { collection: collectionName, doc_id: c.id, data: c, updated_at: now },
+      { onConflict: 'collection,doc_id' }
+    );
+    if (error) {
+      logger.error('Failed to write period challenge', { challengeId: c.id, collection: collectionName, error: error.message });
     }
   }
 
