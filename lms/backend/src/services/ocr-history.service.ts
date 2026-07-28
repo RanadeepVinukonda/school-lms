@@ -1,7 +1,8 @@
 import { logger } from '../utils/logger';
+import { AppError } from '../utils/errors';
 import { textbookChatCompletion } from './ai.service';
 import type { GeneratedQuestion } from './ocr.service';
-import { getConnectionPool } from '../database/connection-manager';
+import { getSupabaseAdmin } from './supabase';
 
 export interface GeneratedAssignment {
   id: string;
@@ -191,30 +192,31 @@ Example:
 }
 
 export async function getChaptersByTextbook(textbookId: string) {
-  const pool = getConnectionPool();
-  const { rows } = await pool.query(
-    'SELECT id, title FROM chapters WHERE textbook_id = $1',
-    [textbookId],
-  );
-  return rows as Array<{ id: string; title: string }>;
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from('chapters')
+    .select('id, title')
+    .eq('textbook_id', textbookId);
+  if (error) throw new AppError(500, `Failed to fetch chapters: ${error.message}`);
+  return (data || []) as Array<{ id: string; title: string }>;
 }
 
 export async function getConceptsByChapterIds(chapterIds: string[]) {
   if (chapterIds.length === 0) return [];
-  const pool = getConnectionPool();
-  const { rows } = await pool.query(
-    'SELECT id, chapter_id, title, summary FROM concepts WHERE chapter_id = ANY($1)',
-    [chapterIds],
-  );
-  return rows as Array<{ id: string; chapter_id: string; title: string; summary: string }>;
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from('concepts')
+    .select('id, chapter_id, title, summary')
+    .in('chapter_id', chapterIds);
+  if (error) throw new AppError(500, `Failed to fetch concepts: ${error.message}`);
+  return (data || []) as Array<{ id: string; chapter_id: string; title: string; summary: string }>;
 }
 
 export async function upsertFirestoreDoc(collection: string, docId: string, data: Record<string, unknown>) {
-  const pool = getConnectionPool();
-  await pool.query(
-    `INSERT INTO firestore_docs (collection, doc_id, data, created_at, updated_at)
-     VALUES ($1, $2, $3, NOW(), NOW())
-     ON CONFLICT (collection, doc_id) DO UPDATE SET data = $3, updated_at = NOW()`,
-    [collection, docId, JSON.stringify(data)],
-  );
+  const supabase = getSupabaseAdmin();
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from('firestore_docs')
+    .upsert({ collection, doc_id: docId, data, updated_at: now }, { onConflict: 'collection,doc_id' });
+  if (error) throw new AppError(500, `Failed to upsert Firestore doc: ${error.message}`);
 }
