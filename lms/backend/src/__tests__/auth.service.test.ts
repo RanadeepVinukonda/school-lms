@@ -60,9 +60,12 @@ describe('auth.service', () => {
     const created = createMockSupabase();
     _mockSupabase = created;
     (_mockSupabase.supabase as any).auth.admin = {
-      createSession: jest.fn<any>().mockResolvedValue({ data: { session: { access_token: 'tok', refresh_token: 'rtok' } }, error: null }),
       getUserById: jest.fn<any>().mockResolvedValue({ data: { user: { id: 'uid' } }, error: null }),
     };
+    (_mockSupabase.supabase as any).auth.signInWithPassword = jest.fn<any>().mockResolvedValue({
+      data: { session: { access_token: 'tok', refresh_token: 'rtok' } },
+      error: null,
+    });
     (getSupabaseAdmin as jest.Mock).mockImplementation(() => _mockSupabase.supabase);
   });
 

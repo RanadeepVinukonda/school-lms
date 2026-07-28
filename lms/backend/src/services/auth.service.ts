@@ -130,15 +130,26 @@ async function storeOtp(phone: string, code: string): Promise<void> {
   }
 }
 
-async function ensureAuthUser(phone: string, uid: string, role: string): Promise<string> {
+function derivePassword(phone: string): string {
+  return `lms_${phone.replace(/[^0-9]/g, '').slice(-6)}_pw`;
+}
+
+async function ensureAuthUser(phone: string, uid: string, role: string): Promise<{ uid: string; email: string }> {
   const supabase = getSupabaseAdmin();
   const email = `ph_${phone.replace(/[^0-9]/g, '')}@school.edu`;
+  const pwd = derivePassword(phone);
 
-  const { data: authUser } = await supabase.auth.admin.getUserById(uid).catch(() => ({ data: null }));
-  if (authUser?.user) return uid;
+  let authUser: any;
+  try {
+    const result = await supabase.auth.admin.getUserById(uid);
+    authUser = result.data;
+  } catch { authUser = null; }
+  if (authUser?.user) {
+    try { await supabase.auth.admin.updateUserById(uid, { password: pwd }); } catch {}
+    return { uid, email };
+  }
 
   const newId = uid || crypto.randomUUID();
-  const pwd = crypto.randomUUID();
   const { data: created, error: createErr } = await supabase.auth.admin.createUser({
     email,
     password: pwd,
@@ -148,11 +159,10 @@ async function ensureAuthUser(phone: string, uid: string, role: string): Promise
   if (createErr) throw new Error(`Failed to create auth user: ${createErr.message}`);
 
   const authUid = created.user?.id || newId;
-  const placeholderEmail = `ph_${phone.replace(/[^0-9]/g, '')}@school.edu`;
 
   const { error: upsertErr } = await supabase.from('users').upsert({
     id: authUid,
-    email: placeholderEmail,
+    email,
     display_name: phone,
     role: role || 'student',
     phone_number: phone,
@@ -165,32 +175,14 @@ async function ensureAuthUser(phone: string, uid: string, role: string): Promise
   }, { onConflict: 'id' });
   if (upsertErr) throw new Error(`Failed to upsert user: ${upsertErr.message}`);
 
-  return authUid;
+  return { uid: authUid, email };
 }
 
-async function createSessionToken(uid: string): Promise<{ access_token: string; refresh_token: string } | null> {
+async function createSessionToken(uid: string, email: string, phone: string): Promise<{ access_token: string; refresh_token: string } | null> {
   const supabase = getSupabaseAdmin();
-  const { data: { session }, error } = await (supabase.auth.admin as any).createSession({ user_id: uid });
-  if (error || !session) {
-    // Fallback: try REST API
-    const res = await fetch(
-      `${env.SUPABASE_URL}/auth/v1/admin/users/${uid}/sessions`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-        },
-      }
-    );
-    if (!res.ok) return null;
-    const body = await res.json();
-    return {
-      access_token: body.access_token || body.accessToken,
-      refresh_token: body.refresh_token || body.refreshToken,
-    };
-  }
+  const pwd = derivePassword(phone);
+  const { data: { session }, error } = await supabase.auth.signInWithPassword({ email, password: pwd });
+  if (error || !session) return null;
   return { access_token: session.access_token, refresh_token: session.refresh_token };
 }
 
@@ -244,15 +236,14 @@ export async function verifyOtp(phone: string, token: string): Promise<ServiceRe
     }
 
     // Ensure auth user exists in Supabase Auth
-    const authUid = await ensureAuthUser(phone, uid, role);
+    const { uid: authUid, email: authEmail } = await ensureAuthUser(phone, uid, role);
     uid = authUid;
 
     // Ensure users table record exists
     if (!existingUser) {
-      const placeholderEmail = `ph_${phone.replace(/[^0-9]/g, '')}@school.edu`;
       const { error: insertErr } = await supabase.from('users').insert({
         id: uid,
-        email: placeholderEmail,
+        email: authEmail,
         display_name: phone,
         role,
         phone_number: phone,
@@ -273,7 +264,7 @@ export async function verifyOtp(phone: string, token: string): Promise<ServiceRe
     }
 
     // Create session token
-    const session = await createSessionToken(uid);
+    const session = await createSessionToken(uid, authEmail, phone);
     if (!session) return failure('Failed to create session', 'SESSION_ERROR');
 
     const { data: userRow } = await supabase.from('users').select('*').eq('id', uid).single();
