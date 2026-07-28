@@ -284,7 +284,7 @@ export default function TeacherAttendancePage() {
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-border/40 text-title-sm">
-                              {(Object.entries(reportData.summary) as [string, any][]).sort(([, a], [, b]) => (a.rollNo || '').localeCompare(b.rollNo || '')).map(([studentId, data], idx: number) => {
+                              {(Object.entries(reportData.summary) as [string, any][]).sort(([, a], [, b]) => String(a.rollNo ?? '').localeCompare(String(b.rollNo ?? ''))).map(([studentId, data], idx: number) => {
                                 const pct = data.percentage ?? (data.total > 0 ? Math.round((data.present / data.total) * 100) : 0);
                                 return (
                                   <tr key={studentId} className="hover:bg-muted/20">
