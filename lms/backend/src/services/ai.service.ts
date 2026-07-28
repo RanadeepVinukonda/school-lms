@@ -20,7 +20,7 @@ export interface ChatRequest {
   jsonMode?: boolean;
 }
 
-export { textbookChatCompletion } from './ai-providers/openrouter.provider';
+import { textbookChatCompletion as openrouterTextbookChatCompletion } from './ai-providers/openrouter.provider';
 
 function toGeminiModel(model: string): string {
   const m = model.trim().replace(/^google\//, '');
@@ -56,5 +56,25 @@ export async function chatCompletion(params: ChatRequest): Promise<string> {
       return fallback;
     }
     throw err;
+  }
+}
+
+export async function textbookChatCompletion(params: ChatRequest): Promise<string> {
+  const { model = env.AI_MODEL, messages, temperature = 0.7, max_tokens = 2048, jsonMode = false } = params;
+
+  if (!env.GEMINI_API_KEY) {
+    throw new AppError(502, 'No AI provider configured. Set GEMINI_API_KEY.');
+  }
+
+  try {
+    const result = await geminiChatCompletion(toGeminiModel(model), messages, temperature, max_tokens, jsonMode);
+    return result;
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('Circuit breaker') && err.message.includes('OPEN')) {
+      logger.warn('Textbook circuit breaker OPEN, falling back to OpenRouter');
+    } else {
+      logger.warn('Gemini textbook failed, falling back to OpenRouter', { error: err instanceof Error ? err.message : String(err) });
+    }
+    return openrouterTextbookChatCompletion(params);
   }
 }
