@@ -1,6 +1,5 @@
 import { Pool } from 'pg';
 import { EventEmitter } from 'events';
-import { logger } from '../utils/logger';
 
 let _pool: Pool | null = null;
 

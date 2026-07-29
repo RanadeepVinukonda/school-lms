@@ -166,15 +166,15 @@ export default function AdminClassesPage() {
         code: finalCode,
         grade: g,
         section: classSection.trim() || '',
-        roomNumber: classRoomNumber.trim() || '',
-        academicYear: activeYear,
-        teacherIds: [],
-        subjectIds: [],
-        studentCount: 0,
-        teacherCount: 0,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        room_number: classRoomNumber.trim() || '',
+        academic_year: activeYear,
+        teacher_ids: [],
+        subject_ids: [],
+        student_count: 0,
+        teacher_count: 0,
+        status: 'active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       }).select('id').single();
       logAudit({
         action: 'class.create',
@@ -226,8 +226,8 @@ export default function AdminClassesPage() {
         code: editClassForm.code.toUpperCase(),
         grade: editClassForm.grade || null,
         section: editClassForm.section || null,
-        roomNumber: editClassForm.roomNumber || null,
-        updatedAt: new Date().toISOString(),
+        room_number: editClassForm.roomNumber || null,
+        updated_at: new Date().toISOString(),
       }).eq('id', editClassTarget.id);
       logAudit({
         action: 'class.update',
@@ -265,7 +265,7 @@ export default function AdminClassesPage() {
     if (!classDeleteTarget) return;
     setClassDeleteLoading(true);
     try {
-      await supabase.from('classes').update({ isActive: false, updatedAt: new Date().toISOString() }).eq('id', classDeleteTarget.id);
+      await supabase.from('classes').update({ status: 'inactive', updated_at: new Date().toISOString() }).eq('id', classDeleteTarget.id);
       logAudit({
         action: 'class.archive',
         targetId: classDeleteTarget.id,
@@ -331,7 +331,7 @@ export default function AdminClassesPage() {
         supabase.from('class_subjects').delete().eq('class_id', classId),
         supabase.from('teacher_class_subject_assignments').delete().eq('class_id', classId),
         supabase.from('timetable').delete().eq('class_id', classId),
-        supabase.from('subjects').delete().eq('classId', classId),
+        supabase.from('subjects').delete().eq('class_id', classId),
       ]);
 
       // 5. Finally delete the class record
@@ -389,10 +389,10 @@ export default function AdminClassesPage() {
         icon: subjectForm.icon,
         color: 'hsl(var(--accent-default))',
         category: subjectForm.category,
-        classId: addSubjectClassId,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        class_id: addSubjectClassId,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       }).select('id').single();
 
       logAudit({
