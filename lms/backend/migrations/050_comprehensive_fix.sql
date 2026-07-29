@@ -387,7 +387,15 @@ DO $$ BEGIN
 END $$;
 
 -- ══════════════════════════════════════════════════════════════════════════════
--- PART 3: Fix role constraint and create admin user
+-- PART 3: Ensure default school exists (for tenant context)
+-- ══════════════════════════════════════════════════════════════════════════════
+
+INSERT INTO schools (id, name, subdomain, plan)
+VALUES ('00000000-0000-0000-0000-000000000001', 'Default School', 'default', 'enterprise')
+ON CONFLICT (id) DO NOTHING;
+
+-- ══════════════════════════════════════════════════════════════════════════════
+-- PART 4: Fix role constraint and create admin user
 -- ══════════════════════════════════════════════════════════════════════════════
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -400,6 +408,7 @@ DO $$
 DECLARE
   _uid UUID := gen_random_uuid();
   _now TIMESTAMPTZ := now();
+  _school_id CONSTANT UUID := '00000000-0000-0000-0000-000000000001';
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = 'admin@school.edu') THEN
     INSERT INTO auth.users (
@@ -419,10 +428,10 @@ BEGIN
     );
 
     INSERT INTO users (
-      id, email, display_name, role, is_active,
+      id, email, display_name, role, is_active, school_id,
       phone_number, photo_url, class_ids, created_at, updated_at
     ) VALUES (
-      _uid, 'admin@school.edu', 'Admin', 'super_admin', true,
+      _uid, 'admin@school.edu', 'Admin', 'super_admin', true, _school_id,
       '', '', '{}', _now, _now
     );
     RAISE NOTICE 'Admin user created: admin@school.edu / admin123';
@@ -431,14 +440,6 @@ BEGIN
   END IF;
 END;
 $$;
-
--- ══════════════════════════════════════════════════════════════════════════════
--- PART 4: Ensure default school exists (for tenant context)
--- ══════════════════════════════════════════════════════════════════════════════
-
-INSERT INTO schools (id, name, subdomain, plan)
-VALUES ('00000000-0000-0000-0000-000000000001', 'Default School', 'default', 'enterprise')
-ON CONFLICT (id) DO NOTHING;
 
 -- ══════════════════════════════════════════════════════════════════════════════
 -- PART 5: Track migration
