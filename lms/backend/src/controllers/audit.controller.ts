@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import * as auditService from '../services/audit.service';
-import { sendSuccess, sendPaginated, buildPaginationMeta } from '../utils/response';
+import { sendSuccess, sendError, sendPaginated, buildPaginationMeta } from '../utils/response';
 import type { ReqWithUser, QueryParams } from '../types/common';
 import type { AuditAction } from '../services/audit.service';
 
@@ -13,7 +13,7 @@ export async function listAuditLogs(req: Request, res: Response) {
 export async function recoverEntity(req: Request, res: Response) {
   const user = (req as ReqWithUser).user;
   if (!user || user.role !== 'admin') {
-    res.status(403).json({ success: false, error: { message: 'Only admins can recover entities' } });
+    sendError(res, 'Only admins can recover entities', 403);
     return;
   }
   const result = await auditService.recoverEntity(req.params.logId);

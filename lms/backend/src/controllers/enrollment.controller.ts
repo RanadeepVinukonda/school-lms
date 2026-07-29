@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import * as enrollmentService from '../services/enrollment-v2.service';
+import { sendSuccess, sendError } from '../utils/response';
 
 /**
  * Get current student's enrollments and a consolidated list of concept release statuses
@@ -7,7 +8,7 @@ import * as enrollmentService from '../services/enrollment-v2.service';
  */
 export async function getMyEnrollments(req: Request, res: Response) {
   if (!req.user) {
-    res.status(401).json({ success: false, error: { message: 'Unauthorized' } });
+    sendError(res, 'Unauthorized', 401);
     return;
   }
 
@@ -23,11 +24,5 @@ export async function getMyEnrollments(req: Request, res: Response) {
     ? await enrollmentService.getConceptReleases(textbooks.map((t: Record<string, unknown>) => t.id as string))
     : [];
 
-  res.json({
-    success: true,
-    data: {
-      enrollments,
-      conceptReleases,
-    }
-  });
+  sendSuccess(res, { enrollments, conceptReleases });
 }

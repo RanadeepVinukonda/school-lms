@@ -3,7 +3,7 @@ import * as parentService from '../services/parent.service';
 import * as analyticsService from '../services/analytics.service';
 import * as gradeService from '../services/grade.service';
 import { chatCompletion } from '../services/ai.service';
-import { sendSuccess } from '../utils/response';
+import { sendSuccess, sendError } from '../utils/response';
 import { ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { env } from '../config/env';
@@ -29,7 +29,7 @@ export async function getChildDashboard(req: Request, res: Response) {
 
   const isChild = await parentService.verifyChildOwnership(parentId, studentId);
   if (!isChild) {
-    res.status(403).json({ success: false, error: { message: 'This student is not your child' } });
+    sendError(res, 'This student is not your child', 403);
     return;
   }
 
@@ -74,7 +74,7 @@ export async function getChildProgress(req: Request, res: Response) {
 
   const isChild = await parentService.verifyChildOwnership(parentId, studentId);
   if (!isChild) {
-    res.status(403).json({ success: false, error: { message: 'This student is not your child' } });
+    sendError(res, 'This student is not your child', 403);
     return;
   }
 
@@ -94,7 +94,7 @@ export async function getChildReport(req: Request, res: Response) {
 
   const isChild = await parentService.verifyChildOwnership(parentId, studentId);
   if (!isChild) {
-    res.status(403).json({ success: false, error: { message: 'This student is not your child' } });
+    sendError(res, 'This student is not your child', 403);
     return;
   }
 

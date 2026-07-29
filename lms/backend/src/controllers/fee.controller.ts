@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import * as feeService from '../services/fee.service';
 import * as receiptService from '../services/receipt.service';
-import { sendSuccess, sendCreated } from '../utils/response';
+import { sendSuccess, sendCreated, sendError } from '../utils/response';
 import { logger } from '../utils/logger';
 import { requireUser } from '../types/common';
 
@@ -19,7 +19,7 @@ export async function downloadReceipt(req: Request, res: Response) {
     res.send(pdf);
   } catch (err) {
     logger.error('Receipt generation failed', { paymentId: req.params.id, error: err instanceof Error ? err.message : String(err) });
-    res.status(404).json({ success: false, message: 'Receipt not available' });
+    sendError(res, 'Receipt not available', 404);
   }
 }
 

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import cloudinary from 'cloudinary';
-import { sendSuccess } from '../utils/response';
+import { sendSuccess, sendError } from '../utils/response';
 import { env } from '../config/env';
 
 export async function getUploadSignature(req: Request, res: Response) {
@@ -9,7 +9,7 @@ export async function getUploadSignature(req: Request, res: Response) {
 
   const allowedFolders = ['textbooks', 'avatars', 'assignments', 'textbook-covers'];
   if (!allowedFolders.includes(folder)) {
-    res.status(400).json({ success: false, error: { message: 'Invalid upload folder' } });
+    sendError(res, 'Invalid upload folder', 400);
     return;
   }
 
