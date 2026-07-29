@@ -3,68 +3,106 @@
 -- Run this in Supabase SQL Editor. It's idempotent — safe to run multiple times.
 
 -- ══════════════════════════════════════════════════════════════════════════════
--- PART 1: Fix real tables — add missing columns the backend queries
+-- PART 1: Add missing columns to real tables (skip views)
+-- On deployed Supabase, classes/subjects/assignments/exams/notifications/quizzes
+--   /lessons/submissions/enrollments are ALL views backed by firestore_docs.
+--   Only timetable + firestore_docs + users + auditLogs are real tables.
+-- Each check verifies relkind = 'r' before ALTER.
 -- ══════════════════════════════════════════════════════════════════════════════
 
--- 1a. classes — ensure all snake_case columns exist
-ALTER TABLE IF EXISTS classes ADD COLUMN IF NOT EXISTS code TEXT DEFAULT '';
-ALTER TABLE IF EXISTS classes ADD COLUMN IF NOT EXISTS description TEXT DEFAULT '';
-ALTER TABLE IF EXISTS classes ADD COLUMN IF NOT EXISTS grade TEXT DEFAULT '';
-ALTER TABLE IF EXISTS classes ADD COLUMN IF NOT EXISTS academic_year TEXT DEFAULT '';
-ALTER TABLE IF EXISTS classes ADD COLUMN IF NOT EXISTS room_number TEXT DEFAULT '';
-ALTER TABLE IF EXISTS classes ADD COLUMN IF NOT EXISTS teacher_ids TEXT[] DEFAULT '{}';
-ALTER TABLE IF EXISTS classes ADD COLUMN IF NOT EXISTS subject_ids TEXT[] DEFAULT '{}';
-ALTER TABLE IF EXISTS classes ADD COLUMN IF NOT EXISTS teacher_count INTEGER DEFAULT 0;
-ALTER TABLE IF EXISTS classes ADD COLUMN IF NOT EXISTS max_students INTEGER DEFAULT 0;
-ALTER TABLE IF EXISTS classes ADD COLUMN IF NOT EXISTS start_date TEXT;
-ALTER TABLE IF EXISTS classes ADD COLUMN IF NOT EXISTS end_date TEXT;
-ALTER TABLE IF EXISTS classes ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
-ALTER TABLE IF EXISTS classes ADD COLUMN IF NOT EXISTS school_id UUID;
-ALTER TABLE IF EXISTS classes ADD COLUMN IF NOT EXISTS version INTEGER DEFAULT 0;
-ALTER TABLE IF EXISTS classes ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'classes' AND relkind = 'r') THEN
+    ALTER TABLE classes ADD COLUMN IF NOT EXISTS code TEXT DEFAULT '';
+    ALTER TABLE classes ADD COLUMN IF NOT EXISTS description TEXT DEFAULT '';
+    ALTER TABLE classes ADD COLUMN IF NOT EXISTS grade TEXT DEFAULT '';
+    ALTER TABLE classes ADD COLUMN IF NOT EXISTS academic_year TEXT DEFAULT '';
+    ALTER TABLE classes ADD COLUMN IF NOT EXISTS room_number TEXT DEFAULT '';
+    ALTER TABLE classes ADD COLUMN IF NOT EXISTS teacher_ids TEXT[] DEFAULT '{}';
+    ALTER TABLE classes ADD COLUMN IF NOT EXISTS subject_ids TEXT[] DEFAULT '{}';
+    ALTER TABLE classes ADD COLUMN IF NOT EXISTS teacher_count INTEGER DEFAULT 0;
+    ALTER TABLE classes ADD COLUMN IF NOT EXISTS max_students INTEGER DEFAULT 0;
+    ALTER TABLE classes ADD COLUMN IF NOT EXISTS start_date TEXT;
+    ALTER TABLE classes ADD COLUMN IF NOT EXISTS end_date TEXT;
+    ALTER TABLE classes ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
+    ALTER TABLE classes ADD COLUMN IF NOT EXISTS school_id UUID;
+    ALTER TABLE classes ADD COLUMN IF NOT EXISTS version INTEGER DEFAULT 0;
+    ALTER TABLE classes ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+  END IF;
+END $$;
 
--- 1b. timetable — ensure school_id exists (table already has snake_case columns)
+-- timetable — confirmed real table
 ALTER TABLE IF EXISTS timetable ADD COLUMN IF NOT EXISTS school_id UUID;
 ALTER TABLE IF EXISTS timetable ADD COLUMN IF NOT EXISTS academic_year TEXT DEFAULT '';
 
--- 1c. Additional tables the backend queries with specific columns
-ALTER TABLE IF EXISTS subjects ADD COLUMN IF NOT EXISTS school_id UUID;
-ALTER TABLE IF EXISTS subjects ADD COLUMN IF NOT EXISTS class_id UUID;
-ALTER TABLE IF EXISTS subjects ADD COLUMN IF NOT EXISTS credit_hours INTEGER DEFAULT 0;
-ALTER TABLE IF EXISTS subjects ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'subjects' AND relkind = 'r') THEN
+    ALTER TABLE subjects ADD COLUMN IF NOT EXISTS school_id UUID;
+    ALTER TABLE subjects ADD COLUMN IF NOT EXISTS class_id UUID;
+    ALTER TABLE subjects ADD COLUMN IF NOT EXISTS credit_hours INTEGER DEFAULT 0;
+    ALTER TABLE subjects ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+  END IF;
+END $$;
 
-ALTER TABLE IF EXISTS assignments ADD COLUMN IF NOT EXISTS school_id UUID;
-ALTER TABLE IF EXISTS assignments ADD COLUMN IF NOT EXISTS course_id UUID;
-ALTER TABLE IF EXISTS assignments ADD COLUMN IF NOT EXISTS due_date TEXT;
-ALTER TABLE IF EXISTS assignments ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'assignments' AND relkind = 'r') THEN
+    ALTER TABLE assignments ADD COLUMN IF NOT EXISTS school_id UUID;
+    ALTER TABLE assignments ADD COLUMN IF NOT EXISTS course_id UUID;
+    ALTER TABLE assignments ADD COLUMN IF NOT EXISTS due_date TEXT;
+    ALTER TABLE assignments ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+  END IF;
+END $$;
 
-ALTER TABLE IF EXISTS exams ADD COLUMN IF NOT EXISTS school_id UUID;
-ALTER TABLE IF EXISTS exams ADD COLUMN IF NOT EXISTS course_id UUID;
-ALTER TABLE IF EXISTS exams ADD COLUMN IF NOT EXISTS total_points INTEGER DEFAULT 0;
-ALTER TABLE IF EXISTS exams ADD COLUMN IF NOT EXISTS passing_score INTEGER DEFAULT 0;
-ALTER TABLE IF EXISTS exams ADD COLUMN IF NOT EXISTS start_date TEXT;
-ALTER TABLE IF EXISTS exams ADD COLUMN IF NOT EXISTS end_date TEXT;
-ALTER TABLE IF EXISTS exams ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'exams' AND relkind = 'r') THEN
+    ALTER TABLE exams ADD COLUMN IF NOT EXISTS school_id UUID;
+    ALTER TABLE exams ADD COLUMN IF NOT EXISTS course_id UUID;
+    ALTER TABLE exams ADD COLUMN IF NOT EXISTS total_points INTEGER DEFAULT 0;
+    ALTER TABLE exams ADD COLUMN IF NOT EXISTS passing_score INTEGER DEFAULT 0;
+    ALTER TABLE exams ADD COLUMN IF NOT EXISTS start_date TEXT;
+    ALTER TABLE exams ADD COLUMN IF NOT EXISTS end_date TEXT;
+    ALTER TABLE exams ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+  END IF;
+END $$;
 
-ALTER TABLE IF EXISTS notifications ADD COLUMN IF NOT EXISTS school_id UUID;
-ALTER TABLE IF EXISTS notifications ADD COLUMN IF NOT EXISTS user_id UUID;
-ALTER TABLE IF EXISTS notifications ADD COLUMN IF NOT EXISTS read_at TIMESTAMPTZ;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'notifications' AND relkind = 'r') THEN
+    ALTER TABLE notifications ADD COLUMN IF NOT EXISTS school_id UUID;
+    ALTER TABLE notifications ADD COLUMN IF NOT EXISTS user_id UUID;
+    ALTER TABLE notifications ADD COLUMN IF NOT EXISTS read_at TIMESTAMPTZ;
+  END IF;
+END $$;
 
-ALTER TABLE IF EXISTS quizzes ADD COLUMN IF NOT EXISTS school_id UUID;
-ALTER TABLE IF EXISTS quizzes ADD COLUMN IF NOT EXISTS course_id UUID;
-ALTER TABLE IF EXISTS quizzes ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'quizzes' AND relkind = 'r') THEN
+    ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS school_id UUID;
+    ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS course_id UUID;
+    ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+  END IF;
+END $$;
 
-ALTER TABLE IF EXISTS lessons ADD COLUMN IF NOT EXISTS school_id UUID;
-ALTER TABLE IF EXISTS lessons ADD COLUMN IF NOT EXISTS course_id UUID;
-ALTER TABLE IF EXISTS lessons ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'lessons' AND relkind = 'r') THEN
+    ALTER TABLE lessons ADD COLUMN IF NOT EXISTS school_id UUID;
+    ALTER TABLE lessons ADD COLUMN IF NOT EXISTS course_id UUID;
+    ALTER TABLE lessons ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+  END IF;
+END $$;
 
-ALTER TABLE IF EXISTS submissions ADD COLUMN IF NOT EXISTS school_id UUID;
-ALTER TABLE IF EXISTS submissions ADD COLUMN IF NOT EXISTS course_id UUID;
-ALTER TABLE IF EXISTS submissions ADD COLUMN IF NOT EXISTS student_id UUID;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'submissions' AND relkind = 'r') THEN
+    ALTER TABLE submissions ADD COLUMN IF NOT EXISTS school_id UUID;
+    ALTER TABLE submissions ADD COLUMN IF NOT EXISTS course_id UUID;
+    ALTER TABLE submissions ADD COLUMN IF NOT EXISTS student_id UUID;
+  END IF;
+END $$;
 
-ALTER TABLE IF EXISTS enrollments ADD COLUMN IF NOT EXISTS school_id UUID;
-ALTER TABLE IF EXISTS enrollments ADD COLUMN IF NOT EXISTS student_id UUID;
-ALTER TABLE IF EXISTS enrollments ADD COLUMN IF NOT EXISTS course_id UUID;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'enrollments' AND relkind = 'r') THEN
+    ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS school_id UUID;
+    ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS student_id UUID;
+    ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS course_id UUID;
+  END IF;
+END $$;
 
 -- ══════════════════════════════════════════════════════════════════════════════
 -- PART 2: Rebuild document-store views (skip if name is a real table)
