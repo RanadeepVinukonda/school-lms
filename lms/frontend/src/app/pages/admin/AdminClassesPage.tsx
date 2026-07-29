@@ -161,28 +161,14 @@ export default function AdminClassesPage() {
 
     setClassCreateLoading(true);
     try {
-      const { data: newClass } = await supabase.from('classes').insert({
+      await api.post('/classes', {
         name: className,
         code: finalCode,
         grade: g,
         section: classSection.trim() || '',
-        room_number: classRoomNumber.trim() || '',
-        academic_year: activeYear,
-        teacher_ids: [],
-        subject_ids: [],
-        student_count: 0,
-        teacher_count: 0,
+        roomNumber: classRoomNumber.trim() || '',
+        academicYear: activeYear,
         status: 'active',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }).select('id').single();
-      logAudit({
-        action: 'class.create',
-        targetId: newClass?.id || '',
-        targetType: 'class',
-        targetName: className,
-        summary: `Created class "${className}" (${finalCode})`,
-        newValue: { name: className, code: finalCode, grade: g, section: classSection.trim(), roomNumber: classRoomNumber.trim() },
       });
       setClassGrade('');
       setClassCode('');
