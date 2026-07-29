@@ -146,7 +146,7 @@ async function ensureAuthUser(phone: string, uid: string, role: string): Promise
   } catch { authUser = null; }
   if (authUser?.user) {
     try { await supabase.auth.admin.updateUserById(uid, { password: pwd }); } catch {}
-    return { uid, email };
+    return { uid, email: authUser.user.email || email };
   }
 
   const newId = uid || crypto.randomUUID();
