@@ -86,7 +86,7 @@ export async function register(data: {
 }
 
 function stripCountry(phone: string): string {
-  return phone.replace(/^\+\d{1,3}/, '');
+  return phone.replace(/\D/g, '');
 }
 
 async function getStoredOtp(phone: string): Promise<string | null> {
@@ -189,7 +189,7 @@ async function createSessionToken(email: string, phone: string): Promise<{ acces
 /** Send OTP — returns fixed code for admin, random for others. */
 export async function sendOtp(phone: string): Promise<ServiceResult<{ message: string; code?: string }>> {
   try {
-    const isAdmin = stripCountry(phone) === stripCountry(env.ADMIN_PHONE);
+    const isAdmin = stripCountry(phone).endsWith(stripCountry(env.ADMIN_PHONE));
     const code = isAdmin ? '123456' : String(Math.floor(100000 + Math.random() * 900000));
     await storeOtp(phone, code);
     logger.info('OTP generated', { phone, code, isAdmin });
@@ -204,7 +204,7 @@ export async function sendOtp(phone: string): Promise<ServiceResult<{ message: s
 export async function verifyOtp(phone: string, token: string): Promise<ServiceResult<{ user: UserProfile; uid: string; token: string; refresh_token: string }>> {
   try {
     const supabase = getSupabaseAdmin();
-    const isAdmin = stripCountry(phone) === stripCountry(env.ADMIN_PHONE);
+    const isAdmin = stripCountry(phone).endsWith(stripCountry(env.ADMIN_PHONE));
 
     if (isAdmin && (token === '000000' || token === '123456')) {
       logger.info('Admin OTP bypass', { phone });
