@@ -317,9 +317,9 @@ export default function AdminClassesPage() {
 
       if (textbookIds.length > 0) {
         await Promise.all([
-          supabase.from('lessons').delete().in('textbookId', textbookIds),
-          supabase.from('quizzes').delete().in('textbookId', textbookIds),
-          supabase.from('assignments').delete().in('textbookId', textbookIds),
+          supabase.from('lessons').delete().in('textbook_id', textbookIds),
+          supabase.from('quizzes').delete().in('textbook_id', textbookIds),
+          supabase.from('assignments').delete().in('textbook_id', textbookIds),
         ]);
       }
       await supabase.from('textbooks').delete().eq('class_id', classId);
@@ -328,6 +328,7 @@ export default function AdminClassesPage() {
       await Promise.all([
         supabase.from('student_class_enrollments').delete().eq('class_id', classId),
         supabase.from('class_teachers').delete().eq('class_id', classId),
+        supabase.from('class_subjects').delete().eq('class_id', classId),
         supabase.from('teacher_class_subject_assignments').delete().eq('class_id', classId),
         supabase.from('timetable').delete().eq('class_id', classId),
         supabase.from('subjects').delete().eq('classId', classId),
@@ -394,16 +395,6 @@ export default function AdminClassesPage() {
         updatedAt: new Date().toISOString(),
       }).select('id').single();
 
-      // Update class subjectIds
-      const { data: classRow } = await supabase.from('classes').select('subjectIds').eq('id', addSubjectClassId).maybeSingle();
-      if (classRow) {
-        const currentSubjectIds = classRow.subjectIds || [];
-        await supabase.from('classes').update({
-          subjectIds: [...currentSubjectIds, newSubject?.id],
-          updatedAt: new Date().toISOString(),
-        }).eq('id', addSubjectClassId);
-      }
-
       logAudit({
         action: 'subject.create',
         targetId: newSubject?.id || '',
@@ -458,8 +449,6 @@ export default function AdminClassesPage() {
         classId: assignClassId,
         subjectId: assignSubjectId,
       });
-      console.log("Assign Response:", res);
-
       await Promise.all([refetchTCAssignments(), refetchUsers()]);
       setShowAssign(false);
       toast.success('Teacher assigned successfully');
@@ -962,7 +951,6 @@ export default function AdminClassesPage() {
 
                               {/* Card Footer Actions */}
                               <div className="px-5 pb-4 flex items-center gap-2 pt-2 border-t border-border/10">
-                                <Button variant="ghost" size="sm" onClick={() => handleClassGradeChange} className="ml-auto opacity-0 pointer-events-none" />
                                 <Button variant="ghost" size="sm" onClick={() => handleEditClassClick(cls)} title="Edit Class Details">
                                   <Icon name="edit" size={16} />
                                 </Button>

@@ -12,7 +12,7 @@ export function auditMiddleware(req: Request, res: Response, next: NextFunction)
     if (status >= 200 && status < 300) {
       const action = `${req.method} ${req.path}`;
       const resource = req.path.split('/')[1] || 'unknown';
-      const auditEntry = {
+      logger.info('AUDIT', {
         action,
         performedBy: req.user?.uid || 'anonymous',
         performedByName: req.user?.name || 'anonymous',
@@ -20,17 +20,7 @@ export function auditMiddleware(req: Request, res: Response, next: NextFunction)
         targetType: resource,
         summary: `${req.method} ${req.path} → ${status}`,
         timestamp: new Date().toISOString(),
-      };
-      logger.info('AUDIT', auditEntry);
-
-      import('../database/connection-manager').then(({ getConnectionPool }) => {
-        const pool = getConnectionPool();
-        pool.query(
-          `INSERT INTO audit_logs (user_id, action, resource, method, path, ip, user_agent, status_code, timestamp)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
-          [req.user?.uid || 'anonymous', action, resource, req.method, req.originalUrl, req.ip, req.get('user-agent'), res.statusCode]
-        ).catch(() => {});
-      }).catch(() => {});
+      });
     }
     return originalJson(body);
   };
