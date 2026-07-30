@@ -13,8 +13,10 @@ import { Input } from '@/components/ui/input';
 import { Icon } from '@/components/ui/Icon';
 import { OptionsSelect } from '@/components/ui/select';
 import { staggerContainer, cardStackReveal } from '@/lib/motion';
+import { supabase } from '@/supabase/config';
 import { getAllUsers, getAllClasses, getAllGrades, getAllExams, getAllAssignments } from '@/services/dataService';
 import { analyticsService } from '@/services/analyticsService';
+import { teacherClassSubjectService, type TeacherClassSubject } from '@/services/teacherClassSubjectService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
@@ -80,9 +82,13 @@ export default function AdminDashboardPage() {
   const { data: overviewData, isLoading: isOverviewLoading, isError: isOverviewError, refetch: refetchOverview } = useQuery({
     queryKey: ['admin-dashboard'],
     queryFn: async () => {
-      const [users, classes, grades, examsRaw, assignmentsRaw] = await Promise.all([
+      const [users, classes, grades, examsRaw, assignmentsRaw, tcsList, quizAttempts, examAttempts, submissionAttempts] = await Promise.all([
         getAllUsers(), getAllClasses(), getAllGrades(),
         getAllExams(), getAllAssignments(),
+        teacherClassSubjectService.getAll().catch(() => ({ data: [] as TeacherClassSubject[] })),
+        supabase.from('firestore_docs').select('data').eq('collection', 'quizAttemptV2').then(r => r.data || []),
+        supabase.from('firestore_docs').select('data').eq('collection', 'examAttemptV2').then(r => r.data || []),
+        supabase.from('firestore_docs').select('data').eq('collection', 'assignmentSubmissionV2').then(r => r.data || []),
       ]);
 
       const exams: ExamDoc[] = ((examsRaw || []) as unknown) as ExamDoc[];
@@ -92,16 +98,35 @@ export default function AdminDashboardPage() {
       const teacherCount = users.filter((u) => u.role === 'teacher').length;
       const upcomingExamCount = exams.filter((e) => e.startDate && new Date(e.startDate) > new Date()).length;
 
-      const atRiskStudents = grades
-        .filter((g) => g.percentage < 50)
-        .map((g) => ({
-          id: g.id, studentName: users.find((u) => u.id === g.studentId)?.displayName ?? 'Unknown',
-          percentage: g.percentage, subject: g.itemName ?? '',
+      // At-risk from actual attempt data stored in firestore_docs
+      const attemptScores = new Map<string, { total: number; count: number; itemName: string }>();
+      for (const arr of [quizAttempts, examAttempts, submissionAttempts]) {
+        for (const a of arr) {
+          const pct = (a.data as any)?.percentage;
+          const sid = (a.data as any)?.studentId;
+          const item = (a.data as any)?.itemName || (a.data as any)?.title || 'Unknown';
+          if (pct == null || !sid) continue;
+          const existing = attemptScores.get(sid) || { total: 0, count: 0, itemName: item };
+          existing.total += pct;
+          existing.count++;
+          existing.itemName = item;
+          attemptScores.set(sid, existing);
+        }
+      }
+      const atRiskStudents = Array.from(attemptScores.entries())
+        .filter(([_, s]) => s.count > 0 && (s.total / s.count) < 50)
+        .map(([sid, s]) => ({
+          id: sid,
+          studentName: users.find((u) => u.id === sid)?.displayName ?? 'Unknown',
+          percentage: Math.round(s.total / s.count),
+          subject: s.itemName,
         }));
 
+      // Teacher workload: count distinct classes per teacher from teacherClassSubject
       const workloadMap = new Map<string, number>();
-      for (const cls of classes) {
-        if (cls.teacherIds) { for (const tid of cls.teacherIds) { workloadMap.set(tid, (workloadMap.get(tid) ?? 0) + 1); } }
+      for (const tcs of (tcsList.data || [])) {
+        const tid = (tcs as any).teacherId || (tcs as any).teacher_id;
+        if (tid) workloadMap.set(tid, (workloadMap.get(tid) ?? 0) + 1);
       }
       const teacherWorkload = Array.from(workloadMap.entries()).map(([id, count]) => ({
         name: users.find((u) => u.id === id)?.displayName ?? 'Unknown', classCount: count,
