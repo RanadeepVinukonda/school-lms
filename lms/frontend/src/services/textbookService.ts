@@ -23,7 +23,7 @@ const snakeToCamel = (obj: any): any => {
 export async function createTextbook(data: Omit<Textbook, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
   const { chapters, ...rest } = data;
   // Refresh schema cache before insert
-  await supabase.from(TEXTBOOKS_COLLECTION).select('id').limit(1).maybeSingle().catch(() => {});
+  try { await supabase.from(TEXTBOOKS_COLLECTION).select('id').limit(1).maybeSingle(); } catch { /* ignore */ }
   const { data: inserted, error } = await supabase.from(TEXTBOOKS_COLLECTION).insert({
     ...rest,
     createdAt: new Date().toISOString(),
