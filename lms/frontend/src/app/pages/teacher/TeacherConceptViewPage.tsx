@@ -308,54 +308,87 @@ export default function TeacherConceptViewPage() {
                   </TabsList>
 
                   <TabsContent value="teach" className="mt-4 space-y-4">
+                    {(d.concept.videos ?? []).length > 0 && (
+                      <>
+                        <h3 className="text-title-sm font-semibold flex items-center gap-2">
+                          <Icon name="smart_display" size={16} className="text-primary" />
+                          {_('Saved Resources')}
+                        </h3>
+                        {d.concept.videos.map((video) => (
+                          <Card key={video.id} className="border-border/60">
+                            <CardContent className="p-5">
+                              <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-muted">
+                                <iframe
+                                  src={`https://www.youtube.com/embed/${video.youtubeId}?rel=0`}
+                                  title={video.title}
+                                  className="absolute inset-0 w-full h-full"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                />
+                              </div>
+                              <div className="mt-2 flex items-start justify-between gap-2">
+                                <div>
+                                  <h3 className="font-medium text-title-sm">{video.title}</h3>
+                                  <p className="text-label-xs text-muted-foreground">{video.channelName} &middot; {video.duration}</p>
+                                </div>
+                                <Badge className="bg-red-600 shrink-0">YouTube</Badge>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </>
+                    )}
+
                     {teachResourcesQuery.isLoading ? (
-                      <div className="flex items-center justify-center py-8">
+                      <div className="flex items-center justify-center py-4">
                         <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
                       </div>
                     ) : teachResourcesQuery.data && teachResourcesQuery.data.length > 0 ? (
-                      teachResourcesQuery.data.map((resource) => (
-                        <Card key={resource.id} className="border-border/60">
-                          <CardContent className="p-5">
-                            <div className="flex gap-4">
-                              <div className="w-48 shrink-0">
-                                <img
-                                  src={resource.thumbnail}
-                                  alt={resource.title}
-                                  className="w-full aspect-video object-cover rounded-lg"
-                                  onError={(e) => { (e.target as HTMLImageElement).src = ''; }}
-                                />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-start justify-between gap-2">
-                                  <div>
-                                    <h3 className="font-semibold text-title-sm line-clamp-2">{resource.title}</h3>
-                                    <p className="text-label-xs text-muted-foreground mt-1">
-                                      {resource.channelName} &middot; {resource.duration}
-                                    </p>
+                      <>
+                        <h3 className="text-title-sm font-semibold flex items-center gap-2">
+                          <Icon name="school" size={16} className="text-primary" />
+                          {_('External Resources')}
+                        </h3>
+                        {teachResourcesQuery.data.map((resource) => (
+                          <Card key={resource.id} className="border-border/60">
+                            <CardContent className="p-5">
+                              <div className="flex gap-4">
+                                <div className="w-48 shrink-0">
+                                  <img
+                                    src={resource.thumbnail}
+                                    alt={resource.title}
+                                    className="w-full aspect-video object-cover rounded-lg"
+                                    onError={(e) => { (e.target as HTMLImageElement).src = ''; }}
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div>
+                                      <h3 className="font-semibold text-title-sm line-clamp-2">{resource.title}</h3>
+                                      <p className="text-label-xs text-muted-foreground mt-1">
+                                        {resource.channelName} &middot; {resource.duration}
+                                      </p>
+                                    </div>
+                                    <Badge className={resource.source === 'khan_academy' ? 'bg-emerald-600' : 'bg-red-600'}>
+                                      {resource.sourceLabel}
+                                    </Badge>
                                   </div>
-                                  <Badge className={resource.source === 'khan_academy' ? 'bg-emerald-600' : 'bg-red-600'}>
-                                    {resource.sourceLabel}
-                                  </Badge>
-                                </div>
-                                <p className="text-label-sm text-muted-foreground mt-2 line-clamp-2">{resource.description}</p>
-                                <div className="mt-3">
-                                  <a
-                                    href={resource.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    <Button variant="outline" size="sm">
-                                      <Icon name="open_in_new" size={14} className="mr-1.5" />
-                                      Open Resource
-                                    </Button>
-                                  </a>
+                                  <p className="text-label-sm text-muted-foreground mt-2 line-clamp-2">{resource.description}</p>
+                                  <div className="mt-3">
+                                    <a href={resource.url} target="_blank" rel="noopener noreferrer">
+                                      <Button variant="outline" size="sm">
+                                        <Icon name="open_in_new" size={14} className="mr-1.5" />
+                                        Open Resource
+                                      </Button>
+                                    </a>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))
-                    ) : teachResourcesQuery.data && teachResourcesQuery.data.length === 0 && !teachResourcesQuery.isLoading ? (
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </>
+                    ) : (d.concept.videos ?? []).length === 0 ? (
                       <Card className="border-border/60">
                         <CardContent className="p-8 text-center text-muted-foreground">
                           <Icon name="search_off" size={40} className="mx-auto mb-2 opacity-40" />
