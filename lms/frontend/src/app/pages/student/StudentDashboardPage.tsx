@@ -73,7 +73,11 @@ export default function StudentDashboardPage() {
 
       const [dashRes, classDoc] = await Promise.all([
         api.get(`/analytics/student/dashboard`).then((r) => r.data.data),
-        authUserData?.classId ? getClass(authUserData.classId) : Promise.resolve(null),
+        (async () => {
+          if (!authUserData?.classId) return null;
+          try { return await getClass(authUserData.classId); }
+          catch (e) { console.error('[dashboard] getClass failed:', e); return null; }
+        })(),
       ]);
 
       const recentResults: ResultEntry[] = [];

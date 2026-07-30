@@ -22,85 +22,110 @@ export async function getStudentDashboard(studentId: string) {
 
   const currentYear = await getCurrentAcademicYear();
   const yearStart = currentYear?.startDate ? new Date(currentYear.startDate as string) : null;
-  
-  const { data: enrollments, error: enrollmentsErr } = await supabase
-    .from('enrollments')
-    .select('courseId')
-    .eq('studentId', studentId)
-    .eq('status', 'active');
-  if (enrollmentsErr) throw new Error(enrollmentsErr.message);
-  
-  const courseIds = (enrollments || []).map((e: { courseId: string }) => e.courseId);
+
+  let enrollments: { courseId: string }[] = [];
+  try {
+    const { data, error } = await supabase
+      .from('enrollments')
+      .select('courseId')
+      .eq('studentId', studentId)
+      .eq('status', 'active');
+    if (error) logger.error('getStudentDashboard enrollments error', { studentId, error: error.message });
+    else enrollments = (data || []) as { courseId: string }[];
+  } catch (e: any) { logger.error('getStudentDashboard enrollments exception', { studentId, error: e.message }); }
+
+  const courseIds = enrollments.map((e) => e.courseId);
   const totalCourses = courseIds.length;
 
-  const { count: unreadNotificationsCount } = await supabase
-    .from('notifications')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', studentId)
-    .eq('read', false);
+  let unreadNotificationsCount = 0;
+  try {
+    const { count } = await supabase
+      .from('notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', studentId)
+      .eq('read', false);
+    unreadNotificationsCount = count || 0;
+  } catch (e: any) { logger.error('getStudentDashboard notifications error', { studentId, error: e.message }); }
 
-  let gradeQuery = supabase
-    .from('grades')
-    .select('score, totalPoints, percentage, createdAt')
-    .eq('studentId', studentId);
-  if (yearStart) {
-    gradeQuery = gradeQuery.gte('createdAt', yearStart.toISOString());
-  }
-  const { data: grades, error: gradesErr } = await gradeQuery;
-  if (gradesErr) throw new Error(gradesErr.message);
+  let gradesList: any[] = [];
+  try {
+    let gradeQuery = supabase
+      .from('grades')
+      .select('score, totalPoints, percentage, createdAt')
+      .eq('studentId', studentId);
+    if (yearStart) gradeQuery = gradeQuery.gte('createdAt', yearStart.toISOString());
+    const { data, error } = await gradeQuery;
+    if (error) logger.error('getStudentDashboard grades error', { studentId, error: error.message });
+    else gradesList = (data || []) as any[];
+  } catch (e: any) { logger.error('getStudentDashboard grades exception', { studentId, error: e.message }); }
 
-  const gradesList = grades || [];
-  const totalScore = gradesList.reduce((sum: number, g: { score?: number }) => sum + (g.score || 0), 0);
-  const totalPoints = gradesList.reduce((sum: number, g: { totalPoints?: number }) => sum + (g.totalPoints || 1), 0);
+  const totalScore = gradesList.reduce((sum: number, g: any) => sum + (g.score || 0), 0);
+  const totalPoints = gradesList.reduce((sum: number, g: any) => sum + (g.totalPoints || 1), 0);
   const overallGrade = safePct(totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0);
 
-  const { data: quizAttempts } = await supabase
-    .from('firestore_docs')
-    .select('data')
-    .eq('collection', 'quizAttemptV2')
-    .eq('data->>studentId', studentId)
-    .eq('data->>status', 'completed');
+  let quizAttempts: any[] = [];
+  try {
+    const { data } = await supabase
+      .from('firestore_docs')
+      .select('data')
+      .eq('collection', 'quizAttemptV2')
+      .eq('data->>studentId', studentId)
+      .eq('data->>status', 'completed');
+    quizAttempts = (data || []) as any[];
+  } catch (e: any) { logger.error('getStudentDashboard quizAttempts error', { studentId, error: e.message }); }
 
-  const { data: assignAttempts } = await supabase
-    .from('firestore_docs')
-    .select('data')
-    .eq('collection', 'assignmentSubmissionV2')
-    .eq('data->>studentId', studentId)
-    .eq('data->>status', 'completed');
+  let assignAttempts: any[] = [];
+  try {
+    const { data } = await supabase
+      .from('firestore_docs')
+      .select('data')
+      .eq('collection', 'assignmentSubmissionV2')
+      .eq('data->>studentId', studentId)
+      .eq('data->>status', 'completed');
+    assignAttempts = (data || []) as any[];
+  } catch (e: any) { logger.error('getStudentDashboard assignAttempts error', { studentId, error: e.message }); }
 
   const allPercentages: number[] = [];
   for (const g of gradesList) { if (g.percentage > 0) allPercentages.push(g.percentage); }
-  for (const a of (quizAttempts || [])) { const pct = (a.data as any)?.percentage; const subDate = (a.data as any)?.submittedAt; if (pct > 0 && (!yearStart || !subDate || new Date(subDate) >= yearStart)) allPercentages.push(pct); }
-  for (const a of (assignAttempts || [])) { const pct = (a.data as any)?.percentage; const subDate = (a.data as any)?.submittedAt; if (pct > 0 && (!yearStart || !subDate || new Date(subDate) >= yearStart)) allPercentages.push(pct); }
+  for (const a of quizAttempts) { const pct = (a.data as any)?.percentage; const subDate = (a.data as any)?.submittedAt; if (pct > 0 && (!yearStart || !subDate || new Date(subDate) >= yearStart)) allPercentages.push(pct); }
+  for (const a of assignAttempts) { const pct = (a.data as any)?.percentage; const subDate = (a.data as any)?.submittedAt; if (pct > 0 && (!yearStart || !subDate || new Date(subDate) >= yearStart)) allPercentages.push(pct); }
 
-  const totalAssessments = gradesList.length + (quizAttempts?.length || 0) + (assignAttempts?.length || 0);
+  const totalAssessments = gradesList.length + quizAttempts.length + assignAttempts.length;
   const avgGrade = allPercentages.length > 0
     ? Math.round(allPercentages.reduce((s, p) => s + p, 0) / allPercentages.length) : 0;
 
   const now = new Date().toISOString();
-  
-  const { count: pendingAssignments } = await supabase
-    .from('assignments')
-    .select('id', { count: 'exact', head: true })
-    .in('course_id', courseIds.length > 0 ? courseIds : [])
-    .gte('due_date', now);
-  
-  const { count: upcomingExams } = await supabase
-    .from('exams')
-    .select('id', { count: 'exact', head: true })
-    .in('course_id', courseIds.length > 0 ? courseIds : [])
-    .gte('start_date', now);
+
+  let pendingAssignments = 0;
+  let upcomingExams = 0;
+  try {
+    const { count } = await supabase
+      .from('assignments')
+      .select('id', { count: 'exact', head: true })
+      .in('course_id', courseIds.length > 0 ? courseIds : [])
+      .gte('due_date', now);
+    pendingAssignments = count || 0;
+  } catch (e: any) { logger.error('getStudentDashboard pendingAssignments error', { studentId, error: e.message }); }
+
+  try {
+    const { count } = await supabase
+      .from('exams')
+      .select('id', { count: 'exact', head: true })
+      .in('course_id', courseIds.length > 0 ? courseIds : [])
+      .gte('start_date', now);
+    upcomingExams = count || 0;
+  } catch (e: any) { logger.error('getStudentDashboard upcomingExams error', { studentId, error: e.message }); }
 
   logger.info('Student dashboard retrieved', { studentId });
 
   return {
     totalCourses,
-    unreadNotifications: unreadNotificationsCount || 0,
+    unreadNotifications: unreadNotificationsCount,
     overallGrade,
     averageScore: avgGrade,
     totalAssessments,
-    pendingAssignments: pendingAssignments || 0,
-    upcomingExams: upcomingExams || 0,
+    pendingAssignments,
+    upcomingExams,
     recentActivity: [],
   };
 }

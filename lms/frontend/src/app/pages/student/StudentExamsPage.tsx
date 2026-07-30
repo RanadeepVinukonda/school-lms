@@ -75,7 +75,11 @@ export default function StudentExamsPage() {
       if (!user?.classId) return { upcoming: [], past: [], subjects: [] };
       const [allSubjects, studentClass, corrections] = await Promise.all([
         getAllSubjects(),
-        getClass(user.classId),
+        (async () => {
+          if (!user?.classId) return null;
+          try { return await getClass(user.classId); }
+          catch (e) { console.error('[exams] getClass failed:', e); return null; }
+        })(),
         user?.id ? getCorrectionsByStudent(user.id) : Promise.resolve([]),
       ]);
 
