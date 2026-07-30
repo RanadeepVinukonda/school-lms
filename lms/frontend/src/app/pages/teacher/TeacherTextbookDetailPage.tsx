@@ -385,7 +385,7 @@ export default function TeacherTextbookDetailPage() {
 
                         <TabsContent value="mindmap">
                           <div className="mt-4">
-                            <ConceptMindMap concepts={allConcepts} chapterTitle={`${tb.title} — All Concepts`} />
+                            <ConceptMindMap concepts={allConcepts} chapterTitle={`${tb.title} — All Concepts`} chapters={chapters} />
                           </div>
                         </TabsContent>
                       </Tabs>
