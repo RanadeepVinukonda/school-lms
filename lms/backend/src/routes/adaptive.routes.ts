@@ -10,6 +10,7 @@ import { getRecommendations } from '../services/adaptive/recommendation.service'
 import { getOverdueConcepts } from '../services/adaptive/revision-scheduler.service';
 import { getLearningVelocity } from '../services/adaptive/velocity.service';
 import { getSupabaseAdmin } from '../services/supabase';
+import { getRemediationPlan, getStudentAdaptiveSummary } from '../services/adaptive/remediation.service';
 
 const router = Router();
 
@@ -62,6 +63,16 @@ router.get('/skill-distribution/:classId', authenticate, requireRole('teacher', 
   });
 
   sendSuccess(res, { distribution, students: profiles, total: profiles.length });
+}));
+
+router.get('/remediation/:studentId/:conceptId', authenticate, asyncHandler(async (req, res) => {
+  const plan = await getRemediationPlan(req.params.studentId, req.params.conceptId);
+  sendSuccess(res, plan);
+}));
+
+router.get('/student-summary/:studentId', authenticate, asyncHandler(async (req, res) => {
+  const summary = await getStudentAdaptiveSummary(req.params.studentId);
+  sendSuccess(res, summary);
 }));
 
 export default router;

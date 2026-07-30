@@ -11,6 +11,7 @@ import contentPublishingRoutes from '../content-publishing.routes';
 import searchRoutes from '../search.routes';
 import deviceTokenRoutes from '../device-token.routes';
 import notificationPrefsRoutes from '../notification-prefs.routes';
+import teachResourcesRoutes from '../teach-resources.routes';
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use('/content-publishing', contentPublishingRoutes);
 router.use('/search', searchRoutes);
 router.use('/device-tokens', deviceTokenRoutes);
 router.use('/notification-preferences', notificationPrefsRoutes);
+router.use('/teach-resources', teachResourcesRoutes);
 
 export default router;

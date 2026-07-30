@@ -7,6 +7,7 @@ import type { Difficulty } from './ai-level.service';
 import * as gamificationService from './gamification.service';
 import { computeMastery } from './adaptive/mastery.service';
 import { getRecommendations } from './adaptive/recommendation.service';
+import { getRemediationPlan } from './adaptive/remediation.service';
 import { createNotification, createBulkNotifications } from './notification.service';
 import { nosqlGet } from './nosql.service';
 import { TransactionManager } from '../database/transaction-manager';
@@ -288,7 +289,55 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
         body: `You scored ${percentage}%. Practice the concept to improve your understanding.`,
         data: { link: `/student/adaptive-quiz/${quizData.conceptId}`, quizId: attemptData.quizId },
       }).catch(err => logger.warn('Failed to send improvement notification', { error: err }));
+
+      getRemediationPlan(studentId, quizData.conceptId as string).then((plan) => {
+        for (const item of plan) {
+          if (item.status !== 'Proficient') {
+            const resourceInfo = item.resources.length > 0
+              ? ` Review ${item.resources[0].sourceLabel} resources for "${item.title}".`
+              : '';
+            createNotification({
+              userId: studentId,
+              type: 'info',
+              title: `Review Prerequisite: ${item.title}`,
+              body: `Mastery: ${Math.round(item.masteryScore * 100)}%.${resourceInfo}`,
+              data: { link: `/student/adaptive-quiz/${item.conceptId}`, conceptId: item.conceptId },
+            }).catch(err => logger.warn('Failed to send prerequisite notification', { error: err }));
+          }
+        }
+      }).catch(err => logger.warn('Failed to get remediation plan', { error: err }));
     }
+  }
+
+  if (percentage >= 70 && quizData.conceptId) {
+    (async () => {
+      try {
+        const supabase = getSupabaseAdmin()!;
+        const { data: concept } = await supabase.from('concepts')
+          .select('id, title, textbook_id')
+          .eq('id', quizData.conceptId as string)
+          .single();
+        if (!concept?.textbook_id) return;
+        const { data: next } = await supabase.from('concepts')
+          .select('id, title')
+          .eq('textbook_id', concept.textbook_id)
+          .contains('prerequisites', [concept.title])
+          .order('order', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        if (next) {
+          await createNotification({
+            userId: studentId,
+            type: 'achievement',
+            title: 'Concept Mastered!',
+            body: `You've mastered this concept. Next: "${next.title}" is now unlocked.`,
+            data: { link: `/student/concepts/${next.id}`, conceptId: next.id as string },
+          });
+        }
+      } catch (err) {
+        logger.warn('Failed to unlock next concept', { error: err });
+      }
+    })();
   }
 
   return { id: attemptId, ...attemptData, ...result, level: newLevel, newBadges: allNewBadges };

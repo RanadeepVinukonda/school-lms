@@ -112,6 +112,25 @@ export default function StudentDashboardPage() {
     callback: () => { refetch(); },
   });
 
+  const { data: adaptiveSummary } = useQuery({
+    queryKey: ['adaptive-summary', studentId],
+    enabled: !!studentId,
+    queryFn: async () => {
+      const res = await api.get(`/adaptive/student-summary/${studentId}`);
+      return res.data.data as {
+        proficiencyPercentage: number;
+        needsRemediation: Array<{
+          conceptId: string; title: string; masteryScore: number; attemptCount: number;
+          status: 'Needs Remediation' | 'In Progress' | 'Proficient';
+          resources: Array<{ id: string; source: string; sourceLabel: string; title: string; url: string }>;
+        }>;
+        totalMastered: number;
+        totalAttempted: number;
+      };
+    },
+    refetchOnWindowFocus: true,
+  });
+
   const { data: recommendations } = useQuery({
     queryKey: ['adaptive-recommendations', studentId],
     enabled: !!studentId,
@@ -247,6 +266,84 @@ export default function StudentDashboardPage() {
                   ))}
                 </motion.div>
               </section>
+
+              {adaptiveSummary && (
+                <section>
+                  <SectionTitle label={_('Adaptive Learning')} title={_('Your learning status & revision path')} />
+                  <motion.div variants={cardStackReveal} custom={0}>
+                    <Card className="border-border/60 mb-4">
+                      <CardContent className="p-5">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <div className="text-center p-4 rounded-xl bg-primary-container/30">
+                            <p className="text-display-xs font-bold text-primary">{adaptiveSummary.proficiencyPercentage}%</p>
+                            <p className="text-label-sm text-muted-foreground mt-1">{_('Overall Proficiency')}</p>
+                          </div>
+                          <div className="text-center p-4 rounded-xl bg-success-container/30">
+                            <p className="text-display-xs font-bold text-success">{adaptiveSummary.totalMastered}</p>
+                            <p className="text-label-sm text-muted-foreground mt-1">{_('Mastered Concepts')}</p>
+                          </div>
+                          <div className="text-center p-4 rounded-xl bg-warning-container/30">
+                            <p className="text-display-xs font-bold text-warning">{adaptiveSummary.totalAttempted - adaptiveSummary.totalMastered}</p>
+                            <p className="text-label-sm text-muted-foreground mt-1">{_('Needs Review')}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+
+                  {adaptiveSummary.needsRemediation.length > 0 && (
+                    <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }} className="space-y-3">
+                      <h3 className="text-title-sm font-semibold flex items-center gap-2">
+                        <Icon name="refresh" size={16} className="text-warning" />
+                        {_('Recommended Revision Path')}
+                      </h3>
+                      {adaptiveSummary.needsRemediation.slice(0, 5).map((item) => {
+                        const statusColor = item.status === 'Needs Remediation' ? 'text-error bg-error/10 border-error/30' :
+                          item.status === 'In Progress' ? 'text-warning bg-warning/10 border-warning/30' :
+                          'text-success bg-success/10 border-success/30';
+                        return (
+                          <motion.div key={item.conceptId} variants={cardStackReveal} custom={0}>
+                            <Card className="border-border/60">
+                              <CardContent className="p-4">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <p className="text-title-sm font-semibold">{item.title}</p>
+                                      <Badge className={`text-[10px] ${statusColor}`}>{_(item.status)}</Badge>
+                                    </div>
+                                    <p className="text-label-sm text-muted-foreground mt-1">
+                                      {_('Mastery')}: {Math.round(item.masteryScore * 100)}% &middot; {_('Attempts')}: {item.attemptCount}
+                                    </p>
+                                    {item.resources.length > 0 && (
+                                      <div className="flex flex-wrap gap-2 mt-2">
+                                        {item.resources.map((r) => (
+                                          <a key={r.id} href={r.url} target="_blank" rel="noopener noreferrer">
+                                            <Badge variant="outline" className="text-[10px] gap-1 cursor-pointer hover:bg-muted">
+                                              <Icon name={r.source === 'khan_academy' ? 'school' : 'smart_display'} size={12} />
+                                              {r.sourceLabel}
+                                            </Badge>
+                                          </a>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex gap-2 shrink-0">
+                                    <Button size="sm" variant="outline" asChild>
+                                      <Link to={`/student/adaptive-quiz/${item.conceptId}`}>
+                                        <Icon name="refresh" size={14} className="mr-1" />{_('Retake')}
+                                      </Link>
+                                    </Button>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </motion.div>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </section>
+              )}
 
               {sharedMindMaps && sharedMindMaps.length > 0 && (
                 <section>
