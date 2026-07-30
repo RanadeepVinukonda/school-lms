@@ -81,7 +81,8 @@ export default function ExamAttemptPage() {
     queryKey: ['corrections', examId],
     queryFn: async () => {
       if (!examId) return [];
-      return getCorrectionsByExam(examId);
+      try { return await getCorrectionsByExam(examId); }
+      catch (e) { console.error('[exam-attempt] getCorrectionsByExam failed:', e); return []; }
     },
     enabled: !!examId,
   });

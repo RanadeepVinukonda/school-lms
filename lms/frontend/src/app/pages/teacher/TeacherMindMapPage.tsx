@@ -139,7 +139,7 @@ export default function TeacherMindMapPage() {
           id: e.id,
           source: e.source,
           target: e.target,
-          label: e.label || '',
+          label: typeof e.label === 'string' ? e.label : '',
         })),
       });
       setSaved(true);

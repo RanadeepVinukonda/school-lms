@@ -110,7 +110,9 @@ export default function TeacherExamCorrectionPage() {
       if (!exam) return null;
 
       const subject = exam.subjectId ? await getSubject(exam.subjectId) : null;
-      const corrections = await getCorrectionsByExam(exam.id);
+      let corrections: any[] = [];
+      try { corrections = await getCorrectionsByExam(exam.id); }
+      catch (e) { console.error('[exam-correction] getCorrectionsByExam failed:', e); }
 
       const targetClassId = (exam as any).classId;
       const enrolled = allUsers.filter((u) => {

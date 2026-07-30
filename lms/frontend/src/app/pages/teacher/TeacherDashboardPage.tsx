@@ -119,7 +119,10 @@ export default function TeacherDashboardPage() {
       const allAssignments = assignmentArrays.flat();
 
       const [correctionArrays, submissionArrays] = await Promise.all([
-        Promise.all(allExams.map((exam) => getCorrectionsByExam(exam.id))),
+        Promise.all(allExams.map(async (exam) => {
+          try { return await getCorrectionsByExam(exam.id); }
+          catch (e) { console.error('[teacher-dashboard] getCorrectionsByExam failed:', e); return []; }
+        })),
         Promise.all(allAssignments.map((ass) => getSubmissionsByAssignment(ass.id))),
       ]);
       const allCorrections = correctionArrays.flat();

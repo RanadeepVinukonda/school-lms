@@ -80,7 +80,11 @@ export default function StudentExamsPage() {
           try { return await getClass(user.classId); }
           catch (e) { console.error('[exams] getClass failed:', e); return null; }
         })(),
-        user?.id ? getCorrectionsByStudent(user.id) : Promise.resolve([]),
+        (async () => {
+          if (!user?.id) return [];
+          try { return await getCorrectionsByStudent(user.id); }
+          catch (e) { console.error('[exams] getCorrectionsByStudent failed:', e); return []; }
+        })(),
       ]);
 
       if (!studentClass || !studentClass.subjectIds || studentClass.subjectIds.length === 0) {
