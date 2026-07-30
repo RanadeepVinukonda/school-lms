@@ -20,27 +20,25 @@ interface VideoResult {
 
 async function searchKhanAcademy(query: string, maxResults: number): Promise<VideoResult[]> {
   try {
-    const body = JSON.stringify([
-      {
-        operationName: 'search',
-        variables: { query, maxResults },
-        query: `query search($query: String!, $maxResults: Int) {
-          search(query: $query, maxResults: $maxResults) {
-            results {
-              ... on Video {
-                id
-                title
-                description
-                duration
-                thumbnailUrl: imageUrl
-                youtubeId
-                slug
-              }
+    const body = JSON.stringify({
+      operationName: 'search',
+      variables: { query, maxResults },
+      query: `query search($query: String!, $maxResults: Int) {
+        search(query: $query, maxResults: $maxResults) {
+          results {
+            ... on Video {
+              id
+              title
+              description
+              duration
+              thumbnailUrl: imageUrl
+              youtubeId
+              slug
             }
           }
-        }`,
-      },
-    ]);
+        }
+      }`,
+    });
 
     const res = await fetch(KA_GRAPHQL, {
       method: 'POST',
@@ -48,10 +46,13 @@ async function searchKhanAcademy(query: string, maxResults: number): Promise<Vid
       body,
       signal: AbortSignal.timeout(8000),
     });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      logger.warn('Khan Academy API rejected request', { query, status: res.status });
+      return [];
+    }
 
     const json = await res.json();
-    const results = json?.[0]?.data?.search?.results || [];
+    const results = json?.data?.search?.results || [];
     const videos = results.filter((r: any) => r.__typename === 'Video' || r.youtubeId);
 
     return videos.slice(0, maxResults).map((v: any, i: number) => ({

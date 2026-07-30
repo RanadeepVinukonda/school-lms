@@ -14,13 +14,19 @@ export async function searchTeachResources(req: Request, res: Response) {
     const supabase = getSupabaseAdmin()!;
     const { data: concept, error } = await supabase
       .from('concepts')
-      .select('id, title, summary, keywords, chapter_id, textbook_id')
+      .select('id, title, chapter_id, textbook_id')
       .eq('id', conceptId)
       .single();
 
     if (error || !concept) {
       return sendError(res, 'Concept not found', 404);
     }
+
+    const { data: notes } = await supabase
+      .from('concept_notes')
+      .select('summary, keywords')
+      .eq('concept_id', conceptId)
+      .maybeSingle();
 
     let chapterTitle = '';
     let subjectName = '';
@@ -51,12 +57,14 @@ export async function searchTeachResources(req: Request, res: Response) {
     }
 
     const keywords: string[] = [];
-    if (typeof concept.keywords === 'string') {
-      try { keywords.push(...JSON.parse(concept.keywords)); } catch { keywords.push(concept.keywords); }
-    } else if (Array.isArray(concept.keywords)) {
-      keywords.push(...concept.keywords);
+    if (notes?.keywords) {
+      if (typeof notes.keywords === 'string') {
+        try { keywords.push(...JSON.parse(notes.keywords)); } catch { keywords.push(notes.keywords); }
+      } else if (Array.isArray(notes.keywords)) {
+        keywords.push(...notes.keywords);
+      }
     }
-    if (concept.summary) keywords.push(concept.summary.slice(0, 100));
+    if (notes?.summary) keywords.push(notes.summary.slice(0, 100));
 
     const resources = await teachResourcesService.searchTeachResources(
       subjectName,
