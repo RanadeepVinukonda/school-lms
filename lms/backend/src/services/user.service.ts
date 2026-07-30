@@ -107,7 +107,7 @@ export async function createUser(data: {
       const now = new Date().toISOString();
       const userData2 = {
         id: existingUser.uid, email: placeholderEmail, display_name: data.displayName,
-        role: data.role, phone_number: data.phone || null, photo_url: data.photoURL || '',
+        role: data.role, phone_number: data.phone || '', photo_url: data.photoURL || '',
         class_ids: finalClassIds, class_id: studentClassId || null,
         student_id: studentId || null, roll_no: data.rollNo || null,
         academic_year: deriveAcademicYear(), gender: data.gender || null,
@@ -140,7 +140,7 @@ export async function createUser(data: {
         const now = new Date().toISOString();
         const userData = {
           id: authUser.id, email: placeholderEmail, display_name: data.displayName,
-          role: data.role, phone_number: data.phone || null, photo_url: data.photoURL || '',
+          role: data.role, phone_number: data.phone || '', photo_url: data.photoURL || '',
           class_ids: finalClassIds, class_id: studentClassId || null,
           student_id: studentId || null, roll_no: data.rollNo || null,
           academic_year: deriveAcademicYear(), gender: data.gender || null,
@@ -162,7 +162,7 @@ export async function createUser(data: {
   const now = new Date().toISOString();
   const userData: Record<string, unknown> = {
     id: authUser.uid, email: placeholderEmail, display_name: data.displayName,
-    role: data.role, phone_number: data.phone || null, photo_url: data.photoURL || '',
+    role: data.role, phone_number: data.phone || '', photo_url: data.photoURL || '',
     class_ids: finalClassIds, class_id: studentClassId || null,
     student_id: studentId || null, roll_no: data.rollNo || null,
     academic_year: deriveAcademicYear(), gender: data.gender || null,
