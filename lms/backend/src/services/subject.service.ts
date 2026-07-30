@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { getSupabaseClient } from './supabase';
+import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
@@ -24,7 +24,7 @@ export async function createSubject(data: {
     throw new ValidationError('classId is required when creating a subject');
   }
   
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const subjectId = uuidv4();
   const now = new Date().toISOString();
 
@@ -79,7 +79,7 @@ export async function createSubject(data: {
 
 /** Update subject fields. Throws NotFoundError if missing. */
 export async function updateSubject(subjectId: string, data: Record<string, unknown>) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: existing } = await supabase
     .from('subjects')
     .select('id')
@@ -106,7 +106,7 @@ export async function updateSubject(subjectId: string, data: Record<string, unkn
 
 /** Delete a subject by id. Throws NotFoundError if missing. */
 export async function deleteSubject(subjectId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: existing } = await supabase
     .from('subjects')
     .select('id')
@@ -134,7 +134,7 @@ export async function listSubjects(query: {
   search?: string;
 }) {
   const { page, limit } = parsePagination(query);
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   
   let baseQuery = supabase.from('subjects').select('*');
 
@@ -167,7 +167,7 @@ export async function listSubjects(query: {
 
 /** List subjects by class. */
 export async function listSubjectsByClass(classId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   
   const { data: items } = await supabase
     .from('subjects')
@@ -183,7 +183,7 @@ export async function listSubjectsByClass(classId: string) {
 
 /** Fetch a single subject by id. Throws NotFoundError if missing. */
 export async function getSubjectById(subjectId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data, error } = await supabase
     .from('subjects')
     .select('*')
