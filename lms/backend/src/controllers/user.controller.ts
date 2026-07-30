@@ -44,6 +44,7 @@ function mapUserRow(row: any): any {
     language: row.language ?? data.language ?? row.language,
     tutorialSeen: row.tutorial_seen ?? data.tutorialSeen ?? row.tutorialSeen,
     schoolId: row.school_id ?? data.schoolId ?? row.schoolId,
+    generatedPassword: row.generatedPassword,
     createdAt: row.created_at ?? data.createdAt ?? row.createdAt,
     updatedAt: row.updated_at ?? data.updatedAt ?? row.updatedAt,
   };
