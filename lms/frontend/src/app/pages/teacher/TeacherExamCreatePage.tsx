@@ -440,6 +440,41 @@ export default function TeacherExamCreatePage() {
     );
   }
 
+  function updatePaperQuestion(id: string, field: string, value: unknown) {
+    setGeneratedPaper((prev: any[] | null) =>
+      prev ? prev.map((q) => (q.id === id ? { ...q, [field]: value } : q)) : null
+    );
+  }
+
+  function updatePaperOption(questionId: string, optionIndex: number, value: string) {
+    setGeneratedPaper((prev: any[] | null) =>
+      prev ? prev.map((q) => {
+        if (q.id !== questionId) return q;
+        const options = [...(q.options || [])];
+        options[optionIndex] = value;
+        return { ...q, options };
+      }) : null
+    );
+  }
+
+  function addPaperOption(questionId: string) {
+    setGeneratedPaper((prev: any[] | null) =>
+      prev ? prev.map((q) =>
+        q.id === questionId ? { ...q, options: [...(q.options || []), ''] } : q
+      ) : null
+    );
+  }
+
+  function removePaperOption(questionId: string, optionIndex: number) {
+    setGeneratedPaper((prev: any[] | null) =>
+      prev ? prev.map((q) => {
+        if (q.id !== questionId) return q;
+        const options = (q.options || []).filter((_: any, i: number) => i !== optionIndex);
+        return { ...q, options: options.length === 0 ? [''] : options };
+      }) : null
+    );
+  }
+
   function canCreate(): boolean {
     const qc = Number(questionCount);
     return (
@@ -455,13 +490,18 @@ export default function TeacherExamCreatePage() {
       Number(passingScore) >= 0 &&
       Number(maxAttempts) > 0 &&
       distributionTotal <= Number(questionCount) &&
-      !createMutation.isPending
+      !createMutation.isPending &&
+      !createFromPaperMutation.isPending
     );
   }
 
   function handleCreate() {
     if (!canCreate()) return;
-    createMutation.mutate();
+    if (generatedPaper && generatedPaper.length > 0) {
+      createFromPaperMutation.mutate();
+    } else {
+      createMutation.mutate();
+    }
   }
 
   if (assignmentsLoading) {
@@ -918,29 +958,104 @@ export default function TeacherExamCreatePage() {
                     <div className="border rounded-lg p-3 bg-background space-y-3 max-h-80 overflow-y-auto">
                       <div className="flex items-center justify-between">
                         <p className="text-xs font-semibold text-primary">Preview ({generatedPaper.length} questions)</p>
-                        {generatedPaper.length < Number(questionCount) && (
-                          <p className="text-[10px] text-amber-600">Warning: fewer questions than requested</p>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {generatedPaper.length < Number(questionCount) && (
+                            <p className="text-[10px] text-amber-600">Warning: fewer questions than requested</p>
+                          )}
+                          <Button variant="ghost" size="sm" onClick={() => setGeneratedPaper(null)} className="h-6 w-6 p-0">
+                            <Icon name="close" size={14} />
+                          </Button>
+                        </div>
                       </div>
                       {generatedPaper.map((q: any, i: number) => (
-                        <div key={q.id || i} className="rounded-lg border border-border/60 p-3 space-y-1.5">
+                        <div key={q.id || i} className="rounded-lg border border-border/60 p-3 space-y-2">
                           <div className="flex items-center gap-2 text-xs">
                             <span className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">{i + 1}</span>
                             <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-medium">{q.type?.replace(/_/g, ' ')}</span>
                             <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${q.difficulty === 'easy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : q.difficulty === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : q.difficulty === 'hard' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'}`}>{q.difficulty}</span>
                             {q.hots && <span className="px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[10px] font-bold">HOTS</span>}
                           </div>
-                          <p className="text-xs text-foreground leading-relaxed">{q.text}</p>
-                          {q.options && q.options.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 pt-0.5">
-                              {q.options.map((opt: string, oi: number) => (
-                                <span key={oi} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{String.fromCharCode(65 + oi)}. {opt}</span>
-                              ))}
+                          <div className="flex items-center gap-2">
+                            <Label className="text-label-xs shrink-0">Points:</Label>
+                            <Input
+                              type="number"
+                              min={1}
+                              value={q.points ?? 1}
+                              onChange={(e) => updatePaperQuestion(q.id, 'points', Number(e.target.value))}
+                              className="w-20 h-7 text-xs"
+                            />
+                          </div>
+                          <textarea
+                            value={q.text || ''}
+                            onChange={(e) => updatePaperQuestion(q.id, 'text', e.target.value)}
+                            className="w-full rounded border border-border bg-background px-2 py-1 text-xs resize-none focus:outline-none focus:ring-1 focus:ring-primary/50"
+                            rows={2}
+                            placeholder="Question text"
+                          />
+                          {['mcq', 'multiple_choice', 'fill_blank', 'matching'].includes(q.type) && q.options && (
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <Label className="text-label-xs">Options</Label>
+                                <Button variant="ghost" size="icon-sm" onClick={() => addPaperOption(q.id)}>
+                                  <Icon name="add_circle" size={12} className="text-primary" />
+                                </Button>
+                              </div>
+                              <div className="space-y-1">
+                                {q.options.map((opt: string, oi: number) => (
+                                  <div key={oi} className="flex items-center gap-1.5">
+                                    <span className="text-[10px] font-medium text-muted-foreground w-4">{String.fromCharCode(65 + oi)}.</span>
+                                    <Input
+                                      value={opt}
+                                      onChange={(e) => updatePaperOption(q.id, oi, e.target.value)}
+                                      className="flex-1 h-7 text-xs"
+                                      placeholder={`Option ${String.fromCharCode(65 + oi)}`}
+                                    />
+                                    {q.options.length > 1 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => removePaperOption(q.id, oi)}
+                                        className="text-muted-foreground hover:text-destructive"
+                                      >
+                                        <Icon name="remove_circle" size={12} />
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
-                          {q.correctAnswer && (
-                            <p className="text-[10px] text-green-600 dark:text-green-400 font-medium">Answer: {Array.isArray(q.correctAnswer) ? q.correctAnswer.join(', ') : q.correctAnswer}</p>
-                          )}
+                          <div>
+                            <Label className="text-label-xs">Answer</Label>
+                            {['mcq', 'multiple_choice'].includes(q.type) && q.options ? (
+                              <select
+                                value={q.correctAnswer || ''}
+                                onChange={(e) => updatePaperQuestion(q.id, 'correctAnswer', e.target.value)}
+                                className="w-full rounded border border-border bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+                              >
+                                <option value="">Select...</option>
+                                {q.options.map((opt: string, oi: number) => (
+                                  <option key={oi} value={opt}>{opt || `Option ${String.fromCharCode(65 + oi)}`}</option>
+                                ))}
+                              </select>
+                            ) : q.type === 'true_false' ? (
+                              <select
+                                value={q.correctAnswer || ''}
+                                onChange={(e) => updatePaperQuestion(q.id, 'correctAnswer', e.target.value)}
+                                className="w-full rounded border border-border bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+                              >
+                                <option value="">Select...</option>
+                                <option value="true">True</option>
+                                <option value="false">False</option>
+                              </select>
+                            ) : (
+                              <Input
+                                value={q.correctAnswer || ''}
+                                onChange={(e) => updatePaperQuestion(q.id, 'correctAnswer', e.target.value)}
+                                className="h-7 text-xs"
+                                placeholder="Enter correct answer"
+                              />
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
