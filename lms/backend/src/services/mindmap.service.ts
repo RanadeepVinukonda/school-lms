@@ -263,12 +263,26 @@ export async function pushToClasses(
   }
 
   const supabase = getSupabaseAdmin()!;
-  const { data: students } = await supabase
+
+  const { data: studentsByArray, error: arrErr } = await supabase
     .from('users')
     .select('id')
+    .eq('role', 'student')
     .overlaps('class_ids', classIds);
+  if (arrErr) throw new Error('Failed to fetch students: ' + arrErr.message);
 
-  const studentIds: string[] = (students || []).map((s: any) => s.id);
+  const { data: studentsBySingle, error: singleErr } = await supabase
+    .from('users')
+    .select('id')
+    .eq('role', 'student')
+    .in('class_id', classIds);
+  if (singleErr) throw new Error('Failed to fetch students: ' + singleErr.message);
+
+  const seen = new Set<string>();
+  const studentIds: string[] = [];
+  for (const s of [...(studentsByArray || []), ...(studentsBySingle || [])]) {
+    if (!seen.has(s.id)) { seen.add(s.id); studentIds.push(s.id); }
+  }
   const currentShared = existing.sharedWith || [];
   const merged = [...new Set([...currentShared, ...studentIds])];
   const pushedClasses = [...new Set([...(existing as any).pushedToClasses || [], ...classIds])];
