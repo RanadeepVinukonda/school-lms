@@ -83,6 +83,10 @@ export default function TeacherAttendancePage() {
         toast.success(_('Attendance marked'));
       }
       setSelectedStudentIds([]);
+      queryClient.invalidateQueries({ queryKey: ['parent-child-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['student-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['parent-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance-report'] });
       refetchTodayAttendance();
       refetchReport();
       queryClient.invalidateQueries({ queryKey: ['attendance'] });

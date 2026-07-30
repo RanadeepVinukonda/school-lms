@@ -68,6 +68,7 @@ export default function AdminTransportPage() {
       toast.success('Stop created');
       setStopForm({ name: '', pickup_time: '', drop_time: '', fare: 0, sequence: stops.length + 1 });
       setShowStopForm(false);
+      queryClient.invalidateQueries({ queryKey: ['admin-route-stops', routeId] });
       refetchStops();
     },
     onError: (err: any) => toast.error(err?.message || 'Failed to create stop'),
@@ -78,6 +79,7 @@ export default function AdminTransportPage() {
     onSuccess: () => {
       toast.success('Stop updated');
       setEditingStop(null);
+      queryClient.invalidateQueries({ queryKey: ['admin-route-stops', routeId] });
       refetchStops();
     },
     onError: (err: any) => toast.error(err?.message || 'Failed to update stop'),
@@ -87,6 +89,7 @@ export default function AdminTransportPage() {
     mutationFn: (id: string) => transportService.deleteStop(id),
     onSuccess: () => {
       toast.success('Stop deleted');
+      queryClient.invalidateQueries({ queryKey: ['admin-route-stops', routeId] });
       refetchStops();
     },
     onError: (err: any) => toast.error(err?.message || 'Failed to delete stop'),
@@ -99,6 +102,8 @@ export default function AdminTransportPage() {
       toast.success('Student assigned to transport');
       setSelectedStudent('');
       setSelectedStop('');
+      queryClient.invalidateQueries({ queryKey: ['admin-route', routeId] });
+      queryClient.invalidateQueries({ queryKey: ['admin-users-list'] });
     },
     onError: (err: any) => toast.error(err?.message || 'Failed to assign student'),
   });

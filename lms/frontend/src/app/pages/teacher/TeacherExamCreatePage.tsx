@@ -286,6 +286,8 @@ export default function TeacherExamCreatePage() {
       setPassingScore('50');
       setMaxAttempts('1');
       queryClient.invalidateQueries({ queryKey: ['exams-v2-class', selectedClassId] });
+      queryClient.invalidateQueries({ queryKey: ['student-exams'] });
+      queryClient.invalidateQueries({ queryKey: ['student-tasks'] });
     },
     onError: (err: unknown) => {
       const message = err && typeof err === 'object' && 'message' in err
@@ -343,6 +345,8 @@ export default function TeacherExamCreatePage() {
       setTitle('');
       setGeneratedPaper(null);
       queryClient.invalidateQueries({ queryKey: ['exams-v2-class', selectedClassId] });
+      queryClient.invalidateQueries({ queryKey: ['student-exams'] });
+      queryClient.invalidateQueries({ queryKey: ['student-tasks'] });
     },
     onError: (err: unknown) => {
       const msg = err && typeof err === 'object' && 'message' in err
@@ -401,6 +405,8 @@ export default function TeacherExamCreatePage() {
     onSuccess: () => {
       toast.success(_('Exam released to students'));
       queryClient.invalidateQueries({ queryKey: ['exams-v2-class', selectedClassId] });
+      queryClient.invalidateQueries({ queryKey: ['student-exams'] });
+      queryClient.invalidateQueries({ queryKey: ['student-tasks'] });
     },
     onError: (err: unknown) => {
       const message = err && typeof err === 'object' && 'message' in err
@@ -417,6 +423,8 @@ export default function TeacherExamCreatePage() {
     onSuccess: () => {
       toast.success(_('Grades visibility updated'));
       queryClient.invalidateQueries({ queryKey: ['exams-v2-class', selectedClassId] });
+      queryClient.invalidateQueries({ queryKey: ['student-exams'] });
+      queryClient.invalidateQueries({ queryKey: ['student-tasks'] });
     },
     onError: (err: unknown) => {
       const message = err && typeof err === 'object' && 'message' in err

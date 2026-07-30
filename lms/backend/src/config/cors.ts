@@ -22,9 +22,12 @@ const DEV_ORIGINS = [
   'http://localhost:8080',
 ];
 
+const VERCEL_PREVIEW_RE = /^https:\/\/genesis-frontend-.*\.vercel\.app$/;
+
 const isAllowed = (origin: string): boolean => {
   if (env.NODE_ENV === 'production') {
-    return PRODUCTION_ORIGINS.some((o) => origin === o || origin.startsWith(o));
+    return PRODUCTION_ORIGINS.some((o) => origin === o || origin.startsWith(o))
+      || VERCEL_PREVIEW_RE.test(origin);
   }
   return [...DEV_ORIGINS, ...STAGING_ORIGINS, env.FRONTEND_URL].includes(origin);
 };

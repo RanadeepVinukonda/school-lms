@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { getSupabaseClient } from './supabase';
+import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
@@ -24,9 +24,18 @@ export async function createSubject(data: {
     throw new ValidationError('classId is required when creating a subject');
   }
   
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const subjectId = uuidv4();
   const now = new Date().toISOString();
+
+  // Fetch parent class to get its school_id and subject_ids
+  const { data: classDoc } = await supabase
+    .from('classes')
+    .select('school_id, subject_ids')
+    .eq('id', data.classId)
+    .maybeSingle();
+
+  const schoolId = classDoc?.school_id || null;
 
   const subjectData = {
     id: subjectId,
@@ -34,21 +43,34 @@ export async function createSubject(data: {
     code: data.code,
     class_id: data.classId,
     description: data.description || '',
-    category: data.category,
-    credit_hours: data.credits,
-    department: data.department,
-    icon: data.thumbnail,
-    is_elective: data.isElective,
-    grade_levels: data.gradeLevels,
-    tags: data.tags || [],
-    syllabus: data.syllabus,
-    status: data.status || 'active',
+    category: data.category || '',
+    credit_hours: data.credits || 0,
+    icon: data.thumbnail || '',
+    color: 'hsl(var(--accent-default))',
+    is_active: true,
     created_at: now,
     updated_at: now,
+    school_id: schoolId,
   };
 
   const { error } = await supabase.from('subjects').insert(subjectData);
   if (error) throw error;
+
+  // Append new subject ID to class's subject_ids array
+  try {
+    if (classDoc) {
+      const currentSubjectIds = classDoc.subject_ids || [];
+      if (!currentSubjectIds.includes(subjectId)) {
+        const updatedSubjectIds = [...currentSubjectIds, subjectId];
+        await supabase
+          .from('classes')
+          .update({ subject_ids: updatedSubjectIds, updated_at: now })
+          .eq('id', data.classId);
+      }
+    }
+  } catch (err) {
+    logger.warn('Failed to update class subject_ids array', { error: err, classId: data.classId, subjectId });
+  }
 
   logger.info('Subject created', { subjectId, name: data.name, code: data.code, classId: data.classId });
 
@@ -57,7 +79,7 @@ export async function createSubject(data: {
 
 /** Update subject fields. Throws NotFoundError if missing. */
 export async function updateSubject(subjectId: string, data: Record<string, unknown>) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: existing } = await supabase
     .from('subjects')
     .select('id')
@@ -84,7 +106,7 @@ export async function updateSubject(subjectId: string, data: Record<string, unkn
 
 /** Delete a subject by id. Throws NotFoundError if missing. */
 export async function deleteSubject(subjectId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data: existing } = await supabase
     .from('subjects')
     .select('id')
@@ -112,7 +134,7 @@ export async function listSubjects(query: {
   search?: string;
 }) {
   const { page, limit } = parsePagination(query);
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   
   let baseQuery = supabase.from('subjects').select('*');
 
@@ -145,7 +167,7 @@ export async function listSubjects(query: {
 
 /** List subjects by class. */
 export async function listSubjectsByClass(classId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   
   const { data: items } = await supabase
     .from('subjects')
@@ -161,7 +183,7 @@ export async function listSubjectsByClass(classId: string) {
 
 /** Fetch a single subject by id. Throws NotFoundError if missing. */
 export async function getSubjectById(subjectId: string) {
-  const supabase = getSupabaseClient()!;
+  const supabase = getSupabaseAdmin()!;
   const { data, error } = await supabase
     .from('subjects')
     .select('*')

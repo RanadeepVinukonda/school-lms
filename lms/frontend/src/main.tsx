@@ -13,6 +13,13 @@ import 'katex/dist/katex.min.css';
 
 setupChunkReload();
 
+window.addEventListener('error', (event) => {
+  console.error('[Global] Uncaught error:', event.error || event.message);
+});
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('[Global] Unhandled rejection:', event.reason);
+});
+
 // ── PWA / Service Worker ──
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

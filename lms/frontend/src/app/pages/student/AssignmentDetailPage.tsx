@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
 import { sanitizeHtml } from '@/lib/sanitize';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -22,6 +22,7 @@ import { getAssignment, getSubmissionsByAssignment, getSubject } from '@/service
 import { getTextbook } from '@/services/textbookService';
 import { formatDate, formatDateTime } from '@/lib/format';
 import type { Submission } from '@/types';
+import api from '@/services/api';
 
 const submitSchema = z.object({
   notes: z.string().max(500, 'Notes must be under 500 characters').optional(),
@@ -44,6 +45,7 @@ export default function AssignmentDetailPage() {
   const [drag, setDrag] = useState(false);
   const [file, setFile] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
+  const queryClient = useQueryClient();
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm({ resolver: zodResolver(submitSchema) });
   const notes = watch('notes');
@@ -113,9 +115,24 @@ export default function AssignmentDetailPage() {
   const history = submissions?.slice(0) ?? [];
 
   const { isPending, mutate } = useMutation({
-    mutationFn: async () => { await new Promise((r) => setTimeout(r, 800)); },
-    onSuccess: () => { toast.success(_('Assignment submitted!')); setConfirm(false); setFile(null); },
-    onError: () => toast.error(_('Failed to submit. Try again.')),
+    mutationFn: async () => {
+      await api.post(`/assignments/${assignmentId}/submit`, {
+        content: notes || '',
+        attachments: file ? [file] : [],
+      });
+    },
+    onSuccess: () => {
+      toast.success(_('Assignment submitted!'));
+      setConfirm(false);
+      setFile(null);
+      queryClient.invalidateQueries({ queryKey: ['submissions', assignmentId, user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['student-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['student-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['parent-child-detail'] });
+    },
+    onError: (err: any) => {
+      toast.error(err.message || _('Failed to submit. Try again.'));
+    },
   });
 
   const rem = (due: string) => {

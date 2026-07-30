@@ -37,7 +37,8 @@ export default function RollNumberEntryPage() {
       const grade = cleaned.slice(0, -2) || cleaned[0];
       const roll = cleaned.slice(-2);
 
-      const { data: classRows } = await supabase.from('classes').select('*').eq('grade', grade).eq('isActive', true);
+      const { data: classRows, error: classErr } = await supabase.from('classes').select('*').eq('grade', grade).eq('status', 'active');
+      if (classErr) throw classErr;
 
       if (!classRows || classRows.length === 0) {
         setError(_('No class found for grade') + ` ${grade}. ` + _('Contact your teacher.'));
@@ -46,22 +47,25 @@ export default function RollNumberEntryPage() {
       }
       const classId = classRows[0].id;
 
-      const { data: duplicates } = await supabase.from('users').select('id').eq('class_id', classId).eq('student_id', cleaned);
+      const { data: duplicates, error: dupErr } = await supabase.from('users').select('id').eq('class_id', classId).eq('student_id', cleaned);
+      if (dupErr) throw dupErr;
       if (duplicates && duplicates.length > 0) {
         setError(_('Roll number') + ` ${cleaned} ` + _('is already taken in this class.'));
         setLoading(false);
         return;
       }
 
-      await supabase.from('users').update({
+      const { error: updErr } = await supabase.from('users').update({
         class_id: classId,
         student_id: cleaned,
-        roll_no: roll,
+        roll_no: parseInt(roll, 10),
         tutorial_seen: false,
         updated_at: new Date().toISOString(),
       }).eq('id', user.id);
+      if (updErr) throw updErr;
 
-      const { data: d } = await supabase.from('users').select('*').eq('id', user.id).maybeSingle();
+      const { data: d, error: getErr } = await supabase.from('users').select('*').eq('id', user.id).maybeSingle();
+      if (getErr) throw getErr;
       if (d) {
         setUser({
           id: d.id,
@@ -85,21 +89,28 @@ export default function RollNumberEntryPage() {
         newValue: { studentId: cleaned, classId },
       });
 
-      await supabase.from('notifications').insert({
+      const welcomeMsg = `Hi ${user?.displayName ?? 'Unknown'}! Your student account is now active. Explore your subjects, tasks, and exams to get started.`;
+      const { error: notifErr } = await supabase.from('notifications').insert({
         user_id: user.id,
+        userId: user.id,
         type: 'welcome',
         title: 'Welcome to Genesis LMS!',
-        body: `Hi ${user?.displayName ?? 'Unknown'}! Your student account is now active. Explore your subjects, tasks, and exams to get started.`,
+        message: welcomeMsg,
+        body: welcomeMsg,
         data: { role: 'student' },
         priority: 'high',
         read: false,
         read_at: null,
+        readAt: null,
         created_at: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       });
+      if (notifErr) throw notifErr;
 
       navigate(ROUTES.STUDENT_DASHBOARD, { replace: true });
-    } catch (err) {
-      setError(_('Something went wrong. Try again.'));
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || _('Something went wrong. Try again.'));
     } finally {
       setLoading(false);
     }

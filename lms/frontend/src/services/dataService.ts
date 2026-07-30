@@ -91,11 +91,19 @@ const CLASSES_COLLECTION = 'classes';
 const GRADES_COLLECTION = 'grades';
 const NOTIFICATIONS_COLLECTION = 'notifications';
 
+function snakeToCamel(obj: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const key of Object.keys(obj)) {
+    result[key.replace(/_([a-z])/g, (_, c) => c.toUpperCase())] = obj[key];
+  }
+  return result;
+}
+
 /** Fetch all subjects from Supabase. */
 export async function getAllSubjects(): Promise<Subject[]> {
   const { data, error } = await supabase.from(SUBJECTS_COLLECTION).select('*');
   if (error) throw error;
-  return (data || []) as Subject[];
+  return ((data || []).map(snakeToCamel) as unknown as Subject[]);
 }
 
 /** Fetch all teachers from Supabase. */
@@ -160,14 +168,14 @@ export async function getClassesByIds(ids: string[]): Promise<ClassEntry[]> {
 export async function getClass(id: string): Promise<ClassEntry | null> {
   const { data, error } = await supabase.from(CLASSES_COLLECTION).select('*').eq('id', id).maybeSingle();
   if (error) throw error;
-  return data as unknown as ClassEntry | null;
+  return (data ? snakeToCamel(data) : null) as ClassEntry | null;
 }
 
 /** Fetch all classes from Supabase. */
 export async function getAllClasses(): Promise<ClassEntry[]> {
   const { data, error } = await supabase.from(CLASSES_COLLECTION).select('*');
   if (error) throw error;
-  return (data || []) as unknown as ClassEntry[];
+  return ((data || []).map(snakeToCamel) as unknown as ClassEntry[]);
 }
 
 /** Fetch all exams from Supabase. */
@@ -481,9 +489,9 @@ export interface TimetableEntry {
 
 /** Fetch timetable entries for a specific class. */
 export async function getTimetableByClass(classId: string): Promise<TimetableEntry[]> {
-  const { data, error } = await supabase.from('timetable').select('*').eq('classId', classId);
+  const { data, error } = await supabase.from('timetable').select('*').eq('class_id', classId);
   if (error) throw error;
-  return (data || []) as TimetableEntry[];
+  return ((data || []).map(snakeToCamel) as unknown as TimetableEntry[]);
 }
 
 // ── Users ──

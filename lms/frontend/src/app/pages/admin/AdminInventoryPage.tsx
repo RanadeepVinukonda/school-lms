@@ -64,6 +64,7 @@ export default function AdminInventoryPage() {
       toast.success('Inventory item created');
       setItemForm({ name: '', category_id: '', quantity: 0, unit: 'pcs', reorder_level: 5, supplier_id: '' });
       setShowItemForm(false);
+      queryClient.invalidateQueries({ queryKey: ['admin-inventory-items'] });
       refetchItems();
     },
     onError: (err: any) => toast.error(err?.message || 'Failed to create item'),
@@ -74,6 +75,7 @@ export default function AdminInventoryPage() {
     onSuccess: () => {
       toast.success('Inventory item updated');
       setEditingItem(null);
+      queryClient.invalidateQueries({ queryKey: ['admin-inventory-items'] });
       refetchItems();
     },
     onError: (err: any) => toast.error(err?.message || 'Failed to update item'),
@@ -83,6 +85,7 @@ export default function AdminInventoryPage() {
     mutationFn: (id: string) => inventoryService.deleteItem(id),
     onSuccess: () => {
       toast.success('Inventory item deleted');
+      queryClient.invalidateQueries({ queryKey: ['admin-inventory-items'] });
       refetchItems();
     },
     onError: (err: any) => toast.error(err?.message || 'Failed to delete item'),
@@ -94,6 +97,7 @@ export default function AdminInventoryPage() {
       toast.success('Category created');
       setCatForm({ name: '', description: '' });
       setShowCatForm(false);
+      queryClient.invalidateQueries({ queryKey: ['admin-inventory-categories'] });
       refetchCats();
     },
     onError: (err: any) => toast.error(err?.message || 'Failed to create category'),
@@ -105,6 +109,7 @@ export default function AdminInventoryPage() {
       toast.success('Supplier created');
       setSupForm({ name: '', contact_person: '', phone: '', email: '', address: '' });
       setShowSupForm(false);
+      queryClient.invalidateQueries({ queryKey: ['admin-inventory-suppliers'] });
       refetchSups();
     },
     onError: (err: any) => toast.error(err?.message || 'Failed to create supplier'),
@@ -118,6 +123,7 @@ export default function AdminInventoryPage() {
       setAdjustingItem(null);
       setAdjustQty(0);
       setAdjustReason('');
+      queryClient.invalidateQueries({ queryKey: ['admin-inventory-items'] });
       refetchItems();
     },
     onError: (err: any) => toast.error(err?.message || 'Failed to adjust stock'),

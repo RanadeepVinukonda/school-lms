@@ -161,28 +161,14 @@ export default function AdminClassesPage() {
 
     setClassCreateLoading(true);
     try {
-      const { data: newClass } = await supabase.from('classes').insert({
+      await api.post('/classes', {
         name: className,
         code: finalCode,
         grade: g,
         section: classSection.trim() || '',
         roomNumber: classRoomNumber.trim() || '',
         academicYear: activeYear,
-        teacherIds: [],
-        subjectIds: [],
-        studentCount: 0,
-        teacherCount: 0,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }).select('id').single();
-      logAudit({
-        action: 'class.create',
-        targetId: newClass?.id || '',
-        targetType: 'class',
-        targetName: className,
-        summary: `Created class "${className}" (${finalCode})`,
-        newValue: { name: className, code: finalCode, grade: g, section: classSection.trim(), roomNumber: classRoomNumber.trim() },
+        status: 'active',
       });
       setClassGrade('');
       setClassCode('');
@@ -221,14 +207,16 @@ export default function AdminClassesPage() {
       return;
     }
     try {
-      await supabase.from('classes').update({
+      const { error } = await supabase.from('classes').update({
         name: editClassForm.name,
         code: editClassForm.code.toUpperCase(),
         grade: editClassForm.grade || null,
         section: editClassForm.section || null,
-        roomNumber: editClassForm.roomNumber || null,
-        updatedAt: new Date().toISOString(),
+        room_number: editClassForm.roomNumber || null,
+        updated_at: new Date().toISOString(),
       }).eq('id', editClassTarget.id);
+      if (error) throw error;
+
       logAudit({
         action: 'class.update',
         targetId: editClassTarget.id,
@@ -242,8 +230,8 @@ export default function AdminClassesPage() {
       setEditClassTarget(null);
       toast.success(`Class ${editClassForm.name} updated`);
       refetchClasses();
-    } catch {
-      toast.error('Failed to update class');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update class');
     }
   };
 
@@ -265,7 +253,9 @@ export default function AdminClassesPage() {
     if (!classDeleteTarget) return;
     setClassDeleteLoading(true);
     try {
-      await supabase.from('classes').update({ isActive: false, updatedAt: new Date().toISOString() }).eq('id', classDeleteTarget.id);
+      const { error } = await supabase.from('classes').update({ status: 'inactive', updated_at: new Date().toISOString() }).eq('id', classDeleteTarget.id);
+      if (error) throw error;
+
       logAudit({
         action: 'class.archive',
         targetId: classDeleteTarget.id,
@@ -278,8 +268,8 @@ export default function AdminClassesPage() {
       setShowClassDependencyDialog(false);
       setClassDeleteTarget(null);
       refetchClasses();
-    } catch {
-      toast.error('Failed to archive class');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to archive class');
     } finally {
       setClassDeleteLoading(false);
     }
@@ -297,6 +287,9 @@ export default function AdminClassesPage() {
         supabase.from('student_class_enrollments').select('student_id').eq('class_id', classId),
       ]);
 
+      if (studentsRes.error) throw studentsRes.error;
+      if (enrollmentsRes.error) throw enrollmentsRes.error;
+
       const studentIds = new Set<string>();
       (studentsRes.data || []).forEach((s: any) => studentIds.add(s.id));
       (enrollmentsRes.data || []).forEach((e: any) => studentIds.add(e.student_id));
@@ -305,36 +298,48 @@ export default function AdminClassesPage() {
 
       // 2. Delete student users from 'users' table (cascades to fee_payments, enrollments, etc.)
       if (studentIdsArray.length > 0) {
-        await supabase.from('users').delete().in('id', studentIdsArray);
+        const { error: delUserErr } = await supabase.from('users').delete().in('id', studentIdsArray);
+        if (delUserErr) throw delUserErr;
       }
 
       // Also clean up any residual students set to this class_id
-      await supabase.from('users').delete().eq('class_id', classId).eq('role', 'student');
+      const { error: delResidErr } = await supabase.from('users').delete().eq('class_id', classId).eq('role', 'student');
+      if (delResidErr) throw delResidErr;
 
       // 3. Find and delete textbooks for this class (and related lessons, quizzes, assignments)
-      const { data: textbooks } = await supabase.from('textbooks').select('id').eq('class_id', classId);
+      const { data: textbooks, error: getTbErr } = await supabase.from('textbooks').select('id').eq('class_id', classId);
+      if (getTbErr) throw getTbErr;
       const textbookIds = (textbooks || []).map((t: any) => t.id);
 
       if (textbookIds.length > 0) {
-        await Promise.all([
-          supabase.from('lessons').delete().in('textbookId', textbookIds),
-          supabase.from('quizzes').delete().in('textbookId', textbookIds),
-          supabase.from('assignments').delete().in('textbookId', textbookIds),
+        const delRes = await Promise.all([
+          supabase.from('lessons').delete().in('textbook_id', textbookIds),
+          supabase.from('quizzes').delete().in('textbook_id', textbookIds),
+          supabase.from('assignments').delete().in('textbook_id', textbookIds),
         ]);
+        for (const r of delRes) {
+          if (r.error) throw r.error;
+        }
       }
-      await supabase.from('textbooks').delete().eq('class_id', classId);
+      const { error: delTbErr } = await supabase.from('textbooks').delete().eq('class_id', classId);
+      if (delTbErr) throw delTbErr;
 
       // 4. Delete class relations, timetable, subjects, and enrollments
-      await Promise.all([
+      const delRels = await Promise.all([
         supabase.from('student_class_enrollments').delete().eq('class_id', classId),
         supabase.from('class_teachers').delete().eq('class_id', classId),
+        supabase.from('class_subjects').delete().eq('class_id', classId),
         supabase.from('teacher_class_subject_assignments').delete().eq('class_id', classId),
         supabase.from('timetable').delete().eq('class_id', classId),
-        supabase.from('subjects').delete().eq('classId', classId),
+        supabase.from('subjects').delete().eq('class_id', classId),
       ]);
+      for (const r of delRels) {
+        if (r.error) throw r.error;
+      }
 
       // 5. Finally delete the class record
-      await supabase.from('classes').delete().eq('id', classId);
+      const { error: delClsErr } = await supabase.from('classes').delete().eq('id', classId);
+      if (delClsErr) throw delClsErr;
 
       logAudit({
         action: 'class.delete',
@@ -350,7 +355,7 @@ export default function AdminClassesPage() {
       refetchClasses();
     } catch (err: any) {
       console.error(err);
-      toast.error('Failed to permanently delete class and its dependencies');
+      toast.error(err.message || 'Failed to permanently delete class and its dependencies');
     } finally {
       setClassDeleteLoading(false);
     }
@@ -382,43 +387,20 @@ export default function AdminClassesPage() {
     }
     setSubjectCreateLoading(true);
     try {
-      const { data: newSubject } = await supabase.from('subjects').insert({
+      await api.post('/subjects', {
         name: subjectForm.name,
         code,
-        icon: subjectForm.icon,
-        color: 'hsl(var(--accent-default))',
+        thumbnail: subjectForm.icon,
         category: subjectForm.category,
         classId: addSubjectClassId,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }).select('id').single();
-
-      // Update class subjectIds
-      const { data: classRow } = await supabase.from('classes').select('subjectIds').eq('id', addSubjectClassId).maybeSingle();
-      if (classRow) {
-        const currentSubjectIds = classRow.subjectIds || [];
-        await supabase.from('classes').update({
-          subjectIds: [...currentSubjectIds, newSubject?.id],
-          updatedAt: new Date().toISOString(),
-        }).eq('id', addSubjectClassId);
-      }
-
-      logAudit({
-        action: 'subject.create',
-        targetId: newSubject?.id || '',
-        targetType: 'subject',
-        targetName: subjectForm.name,
-        summary: `Created subject "${subjectForm.name}" (${code})`,
-        newValue: { name: subjectForm.name, code, category: subjectForm.category, icon: subjectForm.icon, classId: addSubjectClassId },
       });
 
       setShowAddSubject(false);
       toast.success(`Subject ${subjectForm.name} added`);
       refetchSubjects();
       refetchClasses();
-    } catch {
-      toast.error('Failed to add subject');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to add subject');
     } finally {
       setSubjectCreateLoading(false);
     }
@@ -453,13 +435,14 @@ export default function AdminClassesPage() {
         return;
       }
 
-      const res = await teacherClassSubjectService.assign({
+      await teacherClassSubjectService.assign({
         teacherId,
         classId: assignClassId,
         subjectId: assignSubjectId,
       });
-      console.log("Assign Response:", res);
-
+      // Invalidate query cache to trigger immediate UI re-render
+      queryClient.invalidateQueries({ queryKey: ['admin-tc-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-users-list'] });
       await Promise.all([refetchTCAssignments(), refetchUsers()]);
       setShowAssign(false);
       toast.success('Teacher assigned successfully');
@@ -475,6 +458,7 @@ export default function AdminClassesPage() {
     if (!assignment) return;
     try {
       await teacherClassSubjectService.remove(assignment.id);
+      queryClient.invalidateQueries({ queryKey: ['admin-tc-assignments'] });
       await refetchTCAssignments();
       toast.success('Teacher assignment removed');
     } catch (err: any) {
@@ -977,7 +961,6 @@ export default function AdminClassesPage() {
 
                               {/* Card Footer Actions */}
                               <div className="px-5 pb-4 flex items-center gap-2 pt-2 border-t border-border/10">
-                                <Button variant="ghost" size="sm" onClick={() => handleClassGradeChange} className="ml-auto opacity-0 pointer-events-none" />
                                 <Button variant="ghost" size="sm" onClick={() => handleEditClassClick(cls)} title="Edit Class Details">
                                   <Icon name="edit" size={16} />
                                 </Button>

@@ -44,6 +44,8 @@ export default function AdminPayrollPage() {
     onSuccess: () => {
       toast.success('Salary configuration updated');
       setConfiguringStaff(null);
+      queryClient.invalidateQueries({ queryKey: ['admin-staff-payroll-list'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-payroll-runs'] });
     },
     onError: (err: any) => toast.error(err?.message || 'Failed to configure salary'),
   });
@@ -52,6 +54,7 @@ export default function AdminPayrollPage() {
     mutationFn: (data: { staff_id: string; month: string }) => hrService.runPayroll(data),
     onSuccess: () => {
       toast.success('Payroll generated and payslip processed');
+      queryClient.invalidateQueries({ queryKey: ['admin-payroll-runs'] });
       refetchPayroll();
     },
     onError: (err: any) => toast.error(err?.message || 'Failed to process payroll'),

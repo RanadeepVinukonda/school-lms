@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   Clock, AlertCircle, CheckCircle, XCircle, Loader2,
@@ -136,6 +136,7 @@ function playSynthesizedSound(type: 'correct' | 'incorrect') {
 
 export default function StudentQuizTakePageV2() {
   const { _ } = useTranslation();
+  const queryClient = useQueryClient();
   const params = useParams<{ assessmentId: string; id: string }>();
   const assessmentId = params.assessmentId || params.id;
   const [searchParams] = useSearchParams();
@@ -192,7 +193,7 @@ export default function StudentQuizTakePageV2() {
     },
   });
 
-  const { data: pastAttempts = [] } = useQuery({
+  const { data: pastAttempts = [], refetch: refetchPastAttempts } = useQuery({
     queryKey: ['my-attempts', assessmentId, assessmentType],
     queryFn: async () => {
       const endpoint = assessmentType === 'exam' ? '/unified-test-engine/attempts/my' : '/quizzes-v2/attempts/my';
@@ -351,12 +352,19 @@ export default function StudentQuizTakePageV2() {
       setResult(submitResult);
       setPhase('result');
       toast.success(_('Assessment submitted successfully!'));
+      
+      queryClient.invalidateQueries({ queryKey: ['student-quizzes-v2'] });
+      queryClient.invalidateQueries({ queryKey: ['student-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['student-exams'] });
+      queryClient.invalidateQueries({ queryKey: ['student-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['parent-child-detail'] });
+      refetchPastAttempts();
     } catch (err: any) {
       toast.error(err.message || _('Failed to submit assessment'));
     } finally {
       setIsSubmitting(false);
     }
-  }, [attempt, userId, isSubmitting, currentIndex, answers, basePath, trackTimeOnQuestion]);
+  }, [attempt, userId, isSubmitting, currentIndex, answers, basePath, trackTimeOnQuestion, queryClient, refetchPastAttempts]);
 
   const handleInteractiveSelect = (optionValue: string) => {
     if (!attempt || !assessmentInfo?.isRepublished) return;
