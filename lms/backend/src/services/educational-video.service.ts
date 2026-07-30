@@ -174,6 +174,13 @@ function cleanHtml(text: string): string {
   return text.replace(/<[^>]+>/g, '').trim();
 }
 
+export async function searchYouTubeOnly(
+  query: string,
+  maxResults = 8,
+): Promise<VideoResult[]> {
+  return searchYouTube(query, maxResults);
+}
+
 export async function searchEducationalVideos(
   query: string,
   maxResults = 8,

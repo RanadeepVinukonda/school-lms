@@ -1,4 +1,5 @@
 import * as educationalVideoService from './educational-video.service';
+import { logger } from '../utils/logger';
 
 export interface TeachResource {
   id: string;
@@ -14,6 +15,46 @@ export interface TeachResource {
   relevance: number;
 }
 
+const KHAN_ACADEMY_CHANNELS = ['Khan Academy', 'Khan Academy India', 'Khan Academy India - English'];
+
+async function searchKhanAcademyYouTube(
+  conceptTitle: string,
+  subject: string,
+  maxResults: number,
+): Promise<TeachResource[]> {
+  try {
+    const ytSearch = require('yt-search');
+    const query = `"Khan Academy" ${subject} ${conceptTitle}`;
+    const r = await ytSearch(query);
+    const videos = (r.videos || []).slice(0, maxResults);
+
+    return videos
+      .filter((v: any) =>
+        KHAN_ACADEMY_CHANNELS.some((ch) =>
+          (v.author?.name || '').toLowerCase().includes(ch.toLowerCase()),
+        ),
+      )
+      .slice(0, maxResults)
+      .map((v: any, i: number) => ({
+        id: `ka_yt_${v.videoId}`,
+        source: 'khan_academy' as const,
+        sourceLabel: 'Khan Academy',
+        videoId: v.videoId,
+        title: v.title,
+        thumbnail: v.thumbnail || `https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg`,
+        duration: v.timestamp || '0:00',
+        channelName: v.author?.name || 'Khan Academy',
+        description: v.description || '',
+        url: `https://www.youtube.com/watch?v=${v.videoId}`,
+        embedUrl: `https://www.youtube.com/embed/${v.videoId}`,
+        relevance: 1.0 - i * 0.1,
+      }));
+  } catch (err) {
+    logger.warn('Khan Academy YouTube search failed', { conceptTitle, error: (err as Error).message });
+    return [];
+  }
+}
+
 export async function searchTeachResources(
   subject: string,
   chapterTitle: string,
@@ -21,6 +62,11 @@ export async function searchTeachResources(
   keywords: string[] = [],
   maxResults = 6,
 ): Promise<TeachResource[]> {
+  // 1. Search Khan Academy's YouTube channel first
+  const khanResults = await searchKhanAcademyYouTube(conceptTitle, subject, maxResults);
+  if (khanResults.length >= maxResults) return khanResults;
+
+  // 2. Fill remaining slots from general YouTube search
   const queries = [
     ...(keywords.length > 0 ? keywords.slice(0, 3).map((k) => `${subject} ${conceptTitle} ${k}`) : []),
     `${subject} ${conceptTitle}`,
@@ -29,24 +75,24 @@ export async function searchTeachResources(
     `${conceptTitle} explained`,
   ];
 
-  const seen = new Set<string>();
-  const khanResults: TeachResource[] = [];
+  const seen = new Set(khanResults.map((r) => r.id));
   const youtubeResults: TeachResource[] = [];
+  const remaining = maxResults - khanResults.length;
 
   for (const q of queries) {
-    if (khanResults.length >= maxResults) break;
+    if (youtubeResults.length >= remaining) break;
 
-    const allResults = await educationalVideoService.searchEducationalVideos(q, maxResults);
+    const allResults = await educationalVideoService.searchYouTubeOnly(q, remaining);
 
     for (const r of allResults) {
       const key = r.videoId || r.id;
       if (seen.has(key)) continue;
       seen.add(key);
 
-      const resource: TeachResource = {
+      youtubeResults.push({
         id: r.id,
-        source: r.source === 'khan_academy' ? 'khan_academy' : 'youtube',
-        sourceLabel: r.source === 'khan_academy' ? 'Khan Academy' : 'YouTube',
+        source: 'youtube',
+        sourceLabel: 'YouTube',
         title: r.title,
         thumbnail: r.thumbnail,
         duration: r.duration,
@@ -55,21 +101,10 @@ export async function searchTeachResources(
         url: r.url,
         embedUrl: r.embedUrl,
         relevance: r.relevance,
-      };
+      });
 
-      if (r.source === 'khan_academy') {
-        khanResults.push(resource);
-      } else if (r.source === 'youtube' && khanResults.length < maxResults) {
-        youtubeResults.push(resource);
-      }
+      if (youtubeResults.length >= remaining) break;
     }
-  }
-
-  khanResults.sort((a, b) => b.relevance - a.relevance);
-  youtubeResults.sort((a, b) => b.relevance - a.relevance);
-
-  if (khanResults.length >= 2) {
-    return khanResults.slice(0, maxResults);
   }
 
   const combined = [...khanResults, ...youtubeResults];
