@@ -214,11 +214,17 @@ export default function TeacherConceptViewPage() {
     queryKey: ['teach-resources', conceptId],
     queryFn: async () => {
       if (!conceptId) return [];
-      const res = await api.get<{ data: TeachResource[] }>(`/teach-resources/search/${conceptId}`);
-      return res.data.data || [];
+      try {
+        const res = await api.get<{ data: TeachResource[] }>(`/teach-resources/search/${conceptId}`);
+        return res.data?.data ?? [];
+      } catch (err) {
+        console.warn('Failed to fetch teach resources:', err);
+        return [];
+      }
     },
     enabled: !!conceptId,
     staleTime: 5 * 60 * 1000,
+    retry: 1,
   });
 
   const pushConceptMutation = useMutation({
