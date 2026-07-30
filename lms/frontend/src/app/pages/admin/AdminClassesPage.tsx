@@ -582,19 +582,11 @@ export default function AdminClassesPage() {
       toast.error('Please enter teacher name');
       return;
     }
-    if (!teacherForm.phone.trim()) {
-      toast.error('Please enter a phone number');
-      return;
-    }
-    if (!/^\+?\d{10,15}$/.test(teacherForm.phone.trim())) {
-      toast.error('Invalid phone number');
-      return;
-    }
     setTeacherRegisterLoading(true);
     try {
       const res = await userService.create({
         displayName: teacherForm.displayName,
-        phone: teacherForm.phone.trim(),
+        phone: teacherForm.phone.trim() || undefined,
         role: 'teacher',
       });
 
@@ -1452,12 +1444,7 @@ export default function AdminClassesPage() {
               <Label>Teacher Name</Label>
               <Input placeholder="Jane Doe" value={teacherForm.displayName} onChange={(e) => setTeacherForm((f) => ({ ...f, displayName: e.target.value }))} />
             </div>
-            <div className="space-y-2">
-              <Label>Phone Number</Label>
-              <Input placeholder="+2341234567890" value={teacherForm.phone} onChange={(e) => setTeacherForm((f) => ({ ...f, phone: e.target.value }))} />
-              <p className="text-[11px] text-muted-foreground">10–15 digits, with optional leading +</p>
-            </div>
-            <Button className="w-full" onClick={handleCreateTeacher} disabled={teacherRegisterLoading || !teacherForm.displayName || !teacherForm.phone.trim()}>
+            <Button className="w-full" onClick={handleCreateTeacher} disabled={teacherRegisterLoading || !teacherForm.displayName}>
               {teacherRegisterLoading ? 'Registering...' : 'Register Teacher'}
             </Button>
           </div>
