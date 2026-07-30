@@ -185,8 +185,8 @@ export default function AdminSettingsPage() {
   };
 
   const createParentMutation = useMutation({
-    mutationFn: () =>
-      api.post('/auth/users', {
+    mutationFn: async () => {
+      const body = {
         displayName: parentForm.displayName,
         email: parentForm.email,
         password: parentForm.password,
@@ -195,14 +195,29 @@ export default function AdminSettingsPage() {
         address: parentForm.address,
         relationship: parentForm.relationship,
         childrenIds: parentForm.selectedStudentIds,
-      }),
+      };
+      let timer: ReturnType<typeof setTimeout>;
+      const timeout = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('Request timed out. Please try again.')), 15000);
+      });
+      try {
+        const res = await Promise.race([api.post('/auth/users', body), timeout]);
+        return res;
+      } finally {
+        clearTimeout(timer!);
+      }
+    },
     onSuccess: () => {
-      toast.success('Parent account created');
       setShowCreateParent(false);
       setParentForm({ displayName: '', email: '', password: '', phone: '', address: '', relationship: '', selectedStudentIds: [] });
       queryClient.invalidateQueries({ queryKey: ['admin-users-stats'] });
+      toast.success('Parent account created');
     },
-    onError: (err: any) => toast.error(err.message || 'Failed to create parent'),
+    onError: (err: any) => {
+      const msg = err?.response?.data?.error?.message || err?.response?.data?.message || err?.message || 'Failed to create parent';
+      toast.error(msg);
+      console.error('[CreateParent]', msg, err);
+    },
   });
 
   // Parents list
