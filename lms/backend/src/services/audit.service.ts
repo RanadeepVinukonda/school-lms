@@ -40,7 +40,7 @@ export async function logAudit(entry: Omit<AuditEntry, 'timestamp'>): Promise<vo
 
   try {
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase.from('auditlogs').insert(auditDoc);
+    const { error } = await supabase.from('audit_logs').insert(auditDoc);
     if (error) throw error;
     logger.info('Audit log created', { action: entry.action, targetId: entry.targetId });
   } catch (err) {
@@ -76,8 +76,8 @@ export async function listAuditLogs(query: { page?: string; limit?: string; acti
   const offset = (page - 1) * limit;
   const supabase = getSupabaseAdmin();
 
-  let countQ: any = supabase.from('auditlogs').select('*', { count: 'exact', head: true });
-  let listQ: any = supabase.from('auditlogs').select('*').order('timestamp', { ascending: false });
+  let countQ: any = supabase.from('audit_logs').select('*', { count: 'exact', head: true });
+  let listQ: any = supabase.from('audit_logs').select('*').order('timestamp', { ascending: false });
 
   if (query.action) {
     countQ = countQ.eq('action', query.action);
@@ -98,7 +98,7 @@ export async function listAuditLogs(query: { page?: string; limit?: string; acti
 /** Fetch a single audit log by document ID. */
 export async function getAuditLogById(logId: string) {
   const supabase = getSupabaseAdmin();
-  const { data: row, error } = await supabase.from('auditlogs').select('*').eq('id', logId).maybeSingle();
+  const { data: row, error } = await supabase.from('audit_logs').select('*').eq('id', logId).maybeSingle();
   if (error || !row) throw new NotFoundError('Audit log not found');
   return { id: row.id, ...row };
 }
