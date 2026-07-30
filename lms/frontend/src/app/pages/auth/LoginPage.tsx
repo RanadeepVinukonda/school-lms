@@ -58,7 +58,7 @@ export default function LoginPage() {
           <CardHeader className="space-y-1 pb-6">
             <CardTitle className="text-headline-sm text-center font-bold">Verify OTP</CardTitle>
             <CardDescription className="text-center text-body-md text-muted-foreground">
-              {otpCode ? `Your OTP: ${otpCode}` : `Enter the 6-digit code sent to ${otpPhone}`}
+              Enter the 6-digit code sent to {otpPhone}
             </CardDescription>
           </CardHeader>
           <CardContent>
