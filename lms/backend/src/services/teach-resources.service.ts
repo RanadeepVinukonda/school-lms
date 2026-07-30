@@ -17,6 +17,15 @@ export interface TeachResource {
 
 const KHAN_ACADEMY_CHANNELS = ['Khan Academy', 'Khan Academy India', 'Khan Academy India - English'];
 
+function isRelevant(title: string, conceptTitle: string, chapterTitle: string): boolean {
+  const t = title.toLowerCase();
+  const terms = [
+    ...conceptTitle.toLowerCase().split(/[\s,()]+/).filter(Boolean),
+    ...chapterTitle.toLowerCase().split(/[\s,()]+/).filter(Boolean),
+  ];
+  return terms.some((term) => term.length > 3 && t.includes(term));
+}
+
 async function searchKhanAcademyYouTube(
   conceptTitle: string,
   subject: string,
@@ -24,9 +33,9 @@ async function searchKhanAcademyYouTube(
 ): Promise<TeachResource[]> {
   try {
     const ytSearch = require('yt-search');
-    const query = `"Khan Academy" ${subject} ${conceptTitle}`;
+    const query = `${subject} ${conceptTitle}`;
     const r = await ytSearch(query);
-    const videos = (r.videos || []).slice(0, maxResults);
+    const videos = (r.videos || []).slice(0, maxResults * 2);
 
     return videos
       .filter((v: any) =>
@@ -82,11 +91,12 @@ export async function searchTeachResources(
   for (const q of queries) {
     if (youtubeResults.length >= remaining) break;
 
-    const allResults = await educationalVideoService.searchYouTubeOnly(q, remaining);
+    const allResults = await educationalVideoService.searchYouTubeOnly(q, remaining * 2);
 
     for (const r of allResults) {
       const key = r.videoId || r.id;
       if (seen.has(key)) continue;
+      if (!isRelevant(r.title, conceptTitle, chapterTitle)) continue;
       seen.add(key);
 
       youtubeResults.push({

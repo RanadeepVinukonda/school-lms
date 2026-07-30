@@ -22,6 +22,7 @@ import type { CachedVideo } from '@/types/textbook';
 
 interface TeachResource {
   id: string;
+  videoId?: string;
   source: 'khan_academy' | 'youtube';
   sourceLabel: string;
   title: string;
@@ -216,7 +217,10 @@ export default function TeacherConceptViewPage() {
       if (!conceptId) return [];
       try {
         const res = await api.get<{ data: TeachResource[] }>(`/teach-resources/search/${conceptId}`);
-        return res.data?.data ?? [];
+        const all = res.data?.data ?? [];
+        // Deduplicate against already-saved videos
+        const savedIds = new Set((data?.concept?.videos ?? []).map((v) => v.youtubeId));
+        return all.filter((r) => !savedIds.has(r.videoId ?? r.id));
       } catch (err) {
         console.warn('Failed to fetch teach resources:', err);
         return [];
