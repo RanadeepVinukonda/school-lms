@@ -208,7 +208,7 @@ export async function createUser(data: {
     logger.warn('Failed to send welcome notification', { uid: authUser.uid, role: data.role, error: err });
   }
 
-  return stripPw(userData);
+  return { ...stripPw(userData), generatedPassword: autoPassword };
 }
 
 export async function updateUser(uid: string, data: {
