@@ -32,9 +32,25 @@ export interface AuditEntry {
   timestamp: string;
 }
 
+function toSnakeCase(obj: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    result[key.replace(/[A-Z]/g, (c) => '_' + c.toLowerCase())] = value;
+  }
+  return result;
+}
+
+function toCamelCase(obj: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    result[key.replace(/_([a-z])/g, (_, c) => c.toUpperCase())] = value;
+  }
+  return result;
+}
+
 export async function logAudit(entry: Omit<AuditEntry, 'timestamp'>): Promise<void> {
-  const auditDoc: AuditEntry = {
-    ...entry,
+  const auditDoc = {
+    ...toSnakeCase(entry as unknown as Record<string, unknown>),
     timestamp: new Date().toISOString(),
   };
 
@@ -91,7 +107,7 @@ export async function listAuditLogs(query: { page?: string; limit?: string; acti
   const { data: rows, error } = await listQ.range(offset, offset + limit - 1);
   if (error) throw error;
 
-  const items = (rows || []).map((r: any) => ({ ...r }));
+  const items = (rows || []).map((r: any) => ({ ...r, ...toCamelCase(r) }));
   return { items, total, page, limit };
 }
 
@@ -100,7 +116,7 @@ export async function getAuditLogById(logId: string) {
   const supabase = getSupabaseAdmin();
   const { data: row, error } = await supabase.from('audit_logs').select('*').eq('id', logId).maybeSingle();
   if (error || !row) throw new NotFoundError('Audit log not found');
-  return { id: row.id, ...row };
+  return { id: row.id, ...toCamelCase(row) };
 }
 
 /** Recover a soft-deleted entity from its audit log oldValue snapshot. */
