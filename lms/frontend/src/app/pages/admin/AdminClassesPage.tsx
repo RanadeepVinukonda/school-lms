@@ -470,7 +470,7 @@ export default function AdminClassesPage() {
 // INLINE REGISTER STUDENT FOR A CLASS
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [addStudentClassId, setAddStudentClassId] = useState('');
-  const [studentForm, setStudentForm] = useState({ displayName: '', phone: '', rollNo: '', gender: '' });
+  const [studentForm, setStudentForm] = useState({ displayName: '', phone: '', rollNo: '', gender: undefined as string | undefined });
   const [studentRegisterLoading, setStudentRegisterLoading] = useState(false);
 
   const getNextRollNo = (classId: string) => {
@@ -488,7 +488,7 @@ export default function AdminClassesPage() {
       displayName: '',
       phone: '',
       rollNo: String(nextRoll),
-      gender: '',
+      gender: undefined,
     });
     setShowAddStudent(true);
   };
