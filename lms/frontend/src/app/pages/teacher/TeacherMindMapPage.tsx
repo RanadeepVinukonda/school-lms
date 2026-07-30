@@ -3,12 +3,15 @@ import { SEOHead } from '@/components/common/SEOHead';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
 import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useUIStore } from '@/store/uiStore';
+import { useAuthStore } from '@/store/authStore';
 import { mindmapService } from '@/services/mindmapService';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
 import { getAllClasses } from '@/services/dataService';
+import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
+import { useQuery } from '@tanstack/react-query';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
   DialogFooter, DialogClose,
@@ -23,6 +26,7 @@ import 'reactflow/dist/style.css';
 
 export default function TeacherMindMapPage() {
   const { _ } = useTranslation();
+  const user = useAuthStore((s) => s.user);
   const [text, setText] = useState('');
   const [title, setTitle] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,7 +37,32 @@ export default function TeacherMindMapPage() {
   const [pushDone, setPushDone] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [viewId, setViewId] = useState<string | null>(null);
   const theme = useUIStore((s) => s.theme);
+
+  const { data: savedMindMaps, isLoading: savedLoading, error: savedError, refetch: refetchSaved } = useQuery({
+    queryKey: ['teacher-mindmaps', user?.id],
+    enabled: !!user,
+    queryFn: () => mindmapService.getUserMindMaps(),
+  });
+
+  const { data: viewData, isLoading: viewLoading } = useQuery({
+    queryKey: ['mindmap-view', viewId],
+    enabled: !!viewId,
+    queryFn: () => mindmapService.getById(viewId!),
+  });
+
+  const viewNodes: Node[] = (viewData?.nodes || []).map((n: any) => ({
+    id: n.id,
+    position: { x: n.x || 0, y: n.y || 0 },
+    data: { label: n.label },
+    style: { background: '#e0f2fe', color: '#0f172a', border: '1px solid #38bdf8', borderRadius: 8, padding: 10 },
+  }));
+
+  const viewEdges: Edge[] = (viewData?.edges || []).map((e: any) => ({
+    id: e.id, source: e.source, target: e.target, label: e.label,
+    markerEnd: { type: MarkerType.ArrowClosed }, style: { stroke: '#94a3b8' },
+  }));
 
   const initialNodes: Node[] = [];
   const initialEdges: Edge[] = [];
@@ -69,6 +98,7 @@ export default function TeacherMindMapPage() {
       }));
       setNodes(flowNodes);
       setEdges(flowEdges);
+      refetchSaved();
     } catch (err: any) {
       console.error('Mindmap generation failed', err);
     } finally {
@@ -143,6 +173,7 @@ export default function TeacherMindMapPage() {
         })),
       });
       setSaved(true);
+      refetchSaved();
       setTimeout(() => setSaved(false), 2000);
     } catch (err: any) {
       console.error('Failed to save mind map', err);
@@ -237,6 +268,70 @@ export default function TeacherMindMapPage() {
           </div>
         </div>
       </div>
+
+      <div className="px-6 py-4 space-y-4 border-t border-outline-variant">
+        <h2 className="text-title-sm font-bold">{_('Saved Mind Maps')}</h2>
+        <DataFetchWrapper data={savedMindMaps} isLoading={savedLoading} error={savedError} emptyMessage={_('No saved mind maps. Generate one above!')} loadingType="card" onRetry={() => refetchSaved()}>
+          {(maps) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {maps.map((mm: any) => (
+                <Card key={mm.id} className="border-border/60">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="h-10 w-10 rounded-xl bg-primary-container flex items-center justify-center shrink-0">
+                        <Icon name="psychology" size={20} className="text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-title-sm font-semibold truncate">{mm.title}</p>
+                        {mm.description && <p className="text-label-sm text-muted-foreground truncate">{mm.description}</p>}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" className="flex-1" onClick={() => setViewId(mm.id)}>
+                        <Icon name="visibility" size={16} className="mr-1" /> {_('View')}
+                      </Button>
+                      <Button variant="outline" size="sm" className="shrink-0 text-error" onClick={async () => { await mindmapService.delete(mm.id); refetchSaved(); }}>
+                        <Icon name="delete" size={16} />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </DataFetchWrapper>
+      </div>
+
+      <Dialog open={!!viewId} onOpenChange={(o) => { if (!o) setViewId(null); }}>
+        <DialogContent className="max-w-4xl max-h-[90dvh]">
+          <DialogHeader>
+            <DialogTitle>{viewData?.title || _('Mind Map')}</DialogTitle>
+            {viewData?.description && <DialogDescription>{viewData.description}</DialogDescription>}
+          </DialogHeader>
+          {viewLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+            </div>
+          ) : viewNodes.length > 0 ? (
+            <div className="h-[60vh] border border-outline-variant rounded-xl overflow-hidden">
+              <ReactFlow
+                nodes={viewNodes}
+                edges={viewEdges}
+                fitView
+                attributionPosition="bottom-left"
+                nodesDraggable={false}
+                nodesConnectable={false}
+                elementsSelectable={false}
+              >
+                <Background />
+                <Controls />
+              </ReactFlow>
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-8">{_('No nodes in this mind map.')}</p>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={pushOpen} onOpenChange={setPushOpen}>
         <DialogContent>
