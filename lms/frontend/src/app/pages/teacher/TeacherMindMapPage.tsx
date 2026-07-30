@@ -7,8 +7,15 @@ import { Card } from '@/components/ui/card';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useUIStore } from '@/store/uiStore';
 import { mindmapService } from '@/services/mindmapService';
+import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
+import { getAllClasses, getUserByRole } from '@/services/dataService';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+  DialogFooter, DialogClose,
+} from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import ReactFlow, {
-  Background, Controls, MiniMap,
+  Background, Controls,
   Node, Edge, useNodesState, useEdgesState,
   MarkerType,
 } from 'reactflow';
@@ -19,6 +26,11 @@ export default function TeacherMindMapPage() {
   const [text, setText] = useState('');
   const [title, setTitle] = useState('');
   const [loading, setLoading] = useState(false);
+  const [generatedId, setGeneratedId] = useState<string | null>(null);
+  const [pushOpen, setPushOpen] = useState(false);
+  const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
+  const [pushing, setPushing] = useState(false);
+  const [pushDone, setPushDone] = useState(false);
   const theme = useUIStore((s) => s.theme);
 
   const initialNodes: Node[] = [];
@@ -29,8 +41,10 @@ export default function TeacherMindMapPage() {
   const generateMindmap = useCallback(async () => {
     if (!text.trim() || !title.trim()) return;
     setLoading(true);
+    setPushDone(false);
     try {
       const result = await mindmapService.generate(text, title);
+      setGeneratedId(result.id);
       const flowNodes: Node[] = (result.nodes || []).map((n: any) => ({
         id: n.id,
         position: { x: n.x || 0, y: n.y || 0 },
@@ -74,6 +88,57 @@ export default function TeacherMindMapPage() {
     );
   }, [theme]);
 
+  const [assignedClasses, setAssignedClasses] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const [assignmentsRes, allClasses] = await Promise.all([
+          teacherClassSubjectService.getMyAssignments(),
+          getAllClasses(),
+        ]);
+        const myAssignments = assignmentsRes?.data ?? [];
+        const myClassIds = [...new Set(myAssignments.map((a) => a.classId))];
+        const myClasses = allClasses
+          .filter((c: any) => myClassIds.includes(c.id))
+          .map((c: any) => ({ id: c.id, name: `${c.name || ''}${c.section ? ` - ${c.section}` : ''}`.trim() || c.code || c.id }));
+        setAssignedClasses(myClasses);
+      } catch (e) {
+        console.error('Failed to load assigned classes', e);
+      }
+    })();
+  }, []);
+
+  const openPushDialog = useCallback(() => {
+    setSelectedClassIds([]);
+    setPushDone(false);
+    setPushOpen(true);
+  }, []);
+
+  const toggleClass = useCallback((classId: string) => {
+    setSelectedClassIds((prev) =>
+      prev.includes(classId) ? prev.filter((id) => id !== classId) : [...prev, classId]
+    );
+  }, []);
+
+  const handlePush = useCallback(async () => {
+    if (!generatedId || selectedClassIds.length === 0) return;
+    setPushing(true);
+    try {
+      const students = await getUserByRole('student');
+      const targetStudentIds = students
+        .filter((s) => s.classIds?.some((cid) => selectedClassIds.includes(cid)))
+        .map((s) => s.id);
+      if (targetStudentIds.length > 0) {
+        await mindmapService.share(generatedId, targetStudentIds);
+      }
+      setPushDone(true);
+    } catch (err: any) {
+      console.error('Failed to push mind map', err);
+    } finally {
+      setPushing(false);
+    }
+  }, [generatedId, selectedClassIds]);
+
   return (
     <>
       <SEOHead title={_('AI Mind Map Generator')} description={_('Generate mind maps from concept text')} />
@@ -109,6 +174,17 @@ export default function TeacherMindMapPage() {
               <Icon name="psychology" size={18} className="mr-2" />
               {loading ? _('Generating...') : _('Generate Mind Map')}
             </Button>
+            {generatedId && !pushDone && (
+              <Button variant="outline" onClick={openPushDialog}>
+                <Icon name="send" size={18} className="mr-2" />
+                {_('Push to Class')}
+              </Button>
+            )}
+            {pushDone && (
+              <div className="text-center text-label-sm text-success font-medium py-2 rounded-lg bg-success-container/40">
+                {_('Pushed to selected classes')}
+              </div>
+            )}
           </Card>
           <div className="flex-1 border border-outline-variant rounded-xl overflow-hidden">
             <ReactFlow
@@ -121,11 +197,48 @@ export default function TeacherMindMapPage() {
             >
               <Background />
               <Controls />
-              <MiniMap />
             </ReactFlow>
           </div>
         </div>
       </div>
+
+      <Dialog open={pushOpen} onOpenChange={setPushOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{_('Push Mind Map to Classes')}</DialogTitle>
+            <DialogDescription>
+              {_('Select the classes that will receive this mind map.')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            {assignedClasses.length === 0 && (
+              <p className="text-label-sm text-muted-foreground text-center py-4">
+                {_('No assigned classes found.')}
+              </p>
+            )}
+            {assignedClasses.map((cls) => (
+              <label
+                key={cls.id}
+                className="flex items-center gap-3 p-3 rounded-lg border border-border/60 hover:bg-muted/30 cursor-pointer transition-colors"
+              >
+                <Checkbox
+                  checked={selectedClassIds.includes(cls.id)}
+                  onCheckedChange={() => toggleClass(cls.id)}
+                />
+                <span className="text-label-sm font-medium">{cls.name}</span>
+              </label>
+            ))}
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">{_('Cancel')}</Button>
+            </DialogClose>
+            <Button onClick={handlePush} disabled={pushing || selectedClassIds.length === 0}>
+              {pushing ? _('Pushing...') : _('Send')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
