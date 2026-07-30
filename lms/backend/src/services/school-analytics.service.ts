@@ -8,6 +8,7 @@ function safePct(value: number): number {
 async function loadClassMeta(supabase: any): Promise<{ nameMap: Map<string, string>; gradeMap: Map<string, string> }> {
   const nameMap = new Map<string, string>();
   const gradeMap = new Map<string, string>();
+
   const { data: fsClasses } = await supabase
     .from('firestore_docs')
     .select('doc_id, data')
@@ -20,6 +21,17 @@ async function loadClassMeta(supabase: any): Promise<{ nameMap: Map<string, stri
     nameMap.set(c.doc_id, `${name}${section}`.trim() || code || c.doc_id);
     gradeMap.set(c.doc_id, d.grade || d.gradeLevel || '');
   }
+
+  const { data: viewClasses } = await supabase.from('classes').select('id, name, grade, section, code');
+  for (const c of (viewClasses || [])) {
+    if (!nameMap.has(c.id)) {
+      const section = c.section ? ` ${c.section}` : '';
+      const grade = c.grade != null ? String(c.grade) : '';
+      nameMap.set(c.id, `${c.name || ''}${section}`.trim() || c.code || c.id);
+      gradeMap.set(c.id, grade);
+    }
+  }
+
   return { nameMap, gradeMap };
 }
 
@@ -65,8 +77,10 @@ export async function getGradeComparison(_schoolId?: string) {
 
   const gradeAgg: Record<string, { totalScore: number; totalPoints: number; count: number; studentCount: number }> = {};
   for (const [classId, data] of Object.entries(classMap)) {
-    const grade = gradeMap.get(classId);
-    const name = nameMap.get(classId);
+    const rawGrade = gradeMap.get(classId);
+    const rawName = nameMap.get(classId);
+    const grade = rawGrade && rawGrade.trim ? rawGrade.trim() : '';
+    const name = rawName && rawName.trim ? rawName.trim() : '';
     const gradeKey = grade || name || classId;
     if (!gradeAgg[gradeKey]) gradeAgg[gradeKey] = { totalScore: 0, totalPoints: 0, count: 0, studentCount: 0 };
     gradeAgg[gradeKey].totalScore += data.totalScore;
