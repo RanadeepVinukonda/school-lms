@@ -21,17 +21,39 @@ const snakeToCamel = (obj: any): any => {
 
 /** Create a new textbook document in Supabase. Returns the new document id. */
 export async function createTextbook(data: Omit<Textbook, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-  const { chapters, ...rest } = data;
-  // Refresh schema cache before insert
-  try { await supabase.from(TEXTBOOKS_COLLECTION).select('id').limit(1).maybeSingle(); } catch { /* ignore */ }
-  const { data: inserted, error } = await supabase.from(TEXTBOOKS_COLLECTION).insert({
-    ...rest,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  }).select('id').single();
-  if (error) throw new Error(`Failed to create textbook: ${error.message}`);
-  if (!inserted?.id) throw new Error('Textbook created but no ID returned');
-  const id = inserted.id;
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseKey) throw new Error('Supabase credentials not configured');
+
+  const res = await fetch(`${supabaseUrl}/rest/v1/textbooks`, {
+    method: 'POST',
+    headers: {
+      'apikey': supabaseKey,
+      'Authorization': `Bearer ${supabaseKey}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+    },
+    body: JSON.stringify({
+      title: data.title,
+      subject_id: data.subjectId,
+      class_id: data.classId,
+      status: data.status || 'processing',
+      processing_progress: data.processingProgress ?? 0,
+      processing_stage: data.processingStage ?? '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => '');
+    throw new Error(`Failed to create textbook: ${errBody || res.statusText}`);
+  }
+
+  const inserted = await res.json();
+  const id = Array.isArray(inserted) ? inserted[0]?.id : inserted?.id;
+  if (!id) throw new Error('Textbook created but no ID returned');
+
   logAudit({
     action: 'textbook.create',
     targetId: id,
