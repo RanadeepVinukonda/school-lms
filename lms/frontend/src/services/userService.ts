@@ -3,7 +3,7 @@ import type { ApiResponse, PaginatedResponse, PaginationParams, User, UserProfil
 
 export interface CreateUserInput {
   displayName: string;
-  phone: string;
+  phone?: string;
   password?: string;
   role: UserRole;
   classId?: string;

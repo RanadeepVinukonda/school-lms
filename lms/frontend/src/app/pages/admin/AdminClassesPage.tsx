@@ -498,19 +498,11 @@ export default function AdminClassesPage() {
       toast.error('Please enter name and roll number');
       return;
     }
-    if (!studentForm.phone.trim()) {
-      toast.error('Please enter a phone number');
-      return;
-    }
-    if (!/^\+?\d{10,15}$/.test(studentForm.phone.trim())) {
-      toast.error('Invalid phone number');
-      return;
-    }
     setStudentRegisterLoading(true);
     try {
       const res = await userService.create({
         displayName: studentForm.displayName,
-        phone: studentForm.phone.trim(),
+        phone: studentForm.phone.trim() || undefined,
         role: 'student',
         classId: addStudentClassId,
         rollNo: parseInt(studentForm.rollNo, 10),
@@ -1425,11 +1417,6 @@ export default function AdminClassesPage() {
               <Input placeholder="John Doe" value={studentForm.displayName} onChange={(e) => setStudentForm((f) => ({ ...f, displayName: e.target.value }))} />
             </div>
             <div className="space-y-2">
-              <Label>Phone Number</Label>
-              <Input placeholder="+2341234567890" value={studentForm.phone} onChange={(e) => setStudentForm((f) => ({ ...f, phone: e.target.value }))} />
-              <p className="text-[11px] text-muted-foreground">10–15 digits, with optional leading +</p>
-            </div>
-            <div className="space-y-2">
               <Label>Roll Number</Label>
               <Input type="number" value={studentForm.rollNo} onChange={(e) => setStudentForm((f) => ({ ...f, rollNo: e.target.value }))} />
             </div>
@@ -1446,7 +1433,7 @@ export default function AdminClassesPage() {
                 onChange={(v: string) => setStudentForm((f) => ({ ...f, gender: v }))}
               />
             </div>
-            <Button className="w-full" onClick={handleRegisterStudent} disabled={studentRegisterLoading || !studentForm.displayName || !studentForm.gender || !studentForm.phone.trim()}>
+            <Button className="w-full" onClick={handleRegisterStudent} disabled={studentRegisterLoading || !studentForm.displayName || !studentForm.gender}>
               {studentRegisterLoading ? 'Registering...' : 'Register Student'}
             </Button>
           </div>
