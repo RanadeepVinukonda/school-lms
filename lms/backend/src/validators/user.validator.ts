@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const createUserSchema = z.object({
-  phone: z.string().regex(/^\+?\d{10,15}$/, 'Invalid phone number'),
+  phone: z.string().regex(/^\+?\d{10,15}$/, 'Invalid phone number').optional(),
   displayName: z
     .string()
     .min(2, 'Name must be at least 2 characters')

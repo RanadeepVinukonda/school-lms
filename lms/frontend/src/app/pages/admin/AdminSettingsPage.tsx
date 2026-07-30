@@ -190,7 +190,7 @@ export default function AdminSettingsPage() {
         email: parentForm.email,
         password: parentForm.password,
         role: 'parent',
-        phone: parentForm.phone,
+        phone: parentForm.phone || undefined,
         address: parentForm.address,
         relationship: parentForm.relationship,
         childrenIds: parentForm.selectedStudentIds,

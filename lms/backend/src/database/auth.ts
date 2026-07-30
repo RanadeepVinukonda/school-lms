@@ -52,7 +52,7 @@ async function retryOnRateLimit<T>(fn: () => Promise<T>, maxRetries = 3): Promis
 }
 
 export async function createUser(params: {
-  phone: string;
+  phone?: string;
   displayName: string;
   photoURL?: string;
   role?: string;
@@ -60,19 +60,23 @@ export async function createUser(params: {
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error('Supabase not configured');
 
-  const placeholderEmail = `ph_${params.phone.replace(/[^0-9]/g, '')}@school.edu`;
+  const placeholderEmail = params.phone
+    ? `ph_${params.phone.replace(/[^0-9]/g, '')}@school.edu`
+    : `ph_${Date.now()}_${params.displayName.replace(/\s+/g, '').toLowerCase()}@school.edu`;
 
-  const { data, error } = await retryOnRateLimit(() => supabase.auth.admin.createUser({
+  const createPayload: Record<string, unknown> = {
     email: placeholderEmail,
-    phone: params.phone,
     email_confirm: true,
     user_metadata: {
       display_name: params.displayName,
-      phone_number: params.phone,
+      phone_number: params.phone || '',
       photo_url: params.photoURL || '',
     },
     app_metadata: params.role ? { [USER_META_ROLE]: params.role } : undefined,
-  }));
+  };
+  if (params.phone) createPayload.phone = params.phone;
+
+  const { data, error } = await retryOnRateLimit(() => supabase.auth.admin.createUser(createPayload));
   if (error || !data.user) throw new Error('Failed to create user: ' + (error?.message || 'Unknown'));
   return extractUser(data.user);
 }

@@ -50,7 +50,7 @@ export async function getUserByIdService(uid: string) {
 }
 
 export async function createUser(data: {
-  phone: string; displayName: string; role: string;
+  phone?: string; displayName: string; role: string;
   photoURL?: string; classIds?: string[]; classId?: string;
   rollNo?: number; gender?: string; childrenIds?: string[]; schoolId?: string; academicYear?: string;
 }) {
@@ -86,7 +86,9 @@ export async function createUser(data: {
     studentClassId = data.classId;
   }
 
-  const placeholderEmail = `ph_${data.phone.replace(/[^0-9]/g, '')}@school.edu`;
+  const placeholderEmail = data.phone
+    ? `ph_${data.phone.replace(/[^0-9]/g, '')}@school.edu`
+    : `ph_${Date.now()}_${data.displayName.replace(/\s+/g, '').toLowerCase()}@school.edu`;
 
   let resolvedChildrenIds = data.childrenIds || [];
   if (resolvedChildrenIds.length > 0) {
@@ -99,26 +101,28 @@ export async function createUser(data: {
     resolvedChildrenIds = resolved;
   }
 
-  const existingUser = await getUserByPhone(data.phone);
-  if (existingUser) {
-    const now = new Date().toISOString();
-    const userData2 = {
-      id: existingUser.uid, email: placeholderEmail, display_name: data.displayName,
-      role: data.role, phone_number: data.phone, photo_url: data.photoURL || '',
-      class_ids: finalClassIds, class_id: studentClassId || null,
-      student_id: studentId || null, roll_no: data.rollNo || null,
-      academic_year: deriveAcademicYear(), gender: data.gender || null,
-      children_ids: resolvedChildrenIds, is_active: true, school_id: data.schoolId || null,
-      created_at: now, updated_at: now,
-    };
-    const { error } = await supabase.from('users').upsert(userData2, { onConflict: 'id' });
-    if (error) throw error;
-    logger.info('User updated by admin', { uid: existingUser.uid, phone: data.phone, role: data.role });
-    if (data.role === 'student') {
-      const { error: rpcErr } = await supabase.rpc('increment_student_count', { class_id: data.classId!, delta: 1 });
-      if (rpcErr) logger.warn('increment_student_count RPC failed', { classId: data.classId, error: rpcErr.message });
+  if (data.phone) {
+    const existingUser = await getUserByPhone(data.phone);
+    if (existingUser) {
+      const now = new Date().toISOString();
+      const userData2 = {
+        id: existingUser.uid, email: placeholderEmail, display_name: data.displayName,
+        role: data.role, phone_number: data.phone || null, photo_url: data.photoURL || '',
+        class_ids: finalClassIds, class_id: studentClassId || null,
+        student_id: studentId || null, roll_no: data.rollNo || null,
+        academic_year: deriveAcademicYear(), gender: data.gender || null,
+        children_ids: resolvedChildrenIds, is_active: true, school_id: data.schoolId || null,
+        created_at: now, updated_at: now,
+      };
+      const { error } = await supabase.from('users').upsert(userData2, { onConflict: 'id' });
+      if (error) throw error;
+      logger.info('User updated by admin', { uid: existingUser.uid, phone: data.phone, role: data.role });
+      if (data.role === 'student') {
+        const { error: rpcErr } = await supabase.rpc('increment_student_count', { class_id: data.classId!, delta: 1 });
+        if (rpcErr) logger.warn('increment_student_count RPC failed', { classId: data.classId, error: rpcErr.message });
+      }
+      return stripPw(userData2);
     }
-    return stripPw(userData2);
   }
 
   let authUser: Awaited<ReturnType<typeof createAuthUser>>;
@@ -136,7 +140,7 @@ export async function createUser(data: {
         const now = new Date().toISOString();
         const userData = {
           id: authUser.id, email: placeholderEmail, display_name: data.displayName,
-          role: data.role, phone_number: data.phone, photo_url: data.photoURL || '',
+          role: data.role, phone_number: data.phone || null, photo_url: data.photoURL || '',
           class_ids: finalClassIds, class_id: studentClassId || null,
           student_id: studentId || null, roll_no: data.rollNo || null,
           academic_year: deriveAcademicYear(), gender: data.gender || null,
@@ -158,7 +162,7 @@ export async function createUser(data: {
   const now = new Date().toISOString();
   const userData: Record<string, unknown> = {
     id: authUser.uid, email: placeholderEmail, display_name: data.displayName,
-    role: data.role, phone_number: data.phone, photo_url: data.photoURL || '',
+    role: data.role, phone_number: data.phone || null, photo_url: data.photoURL || '',
     class_ids: finalClassIds, class_id: studentClassId || null,
     student_id: studentId || null, roll_no: data.rollNo || null,
     academic_year: deriveAcademicYear(), gender: data.gender || null,
