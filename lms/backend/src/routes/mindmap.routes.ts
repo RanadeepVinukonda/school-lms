@@ -29,6 +29,10 @@ const shareMindMapSchema = z.object({
   shareWithIds: z.array(z.string()).min(1),
 }).passthrough();
 
+const pushToClassesSchema = z.object({
+  classIds: z.array(z.string()).min(1),
+}).passthrough();
+
 const pinResourceSchema = z.object({
   nodeId: z.string().min(1),
   resourceId: z.string().min(1),
@@ -49,6 +53,7 @@ router.get('/:id', authenticate, asyncHandler(mindmapController.getMindMap));
 router.put('/:id', authenticate, validate(updateMindMapSchema), asyncHandler(mindmapController.updateMindMap));
 router.delete('/:id', authenticate, asyncHandler(mindmapController.deleteMindMap));
 router.post('/:id/share', authenticate, validate(shareMindMapSchema), asyncHandler(mindmapController.shareMindMap));
+router.post('/:id/push-to-classes', authenticate, validate(pushToClassesSchema), asyncHandler(mindmapController.pushMindMapToClasses));
 router.post('/:id/pin-resource', authenticate, validate(pinResourceSchema), asyncHandler(mindmapController.pinResource));
 
 export default router;

@@ -41,6 +41,11 @@ export const mindmapService = {
     return res.data.data;
   },
 
+  async pushToClasses(id: string, classIds: string[]) {
+    const res = await api.post<ApiResponse<MindMap>>(`/mindmaps/${id}/push-to-classes`, { classIds });
+    return res.data.data;
+  },
+
   async pinResource(id: string, nodeId: string, resourceId: string, resourceType: 'lesson' | 'concept' | 'video') {
     const res = await api.post<ApiResponse<MindMap>>(`/mindmaps/${id}/pin-resource`, { nodeId, resourceId, resourceType });
     return res.data.data;

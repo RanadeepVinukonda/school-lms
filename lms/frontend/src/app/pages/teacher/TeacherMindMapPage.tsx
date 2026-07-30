@@ -8,7 +8,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useUIStore } from '@/store/uiStore';
 import { mindmapService } from '@/services/mindmapService';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
-import { getAllClasses, getUserByRole } from '@/services/dataService';
+import { getAllClasses } from '@/services/dataService';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
   DialogFooter, DialogClose,
@@ -124,13 +124,7 @@ export default function TeacherMindMapPage() {
     if (!generatedId || selectedClassIds.length === 0) return;
     setPushing(true);
     try {
-      const students = await getUserByRole('student');
-      const targetStudentIds = students
-        .filter((s) => s.classIds?.some((cid) => selectedClassIds.includes(cid)))
-        .map((s) => s.id);
-      if (targetStudentIds.length > 0) {
-        await mindmapService.share(generatedId, targetStudentIds);
-      }
+      await mindmapService.pushToClasses(generatedId, selectedClassIds);
       setPushDone(true);
     } catch (err: any) {
       console.error('Failed to push mind map', err);

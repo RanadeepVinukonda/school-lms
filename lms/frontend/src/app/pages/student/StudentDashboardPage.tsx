@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { motion, useInView } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -15,8 +15,12 @@ import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import api from '@/services/api';
 import { getClass } from '@/services/dataService';
+import { mindmapService } from '@/services/mindmapService';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from '@/components/ui/dialog';
 
 interface ResultEntry { id: string; itemName: string; score: number; maxScore: number; percentage: number; gradedAt: string; feedback?: string }
 
@@ -124,6 +128,20 @@ export default function StudentDashboardPage() {
     refetchOnWindowFocus: true,
   });
 
+  const [viewMindMapId, setViewMindMapId] = useState<string | null>(null);
+
+  const { data: sharedMindMaps } = useQuery({
+    queryKey: ['student-shared-mindmaps', studentId],
+    enabled: !!studentId,
+    queryFn: () => mindmapService.getSharedMindMaps(),
+  });
+
+  const { data: viewMindMapData } = useQuery({
+    queryKey: ['mindmap-view', viewMindMapId],
+    enabled: !!viewMindMapId,
+    queryFn: () => mindmapService.getById(viewMindMapId!),
+  });
+
   useRealtimeInvalidation([
     { table: 'grades', queryKey: ['student-dashboard', studentId ?? ''] },
     { table: 'corrections', queryKey: ['student-dashboard', studentId ?? ''] },
@@ -225,6 +243,30 @@ export default function StudentDashboardPage() {
                   ))}
                 </motion.div>
               </section>
+
+              {sharedMindMaps && sharedMindMaps.length > 0 && (
+                <section>
+                  <SectionTitle label={_('Resources')} title={_('Shared Mind Maps')} />
+                  <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {sharedMindMaps.map((mm) => (
+                      <motion.div key={mm.id} variants={cardStackReveal} custom={0}>
+                        <Card className="border-border/60 cursor-pointer hover:border-primary/40 transition-colors" onClick={() => setViewMindMapId(mm.id)}>
+                          <CardContent className="p-4 flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl bg-secondary-container flex items-center justify-center shrink-0">
+                              <Icon name="psychology" size={20} className="text-secondary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-title-sm font-semibold truncate">{mm.title}</p>
+                              {mm.description && <p className="text-label-sm text-muted-foreground truncate">{mm.description}</p>}
+                            </div>
+                            <Icon name="chevron_right" size={18} className="text-muted-foreground shrink-0" />
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                </section>
+              )}
 
               {(recommendations && recommendations.length > 0) || (overdueConcepts && overdueConcepts.length > 0) ? (
                 <section>
@@ -333,6 +375,38 @@ export default function StudentDashboardPage() {
           )}
         </DataFetchWrapper>
       </motion.div>
+
+      <Dialog open={!!viewMindMapId} onOpenChange={(o) => { if (!o) setViewMindMapId(null); }}>
+        <DialogContent className="max-w-3xl max-h-[85dvh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{viewMindMapData?.title || _('Mind Map')}</DialogTitle>
+            {viewMindMapData?.description && <DialogDescription>{viewMindMapData.description}</DialogDescription>}
+          </DialogHeader>
+          {viewMindMapData && viewMindMapData.nodes && viewMindMapData.nodes.length > 0 ? (
+            <div className="space-y-3 py-2">
+              {viewMindMapData.nodes.map((n) => (
+                <div key={n.id} className="flex items-center gap-3 p-3 rounded-lg border border-border/60">
+                  <div className="h-8 w-8 rounded-full bg-primary-container flex items-center justify-center shrink-0">
+                    <Icon name="account_tree" size={14} className="text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-title-sm font-medium">{n.label}</p>
+                    <p className="text-label-xs text-muted-foreground">
+                      {n.type}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : viewMindMapData ? (
+            <p className="text-center text-muted-foreground py-8">{_('No nodes in this mind map.')}</p>
+          ) : (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

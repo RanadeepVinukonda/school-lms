@@ -252,6 +252,37 @@ export async function generateTextbookMindMap(
   return generateMindMapFromText(userId, aggregatedText, title, language);
 }
 
+export async function pushToClasses(
+  mindmapId: string,
+  userId: string,
+  classIds: string[],
+): Promise<MindMap> {
+  const existing = await ensureOwnership(mindmapId, userId);
+  if (existing.ownerId !== userId) {
+    throw new ForbiddenError('Only the owner can push this mind map');
+  }
+
+  const supabase = getSupabaseAdmin()!;
+  const { data: students } = await supabase
+    .from('users')
+    .select('id')
+    .overlaps('class_ids', classIds);
+
+  const studentIds: string[] = (students || []).map((s: any) => s.id);
+  const currentShared = existing.sharedWith || [];
+  const merged = [...new Set([...currentShared, ...studentIds])];
+  const pushedClasses = [...new Set([...(existing as any).pushedToClasses || [], ...classIds])];
+
+  const updated = {
+    ...existing,
+    sharedWith: merged,
+    pushedToClasses: pushedClasses,
+    updatedAt: new Date().toISOString(),
+  };
+  await setDoc(mindmapId, updated as unknown as Record<string, unknown>);
+  return updated;
+}
+
 export async function pinResource(
   mindmapId: string,
   userId: string,
