@@ -336,9 +336,9 @@ export interface AssignmentItem {
 
 /** Fetch assignments for a specific subject. */
 export async function getAssignmentsBySubject(subjectId: string): Promise<AssignmentItem[]> {
-  const { data, error } = await supabase.from('assignments').select('*').eq('subjectId', subjectId);
+  const { data, error } = await supabase.from('assignments').select('*').eq('subject_id', subjectId);
   if (error) throw error;
-  return (data || []) as AssignmentItem[];
+  return ((data || []).map(snakeToCamel) as unknown as AssignmentItem[]);
 }
 
 /** Fetch a single assignment by id. */
@@ -366,9 +366,9 @@ export interface SubmissionItem {
 
 /** Fetch submissions for a specific assignment. */
 export async function getSubmissionsByAssignment(assignmentId: string): Promise<SubmissionItem[]> {
-  const { data, error } = await supabase.from('submissions').select('*').eq('assignmentId', assignmentId);
+  const { data, error } = await supabase.from('submissions').select('*').eq('assignment_id', assignmentId);
   if (error) throw error;
-  return (data || []) as SubmissionItem[];
+  return ((data || []).map(snakeToCamel) as unknown as SubmissionItem[]);
 }
 
 // ── Exams ──
@@ -395,9 +395,9 @@ export interface ExamItem {
 
 /** Fetch exams for a specific subject. */
 export async function getExamsBySubject(subjectId: string): Promise<ExamItem[]> {
-  const { data, error } = await supabase.from('exams').select('*').eq('subjectId', subjectId);
+  const { data, error } = await supabase.from('exams').select('*').eq('subject_id', subjectId);
   if (error) throw error;
-  return (data || []) as ExamItem[];
+  return ((data || []).map(snakeToCamel) as unknown as ExamItem[]);
 }
 
 /** Fetch a single exam by id. */
@@ -422,16 +422,16 @@ export interface CorrectionItem {
 
 /** Fetch corrections for a specific student. */
 export async function getCorrectionsByStudent(studentId: string): Promise<CorrectionItem[]> {
-  const { data, error } = await supabase.from('corrections').select('*').eq('studentId', studentId);
+  const { data, error } = await supabase.from('corrections').select('*').eq('student_id', studentId);
   if (error) throw error;
-  return (data || []) as CorrectionItem[];
+  return ((data || []).map(snakeToCamel) as unknown as CorrectionItem[]);
 }
 
 /** Fetch corrections for a specific exam. */
 export async function getCorrectionsByExam(examId: string): Promise<CorrectionItem[]> {
-  const { data, error } = await supabase.from('corrections').select('*').eq('examId', examId);
+  const { data, error } = await supabase.from('corrections').select('*').eq('exam_id', examId);
   if (error) throw error;
-  return (data || []) as CorrectionItem[];
+  return ((data || []).map(snakeToCamel) as unknown as CorrectionItem[]);
 }
 
 // ── Quizzes ──
