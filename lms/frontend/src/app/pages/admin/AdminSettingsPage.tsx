@@ -152,6 +152,7 @@ export default function AdminSettingsPage() {
 
   // Parent Registration
   const [showCreateParent, setShowCreateParent] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [parentForm, setParentForm] = useState({
     displayName: '',
     email: '',
@@ -665,7 +666,12 @@ export default function AdminSettingsPage() {
             </div>
             <div className="space-y-2">
               <Label>Password *</Label>
-              <Input type="password" placeholder="Min 8 characters" value={parentForm.password} onChange={(e) => setParentForm((f) => ({ ...f, password: e.target.value }))} />
+              <div className="relative">
+                <Input type={showPassword ? 'text' : 'password'} placeholder="Min 8 characters" value={parentForm.password} onChange={(e) => setParentForm((f) => ({ ...f, password: e.target.value }))} className="pr-12" />
+                <button type="button" onClick={() => setShowPassword((p) => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" aria-label={showPassword ? 'Hide password' : 'Show password'} tabIndex={-1}>
+                  <Icon name={showPassword ? 'visibility_off' : 'visibility'} size={20} />
+                </button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Phone Number</Label>
