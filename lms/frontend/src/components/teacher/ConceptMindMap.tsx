@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import ReactFlow, {
-  Background, Controls,
+  Background, Controls, MiniMap,
   Node, Edge, MarkerType,
   useNodesState, useEdgesState,
 } from 'reactflow';
@@ -197,11 +197,18 @@ export function ConceptMindMap({ concepts, chapterTitle, chapters, onSelectConce
 
   const [nodes, setNodes, onNodesChange] = useNodesState(layouted.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(layouted.edges);
+  const rfInstance = useRef<any>(null);
 
   useEffect(() => {
     setNodes(layouted.nodes);
     setEdges(layouted.edges);
   }, [layouted, setNodes, setEdges]);
+
+  useEffect(() => {
+    if (layouted.nodes.length > 0 && rfInstance.current) {
+      requestAnimationFrame(() => rfInstance.current.fitView({ padding: 0.15, duration: 200 }));
+    }
+  }, [layouted.nodes.length]);
 
   const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
     const data = node.data as any;
@@ -247,23 +254,36 @@ export function ConceptMindMap({ concepts, chapterTitle, chapters, onSelectConce
                 Scroll to zoom &middot; Drag to pan &middot; Click chapter to expand/collapse
               </span>
             </div>
-            <div className="w-full h-[500px] border border-border/40 rounded-lg bg-muted/10">
+            <div className="w-full h-[calc(100vh-20rem)] min-h-[400px] border border-border/40 rounded-lg bg-muted/10">
               <ReactFlow
                 nodes={nodes}
                 edges={edges}
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onNodeClick={onNodeClick}
-                fitView
+                onInit={(instance) => { rfInstance.current = instance; }}
                 attributionPosition="bottom-left"
                 nodesDraggable={false}
                 nodesConnectable={false}
                 elementsSelectable={false}
-                minZoom={0.3}
+                minZoom={0.1}
                 maxZoom={3}
+                panOnDrag={true}
+                zoomOnScroll={true}
               >
                 <Background />
                 <Controls />
+                <MiniMap
+                  nodeStrokeColor="#94a3b8"
+                  nodeColor={(n) => {
+                    const d = n.data as any;
+                    if (d?.type === 'textbook') return '#1e40af';
+                    if (d?.type === 'chapter') return '#3b82f6';
+                    return '#e0f2fe';
+                  }}
+                  maskColor="rgba(0,0,0,0.1)"
+                  style={{ bottom: 10, right: 10 }}
+                />
               </ReactFlow>
             </div>
           </CardContent>
