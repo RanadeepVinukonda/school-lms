@@ -3,6 +3,7 @@ import { logger } from '../utils/logger';
 
 export interface TeachResource {
   id: string;
+  videoId: string;
   source: 'khan_academy' | 'youtube';
   sourceLabel: string;
   title: string;
@@ -101,6 +102,7 @@ export async function searchTeachResources(
 
       youtubeResults.push({
         id: r.id,
+        videoId: r.videoId,
         source: 'youtube',
         sourceLabel: 'YouTube',
         title: r.title,

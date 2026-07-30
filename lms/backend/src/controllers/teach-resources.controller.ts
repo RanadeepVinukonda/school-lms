@@ -81,7 +81,7 @@ export async function searchTeachResources(req: Request, res: Response) {
         concept_id: concept.id,
         textbook_id: concept.textbook_id,
         chapter_id: concept.chapter_id,
-        video_id: r.id,
+        video_id: r.videoId || r.id,
         title: r.title,
         description: r.description || '',
         channel: r.channelName || r.sourceLabel,
