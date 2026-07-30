@@ -65,6 +65,27 @@ export async function searchTeachResources(req: Request, res: Response) {
       keywords,
     );
 
+    // Persist found resources to concept_videos so they appear on reload
+    if (resources.length > 0) {
+      const { v4: uuidv4 } = await import('uuid');
+      const rows = resources.map((r) => ({
+        id: uuidv4(),
+        concept_id: concept.id,
+        textbook_id: concept.textbook_id,
+        chapter_id: concept.chapter_id,
+        video_id: r.id,
+        title: r.title,
+        description: r.description || '',
+        channel: r.channelName || r.sourceLabel,
+        thumbnail: r.thumbnail || '',
+        duration: r.duration || '',
+        score: r.relevance || 0.5,
+        data: { source: r.source, sourceLabel: r.sourceLabel, url: r.url, embedUrl: r.embedUrl },
+      }));
+      const { error: insertError } = await supabase.from('concept_videos').insert(rows);
+      if (insertError) logger.warn('Failed to persist teach resources', { error: insertError });
+    }
+
     return sendSuccess(res, resources);
   } catch (err) {
     logger.error('Failed to search teach resources', { error: (err as Error).message });
