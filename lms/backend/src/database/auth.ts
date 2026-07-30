@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '../services/supabase';
+import { ValidationError } from '../utils/errors';
 
 export interface AuthUser {
   uid: string;
@@ -72,12 +73,12 @@ export async function createUser(params: {
       phone_number: params.phone || '',
       photo_url: params.photoURL || '',
     },
-    app_metadata: params.role ? { [USER_META_ROLE]: params.role } : undefined,
   };
+  if (params.role) createPayload.app_metadata = { [USER_META_ROLE]: params.role };
   if (params.phone) createPayload.phone = params.phone;
 
   const { data, error } = await retryOnRateLimit(() => supabase.auth.admin.createUser(createPayload));
-  if (error || !data.user) throw new Error('Failed to create user: ' + (error?.message || 'Unknown'));
+  if (error || !data.user) throw new ValidationError('Failed to create user: ' + (error?.message || 'Unknown'));
   return extractUser(data.user);
 }
 

@@ -154,9 +154,9 @@ export async function createUser(data: {
       }
     }
     if (err.message?.toLowerCase().includes('supabase') || err.message?.toLowerCase().includes('not configured')) {
-      throw new Error(`Auth service unavailable: ${err.message}`);
+      throw new ValidationError(`Auth service unavailable: ${err.message}`);
     }
-    throw new Error(`Failed to create user in auth system: ${err.message}`);
+    throw new ValidationError(`Failed to create user in auth system: ${err.message}`);
   }
 
   const now = new Date().toISOString();
