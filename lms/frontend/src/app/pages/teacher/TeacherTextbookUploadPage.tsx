@@ -169,6 +169,7 @@ export default function TeacherTextbookUploadPage() {
 
     const res = await api.post('/textbooks', bodyFormData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 600000,
       onUploadProgress: (e) => {
         if (e.total) {
           const pct = Math.round((e.loaded / e.total) * 100);

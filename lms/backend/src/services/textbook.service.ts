@@ -81,7 +81,53 @@ export async function createTextbook(data: {
     updated_at: now,
   });
 
-  if (insertError) throw insertError;
+  if (insertError) {
+    // Fallback: try raw REST API in case of schema cache issue
+    try {
+      logger.warn('Supabase insert failed, retrying via raw REST API', { error: insertError.message });
+      const supabaseUrl = env.SUPABASE_URL;
+      const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
+      if (supabaseUrl && serviceKey) {
+        const res = await fetch(`${supabaseUrl}/rest/v1/textbooks`, {
+          method: 'POST',
+          headers: {
+            'apikey': serviceKey,
+            'Authorization': `Bearer ${serviceKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation',
+          },
+          body: JSON.stringify({
+            id: textbookId,
+            title: data.title,
+            subject_id: data.subjectId,
+            class_id: data.classId,
+            teacher_id: data.teacherId,
+            description: data.description || '',
+            cover_image: data.coverImage || '',
+            storage_path: storagePath,
+            pdf_url: pdfUrl,
+            status,
+            chapter_count: 0,
+            total_concepts: 0,
+            completed_concepts: 0,
+            school_id: data.schoolId,
+            created_at: now,
+            updated_at: now,
+          }),
+        });
+        if (res.ok) {
+          logger.info('Textbook inserted via raw REST API fallback', { textbookId });
+        } else {
+          const errBody = await res.text().catch(() => '');
+          throw new Error(`Raw REST insert failed: ${errBody || res.statusText}`);
+        }
+      } else {
+        throw insertError;
+      }
+    } catch (fallbackErr) {
+      throw fallbackErr instanceof Error ? fallbackErr : insertError;
+    }
+  }
 
   // Submit to Inngest background processing (fire-and-forget when inline)
   try {
