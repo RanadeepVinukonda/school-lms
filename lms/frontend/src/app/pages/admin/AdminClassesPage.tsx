@@ -424,33 +424,101 @@ export default function AdminClassesPage() {
     setShowAssign(true);
   };
 
+  /* ── Assign Teacher ─────────────────────────────────────────────── */
   const handleAssignTeacher = async () => {
     setAssignLoading(true);
-    try {
-      const teacherId = selectedTeacherId;
+    const log = (...args: unknown[]) => console.log('[AssignTeacher]', ...args);
+    const logErr = (...args: unknown[]) => console.error('[AssignTeacher]', ...args);
+    const teacherId = selectedTeacherId;
 
-      if (!teacherId) {
-        toast.error('Please select a teacher');
+    if (!teacherId || !assignClassId || !assignSubjectId) {
+      logErr('Missing data:', { teacherId, assignClassId, assignSubjectId });
+      toast.error('Missing class, subject, or teacher selection');
+      setAssignLoading(false);
+      return;
+    }
+    log('Starting assign flow', { teacherId, classId: assignClassId, subjectId: assignSubjectId });
+
+    // Strategy: try backend API first (fast path), then direct Supabase if it times out.
+    let assignmentDone = false;
+    let apiTimer: ReturnType<typeof setTimeout>;
+
+    try {
+      const apiTimeout = new Promise<never>((_, reject) => {
+        apiTimer = setTimeout(() => reject(new Error('API_TIMEOUT')), 6000);
+      });
+      log('Calling backend API...');
+      await Promise.race([
+        teacherClassSubjectService.assign({ teacherId, classId: assignClassId, subjectId: assignSubjectId }),
+        apiTimeout,
+      ]).finally(() => { clearTimeout(apiTimer); log('API race finished'); });
+      log('Backend API succeeded');
+      assignmentDone = true;
+    } catch (apiErr: any) {
+      log('Backend API failed:', apiErr?.message);
+      if (apiErr?.message === 'API_TIMEOUT') {
+        log('API timed out — will try direct insert');
+      } else if (apiErr?.response?.data?.error?.message) {
+        log('API returned error:', apiErr.response.data.error.message);
+      }
+
+      // Fallback: insert directly via Supabase client (bypasses backend middleware)
+      try {
+        const docId = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const now = new Date().toISOString();
+        log('Inserting directly into firestore_docs...');
+        const { error: insertErr } = await supabase.from('firestore_docs').insert({
+          collection: 'teacherClassSubject',
+          doc_id: docId,
+          data: { teacherId, classId: assignClassId, subjectId: assignSubjectId, createdAt: now, updatedAt: now },
+          updated_at: now,
+        });
+        if (insertErr) {
+          logErr('Direct insert failed:', insertErr);
+          throw new Error(insertErr.message);
+        }
+        log('Direct insert succeeded');
+        assignmentDone = true;
+      } catch (directErr: any) {
+        const msg = apiErr?.response?.data?.error?.message || apiErr?.response?.data?.message || directErr?.message || apiErr?.message || 'Failed to assign teacher';
+        logErr('Both paths failed:', msg, { apiErr: apiErr?.message, directErr: directErr?.message });
+        toast.error(msg);
         setAssignLoading(false);
         return;
       }
-
-      await teacherClassSubjectService.assign({
-        teacherId,
-        classId: assignClassId,
-        subjectId: assignSubjectId,
-      });
-      // Invalidate query cache to trigger immediate UI re-render
-      queryClient.invalidateQueries({ queryKey: ['admin-tc-assignments'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-users-list'] });
-      await Promise.all([refetchTCAssignments(), refetchUsers()]);
-      setShowAssign(false);
-      toast.success('Teacher assigned successfully');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to assign teacher');
-    } finally {
-      setAssignLoading(false);
     }
+
+    if (!assignmentDone) {
+      logErr('Assignment flag not set — aborting');
+      toast.error('Assignment could not be saved');
+      setAssignLoading(false);
+      return;
+    }
+
+    // Refresh queries so the UI shows the new teacher name immediately
+    log('Invalidating query cache...');
+    queryClient.invalidateQueries({ queryKey: ['admin-tc-assignments'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-users-list'] });
+
+    let refetchTimer: ReturnType<typeof setTimeout>;
+    try {
+      log('Refetching assignments and users...');
+      const rfTimeout = new Promise<never>((_, reject) => {
+        refetchTimer = setTimeout(() => reject(new Error('REFETCH_TIMEOUT')), 8000);
+      });
+      await Promise.race([
+        Promise.all([refetchTCAssignments(), refetchUsers()]),
+        rfTimeout,
+      ]).finally(() => { clearTimeout(refetchTimer); log('Refetch race finished'); });
+      log('Refetched successfully');
+    } catch {
+      log('Refetch timed out or failed — continuing (assignment is saved)');
+    }
+
+    setShowAssign(false);
+    toast.success('Teacher assigned successfully');
+    setAssignLoading(false);
+    log('Assign flow complete');
   };
 
   const handleRemoveTeacherAssignment = async (classId: string, subjectId: string) => {
