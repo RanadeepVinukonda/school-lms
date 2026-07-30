@@ -207,7 +207,7 @@ export default function AdminClassesPage() {
       return;
     }
     try {
-      await supabase.from('classes').update({
+      const { error } = await supabase.from('classes').update({
         name: editClassForm.name,
         code: editClassForm.code.toUpperCase(),
         grade: editClassForm.grade || null,
@@ -215,6 +215,8 @@ export default function AdminClassesPage() {
         room_number: editClassForm.roomNumber || null,
         updated_at: new Date().toISOString(),
       }).eq('id', editClassTarget.id);
+      if (error) throw error;
+
       logAudit({
         action: 'class.update',
         targetId: editClassTarget.id,
@@ -228,8 +230,8 @@ export default function AdminClassesPage() {
       setEditClassTarget(null);
       toast.success(`Class ${editClassForm.name} updated`);
       refetchClasses();
-    } catch {
-      toast.error('Failed to update class');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update class');
     }
   };
 
@@ -251,7 +253,9 @@ export default function AdminClassesPage() {
     if (!classDeleteTarget) return;
     setClassDeleteLoading(true);
     try {
-      await supabase.from('classes').update({ status: 'inactive', updated_at: new Date().toISOString() }).eq('id', classDeleteTarget.id);
+      const { error } = await supabase.from('classes').update({ status: 'inactive', updated_at: new Date().toISOString() }).eq('id', classDeleteTarget.id);
+      if (error) throw error;
+
       logAudit({
         action: 'class.archive',
         targetId: classDeleteTarget.id,
@@ -264,8 +268,8 @@ export default function AdminClassesPage() {
       setShowClassDependencyDialog(false);
       setClassDeleteTarget(null);
       refetchClasses();
-    } catch {
-      toast.error('Failed to archive class');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to archive class');
     } finally {
       setClassDeleteLoading(false);
     }
@@ -283,6 +287,9 @@ export default function AdminClassesPage() {
         supabase.from('student_class_enrollments').select('student_id').eq('class_id', classId),
       ]);
 
+      if (studentsRes.error) throw studentsRes.error;
+      if (enrollmentsRes.error) throw enrollmentsRes.error;
+
       const studentIds = new Set<string>();
       (studentsRes.data || []).forEach((s: any) => studentIds.add(s.id));
       (enrollmentsRes.data || []).forEach((e: any) => studentIds.add(e.student_id));
@@ -291,27 +298,34 @@ export default function AdminClassesPage() {
 
       // 2. Delete student users from 'users' table (cascades to fee_payments, enrollments, etc.)
       if (studentIdsArray.length > 0) {
-        await supabase.from('users').delete().in('id', studentIdsArray);
+        const { error: delUserErr } = await supabase.from('users').delete().in('id', studentIdsArray);
+        if (delUserErr) throw delUserErr;
       }
 
       // Also clean up any residual students set to this class_id
-      await supabase.from('users').delete().eq('class_id', classId).eq('role', 'student');
+      const { error: delResidErr } = await supabase.from('users').delete().eq('class_id', classId).eq('role', 'student');
+      if (delResidErr) throw delResidErr;
 
       // 3. Find and delete textbooks for this class (and related lessons, quizzes, assignments)
-      const { data: textbooks } = await supabase.from('textbooks').select('id').eq('class_id', classId);
+      const { data: textbooks, error: getTbErr } = await supabase.from('textbooks').select('id').eq('class_id', classId);
+      if (getTbErr) throw getTbErr;
       const textbookIds = (textbooks || []).map((t: any) => t.id);
 
       if (textbookIds.length > 0) {
-        await Promise.all([
+        const delRes = await Promise.all([
           supabase.from('lessons').delete().in('textbook_id', textbookIds),
           supabase.from('quizzes').delete().in('textbook_id', textbookIds),
           supabase.from('assignments').delete().in('textbook_id', textbookIds),
         ]);
+        for (const r of delRes) {
+          if (r.error) throw r.error;
+        }
       }
-      await supabase.from('textbooks').delete().eq('class_id', classId);
+      const { error: delTbErr } = await supabase.from('textbooks').delete().eq('class_id', classId);
+      if (delTbErr) throw delTbErr;
 
       // 4. Delete class relations, timetable, subjects, and enrollments
-      await Promise.all([
+      const delRels = await Promise.all([
         supabase.from('student_class_enrollments').delete().eq('class_id', classId),
         supabase.from('class_teachers').delete().eq('class_id', classId),
         supabase.from('class_subjects').delete().eq('class_id', classId),
@@ -319,9 +333,13 @@ export default function AdminClassesPage() {
         supabase.from('timetable').delete().eq('class_id', classId),
         supabase.from('subjects').delete().eq('class_id', classId),
       ]);
+      for (const r of delRels) {
+        if (r.error) throw r.error;
+      }
 
       // 5. Finally delete the class record
-      await supabase.from('classes').delete().eq('id', classId);
+      const { error: delClsErr } = await supabase.from('classes').delete().eq('id', classId);
+      if (delClsErr) throw delClsErr;
 
       logAudit({
         action: 'class.delete',
@@ -337,7 +355,7 @@ export default function AdminClassesPage() {
       refetchClasses();
     } catch (err: any) {
       console.error(err);
-      toast.error('Failed to permanently delete class and its dependencies');
+      toast.error(err.message || 'Failed to permanently delete class and its dependencies');
     } finally {
       setClassDeleteLoading(false);
     }

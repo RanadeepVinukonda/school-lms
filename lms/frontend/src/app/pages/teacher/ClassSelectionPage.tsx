@@ -80,9 +80,11 @@ export default function ClassSelectionPage() {
   useEffect(() => {
     async function fetch() {
       try {
-        const { data: items } = await supabase.from('classes').select('*');
+        const { data: items, error: classErr } = await supabase.from('classes').select('*');
+        if (classErr) throw classErr;
         setClasses((items || []) as Class[]);
-      } catch {
+      } catch (err: any) {
+        console.error(err);
         setError(_('Failed to load classes'));
       } finally {
         setLoading(false);
@@ -102,11 +104,13 @@ export default function ClassSelectionPage() {
       try {
         const newMap: Record<string, SubjectWithClassId[]> = {};
         for (const classId of selectedIds) {
-          const { data: subs } = await supabase.from('subjects').select('*').eq('classId', classId);
+          const { data: subs, error: subErr } = await supabase.from('subjects').select('*').eq('class_id', classId);
+          if (subErr) throw subErr;
           newMap[classId] = (subs || []) as SubjectWithClassId[];
         }
         setSubjectsMap(newMap);
-      } catch {
+      } catch (err: any) {
+        console.error(err);
         setError(_('Failed to load subjects'));
       } finally {
         setLoadingSubjects(false);
@@ -150,7 +154,9 @@ export default function ClassSelectionPage() {
         subjectAssignments,
       });
 
-      const { data: d } = await supabase.from('users').select('*').eq('id', user.id).maybeSingle();
+      const { data: d, error: getErr } = await supabase.from('users').select('*').eq('id', user.id).maybeSingle();
+      if (getErr) throw getErr;
+
       if (d) {
         setUser({
           id: d.id,
@@ -189,21 +195,28 @@ export default function ClassSelectionPage() {
         newValue: { classIds: classIdArray, subjectAssignments },
       });
 
-      await supabase.from('notifications').insert({
+      const welcomeBody = `${_('Hi')} ${user?.displayName ?? 'Unknown'}! ${_("You're now assigned to")} ${selectedNames}. ${_('Start creating content for your students.')}`;
+      const { error: notifErr } = await supabase.from('notifications').insert({
+        user_id: user.id,
         userId: user.id,
         type: 'welcome',
         title: _('Welcome to Genesis LMS!'),
-        body: `${_('Hi')} ${user?.displayName ?? 'Unknown'}! ${_("You're now assigned to")} ${selectedNames}. ${_('Start creating content for your students.')}`,
+        message: welcomeBody,
+        body: welcomeBody,
         data: { role: 'teacher', classIds: classIdArray },
         priority: 'high',
         read: false,
+        read_at: null,
         readAt: null,
+        created_at: new Date().toISOString(),
         createdAt: new Date().toISOString(),
       });
+      if (notifErr) throw notifErr;
 
       navigate(ROUTES.TEACHER_DASHBOARD, { replace: true });
-    } catch {
-      setError(_('Failed to save selection. Try again.'));
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || _('Failed to save selection. Try again.'));
     } finally {
       setSaving(false);
     }

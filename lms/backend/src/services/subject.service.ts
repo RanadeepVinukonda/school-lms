@@ -28,23 +28,29 @@ export async function createSubject(data: {
   const subjectId = uuidv4();
   const now = new Date().toISOString();
 
+  // Fetch parent class to get its school_id and subject_ids
+  const { data: classDoc } = await supabase
+    .from('classes')
+    .select('school_id, subject_ids')
+    .eq('id', data.classId)
+    .maybeSingle();
+
+  const schoolId = classDoc?.school_id || null;
+
   const subjectData = {
     id: subjectId,
     name: data.name,
     code: data.code,
     class_id: data.classId,
     description: data.description || '',
-    category: data.category,
-    credit_hours: data.credits,
-    department: data.department,
-    icon: data.thumbnail,
-    is_elective: data.isElective,
-    grade_levels: data.gradeLevels,
-    tags: data.tags || [],
-    syllabus: data.syllabus,
-    status: data.status || 'active',
+    category: data.category || '',
+    credit_hours: data.credits || 0,
+    icon: data.thumbnail || '',
+    color: 'hsl(var(--accent-default))',
+    is_active: true,
     created_at: now,
     updated_at: now,
+    school_id: schoolId,
   };
 
   const { error } = await supabase.from('subjects').insert(subjectData);
@@ -52,12 +58,6 @@ export async function createSubject(data: {
 
   // Append new subject ID to class's subject_ids array
   try {
-    const { data: classDoc } = await supabase
-      .from('classes')
-      .select('subject_ids')
-      .eq('id', data.classId)
-      .maybeSingle();
-
     if (classDoc) {
       const currentSubjectIds = classDoc.subject_ids || [];
       if (!currentSubjectIds.includes(subjectId)) {
