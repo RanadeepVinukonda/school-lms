@@ -996,7 +996,6 @@ export default function AdminClassesPage() {
                     <thead>
                       <tr className="border-b border-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
                         <th className="text-left px-4 py-3">Name</th>
-                          <th className="text-left px-4 py-3">Phone</th>
                         <th className="text-left px-4 py-3">Assigned Classes</th>
                         <th className="text-left px-4 py-3">Status</th>
                         <th className="text-right px-4 py-3">Actions</th>
@@ -1012,7 +1011,6 @@ export default function AdminClassesPage() {
                         return (
                           <tr key={teacher.id} className="hover:bg-muted/20 transition-colors text-body-md">
                             <td className="px-4 py-3 font-semibold">{teacher.displayName}</td>
-                              <td className="px-4 py-3 font-mono text-sm select-all">{(teacher as any).phone_number || teacher.phone || '—'}</td>
                             <td className="px-4 py-3">
                               {teacherAssignments.length === 0 ? (
                                 <span className="text-label-xs text-muted-foreground/60">No assignments</span>
@@ -1109,7 +1107,6 @@ export default function AdminClassesPage() {
                           <th className="text-left px-4 py-3">Student ID</th>
                           <th className="text-left px-4 py-3">Class</th>
                           <th className="text-left px-4 py-3">Roll No</th>
-                        <th className="text-left px-4 py-3">Phone</th>
                           <th className="text-left px-4 py-3">Status</th>
                           <th className="text-right px-4 py-3">Actions</th>
                         </tr>
@@ -1123,7 +1120,6 @@ export default function AdminClassesPage() {
                               <td className="px-4 py-3 font-mono text-sm font-semibold text-primary">{student.studentId || '\u2014'}</td>
                               <td className="px-4 py-3">{classObj ? classObj.name : '\u2014'}</td>
                               <td className="px-4 py-3 font-semibold">{student.rollNo ?? '\u2014'}</td>
-                              <td className="px-4 py-3 font-mono text-xs text-muted-foreground select-all">{(student as any).phone_number || student.phone || '—'}</td>
                               <td className="px-4 py-3">
                                 <Badge variant={student.isActive === false ? 'destructive' : 'success'} className="text-[10px]">
                                   {student.isActive === false ? 'Inactive' : 'Active'}
