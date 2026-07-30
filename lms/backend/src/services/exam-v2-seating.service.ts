@@ -6,6 +6,11 @@ import { nosqlGet, nosqlUpdate } from './nosql.service';
 const POINTS_BY_DIFFICULTY: Record<string, number> = { easy: 1, medium: 2, hard: 3 };
 const EAV2 = 'examAttemptV2';
 
+const NORMALIZE_TYPE: Record<string, string> = {
+  multiple_choice: 'mcq',
+  mcq: 'mcq',
+};
+
 async function getConceptsForChapter(_textbookId: string, chapterId: string) {
   const { data: rows, error } = await getSupabaseAdmin().from('concepts').select('*').eq('chapter_id', chapterId);
   if (error) throw error;
@@ -56,12 +61,36 @@ export async function generateQuestionPaper(data: {
     .in('concept_id', conceptIds);
   if (error) throw error;
 
+  // Normalize raw questions: map types (multiple_choice -> mcq), auto-detect true_false mislabeled as mcq
+  const normalized = (allQuestions || []).map((q: any) => {
+    let type = NORMALIZE_TYPE[q.type] || q.type;
+    let opts = q.options;
+    if (typeof opts === 'string') { try { opts = JSON.parse(opts); } catch { opts = null; } }
+    const ans = (q.answer || q.correctAnswer || '').toString().toLowerCase().trim();
+    // If type is mcq but no options and answer is True/False, reclassify
+    if (type === 'mcq' && (!opts || opts.length === 0) && (ans === 'true' || ans === 'false')) {
+      type = 'true_false';
+    }
+    return { ...q, type, options: opts || null };
+  });
+
+  // Normalize distribution keys too (multiple_choice -> mcq)
+  const normDist: Record<string, Record<string, number>> = {};
+  for (const [diff, typeCounts] of Object.entries(distribution)) {
+    normDist[diff] = {};
+    for (const [type, count] of Object.entries(typeCounts)) {
+      const key = NORMALIZE_TYPE[type] || type;
+      if ((count as number) > 0) normDist[diff][key] = (normDist[diff][key] || 0) + (count as number);
+    }
+  }
+
   const selected: Array<Record<string, unknown>> = [];
   const usedIds = new Set<string>();
 
-  for (const [difficulty, typeCounts] of Object.entries(distribution)) {
+  for (const [difficulty, typeCounts] of Object.entries(normDist)) {
     for (const [type, count] of Object.entries(typeCounts)) {
-      const candidates = (allQuestions || []).filter(
+      if ((count as number) <= 0) continue;
+      const candidates = normalized.filter(
         (q: any) => q.difficulty === difficulty && q.type === type && !usedIds.has(q.id),
       );
 
@@ -74,7 +103,7 @@ export async function generateQuestionPaper(data: {
           type: q.type,
           text: q.question || q.text,
           options: q.options,
-          correctAnswer: q.correct_answer || q.correctAnswer || q.answer || '',
+          correctAnswer: q.answer || q.correctAnswer || q.correct_answer || '',
           explanation: q.explanation,
           difficulty: q.difficulty || 'medium',
           points: q.points || POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1,

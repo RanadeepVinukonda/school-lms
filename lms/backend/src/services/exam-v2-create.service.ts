@@ -10,6 +10,11 @@ import { nosqlSet, nosqlGet, nosqlUpdate } from './nosql.service';
 const POINTS_BY_DIFFICULTY: Record<string, number> = { easy: 1, medium: 2, hard: 3 };
 const EV2 = 'examV2';
 
+const NORMALIZE_TYPE: Record<string, string> = {
+  multiple_choice: 'mcq',
+  mcq: 'mcq',
+};
+
 async function getConceptsForChapter(_textbookId: string, chapterId: string) {
   const { data: rows, error } = await getSupabaseAdmin().from('concepts').select('*').eq('chapter_id', chapterId);
   if (error) throw error;
@@ -77,18 +82,28 @@ export async function createExam(data: {
     let remaining = data.questionCountPerConcept;
     for (const c of concepts) {
       const questions = await getQuestionsForConcept(c.id);
-      const filtered = questions.filter((q: any) => data.selectedModels.includes(q.type));
+      const normSelectedModels = new Set(data.selectedModels.flatMap((m: string) => {
+        const n = NORMALIZE_TYPE[m] || m;
+        return n === 'mcq' ? ['mcq', 'multiple_choice'] : [n];
+      }));
+      const filtered = questions.filter((q: any) => normSelectedModels.has(NORMALIZE_TYPE[q.type] || q.type));
       const take = Math.min(perConcept, remaining, filtered.length);
       const selected = filtered.slice(0, take);
       remaining -= selected.length;
       totalPoints += selected.reduce((sum: number, q: any) => sum + (q.points || POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1), 0);
       for (const q of selected) {
+        let type = NORMALIZE_TYPE[q.type] || q.type;
+        const opts = q.options;
+        const ans = (q.answer || q.correctAnswer || '').toString().toLowerCase().trim();
+        if (type === 'mcq' && (!opts || opts.length === 0) && (ans === 'true' || ans === 'false')) {
+          type = 'true_false';
+        }
         allSelectedQuestions.push({
           id: q.id,
-          type: q.type,
+          type,
           text: q.text || q.question,
-          options: q.options,
-          correctAnswer: q.correct_answer || q.correctAnswer || q.answer || '',
+          options: opts || null,
+          correctAnswer: q.answer || q.correctAnswer || q.correct_answer || '',
           explanation: q.explanation,
           difficulty: q.difficulty || 'medium',
           points: q.points || POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1,
@@ -114,11 +129,17 @@ export async function createExam(data: {
             remaining -= aiQuestions.length;
             for (const q of aiQuestions) {
               const pts = q.points || POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1;
+              let type = NORMALIZE_TYPE[q.type] || q.type;
+              const opts = q.options;
+              const ans = (q.answer || '').toString().toLowerCase().trim();
+              if (type === 'mcq' && (!opts || opts.length === 0) && (ans === 'true' || ans === 'false')) {
+                type = 'true_false';
+              }
               allSelectedQuestions.push({
                 id: q.id,
-                type: q.type,
+                type,
                 text: q.question,
-                options: q.options || null,
+                options: opts || null,
                 correctAnswer: q.answer,
                 explanation: q.explanation || '',
                 difficulty: q.difficulty || 'medium',
