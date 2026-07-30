@@ -5,6 +5,7 @@ import { deriveAcademicYear } from '../middlewares/academicYear.middleware';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 import { generateStudentId } from '../utils/studentIdGenerator.js';
+import { generatePassword } from '../utils/passwordGenerator.js';
 import { createNotification, createBulkNotifications } from './notification.service';
 import { userCache } from '../utils/cache';
 
@@ -126,9 +127,10 @@ export async function createUser(data: {
   }
 
   let authUser: Awaited<ReturnType<typeof createAuthUser>>;
+  const autoPassword = generatePassword();
   try {
     authUser = await createAuthUser({
-      phone: data.phone, displayName: data.displayName, photoURL: data.photoURL,
+      phone: data.phone, displayName: data.displayName, photoURL: data.photoURL, password: autoPassword,
     });
   } catch (err: any) {
     logger.error('Auth user creation failed', { phone: data.phone, role: data.role, error: err.message, stack: err.stack });
@@ -150,7 +152,7 @@ export async function createUser(data: {
         const { error: upsertErr } = await supabase.from('users').upsert(userData, { onConflict: 'id' });
         if (upsertErr) throw upsertErr;
         logger.info('User recovered (auth existed, DB row created)', { uid: authUser.id, phone: data.phone, role: data.role });
-        return stripPw(userData);
+  return { ...stripPw(userData), generatedPassword: autoPassword };
       }
     }
     if (err.message?.toLowerCase().includes('supabase') || err.message?.toLowerCase().includes('not configured')) {

@@ -57,6 +57,7 @@ export async function createUser(params: {
   displayName: string;
   photoURL?: string;
   role?: string;
+  password?: string;
 }): Promise<AuthUser> {
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error('Supabase not configured');
@@ -76,6 +77,7 @@ export async function createUser(params: {
   };
   if (params.role) createPayload.app_metadata = { [USER_META_ROLE]: params.role };
   if (params.phone) createPayload.phone = params.phone;
+  if (params.password) createPayload.password = params.password;
 
   const { data, error } = await retryOnRateLimit(() => supabase.auth.admin.createUser(createPayload));
   if (error || !data.user) throw new ValidationError('Failed to create user: ' + (error?.message || 'Unknown'));

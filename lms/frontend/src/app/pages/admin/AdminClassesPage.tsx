@@ -1589,7 +1589,7 @@ export default function AdminClassesPage() {
                 </div>
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border-b border-border/60 pb-2">
-                <span className="font-bold text-muted-foreground">Phone:</span>
+                <span className="font-bold text-muted-foreground">Email:</span>
                 <span className="sm:col-span-1 col-span-2 select-all">{createdCredentials.email}</span>
               </div>
               {createdCredentials.generatedPassword && (
