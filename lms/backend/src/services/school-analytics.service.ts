@@ -26,7 +26,7 @@ async function loadClassMeta(supabase: any): Promise<{ nameMap: Map<string, stri
 export async function getGradeComparison(_schoolId?: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return [];
 
-  const [{ nameMap }] = await Promise.all([loadClassMeta(supabase)]);
+  const [{ nameMap, gradeMap }] = await Promise.all([loadClassMeta(supabase)]);
 
   const [quizRes, examRes, assignRes] = await Promise.all([
     supabase.from('firestore_docs').select('doc_id, data').eq('collection', 'quizV2'),
@@ -63,18 +63,19 @@ export async function getGradeComparison(_schoolId?: string) {
   processAttempts(examAttemptRes.data || [], 'examId', examRes.data || []);
   processAttempts(submitRes.data || [], 'assignmentId', assignRes.data || []);
 
-  const gradeMap: Record<string, { totalScore: number; totalPoints: number; count: number; studentCount: number }> = {};
+  const gradeAgg: Record<string, { totalScore: number; totalPoints: number; count: number; studentCount: number }> = {};
   for (const [classId, data] of Object.entries(classMap)) {
+    const grade = gradeMap.get(classId);
     const name = nameMap.get(classId);
-    const gradeKey = name || classId;
-    if (!gradeMap[gradeKey]) gradeMap[gradeKey] = { totalScore: 0, totalPoints: 0, count: 0, studentCount: 0 };
-    gradeMap[gradeKey].totalScore += data.totalScore;
-    gradeMap[gradeKey].totalPoints += data.totalPoints;
-    gradeMap[gradeKey].count += data.count;
-    gradeMap[gradeKey].studentCount += data.studentIds.size;
+    const gradeKey = grade || name || classId;
+    if (!gradeAgg[gradeKey]) gradeAgg[gradeKey] = { totalScore: 0, totalPoints: 0, count: 0, studentCount: 0 };
+    gradeAgg[gradeKey].totalScore += data.totalScore;
+    gradeAgg[gradeKey].totalPoints += data.totalPoints;
+    gradeAgg[gradeKey].count += data.count;
+    gradeAgg[gradeKey].studentCount += data.studentIds.size;
   }
 
-  return Object.entries(gradeMap).map(([grade, data]) => ({
+  return Object.entries(gradeAgg).map(([grade, data]) => ({
     grade,
     averageScore: data.totalPoints > 0 ? safePct(Math.round((data.totalScore / data.totalPoints) * 100)) : 0,
     studentCount: data.studentCount,
