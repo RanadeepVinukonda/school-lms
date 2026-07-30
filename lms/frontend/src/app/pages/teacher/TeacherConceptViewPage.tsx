@@ -214,7 +214,7 @@ export default function TeacherConceptViewPage() {
     queryKey: ['teach-resources', conceptId],
     queryFn: async () => {
       if (!conceptId) return [];
-      const res = await api.get<{ data: TeachResource[] }>(`/content/teach-resources/search/${conceptId}`);
+      const res = await api.get<{ data: TeachResource[] }>(`/teach-resources/search/${conceptId}`);
       return res.data.data || [];
     },
     enabled: !!conceptId,
