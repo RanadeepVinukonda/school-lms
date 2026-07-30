@@ -435,11 +435,14 @@ export default function AdminClassesPage() {
         return;
       }
 
-      const res = await teacherClassSubjectService.assign({
+      await teacherClassSubjectService.assign({
         teacherId,
         classId: assignClassId,
         subjectId: assignSubjectId,
       });
+      // Invalidate query cache to trigger immediate UI re-render
+      queryClient.invalidateQueries({ queryKey: ['admin-tc-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-users-list'] });
       await Promise.all([refetchTCAssignments(), refetchUsers()]);
       setShowAssign(false);
       toast.success('Teacher assigned successfully');
@@ -455,6 +458,7 @@ export default function AdminClassesPage() {
     if (!assignment) return;
     try {
       await teacherClassSubjectService.remove(assignment.id);
+      queryClient.invalidateQueries({ queryKey: ['admin-tc-assignments'] });
       await refetchTCAssignments();
       toast.success('Teacher assignment removed');
     } catch (err: any) {
