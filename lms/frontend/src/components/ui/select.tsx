@@ -129,7 +129,7 @@ SelectSeparator.displayName = SelectPrimitive.Separator.displayName;
 function OptionsSelect({ options, placeholder, value, defaultValue, onChange, onValueChange, className, ...props }: Record<string, any>) {
   return (
     <Select
-      value={value}
+      {...(value ? { value } : {})}
       defaultValue={defaultValue}
       onValueChange={onValueChange || onChange}
     >
