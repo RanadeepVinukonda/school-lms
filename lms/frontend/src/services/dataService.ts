@@ -221,7 +221,21 @@ export interface AttemptEntry {
 
 /** Fetch grades for a specific student. */
 export async function getGradesByStudent(studentId: string): Promise<GradeEntry[]> {
-  const { data, error } = await supabase.from(GRADES_COLLECTION).select('*').eq('studentId', studentId);
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  if (supabaseUrl && supabaseKey) {
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session?.data?.session?.access_token;
+      if (token) {
+        const res = await fetch(`${supabaseUrl}/rest/v1/grades?student_id=eq.${encodeURIComponent(studentId)}&select=*`, {
+          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+        });
+        if (res.ok) return (await res.json()) as unknown as GradeEntry[];
+      }
+    } catch { /* fall through */ }
+  }
+  const { data, error } = await supabase.from(GRADES_COLLECTION).select('*').eq('student_id', studentId);
   if (error) throw error;
   return (data || []) as unknown as GradeEntry[];
 }

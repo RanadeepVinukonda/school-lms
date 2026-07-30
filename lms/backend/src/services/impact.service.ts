@@ -22,7 +22,17 @@ const supabase = () => getSupabaseAdmin()!;
 
 async function countTyped(table: string, field: string, value: string): Promise<number> {
   try {
-    const { count } = await supabase().from(table).select('*', { count: 'exact', head: true }).eq(field, value);
+    const snakeField = field.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (supabaseUrl && serviceKey) {
+      const res = await fetch(`${supabaseUrl}/rest/v1/${table}?${snakeField}=eq.${encodeURIComponent(value)}&select=id&head=true`, {
+        headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${serviceKey}`, 'Accept': 'application/json' },
+      });
+      const count = parseInt(res.headers.get('content-range')?.split('/')[1] || '0', 10);
+      return count || 0;
+    }
+    const { count } = await supabase().from(table).select('*', { count: 'exact', head: true }).eq(snakeField, value);
     return count || 0;
   } catch { return 0; }
 }
