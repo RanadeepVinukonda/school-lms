@@ -89,9 +89,7 @@ export async function createUser(data: {
 
   const placeholderEmail = data.role === 'student' && studentId
     ? `${studentId.toLowerCase()}@school.edu`
-    : data.phone
-      ? `ph_${data.phone.replace(/[^0-9]/g, '')}@school.edu`
-      : `ph_${Date.now()}_${data.displayName.replace(/\s+/g, '').toLowerCase()}@school.edu`;
+    : `${data.displayName.replace(/\s+/g, '').toLowerCase()}@school.edu`;
 
   let resolvedChildrenIds = data.childrenIds || [];
   if (resolvedChildrenIds.length > 0) {

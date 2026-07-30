@@ -64,9 +64,7 @@ export async function createUser(params: {
   if (!supabase) throw new Error('Supabase not configured');
 
   const placeholderEmail = params.email
-    || (params.phone
-      ? `ph_${params.phone.replace(/[^0-9]/g, '')}@school.edu`
-      : `ph_${Date.now()}_${params.displayName.replace(/\s+/g, '').toLowerCase()}@school.edu`);
+    || `${params.displayName.replace(/\s+/g, '').toLowerCase()}@school.edu`;
 
   const createPayload: Record<string, unknown> = {
     email: placeholderEmail,
