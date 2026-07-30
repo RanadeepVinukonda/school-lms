@@ -6,7 +6,7 @@ import api, { startTokenRefresh } from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
 import { getPrimaryRole } from '@/lib/roleHelpers';
-import type { LoginInput, OtpVerifyInput, ApiError } from '@/types';
+import type { LoginInput, ApiError } from '@/types';
 
 function setupDashboard(role: string): string {
   const primaryRole = getPrimaryRole(role);
@@ -117,15 +117,6 @@ export function useLogin() {
 
   return useMutation({
     mutationFn: async (data: LoginInput) => {
-      if (data.phone) {
-        const res = await api.post('/auth/send-otp', { phone: data.phone });
-        if (!res.data?.success) {
-          throw new Error(res.data?.message || 'Failed to send OTP');
-        }
-        const code = res.data?.data?.data?.code;
-        return { otpSent: true, phone: data.phone, code };
-      }
-
       const { data: authData, error } = await supabase.auth.signInWithPassword({
         email: data.email!,
         password: data.password!,
@@ -137,35 +128,10 @@ export function useLogin() {
       return fetchProfile(authData.user.id, authData.session.access_token, authData.session.refresh_token);
     },
     onSuccess: (result) => {
-      if (result && 'otpSent' in result) return;
-      handleLoginSuccess(result as any, navigate, location, setToken, setUser);
-    },
-    onError: (error: ApiError) => {
-      toast.error(getErrorMessage(error));
-    },
-  });
-}
-
-export function useVerifyOtp() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { setUser, setToken } = useAuthStore();
-
-  return useMutation({
-    mutationFn: async (data: OtpVerifyInput) => {
-      const res = await api.post('/auth/verify-otp', { phone: data.phone, token: data.token });
-      const body = res.data?.data;
-      if (!body?.success || !body?.data) {
-        throw new Error(body?.message || 'Invalid or expired OTP');
-      }
-      const { uid, token, refresh_token, user } = body.data;
-      return { ...user, uid, token, refreshToken: refresh_token };
-    },
-    onSuccess: (result) => {
       handleLoginSuccess(result, navigate, location, setToken, setUser);
     },
     onError: (error: ApiError) => {
-      toast.error(error.message || 'Invalid OTP. Please try again.');
+      toast.error(getErrorMessage(error));
     },
   });
 }
