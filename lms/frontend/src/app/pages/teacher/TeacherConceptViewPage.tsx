@@ -283,7 +283,7 @@ export default function TeacherConceptViewPage() {
                     )}
                     <Badge variant="outline" className="text-[10px]">
                       <Icon name="smart_display" size={12} className="mr-1" />
-                      {(d.concept.videos ?? []).length} video{(d.concept.videos ?? []).length !== 1 ? 's' : ''}
+                      {(d.concept.videos ?? []).length + (teachResourcesQuery.data?.length ?? 0)} video{(d.concept.videos ?? []).length + (teachResourcesQuery.data?.length ?? 0) !== 1 ? 's' : ''}
                     </Badge>
                     <Badge variant="outline" className="text-[10px]">
                       <Icon name="quiz" size={12} className="mr-1" />
