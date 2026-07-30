@@ -158,6 +158,7 @@ export default function TeacherMindMapPage() {
     setSaved(false);
     try {
       await mindmapService.update(generatedId, {
+        title,
         nodes: nodes.map((n) => ({
           id: n.id,
           label: (n.data as any)?.label || '',
@@ -180,7 +181,7 @@ export default function TeacherMindMapPage() {
     } finally {
       setSaving(false);
     }
-  }, [generatedId, nodes, edges]);
+  }, [generatedId, title, nodes, edges]);
 
   const handlePush = useCallback(async () => {
     if (!generatedId || selectedClassIds.length === 0) return;
