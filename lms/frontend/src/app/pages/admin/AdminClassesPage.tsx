@@ -440,7 +440,7 @@ export default function AdminClassesPage() {
     log('Starting assign flow', { teacherId, classId: assignClassId, subjectId: assignSubjectId });
 
     // Strategy: try backend API first (fast path), then direct Supabase if it times out.
-    let assignmentDone = false;
+    let assignedId: string | null = null;
     let apiTimer: ReturnType<typeof setTimeout>;
 
     try {
@@ -448,12 +448,12 @@ export default function AdminClassesPage() {
         apiTimer = setTimeout(() => reject(new Error('API_TIMEOUT')), 6000);
       });
       log('Calling backend API...');
-      await Promise.race([
+      const apiResult = await Promise.race([
         teacherClassSubjectService.assign({ teacherId, classId: assignClassId, subjectId: assignSubjectId }),
         apiTimeout,
       ]).finally(() => { clearTimeout(apiTimer); log('API race finished'); });
-      log('Backend API succeeded');
-      assignmentDone = true;
+      assignedId = (apiResult as any)?.data?.id || assignSubjectId;
+      log('Backend API succeeded, id:', assignedId);
     } catch (apiErr: any) {
       log('Backend API failed:', apiErr?.message);
       if (apiErr?.message === 'API_TIMEOUT') {
@@ -464,12 +464,12 @@ export default function AdminClassesPage() {
 
       // Fallback: insert directly via Supabase client (bypasses backend middleware)
       try {
-        const docId = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        assignedId = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
         const now = new Date().toISOString();
         log('Inserting directly into firestore_docs...');
         const { error: insertErr } = await supabase.from('firestore_docs').insert({
           collection: 'teacherClassSubject',
-          doc_id: docId,
+          doc_id: assignedId,
           data: { teacherId, classId: assignClassId, subjectId: assignSubjectId, createdAt: now, updatedAt: now },
           updated_at: now,
         });
@@ -477,8 +477,7 @@ export default function AdminClassesPage() {
           logErr('Direct insert failed:', insertErr);
           throw new Error(insertErr.message);
         }
-        log('Direct insert succeeded');
-        assignmentDone = true;
+        log('Direct insert succeeded, id:', assignedId);
       } catch (directErr: any) {
         const msg = apiErr?.response?.data?.error?.message || apiErr?.response?.data?.message || directErr?.message || apiErr?.message || 'Failed to assign teacher';
         logErr('Both paths failed:', msg, { apiErr: apiErr?.message, directErr: directErr?.message });
@@ -488,21 +487,32 @@ export default function AdminClassesPage() {
       }
     }
 
-    if (!assignmentDone) {
-      logErr('Assignment flag not set — aborting');
+    if (!assignedId) {
+      logErr('No assignment ID — aborting');
       toast.error('Assignment could not be saved');
       setAssignLoading(false);
       return;
     }
 
-    // Refresh queries so the UI shows the new teacher name immediately
-    log('Invalidating query cache...');
+    // Optimistically push new assignment into the React Query cache so the
+    // teacher name appears in the UI *immediately*, before any refetch completes.
+    const teacherName = users.find((u) => u.id === teacherId)?.displayName || 'Unknown';
+    queryClient.setQueryData(['admin-tc-assignments'], (old: any) => {
+      const arr = Array.isArray(old) ? old : [];
+      // Avoid duplicating if already present (defensive)
+      if (arr.some((a: any) => a.classId === assignClassId && a.subjectId === assignSubjectId)) return arr;
+      return [...arr, {
+        id: assignedId, teacherId, classId: assignClassId, subjectId: assignSubjectId,
+        teacherName, className: '', subjectName: '',
+      }];
+    });
+
+    // Best-effort refetch to sync with any concurrent changes
+    log('Refetching assignments and users...');
     queryClient.invalidateQueries({ queryKey: ['admin-tc-assignments'] });
     queryClient.invalidateQueries({ queryKey: ['admin-users-list'] });
-
     let refetchTimer: ReturnType<typeof setTimeout>;
     try {
-      log('Refetching assignments and users...');
       const rfTimeout = new Promise<never>((_, reject) => {
         refetchTimer = setTimeout(() => reject(new Error('REFETCH_TIMEOUT')), 8000);
       });
@@ -512,7 +522,7 @@ export default function AdminClassesPage() {
       ]).finally(() => { clearTimeout(refetchTimer); log('Refetch race finished'); });
       log('Refetched successfully');
     } catch {
-      log('Refetch timed out or failed — continuing (assignment is saved)');
+      log('Refetch timed out or failed — UI already has optimistic data');
     }
 
     setShowAssign(false);
