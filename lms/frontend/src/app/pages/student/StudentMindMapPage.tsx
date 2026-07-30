@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -69,9 +70,10 @@ export default function StudentMindMapPage() {
       await mindmapService.generate(text, title);
       setText('');
       setTitle('');
+      toast.success(_('Mind map generated!'));
       refetch();
     } catch (err: any) {
-      console.error('Failed to generate mind map', err);
+      toast.error(err?.message || _('Failed to generate mind map'));
     } finally {
       setGenerating(false);
     }
@@ -80,9 +82,10 @@ export default function StudentMindMapPage() {
   const handleDelete = useCallback(async (id: string) => {
     try {
       await mindmapService.delete(id);
+      toast.success(_('Mind map deleted'));
       refetch();
     } catch (err: any) {
-      console.error('Failed to delete mind map', err);
+      toast.error(err?.message || _('Failed to delete mind map'));
     }
   }, [refetch]);
 
