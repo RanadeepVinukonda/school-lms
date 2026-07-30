@@ -52,6 +52,7 @@ const AdaptiveQuizPage = lazyRetry(() => import('@/app/pages/student/AdaptiveQui
 const StudentNoticeBoardPage = lazyRetry(() => import('@/app/pages/student/StudentNoticeBoardPage'));
 const StudentTimetablePage = lazyRetry(() => import('@/app/pages/student/StudentTimetablePage'));
 const StudentReportPage = lazyRetry(() => import('@/app/pages/student/StudentReportPage'));
+const StudentMindMapPage = lazyRetry(() => import('@/app/pages/student/StudentMindMapPage'));
 const K2DashboardPage = lazyRetry(() => import('@/app/pages/student/K2DashboardPage'));
 const K2TracingPage = lazyRetry(() => import('@/app/pages/student/K2TracingPage'));
 const K2PhonicsPage = lazyRetry(() => import('@/app/pages/student/K2PhonicsPage'));
@@ -177,6 +178,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.STUDENT_ADAPTIVE_QUIZ(':conceptId'), element: <Suspense fallback={<PageFallback />}><AdaptiveQuizPage /></Suspense> },
       { path: ROUTES.STUDENT_NOTICEBOARD, element: <Suspense fallback={<PageFallback />}><StudentNoticeBoardPage /></Suspense> },
       { path: ROUTES.STUDENT_TIMETABLE, element: <Suspense fallback={<PageFallback />}><StudentTimetablePage /></Suspense> },
+      { path: ROUTES.STUDENT_MINDMAPS, element: <Suspense fallback={<PageFallback />}><StudentMindMapPage /></Suspense> },
       { path: ROUTES.STUDENT_REPORT, element: <Suspense fallback={<PageFallback />}><StudentReportPage /></Suspense> },
     ],
   },

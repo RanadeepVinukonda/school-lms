@@ -31,6 +31,8 @@ export default function TeacherMindMapPage() {
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
   const [pushing, setPushing] = useState(false);
   const [pushDone, setPushDone] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const theme = useUIStore((s) => s.theme);
 
   const initialNodes: Node[] = [];
@@ -120,6 +122,35 @@ export default function TeacherMindMapPage() {
     );
   }, []);
 
+  const handleSave = useCallback(async () => {
+    if (!generatedId) return;
+    setSaving(true);
+    setSaved(false);
+    try {
+      await mindmapService.update(generatedId, {
+        nodes: nodes.map((n) => ({
+          id: n.id,
+          label: (n.data as any)?.label || '',
+          type: 'concept',
+          x: n.position.x,
+          y: n.position.y,
+        })),
+        edges: edges.map((e) => ({
+          id: e.id,
+          source: e.source,
+          target: e.target,
+          label: e.label || '',
+        })),
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err: any) {
+      console.error('Failed to save mind map', err);
+    } finally {
+      setSaving(false);
+    }
+  }, [generatedId, nodes, edges]);
+
   const handlePush = useCallback(async () => {
     if (!generatedId || selectedClassIds.length === 0) return;
     setPushing(true);
@@ -169,10 +200,21 @@ export default function TeacherMindMapPage() {
               {loading ? _('Generating...') : _('Generate Mind Map')}
             </Button>
             {generatedId && !pushDone && (
-              <Button variant="outline" onClick={openPushDialog}>
-                <Icon name="send" size={18} className="mr-2" />
-                {_('Push to Class')}
-              </Button>
+              <div className="flex flex-col gap-2">
+                <Button variant="outline" onClick={handleSave} disabled={saving}>
+                  <Icon name="save" size={18} className="mr-2" />
+                  {saving ? _('Saving...') : _('Save')}
+                </Button>
+                <Button variant="outline" onClick={openPushDialog}>
+                  <Icon name="send" size={18} className="mr-2" />
+                  {_('Push to Class')}
+                </Button>
+              </div>
+            )}
+            {saved && (
+              <div className="text-center text-label-sm text-success font-medium py-2 rounded-lg bg-success-container/40">
+                {_('Saved')}
+              </div>
             )}
             {pushDone && (
               <div className="text-center text-label-sm text-success font-medium py-2 rounded-lg bg-success-container/40">

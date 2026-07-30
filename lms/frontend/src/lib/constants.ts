@@ -105,6 +105,7 @@ export const ROUTES = {
 
   STUDENT_CODING: '/student/coding',
   STUDENT_CODING_EDITOR: (id: string) => `/student/coding/${id}`,
+  STUDENT_MINDMAPS: '/student/mindmaps',
   STUDENT_OCR: '/student/ocr',
   STUDENT_ADAPTIVE_QUIZ: (conceptId: string) => `/student/concepts/${conceptId}/adaptive-quiz`,
   TEACHER_NEP_QUESTIONS: '/teacher/nep-questions',
