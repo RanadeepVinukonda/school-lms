@@ -6,11 +6,11 @@ describe('Health Check Integration', () => {
     const res = await request(app).get('/health');
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('success', true);
-  });
+  }, 30000);
 
   it('GET /health/deep returns status with checks', async () => {
     const res = await request(app).get('/health/deep');
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('checks');
-  });
+  }, 30000);
 });

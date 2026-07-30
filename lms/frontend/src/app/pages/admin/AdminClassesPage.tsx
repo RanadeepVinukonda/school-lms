@@ -369,33 +369,20 @@ export default function AdminClassesPage() {
     }
     setSubjectCreateLoading(true);
     try {
-      const { data: newSubject } = await supabase.from('subjects').insert({
+      await api.post('/subjects', {
         name: subjectForm.name,
         code,
-        icon: subjectForm.icon,
-        color: 'hsl(var(--accent-default))',
+        thumbnail: subjectForm.icon,
         category: subjectForm.category,
-        class_id: addSubjectClassId,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }).select('id').single();
-
-      logAudit({
-        action: 'subject.create',
-        targetId: newSubject?.id || '',
-        targetType: 'subject',
-        targetName: subjectForm.name,
-        summary: `Created subject "${subjectForm.name}" (${code})`,
-        newValue: { name: subjectForm.name, code, category: subjectForm.category, icon: subjectForm.icon, classId: addSubjectClassId },
+        classId: addSubjectClassId,
       });
 
       setShowAddSubject(false);
       toast.success(`Subject ${subjectForm.name} added`);
       refetchSubjects();
       refetchClasses();
-    } catch {
-      toast.error('Failed to add subject');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to add subject');
     } finally {
       setSubjectCreateLoading(false);
     }

@@ -50,6 +50,28 @@ export async function createSubject(data: {
   const { error } = await supabase.from('subjects').insert(subjectData);
   if (error) throw error;
 
+  // Append new subject ID to class's subject_ids array
+  try {
+    const { data: classDoc } = await supabase
+      .from('classes')
+      .select('subject_ids')
+      .eq('id', data.classId)
+      .maybeSingle();
+
+    if (classDoc) {
+      const currentSubjectIds = classDoc.subject_ids || [];
+      if (!currentSubjectIds.includes(subjectId)) {
+        const updatedSubjectIds = [...currentSubjectIds, subjectId];
+        await supabase
+          .from('classes')
+          .update({ subject_ids: updatedSubjectIds, updated_at: now })
+          .eq('id', data.classId);
+      }
+    }
+  } catch (err) {
+    logger.warn('Failed to update class subject_ids array', { error: err, classId: data.classId, subjectId });
+  }
+
   logger.info('Subject created', { subjectId, name: data.name, code: data.code, classId: data.classId });
 
   return { ...subjectData, classId: data.classId };

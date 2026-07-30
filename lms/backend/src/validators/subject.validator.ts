@@ -15,7 +15,7 @@ export const createSubjectSchema = z.object({
   category: z.string().max(100).optional(),
   credits: z.number().int().positive('Credits must be positive').optional(),
   department: z.string().max(100).optional(),
-  thumbnail: z.string().url('Invalid thumbnail URL').optional(),
+  thumbnail: z.string().max(500).optional(),
   isElective: z.boolean().default(false),
   gradeLevels: z.array(z.string()).optional(),
   tags: z.array(z.string()).max(20).optional(),
