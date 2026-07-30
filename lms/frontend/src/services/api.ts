@@ -6,7 +6,7 @@ import type { ApiError } from '@/types';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: 120000,
   withCredentials: true,
 });
 

@@ -22,6 +22,8 @@ const snakeToCamel = (obj: any): any => {
 /** Create a new textbook document in Supabase. Returns the new document id. */
 export async function createTextbook(data: Omit<Textbook, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
   const { chapters, ...rest } = data;
+  // Refresh schema cache before insert
+  await supabase.from(TEXTBOOKS_COLLECTION).select('id').limit(1).maybeSingle().catch(() => {});
   const { data: inserted, error } = await supabase.from(TEXTBOOKS_COLLECTION).insert({
     ...rest,
     createdAt: new Date().toISOString(),
