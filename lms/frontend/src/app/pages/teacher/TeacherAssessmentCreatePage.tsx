@@ -278,6 +278,8 @@ export default function TeacherAssessmentCreatePage() {
     onSuccess: () => {
       toast.success(_('Quiz created successfully'));
       queryClient.invalidateQueries({ queryKey: ['quizzes-v2-class', selectedClassId] });
+      queryClient.invalidateQueries({ queryKey: ['student-quizzes-v2'] });
+      queryClient.invalidateQueries({ queryKey: ['student-tasks'] });
       setReviewQuestions([]);
       setQuizTitle('');
       setTimeLimitMinutes(30);
@@ -319,6 +321,7 @@ export default function TeacherAssessmentCreatePage() {
     onSuccess: () => {
       toast.success(_('Assignment created successfully'));
       queryClient.invalidateQueries({ queryKey: ['assignments-v2-class', selectedClassId] });
+      queryClient.invalidateQueries({ queryKey: ['student-tasks'] });
       setAssignmentTitle('');
       setAssignmentDescription('');
       setAssignmentQuestions([createEmptyQuestion()]);
@@ -377,6 +380,8 @@ export default function TeacherAssessmentCreatePage() {
       toast.success(_('Quiz created from paper'));
       setQuizGeneratedPaper(null);
       queryClient.invalidateQueries({ queryKey: ['quizzes-v2-class', selectedClassId] });
+      queryClient.invalidateQueries({ queryKey: ['student-quizzes-v2'] });
+      queryClient.invalidateQueries({ queryKey: ['student-tasks'] });
     },
     onError: (err: unknown) => {
       const msg = err && typeof err === 'object' && 'message' in err

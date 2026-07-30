@@ -53,6 +53,9 @@ export default function AdminNoticeBoardPage() {
       setForm({ title: '', content: '', priority: 'medium', expires_at: '', target_class_id: null });
       queryClient.invalidateQueries({ queryKey: ['admin-notices'] });
       queryClient.invalidateQueries({ queryKey: ['erp-notices'] });
+      queryClient.invalidateQueries({ queryKey: ['teacher-notices'] });
+      queryClient.invalidateQueries({ queryKey: ['student-notices'] });
+      queryClient.invalidateQueries({ queryKey: ['parent-notices'] });
     },
     onError: (err: any) => toast.error(err?.message || 'Failed to create notice'),
   });
@@ -63,6 +66,9 @@ export default function AdminNoticeBoardPage() {
       toast.success('Notice deleted');
       queryClient.invalidateQueries({ queryKey: ['admin-notices'] });
       queryClient.invalidateQueries({ queryKey: ['erp-notices'] });
+      queryClient.invalidateQueries({ queryKey: ['teacher-notices'] });
+      queryClient.invalidateQueries({ queryKey: ['student-notices'] });
+      queryClient.invalidateQueries({ queryKey: ['parent-notices'] });
     },
     onError: (err: any) => toast.error(err?.message || 'Failed to delete notice'),
   });

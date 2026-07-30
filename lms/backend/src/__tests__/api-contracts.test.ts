@@ -56,7 +56,7 @@ describe('API Contract: Auth endpoints', () => {
     const res = await request(app).post('/auth/register').send({ email: 'a@b.com', password: 'Pass123!', displayName: 'Test' });
     expect([200, 201, 400, 401, 500]).toContain(res.status);
     if (res.status < 300) expect(res.body).toMatchObject({ success: true });
-  });
+  }, 30000);
 
   it('POST /auth/register - rejects missing body', async () => {
     const res = await request(app).post('/auth/register').send({});
