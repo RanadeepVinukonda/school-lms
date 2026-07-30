@@ -29,6 +29,7 @@ function isRelevant(title: string, conceptTitle: string, chapterTitle: string): 
 
 async function searchKhanAcademyYouTube(
   conceptTitle: string,
+  chapterTitle: string,
   subject: string,
   maxResults: number,
 ): Promise<TeachResource[]> {
@@ -36,13 +37,13 @@ async function searchKhanAcademyYouTube(
     const ytSearch = require('yt-search');
     const query = `${subject} ${conceptTitle}`;
     const r = await ytSearch(query);
-    const videos = (r.videos || []).slice(0, maxResults * 2);
+    const videos = (r.videos || []).slice(0, maxResults * 3);
 
     return videos
       .filter((v: any) =>
         KHAN_ACADEMY_CHANNELS.some((ch) =>
           (v.author?.name || '').toLowerCase().includes(ch.toLowerCase()),
-        ),
+        ) && isRelevant(v.title || '', conceptTitle, chapterTitle),
       )
       .slice(0, maxResults)
       .map((v: any, i: number) => ({
@@ -73,7 +74,7 @@ export async function searchTeachResources(
   maxResults = 6,
 ): Promise<TeachResource[]> {
   // 1. Search Khan Academy's YouTube channel first
-  const khanResults = await searchKhanAcademyYouTube(conceptTitle, subject, maxResults);
+  const khanResults = await searchKhanAcademyYouTube(conceptTitle, chapterTitle, subject, maxResults);
   if (khanResults.length >= maxResults) return khanResults;
 
   // 2. Fill remaining slots from general YouTube search
