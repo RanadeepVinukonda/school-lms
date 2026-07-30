@@ -58,13 +58,15 @@ export async function createUser(params: {
   photoURL?: string;
   role?: string;
   password?: string;
+  email?: string;
 }): Promise<AuthUser> {
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error('Supabase not configured');
 
-  const placeholderEmail = params.phone
-    ? `ph_${params.phone.replace(/[^0-9]/g, '')}@school.edu`
-    : `ph_${Date.now()}_${params.displayName.replace(/\s+/g, '').toLowerCase()}@school.edu`;
+  const placeholderEmail = params.email
+    || (params.phone
+      ? `ph_${params.phone.replace(/[^0-9]/g, '')}@school.edu`
+      : `ph_${Date.now()}_${params.displayName.replace(/\s+/g, '').toLowerCase()}@school.edu`);
 
   const createPayload: Record<string, unknown> = {
     email: placeholderEmail,

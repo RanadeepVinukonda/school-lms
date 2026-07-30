@@ -87,9 +87,11 @@ export async function createUser(data: {
     studentClassId = data.classId;
   }
 
-  const placeholderEmail = data.phone
-    ? `ph_${data.phone.replace(/[^0-9]/g, '')}@school.edu`
-    : `ph_${Date.now()}_${data.displayName.replace(/\s+/g, '').toLowerCase()}@school.edu`;
+  const placeholderEmail = data.role === 'student' && studentId
+    ? `${studentId.toLowerCase()}@school.edu`
+    : data.phone
+      ? `ph_${data.phone.replace(/[^0-9]/g, '')}@school.edu`
+      : `ph_${Date.now()}_${data.displayName.replace(/\s+/g, '').toLowerCase()}@school.edu`;
 
   let resolvedChildrenIds = data.childrenIds || [];
   if (resolvedChildrenIds.length > 0) {
@@ -130,7 +132,7 @@ export async function createUser(data: {
   const autoPassword = generatePassword();
   try {
     authUser = await createAuthUser({
-      phone: data.phone, displayName: data.displayName, photoURL: data.photoURL, password: autoPassword,
+      phone: data.phone, displayName: data.displayName, photoURL: data.photoURL, password: autoPassword, email: placeholderEmail,
     });
   } catch (err: any) {
     logger.error('Auth user creation failed', { phone: data.phone, role: data.role, error: err.message, stack: err.stack });
