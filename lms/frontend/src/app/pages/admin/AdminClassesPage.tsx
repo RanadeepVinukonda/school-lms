@@ -42,6 +42,16 @@ function ordinal(n: number): string {
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
+function rollSort(a?: string | number | null, b?: string | number | null): number {
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+  const na = Number(a);
+  const nb = Number(b);
+  if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
+  return String(a).localeCompare(String(b), undefined, { numeric: true });
+}
+
 const subjectCategoryOptions = [
   { value: 'STEM', label: 'STEM' },
   { value: 'Humanities', label: 'Humanities' },
@@ -741,7 +751,6 @@ export default function AdminClassesPage() {
   // -------------------------------------------------------------
   const [studentSearch, setStudentSearch] = useState('');
   const [studentClassFilter, setStudentClassFilter] = useState('all');
-  const [studentPage, setStudentPage] = useState(1);
   const [showEditStudent, setShowEditStudent] = useState(false);
   const [editStudentTarget, setEditStudentTarget] = useState<UserDoc | null>(null);
   const [editStudentForm, setEditStudentForm] = useState({ displayName: '', rollNo: '', classId: '' });
@@ -763,23 +772,37 @@ export default function AdminClassesPage() {
         return (nameMatch || emailMatch) && classMatch;
       })
       .sort((a, b) => {
-        const aName = fetchedClasses.find((c) => c.id === a.classId)?.name || '';
-        const bName = fetchedClasses.find((c) => c.id === b.classId)?.name || '';
-        return aName.localeCompare(bName) || (a.displayName || '').localeCompare(b.displayName || '');
+        const aClass = fetchedClasses.find((c) => c.id === a.classId);
+        const bClass = fetchedClasses.find((c) => c.id === b.classId);
+        const aName = aClass?.name || '';
+        const bName = bClass?.name || '';
+        const aSection = aClass?.section || '';
+        const bSection = bClass?.section || '';
+        return aName.localeCompare(bName) || aSection.localeCompare(bSection) || rollSort(a.rollNo, b.rollNo);
       });
   }, [students, studentSearch, studentClassFilter, fetchedClasses]);
 
-  const paginatedStudents = useMemo(() => {
-    const limit = 10;
-    const offset = (studentPage - 1) * limit;
-    return filteredStudents.slice(offset, offset + limit);
-  }, [filteredStudents, studentPage]);
-
-  const studentTotalPages = Math.ceil(filteredStudents.length / 10);
-
-  useEffect(() => {
-    setStudentPage(1);
-  }, [studentSearch, studentClassFilter]);
+  // Group students by class, sorted by class name + section, then by roll number.
+  const studentGroups = useMemo(() => {
+    const map = new Map<string, UserDoc[]>();
+    for (const s of filteredStudents) {
+      const key = s.classId || 'unassigned';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(s);
+    }
+    return Array.from(map.entries())
+      .map(([classId, list]) => {
+        const cls = fetchedClasses.find((c) => c.id === classId);
+        return { classId, cls, students: [...list].sort((a, b) => rollSort(a.rollNo, b.rollNo)) };
+      })
+      .sort((a, b) => {
+        const aName = a.cls?.name || '';
+        const bName = b.cls?.name || '';
+        const aSection = a.cls?.section || '';
+        const bSection = b.cls?.section || '';
+        return aName.localeCompare(bName) || aSection.localeCompare(bSection);
+      });
+  }, [filteredStudents, fetchedClasses]);
 
   const handleEditStudentClick = (student: UserDoc) => {
     setEditStudentTarget(student);
@@ -1188,87 +1211,80 @@ export default function AdminClassesPage() {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="space-y-4">
-                  <div className="border border-border/60 rounded-xl overflow-x-auto bg-surface">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
-                          <th className="text-left px-4 py-3">Name</th>
-                          <th className="text-left px-4 py-3">Student ID</th>
-                          <th className="text-left px-4 py-3">Class</th>
-                          <th className="text-left px-4 py-3">Roll No</th>
-                          <th className="text-left px-4 py-3">Status</th>
-                          <th className="text-right px-4 py-3">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border/40 text-body-md">
-                        {paginatedStudents.map((student) => {
-                          const classObj = fetchedClasses.find((c) => c.id === student.classId);
-                          return (
-                            <tr key={student.id} className="hover:bg-muted/20 transition-colors">
-                              <td className="px-4 py-3 font-semibold">{student.displayName}</td>
-                              <td className="px-4 py-3 font-mono text-sm font-semibold text-primary">{student.studentId || '\u2014'}</td>
-                              <td className="px-4 py-3">{classObj ? classObj.name : '\u2014'}</td>
-                              <td className="px-4 py-3 font-semibold">{student.rollNo ?? '\u2014'}</td>
-                              <td className="px-4 py-3">
-                                <Badge variant={student.isActive === false ? 'destructive' : 'success'} className="text-[10px]">
-                                  {student.isActive === false ? 'Inactive' : 'Active'}
-                                </Badge>
-                              </td>
-                              <td className="px-4 py-3 text-right flex items-center justify-end gap-1.5">
-                                <Button
-                                  variant="ghost"
-                                  size="icon-sm"
-                                  onClick={() => handleEditStudentClick(student)}
-                                  title="Edit Student details"
-                                >
-                                  <Icon name="edit" size={16} />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon-sm"
-                                  onClick={() => handleToggleUserActive(student)}
-                                  title={student.isActive === false ? 'Enable student account' : 'Disable student account'}
-                                >
-                                  <Icon name={student.isActive === false ? 'toggle_off' : 'toggle_on'} size={18} />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon-sm"
-                                  onClick={() => handleUserDeleteClick(student)}
-                                  title="Delete student"
-                                >
-                                  <Icon name="delete" size={16} className="text-error" />
-                                </Button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {studentTotalPages > 1 && (
-                    <div className="flex items-center justify-center gap-2 mt-4">
-                      <Button variant="outline" size="icon" disabled={studentPage <= 1} onClick={() => setStudentPage(p => p - 1)}>
-                        <Icon name="chevron_left" size={18} />
-                      </Button>
-                      {Array.from({ length: studentTotalPages }, (_, i) => (
-                        <Button
-                          key={i + 1}
-                          variant={studentPage === i + 1 ? 'default' : 'outline'}
-                          size="icon"
-                          className="h-8 w-8 text-xs font-semibold"
-                          onClick={() => setStudentPage(i + 1)}
-                        >
-                          {i + 1}
-                        </Button>
-                      ))}
-                      <Button variant="outline" size="icon" disabled={studentPage >= studentTotalPages} onClick={() => setStudentPage(p => p + 1)}>
-                        <Icon name="chevron_right" size={18} />
-                      </Button>
-                    </div>
-                  )}
+                <div className="space-y-6">
+                  {studentGroups.map((group) => {
+                    const cls = group.cls;
+                    const capName = cls?.name
+                      ? cls.name.split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+                      : 'Unassigned';
+                    const label = cls?.section ? `${capName} - Section ${cls.section}` : capName;
+                    return (
+                      <div key={group.classId} className="border border-border/60 rounded-xl overflow-hidden bg-surface">
+                        <div className="flex items-center justify-between px-4 py-3 bg-muted/40 border-b border-border/60">
+                          <div className="flex items-center gap-2">
+                            <Icon name="school" size={16} className="text-primary" />
+                            <span className="text-title-sm font-bold">{label}</span>
+                          </div>
+                          <Badge variant="outline" className="text-[11px]">
+                            {group.students.length} student{group.students.length === 1 ? '' : 's'}
+                          </Badge>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="border-b border-border/60 bg-muted/20 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
+                                <th className="text-left px-4 py-2.5">Roll</th>
+                                <th className="text-left px-4 py-2.5">Name</th>
+                                <th className="text-left px-4 py-2.5">Student ID</th>
+                                <th className="text-left px-4 py-2.5">Status</th>
+                                <th className="text-right px-4 py-2.5">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border/40 text-body-md">
+                              {group.students.map((student) => (
+                                <tr key={student.id} className="hover:bg-muted/20 transition-colors">
+                                  <td className="px-4 py-2.5 font-semibold text-muted-foreground">{student.rollNo ?? '\u2014'}</td>
+                                  <td className="px-4 py-2.5 font-semibold">{student.displayName}</td>
+                                  <td className="px-4 py-2.5 font-mono text-sm font-semibold text-primary">{student.studentId || '\u2014'}</td>
+                                  <td className="px-4 py-2.5">
+                                    <Badge variant={student.isActive === false ? 'destructive' : 'success'} className="text-[10px]">
+                                      {student.isActive === false ? 'Inactive' : 'Active'}
+                                    </Badge>
+                                  </td>
+                                  <td className="px-4 py-2.5 text-right flex items-center justify-end gap-1.5">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon-sm"
+                                      onClick={() => handleEditStudentClick(student)}
+                                      title="Edit Student details"
+                                    >
+                                      <Icon name="edit" size={16} />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon-sm"
+                                      onClick={() => handleToggleUserActive(student)}
+                                      title={student.isActive === false ? 'Enable student account' : 'Disable student account'}
+                                    >
+                                      <Icon name={student.isActive === false ? 'toggle_off' : 'toggle_on'} size={18} />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon-sm"
+                                      onClick={() => handleUserDeleteClick(student)}
+                                      title="Delete student"
+                                    >
+                                      <Icon name="delete" size={16} className="text-error" />
+                                    </Button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </TabsContent>
