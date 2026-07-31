@@ -288,11 +288,11 @@ export async function getCompletedAssignmentAttempts(studentId: string): Promise
 
 /** Fetch notifications for a specific user. */
 export async function getNotificationsByUser(userId: string): Promise<NotificationItem[]> {
-  const { data, error } = await supabase.from(NOTIFICATIONS_COLLECTION).select('*').eq('userId', userId).order('createdAt', { ascending: false }).limit(50);
+  const { data, error } = await supabase.from(NOTIFICATIONS_COLLECTION).select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(50);
   if (error) throw error;
   return (data || []).map((n: Record<string, unknown>) => ({
     id: n.id as string,
-    userId: n.userId as string,
+    userId: n.user_id as string,
     type: n.type as string,
     title: n.title as string,
     body: (n.body as string) || (n.message as string) || '',
@@ -300,27 +300,27 @@ export async function getNotificationsByUser(userId: string): Promise<Notificati
     link: n.link as string | undefined,
     priority: n.priority as string | undefined,
     read: n.read as boolean,
-    readAt: n.readAt as string | undefined,
-    createdAt: n.createdAt as string,
+    readAt: n.read_at as string | undefined,
+    createdAt: n.created_at as string,
   }));
 }
 
 /** Get count of unread notifications for a user. */
 export async function getUnreadNotificationsCount(userId: string): Promise<number> {
-  const { count, error } = await supabase.from(NOTIFICATIONS_COLLECTION).select('*', { count: 'exact', head: true }).eq('userId', userId).eq('read', false);
+  const { count, error } = await supabase.from(NOTIFICATIONS_COLLECTION).select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('read', false);
   if (error) throw error;
   return count || 0;
 }
 
 /** Mark a single notification as read. */
 export async function markNotificationRead(notificationId: string): Promise<void> {
-  const { error } = await supabase.from(NOTIFICATIONS_COLLECTION).update({ read: true, readAt: new Date().toISOString() }).eq('id', notificationId);
+  const { error } = await supabase.from(NOTIFICATIONS_COLLECTION).update({ read: true, read_at: new Date().toISOString() }).eq('id', notificationId);
   if (error) throw error;
 }
 
 /** Mark all unread notifications as read for a user. */
 export async function markAllNotificationsRead(userId: string): Promise<void> {
-  const { error } = await supabase.from(NOTIFICATIONS_COLLECTION).update({ read: true, readAt: new Date().toISOString() }).eq('userId', userId).eq('read', false);
+  const { error } = await supabase.from(NOTIFICATIONS_COLLECTION).update({ read: true, read_at: new Date().toISOString() }).eq('user_id', userId).eq('read', false);
   if (error) throw error;
 }
 

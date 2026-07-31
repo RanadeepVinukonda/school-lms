@@ -61,12 +61,12 @@ export async function checkUpcomingDeadlines() {
             continue;
           }
           const { error } = await supabase.from('notifications').insert({
-            userId: studentId,
+            user_id: studentId,
             type: reminderType,
             title: 'Assignment Due Soon',
             message: `"${assignment.title}" is due within 24 hours`,
             read: false,
-            createdAt: new Date().toISOString(),
+            created_at: new Date().toISOString(),
           });
           if (error) throw error;
           await markReminderSent(reminderType, assignment.id, studentId);
@@ -100,12 +100,12 @@ export async function checkUpcomingDeadlines() {
               continue;
             }
             const { error } = await supabase.from('notifications').insert({
-              userId: student.id,
+              user_id: student.id,
               type: reminderType,
               title: 'Upcoming Exam',
               message: `"${exam.title}" is scheduled soon`,
               read: false,
-              createdAt: new Date().toISOString(),
+              created_at: new Date().toISOString(),
             });
             if (error) throw error;
             await markReminderSent(reminderType, exam.id, student.id);

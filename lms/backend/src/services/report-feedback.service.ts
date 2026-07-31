@@ -95,12 +95,12 @@ async function createNotificationInternal(data: {
 }) {
   const supabase = getSupabaseAdmin()!;
   const row: Record<string, unknown> = {
-    userId: data.userId,
+    user_id: data.userId,
     type: data.type,
     title: data.title,
     message: data.body,
     read: false,
-    createdAt: new Date().toISOString(),
+    created_at: new Date().toISOString(),
   };
   if (data.data?.schoolId) row.school_id = data.data.schoolId;
   await supabase.from('notifications').insert(row);

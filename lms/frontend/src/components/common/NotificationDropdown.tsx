@@ -101,8 +101,8 @@ export default function NotificationDropdown() {
       const { data, error: err } = await supabase
         .from('notifications')
         .select('*')
-        .eq('userId', user!.id)
-        .order('createdAt', { ascending: false })
+        .eq('user_id', user!.id)
+        .order('created_at', { ascending: false })
         .range(pageParam, pageParam + ITEMS_PER_PAGE - 1);
       if (err) throw err;
       return { data: data || [], nextOffset: pageParam + ITEMS_PER_PAGE };
@@ -118,7 +118,7 @@ export default function NotificationDropdown() {
   useRealtimeInvalidation([{
     table: 'notifications',
     queryKey: ['notifications-dropdown-infinite', user?.id ?? ''],
-    filter: user ? { column: 'userId', value: user.id } : undefined,
+    filter: user ? { column: 'user_id', value: user.id } : undefined,
   }]);
 
   const rawItems = useMemo(
@@ -127,7 +127,7 @@ export default function NotificationDropdown() {
   );
 
   const items: Item[] = useMemo(
-    () => rawItems.map((n) => ({ ...n, message: n.message ?? n.body ?? n.title, priority: derivePriority(n.type) })),
+    () => rawItems.map((n) => ({ ...n, createdAt: n.created_at, message: n.message ?? n.body ?? n.title, priority: derivePriority(n.type) })),
     [rawItems],
   );
   const unreadItems = useMemo(() => items.filter((n) => !n.read), [items]);

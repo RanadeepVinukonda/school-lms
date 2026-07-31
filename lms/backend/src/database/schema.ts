@@ -21,7 +21,7 @@ export const TYPED_TABLES: Record<string, Set<string>> = {
   grades: new Set(['id','studentId','courseId','assignmentId','score','maxScore','letterGrade','comments','date','semester','academicYear','academic_year','createdAt','created_at']),
   assignments: new Set(['id','title','description','subjectId','subjectName','chapterId','textbookId','lessonId','courseId','dueDate','points','maxAttempts','allowLateSubmission','latePenaltyPercent','passingGrade','status','submissionCount','isPublished','academicYear','academic_year','createdAt','updatedAt','school_id']),
   exams: new Set(['id','title','description','subjectId','subjectName','courseId','duration','totalPoints','passingScore','questions','status','startDate','endDate','isProctored','shuffleQuestions','showResults','academicYear','academic_year','createdAt','updatedAt','school_id']),
-  notifications: new Set(['id','userId','title','message','type','read','readAt','createdAt','school_id']),
+  notifications: new Set(['id','user_id','userId','title','message','body','type','read','read_at','readAt','created_at','createdAt','priority','data','link','school_id']),
   submissions: new Set(['id','assignmentId','studentId','content','attachments','submittedAt','status','attemptNumber','grade','feedback','gradedBy','gradedAt']),
   corrections: new Set(['id','examId','studentId','teacherId','questionMarks','totalMarks','overallFeedback','status','correctedAt']),
   quizzes: new Set(['id','title','description','lessonId','chapterId','textbookId','subjectId','subjectName','timeLimit','questions','questionCount','status','school_id']),

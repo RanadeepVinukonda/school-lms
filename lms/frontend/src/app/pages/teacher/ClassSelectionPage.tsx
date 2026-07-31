@@ -198,7 +198,6 @@ export default function ClassSelectionPage() {
       const welcomeBody = `${_('Hi')} ${user?.displayName ?? 'Unknown'}! ${_("You're now assigned to")} ${selectedNames}. ${_('Start creating content for your students.')}`;
       const { error: notifErr } = await supabase.from('notifications').insert({
         user_id: user.id,
-        userId: user.id,
         type: 'welcome',
         title: _('Welcome to Genesis LMS!'),
         message: welcomeBody,
@@ -207,9 +206,7 @@ export default function ClassSelectionPage() {
         priority: 'high',
         read: false,
         read_at: null,
-        readAt: null,
         created_at: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
       });
       if (notifErr) throw notifErr;
 

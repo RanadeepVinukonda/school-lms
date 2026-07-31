@@ -26,7 +26,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
         const { count } = await supabase
           .from('notifications')
           .select('id', { count: 'exact', head: true })
-          .eq('userId', userId)
+          .eq('user_id', userId)
           .eq('read', false);
         if (count != null) set({ unreadCount: count });
       } catch {
@@ -46,7 +46,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
           event: 'INSERT',
           schema: 'public',
           table: 'notifications',
-          filter: `userId=eq.${userId}`,
+          filter: `user_id=eq.${userId}`,
         },
         () => {
           set((state) => ({ unreadCount: state.unreadCount + 1 }));
@@ -58,7 +58,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
           event: 'UPDATE',
           schema: 'public',
           table: 'notifications',
-          filter: `userId=eq.${userId}`,
+          filter: `user_id=eq.${userId}`,
         },
         (payload) => {
           const New = payload.new as { read?: boolean };

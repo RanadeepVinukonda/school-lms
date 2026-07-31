@@ -92,7 +92,6 @@ export default function RollNumberEntryPage() {
       const welcomeMsg = `Hi ${user?.displayName ?? 'Unknown'}! Your student account is now active. Explore your subjects, tasks, and exams to get started.`;
       const { error: notifErr } = await supabase.from('notifications').insert({
         user_id: user.id,
-        userId: user.id,
         type: 'welcome',
         title: 'Welcome to Genesis LMS!',
         message: welcomeMsg,
@@ -101,9 +100,7 @@ export default function RollNumberEntryPage() {
         priority: 'high',
         read: false,
         read_at: null,
-        readAt: null,
         created_at: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
       });
       if (notifErr) throw notifErr;
 

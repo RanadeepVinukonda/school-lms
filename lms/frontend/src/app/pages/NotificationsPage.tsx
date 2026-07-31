@@ -42,7 +42,7 @@ export default function NotificationsPage() {
   useRealtimeInvalidation([{
     table: 'notifications',
     queryKey: ['notifications-page', user?.id ?? ''],
-    filter: user ? { column: 'userId', value: user.id } : undefined,
+    filter: user ? { column: 'user_id', value: user.id } : undefined,
   }]);
 
   const displayed = filter === 'unread' ? items.filter((n) => !n.read) : items;

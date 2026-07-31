@@ -30,12 +30,12 @@ export async function createNotification(data: {
   }
 
   const row: Record<string, unknown> = {
-    userId: data.userId,
+    user_id: data.userId,
     type: data.type,
     title: data.title,
     message: data.body,
     read: false,
-    createdAt: new Date().toISOString(),
+    created_at: new Date().toISOString(),
   };
   if (school_id) row.school_id = school_id;
 
@@ -59,8 +59,8 @@ export async function getNotificationsByUser(userId: string, query: {
   let baseQuery = supabase()
     .from('notifications')
     .select('*', { count: 'exact' })
-    .eq('userId', userId)
-    .order('createdAt', { ascending: false });
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
 
   if (query.unreadOnly === 'true') {
     baseQuery = baseQuery.eq('read', false);
@@ -72,9 +72,9 @@ export async function getNotificationsByUser(userId: string, query: {
   return {
     items: (items || []).map((n: any) => ({
       ...n,
-      userId: n.userId,
-      readAt: n.readAt,
-      createdAt: n.createdAt,
+      userId: n.user_id,
+      readAt: n.read_at,
+      createdAt: n.created_at,
     })),
     total: count || 0,
     page,
@@ -85,12 +85,12 @@ export async function getNotificationsByUser(userId: string, query: {
 /** Mark a single notification as read. Verifies ownership. */
 export async function markNotificationRead(notificationId: string, userId: string) {
   const { data: existing } = await supabase()
-    .from('notifications').select('id, "userId"').eq('id', notificationId).maybeSingle();
-  if (!existing || existing.userId !== userId) {
+    .from('notifications').select('id, user_id').eq('id', notificationId).maybeSingle();
+  if (!existing || existing.user_id !== userId) {
     throw new NotFoundError('Notification not found');
   }
   const { error } = await supabase()
-    .from('notifications').update({ read: true, readAt: new Date().toISOString() }).eq('id', notificationId);
+    .from('notifications').update({ read: true, read_at: new Date().toISOString() }).eq('id', notificationId);
   if (error) throw error;
   logger.info('Notification marked as read', { notificationId });
 }
@@ -99,8 +99,8 @@ export async function markNotificationRead(notificationId: string, userId: strin
 export async function markAllNotificationsRead(userId: string) {
   const { error } = await supabase()
     .from('notifications')
-    .update({ read: true, readAt: new Date().toISOString() })
-    .eq('userId', userId)
+    .update({ read: true, read_at: new Date().toISOString() })
+    .eq('user_id', userId)
     .eq('read', false);
   if (error) throw error;
   logger.info('All notifications marked as read', { userId });
@@ -111,7 +111,7 @@ export async function getUnreadCount(userId: string) {
   const { count, error } = await supabase()
     .from('notifications')
     .select('id', { count: 'exact', head: true })
-    .eq('userId', userId)
+    .eq('user_id', userId)
     .eq('read', false);
   if (error) throw error;
   return { count: count || 0 };
@@ -120,8 +120,8 @@ export async function getUnreadCount(userId: string) {
 /** Delete a notification by id. Verifies ownership. */
 export async function deleteNotification(notificationId: string, userId: string) {
   const { data: existing } = await supabase()
-    .from('notifications').select('id, "userId"').eq('id', notificationId).maybeSingle();
-  if (!existing || existing.userId !== userId) {
+    .from('notifications').select('id, user_id').eq('id', notificationId).maybeSingle();
+  if (!existing || existing.user_id !== userId) {
     throw new NotFoundError('Notification not found');
   }
   const { error } = await supabase().from('notifications').delete().eq('id', notificationId);
@@ -198,9 +198,9 @@ export async function createBulkNotifications(
     .filter((n) => prefsMap.get(n.userId)?.in_app_enabled !== false)
     .map((n) => {
       const r: Record<string, unknown> = {
-        userId: n.userId, type: n.type,
+        user_id: n.userId, type: n.type,
         title: n.title, message: n.body,
-        read: false, createdAt: new Date().toISOString(),
+        read: false, created_at: new Date().toISOString(),
       };
       const sid = schoolMap.get(n.userId) || fallbackSchoolId;
       if (sid) r.school_id = sid;
