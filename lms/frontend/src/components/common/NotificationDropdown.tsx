@@ -306,11 +306,12 @@ export default function NotificationDropdown() {
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative overflow-visible" aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}>
           <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-2 -right-2 flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-bold text-destructive-foreground shadow-sm ring-[3px] ring-background leading-none">
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </span>
-          )}
+          <span className={cn(
+            'absolute -top-2 -right-2 flex h-[22px] min-w-[22px] items-center justify-center rounded-full px-1.5 text-[11px] font-bold shadow-sm ring-[3px] ring-background leading-none',
+            unreadCount > 0 ? 'bg-destructive text-destructive-foreground' : 'bg-muted-foreground/20 text-muted-foreground',
+          )}>
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" sideOffset={8} className="w-96 max-w-[90vw] p-0 max-h-[480px]" onKeyDown={handleKeyDown}>
