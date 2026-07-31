@@ -10,6 +10,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Badge } from '@/components/ui/badge';
 import { timetableService } from '@/services/timetableService';
 import { getAllClasses, getAllSubjects, getAllTeachers } from '@/services/dataService';
+import { formatClockTime } from '@/lib/format';
 import type { TimetableEntry } from '@/services/timetableService';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
@@ -439,7 +440,7 @@ export default function AdminTimetablePage() {
                                             {(entry.start_time || entry.startTime || entry.end_time || entry.endTime) && (
                                               <p className="text-[11px] text-muted-foreground/60 font-mono mt-2 pt-2 border-t border-border/20 flex items-center gap-1.5">
                                                 <Icon name="schedule" size={11} className="text-muted-foreground/40 shrink-0" />
-                                                <span>{(entry.start_time || entry.startTime || '—').slice(0, 5)} &ndash; {(entry.end_time || entry.endTime || '—').slice(0, 5)}</span>
+                                                <span>{formatClockTime(entry.start_time || entry.startTime, true) || '—'} &ndash; {formatClockTime(entry.end_time || entry.endTime, true) || '—'}</span>
                                               </p>
                                             )}
                                           </div>

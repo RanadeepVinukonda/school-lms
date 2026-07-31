@@ -217,24 +217,40 @@ export async function getStudentPayments(studentId: string, schoolId?: string) {
  */
 export async function getOutstandingReport(schoolId?: string) {
   const supabase = getSupabaseAdmin()!;
+  const pageSize = 1000;
 
-  let structQ = supabase.from('fee_structures').select('*');
-  let studentQ = supabase.from('users').select('id, display_name, class_id, class_ids').eq('role', 'student').is('deleted_at', null);
-  let paymentQ = supabase.from('fee_payments').select('*');
-
-  if (schoolId) {
-    structQ = structQ.eq('school_id', schoolId);
-    studentQ = studentQ.eq('school_id', schoolId);
-    paymentQ = paymentQ.eq('school_id', schoolId);
+  async function fetchAll(builder: () => any): Promise<any[]> {
+    const all: any[] = [];
+    let from = 0;
+    for (;;) {
+      const query = builder().range(from, from + pageSize - 1);
+      const { data, error } = await query;
+      if (error) throw new Error(`Failed to load outstanding report: ${error.message}`);
+      all.push(...(data || []));
+      if (!data || data.length < pageSize) break;
+      from += pageSize;
+    }
+    return all;
   }
 
-  const results = await Promise.all([structQ, paymentQ, studentQ]);
+  const [structures, payments, students] = await Promise.all([
+    fetchAll(() => {
+      let q = supabase.from('fee_structures').select('*');
+      if (schoolId) q = q.eq('school_id', schoolId);
+      return q;
+    }),
+    fetchAll(() => {
+      let q = supabase.from('fee_payments').select('*');
+      if (schoolId) q = q.eq('school_id', schoolId);
+      return q;
+    }),
+    fetchAll(() => {
+      let q = supabase.from('users').select('id, display_name, class_id, class_ids').eq('role', 'student').is('deleted_at', null);
+      if (schoolId) q = q.eq('school_id', schoolId);
+      return q;
+    }),
+  ]);
 
-  for (const r of results) {
-    if (r.error) throw new Error(`Failed to load outstanding report: ${r.error.message}`);
-  }
-
-  const [structures, payments, students] = results.map(r => r.data);
   if (!structures || !students) return [];
 
   const classIds = [...new Set(students.map((s: any) => s.class_id).filter(Boolean))];
@@ -248,5 +264,5 @@ export async function getOutstandingReport(schoolId?: string) {
     }
   }
 
-  return buildOutstandingReport(structures, payments || [], students, classMap);
+  return buildOutstandingReport(structures, payments, students, classMap);
 }

@@ -106,11 +106,20 @@ export async function markAttendance(data: {
 /** Get attendance records for a class, optionally filtered by date. */
 export async function getClassAttendance(classId: string, date?: string): Promise<AttendanceRecord[]> {
   const supabase = getSupabaseAdmin();
-  let query = supabase.from('attendance').select('*').eq('class_id', classId);
-  if (date) query = query.eq('date', date);
-  const { data: rows, error } = await query;
-  if (error) throw error;
-  return (rows || []).map(toAttendanceResponse);
+  const pageSize = 1000;
+  const all: any[] = [];
+  let from = 0;
+  for (;;) {
+    let query = supabase.from('attendance').select('*', { count: 'exact' }).eq('class_id', classId);
+    if (date) query = query.eq('date', date);
+    query = query.order('date', { ascending: true }).range(from, from + pageSize - 1);
+    const { data, error } = await query;
+    if (error) throw error;
+    all.push(...(data || []));
+    if (!data || data.length < pageSize) break;
+    from += pageSize;
+  }
+  return all.map(toAttendanceResponse);
 }
 
 /** Get attendance records for a student, sorted by date descending. */

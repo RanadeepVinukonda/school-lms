@@ -22,6 +22,26 @@ export function formatTime(minutes: number): string {
   return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
 }
 
+export function formatClockTime(value?: string, include24 = false): string {
+  if (!value) return '';
+  const match = String(value).match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return String(value);
+  let hour = parseInt(match[1], 10);
+  const minute = match[2];
+  const period = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12 || 12;
+  const hh = String(hour).padStart(2, '0');
+  const display = `${hour}:${minute} ${period}`;
+  return include24 ? `${display} (${hh}:${minute})` : display;
+}
+
+export function formatClockRange(start?: string, end?: string, separator = ' – '): string {
+  const s = formatClockTime(start);
+  const e = formatClockTime(end);
+  if (s && e) return `${s}${separator}${e}`;
+  return s || e || '';
+}
+
 export function formatPercentage(value: number, decimals = 0): string {
   return `${value.toFixed(decimals)}%`;
 }
