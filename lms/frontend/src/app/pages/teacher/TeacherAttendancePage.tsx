@@ -14,7 +14,8 @@ import { OptionsSelect } from '@/components/ui/select';
 import { attendanceService } from '@/services/attendanceService';
 import { getStudentsByClass } from '@/services/dataService';
 import { useAuthStore } from '@/store/authStore';
-import api from '@/services/api';
+import { useClasses } from '@/hooks/useClasses';
+import { formatClassName } from '@/services/classService';
 
 export default function TeacherAttendancePage() {
   const { _ } = useTranslation();
@@ -27,21 +28,7 @@ export default function TeacherAttendancePage() {
   const [attendanceStatus, setAttendanceStatus] = useState<'present' | 'absent' | 'late' | 'holiday'>('present');
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
 
-  const { data: teacherClasses = [] } = useQuery({
-    queryKey: ['teacher-classes', userId],
-    queryFn: async () => {
-      const res = await api.get('/teacher-class-subject/my');
-      const assignments = res.data?.data || [];
-      const seen = new Map<string, { id: string; name: string }>();
-      for (const a of assignments) {
-        if (!seen.has(a.classId)) {
-          seen.set(a.classId, { id: a.classId, name: a.className || a.classId });
-        }
-      }
-      return Array.from(seen.values());
-    },
-    enabled: !!userId,
-  });
+  const { data: teacherClasses = [] } = useClasses();
 
   const { data: classStudents = [], isLoading: studentsLoading } = useQuery({
     queryKey: ['teacher-class-students', selectedClass],
@@ -139,7 +126,7 @@ export default function TeacherAttendancePage() {
             onChange={(e) => setSelectedClass(e.target.value)}
           >
             <option value="">{_('Select your class...')}</option>
-            {teacherClasses.map((c: any) => <option key={c.id} value={c.id}>{c.name}{c.section ? ` - ${c.section}` : ''}</option>)}
+            {teacherClasses.map((c) => <option key={c.id} value={c.id}>{formatClassName(c)}</option>)}
           </select>
           <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-44" />
         </div>

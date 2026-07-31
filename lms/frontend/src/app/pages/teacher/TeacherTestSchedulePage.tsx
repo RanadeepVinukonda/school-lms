@@ -15,6 +15,8 @@ import { Icon } from '@/components/ui/Icon';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
+import { useClasses } from '@/hooks/useClasses';
+import { formatClassName } from '@/services/classService';
 import api from '@/services/api';
 
 interface TeacherAssignment {
@@ -36,17 +38,15 @@ export default function TeacherTestSchedulePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [subjectFilter, setSubjectFilter] = useState('');
 
-  const { data: assignments, isLoading: assignmentsLoading } = useQuery({
+  const { data: assignments } = useQuery({
     queryKey: ['teacher-assignments', user?.id],
     queryFn: () => api.get('/teacher-class-subject/my').then((r) => r.data.data),
     enabled: !!user?.id,
   });
 
+  const { data: classes = [], isLoading: classesLoading } = useClasses();
+
   const assignmentList: TeacherAssignment[] = assignments ?? [];
-  const uniqueClasses = assignmentList.reduce<TeacherAssignment[]>((acc, a) => {
-    if (!acc.find((x) => x.classId === a.classId)) acc.push(a);
-    return acc;
-  }, []);
 
   const uniqueSubjects = useMemo(() => {
     const map = new Map<string, string>();
@@ -187,12 +187,12 @@ export default function TeacherTestSchedulePage() {
               <select
                 value={selectedClassId}
                 onChange={(e) => { setSelectedClassId(e.target.value); setActiveTab('exams'); }}
-                disabled={assignmentsLoading}
+                disabled={classesLoading}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm mt-1.5 focus:outline-none focus:ring-2 focus:ring-primary/50"
               >
                 <option value="">{_('Choose a class...')}</option>
-                {uniqueClasses.map((a) => (
-                  <option key={a.classId} value={a.classId}>{a.className}</option>
+                {classes.map((c) => (
+                  <option key={c.id} value={c.id}>{formatClassName(c)}</option>
                 ))}
               </select>
             </CardContent>

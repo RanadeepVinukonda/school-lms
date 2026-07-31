@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,8 +10,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Icon } from '@/components/ui/Icon';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
-import { getChildren } from '@/services/parentService';
-import { hasAnyRole, hasRole } from '@/lib/roleHelpers';
+import { useClasses } from '@/hooks/useClasses';
+import { formatClassName } from '@/services/classService';
+import ClassSelect from '@/components/common/ClassSelect';
 
 type ReportCategory = 'suggestion' | 'complaint' | 'feedback' | 'improvement' | 'technical_issue';
 type ReportPriority = 'low' | 'medium' | 'high' | 'urgent';
@@ -44,48 +45,12 @@ export default function ReportFeedbackForm({ className: classnameProp, onSuccess
     title: '', description: '', category: 'feedback', priority: 'medium', classId: '',
   });
 
-  const { data: classes } = useQuery({
-    queryKey: ['report-feedback-classes', user?.id],
-    queryFn: async () => {
-      const role = user?.role || 'student';
+  const { data: classes } = useClasses();
 
-      if (hasAnyRole(role, ['admin', 'teacher'])) {
-        const res = await api.get('/classes');
-        const payload = res.data?.data;
-        return Array.isArray(payload) ? payload : payload?.items || [];
-      }
+  const classList = classes ?? [];
 
-      if (hasRole(role, 'parent')) {
-        const children = await getChildren();
-        const seen = new Map<string, { id: string; name: string }>();
-        for (const child of children || []) {
-          const classId = child.class_id || child.classIds?.[0];
-          if (!classId) continue;
-          const info = child.classInfo || {};
-          const label = info.name || (info.grade ? `${info.grade}${info.section ? ` - ${info.section}` : ''}` : classId);
-          if (!seen.has(classId)) seen.set(classId, { id: classId, name: label });
-        }
-        return Array.from(seen.values());
-      }
-
-      const classIds = user?.classIds?.length ? user.classIds : user?.classId ? [user.classId] : [];
-      const own: { id: string; name: string }[] = [];
-      for (const cid of classIds) {
-        try {
-          const res = await api.get(`/classes/${cid}`);
-          const cls = res.data?.data;
-          if (cls && cls.id) own.push({ id: cls.id, name: cls.name || cid });
-        } catch {
-          own.push({ id: cid, name: cid });
-        }
-      }
-      return own;
-    },
-  });
-
-  const classList = Array.isArray(classes) ? classes : classes?.items || [];
-
-  const selectedClassName = classList.find((c: any) => c.id === form.classId)?.name || '';
+  const selectedClass = classList.find((c: any) => c.id === form.classId);
+  const selectedClassName = selectedClass ? formatClassName(selectedClass) : '';
 
   const mutation = useMutation({
     mutationFn: () => api.post('/report-feedback', {
@@ -194,18 +159,14 @@ export default function ReportFeedbackForm({ className: classnameProp, onSuccess
 
           <div>
             <Label className="mb-1.5 block" htmlFor="report-class">{_('Child\'s Class *')}</Label>
-            <select
+            <ClassSelect
               id="report-class"
               value={form.classId}
-              onChange={(e) => setForm({ ...form, classId: e.target.value })}
+              onChange={(v) => setForm({ ...form, classId: v })}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              placeholder={_('Select class')}
               required
-            >
-              <option value="">{_('Select class')}</option>
-              {classList.map((cls: any) => (
-                <option key={cls.id} value={cls.id}>{cls.name}</option>
-              ))}
-            </select>
+            />
           </div>
 
           <Button type="submit" className="w-full gap-2" loading={mutation.isPending}>

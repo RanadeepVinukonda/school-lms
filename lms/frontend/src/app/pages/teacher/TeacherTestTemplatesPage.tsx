@@ -14,6 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { scrollReveal, cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
+import { useClasses } from '@/hooks/useClasses';
+import { formatClassName } from '@/services/classService';
 import api from '@/services/api';
 
 interface CompiledQuestion {
@@ -120,9 +122,9 @@ export default function TeacherTestTemplatesPage() {
     enabled: !!user?.id,
   });
 
-  const classOptions = myAssignments
-    ? [...new Map(myAssignments.map((a: any) => [a.classId, { id: a.classId, name: a.className || a.classId }])).values()]
-    : [];
+  const { data: classes = [] } = useClasses();
+
+  const classOptions = classes.map((c) => ({ id: c.id, name: formatClassName(c) }));
 
   const subjectOptions = myAssignments
     ?.filter((a: any) => a.classId === classId)
@@ -255,7 +257,7 @@ export default function TeacherTestTemplatesPage() {
                   <label className="text-sm font-medium">{_('Class')}</label>
                   <select value={classId} onChange={(e) => { setClassId(e.target.value); setSubjectId(''); setTextbookId(''); setChapterId(''); }} className="w-full border rounded-lg px-3 py-2 text-sm bg-background text-foreground mt-1">
                     <option value="">{_('Select class...')}</option>
-                    {classOptions.map((c: any) => <option key={c.id} value={c.id}>{c.name}{c.section ? ` - ${c.section}` : ''}</option>)}
+                    {classOptions.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
                 <div>

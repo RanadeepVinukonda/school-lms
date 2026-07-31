@@ -16,6 +16,8 @@ import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
+import { useClasses } from '@/hooks/useClasses';
+import { formatClassName } from '@/services/classService';
 import api from '@/services/api';
 import { getTextbooksBySubject, getChaptersForTextbook } from '@/services/textbookService';
 import { getStudentsByClass } from '@/services/dataService';
@@ -160,6 +162,8 @@ export default function TeacherExamsPage() {
     queryFn: () => api.get('/teacher-class-subject/my').then((r) => r.data.data),
     enabled: !!user?.id,
   });
+
+  const { data: classes = [] } = useClasses();
 
   const assignmentList: TeacherAssignment[] = assignments ?? [];
   const classAssignments = assignmentList.filter((a) => a.classId === selectedClassId);
@@ -415,10 +419,7 @@ export default function TeacherExamsPage() {
     );
   }
 
-  const uniqueClasses = assignmentList.reduce<TeacherAssignment[]>((acc, a) => {
-    if (!acc.find((x) => x.classId === a.classId)) acc.push(a);
-    return acc;
-  }, []);
+  const uniqueClasses = classes.map((c) => ({ classId: c.id, className: formatClassName(c) }));
 
   return (
     <>

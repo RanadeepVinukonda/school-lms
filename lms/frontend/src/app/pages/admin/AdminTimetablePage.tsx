@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Icon } from '@/components/ui/Icon';
 import { Badge } from '@/components/ui/badge';
 import { timetableService } from '@/services/timetableService';
-import { getAllClasses, getAllSubjects, getAllTeachers } from '@/services/dataService';
+import { getAllSubjects, getAllTeachers } from '@/services/dataService';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
+import ClassSelect from '@/components/common/ClassSelect';
 import { formatClockTime } from '@/lib/format';
 import type { TimetableEntry } from '@/services/timetableService';
 
@@ -41,8 +42,6 @@ export default function AdminTimetablePage() {
   const [selectedDay, setSelectedDay] = useState<string>('');
   const [rows, setRows] = useState<PeriodRow[]>([]);
   const [nextPeriod, setNextPeriod] = useState(1);
-
-  const { data: classesData = [] } = useQuery({ queryKey: ['admin-classes'], queryFn: getAllClasses });
 
   const { data: subjects = [] } = useQuery({
     queryKey: ['all-subjects'],
@@ -203,20 +202,12 @@ export default function AdminTimetablePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <select
+            <ClassSelect
               className="h-11 px-4 rounded-xl border border-border/50 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary w-full sm:w-96 text-sm font-medium cursor-pointer"
+              placeholder="— Choose a class —"
               value={selectedClassId}
-              onChange={(e) => { setSelectedClassId(e.target.value); setSelectedDay(''); }}
-            >
-              <option value="">— Choose a class —</option>
-              {classesData.map((c) => {
-                const capName = c.name.split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-                const label = c.section ? `${capName}-Section ${c.section}` : capName;
-                return (
-                  <option key={c.id} value={c.id}>{label}</option>
-                );
-              })}
-            </select>
+              onChange={(v) => { setSelectedClassId(v); setSelectedDay(''); }}
+            />
           </CardContent>
         </Card>
 

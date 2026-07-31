@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useClassScope } from '@/contexts/ClassScopeContext';
-import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/supabase/config';
+import { useClasses } from '@/hooks/useClasses';
+import { formatClassName } from '@/services/classService';
 
 interface ClassItem {
   id: string;
@@ -16,35 +16,13 @@ interface ClassItem {
 
 export function ClassSwitcher() {
   const { selectedClassId, setSelectedClassId } = useClassScope();
-  const user = useAuthStore((s) => s.user);
-  const [classes, setClasses] = useState<ClassItem[]>([]);
+  const { data: classes = [] } = useClasses();
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchClasses() {
-      if (!user?.classIds || user.classIds.length === 0) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const { data } = await supabase
-          .from('classes')
-          .select('id, name, code, grade')
-          .in('id', user.classIds);
-        setClasses((data || []) as ClassItem[]);
-      } catch {
-        // ignore
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchClasses();
-  }, [user?.classIds]);
+  const classList = (classes || []) as ClassItem[];
+  const selectedClass = classList.find((c) => c.id === selectedClassId);
 
-  const selectedClass = classes.find((c) => c.id === selectedClassId);
-
-  if (loading || classes.length <= 1) return null;
+  if (classList.length <= 1) return null;
 
   return (
     <div className="relative">
@@ -55,7 +33,7 @@ export function ClassSwitcher() {
         className="gap-2 h-8 text-xs font-medium"
       >
         <Icon name="school" size={14} />
-        <span className="max-w-[120px] truncate">{selectedClass?.name || 'Select Class'}</span>
+        <span className="max-w-[120px] truncate">{selectedClass ? formatClassName(selectedClass) : 'Select Class'}</span>
         <Icon name={open ? 'expand_less' : 'expand_more'} size={14} />
       </Button>
 
@@ -70,7 +48,7 @@ export function ClassSwitcher() {
               className="absolute right-0 top-full mt-1 z-50 w-56 rounded-xl border border-border bg-surface shadow-elevation-3 overflow-hidden"
             >
               <div className="p-1.5">
-                {classes.map((cls) => (
+                {classList.map((cls) => (
                   <button
                     key={cls.id}
                     onClick={() => {

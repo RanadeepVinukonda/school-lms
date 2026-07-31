@@ -27,6 +27,7 @@ import { getInitials, formatDate } from '@/lib/utils';
 import { settingsService } from '@/services/settingsService';
 import { getAllUsers, getAllClasses } from '@/services/dataService';
 import { userService } from '@/services/userService';
+import { invalidateClasses } from '@/hooks/useClasses';
 import { getUserDependencies } from '@/services/dependencyService';
 import { logAudit } from '@/services/auditService';
 import api from '@/services/api';
@@ -211,6 +212,7 @@ export default function AdminSettingsPage() {
       setShowCreateParent(false);
       setParentForm({ displayName: '', email: '', password: '', phone: '', address: '', relationship: '', selectedStudentIds: [] });
       queryClient.invalidateQueries({ queryKey: ['admin-users-stats'] });
+      invalidateClasses(queryClient);
       toast.success('Parent account created');
     },
     onError: (err: any) => {

@@ -4,6 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Icon } from '@/components/ui/Icon';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
+import { useClasses } from '@/hooks/useClasses';
+import { formatClassName } from '@/services/classService';
 import { ROUTES } from '@/lib/constants';
 
 interface HierarchyNode {
@@ -26,8 +28,9 @@ export function TeacherHierarchyNav() {
     enabled: !!user?.id,
   });
 
-  const classList: HierarchyNode[] = myAssignments
-    ? [...new Map(myAssignments.map((a: any) => [a.classId, { id: a.classId, label: a.className || a.classId }])).values()]
+  const { data: classes = [] } = useClasses();
+  const classList: HierarchyNode[] = classes
+    ? [...new Map(classes.map((c: any) => [c.id, { id: c.id, label: formatClassName(c) }])).values()]
     : [];
 
   const subjectsForClass: HierarchyNode[] = myAssignments

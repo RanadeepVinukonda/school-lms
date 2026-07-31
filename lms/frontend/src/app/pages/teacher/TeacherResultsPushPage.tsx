@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -10,7 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { cardStackReveal } from '@/lib/motion';
-import { useAuthStore } from '@/store/authStore';
+import { useClasses } from '@/hooks/useClasses';
+import { formatClassName } from '@/services/classService';
 import api from '@/services/api';
 
 const RELEASE_OPTIONS = [
@@ -22,17 +23,12 @@ const RELEASE_OPTIONS = [
 
 export default function TeacherResultsPushPage() {
   const { _ } = useTranslation();
-  const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
   const [selectedClassId, setSelectedClassId] = useState('');
   const [releaseType, setReleaseType] = useState('');
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const { data: assignments } = useQuery({
-    queryKey: ['teacher-assignments', user?.id],
-    queryFn: () => api.get('/teacher-class-subject/my').then((r) => r.data.data),
-    enabled: !!user?.id,
-  });
+  const { data: classes = [] } = useClasses();
 
   const releaseMutation = useMutation({
     mutationFn: () => api.post('/results-push/release-class', { classId: selectedClassId, type: releaseType || undefined }).then((r) => r.data.data),
@@ -43,8 +39,6 @@ export default function TeacherResultsPushPage() {
     },
     onError: () => toast.error(_('Failed to release grades')),
   });
-
-  const classes = [...new Map((assignments ?? []).map((a: any) => [a.classId, { id: a.classId, name: a.className }])).values()] as any[];
 
   const selectedOption = RELEASE_OPTIONS.find((o) => o.value === releaseType) || RELEASE_OPTIONS[0];
 
@@ -74,8 +68,8 @@ export default function TeacherResultsPushPage() {
                 className="w-full border rounded-lg px-3 py-2 text-sm bg-background text-foreground"
               >
                 <option value="">{_('Choose a class...')}</option>
-                {classes.map((c: any) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                {classes.map((c) => (
+                  <option key={c.id} value={c.id}>{formatClassName(c)}</option>
                 ))}
               </select>
             </CardContent>

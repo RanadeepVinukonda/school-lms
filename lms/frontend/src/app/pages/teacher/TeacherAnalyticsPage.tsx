@@ -11,7 +11,8 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icon } from '@/components/ui/Icon';
 import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
-import { useAuthStore } from '@/store/authStore';
+import { useClasses } from '@/hooks/useClasses';
+import { formatClassName } from '@/services/classService';
 import api from '@/services/api';
 
 function StatCard({ icon, label, value, color }: { icon: string; label: string; value: string | number; color: string }) {
@@ -85,15 +86,10 @@ function AssessmentRow({ assessment }: { assessment: any }) {
 
 export default function TeacherAnalyticsPage() {
   const { _ } = useTranslation();
-  const user = useAuthStore((s) => s.user);
   const [selectedClassId, setSelectedClassId] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
 
-  const { data: assignments } = useQuery({
-    queryKey: ['teacher-assignments', user?.id],
-    queryFn: () => api.get('/teacher-class-subject/my').then((r) => r.data.data),
-    enabled: !!user?.id,
-  });
+  const { data: classes = [] } = useClasses();
 
   const { data: classData, isLoading, error, refetch } = useQuery({
     queryKey: ['class-analytics', selectedClassId],
@@ -106,8 +102,6 @@ export default function TeacherAnalyticsPage() {
     queryFn: () => api.get(`/analytics-v2/class/${selectedClassId}/concepts`).then((r) => r.data.data),
     enabled: !!selectedClassId && activeTab === 'concepts',
   });
-
-  const classes = [...new Map((assignments ?? []).map((a: any) => [a.classId, { id: a.classId, name: a.className }])).values()] as any[];
 
   const levelColors: Record<string, string> = { beginner: 'bg-blue-500', intermediate: 'bg-amber-500', advanced: 'bg-emerald-500' };
 
@@ -133,8 +127,8 @@ export default function TeacherAnalyticsPage() {
                 className="border rounded-lg px-3 py-2 text-sm bg-background text-foreground"
               >
                 <option value="">{_('Select a class...')}</option>
-                {classes.map((c: any) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                {classes.map((c) => (
+                  <option key={c.id} value={c.id}>{formatClassName(c)}</option>
                 ))}
               </select>
             )}

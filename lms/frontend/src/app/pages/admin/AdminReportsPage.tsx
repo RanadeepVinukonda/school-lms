@@ -14,6 +14,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import api from '@/services/api';
+import { useClasses } from '@/hooks/useClasses';
+import { formatClassName } from '@/services/classService';
 
 const STATUS_COLORS: Record<string, string> = {
   open: 'bg-yellow-100 text-yellow-700 border-yellow-200',
@@ -77,12 +79,9 @@ export default function AdminReportsPage() {
     queryFn: () => api.get('/report-feedback/stats').then((r) => r.data.data),
   });
 
-  const { data: classes } = useQuery({
-    queryKey: ['classes-list'],
-    queryFn: () => api.get('/classes').then((r) => r.data.data),
-  });
+  const { data: classes } = useClasses();
 
-  const classList = Array.isArray(classes) ? classes : classes?.items || [];
+  const classList = classes ?? [];
 
   const updateMutation = useMutation({
     mutationFn: () => api.put(`/report-feedback/${selectedReport?.id}`, {
@@ -175,7 +174,7 @@ export default function AdminReportsPage() {
           <select value={filterClass} onChange={(e) => setFilterClass(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
             <option value="">{_('All Classes')}</option>
             {classList.map((cls: any) => (
-              <option key={cls.id} value={cls.id}>{cls.name}</option>
+              <option key={cls.id} value={cls.id}>{formatClassName(cls)}</option>
             ))}
           </select>
           <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">

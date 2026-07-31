@@ -17,6 +17,8 @@ import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/skeleton';
 import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
+import { useClasses } from '@/hooks/useClasses';
+import { formatClassName } from '@/services/classService';
 import api from '@/services/api';
 import { getTextbooksBySubject, getChaptersForTextbook, getConceptsForChapter } from '@/services/textbookService';
 import { getStudentsByClass } from '@/services/dataService';
@@ -135,6 +137,8 @@ export default function TeacherAssessmentCreatePage() {
     queryFn: () => api.get('/teacher-class-subject/my').then((r) => r.data.data),
     enabled: !!user?.id,
   });
+
+  const { data: classes = [] } = useClasses();
 
   const assignmentList: TeacherAssignment[] = assignments ?? [];
   const classAssignments = assignmentList.filter((a) => a.classId === selectedClassId);
@@ -833,8 +837,8 @@ export default function TeacherAssessmentCreatePage() {
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >
                   <option value="">{_('Select a class...')}</option>
-                  {[...new Map(assignmentList.map((a) => [a.classId, a]))].map(([_, a]) => (
-                    <option key={a.classId} value={a.classId}>{a.className}</option>
+                  {classes.map((c) => (
+                    <option key={c.id} value={c.id}>{formatClassName(c)}</option>
                   ))}
                 </select>
               </div>

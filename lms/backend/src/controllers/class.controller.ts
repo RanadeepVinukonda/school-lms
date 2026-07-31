@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import * as classService from '../services/class.service';
 import { requireNoDependenciesOrThrow, getClassImpact } from '../services/impact.service';
 import { logAudit, adminAuditEntry } from '../services/audit.service';
-import { sendSuccess, sendCreated } from '../utils/response';
+import { sendSuccess, sendCreated, sendError } from '../utils/response';
 import { ValidationError } from '../utils/errors';
 import type { ReqWithUser, QueryParams } from '../types/common';
 
@@ -47,6 +47,17 @@ export async function listClasses(req: Request, res: Response) {
     schoolId: req.user.school_id,
   });
   sendSuccess(res, result);
+}
+
+/** Role-aware class list for the currently authenticated user. */
+export async function listMyClasses(req: Request, res: Response) {
+  if (!req.user) throw new ValidationError('Authentication required');
+  const result = await classService.listMyClassesForUser(req.user);
+  if (!result.success) {
+    sendError(res, result.error, 400);
+    return;
+  }
+  sendSuccess(res, result.data);
 }
 
 export async function getClass(req: Request, res: Response) {

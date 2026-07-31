@@ -12,7 +12,9 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { AcademicYearSelect } from '@/components/ui/academic-year-select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { feeService } from '@/services/feeService';
-import { getAllClasses, getAllUsers } from '@/services/dataService';
+import { getAllUsers } from '@/services/dataService';
+import { useClasses } from '@/hooks/useClasses';
+import ClassSelect from '@/components/common/ClassSelect';
 
 function OutstandingRow({ item }: { item: any }) {
   const [expanded, setExpanded] = useState(false);
@@ -55,7 +57,7 @@ export default function AdminFeePage() {
   const [paymentData, setPaymentData] = useState({ studentId: '', feeScheduleId: '', amountPaid: 0, paymentMethod: 'cash', transactionId: '' });
   const [paymentStudentLookup, setPaymentStudentLookup] = useState('');
 
-  const { data: classesData = [] } = useQuery({ queryKey: ['admin-classes'], queryFn: getAllClasses });
+  const { data: classesData = [] } = useClasses();
   const { data: usersData = [] } = useQuery({ queryKey: ['admin-users'], queryFn: getAllUsers });
 
   const students = useMemo(() => usersData.filter((u) => u.role === 'student'), [usersData]);
@@ -171,14 +173,11 @@ export default function AdminFeePage() {
                   <Input placeholder="Fee Name (e.g. Tuition Fee)" value={newSchedule.name} onChange={(e) => setNewSchedule({ ...newSchedule, name: e.target.value })} />
                   <Input type="number" placeholder="Amount" value={newSchedule.amount || ''} onChange={(e) => setNewSchedule({ ...newSchedule, amount: Number(e.target.value) })} />
                   <Input type="date" placeholder="Due Date" value={newSchedule.dueDate} onChange={(e) => setNewSchedule({ ...newSchedule, dueDate: e.target.value })} />
-                  <select className="h-10 px-3 rounded-lg border border-border/60 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary" value={newSchedule.classId} onChange={(e) => setNewSchedule({ ...newSchedule, classId: e.target.value })}>
-                    <option value="">Select Class</option>
-                    {classesData.map((c) => {
-                      const capName = c.name.split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-                      const label = c.section ? `${capName}-Section ${c.section}` : capName;
-                      return <option key={c.id} value={c.id}>{label}</option>;
-                    })}
-                  </select>
+                  <ClassSelect
+                    value={newSchedule.classId}
+                    onChange={(v) => setNewSchedule({ ...newSchedule, classId: v })}
+                    className="h-10 px-3 rounded-lg border border-border/60 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
                   <AcademicYearSelect
                     value={newSchedule.academicYear}
                     onChange={(v) => setNewSchedule({ ...newSchedule, academicYear: v })}

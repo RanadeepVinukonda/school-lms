@@ -14,6 +14,7 @@ const addStudentsSchema = z.object({
 });
 
 router.get('/', authenticate, requireRole('admin', 'teacher'), asyncHandler(classController.listClasses));
+router.get('/my', authenticate, asyncHandler(classController.listMyClasses));
 router.post('/', authenticate, requireRole('admin'), validate(createClassSchema), asyncHandler(classController.createClass));
 router.get('/:classId', authenticate, asyncHandler(classController.getClass));
 router.put('/:classId', authenticate, requireRole('admin'), validate(updateClassSchema), asyncHandler(classController.updateClass));

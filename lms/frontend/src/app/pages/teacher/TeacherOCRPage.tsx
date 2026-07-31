@@ -11,6 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { sendChatMessage, pushQuiz, pushAssignment } from '@/services/ocrService';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
+import { useClasses } from '@/hooks/useClasses';
+import { formatClassName } from '@/services/classService';
 import api from '@/services/api';
 import LatexRenderer from '@/components/common/LatexRenderer';
 import { useAuthStore } from '@/store/authStore';
@@ -42,6 +44,8 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
     queryFn: () => teacherClassSubjectService.getMyAssignments().then((r) => r.data),
   });
 
+  const { data: classes = [] } = useClasses();
+
   const { data: roster = [] } = useQuery({
     queryKey: ['class-roster-ocr', selectedClass],
     enabled: !!selectedClass && pushMode === 'students',
@@ -51,11 +55,7 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
       ),
   });
 
-  const myClasses = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const a of myAssignments) if (a.classId) map.set(a.classId, a.className || a.classId);
-    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
-  }, [myAssignments]);
+  const myClasses = classes.map((c) => ({ id: c.id, name: formatClassName(c) }));
 
   const mySubjects = useMemo(() => {
     if (!selectedClass) return [];
@@ -209,15 +209,8 @@ function AssignmentView({ data, onPush }: { data: any; onPush: (d: any, cls: str
   const { _ } = useTranslation();
   const [selectedClass, setSelectedClass] = useState('');
   const [pushing, setPushing] = useState(false);
-  const { data: myAssignments = [] } = useQuery({
-    queryKey: ['my-class-subjects'],
-    queryFn: () => teacherClassSubjectService.getMyAssignments().then((r) => r.data),
-  });
-  const myClasses = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const a of myAssignments) if (a.classId) map.set(a.classId, a.className || a.classId);
-    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
-  }, [myAssignments]);
+  const { data: classes = [] } = useClasses();
+  const myClasses = classes.map((c) => ({ id: c.id, name: formatClassName(c) }));
   return (
     <div className="space-y-3 mt-2">
       <p className="text-sm font-semibold text-primary">{data.title || _('Generated Assignment')}</p>

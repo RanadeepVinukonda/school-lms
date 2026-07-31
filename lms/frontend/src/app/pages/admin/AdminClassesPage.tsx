@@ -28,6 +28,8 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/supabase/config';
 import { hasRole } from '@/lib/roleHelpers';
 import { getAllClasses, getAllUsers, getAllSubjects } from '@/services/dataService';
+import { useClasses, invalidateClasses } from '@/hooks/useClasses';
+import { formatClassName } from '@/services/classService';
 import api from '@/services/api';
 import { getClassDependencies, getUserDependencies } from '@/services/dependencyService';
 import { logAudit } from '@/services/auditService';
@@ -90,6 +92,8 @@ export default function AdminClassesPage() {
     queryFn: getAllClasses,
   });
 
+  const { data: myClasses = [] } = useClasses();
+
   const { data: users = [], refetch: refetchUsers } = useQuery({
     queryKey: ['admin-users-list'],
     queryFn: getAllUsers,
@@ -107,6 +111,7 @@ export default function AdminClassesPage() {
 
   const handleRefreshAll = () => {
     refetchClasses();
+    invalidateClasses(queryClient);
     refetchUsers();
     refetchSubjects();
     refetchTCAssignments();
@@ -193,6 +198,7 @@ export default function AdminClassesPage() {
       setShowCreateClass(false);
       toast.success(`${className} created`);
       refetchClasses();
+      invalidateClasses(queryClient);
     } catch {
       toast.error('Failed to create class');
     } finally {
@@ -246,6 +252,7 @@ export default function AdminClassesPage() {
       setEditClassTarget(null);
       toast.success(`Class ${editClassForm.name} updated`);
       refetchClasses();
+      invalidateClasses(queryClient);
     } catch (err: any) {
       toast.error(err.message || 'Failed to update class');
     }
@@ -284,6 +291,7 @@ export default function AdminClassesPage() {
       setShowClassDependencyDialog(false);
       setClassDeleteTarget(null);
       refetchClasses();
+      invalidateClasses(queryClient);
     } catch (err: any) {
       toast.error(err.message || 'Failed to archive class');
     } finally {
@@ -369,6 +377,7 @@ export default function AdminClassesPage() {
       setShowClassDependencyDialog(false);
       setClassDeleteTarget(null);
       refetchClasses();
+      invalidateClasses(queryClient);
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || 'Failed to permanently delete class and its dependencies');
@@ -415,6 +424,7 @@ export default function AdminClassesPage() {
       toast.success(`Subject ${subjectForm.name} added`);
       refetchSubjects();
       refetchClasses();
+      invalidateClasses(queryClient);
     } catch (err: any) {
       toast.error(err.message || 'Failed to add subject');
     } finally {
@@ -527,6 +537,7 @@ export default function AdminClassesPage() {
     log('Refetching assignments and users...');
     queryClient.invalidateQueries({ queryKey: ['admin-tc-assignments'] });
     queryClient.invalidateQueries({ queryKey: ['admin-users-list'] });
+    invalidateClasses(queryClient);
     let refetchTimer: ReturnType<typeof setTimeout>;
     try {
       const rfTimeout = new Promise<never>((_, reject) => {
@@ -615,6 +626,7 @@ export default function AdminClassesPage() {
       toast.success(`Student ${studentForm.displayName} registered`);
       refetchUsers();
       refetchClasses();
+      invalidateClasses(queryClient);
     } catch (err: any) {
       toast.error(err.message || 'Failed to register student');
     } finally {
@@ -635,6 +647,7 @@ export default function AdminClassesPage() {
       setShowPromoteConfirm(false);
       refetchUsers();
       refetchClasses();
+      invalidateClasses(queryClient);
     } catch (err: any) {
       toast.error(err.message || 'Failed to promote students');
     } finally {
@@ -757,11 +770,10 @@ export default function AdminClassesPage() {
   const [studentSaveLoading, setStudentSaveLoading] = useState(false);
 
   const students = useMemo(() => users.filter((u) => hasRole(u.role, 'student')), [users]);
-  const classOptions = useMemo(() => fetchedClasses.map((c) => {
-    const capName = c.name.split(' ').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-    const label = c.section ? `${capName}-Section ${c.section}` : capName;
-    return { value: c.id, label };
-  }), [fetchedClasses]);
+  const classOptions = useMemo(() => myClasses.map((c) => ({
+    value: c.id,
+    label: formatClassName(c),
+  })), [myClasses]);
 
   const filteredStudents = useMemo(() => {
     return students

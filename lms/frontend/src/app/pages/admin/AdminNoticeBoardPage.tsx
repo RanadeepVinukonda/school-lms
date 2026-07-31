@@ -12,7 +12,9 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { OptionsSelect } from '@/components/ui/select';
 import { noticeService } from '@/services/noticeService';
-import { getAllClasses } from '@/services/dataService';
+import { useClasses } from '@/hooks/useClasses';
+import { formatClassName } from '@/services/classService';
+import ClassSelect from '@/components/common/ClassSelect';
 import type { CreateNoticeData } from '@/services/noticeService';
 
 const priorityBadge = (p: string) => {
@@ -32,12 +34,8 @@ const priorityOptions = [
 
 export default function AdminNoticeBoardPage() {
   const queryClient = useQueryClient();
+  const { data: classes = [] } = useClasses();
   const [form, setForm] = useState<CreateNoticeData>({ title: '', content: '', priority: 'medium', expires_at: '', target_class_id: null });
-
-  const { data: classes = [] } = useQuery({
-    queryKey: ['admin-classes'],
-    queryFn: getAllClasses,
-  });
 
   const { data: noticesRes, isLoading, error, refetch } = useQuery({
     queryKey: ['admin-notices'],
@@ -113,18 +111,12 @@ export default function AdminNoticeBoardPage() {
               </div>
               <div>
                 <label className="text-label-sm text-muted-foreground mb-1 block">Target Class</label>
-                <select
+                <ClassSelect
                   value={form.target_class_id ?? ''}
-                  onChange={(e) => setForm({ ...form, target_class_id: e.target.value || null })}
+                  onChange={(v) => setForm({ ...form, target_class_id: v || null })}
+                  placeholder="All Classes"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <option value="">All Classes</option>
-                  {(classes as any[])?.map((cls: any) => (
-                    <option key={cls.id} value={cls.id}>
-                      {cls.name}{cls.section ? ` - Section ${cls.section}` : ''}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
               <div>
                 <label className="text-label-sm text-muted-foreground mb-1 block">Expires At</label>
@@ -181,8 +173,8 @@ export default function AdminNoticeBoardPage() {
                               {n.target_class_id ? (
                                 <Badge variant="outline" className="text-[10px]">
                                   {(() => {
-                                    const targetCls = (classes as any[])?.find((c: any) => c.id === n.target_class_id);
-                                    return targetCls ? `${targetCls.name}${targetCls.section ? ` - Section ${targetCls.section}` : ''}` : 'Specific Class';
+                                    const targetCls = classes.find((c) => c.id === n.target_class_id);
+                                    return targetCls ? formatClassName(targetCls) : 'Specific Class';
                                   })()}
                                 </Badge>
                               ) : (

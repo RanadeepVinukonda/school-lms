@@ -155,6 +155,105 @@ export async function listClasses(query: {
   }
 }
 
+/**
+ * List classes visible to the current user based on their role.
+ * - super_admin: all classes across all schools
+ * - admin: all classes in the admin's school
+ * - teacher: classes the teacher is assigned to (teacher_class_subject assignments,
+ *   classes.teacher_ids, or class_ids on their profile)
+ * - student: the student's enrolled class(es) (class_id / class_ids)
+ * - parent: unique classes of all their children (children_ids)
+ * - fallback (unknown roles): class ids on the profile
+ */
+export async function listMyClassesForUser(user: {
+  uid: string;
+  role: string;
+  classIds?: string[];
+  class_id?: string;
+  children_ids?: string[];
+  school_id?: string;
+}): Promise<ServiceResult<Record<string, unknown>[]>> {
+  try {
+    const supabase = getSupabaseAdmin()!;
+    const roles = (user.role || '').split(',').map((r) => r.trim());
+
+    let classIds: string[] | null = null;
+    let schoolId: string | undefined;
+
+    if (roles.includes('super_admin')) {
+      // all classes across all schools
+    } else if (roles.includes('admin')) {
+      schoolId = user.school_id || undefined;
+    } else if (roles.includes('teacher')) {
+      const ids = new Set<string>();
+      if (user.class_id) ids.add(user.class_id);
+      for (const id of user.classIds || []) if (id) ids.add(id);
+
+      const { data: tcsRows, error: tcsErr } = await supabase
+        .from('firestore_docs')
+        .select('data')
+        .eq('collection', 'teacherClassSubject')
+        .contains('data', { teacherId: user.uid });
+      if (tcsErr) return failure(tcsErr.message, 'DB_ERROR');
+      for (const row of tcsRows || []) {
+        const cid = (row.data as Record<string, unknown>)?.classId as string | undefined;
+        if (cid) ids.add(cid);
+      }
+
+      const { data: byTeacherIds, error: tiErr } = await supabase
+        .from('classes')
+        .select('id')
+        .contains('teacher_ids', [user.uid]);
+      if (tiErr) return failure(tiErr.message, 'DB_ERROR');
+      for (const c of byTeacherIds || []) if (c.id) ids.add(c.id);
+
+      classIds = Array.from(ids);
+    } else if (roles.includes('student')) {
+      const ids = new Set<string>();
+      if (user.class_id) ids.add(user.class_id);
+      for (const id of user.classIds || []) if (id) ids.add(id);
+      classIds = Array.from(ids);
+    } else if (roles.includes('parent')) {
+      const ids = new Set<string>();
+      const childrenIds = (user.children_ids || []).filter(Boolean);
+      if (childrenIds.length > 0) {
+        const { data: children, error: chErr } = await supabase
+          .from('users')
+          .select('class_id, class_ids')
+          .in('id', childrenIds);
+        if (chErr) return failure(chErr.message, 'DB_ERROR');
+        for (const c of children || []) {
+          if (c.class_id) ids.add(c.class_id);
+          for (const id of (c.class_ids || [])) if (id) ids.add(id);
+        }
+      }
+      classIds = Array.from(ids);
+    } else {
+      const ids = new Set<string>();
+      if (user.class_id) ids.add(user.class_id);
+      for (const id of user.classIds || []) if (id) ids.add(id);
+      classIds = Array.from(ids);
+    }
+
+    if (classIds !== null && classIds.length === 0) return success([]);
+
+    let query = supabase
+      .from('classes')
+      .select('*')
+      .order('created_at', { ascending: true });
+    if (schoolId) query = query.eq('school_id', schoolId);
+    if (classIds !== null) query = query.in('id', classIds);
+    query = query.limit(500);
+
+    const { data, error } = await query;
+    if (error) return failure(error.message, 'DB_ERROR');
+
+    return success((data || []).filter((c: Record<string, unknown>) => !c.deleted_at));
+  } catch (err: unknown) {
+    return failure(err instanceof Error ? err.message : String(err), 'LIST_MY_CLASSES_ERROR');
+  }
+}
+
 /** Fetch a single class by id. Throws NotFoundError if missing. */
 export async function getClassById(classId: string): Promise<ServiceResult<Record<string, unknown>>> {
   try {

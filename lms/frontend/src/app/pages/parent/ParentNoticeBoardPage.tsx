@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { noticeService } from '@/services/noticeService';
-import { getAllClasses } from '@/services/dataService';
+import { useClasses } from '@/hooks/useClasses';
+import { formatClassName } from '@/services/classService';
 
 function priorityBadge(p: string) {
   switch (p) {
@@ -18,10 +19,7 @@ function priorityBadge(p: string) {
 }
 
 export default function ParentNoticeBoardPage() {
-  const { data: classes = [] } = useQuery({
-    queryKey: ['all-classes'],
-    queryFn: getAllClasses,
-  });
+  const { data: classes = [] } = useClasses();
 
   const { data: noticesRes, isLoading, error, refetch } = useQuery({
     queryKey: ['parent-notices'],
@@ -80,7 +78,7 @@ export default function ParentNoticeBoardPage() {
                                   {priorityBadge(n.priority)}
                                   {n.target_class_id ? (
                                     <Badge variant="outline" className="text-[10px]">
-                                      {(classes as any[])?.find((c: any) => c.id === n.target_class_id)?.name || 'Class'}
+                                      {classes.find((c) => c.id === n.target_class_id) ? formatClassName(classes.find((c) => c.id === n.target_class_id)!) : 'Class'}
                                     </Badge>
                                   ) : (
                                     <Badge variant="secondary" className="text-[10px]">All Classes</Badge>

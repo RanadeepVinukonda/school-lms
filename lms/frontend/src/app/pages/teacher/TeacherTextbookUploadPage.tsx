@@ -16,7 +16,9 @@ import { cardStackReveal } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import { useAuthStore } from '@/store/authStore';
 import { useUploadStore } from '@/store/uploadStore';
-import { getAllSubjects, getAllClasses } from '@/services/dataService';
+import { getAllSubjects } from '@/services/dataService';
+import { useClasses } from '@/hooks/useClasses';
+import { formatClassName } from '@/services/classService';
 import api from '@/services/api';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
 
@@ -44,12 +46,14 @@ export default function TeacherTextbookUploadPage() {
 
   const queryClient = useQueryClient();
 
+  const { data: allClasses = [] } = useClasses();
+
   const { data: assignments, isLoading: assignmentsLoading } = useQuery({
     queryKey: ['teacher-assignments', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
       const myAssignments = await teacherClassSubjectService.getMyAssignments().then((res) => res.data);
-      const [allSubjects, allClasses] = await Promise.all([getAllSubjects(), getAllClasses()]);
+      const allSubjects = await getAllSubjects();
       const subjectMap = new Map(allSubjects.map((s) => [s.id, s]));
       const classMap = new Map(allClasses.map((c) => [c.id, c]));
       return myAssignments.map((data) => {
@@ -58,7 +62,7 @@ export default function TeacherTextbookUploadPage() {
         return {
           id: data.id,
           classId: data.classId,
-          className: cls?.name ?? _('Unknown Class'),
+          className: cls ? formatClassName(cls) : _('Unknown Class'),
           subjectId: data.subjectId,
           subjectName: subject?.name ?? _('Unknown Subject'),
         } as TeacherAssignment;

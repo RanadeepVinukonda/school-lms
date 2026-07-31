@@ -8,15 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
 import { attendanceService } from '@/services/attendanceService';
-import { getAllClasses } from '@/services/dataService';
+import ClassSelect from '@/components/common/ClassSelect';
 
 export default function AdminAttendancePage() {
   const [selectedClass, setSelectedClass] = useState('');
-
-  const { data: classesData = [] } = useQuery({
-    queryKey: ['admin-classes'],
-    queryFn: getAllClasses,
-  });
 
   const { data: reportData, isLoading: reportLoading, isError: reportError, refetch: refetchReport } = useQuery({
     queryKey: ['attendance-report', selectedClass],
@@ -36,20 +31,12 @@ export default function AdminAttendancePage() {
         <div className="flex gap-3 items-center flex-wrap">
           <div className="relative flex-1 min-w-0 sm:min-w-[200px]">
             <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-            <select
-              className="h-10 w-full pl-10 rounded-lg border border-border/60 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
+            <ClassSelect
               value={selectedClass}
-              onChange={(e) => setSelectedClass(e.target.value)}
-            >
-              <option value="">Select a class...</option>
-              {classesData.map((c) => {
-                const capName = c.name.split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-                const label = c.section ? `${capName}-Section ${c.section}` : capName;
-                return (
-                  <option key={c.id} value={c.id}>{label}</option>
-                );
-              })}
-            </select>
+              onChange={setSelectedClass}
+              placeholder="Select a class..."
+              className="h-10 w-full pl-10 rounded-lg border border-border/60 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
+            />
           </div>
         </div>
 

@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -14,7 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import CameraCapture from '@/components/ocr/CameraCapture';
 import { QuestionCard } from '@/components/ocr/QuestionCard';
 import { scanImage, mapToConcept, pushQuiz } from '@/services/ocrService';
-import api from '@/services/api';
+import { useClasses } from '@/hooks/useClasses';
+import { formatClassName } from '@/services/classService';
 import type { OCRResult, GeneratedQuestion } from '@/types/ocr';
 
 export default function StudentOCRPage() {
@@ -29,12 +29,8 @@ export default function StudentOCRPage() {
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<'capture' | 'scanning' | 'quiz'>('capture');
   const [selectedClassId, setSelectedClassId] = useState('');
-  const { data: classes } = useQuery({
-    queryKey: ['classes-list-for-ocr'],
-    queryFn: () => api.get('/classes').then((r) => r.data.data),
-    enabled: step === 'quiz' && questions.length > 0,
-  });
-  const classList = Array.isArray(classes) ? classes : classes?.items || [];
+  const { data: classes } = useClasses();
+  const classList = classes ?? [];
   const generateQuiz = useCallback(async (text: string, count?: number) => {
     setIsProcessing(true);
     setError(null);
@@ -257,8 +253,8 @@ export default function StudentOCRPage() {
                             <SelectValue placeholder={_('Choose a class...')} />
                           </SelectTrigger>
                           <SelectContent>
-                            {classList.map((cls: { id: string; name?: string; className?: string }) => (
-                              <SelectItem key={cls.id} value={cls.id}>{cls.name || cls.className || cls.id}</SelectItem>
+                            {classList.map((cls: any) => (
+                              <SelectItem key={cls.id} value={cls.id}>{formatClassName(cls)}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>

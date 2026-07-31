@@ -20,6 +20,8 @@ import {
 } from '@/services/dataService';
 import { getTextbooksBySubject } from '@/services/textbookService';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
+import { useClasses } from '@/hooks/useClasses';
+import { formatClassName } from '@/services/classService';
 import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
@@ -84,6 +86,7 @@ function NeedsAttentionCard({ item }: { item: NeedsAttentionItem }) {
 export default function TeacherDashboardPage() {
   const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
+  const { data: classes = [] } = useClasses();
   const [selectedClassFilter, setSelectedClassFilter] = useState('');
   const QUICK_ACTIONS = [
     { icon: 'group', label: _('View Students'), link: '/teacher/students', bg: 'bg-success-container', color: 'text-success' },
@@ -338,8 +341,8 @@ export default function TeacherDashboardPage() {
                     onChange={(e) => setSelectedClassFilter(e.target.value)}
                   >
                     <option value="">{_('All Classes')}</option>
-                    {d.teaching.classes.map((cls: any) => (
-                      <option key={cls.id} value={cls.id}>{cls.name}</option>
+                    {classes.map((cls) => (
+                      <option key={cls.id} value={cls.id}>{formatClassName(cls)}</option>
                     ))}
                   </select>
                 </div>

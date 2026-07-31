@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Icon } from '@/components/ui/Icon';
 import { OptionsSelect } from '@/components/ui/select';
 import { classroomService, ClassroomCourse } from '@/services/classroomService';
-import api from '@/services/api';
+import { useClasses } from '@/hooks/useClasses';
+import { formatClassName } from '@/services/classService';
 
 export default function AdminClassroomPage() {
   const [accessToken, setAccessToken] = useState(() => localStorage.getItem('google_classroom_token') || '');
@@ -35,13 +36,7 @@ export default function AdminClassroomPage() {
   };
 
   // Fetch LMS Classes
-  const { data: classesData = [] } = useQuery({
-    queryKey: ['classroom-lms-classes'],
-    queryFn: async () => {
-      const res = await api.get('/classes');
-      return res.data?.data || [];
-    }
-  });
+  const { data: classesData = [] } = useClasses();
 
   // Fetch Google Classroom Courses
   const { data: coursesRes, isLoading: loadingCourses, refetch: fetchCourses } = useQuery({
@@ -119,8 +114,7 @@ export default function AdminClassroomPage() {
                   <label className="text-label-sm text-muted-foreground mb-1 block">LMS Target Class Hub *</label>
                   <OptionsSelect
                     options={classesData.map((c: any) => {
-                      const capName = c.name.split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-                      const label = c.section ? `${capName}-Section ${c.section}` : capName;
+                      const label = formatClassName(c);
                       return { value: c.id, label };
                     })}
                     value={selectedLmsClass}
