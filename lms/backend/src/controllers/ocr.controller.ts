@@ -120,7 +120,7 @@ export async function chat(req: Request, res: Response) {
 export async function pushQuiz(req: Request, res: Response) {
   const { classId, subjectId, questions: reqQuestions } = req.body;
   const questionsRaw = reqQuestions || req.body.data?.questions;
-  const userId = (req as unknown as { user?: { id: string } }).user?.id || 'unknown';
+  const userId = (req as unknown as { user?: { uid?: string } }).user?.uid || 'unknown';
 
   if (!questionsRaw || !Array.isArray(questionsRaw) || questionsRaw.length === 0) {
     throw new ValidationError('Quiz data must contain a questions array');
@@ -194,7 +194,7 @@ export async function pushAssignment(req: Request, res: Response) {
   const assignmentInstructions = instructions || req.body.data?.instructions;
   const assignmentQuestions = reqQuestions || req.body.data?.questions || [];
   const assignmentDescription = reqDesc || req.body.data?.description || '';
-  const userId = (req as unknown as { user?: { id: string } }).user?.id || 'unknown';
+  const userId = (req as unknown as { user?: { uid?: string } }).user?.uid || 'unknown';
 
   if (!assignmentTitle) {
     throw new ValidationError('Assignment data must contain a title');
