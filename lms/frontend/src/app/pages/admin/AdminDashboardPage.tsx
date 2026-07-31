@@ -340,7 +340,7 @@ export default function AdminDashboardPage() {
                                   </div>
                                 ))}
                                 <Button variant="outline" size="sm" className="w-full mt-3" asChild>
-                                  <Link to="/admin/students">{_('View All Students')}</Link>
+                                  <Link to="/admin/classes?tab=students">{_('View All Students')}</Link>
                                 </Button>
                               </div>
                             )}

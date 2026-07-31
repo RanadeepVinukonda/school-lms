@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Icon } from '@/components/ui/Icon';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { AcademicYearSelect } from '@/components/ui/academic-year-select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { feeService } from '@/services/feeService';
@@ -49,6 +50,8 @@ export default function AdminFeePage() {
   const [activeTab, setActiveTab] = useState('schedules');
 
   const [newSchedule, setNewSchedule] = useState({ name: '', amount: 0, dueDate: '', classId: '', academicYear: '', description: '' });
+  const [editingSchedule, setEditingSchedule] = useState<any>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<any>(null);
   const [paymentData, setPaymentData] = useState({ studentId: '', feeScheduleId: '', amountPaid: 0, paymentMethod: 'cash', transactionId: '' });
   const [paymentStudentLookup, setPaymentStudentLookup] = useState('');
 
@@ -99,6 +102,43 @@ export default function AdminFeePage() {
     onError: (err: any) => toast.error(err.message || 'Failed to create schedule'),
   });
 
+  const updateScheduleMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: typeof newSchedule }) => feeService.updateFeeSchedule(id, data),
+    onSuccess: () => { toast.success('Fee schedule updated'); resetScheduleForm(); queryClient.invalidateQueries({ queryKey: ['fee-schedules'] }); refetchOut(); },
+    onError: (err: any) => toast.error(err.message || 'Failed to update schedule'),
+  });
+
+  const deleteScheduleMutation = useMutation({
+    mutationFn: (id: string) => feeService.deleteFeeSchedule(id),
+    onSuccess: () => { toast.success('Fee schedule deleted'); setDeleteConfirm(null); queryClient.invalidateQueries({ queryKey: ['fee-schedules'] }); refetchOut(); },
+    onError: (err: any) => toast.error(err.message || 'Failed to delete schedule'),
+  });
+
+  function resetScheduleForm() {
+    setNewSchedule({ name: '', amount: 0, dueDate: '', classId: '', academicYear: '', description: '' });
+    setEditingSchedule(null);
+  }
+
+  function openEdit(s: any) {
+    setEditingSchedule(s);
+    setNewSchedule({
+      name: s.name || '',
+      amount: Number(s.amount) || 0,
+      dueDate: s.due_date || s.dueDate || '',
+      classId: s.class_id || s.classId || '',
+      academicYear: s.academic_year || s.academicYear || '',
+      description: s.description || '',
+    });
+  }
+
+  function handleScheduleSave() {
+    if (editingSchedule) {
+      updateScheduleMutation.mutate({ id: editingSchedule.id, data: newSchedule });
+    } else {
+      createScheduleMutation.mutate(newSchedule);
+    }
+  }
+
   const recordPaymentMutation = useMutation({
     mutationFn: (data: typeof paymentData) => feeService.recordPayment(data),
     onSuccess: () => { toast.success('Payment recorded'); setPaymentData({ studentId: '', feeScheduleId: '', amountPaid: 0, paymentMethod: 'cash', transactionId: '' }); queryClient.invalidateQueries({ queryKey: ['student-payments'] }); refetchOut(); },
@@ -124,7 +164,7 @@ export default function AdminFeePage() {
           <TabsContent value="schedules" className="space-y-6">
             <Card className="border-border/60">
               <CardHeader className="pb-3">
-                <CardTitle className="text-title-sm">Create Fee Schedule</CardTitle>
+                <CardTitle className="text-title-sm">{editingSchedule ? 'Edit Fee Schedule' : 'Create Fee Schedule'}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -147,10 +187,15 @@ export default function AdminFeePage() {
                   />
                   <Input placeholder="Description (optional)" value={newSchedule.description} onChange={(e) => setNewSchedule({ ...newSchedule, description: e.target.value })} />
                 </div>
-                <Button className="mt-4" onClick={() => createScheduleMutation.mutate(newSchedule)} loading={createScheduleMutation.isPending} disabled={!newSchedule.name || !newSchedule.amount || !newSchedule.dueDate || !newSchedule.classId || !newSchedule.academicYear}>
-                  <Icon name="add" size={16} className="mr-1.5" />
-                  Create Fee Schedule
-                </Button>
+                <div className="mt-4 flex gap-2">
+                  <Button onClick={handleScheduleSave} loading={createScheduleMutation.isPending || updateScheduleMutation.isPending} disabled={!newSchedule.name || !newSchedule.amount || !newSchedule.dueDate || !newSchedule.classId || !newSchedule.academicYear}>
+                    <Icon name={editingSchedule ? 'save' : 'add'} size={16} className="mr-1.5" />
+                    {editingSchedule ? 'Save Changes' : 'Create Fee Schedule'}
+                  </Button>
+                  {editingSchedule && (
+                    <Button variant="outline" onClick={resetScheduleForm}>Cancel</Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -179,6 +224,7 @@ export default function AdminFeePage() {
                               <th className="px-4 py-3">Due Date</th>
                               <th className="px-4 py-3">Class</th>
                               <th className="px-4 py-3">Academic Year</th>
+                              <th className="px-4 py-3 text-right">Actions</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-border/40 text-title-sm">
@@ -191,6 +237,12 @@ export default function AdminFeePage() {
                                   <td className="px-4 py-3">{s.due_date ? new Date(s.due_date).toLocaleDateString() : '-'}</td>
                                   <td className="px-4 py-3">{cls ? `${cls.name}${cls.section ? ` - ${cls.section}` : ''}` : s.class_id || s.classId || '-'}</td>
                                   <td className="px-4 py-3">{s.academic_year || s.academicYear || '-'}</td>
+                                  <td className="px-4 py-3">
+                                    <div className="flex items-center justify-end gap-1">
+                                      <Button variant="ghost" size="icon-sm" onClick={() => openEdit(s)} title="Edit"><Icon name="edit" size={16} /></Button>
+                                      <Button variant="ghost" size="icon-sm" onClick={() => setDeleteConfirm(s)} title="Delete"><Icon name="delete" size={16} /></Button>
+                                    </div>
+                                  </td>
                                 </tr>
                               );
                             })}
@@ -365,6 +417,17 @@ export default function AdminFeePage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        onOpenChange={(o) => { if (!o) setDeleteConfirm(null); }}
+        title="Delete Fee Schedule"
+        description={deleteConfirm ? `Are you sure you want to delete the fee schedule "${deleteConfirm.name}"? This cannot be undone.` : ''}
+        confirmText="Delete"
+        destructive
+        loading={deleteScheduleMutation.isPending}
+        onConfirm={() => { if (deleteConfirm) deleteScheduleMutation.mutate(deleteConfirm.id); }}
+      />
     </>
   );
 }

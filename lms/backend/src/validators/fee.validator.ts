@@ -9,6 +9,15 @@ export const createFeeScheduleSchema = z.object({
   description: z.string().max(1000).optional(),
 });
 
+export const updateFeeScheduleSchema = z.object({
+  name: z.string().min(1, 'Name required').optional(),
+  amount: z.number().positive('Amount must be positive').optional(),
+  dueDate: z.string().min(1, 'Due date required').optional(),
+  classId: z.string().min(1, 'Class ID required').optional(),
+  academicYear: z.string().optional(),
+  description: z.string().max(1000).optional(),
+});
+
 export const recordPaymentSchema = z.object({
   studentId: z.string().min(1, 'Student ID required'),
   feeScheduleId: z.string().min(1, 'Fee schedule ID required'),

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -67,6 +67,12 @@ export default function AdminClassesPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('classes');
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) setActiveTab(tab);
+  }, [searchParams]);
 
   // Queries
   const { data: fetchedClasses = [], isLoading: classesLoading, isError: classesError, refetch: refetchClasses } = useQuery({
@@ -749,13 +755,19 @@ export default function AdminClassesPage() {
   }), [fetchedClasses]);
 
   const filteredStudents = useMemo(() => {
-    return students.filter((s) => {
-      const nameMatch = (s.displayName || '').toLowerCase().includes(studentSearch.toLowerCase());
-      const emailMatch = (s.email || '').toLowerCase().includes(studentSearch.toLowerCase());
-      const classMatch = studentClassFilter === 'all' || s.classId === studentClassFilter;
-      return (nameMatch || emailMatch) && classMatch;
-    });
-  }, [students, studentSearch, studentClassFilter]);
+    return students
+      .filter((s) => {
+        const nameMatch = (s.displayName || '').toLowerCase().includes(studentSearch.toLowerCase());
+        const emailMatch = (s.email || '').toLowerCase().includes(studentSearch.toLowerCase());
+        const classMatch = studentClassFilter === 'all' || s.classId === studentClassFilter;
+        return (nameMatch || emailMatch) && classMatch;
+      })
+      .sort((a, b) => {
+        const aName = fetchedClasses.find((c) => c.id === a.classId)?.name || '';
+        const bName = fetchedClasses.find((c) => c.id === b.classId)?.name || '';
+        return aName.localeCompare(bName) || (a.displayName || '').localeCompare(b.displayName || '');
+      });
+  }, [students, studentSearch, studentClassFilter, fetchedClasses]);
 
   const paginatedStudents = useMemo(() => {
     const limit = 10;

@@ -36,6 +36,16 @@ export async function getFeeSchedule(req: Request, res: Response) {
   sendSuccess(res, result);
 }
 
+export async function updateFeeSchedule(req: Request, res: Response) {
+  const result = await feeService.updateFeeSchedule(req.params.id, req.body);
+  sendSuccess(res, result, 'Fee schedule updated');
+}
+
+export async function deleteFeeSchedule(req: Request, res: Response) {
+  await feeService.deleteFeeSchedule(req.params.id);
+  sendSuccess(res, null, 'Fee schedule deleted');
+}
+
 export async function recordPayment(req: Request, res: Response) {
   const user = requireUser(req);
   const result = await feeService.recordPayment({ ...req.body, schoolId: user.school_id });

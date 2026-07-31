@@ -47,6 +47,16 @@ export const feeService = {
     return response.data;
   },
 
+  async updateFeeSchedule(id: string, data: Partial<Pick<FeeSchedule, 'name' | 'amount' | 'dueDate' | 'classId' | 'academicYear' | 'description'>>) {
+    const response = await api.put<ApiResponse<FeeSchedule>>(`/fee/schedules/${id}`, data);
+    return response.data;
+  },
+
+  async deleteFeeSchedule(id: string) {
+    const response = await api.delete<ApiResponse<null>>(`/fee/schedules/${id}`);
+    return response.data;
+  },
+
   async recordPayment(data: { studentId: string; feeScheduleId: string; amountPaid: number; paymentMethod: string; transactionId?: string }) {
     const response = await api.post<ApiResponse<PaymentRecord>>('/fee/payments', data);
     return response.data;

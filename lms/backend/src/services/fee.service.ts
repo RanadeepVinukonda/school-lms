@@ -107,6 +107,40 @@ export async function getFeeSchedule(id: string): Promise<FeeStructureRecord | n
 }
 
 /**
+ * Update an existing fee schedule.
+ */
+export async function updateFeeSchedule(
+  id: string,
+  data: {
+    name?: string;
+    amount?: number;
+    dueDate?: string;
+    classId?: string;
+    academicYear?: string;
+    description?: string;
+  }
+): Promise<FeeStructureRecord> {
+  const result = await feeBase.update(id, {
+    ...(data.name !== undefined ? { name: data.name } : {}),
+    ...(data.amount !== undefined ? { amount: data.amount } : {}),
+    ...(data.dueDate !== undefined ? { due_date: data.dueDate || null } : {}),
+    ...(data.classId !== undefined ? { class_id: data.classId } : {}),
+    ...(data.academicYear !== undefined ? { academic_year: data.academicYear } : {}),
+    ...(data.description !== undefined ? { description: data.description || null } : {}),
+  } as Partial<FeeStructureRecord>);
+  feeCache.clear();
+  return result;
+}
+
+/**
+ * Delete a fee schedule.
+ */
+export async function deleteFeeSchedule(id: string): Promise<void> {
+  await feeBase.delete(id);
+  feeCache.clear();
+}
+
+/**
  * Record a fee payment for a student inside an ACID transaction.
  * Uses raw SQL via getConnectionPool() to guarantee atomic read-then-write.
  */
