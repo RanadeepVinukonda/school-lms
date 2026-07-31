@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Icon } from '@/components/ui/Icon';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
+import { getChildren } from '@/services/parentService';
+import { hasAnyRole, hasRole } from '@/lib/roleHelpers';
 
 type ReportCategory = 'suggestion' | 'complaint' | 'feedback' | 'improvement' | 'technical_issue';
 type ReportPriority = 'low' | 'medium' | 'high' | 'urgent';
@@ -43,8 +45,42 @@ export default function ReportFeedbackForm({ className: classnameProp, onSuccess
   });
 
   const { data: classes } = useQuery({
-    queryKey: ['classes-list'],
-    queryFn: () => api.get('/classes').then((r) => r.data.data),
+    queryKey: ['report-feedback-classes', user?.id],
+    queryFn: async () => {
+      const role = user?.role || 'student';
+
+      if (hasAnyRole(role, ['admin', 'teacher'])) {
+        const res = await api.get('/classes');
+        const payload = res.data?.data;
+        return Array.isArray(payload) ? payload : payload?.items || [];
+      }
+
+      if (hasRole(role, 'parent')) {
+        const children = await getChildren();
+        const seen = new Map<string, { id: string; name: string }>();
+        for (const child of children || []) {
+          const classId = child.class_id || child.classIds?.[0];
+          if (!classId) continue;
+          const info = child.classInfo || {};
+          const label = info.name || (info.grade ? `${info.grade}${info.section ? ` - ${info.section}` : ''}` : classId);
+          if (!seen.has(classId)) seen.set(classId, { id: classId, name: label });
+        }
+        return Array.from(seen.values());
+      }
+
+      const classIds = user?.classIds?.length ? user.classIds : user?.classId ? [user.classId] : [];
+      const own: { id: string; name: string }[] = [];
+      for (const cid of classIds) {
+        try {
+          const res = await api.get(`/classes/${cid}`);
+          const cls = res.data?.data;
+          if (cls && cls.id) own.push({ id: cls.id, name: cls.name || cid });
+        } catch {
+          own.push({ id: cid, name: cid });
+        }
+      }
+      return own;
+    },
   });
 
   const classList = Array.isArray(classes) ? classes : classes?.items || [];
