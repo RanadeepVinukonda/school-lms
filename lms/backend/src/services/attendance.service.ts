@@ -231,14 +231,15 @@ export async function exportAttendanceCSV(classId: string): Promise<string> {
   }
   function escapeCSV(val: string): string {
     if (/^[=+\-@\t]/.test(val)) val = `'${val}`;
-    if (val.includes(',') || val.includes('"') || val.includes('\n')) val = `"${val.replace(/"/g, '""')}"`;
+    if (val.includes(',') || val.includes('"') || val.includes('\n') || val.includes('\r')) val = `"${val.replace(/"/g, '""')}"`;
     return val;
   }
 
   const header = 'StudentId,StudentName,Date,Status,MarkedBy,Note,MarkedAt';
   const rows = records.map((r) =>
     [r.studentId, (nameMap[r.studentId] || r.studentId), r.date, r.status, r.markedBy || '', (r.note || ''), r.markedAt || ''].map((v) => escapeCSV(String(v))).join(','));
-  return [header, ...rows].join('\n');
+  // BOM + CRLF so Excel (Windows) renders all rows and UTF-8 correctly
+  return `\uFEFF${[header, ...rows].join('\r\n')}`;
 }
 
 // ── Helpers ──────────────────────────────────────────────

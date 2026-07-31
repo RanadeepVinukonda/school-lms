@@ -74,7 +74,8 @@ export default function AdminAttendancePage() {
                   <Button variant="outline" onClick={async () => {
                     try {
                       const blob = await attendanceService.exportAttendanceCSV(selectedClass).then((r: any) => r);
-                      const url = URL.createObjectURL(blob);
+                      const csvBlob = new Blob([blob], { type: 'text/csv;charset=utf-8;' });
+                      const url = URL.createObjectURL(csvBlob);
                       const a = document.createElement('a');
                       a.href = url;
                       a.download = `attendance-${selectedClass}.csv`;

@@ -134,8 +134,19 @@ export async function updateFeeSchedule(
 
 /**
  * Delete a fee schedule.
+ * Refuses to delete schedules that already have payments recorded against them.
  */
 export async function deleteFeeSchedule(id: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) throw new Error('Supabase admin client unavailable');
+  const { count, error } = await supabase
+    .from('fee_payments')
+    .select('id', { count: 'exact', head: true })
+    .eq('fee_structure_id', id);
+  if (error) throw new Error(`Failed to check fee schedule payments: ${error.message}`);
+  if (count && count > 0) {
+    throw new ValidationError('Cannot delete this fee schedule because payments have already been recorded against it.');
+  }
   await feeBase.delete(id);
   feeCache.clear();
 }

@@ -29,7 +29,7 @@ export async function getAttendanceReport(req: Request, res: Response) {
 
 export async function exportAttendanceCSV(req: Request, res: Response) {
   const csv = await attendanceService.exportAttendanceCSV(req.params.classId);
-  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename=attendance-${req.params.classId}.csv`);
   res.send(csv);
 }
