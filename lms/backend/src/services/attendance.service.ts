@@ -223,11 +223,16 @@ export async function getAttendanceReport(classId: string) {
 export async function exportAttendanceCSV(classId: string): Promise<string> {
   const records = await getClassAttendance(classId);
   const studentIds: string[] = [...new Set(records.map((r) => r.studentId))];
+  const markerIds: string[] = [...new Set(records.map((r) => r.markedBy).filter((x): x is string => !!x))];
   const nameMap: Record<string, string> = {};
+  const supabase = getSupabaseAdmin();
   if (studentIds.length > 0) {
-    const supabase = getSupabaseAdmin();
     const { data: students } = await supabase.from('users').select('id, display_name').in('id', studentIds);
     for (const s of students || []) nameMap[s.id] = s.display_name || s.id;
+  }
+  if (markerIds.length > 0) {
+    const { data: markers } = await supabase.from('users').select('id, display_name').in('id', markerIds);
+    for (const m of markers || []) nameMap[m.id] = m.display_name || m.id;
   }
   function escapeCSV(val: string): string {
     if (/^[=+\-@\t]/.test(val)) val = `'${val}`;
@@ -235,9 +240,19 @@ export async function exportAttendanceCSV(classId: string): Promise<string> {
     return val;
   }
 
+  // Quoted tab prefix forces Excel to render the value as plain text (no "#####" from narrow columns).
+  const asText = (val: string) => `"\t${val}"`;
+
   const header = 'StudentId,StudentName,Date,Status,MarkedBy,Note,MarkedAt';
-  const rows = records.map((r) =>
-    [r.studentId, (nameMap[r.studentId] || r.studentId), r.date, r.status, r.markedBy || '', (r.note || ''), r.markedAt || ''].map((v) => escapeCSV(String(v))).join(','));
+  const rows = records.map((r) => [
+    escapeCSV(r.studentId),
+    escapeCSV(nameMap[r.studentId] || r.studentId),
+    asText(r.date),
+    escapeCSV(r.status),
+    escapeCSV((r.markedBy && nameMap[r.markedBy]) || r.markedBy || ''),
+    escapeCSV(r.note || ''),
+    asText(r.markedAt || ''),
+  ].join(','));
   // BOM + CRLF so Excel (Windows) renders all rows and UTF-8 correctly
   return `\uFEFF${[header, ...rows].join('\r\n')}`;
 }
