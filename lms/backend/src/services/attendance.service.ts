@@ -240,8 +240,9 @@ export async function exportAttendanceCSV(classId: string): Promise<string> {
     return val;
   }
 
-  // Quoted tab prefix forces Excel to render the value as plain text (no "#####" from narrow columns).
-  const asText = (val: string) => `"\t${val}"`;
+  // Force Excel to render date fields as plain text (no "#####" from narrow columns)
+  // using the ="..." formula-text trick, which does not disturb CSV row parsing.
+  const asText = (val: string) => `"=""${val}"""`;
 
   const header = 'StudentId,StudentName,Date,Status,MarkedBy,Note,MarkedAt';
   const rows = records.map((r) => [
