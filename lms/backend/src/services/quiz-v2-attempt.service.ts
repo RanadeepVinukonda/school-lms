@@ -28,6 +28,12 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
   const { exists: quizExists, data: quizData } = await nosqlGet(QV2, quizId);
   if (!quizExists || !quizData) throw new NotFoundError('Quiz not found');
   if (!quizData.releasedAt) throw new ForbiddenError('Quiz is not yet released');
+  if (quizData.publishedTo === 'students') {
+    const targetStudentIds = (quizData.targetStudentIds as string[]) || [];
+    if (!targetStudentIds.includes(studentId)) {
+      throw new ForbiddenError('This quiz was assigned to specific students only');
+    }
+  }
 
   const attempts = await nosqlQuery(QAV2, { quizId, studentId });
   const totalAttempts = attempts.length;

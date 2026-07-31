@@ -121,6 +121,7 @@ export async function pushQuiz(req: Request, res: Response) {
   const { classId, subjectId, questions: reqQuestions } = req.body;
   const questionsRaw = reqQuestions || req.body.data?.questions;
   const userId = (req as unknown as { user?: { uid?: string } }).user?.uid || 'unknown';
+  const studentIds = Array.isArray(req.body.studentIds) ? req.body.studentIds : [];
 
   if (!questionsRaw || !Array.isArray(questionsRaw) || questionsRaw.length === 0) {
     throw new ValidationError('Quiz data must contain a questions array');
@@ -177,6 +178,8 @@ export async function pushQuiz(req: Request, res: Response) {
     shuffleQuestions: true,
     showResults: true,  // students see correct answers after submitting
     attemptCount: 0,
+    publishedTo: studentIds.length > 0 ? 'students' : 'class',
+    targetStudentIds: studentIds.length > 0 ? studentIds : [],
     releasedAt: now,  // auto-release so students see it
     ocrGenerated: true,
     createdAt: now,

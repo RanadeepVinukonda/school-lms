@@ -17,17 +17,39 @@ import { useAuthStore } from '@/store/authStore';
 import { useChatStore, ChatMsg } from '@/store/chatStore';
 
 
-function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, meta: { title: string; subjectId: string }) => Promise<void> }) {
+function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, meta: { title: string; subjectId: string; questions: any[]; studentIds: string[] }) => Promise<void> }) {
   const { _ } = useTranslation();
   const [selectedClass, setSelectedClass] = useState('');
   const [testName, setTestName] = useState('');
   const [subjectId, setSubjectId] = useState('');
+  const [pushMode, setPushMode] = useState<'class' | 'students'>('class');
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [pushing, setPushing] = useState(false);
+  const [questions, setQuestions] = useState<any[]>(() =>
+    (data?.questions || []).map((q: any) => ({
+      id: q.id || `q_${Math.random().toString(36).slice(2, 9)}`,
+      type: q.type || 'short_answer',
+      question: q.question || q.text || '',
+      options: Array.isArray(q.options) ? [...q.options] : [],
+      correctAnswer: q.correctAnswer || '',
+      explanation: q.explanation || '',
+      difficulty: q.difficulty || 'medium',
+      points: Number(q.points) || 1,
+    })),
+  );
   const { data: myAssignments = [] } = useQuery({
     queryKey: ['my-class-subjects'],
     queryFn: () => teacherClassSubjectService.getMyAssignments().then((r) => r.data),
   });
-  const questions = data?.questions || [];
+
+  const { data: roster = [] } = useQuery({
+    queryKey: ['class-roster-ocr', selectedClass],
+    enabled: !!selectedClass && pushMode === 'students',
+    queryFn: () =>
+      api.get(`/classes/${selectedClass}/roster`).then((r) =>
+        (r.data.data ?? []).filter((u: any) => u.role === 'student'),
+      ),
+  });
 
   const myClasses = useMemo(() => {
     const map = new Map<string, string>();
@@ -44,25 +66,79 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
     return Array.from(seen.entries()).map(([id, name]) => ({ id, name }));
   }, [myAssignments, selectedClass]);
 
+  const updateQuestion = (i: number, patch: Record<string, unknown>) => {
+    setQuestions((prev) => prev.map((q, idx) => (idx === i ? { ...q, ...patch } : q)));
+  };
+  const updateOption = (qi: number, oi: number, value: string) => {
+    setQuestions((prev) =>
+      prev.map((q, idx) =>
+        idx === qi ? { ...q, options: q.options.map((o: string, j: number) => (j === oi ? value : o)) } : q,
+      ),
+    );
+  };
+  const addOption = (qi: number) => {
+    setQuestions((prev) => prev.map((q, idx) => (idx === qi ? { ...q, options: [...q.options, ''] } : q)));
+  };
+  const removeOption = (qi: number, oi: number) => {
+    setQuestions((prev) =>
+      prev.map((q, idx) => (idx === qi ? { ...q, options: q.options.filter((_: string, j: number) => j !== oi) } : q)),
+    );
+  };
+  const toggleStudent = (id: string) => {
+    setSelectedStudentIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const pushDisabled = !selectedClass || !subjectId || !testName.trim() || (pushMode === 'students' && selectedStudentIds.length === 0) || pushing;
+
+  const handlePush = () => {
+    setPushing(true);
+    onPush(data, selectedClass, {
+      title: testName,
+      subjectId,
+      questions: questions.map((q) => ({
+        id: q.id,
+        type: q.type,
+        question: q.question,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation,
+        difficulty: q.difficulty,
+        points: Number(q.points) || 1,
+      })),
+      studentIds: pushMode === 'students' ? selectedStudentIds : [],
+    }).finally(() => setPushing(false));
+  };
+
   return (
     <div className="space-y-3 mt-2">
       <p className="text-sm font-semibold text-primary">{_('Generated Quiz')} ({questions.length} {_('questions')})</p>
+      <p className="text-[10px] text-muted-foreground">{_('You can edit the questions, marks and options before pushing.')}</p>
+
       {questions.map((q: any, i: number) => (
-        <div key={q.id || i} className="p-3 rounded-lg border border-border/60 text-sm">
-          <p className="font-medium">{i + 1}. {q.question}</p>
-          {q.options ? (
-            <div className="mt-1 space-y-1">
+        <div key={q.id || i} className="p-3 rounded-lg border border-border/60 space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-muted-foreground shrink-0">{i + 1}.</span>
+            <Input value={q.question} onChange={(e) => updateQuestion(i, { question: e.target.value })} placeholder={_('Question text')} className="h-8 text-xs flex-1" />
+            <div className="flex items-center gap-1 shrink-0">
+              <span className="text-[10px] text-muted-foreground">{_('Marks')}</span>
+              <Input type="number" min={1} value={q.points} onChange={(e) => updateQuestion(i, { points: e.target.value })} className="h-8 w-16 text-center text-xs" />
+            </div>
+          </div>
+          {q.options && q.options.length > 0 && (
+            <div className="space-y-1 pl-6">
               {q.options.map((o: string, j: number) => (
-                <div key={j} className={`px-2 py-1 rounded text-xs ${o === q.correctAnswer ? 'bg-success/10 text-success font-semibold' : 'text-muted-foreground'}`}>
-                  {o} {o === q.correctAnswer && '✓'}
+                <div key={j} className="flex items-center gap-1.5">
+                  <Input value={o} onChange={(e) => updateOption(i, j, e.target.value)} placeholder={`${_('Option')} ${j + 1}`} className="h-7 text-xs flex-1" />
+                  <button type="button" onClick={() => removeOption(i, j)} className="text-muted-foreground hover:text-error text-sm shrink-0 px-1">✕</button>
                 </div>
               ))}
-            </div>
-          ) : (
-            <div className="mt-1 text-xs text-success font-semibold">
-              {_('Answer:')} {q.correctAnswer}
+              <button type="button" onClick={() => addOption(i)} className="text-[10px] text-primary hover:underline">{_('+ Add option')}</button>
             </div>
           )}
+          <div className="flex items-center gap-2 pl-6">
+            <span className="text-[10px] text-muted-foreground shrink-0">{_('Correct answer')}</span>
+            <Input value={q.correctAnswer} onChange={(e) => updateQuestion(i, { correctAnswer: e.target.value })} className="h-7 text-xs flex-1" />
+          </div>
         </div>
       ))}
 
@@ -74,7 +150,7 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
           onChange={(e) => setTestName(e.target.value)}
         />
         <div className="flex flex-wrap items-center gap-2">
-          <Select value={selectedClass} onValueChange={(v) => { setSelectedClass(v); setSubjectId(''); }}>
+          <Select value={selectedClass} onValueChange={(v) => { setSelectedClass(v); setSubjectId(''); setSelectedStudentIds([]); }}>
             <SelectTrigger className="w-48"><SelectValue placeholder={_('Select class...')} /></SelectTrigger>
             <SelectContent>
               {myClasses.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
@@ -90,7 +166,38 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
         {myClasses.length === 0 ? (
           <p className="text-xs text-muted-foreground">{_('You have no allotted classes yet. Ask your admin to assign you to a class and subject.')}</p>
         ) : null}
-        <Button size="sm" className="w-full" onClick={() => { setPushing(true); onPush(data, selectedClass, { title: testName, subjectId }).finally(() => setPushing(false)); }} disabled={!selectedClass || !subjectId || !testName.trim() || pushing} loading={pushing}>
+
+        <div>
+          <div className="flex gap-2 mb-2">
+            <button type="button" onClick={() => setPushMode('class')} className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${pushMode === 'class' ? 'bg-primary text-primary-foreground border-primary' : 'bg-surface text-muted-foreground border-border/60'}`}>
+              {_('Entire Class')}
+            </button>
+            <button type="button" onClick={() => setPushMode('students')} className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${pushMode === 'students' ? 'bg-primary text-primary-foreground border-primary' : 'bg-surface text-muted-foreground border-border/60'}`}>
+              {_('Select Students')}
+            </button>
+          </div>
+          {pushMode === 'students' && (
+            <div className="border border-border/50 rounded-lg p-2 max-h-44 overflow-y-auto space-y-1">
+              {!selectedClass ? (
+                <p className="text-xs text-muted-foreground">{_('Select a class first.')}</p>
+              ) : roster.length === 0 ? (
+                <p className="text-xs text-muted-foreground">{_('Loading students...')}</p>
+              ) : (
+                roster.map((s: any) => (
+                  <label key={s.id} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted/40 px-1 rounded">
+                    <input type="checkbox" checked={selectedStudentIds.includes(s.id)} onChange={() => toggleStudent(s.id)} className="accent-primary" />
+                    <span className="truncate">{s.display_name || s.email}{s.roll_no ? ` (${s.roll_no})` : ''}</span>
+                  </label>
+                ))
+              )}
+            </div>
+          )}
+          {pushMode === 'students' && selectedStudentIds.length > 0 && (
+            <p className="text-[10px] text-muted-foreground mt-1">{selectedStudentIds.length} {_('student(s) selected')}</p>
+          )}
+        </div>
+
+        <Button size="sm" className="w-full" onClick={handlePush} disabled={pushDisabled} loading={pushing}>
           <Icon name="send" size={14} className="mr-1" /> {pushing ? _('Pushing...') : _('Push to Quizzes')}
         </Button>
       </div>
@@ -263,13 +370,14 @@ export default function TeacherOCRPage() {
     }
   }, []);
 
-  const handlePushQuiz = useCallback(async (data: any, classId: string, meta: { title: string; subjectId: string }) => {
-    setMessages((prev) => [...prev, { role: 'assistant', content: `⏳ Pushing quiz to class...` }]);
+  const handlePushQuiz = useCallback(async (data: any, classId: string, meta: { title: string; subjectId: string; questions?: any[]; studentIds?: string[] }) => {
+    setMessages((prev) => [...prev, { role: 'assistant', content: `⏳ Pushing quiz...` }]);
     try {
       const result = await pushQuiz(data, classId, meta);
+      const target = meta.studentIds?.length ? `${meta.studentIds.length} student(s)` : 'class';
       setMessages((prev) => [...prev, {
         role: 'assistant',
-        content: `✅ Quiz "${result.title || 'Untitled'}" pushed successfully! (${data.questions?.length || 0} questions)`,
+        content: `✅ Quiz "${result.title || 'Untitled'}" pushed to ${target}! (${meta.questions?.length || data.questions?.length || 0} questions)`,
         data: { pushedQuizId: result.id, action: 'pushed_quiz' }
       }]);
     } catch (err: any) {
