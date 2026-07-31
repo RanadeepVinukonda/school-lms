@@ -10,7 +10,7 @@ import { Brain } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { sendChatMessage, pushQuiz, pushAssignment } from '@/services/ocrService';
-import { getAllClasses, getAllSubjects } from '@/services/dataService';
+import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
 import api from '@/services/api';
 import LatexRenderer from '@/components/common/LatexRenderer';
 import { useAuthStore } from '@/store/authStore';
@@ -23,14 +23,26 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
   const [testName, setTestName] = useState('');
   const [subjectId, setSubjectId] = useState('');
   const [pushing, setPushing] = useState(false);
-  const { data: classes } = useQuery({ queryKey: ['admin-classes'], queryFn: getAllClasses });
-  const { data: subjects } = useQuery({ queryKey: ['all-subjects'], queryFn: getAllSubjects });
+  const { data: myAssignments = [] } = useQuery({
+    queryKey: ['my-class-subjects'],
+    queryFn: () => teacherClassSubjectService.getMyAssignments().then((r) => r.data),
+  });
   const questions = data?.questions || [];
 
-  const filteredSubjects = useMemo(
-    () => (subjects || []).filter((s: any) => !s.classId || s.classId === selectedClass),
-    [subjects, selectedClass],
-  );
+  const myClasses = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const a of myAssignments) if (a.classId) map.set(a.classId, a.className || a.classId);
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }, [myAssignments]);
+
+  const mySubjects = useMemo(() => {
+    if (!selectedClass) return [];
+    const seen = new Map<string, string>();
+    for (const a of myAssignments) {
+      if (a.classId === selectedClass && a.subjectId) seen.set(a.subjectId, a.subjectName || a.subjectId);
+    }
+    return Array.from(seen.entries()).map(([id, name]) => ({ id, name }));
+  }, [myAssignments, selectedClass]);
 
   return (
     <div className="space-y-3 mt-2">
@@ -65,16 +77,19 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
           <Select value={selectedClass} onValueChange={(v) => { setSelectedClass(v); setSubjectId(''); }}>
             <SelectTrigger className="w-48"><SelectValue placeholder={_('Select class...')} /></SelectTrigger>
             <SelectContent>
-              {classes?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}{c.section ? ` - ${c.section}` : ''}</SelectItem>)}
+              {myClasses.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={subjectId} onValueChange={setSubjectId}>
             <SelectTrigger className="w-48"><SelectValue placeholder={_('Select subject...')} /></SelectTrigger>
             <SelectContent>
-              {filteredSubjects.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+              {mySubjects.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
+        {myClasses.length === 0 ? (
+          <p className="text-xs text-muted-foreground">{_('You have no allotted classes yet. Ask your admin to assign you to a class and subject.')}</p>
+        ) : null}
         <Button size="sm" className="w-full" onClick={() => { setPushing(true); onPush(data, selectedClass, { title: testName, subjectId }).finally(() => setPushing(false)); }} disabled={!selectedClass || !subjectId || !testName.trim() || pushing} loading={pushing}>
           <Icon name="send" size={14} className="mr-1" /> {pushing ? _('Pushing...') : _('Push to Quizzes')}
         </Button>
@@ -87,7 +102,15 @@ function AssignmentView({ data, onPush }: { data: any; onPush: (d: any, cls: str
   const { _ } = useTranslation();
   const [selectedClass, setSelectedClass] = useState('');
   const [pushing, setPushing] = useState(false);
-  const { data: classes } = useQuery({ queryKey: ['admin-classes'], queryFn: getAllClasses });
+  const { data: myAssignments = [] } = useQuery({
+    queryKey: ['my-class-subjects'],
+    queryFn: () => teacherClassSubjectService.getMyAssignments().then((r) => r.data),
+  });
+  const myClasses = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const a of myAssignments) if (a.classId) map.set(a.classId, a.className || a.classId);
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }, [myAssignments]);
   return (
     <div className="space-y-3 mt-2">
       <p className="text-sm font-semibold text-primary">{data.title || _('Generated Assignment')}</p>
@@ -102,7 +125,7 @@ function AssignmentView({ data, onPush }: { data: any; onPush: (d: any, cls: str
         <Select value={selectedClass} onValueChange={setSelectedClass}>
           <SelectTrigger className="w-48"><SelectValue placeholder={_('Select class...')} /></SelectTrigger>
           <SelectContent>
-            {classes?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}{c.section ? ` - ${c.section}` : ''}</SelectItem>)}
+            {myClasses.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Button size="sm" onClick={() => { setPushing(true); onPush(data, selectedClass).finally(() => setPushing(false)); }} disabled={!selectedClass || pushing} loading={pushing}>
