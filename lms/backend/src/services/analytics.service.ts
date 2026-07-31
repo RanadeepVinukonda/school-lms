@@ -48,19 +48,37 @@ export async function getStudentDashboard(studentId: string) {
   } catch (e: any) { logger.error('getStudentDashboard notifications error', { studentId, error: e.message }); }
 
   let gradesList: any[] = [];
-  try {
+  const fetchGrades = async (idColumn: string, createdAtColumn: string): Promise<any[]> => {
     let gradeQuery = supabase
       .from('grades')
-      .select('score, totalPoints, percentage, createdAt')
-      .eq('studentId', studentId);
-    if (yearStart) gradeQuery = gradeQuery.gte('createdAt', yearStart.toISOString());
+      .select('*')
+      .eq(idColumn, studentId);
+    if (yearStart) gradeQuery = gradeQuery.gte(createdAtColumn, yearStart.toISOString());
     const { data, error } = await gradeQuery;
-    if (error) logger.error('getStudentDashboard grades error', { studentId, error: error.message });
-    else gradesList = (data || []) as any[];
-  } catch (e: any) { logger.error('getStudentDashboard grades exception', { studentId, error: e.message }); }
+    if (error) throw error;
+    return (data || []) as any[];
+  };
+  try {
+    try {
+      gradesList = await fetchGrades('student_id', 'created_at');
+    } catch (e: any) {
+      if (/student_id|created_at/.test(e.message || '')) gradesList = await fetchGrades('studentId', 'createdAt');
+      else throw e;
+    }
+  } catch (e: any) { logger.error('getStudentDashboard grades error', { studentId, error: e.message }); }
 
+  const gradePct = (g: any): number | null => {
+    if (g.percentage != null) return Number(g.percentage);
+    const points = (g.totalPoints ?? g.total_points ?? g.maxScore ?? g.max_score) || 0;
+    const sc = g.score ?? 0;
+    if (points > 0) return Math.round((sc / points) * 100);
+    return null;
+  };
   const totalScore = gradesList.reduce((sum: number, g: any) => sum + (g.score || 0), 0);
-  const totalPoints = gradesList.reduce((sum: number, g: any) => sum + (g.totalPoints || 1), 0);
+  const totalPoints = gradesList.reduce(
+    (sum: number, g: any) => sum + ((g.totalPoints ?? g.total_points ?? g.maxScore ?? g.max_score) || 1),
+    0,
+  );
   const overallGrade = safePct(totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0);
 
   let quizAttempts: any[] = [];
@@ -69,9 +87,8 @@ export async function getStudentDashboard(studentId: string) {
       .from('firestore_docs')
       .select('data')
       .eq('collection', 'quizAttemptV2')
-      .eq('data->>studentId', studentId)
-      .eq('data->>status', 'completed');
-    quizAttempts = (data || []) as any[];
+      .eq('data->>studentId', studentId);
+    quizAttempts = ((data || []) as any[]).filter((a) => (a.data as any)?.percentage != null);
   } catch (e: any) { logger.error('getStudentDashboard quizAttempts error', { studentId, error: e.message }); }
 
   let assignAttempts: any[] = [];
@@ -80,13 +97,12 @@ export async function getStudentDashboard(studentId: string) {
       .from('firestore_docs')
       .select('data')
       .eq('collection', 'assignmentSubmissionV2')
-      .eq('data->>studentId', studentId)
-      .eq('data->>status', 'completed');
-    assignAttempts = (data || []) as any[];
+      .eq('data->>studentId', studentId);
+    assignAttempts = ((data || []) as any[]).filter((a) => (a.data as any)?.percentage != null);
   } catch (e: any) { logger.error('getStudentDashboard assignAttempts error', { studentId, error: e.message }); }
 
   const allPercentages: number[] = [];
-  for (const g of gradesList) { if (g.percentage > 0) allPercentages.push(g.percentage); }
+  for (const g of gradesList) { const pct = gradePct(g); if (pct != null && pct > 0) allPercentages.push(pct); }
   for (const a of quizAttempts) { const pct = (a.data as any)?.percentage; const subDate = (a.data as any)?.submittedAt; if (pct > 0 && (!yearStart || !subDate || new Date(subDate) >= yearStart)) allPercentages.push(pct); }
   for (const a of assignAttempts) { const pct = (a.data as any)?.percentage; const subDate = (a.data as any)?.submittedAt; if (pct > 0 && (!yearStart || !subDate || new Date(subDate) >= yearStart)) allPercentages.push(pct); }
 
