@@ -183,7 +183,7 @@ export async function getConductedTests() {
     supabase.from('firestore_docs').select('data, doc_id').eq('collection', 'assignmentV2'),
     supabase.from('classes').select('id, name'),
     supabase.from('subjects').select('id, name'),
-    supabase.from('users').select('id, display_name, email').eq('role', 'teacher'),
+    supabase.from('users').select('id, display_name, email').in('role', ['teacher', 'admin']),
   ]);
   for (const res of [quizRes, examRes, assignmentRes, classesRes, subjectsRes, teachersRes]) {
     if (res.error) throw new Error(res.error.message);

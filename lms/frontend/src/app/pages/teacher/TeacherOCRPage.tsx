@@ -10,19 +10,28 @@ import { Brain } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { sendChatMessage, pushQuiz, pushAssignment } from '@/services/ocrService';
-import { getAllClasses } from '@/services/dataService';
+import { getAllClasses, getAllSubjects } from '@/services/dataService';
 import api from '@/services/api';
 import LatexRenderer from '@/components/common/LatexRenderer';
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore, ChatMsg } from '@/store/chatStore';
 
 
-function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string) => Promise<void> }) {
+function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, meta: { title: string; subjectId: string }) => Promise<void> }) {
   const { _ } = useTranslation();
   const [selectedClass, setSelectedClass] = useState('');
+  const [testName, setTestName] = useState('');
+  const [subjectId, setSubjectId] = useState('');
   const [pushing, setPushing] = useState(false);
   const { data: classes } = useQuery({ queryKey: ['admin-classes'], queryFn: getAllClasses });
+  const { data: subjects } = useQuery({ queryKey: ['all-subjects'], queryFn: getAllSubjects });
   const questions = data?.questions || [];
+
+  const filteredSubjects = useMemo(
+    () => (subjects || []).filter((s: any) => !s.classId || s.classId === selectedClass),
+    [subjects, selectedClass],
+  );
+
   return (
     <div className="space-y-3 mt-2">
       <p className="text-sm font-semibold text-primary">{_('Generated Quiz')} ({questions.length} {_('questions')})</p>
@@ -45,14 +54,28 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string) =
         </div>
       ))}
 
-      <div className="flex items-center gap-2 mt-3">
-        <Select value={selectedClass} onValueChange={setSelectedClass}>
-          <SelectTrigger className="w-48"><SelectValue placeholder={_('Select class...')} /></SelectTrigger>
-          <SelectContent>
-            {classes?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}{c.section ? ` - ${c.section}` : ''}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Button size="sm" onClick={() => { setPushing(true); onPush(data, selectedClass).finally(() => setPushing(false)); }} disabled={!selectedClass || pushing} loading={pushing}>
+      <div className="p-3 rounded-xl border border-primary/20 bg-primary/5 space-y-2.5 mt-3">
+        <p className="text-xs font-bold text-primary uppercase tracking-wider">{_('Test Details')}</p>
+        <Input
+          placeholder={_('Test name (e.g. Polynomials Quiz)')}
+          value={testName}
+          onChange={(e) => setTestName(e.target.value)}
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={selectedClass} onValueChange={(v) => { setSelectedClass(v); setSubjectId(''); }}>
+            <SelectTrigger className="w-48"><SelectValue placeholder={_('Select class...')} /></SelectTrigger>
+            <SelectContent>
+              {classes?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}{c.section ? ` - ${c.section}` : ''}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={subjectId} onValueChange={setSubjectId}>
+            <SelectTrigger className="w-48"><SelectValue placeholder={_('Select subject...')} /></SelectTrigger>
+            <SelectContent>
+              {filteredSubjects.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <Button size="sm" className="w-full" onClick={() => { setPushing(true); onPush(data, selectedClass, { title: testName, subjectId }).finally(() => setPushing(false)); }} disabled={!selectedClass || !subjectId || !testName.trim() || pushing} loading={pushing}>
           <Icon name="send" size={14} className="mr-1" /> {pushing ? _('Pushing...') : _('Push to Quizzes')}
         </Button>
       </div>
@@ -217,10 +240,10 @@ export default function TeacherOCRPage() {
     }
   }, []);
 
-  const handlePushQuiz = useCallback(async (data: any, classId: string) => {
+  const handlePushQuiz = useCallback(async (data: any, classId: string, meta: { title: string; subjectId: string }) => {
     setMessages((prev) => [...prev, { role: 'assistant', content: `⏳ Pushing quiz to class...` }]);
     try {
-      const result = await pushQuiz(data, classId);
+      const result = await pushQuiz(data, classId, meta);
       setMessages((prev) => [...prev, {
         role: 'assistant',
         content: `✅ Quiz "${result.title || 'Untitled'}" pushed successfully! (${data.questions?.length || 0} questions)`,

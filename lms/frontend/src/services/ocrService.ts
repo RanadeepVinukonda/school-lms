@@ -105,8 +105,13 @@ export async function sendChatMessage(
   return res.data.data;
 }
 
-export async function pushQuiz(data: any, classId: string): Promise<any> {
-  const res = await api.post('/ocr/push-quiz', { ...data, classId });
+export async function pushQuiz(data: any, classId: string, meta?: { title?: string; subjectId?: string }): Promise<any> {
+  const res = await api.post('/ocr/push-quiz', {
+    ...data,
+    classId,
+    title: meta?.title || data.title || undefined,
+    subjectId: meta?.subjectId || data.subjectId || undefined,
+  });
   return res.data.data;
 }
 

@@ -512,7 +512,12 @@ export default function AdminDashboardPage() {
                                     <Badge variant={test.type === 'Quiz' ? 'default' : test.type === 'Exam' ? 'destructive' : 'warning'} className="text-[10px] uppercase font-bold py-0 px-1.5 h-4">
                                       {test.type}
                                     </Badge>
-                                    <span className="text-[10px] text-muted-foreground">{new Date(test.createdAt).toLocaleDateString()}</span>
+                                    {test.ocrGenerated && (
+                                      <Badge variant="secondary" className="text-[10px] uppercase font-bold py-0 px-1.5 h-4">OCR</Badge>
+                                    )}
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {new Date(test.examDate || test.releasedAt || test.createdAt || Date.now()).toLocaleDateString()}
+                                    </span>
                                   </div>
                                 </td>
                                 <td className="px-4 py-3">
@@ -667,7 +672,8 @@ export default function AdminDashboardPage() {
               </div>
             </DialogTitle>
             <DialogDescription className="text-label-sm text-muted-foreground mt-1">
-              {_('Conducted by')} {inspectTest?.teacherName} {_('on')} {inspectTest?.conceptName || _('General Concept')}
+              {_('Conducted by')} {inspectTest?.teacherName} {_('on')} {inspectTest?.examDate || inspectTest?.releasedAt || inspectTest?.createdAt ? new Date(inspectTest?.examDate || inspectTest?.releasedAt || inspectTest?.createdAt).toLocaleDateString() : ''}
+              {' · '}{inspectTest?.conceptName || _('General Concept')}
             </DialogDescription>
           </DialogHeader>
 
