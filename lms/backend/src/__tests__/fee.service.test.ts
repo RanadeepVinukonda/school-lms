@@ -99,6 +99,7 @@ describe('fee.service', () => {
       supabase.eq = jest.fn().mockReturnThis();
       supabase.is = jest.fn().mockReturnThis();
       supabase.in = jest.fn().mockReturnThis();
+      supabase.range = jest.fn().mockReturnThis();
       supabase.then = jest.fn(function (resolve: Function) {
         if (this._qIndex === undefined) this._qIndex = 0;
         const i = this._qIndex++;

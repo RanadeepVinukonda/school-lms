@@ -7,6 +7,8 @@ const mockQuery: any = {
   is: jest.fn(() => mockQuery),
   contains: jest.fn(() => mockQuery),
   overlaps: jest.fn(() => mockQuery),
+  order: jest.fn(() => mockQuery),
+  range: jest.fn(() => mockQuery),
   insert: jest.fn(() => mockQuery),
   then: jest.fn(),
 };
