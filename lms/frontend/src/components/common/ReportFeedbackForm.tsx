@@ -69,7 +69,7 @@ export default function ReportFeedbackForm({ className: classnameProp, onSuccess
       setForm({ title: '', description: '', category: 'feedback', priority: 'medium', classId: '' });
       onSuccess?.();
     },
-    onError: () => toast.error(_('Failed to submit report')),
+    onError: (err) => toast.error((err as any)?.message || _('Failed to submit report')),
   });
 
   const handleSubmit = (e: React.FormEvent) => {
