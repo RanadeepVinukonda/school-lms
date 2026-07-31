@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
+import { PerformanceLogoBadge } from '@/components/common/PerformanceLogoBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -74,9 +75,9 @@ export default function TeacherProfilePage() {
   }, [raw, authUser]);
 
   const statCards = [
-    { icon: 'group', label: _('Students'), value: data.stats.totalStudents, bg: 'bg-primary-container', color: 'text-on-primary-container' },
-    { icon: 'school', label: _('Classes'), value: data.stats.totalClasses, bg: 'bg-secondary-container', color: 'text-on-secondary-container' },
-    { icon: 'menu_book', label: _('Subjects'), value: data.stats.totalSubjects, bg: 'bg-success-container', color: 'text-on-success-container' },
+    { icon: 'group', label: _('Students'), value: data.stats.totalStudents, bg: 'bg-primary-container', color: 'text-on-primary-container', isPerformanceLogo: false },
+    { icon: 'school', label: _('Classes'), value: data.stats.totalClasses, bg: 'bg-secondary-container', color: 'text-on-secondary-container', isPerformanceLogo: false },
+    { icon: 'menu_book', label: _('Subjects'), value: data.stats.totalSubjects, bg: 'bg-success-container', color: 'text-on-success-container', isPerformanceLogo: false },
   ];
 
   const avgPct = data.stats.avgPerformance;
@@ -86,6 +87,7 @@ export default function TeacherProfilePage() {
     value: `${avgPct}%`,
     bg: avgPct >= 80 ? 'bg-success-container' : avgPct >= 60 ? 'bg-warning-container' : 'bg-error-container',
     color: avgPct >= 80 ? 'text-on-success-container' : avgPct >= 60 ? 'text-on-warning-container' : 'text-on-error-container',
+    isPerformanceLogo: true,
   };
 
   return (
@@ -133,9 +135,13 @@ export default function TeacherProfilePage() {
                   {[...statCards, avgStat].map((stat) => (
                     <Card key={stat.label} className="border-border/60">
                       <CardContent className="p-5 flex items-center gap-3">
-                        <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${stat.bg}`}>
-                          <Icon name={stat.icon} size={20} className={stat.color} />
-                        </div>
+                        {stat.isPerformanceLogo ? (
+                          <PerformanceLogoBadge className={stat.bg} size={20} />
+                        ) : (
+                          <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${stat.bg}`}>
+                            <Icon name={stat.icon} size={20} className={stat.color} />
+                          </div>
+                        )}
                         <div>
                           <p className="text-display-xs font-bold tabular-nums">{stat.value}</p>
                           <p className="text-label-xs text-muted-foreground">{stat.label}</p>

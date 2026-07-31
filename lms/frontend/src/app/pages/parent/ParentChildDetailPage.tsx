@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
+import { PerformanceLogoBadge } from '@/components/common/PerformanceLogoBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -132,14 +133,18 @@ export default function ParentChildDetailPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {[
                       { icon: 'graded', label: 'Total Assessments', value: d.totalAttempts, bg: 'bg-primary-container', color: 'text-primary' },
-                      { icon: 'trending_up', label: 'Overall Avg Score', value: `${d.overallAvgScore}%`, bg: 'bg-secondary-container', color: 'text-secondary' },
+                      { icon: 'trending_up', label: 'Overall Avg Score', value: `${d.overallAvgScore}%`, bg: 'bg-secondary-container', color: 'text-secondary', isPerformanceLogo: true },
                       { icon: 'school', label: 'Class', value: d.className ?? 'N/A', bg: 'bg-success-container', color: 'text-success' },
                     ].map((stat) => (
                       <Card key={stat.label} className="border-border/60">
                         <CardContent className="p-5 flex items-center gap-4">
-                          <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${stat.bg}`}>
-                            <Icon name={stat.icon} size={22} className={stat.color} />
-                          </div>
+                          {stat.isPerformanceLogo ? (
+                            <PerformanceLogoBadge className={stat.bg} />
+                          ) : (
+                            <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${stat.bg}`}>
+                              <Icon name={stat.icon} size={22} className={stat.color} />
+                            </div>
+                          )}
                           <div>
                             <p className="text-display-xs font-bold tabular-nums leading-none mb-1">{stat.value}</p>
                             <p className="text-label-sm text-muted-foreground">{stat.label}</p>

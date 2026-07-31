@@ -5,6 +5,7 @@ import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Icon } from '@/components/ui/Icon';
+import { PerformanceLogoBadge } from '@/components/common/PerformanceLogoBadge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { schoolAnalyticsService } from '@/services/schoolAnalyticsService';
 
@@ -75,7 +76,7 @@ export default function AdminSchoolAnalyticsPage() {
       { icon: 'groups', label: 'Total Students', value: overviewData.totalStudents, color: 'text-primary', bg: 'bg-primary-container' },
       { icon: 'badge', label: 'Total Teachers', value: overviewData.totalTeachers, color: 'text-success', bg: 'bg-success-container' },
       { icon: 'meeting_room', label: 'Total Classes', value: overviewData.totalClasses, color: 'text-warning', bg: 'bg-warning-container' },
-      { icon: 'trending_up', label: 'Avg Performance', value: `${overviewData.averagePerformance}%`, color: 'text-info', bg: 'bg-info-container' },
+      { icon: 'trending_up', label: 'Avg Performance', value: `${overviewData.averagePerformance}%`, color: 'text-info', bg: 'bg-success-container', isPerformanceLogo: true },
       { icon: 'warning', label: 'At Risk Students', value: overviewData.atRiskCount, color: 'text-error', bg: 'bg-error-container' },
     ];
   }, [overviewData]);
@@ -114,9 +115,13 @@ export default function AdminSchoolAnalyticsPage() {
                         {statCards.map((s) => (
                           <Card key={s.label} className="border-border/60">
                             <CardContent className="p-5">
-                              <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${s.bg}`}>
-                                <Icon name={s.icon} size={22} className={s.color} />
-                              </div>
+                              {s.isPerformanceLogo ? (
+                                <PerformanceLogoBadge className={s.bg} />
+                              ) : (
+                                <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${s.bg}`}>
+                                  <Icon name={s.icon} size={22} className={s.color} />
+                                </div>
+                              )}
                               <p className="text-display-xs font-bold tracking-tight mt-4">{s.value}</p>
                               <p className="text-label-sm text-muted-foreground mt-1">{s.label}</p>
                             </CardContent>

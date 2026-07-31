@@ -16,6 +16,7 @@ import { ROUTES } from '@/lib/constants';
 import api from '@/services/api';
 import { getClass } from '@/services/dataService';
 import { mindmapService } from '@/services/mindmapService';
+import { PerformanceLogoBadge } from '@/components/common/PerformanceLogoBadge';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
 import {
@@ -218,16 +219,20 @@ export default function StudentDashboardPage() {
                 >
                   {[
                     { icon: 'school', label: _('Subjects'), value: dash.subjectsCount, color: 'text-primary', bg: 'bg-primary-container' },
-                    { icon: 'grade', label: _('Avg Grade'), value: `${dash.avgGrade}%`, color: 'text-success', bg: 'bg-success-container' },
+                    { icon: 'grade', label: _('Avg Grade'), value: `${dash.avgGrade}%`, color: 'text-success', bg: 'bg-success-container', isPerformanceLogo: true },
                     { icon: 'checklist', label: _('Completed'), value: dash.totalAssessments, color: 'text-warning', bg: 'bg-warning-container' },
                     { icon: 'group', label: _('Class'), value: dash.className ?? '\u2014', color: 'text-tertiary', bg: 'bg-tertiary-container' },
                   ].map((stat) => (
                     <motion.div key={stat.label} variants={cardStackReveal} custom={0}>
                       <Card className="h-full border-border/60">
                         <CardContent className="p-5">
-                          <div className={`h-12 w-12 rounded-xl flex items-center justify-center mb-4 ${stat.bg}`}>
-                            <Icon name={stat.icon} size={22} className={stat.color} />
-                          </div>
+                          {stat.isPerformanceLogo ? (
+                            <PerformanceLogoBadge className={`${stat.bg} mb-4`} />
+                          ) : (
+                            <div className={`h-12 w-12 rounded-xl flex items-center justify-center mb-4 ${stat.bg}`}>
+                              <Icon name={stat.icon} size={22} className={stat.color} />
+                            </div>
+                          )}
                           <p className="text-display-xs font-bold tracking-tight">{stat.value}</p>
                           <p className="text-label-sm text-muted-foreground mt-1">{stat.label}</p>
                         </CardContent>

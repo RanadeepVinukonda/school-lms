@@ -5,6 +5,7 @@ import { motion, useInView } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
+import { PerformanceLogoBadge } from '@/components/common/PerformanceLogoBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -32,7 +33,7 @@ interface NeedsAttentionItem {
 
 interface DashboardData {
   needsAttention: NeedsAttentionItem[];
-  stats: { icon: string; label: string; value: string | number; color: string; bg: string }[];
+  stats: { icon: string; label: string; value: string | number; color: string; bg: string; isPerformanceLogo?: boolean }[];
   teaching: {
     classes: { id: string; name: string }[];
     textbooks: { id: string; title: string; subjectId: string }[];
@@ -154,7 +155,7 @@ export default function TeacherDashboardPage() {
           { icon: 'warning', label: _('Late Submissions'), count: lateAssignmentsCount, color: 'text-destructive', bg: 'bg-destructive/10', link: '/teacher/assignments?filter=late', description: _('Past due date') },
         ],
         stats: [
-          { icon: 'trending_up', label: _('Avg Score'), value: `${avgScore}%`, color: 'text-success', bg: 'bg-success-container' },
+          { icon: 'trending_up', label: _('Avg Score'), value: `${avgScore}%`, color: 'text-success', bg: 'bg-success-container', isPerformanceLogo: true },
           { icon: 'school', label: _('Total Students'), value: teachingStudentCount, color: 'text-primary', bg: 'bg-primary-container' },
           { icon: 'assignment', label: _('Exams Created'), value: allExams.length, color: 'text-secondary', bg: 'bg-secondary-container' },
         ],
@@ -273,9 +274,13 @@ export default function TeacherDashboardPage() {
                     <motion.div key={stat.label} variants={cardStackReveal} custom={0}>
                       <Card className="border-border/60">
                         <CardContent className="p-5 flex items-center gap-4">
-                          <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${stat.bg}`}>
-                            <Icon name={stat.icon} size={22} className={stat.color} />
-                          </div>
+                          {stat.isPerformanceLogo ? (
+                            <PerformanceLogoBadge className={stat.bg} />
+                          ) : (
+                            <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${stat.bg}`}>
+                              <Icon name={stat.icon} size={22} className={stat.color} />
+                            </div>
+                          )}
                           <div>
                             <p className="text-display-xs font-bold tabular-nums leading-none mb-1">{stat.value}</p>
                             <p className="text-label-sm text-muted-foreground">{stat.label}</p>
