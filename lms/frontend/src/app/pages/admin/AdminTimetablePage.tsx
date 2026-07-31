@@ -10,6 +10,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Badge } from '@/components/ui/badge';
 import { timetableService } from '@/services/timetableService';
 import { getAllClasses, getAllSubjects, getAllTeachers } from '@/services/dataService';
+import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
 import { formatClockTime } from '@/lib/format';
 import type { TimetableEntry } from '@/services/timetableService';
 
@@ -59,6 +60,22 @@ export default function AdminTimetablePage() {
   });
 
   const teachers = useMemo(() => teachersData || [], [teachersData]);
+
+  const { data: tcAssignments } = useQuery({
+    queryKey: ['timetable-tc-assignments'],
+    queryFn: () => teacherClassSubjectService.getAll().then((r) => r.data),
+    enabled: !!selectedClassId,
+  });
+
+  const subjectTeacherMap = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const a of (tcAssignments || [])) {
+      if (a.classId && a.subjectId && a.teacherId) {
+        m.set(`${a.classId}|${a.subjectId}`, a.teacherId);
+      }
+    }
+    return m;
+  }, [tcAssignments]);
 
   const { data: allEntriesData } = useQuery({
     queryKey: ['timetable', selectedClassId],
@@ -301,7 +318,12 @@ export default function AdminTimetablePage() {
                               <select
                                 className="h-10 w-full rounded-lg border border-border/50 bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary cursor-pointer"
                                 value={row.subjectId}
-                                onChange={(e) => updateRow(row.id, 'subjectId', e.target.value)}
+                                onChange={(e) => {
+                                  const subjectId = e.target.value;
+                                  const autoTeacher = subjectId ? subjectTeacherMap.get(`${selectedClassId}|${subjectId}`) || '' : '';
+                                  updateRow(row.id, 'subjectId', subjectId);
+                                  if (autoTeacher) updateRow(row.id, 'teacherId', autoTeacher);
+                                }}
                               >
                                 <option value="">— Select subject —</option>
                                 {filteredSubjects.map((s) => (
