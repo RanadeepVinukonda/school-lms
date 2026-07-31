@@ -16,7 +16,7 @@ import { ROUTES } from '@/lib/constants';
 import { getTextbook, getChaptersForTextbook, getConceptsForChapter, getConceptRelease, setConceptRelease } from '@/services/textbookService';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
-import { ConceptDetailMindMap } from '@/components/teacher/ConceptDetailMindMap';
+import { ConceptHierarchyMindMap } from '@/components/teacher/ConceptHierarchyMindMap';
 import { QuestionRenderer } from '@/components/teacher/QuestionRenderer';
 import type { CachedVideo } from '@/types/textbook';
 
@@ -199,7 +199,7 @@ export default function TeacherConceptViewPage() {
         const c = concepts.find((co) => co.id === conceptId);
         if (c) {
           const release = await getConceptRelease(tb.classId, textbookId, conceptId);
-          return { concept: c, chapter: ch, textbook: tb, release };
+          return { concept: c, chapter: ch, chapterConcepts: concepts, textbook: tb, release };
         }
       }
       throw new Error('Concept not found');
@@ -445,7 +445,15 @@ export default function TeacherConceptViewPage() {
                   </TabsContent>
 
                   <TabsContent value="mindmap" className="mt-4">
-                    <ConceptDetailMindMap concept={d.concept} />
+                    <ConceptHierarchyMindMap
+                      chapterTitle={d.chapter.title}
+                      concepts={(d.chapterConcepts || []).map((c: any) => ({ id: c.id, title: c.title }))}
+                      onSelectConcept={(id) => {
+                        if (id !== conceptId) {
+                          navigate(`/teacher/textbooks/${textbookId}/chapters/${chapterId}/concepts/${id}`);
+                        }
+                      }}
+                    />
                   </TabsContent>
 
                   <TabsContent value="studyMaterial" className="mt-4 space-y-4">

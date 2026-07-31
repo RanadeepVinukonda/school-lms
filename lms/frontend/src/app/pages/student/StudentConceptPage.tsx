@@ -19,7 +19,7 @@ import { ROUTES } from '@/lib/constants';
 import { getTextbook, getChaptersForTextbook, getConceptsForChapter, getConceptProgress, saveConceptProgress, getConceptRelease } from '@/services/textbookService';
 import { useAuthStore } from '@/store/authStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { ConceptDetailMindMap } from '@/components/teacher/ConceptDetailMindMap';
+import { ConceptHierarchyMindMap } from '@/components/teacher/ConceptHierarchyMindMap';
 import type { GeneratedQuestion } from '@/types/textbook';
 
 type QuestionType = GeneratedQuestion['type'];
@@ -164,7 +164,7 @@ export default function StudentConceptPage() {
             userId ? getConceptProgress(userId, conceptId) : null,
             getConceptRelease(fb.classId, textbookId, conceptId),
           ]);
-          return { concept: c, chapter: ch, textbook: fb, progress, release };
+          return { concept: c, chapter: ch, chapterConcepts: concepts, textbook: fb, progress, release };
         }
       }
       throw new Error('Concept not found');
@@ -366,7 +366,15 @@ export default function StudentConceptPage() {
                     </TabsContent>
 
                     <TabsContent value="mindmap" className="mt-4">
-                      <ConceptDetailMindMap concept={d.concept} />
+                      <ConceptHierarchyMindMap
+                        chapterTitle={d.chapter.title}
+                        concepts={(d.chapterConcepts || []).map((c: any) => ({ id: c.id, title: c.title }))}
+                        onSelectConcept={(id) => {
+                          if (id !== conceptId) {
+                            navigate(`${ROUTES.STUDENT_CONCEPT(id)}?textbookId=${textbookId}`);
+                          }
+                        }}
+                      />
                     </TabsContent>
 
                     <TabsContent value="quiz" className="mt-4">

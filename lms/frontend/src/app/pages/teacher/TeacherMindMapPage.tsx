@@ -5,7 +5,6 @@ import { Icon } from '@/components/ui/Icon';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useUIStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
 import { mindmapService } from '@/services/mindmapService';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
@@ -17,12 +16,10 @@ import {
   DialogFooter, DialogClose,
 } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import ReactFlow, {
-  Background, Controls,
-  Node, Edge, useNodesState, useEdgesState,
-  MarkerType,
-} from 'reactflow';
-import 'reactflow/dist/style.css';
+import { MindMapCanvas } from '@/components/mindmap/MindMapCanvas';
+import type { Node, Edge } from 'reactflow';
+import { applyNodeChanges, applyEdgeChanges } from 'reactflow';
+import type { OnNodesChange, OnEdgesChange } from 'reactflow';
 
 export default function TeacherMindMapPage() {
   const { _ } = useTranslation();
@@ -38,7 +35,6 @@ export default function TeacherMindMapPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [viewId, setViewId] = useState<string | null>(null);
-  const theme = useUIStore((s) => s.theme);
 
   const { data: savedMindMaps, isLoading: savedLoading, error: savedError, refetch: refetchSaved } = useQuery({
     queryKey: ['teacher-mindmaps', user?.id],
@@ -56,18 +52,22 @@ export default function TeacherMindMapPage() {
     id: n.id,
     position: { x: n.x || 0, y: n.y || 0 },
     data: { label: n.label },
-    style: { background: '#e0f2fe', color: '#0f172a', border: '1px solid #38bdf8', borderRadius: 8, padding: 10 },
   }));
 
   const viewEdges: Edge[] = (viewData?.edges || []).map((e: any) => ({
     id: e.id, source: e.source, target: e.target, label: e.label,
-    markerEnd: { type: MarkerType.ArrowClosed }, style: { stroke: '#94a3b8' },
   }));
 
-  const initialNodes: Node[] = [];
-  const initialEdges: Edge[] = [];
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [nodes, setNodes] = useState<Node[]>([]);
+  const [edges, setEdges] = useState<Edge[]>([]);
+
+  const handleNodesChange = useCallback<OnNodesChange>((changes) => {
+    setNodes((nds) => applyNodeChanges(changes, nds));
+  }, []);
+
+  const handleEdgesChange = useCallback<OnEdgesChange>((changes) => {
+    setEdges((eds) => applyEdgeChanges(changes, eds));
+  }, []);
 
   const generateMindmap = useCallback(async () => {
     if (!text.trim() || !title.trim()) return;
@@ -80,21 +80,12 @@ export default function TeacherMindMapPage() {
         id: n.id,
         position: { x: n.x || 0, y: n.y || 0 },
         data: { label: n.label },
-        style: {
-          background: '#e0f2fe',
-          color: '#0f172a',
-          border: '1px solid #38bdf8',
-          borderRadius: 8,
-          padding: 10,
-        },
       }));
       const flowEdges: Edge[] = (result.edges || []).map((e: any) => ({
         id: e.id,
         source: e.source,
         target: e.target,
         label: e.label,
-        markerEnd: { type: MarkerType.ArrowClosed },
-        style: { stroke: '#94a3b8' },
       }));
       setNodes(flowNodes);
       setEdges(flowEdges);
@@ -105,20 +96,6 @@ export default function TeacherMindMapPage() {
       setLoading(false);
     }
   }, [text, title]);
-
-  useEffect(() => {
-    setNodes((nds) =>
-      nds.map((n) => ({
-        ...n,
-        style: {
-          ...n.style,
-          background: theme === 'dark' ? '#1e293b' : '#e0f2fe',
-          color: theme === 'dark' ? '#e2e8f0' : '#0f172a',
-          border: theme === 'dark' ? '1px solid #334155' : '1px solid #38bdf8',
-        },
-      }))
-    );
-  }, [theme]);
 
   const [assignedClasses, setAssignedClasses] = useState<{ id: string; name: string }[]>([]);
   useEffect(() => {
@@ -255,17 +232,16 @@ export default function TeacherMindMapPage() {
             )}
           </Card>
           <div className="flex-1 border border-outline-variant rounded-xl overflow-hidden">
-            <ReactFlow
+            <MindMapCanvas
               nodes={nodes}
               edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              fitView
-              attributionPosition="bottom-left"
-            >
-              <Background />
-              <Controls />
-            </ReactFlow>
+              layout="none"
+              showMiniMap
+              nodesDraggable
+              onNodesChange={handleNodesChange}
+              onEdgesChange={handleEdgesChange}
+              className="h-full w-full border-0 rounded-none"
+            />
           </div>
         </div>
       </div>
@@ -315,18 +291,13 @@ export default function TeacherMindMapPage() {
             </div>
           ) : viewNodes.length > 0 ? (
             <div className="h-[60vh] border border-outline-variant rounded-xl overflow-hidden">
-              <ReactFlow
+              <MindMapCanvas
                 nodes={viewNodes}
                 edges={viewEdges}
-                fitView
-                attributionPosition="bottom-left"
-                nodesDraggable={false}
-                nodesConnectable={false}
-                elementsSelectable={false}
-              >
-                <Background />
-                <Controls />
-              </ReactFlow>
+                layout="none"
+                showMiniMap
+                className="h-full w-full border-0 rounded-none"
+              />
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-8">{_('No nodes in this mind map.')}</p>
