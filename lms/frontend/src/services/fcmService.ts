@@ -3,6 +3,13 @@ import api from './api';
 let messagingInstance: any = null;
 let currentToken: string | null = null;
 
+async function getServiceWorkerRegistration(): Promise<ServiceWorkerRegistration | undefined> {
+  if (!('serviceWorker' in navigator)) return undefined;
+  const reg = await navigator.serviceWorker.getRegistration().catch(() => undefined);
+  if (reg) return reg;
+  return navigator.serviceWorker.register('/firebase-messaging-sw.js').catch(() => undefined);
+}
+
 function getFirebaseConfig() {
   const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;
   const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
@@ -47,8 +54,10 @@ export async function requestPermission(): Promise<string | null> {
     const { getToken } = await import('firebase/messaging');
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') return null;
+    const serviceWorkerRegistration = await getServiceWorkerRegistration();
     const token = await getToken(messaging, {
       vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+      serviceWorkerRegistration,
     });
     if (token) {
       currentToken = token;
@@ -67,4 +76,26 @@ export async function getFCMToken(): Promise<string | null> {
 
 export function isFirebaseConfigured(): boolean {
   return !!getFirebaseConfig();
+}
+
+/** Listen for foreground FCM messages and invoke the callback with the payload. */
+export async function onForegroundMessage(
+  handler: (payload: { title?: string; body?: string; data?: Record<string, unknown>; notification?: any }) => void,
+): Promise<() => void> {
+  const messaging = await getMessaging();
+  if (!messaging) return () => {};
+  try {
+    const { onMessage } = await import('firebase/messaging');
+    const unsubscribe = onMessage(messaging, (payload: any) => {
+      handler({
+        title: payload?.notification?.title || payload?.data?.title || 'Genesis LMS',
+        body: payload?.notification?.body || payload?.data?.body || '',
+        data: payload?.data || {},
+        notification: payload?.notification,
+      });
+    });
+    return unsubscribe;
+  } catch {
+    return () => {};
+  }
 }

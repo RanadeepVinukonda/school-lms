@@ -11,7 +11,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { getNotificationsByUser, markNotificationRead, markAllNotificationsRead } from '@/services/dataService';
-import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
 import { cn } from '@/lib/utils';
 import { ErrorState } from '@/components/common/ErrorState';
@@ -40,15 +39,11 @@ export default function NotificationsPage() {
     enabled: !!user,
   });
 
-  // Realtime: auto-refresh notifications list when new notifications arrive
-  useRealtimeSubscription({
+  useRealtimeInvalidation([{
     table: 'notifications',
-    event: 'INSERT',
-    filter: user?.id ? { column: 'userId', value: user.id } : undefined,
-    callback: () => { refetch(); },
-  });
-
-  useRealtimeInvalidation([{ table: 'notifications', queryKey: ['notifications-page', user?.id ?? ''] }]);
+    queryKey: ['notifications-page', user?.id ?? ''],
+    filter: user ? { column: 'userId', value: user.id } : undefined,
+  }]);
 
   const displayed = filter === 'unread' ? items.filter((n) => !n.read) : items;
 

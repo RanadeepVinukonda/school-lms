@@ -8,6 +8,8 @@ type RealtimeConfig = {
   queryKey: string[];
   schema?: string;
   event?: '*' | 'INSERT' | 'UPDATE' | 'DELETE';
+  /** Optional equality filter, e.g. { column: 'userId', value: userId } */
+  filter?: { column: string; value: string | number };
 };
 
 export function useRealtimeInvalidation(configs: RealtimeConfig[]) {
@@ -15,13 +17,18 @@ export function useRealtimeInvalidation(configs: RealtimeConfig[]) {
 
   useEffect(() => {
     const channels: RealtimeChannel[] = [];
-    for (const { table, queryKey, schema = 'public', event = '*' } of configs) {
+    for (const { table, queryKey, schema = 'public', event = '*', filter } of configs) {
       try {
         const channel = supabase
           .channel(`realtime-${table}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`)
           .on(
             'postgres_changes' as any,
-            { event, schema, table },
+            {
+              event,
+              schema,
+              table,
+              filter: filter ? `${filter.column}=eq.${filter.value}` : undefined,
+            },
             () => {
               queryClient.invalidateQueries({ queryKey });
             },

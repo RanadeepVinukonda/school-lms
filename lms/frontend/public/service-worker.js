@@ -17,6 +17,62 @@ self.addEventListener('activate', (e) => {
   self.clients.claim();
 });
 
+// ── Push / notification handlers (Firebase Cloud Messaging) ──
+function resolveUrl(raw) {
+  if (!raw) return '/';
+  // Web push links are absolute or app-relative paths
+  return String(raw);
+}
+
+self.addEventListener('push', (e) => {
+  if (!e.data) return;
+  let payload = {};
+  try { payload = e.data.json(); } catch (err) { payload = { notification: {} }; }
+
+  const n = payload.notification || {};
+  const d = payload.data || {};
+  const title = n.title || d.title || 'New notification';
+  const body = n.body || d.body || d.message || '';
+  const icon = n.icon || d.icon || '/icon-192x192.png';
+
+  e.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon,
+      badge: '/icon-192x192.png',
+      data: {
+        url: resolveUrl(d.link || d.url || '/'),
+        notificationId: d.notificationId || d.id || null,
+        type: d.type || 'system',
+      },
+      tag: d.tag || undefined,
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = e.notification.data && e.notification.data.url ? e.notification.data.url : '/';
+
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) {
+          client.navigate(url).catch(() => {});
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(url);
+      }
+    })
+  );
+});
+
+self.addEventListener('notificationclose', (e) => {
+  e.waitUntil(new Promise((resolve) => setTimeout(resolve, 0)));
+});
+
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
   e.respondWith(

@@ -4,6 +4,7 @@ import {
   requestPermission,
   getFCMToken,
   isFirebaseConfigured,
+  onForegroundMessage,
 } from '@/services/fcmService';
 
 function getNotificationPermission(): NotificationPermission {
@@ -34,6 +35,30 @@ export function usePushNotifications(autoRequest = false) {
       request();
     }
   }, [autoRequest, request]);
+
+  // Show a toast when a push arrives while the app is in the foreground.
+  useEffect(() => {
+    if (!isFirebaseConfigured()) return;
+    let unsub: (() => void) | undefined;
+    onForegroundMessage((payload) => {
+      if (!payload.title && !payload.body) return;
+      toast(payload.title, {
+        description: payload.body,
+        action: payload.data?.link
+          ? {
+              label: 'Open',
+              onClick: () => {
+                const url = String(payload.data?.link);
+                if (url.startsWith('/')) window.location.href = url;
+              },
+            }
+          : undefined,
+      });
+    }).then((fn) => {
+      unsub = fn;
+    });
+    return () => unsub?.();
+  }, []);
 
   return { permission, token, requestPermission: request };
 }

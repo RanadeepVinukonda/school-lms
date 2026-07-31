@@ -115,7 +115,11 @@ export default function NotificationDropdown() {
     enabled: !!user && open,
   });
 
-  useRealtimeInvalidation([{ table: 'notifications', queryKey: ['notifications-dropdown-infinite', user?.id ?? ''] }]);
+  useRealtimeInvalidation([{
+    table: 'notifications',
+    queryKey: ['notifications-dropdown-infinite', user?.id ?? ''],
+    filter: user ? { column: 'userId', value: user.id } : undefined,
+  }]);
 
   const rawItems = useMemo(
     () => infiniteData?.pages.flatMap((p) => p.data) ?? [],
