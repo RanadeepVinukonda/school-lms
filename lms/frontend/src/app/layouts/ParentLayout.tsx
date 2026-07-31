@@ -39,7 +39,7 @@ const navGroups: NavGroup[] = [
       { label: 'My Children', href: ROUTES.PARENT_CHILDREN, icon: 'family_restroom' },
       { label: 'Reports', href: ROUTES.PARENT_REPORTS, icon: 'assessment' },
       { label: 'Notice Board', href: ROUTES.PARENT_NOTICEBOARD, icon: 'campaign' },
-      { label: 'Report & Suggestion', href: ROUTES.PARENT_REPORT, icon: 'rate_review' },
+      { label: 'Report & Suggestion', href: ROUTES.PARENT_REPORT, icon: 'feedback' },
     ],
   },
 ];
@@ -49,7 +49,7 @@ const mobileNavItems: NavItem[] = [
   { label: 'Children', href: ROUTES.PARENT_CHILDREN, icon: 'family_restroom' },
   { label: 'Reports', href: ROUTES.PARENT_REPORTS, icon: 'assessment' },
   { label: 'Notice Board', href: ROUTES.PARENT_NOTICEBOARD, icon: 'campaign' },
-  { label: 'Report & Suggestion', href: ROUTES.PARENT_REPORT, icon: 'rate_review' },
+  { label: 'Report & Suggestion', href: ROUTES.PARENT_REPORT, icon: 'feedback' },
 ];
 
 export default function ParentLayout() {
