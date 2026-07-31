@@ -38,6 +38,12 @@ export async function deleteMindMap(req: Request, res: Response) {
   sendNoContent(res);
 }
 
+export async function removeSharedMindMap(req: Request, res: Response) {
+  if (!req.user) throw new ValidationError('Authentication required');
+  await mindmapService.removeSharedMindMap(req.params.id, req.user.uid);
+  sendNoContent(res);
+}
+
 export async function getUserMindMaps(req: Request, res: Response) {
   if (!req.user) throw new ValidationError('Authentication required');
   const mindMaps = await mindmapService.getUserMindMaps(req.user.uid);

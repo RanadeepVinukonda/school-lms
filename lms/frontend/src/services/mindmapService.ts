@@ -26,6 +26,10 @@ export const mindmapService = {
     await api.delete(`/mindmaps/${id}`);
   },
 
+  async removeShared(id: string) {
+    await api.delete(`/mindmaps/${id}/remove-share`);
+  },
+
   async getUserMindMaps() {
     const res = await api.get<ApiResponse<MindMap[]>>('/mindmaps/user');
     return res.data.data;

@@ -106,6 +106,24 @@ export async function deleteMindMap(mindmapId: string, userId: string): Promise<
   await deleteDocument('mindmaps', mindmapId);
 }
 
+export async function removeSharedMindMap(mindmapId: string, userId: string): Promise<void> {
+  const existing = await getDoc(mindmapId);
+  if (!existing) throw new NotFoundError('Mind map not found');
+  const data = existing.data as MindMap;
+  if (data.ownerId === userId) {
+    throw new ForbiddenError('Owner cannot remove their own mind map');
+  }
+  if (!data.sharedWith.includes(userId)) {
+    throw new ForbiddenError('You do not have access to this mind map');
+  }
+  const updated = {
+    ...data,
+    sharedWith: data.sharedWith.filter((id) => id !== userId),
+    updatedAt: new Date().toISOString(),
+  };
+  await setDoc(mindmapId, updated as unknown as Record<string, unknown>);
+}
+
 export async function getUserMindMaps(userId: string): Promise<MindMap[]> {
   const supabase = getSupabaseAdmin()!;
   const { data: rows, error } = await supabase.from('firestore_docs').select('doc_id, data')

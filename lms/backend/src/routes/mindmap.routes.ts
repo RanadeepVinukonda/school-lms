@@ -52,6 +52,7 @@ router.get('/shared', authenticate, asyncHandler(mindmapController.getSharedMind
 router.get('/:id', authenticate, asyncHandler(mindmapController.getMindMap));
 router.put('/:id', authenticate, validate(updateMindMapSchema), asyncHandler(mindmapController.updateMindMap));
 router.delete('/:id', authenticate, asyncHandler(mindmapController.deleteMindMap));
+router.delete('/:id/remove-share', authenticate, asyncHandler(mindmapController.removeSharedMindMap));
 router.post('/:id/share', authenticate, validate(shareMindMapSchema), asyncHandler(mindmapController.shareMindMap));
 router.post('/:id/push-to-classes', authenticate, validate(pushToClassesSchema), asyncHandler(mindmapController.pushMindMapToClasses));
 router.post('/:id/pin-resource', authenticate, validate(pinResourceSchema), asyncHandler(mindmapController.pinResource));
