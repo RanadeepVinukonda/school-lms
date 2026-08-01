@@ -6,6 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   bundledWebRuntime: false,
   server: {
+    url: 'https://genesis-frontend-teal.vercel.app',
     androidScheme: 'https',
     allowNavigation: [
       'school-lms-api-b8cn.onrender.com',

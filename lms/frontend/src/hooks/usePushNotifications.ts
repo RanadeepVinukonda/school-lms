@@ -5,6 +5,7 @@ import {
   getFCMToken,
   isFirebaseConfigured,
   onForegroundMessage,
+  onNativePushAction,
 } from '@/services/fcmService';
 
 function getNotificationPermission(): NotificationPermission {
@@ -54,6 +55,21 @@ export function usePushNotifications(autoRequest = false) {
             }
           : undefined,
       });
+    }).then((fn) => {
+      unsub = fn;
+    });
+    return () => unsub?.();
+  }, []);
+
+  // Deep-link navigation when a native push notification is tapped.
+  useEffect(() => {
+    if (!isFirebaseConfigured()) return;
+    let unsub: (() => void) | undefined;
+    onNativePushAction((data) => {
+      const link = data?.link || data?.url;
+      if (link && String(link).startsWith('/')) {
+        window.location.href = String(link);
+      }
     }).then((fn) => {
       unsub = fn;
     });

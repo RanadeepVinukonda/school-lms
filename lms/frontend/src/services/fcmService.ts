@@ -3,11 +3,18 @@ import api from './api';
 let messagingInstance: any = null;
 let currentToken: string | null = null;
 
-async function getServiceWorkerRegistration(): Promise<ServiceWorkerRegistration | undefined> {
-  if (!('serviceWorker' in navigator)) return undefined;
-  const reg = await navigator.serviceWorker.getRegistration().catch(() => undefined);
-  if (reg) return reg;
-  return navigator.serviceWorker.register('/firebase-messaging-sw.js').catch(() => undefined);
+async function isNativePlatform(): Promise<boolean> {
+  try {
+    const { Capacitor } = await import('@capacitor/core');
+    return Capacitor.isNativePlatform();
+  } catch {
+    return false;
+  }
+}
+
+function getServiceWorkerRegistration(): Promise<ServiceWorkerRegistration | undefined> {
+  if (!('serviceWorker' in navigator)) return Promise.resolve(undefined);
+  return navigator.serviceWorker.getRegistration().catch(() => undefined);
 }
 
 function getFirebaseConfig() {
@@ -46,8 +53,44 @@ async function getMessaging() {
   }
 }
 
+async function requestNativePermission(): Promise<string | null> {
+  if (currentToken) return currentToken;
+  try {
+    const { PushNotifications } = await import('@capacitor/push-notifications');
+    let permission = await PushNotifications.checkPermissions();
+    if (permission.receive !== 'granted') {
+      permission = await PushNotifications.requestPermissions();
+    }
+    if (permission.receive !== 'granted') return null;
+
+    await PushNotifications.register();
+    const token = await new Promise<string | null>((resolve) => {
+      const timeout = setTimeout(() => resolve(null), 10000);
+      PushNotifications.addListener('registration', (event: any) => {
+        clearTimeout(timeout);
+        resolve(event?.value || null);
+      });
+      PushNotifications.addListener('registrationError', () => {
+        clearTimeout(timeout);
+        resolve(null);
+      });
+    });
+
+    if (token) {
+      currentToken = token;
+      await api.post('/device-tokens', { token, platform: 'android' }).catch(() => {});
+    }
+    return token;
+  } catch {
+    return null;
+  }
+}
+
 export async function requestPermission(): Promise<string | null> {
   if (currentToken) return currentToken;
+  if (await isNativePlatform()) {
+    return requestNativePermission();
+  }
   const messaging = await getMessaging();
   if (!messaging) return null;
   try {
@@ -78,10 +121,26 @@ export function isFirebaseConfigured(): boolean {
   return !!getFirebaseConfig();
 }
 
-/** Listen for foreground FCM messages and invoke the callback with the payload. */
+/** Listen for foreground push messages and invoke the callback with the payload. */
 export async function onForegroundMessage(
   handler: (payload: { title?: string; body?: string; data?: Record<string, unknown>; notification?: any }) => void,
 ): Promise<() => void> {
+  if (await isNativePlatform()) {
+    try {
+      const { PushNotifications } = await import('@capacitor/push-notifications');
+      const handle = await PushNotifications.addListener('pushNotificationReceived', (event: any) => {
+        const payload = event?.notification || event || {};
+        handler({
+          title: payload.title || payload?.data?.title || 'Genesis LMS',
+          body: payload.body || payload?.data?.body || '',
+          data: payload?.data || {},
+        });
+      });
+      return () => { handle.remove(); };
+    } catch {
+      return () => {};
+    }
+  }
   const messaging = await getMessaging();
   if (!messaging) return () => {};
   try {
@@ -95,6 +154,22 @@ export async function onForegroundMessage(
       });
     });
     return unsubscribe;
+  } catch {
+    return () => {};
+  }
+}
+
+/** Register a tap handler for native push notifications (deep-link to the app). */
+export async function onNativePushAction(
+  handler: (data: Record<string, unknown>) => void,
+): Promise<() => void> {
+  if (!(await isNativePlatform())) return () => {};
+  try {
+    const { PushNotifications } = await import('@capacitor/push-notifications');
+    const handle = await PushNotifications.addListener('pushNotificationActionPerformed', (event: any) => {
+      handler(event?.notification?.data || event?.data || {});
+    });
+    return () => { handle.remove(); };
   } catch {
     return () => {};
   }
