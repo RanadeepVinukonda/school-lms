@@ -86,16 +86,23 @@ export function buildFCMMessage(
   return message;
 }
 
-// ── Android native FCM message builder (data-only) ────────
+// ── Android native FCM message builder ────────────────────
 //
-// Android notifications are rendered entirely by the app's native
-// GenesisMessagingService (custom FirebaseMessagingService) so they can show the
-// full-color Genesis logo, grouped Inbox-style summaries, foreground heads-up
-// popups and an accurate launcher badge even when the app is killed. FCM only
-// hands `data` to a service's onMessageReceived in every app state — the `data`
-// payload below therefore carries everything the native renderer needs
-// (title/body/unread count are part of the `notification` block on the web
-// message, so they must be duplicated here for Android).
+// The message carries BOTH `data` and `notification`:
+//  - `data` feeds the app's custom GenesisMessagingService renderer, which shows
+//    the full-color logo, grouped Inbox-style summary, foreground heads-up popup
+//    and launcher badge whenever the app process is alive (foreground, or
+//    background with a warm process).
+//  - `notification` guarantees the *system* renders the message even when the
+//    app process is dead (swiped away, killed, or blocked by an OEM battery
+//    manager). A data-only message requires waking the process, which Android
+//    routinely refuses; the system notification uses the manifest's monochrome
+//    Genesis icon + brand color, the per-category channel and a tap that opens
+//    the app with the full `data` payload for deep-linking.
+//
+// When the app is in the foreground the system does not auto-display the
+// `notification` block — it is delivered to onMessageReceived, so the custom
+// renderer still owns the heads-up experience and no duplicate appears.
 
 export function buildAndroidDataMessage(
   tokens: string[],
@@ -116,12 +123,23 @@ export function buildAndroidDataMessage(
   if (unreadCount && unreadCount > 0) payload.unreadCount = String(unreadCount);
 
   const message: Record<string, unknown> = {
+    notification: { title, body },
     data: payload,
     tokens,
     android: {
       priority: 'high',
       // No explicit TTL: firebase-admin rejects plain '86400' strings, and FCM's
       // default TTL (4 weeks) is fine for school notifications.
+      notification: {
+        channelId: categoryToChannelId(category),
+        color: '#26A69A',
+        icon: 'ic_stat_genesis',
+        // Show content on the lock screen (matches 'public' visibility).
+        visibility: 'public',
+        // System-applied launcher badge count (Android 12+ supported launchers)
+        // so the app-icon badge updates even when the app is closed.
+        ...(unreadCount && unreadCount > 0 ? { notificationCount: unreadCount } : {}),
+      },
     },
   };
 
