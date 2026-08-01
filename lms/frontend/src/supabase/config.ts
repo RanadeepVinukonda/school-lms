@@ -9,5 +9,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = (supabaseUrl && supabaseAnonKey)
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        // Single refresh authority: the backend /auth/refresh rotates tokens via
+        // api.ts and syncs back with setSession. If the SDK also auto-refreshes,
+        // two systems rotate the same refresh-token chain and break each other.
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    })
   : (null as unknown as ReturnType<typeof createClient>);

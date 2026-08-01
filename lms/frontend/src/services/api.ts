@@ -40,6 +40,11 @@ async function fetchAndCacheCsrfToken(): Promise<string | null> {
       const bodyToken = response.data?.data?.csrfToken;
       if (bodyToken) {
         cachedCsrfToken = bodyToken;
+        // Write the cookie via JS too so the WebView always has a matching
+        // csrf-token cookie even if the Set-Cookie header was dropped.
+        try {
+          document.cookie = `${CSRF_COOKIE_NAME}=${encodeURIComponent(bodyToken)}; path=/; SameSite=None; Secure`;
+        } catch { /* ignore */ }
         return bodyToken;
       }
       return readCsrfCookie();
@@ -91,48 +96,56 @@ function isTokenExpired(token: string): boolean {
   return (payload.exp as number) * 1000 + 60 * 1000 < Date.now();
 }
 
-const AUTH_TIMEOUT_MS = 10000;
+async function refreshViaBackend(): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const storeState = useAuthStore.getState();
+  // Fall back to the persisted refresh token when the SDK session is
+  // missing/stale (WebView storage cleared, background throttle, desync).
+  const refreshToken = session?.refresh_token || storeState.refreshToken;
+  if (!refreshToken) return null;
 
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timed out')), ms)),
-  ]);
+  const refreshRes = await api.post('/auth/refresh', { refresh_token: refreshToken }, { timeout: 5000 });
+  const newToken = refreshRes.data?.data?.token;
+  if (!newToken) return null;
+
+  const newRefreshToken = refreshRes.data?.data?.refresh_token;
+  cachedToken = newToken;
+  tokenExpiresAt = decodeAndGetExp(newToken);
+  // Sync the rotated tokens back into the SDK AND the persisted store so the
+  // new refresh token is never lost across reloads/backgrounding.
+  try {
+    await supabase.auth.setSession({
+      access_token: newToken,
+      refresh_token: newRefreshToken || refreshToken,
+    });
+  } catch { /* ignore */ }
+  useAuthStore.getState().setSessionTokens(newToken, newRefreshToken || refreshToken);
+  return newToken;
 }
 
 async function getAccessToken(): Promise<string | null> {
   // Use cached token if still valid
   if (cachedToken && !isTokenExpired(cachedToken)) return cachedToken;
 
-  // Try refreshing the Supabase session first (handles auto-refresh behind the scenes)
-  try {
-    const { data: { session } } = await withTimeout(supabase.auth.refreshSession(), AUTH_TIMEOUT_MS);
-    if (session?.access_token) {
-      cachedToken = session.access_token;
-      const payload = decodeJwtPayload(session.access_token);
-      tokenExpiresAt = payload?.exp ? (payload.exp as number) * 1000 : 0;
-      useAuthStore.getState().setSessionTokens(session.access_token, session.refresh_token || undefined);
-      return cachedToken;
-    }
-  } catch { /* fall through */ }
-
-  // Try getting the current session (if refresh didn't work)
-  try {
-    const { data: { session } } = await withTimeout(supabase.auth.getSession(), AUTH_TIMEOUT_MS);
-    if (session?.access_token) {
-      cachedToken = session.access_token;
-      const payload = decodeJwtPayload(session.access_token);
-      tokenExpiresAt = payload?.exp ? (payload.exp as number) * 1000 : 0;
-      return cachedToken;
-    }
-  } catch { /* fall through */ }
-
-  // Fallback to persisted store token (use even if locally expired — backend will return 401 to trigger refresh)
+  // Use the persisted store token if still valid (avoids a network round-trip)
   const storeToken = useAuthStore.getState().token;
+  if (storeToken && !isTokenExpired(storeToken)) {
+    cachedToken = storeToken;
+    tokenExpiresAt = decodeAndGetExp(storeToken);
+    return cachedToken;
+  }
+
+  // Token missing/expired — rotate via the backend (single refresh authority).
+  try {
+    const newToken = await refreshViaBackend();
+    if (newToken) return newToken;
+  } catch { /* fall through */ }
+
+  // Last resort: send the store token even if locally expired — the backend
+  // returns 401 and the response interceptor drives the refresh + retry.
   if (storeToken) {
     cachedToken = storeToken;
-    const payload = decodeJwtPayload(storeToken);
-    if (payload?.exp) tokenExpiresAt = (payload.exp as number) * 1000;
+    tokenExpiresAt = decodeAndGetExp(storeToken);
     return cachedToken;
   }
 
@@ -189,13 +202,8 @@ function decodeAndGetExp(token: string): number {
 
 async function tryRefreshToken(): Promise<boolean> {
   try {
-    const { data: { session } } = await withTimeout(supabase.auth.refreshSession(), AUTH_TIMEOUT_MS);
-    if (session?.access_token) {
-      cachedToken = session.access_token;
-      tokenExpiresAt = decodeAndGetExp(session.access_token);
-      useAuthStore.getState().setSessionTokens(session.access_token, session.refresh_token || undefined);
-      return true;
-    }
+    const newToken = await refreshViaBackend();
+    return !!newToken;
   } catch { /* ignore */ }
   return false;
 }
@@ -281,30 +289,12 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const storeState = useAuthStore.getState();
-        // Fall back to the persisted refresh token when the SDK session is
-        // missing/stale (WebView storage cleared, background throttle, desync).
-        const refreshToken = session?.refresh_token || storeState.refreshToken;
-        if (!refreshToken) throw new Error('No refresh token');
-
-        const refreshRes = await api.post('/auth/refresh', { refresh_token: refreshToken }, { timeout: 5000 });
-        // Sync refreshed tokens back into the Supabase client AND the persisted
-        // store so the rotated refresh token is never lost.
-        const newToken = refreshRes.data?.data?.token;
-        const newRefreshToken = refreshRes.data?.data?.refresh_token;
+        const newToken = await refreshViaBackend();
         if (newToken) {
-          cachedToken = newToken; // update cache
-          tokenExpiresAt = decodeAndGetExp(newToken);
-          await supabase.auth.setSession({
-            access_token: newToken,
-            refresh_token: newRefreshToken || refreshToken,
-          });
-          useAuthStore.getState().setSessionTokens(newToken, newRefreshToken || refreshToken);
           processQueue(null);
         } else {
-          // No new token returned — treat as refresh failure
-          throw new Error('Refresh endpoint did not return a new token');
+          // No refresh token anywhere — the session is unrecoverable.
+          throw new Error('No refresh token');
         }
         return api(originalRequest);
       } catch (refreshError) {
@@ -314,9 +304,10 @@ api.interceptors.response.use(
         const refreshStatus = (refreshError as any)?.response?.status ?? (refreshError as any)?.status;
         const code = (refreshError as any)?.code;
         const msg = String((refreshError as any)?.message || '').toLowerCase();
-        const transient = !refreshStatus || refreshStatus === 502 || refreshStatus === 503 || refreshStatus >= 500 || code === 'ECONNABORTED' || msg.includes('network');
+        const noRefreshToken = msg.includes('no refresh token');
+        const transient = !noRefreshToken && (!refreshStatus || refreshStatus === 502 || refreshStatus === 503 || refreshStatus >= 500 || code === 'ECONNABORTED' || msg.includes('network'));
 
-        if (!transient) {
+        if (noRefreshToken || !transient) {
           cachedToken = null;
           await useAuthStore.getState().logout();
           const errData = error.response?.data;
