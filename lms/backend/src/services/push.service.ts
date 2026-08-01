@@ -86,6 +86,51 @@ export function buildFCMMessage(
   return message;
 }
 
+// ── Android native FCM message builder (data-only) ────────
+//
+// Android notifications are rendered entirely by the app's native
+// GenesisMessagingService (custom FirebaseMessagingService) so they can show the
+// full-color Genesis logo, grouped Inbox-style summaries, foreground heads-up
+// popups and an accurate launcher badge even when the app is killed. FCM only
+// hands `data` to a service's onMessageReceived in every app state — the `data`
+// payload below therefore carries everything the native renderer needs
+// (title/body/unread count are part of the `notification` block on the web
+// message, so they must be duplicated here for Android).
+
+export function buildAndroidDataMessage(
+  tokens: string[],
+  title: string,
+  body: string,
+  data?: Record<string, unknown>,
+  type?: string,
+  unreadCount?: number,
+) {
+  const category = type ? typeToCategory(type) : 'general';
+  const entityId = data?.entityId ?? data?.id;
+  const key = collapseKeyFor(type || '', typeof entityId === 'string' ? entityId : undefined);
+
+  const payload = stringifyData(data, type);
+  payload.title = title;
+  payload.body = body;
+  payload.category = category;
+  if (unreadCount && unreadCount > 0) payload.unreadCount = String(unreadCount);
+
+  const message: Record<string, unknown> = {
+    data: payload,
+    tokens,
+    android: {
+      priority: 'high',
+      ttl: '86400',
+    },
+  };
+
+  if (key) {
+    (message.android as Record<string, unknown>).collapseKey = key;
+  }
+
+  return message;
+}
+
 // ── Expo Push API helper ─────────────────────────────────
 
 async function sendExpoPush(tokens: string[], title: string, body: string, data?: Record<string, unknown>) {
@@ -195,7 +240,15 @@ async function cleanupStaleTokens(tokens: string[], responses: Array<{ success: 
   }
 }
 
-async function sendFCMPush(tokens: string[], title: string, body: string, data?: Record<string, unknown>, type?: string, unreadCount?: number) {
+async function sendFCMPush(
+  tokens: string[],
+  platform: 'android' | 'web',
+  title: string,
+  body: string,
+  data?: Record<string, unknown>,
+  type?: string,
+  unreadCount?: number,
+) {
   const fcm = await getFirebaseMessaging();
   if (tokens.length === 0) return { successCount: 0, failureCount: 0 };
   if (!fcm) {
@@ -208,7 +261,12 @@ async function sendFCMPush(tokens: string[], title: string, body: string, data?:
 
   for (let i = 0; i < tokens.length; i += FCM_BATCH_SIZE) {
     const chunk = tokens.slice(i, i + FCM_BATCH_SIZE);
-    const message = buildFCMMessage(chunk, title, body, data, type, unreadCount);
+    // Android gets a data-only message rendered by the native service; web gets
+    // the unchanged notification+data message handled by the service worker.
+    const message =
+      platform === 'android'
+        ? buildAndroidDataMessage(chunk, title, body, data, type, unreadCount)
+        : buildFCMMessage(chunk, title, body, data, type, unreadCount);
     const result = await sendFCMChunkWithRetry(fcm, message);
 
     // Clean up stale tokens from this chunk
@@ -264,23 +322,27 @@ export async function sendPush(userId: string, type: string, title: string, body
     return;
   }
 
-  // Split tokens by format: Expo push tokens vs FCM tokens
+  // Split tokens by format/platform: Expo push tokens, Android FCM tokens
+  // (rendered natively) and web FCM tokens (service-worker rendered).
   const expoTokens: string[] = [];
-  const fcmTokens: string[] = [];
+  const fcmAndroid: string[] = [];
+  const fcmWeb: string[] = [];
 
   for (const t of tokens) {
     if (typeof t.token !== 'string') continue;
     // Auto-detect: explicit platform field OR token format heuristic
     if (t.platform === 'expo' || isExpoPushToken(t.token)) {
       expoTokens.push(t.token);
+    } else if (t.platform === 'android') {
+      fcmAndroid.push(t.token);
     } else {
-      fcmTokens.push(t.token);
+      fcmWeb.push(t.token);
     }
   }
 
   // Send to both channels in parallel
   let unreadCount = 0;
-  if (fcmTokens.length > 0) {
+  if (fcmAndroid.length > 0 || fcmWeb.length > 0) {
     const { count } = await supabase
       .from('notifications')
       .select('id', { count: 'exact', head: true })
@@ -289,13 +351,14 @@ export async function sendPush(userId: string, type: string, title: string, body
     unreadCount = count || 0;
   }
 
-  const [expoResult, fcmResult] = await Promise.all([
+  const [expoResult, androidResult, webResult] = await Promise.all([
     sendExpoPush(expoTokens, title, body, data),
-    sendFCMPush(fcmTokens, title, body, data, type, unreadCount),
+    sendFCMPush(fcmAndroid, 'android', title, body, data, type, unreadCount),
+    sendFCMPush(fcmWeb, 'web', title, body, data, type, unreadCount),
   ]);
 
-  const totalSuccess = expoResult.successCount + fcmResult.successCount;
-  const totalFailure = expoResult.failureCount + fcmResult.failureCount;
+  const totalSuccess = expoResult.successCount + androidResult.successCount + webResult.successCount;
+  const totalFailure = expoResult.failureCount + androidResult.failureCount + webResult.failureCount;
 
   if (totalSuccess > 0 || totalFailure > 0) {
     logger.info('Push sent', {
@@ -303,7 +366,8 @@ export async function sendPush(userId: string, type: string, title: string, body
       type,
       category,
       expoTokens: expoTokens.length,
-      fcmTokens: fcmTokens.length,
+      fcmAndroidTokens: fcmAndroid.length,
+      fcmWebTokens: fcmWeb.length,
       successCount: totalSuccess,
       failureCount: totalFailure,
     });
