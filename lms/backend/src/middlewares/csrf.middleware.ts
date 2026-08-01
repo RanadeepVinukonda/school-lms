@@ -65,11 +65,21 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
     return next();
   }
 
+  // A Bearer token in the Authorization header already defeats CSRF: a cross-site
+  // attacker cannot set that header (it triggers a CORS preflight that the browser
+  // blocks), so its presence proves the request is not a forged cross-origin form.
+  // This keeps native WebViews working even when they cannot store/persist the
+  // csrf-token cookie (third-party cookie blocking). Invalid tokens still get
+  // rejected by the auth middleware before any state changes.
+  const hasBearerToken =
+    typeof req.headers.authorization === 'string' &&
+    req.headers.authorization.startsWith('Bearer ');
+
   const cookies = getCookies(req);
   const cookieToken = cookies[CSRF_COOKIE];
   const headerToken = req.headers[CSRF_HEADER] as string | undefined;
 
-  if (!cookieToken || !headerToken || cookieToken !== headerToken) {
+  if (!hasBearerToken && (!cookieToken || !headerToken || cookieToken !== headerToken)) {
     res.status(403).json({
       success: false,
       error: { message: 'Invalid or missing CSRF token. Include x-csrf-token header matching csrf-token cookie.' },

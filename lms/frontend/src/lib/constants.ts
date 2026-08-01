@@ -1,4 +1,5 @@
 import type { UserRole } from '@/types';
+import { Capacitor } from '@capacitor/core';
 
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
   super_admin: 100,
@@ -118,7 +119,15 @@ export const ROUTES = {
   K2_FLASHCARD_CATEGORY: (category: string) => `/k2/flashcards/${category}`,
 } as const;
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+// Native app: the WebView loads the deployed site, so relative /api goes through
+// the same-origin Vercel proxy (vercel.json) to Render. That makes the csrf-token
+// and session cookies first-party, which the Android WebView stores reliably.
+// (Cross-origin direct-to-Render calls rely on third-party cookies, which WebViews
+// often drop — that caused every create/edit to fail with a CSRF 403.)
+export const API_BASE_URL =
+  import.meta.env.DEV === false && Capacitor.isNativePlatform()
+    ? '/api'
+    : import.meta.env.VITE_API_BASE_URL || '/api';
 
 export const PAGINATION = {
   DEFAULT_PAGE_SIZE: 20,
