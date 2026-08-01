@@ -15,7 +15,7 @@ jest.mock('../config/env', () => ({
   },
 }));
 
-import { sendPush, sendPushBulk } from '../services/push.service';
+import { sendPush, sendPushBulk, buildFCMMessage } from '../services/push.service';
 
 describe('push.service', () => {
   let fetchSpy: any;
@@ -80,5 +80,49 @@ describe('push.service', () => {
 
     await sendPush('u1', 'info', 'Hello', 'World');
     expect(mockQuery.update).toHaveBeenCalled();
+  });
+
+  it('respects per-category push preference (disabled)', async () => {
+    mockQuery.maybeSingle.mockResolvedValue({ data: { push_enabled: false }, error: null } as any);
+    (mockQuery as any).data = [{ token: 'ExponentPushToken[xxx]', platform: 'android' }];
+
+    await sendPush('u1', 'info', 'Hello', 'World');
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not respect category pref when no row exists', async () => {
+    mockQuery.maybeSingle.mockResolvedValue({ data: null, error: null } as any);
+    (mockQuery as any).data = [{ token: 'ExponentPushToken[xxx]', platform: 'android' }];
+
+    await sendPush('u1', 'info', 'Hello', 'World');
+    expect(fetchSpy).toHaveBeenCalled();
+  });
+});
+
+describe('buildFCMMessage', () => {
+  it('builds a high-priority message with mapped channel', () => {
+    const msg = buildFCMMessage(['tok'], 'Title', 'Body', { type: 'assignment' }, 'assignment');
+    expect(msg.tokens).toEqual(['tok']);
+    expect((msg as any).android.priority).toBe('high');
+    expect((msg as any).android.notification.channelId).toBe('assignments');
+    expect((msg as any).android.notification.icon).toBe('ic_stat_genesis');
+    expect((msg as any).android.notification.sound).toBe('default');
+  });
+
+  it('stringifies data and includes type/category', () => {
+    const msg = buildFCMMessage(['tok'], 'T', 'B', { key: { nested: 1 }, entityId: 'a1' }, 'quiz');
+    expect(msg.data.key).toBe('{"nested":1}');
+    expect(msg.data.entityId).toBe('a1');
+    expect(msg.data.type).toBe('quiz');
+    expect(msg.data.category).toBe('quizzes');
+  });
+
+  it('adds collapse key and tag when entityId present', () => {
+    const withId = buildFCMMessage(['tok'], 'T', 'B', { entityId: 'a1' }, 'assignment');
+    expect((withId as any).android.collapseKey).toBe('g:assignments:a1');
+    expect((withId as any).android.notification.tag).toBe('g:assignments:a1');
+
+    const withoutId = buildFCMMessage(['tok'], 'T', 'B', {}, 'assignment');
+    expect((withoutId as any).android.collapseKey).toBeUndefined();
   });
 });

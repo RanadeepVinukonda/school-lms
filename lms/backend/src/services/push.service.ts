@@ -1,6 +1,7 @@
 import { env } from '../config/env';
 import { logger } from '../utils/logger';
 import { getSupabaseAdmin } from './supabase';
+import { typeToCategory, categoryToChannelId, collapseKeyFor } from './push.mappings';
 
 // ── Firebase Admin SDK initialization ────────────────────
 let firebaseApp: any = null;
@@ -28,6 +29,57 @@ function isExpoPushToken(token: string): boolean {
   return token.startsWith('ExponentPushToken[') || token.startsWith('expo_push_token[');
 }
 
+function stringifyData(data?: Record<string, unknown>, type?: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (type) out.type = type;
+  if (type) out.category = typeToCategory(type);
+  if (data) {
+    for (const [k, v] of Object.entries(data)) {
+      out[k] = typeof v === 'object' && v !== null ? JSON.stringify(v) : String(v);
+    }
+  }
+  return out;
+}
+
+// ── FCM message builder (exported for unit testing) ──────
+
+export function buildFCMMessage(
+  tokens: string[],
+  title: string,
+  body: string,
+  data?: Record<string, unknown>,
+  type?: string,
+) {
+  const category = type ? typeToCategory(type) : 'general';
+  const entityId = data?.entityId ?? data?.id;
+  const key = collapseKeyFor(type || '', typeof entityId === 'string' ? entityId : undefined);
+
+  const message: Record<string, unknown> = {
+    notification: { title, body },
+    data: stringifyData(data, type),
+    tokens,
+    android: {
+      priority: 'high',
+      notification: {
+        channelId: categoryToChannelId(category),
+        sound: 'default',
+        color: '#2563eb',
+        icon: 'ic_stat_genesis',
+      },
+    },
+    webpush: {
+      headers: { Urgency: 'high', TTL: '86400' },
+    },
+  };
+
+  if (key) {
+    (message.android as Record<string, unknown>).collapseKey = key;
+    ((message.android as any).notification.tag) = key;
+  }
+
+  return message;
+}
+
 // ── Expo Push API helper ─────────────────────────────────
 
 async function sendExpoPush(tokens: string[], title: string, body: string, data?: Record<string, unknown>) {
@@ -37,7 +89,7 @@ async function sendExpoPush(tokens: string[], title: string, body: string, data?
     to: token,
     title,
     body,
-    data: data ? Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])) : undefined,
+    data: data ? stringifyData(data) : undefined,
   }));
 
   // Expo accepts batch of up to 100
@@ -90,40 +142,75 @@ async function sendExpoPush(tokens: string[], title: string, body: string, data?
 
 // ── FCM push helper ──────────────────────────────────────
 
-async function sendFCMPush(tokens: string[], title: string, body: string, data?: Record<string, unknown>) {
+const FCM_BATCH_SIZE = 500;
+const TRANSIENT_CODES = new Set([
+  'messaging/server-unavailable',
+  'messaging/internal-error',
+  'messaging/quota-exceeded',
+  'messaging/third-party-auth-error',
+  'app/network-error',
+  'messaging/message-rate-exceeded',
+]);
+
+async function sendFCMChunkWithRetry(fcm: any, message: Record<string, unknown>, attempt = 0): Promise<{
+  successCount: number;
+  failureCount: number;
+  responses?: Array<{ success: boolean; error?: { code?: string } }>;
+}> {
+  try {
+    const response = await fcm.sendEachForMulticast(message);
+    return {
+      successCount: response.successCount || 0,
+      failureCount: response.failureCount || 0,
+      responses: response.responses,
+    };
+  } catch (err: any) {
+    const code = err?.errorInfo?.code || err?.code || '';
+    if (TRANSIENT_CODES.has(code) && attempt < 1) {
+      await new Promise((r) => setTimeout(r, 500));
+      return sendFCMChunkWithRetry(fcm, message, attempt + 1);
+    }
+    logger.error('FCM multicast failed', { error: err, code });
+    return { successCount: 0, failureCount: (message.tokens as string[]).length };
+  }
+}
+
+async function cleanupStaleTokens(tokens: string[], responses: Array<{ success: boolean; error?: { code?: string } }>, baseIndex: number) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase || !responses) return;
+  for (let j = 0; j < responses.length; j++) {
+    const r = responses[j];
+    if (!r.success && r.error) {
+      const code = r.error.code || '';
+      if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token') {
+        await supabase.from('device_tokens').update({ deleted_at: new Date().toISOString() }).eq('token', tokens[baseIndex + j]);
+      }
+    }
+  }
+}
+
+async function sendFCMPush(tokens: string[], title: string, body: string, data?: Record<string, unknown>, type?: string) {
   const fcm = await getFirebaseMessaging();
   if (!fcm || tokens.length === 0) return { successCount: 0, failureCount: 0 };
 
-  const message = {
-    notification: { title, body },
-    data: data ? Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])) : {},
-    tokens,
-  };
+  let successCount = 0;
+  let failureCount = 0;
 
-  try {
-    const response = await fcm.sendEachForMulticast(message);
+  for (let i = 0; i < tokens.length; i += FCM_BATCH_SIZE) {
+    const chunk = tokens.slice(i, i + FCM_BATCH_SIZE);
+    const message = buildFCMMessage(chunk, title, body, data, type);
+    const result = await sendFCMChunkWithRetry(fcm, message);
 
-    // Clean up stale tokens
-    if (response.responses) {
-      const supabase = getSupabaseAdmin();
-      for (let i = 0; i < response.responses.length; i++) {
-        const r = response.responses[i];
-        if (!r.success && r.error) {
-          const code = r.error.code || '';
-          if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token') {
-            if (supabase) {
-              await supabase.from('device_tokens').update({ deleted_at: new Date().toISOString() }).eq('token', tokens[i]);
-            }
-          }
-        }
-      }
+    // Clean up stale tokens from this chunk
+    if (result.responses) {
+      await cleanupStaleTokens(tokens, result.responses, i);
     }
 
-    return { successCount: response.successCount, failureCount: response.failureCount };
-  } catch (err) {
-    logger.error('FCM push failed', { error: err });
-    return { successCount: 0, failureCount: tokens.length };
+    successCount += result.successCount;
+    failureCount += result.failureCount;
   }
+
+  return { successCount, failureCount };
 }
 
 // ── Main send function ───────────────────────────────────
@@ -131,6 +218,16 @@ async function sendFCMPush(tokens: string[], title: string, body: string, data?:
 export async function sendPush(userId: string, type: string, title: string, body: string, data?: Record<string, unknown>) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return;
+
+  // Per-category push preference (notification_preferences table)
+  const category = typeToCategory(type);
+  const { data: catPref } = await supabase
+    .from('notification_preferences')
+    .select('push_enabled')
+    .eq('user_id', userId)
+    .eq('category', category)
+    .maybeSingle();
+  if (catPref && catPref.push_enabled === false) return;
 
   // Check user-level push preference from the users JSONB column
   const { data: user } = await supabase
@@ -171,7 +268,7 @@ export async function sendPush(userId: string, type: string, title: string, body
   // Send to both channels in parallel
   const [expoResult, fcmResult] = await Promise.all([
     sendExpoPush(expoTokens, title, body, data),
-    sendFCMPush(fcmTokens, title, body, data),
+    sendFCMPush(fcmTokens, title, body, data, type),
   ]);
 
   const totalSuccess = expoResult.successCount + fcmResult.successCount;
@@ -181,6 +278,7 @@ export async function sendPush(userId: string, type: string, title: string, body
     logger.info('Push sent', {
       userId,
       type,
+      category,
       expoTokens: expoTokens.length,
       fcmTokens: fcmTokens.length,
       successCount: totalSuccess,

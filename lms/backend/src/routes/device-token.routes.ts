@@ -4,9 +4,14 @@ import { authenticate } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/validate.middleware';
 import { asyncHandler } from '../middlewares/asyncHandler';
 import { sendSuccess } from '../utils/response';
-import { registerToken } from '../services/device-token.service';
+import { registerToken, getTokensForUser, deleteToken } from '../services/device-token.service';
 
 const router = Router();
+
+router.get('/', authenticate, asyncHandler(async (req, res) => {
+  const tokens = await getTokensForUser(req.user!.uid);
+  sendSuccess(res, tokens);
+}));
 
 router.post('/', authenticate,
   validate(z.object({ token: z.string(), platform: z.string().default('web') })),
@@ -20,5 +25,10 @@ router.post('/', authenticate,
     sendSuccess(res, null, 'Token registered');
   })
 );
+
+router.delete('/:token', authenticate, asyncHandler(async (req, res) => {
+  await deleteToken(req.user!.uid, req.params.token);
+  sendSuccess(res, null, 'Token deleted');
+}));
 
 export default router;

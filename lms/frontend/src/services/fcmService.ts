@@ -3,12 +3,37 @@ import api from './api';
 let messagingInstance: any = null;
 let currentToken: string | null = null;
 
+/** Tokens already registered with the backend this session (avoids duplicate POSTs). */
+const registeredTokens = new Set<string>();
+
+const PENDING_TOKEN_KEY = 'lms_pending_push_token';
+const PENDING_LINK_KEY = 'lms_pending_deep_link';
+
+let nativeListenerReady: Promise<boolean> | null = null;
+
 async function isNativePlatform(): Promise<boolean> {
   try {
     const { Capacitor } = await import('@capacitor/core');
     return Capacitor.isNativePlatform();
   } catch {
     return false;
+  }
+}
+
+function getPendingToken(): string | null {
+  try {
+    return localStorage.getItem(PENDING_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function setPendingToken(token: string | null): void {
+  try {
+    if (token) localStorage.setItem(PENDING_TOKEN_KEY, token);
+    else localStorage.removeItem(PENDING_TOKEN_KEY);
+  } catch {
+    /* storage unavailable */
   }
 }
 
@@ -53,6 +78,71 @@ async function getMessaging() {
   }
 }
 
+/**
+ * Register a token with the backend. On network failure the token is queued in
+ * localStorage and re-sent on the next flush (app start / reconnect).
+ */
+async function postToken(token: string, platform: 'android' | 'web'): Promise<void> {
+  if (registeredTokens.has(token)) return;
+  try {
+    await api.post('/device-tokens', { token, platform });
+    registeredTokens.add(token);
+    setPendingToken(null);
+  } catch {
+    setPendingToken(token);
+  }
+}
+
+/**
+ * Persistent native token listener. FCM generates a fresh registration token when
+ * the app is reinstalled or the token rotates, so we re-register automatically
+ * instead of only at first permission request.
+ */
+function ensureNativeTokenListener(): Promise<boolean> {
+  if (nativeListenerReady) return nativeListenerReady;
+  nativeListenerReady = (async () => {
+    if (!(await isNativePlatform())) return false;
+    try {
+      const { PushNotifications } = await import('@capacitor/push-notifications');
+      await PushNotifications.addListener('registration', (event: any) => {
+        const token = event?.value as string | undefined;
+        if (token && token !== currentToken) {
+          currentToken = token;
+          postToken(token, 'android');
+        }
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  })();
+  return nativeListenerReady;
+}
+
+/** Retry any token that failed to register while offline. Idempotent. */
+export async function flushPendingPushToken(): Promise<void> {
+  const pending = getPendingToken();
+  if (!pending) return;
+  if (await isNativePlatform()) {
+    await postToken(pending, 'android');
+  } else {
+    await postToken(pending, 'web');
+  }
+}
+
+let initialized = false;
+/** One-time bootstrap: queue replay + reconnect flush. Safe to call on every app start. */
+export function initFCM(): void {
+  if (initialized) return;
+  initialized = true;
+  if (typeof window !== 'undefined') {
+    window.addEventListener('online', () => {
+      flushPendingPushToken();
+    });
+  }
+  flushPendingPushToken();
+}
+
 async function requestNativePermission(): Promise<string | null> {
   if (currentToken) return currentToken;
   try {
@@ -63,12 +153,16 @@ async function requestNativePermission(): Promise<string | null> {
     }
     if (permission.receive !== 'granted') return null;
 
+    await ensureNativeTokenListener();
     await PushNotifications.register();
+
     const token = await new Promise<string | null>((resolve) => {
       const timeout = setTimeout(() => resolve(null), 10000);
       PushNotifications.addListener('registration', (event: any) => {
         clearTimeout(timeout);
         resolve(event?.value || null);
+      }).then((handle) => {
+        handle.remove();
       });
       PushNotifications.addListener('registrationError', () => {
         clearTimeout(timeout);
@@ -78,7 +172,7 @@ async function requestNativePermission(): Promise<string | null> {
 
     if (token) {
       currentToken = token;
-      await api.post('/device-tokens', { token, platform: 'android' }).catch(() => {});
+      await postToken(token, 'android');
     }
     return token;
   } catch {
@@ -104,7 +198,7 @@ export async function requestPermission(): Promise<string | null> {
     });
     if (token) {
       currentToken = token;
-      await api.post('/device-tokens', { token, platform: 'web' }).catch(() => {});
+      await postToken(token, 'web');
     }
     return token;
   } catch {
@@ -117,8 +211,43 @@ export async function getFCMToken(): Promise<string | null> {
   return requestPermission();
 }
 
+/** Current token (or the last one queued for re-registration), without prompting. */
+export function getCachedFCMToken(): string | null {
+  return currentToken || getPendingToken();
+}
+
+/** Best-effort server-side deregistration on logout. */
+export async function deregisterToken(token: string | null | undefined): Promise<void> {
+  if (!token) return;
+  registeredTokens.delete(token);
+  try {
+    await api.delete(`/device-tokens/${encodeURIComponent(token)}`);
+  } catch {
+    // Stale tokens are swept server-side on the next send, so failure here is harmless.
+  }
+}
+
 export function isFirebaseConfigured(): boolean {
   return !!getFirebaseConfig();
+}
+
+/** Pending deep link stashed while the app was logged out (flushed after login). */
+export function savePendingDeepLink(link: string): void {
+  try {
+    localStorage.setItem(PENDING_LINK_KEY, link);
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+export function takePendingDeepLink(): string | null {
+  try {
+    const link = localStorage.getItem(PENDING_LINK_KEY);
+    localStorage.removeItem(PENDING_LINK_KEY);
+    return link;
+  } catch {
+    return null;
+  }
 }
 
 /** Listen for foreground push messages and invoke the callback with the payload. */

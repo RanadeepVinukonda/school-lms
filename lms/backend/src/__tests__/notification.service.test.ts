@@ -1,5 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { NotFoundError } from '../utils/errors';
+import { NotFoundError, ValidationError } from '../utils/errors';
 import { createMockSupabase } from './helpers/mock-factory';
 
 const { supabase: mockSupabase, query: mockQuery } = createMockSupabase();
@@ -9,7 +9,7 @@ jest.mock('../services/supabase', () => ({
   getSupabaseClient: jest.fn(() => mockSupabase),
 }));
 
-import { createNotification, getNotificationsByUser, markNotificationRead, markAllNotificationsRead, getUnreadCount, deleteNotification, getNotificationPreferences, updateNotificationPreferences, createBulkNotifications } from '../services/notification.service';
+import { createNotification, getNotificationsByUser, markNotificationRead, markAllNotificationsRead, getUnreadCount, deleteNotification, getNotificationPreferences, updateNotificationPreferences, createBulkNotifications, sendNotificationToTargets } from '../services/notification.service';
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -78,5 +78,61 @@ describe('notification.service', () => {
   it('marks all notifications read', async () => {
     (mockQuery as any).data = [{ id: 'n1' }, { id: 'n2' }];
     await expect(markAllNotificationsRead('u1')).resolves.not.toThrow();
+  });
+});
+
+describe('notification.service — category prefs & send API', () => {
+  it('skips creation when category in-app preference is disabled', async () => {
+    mockQuery.maybeSingle
+      .mockReset()
+      .mockResolvedValue({ data: null, error: null } as any)
+      .mockResolvedValueOnce(({ data: { notification_preferences: { email: true, push: true, sms: false, inApp: true, in_app_enabled: true }, id: 'u1' }, error: null }) as any)
+      .mockResolvedValueOnce(({ data: { in_app_enabled: false }, error: null }) as any);
+
+    const result = await createNotification({ userId: 'u1', type: 'notice', title: 'T', body: 'B' });
+    expect(result).toBeNull();
+    expect(mockQuery.insert).not.toHaveBeenCalled();
+  });
+
+  it('creates when category in-app preference is enabled', async () => {
+    mockQuery.maybeSingle
+      .mockReset()
+      .mockResolvedValue({ data: null, error: null } as any)
+      .mockResolvedValueOnce(({ data: { notification_preferences: { email: true, push: true, sms: false, inApp: true, in_app_enabled: true }, id: 'u1' }, error: null }) as any)
+      .mockResolvedValueOnce(({ data: { in_app_enabled: true }, error: null }) as any);
+
+    const result = await createNotification({ userId: 'u1', type: 'notice', title: 'T', body: 'B' });
+    expect(result).not.toBeNull();
+    expect(mockQuery.insert).toHaveBeenCalled();
+  });
+
+  it('persists data and link columns', async () => {
+    mockQuery.maybeSingle
+      .mockReset()
+      .mockResolvedValue({ data: null, error: null } as any)
+      .mockResolvedValueOnce(({ data: { notification_preferences: { inApp: true, in_app_enabled: true }, id: 'u1' }, error: null }) as any)
+      .mockResolvedValueOnce(({ data: null, error: null }) as any);
+
+    await createNotification({ userId: 'u1', type: 'notice', title: 'T', body: 'B', data: { entityId: 'e1' }, link: '/notices/1' });
+    const insertCall = (mockQuery.insert as any).mock.calls[0]?.[0];
+    expect(insertCall.data).toEqual({ entityId: 'e1' });
+    expect(insertCall.link).toBe('/notices/1');
+  });
+
+  it('resolves role targets and returns created ids', async () => {
+    (mockQuery as any).data = [{ id: 'u1' }, { id: 'u2' }];
+    const result = await sendNotificationToTargets({ type: 'notice', title: 'Hi', body: 'B', role: 'student' });
+    expect(result.count).toBe(2);
+    expect(result.notificationIds).toHaveLength(2);
+  });
+
+  it('returns empty when role has no users', async () => {
+    (mockQuery as any).data = [];
+    const result = await sendNotificationToTargets({ type: 'notice', title: 'Hi', body: 'B', role: 'teacher' });
+    expect(result.count).toBe(0);
+  });
+
+  it('throws ValidationError when no target specified', async () => {
+    await expect(sendNotificationToTargets({ type: 'notice', title: 'T', body: 'B' })).rejects.toThrow(ValidationError);
   });
 });

@@ -7,13 +7,22 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
+import { Input } from '@/components/ui/input';
+import { OptionsSelect } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
+import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
-import { getNotificationsByUser, markNotificationRead, markAllNotificationsRead } from '@/services/dataService';
+import {
+  getNotificationsByUser,
+  markNotificationRead,
+  markAllNotificationsRead,
+  deleteNotification,
+} from '@/services/dataService';
 import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
 import { cn } from '@/lib/utils';
 import { ErrorState } from '@/components/common/ErrorState';
+
+const PAGE_STEP = 30;
 
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -32,20 +41,39 @@ export default function NotificationsPage() {
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('all');
+  const [limit, setLimit] = useState(PAGE_STEP);
 
   const { data: items = [], refetch, error } = useQuery({
-    queryKey: ['notifications-page', user?.id],
-    queryFn: () => getNotificationsByUser(user!.id),
+    queryKey: ['notifications-page', user?.id, limit],
+    queryFn: () => getNotificationsByUser(user!.id, { limit }),
     enabled: !!user,
   });
 
   useRealtimeInvalidation([{
     table: 'notifications',
-    queryKey: ['notifications-page', user?.id ?? ''],
+    queryKey: ['notifications-page', user?.id ?? '', String(limit)],
     filter: user ? { column: 'user_id', value: user.id } : undefined,
   }]);
 
-  const displayed = filter === 'unread' ? items.filter((n) => !n.read) : items;
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    items.forEach((n) => set.add(n.type));
+    return Array.from(set)
+      .sort()
+      .map((t) => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1) }));
+  }, [items]);
+
+  const displayed = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return items.filter((n) => {
+      if (filter === 'unread' && n.read) return false;
+      if (category !== 'all' && n.type !== category) return false;
+      if (q && !`${n.title} ${n.body}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [items, filter, search, category]);
 
   const handleMarkRead = async (id: string) => {
     await markNotificationRead(id);
@@ -58,6 +86,19 @@ export default function NotificationsPage() {
     refetch();
   };
 
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteNotification(id);
+      refetch();
+    } catch {
+      // Realtime invalidation will reconcile the list if the delete landed.
+    }
+  };
+
+  const handleLoadMore = () => {
+    setLimit((l) => l + PAGE_STEP);
+  };
+
   return (
     <>
       <SEOHead title="Notifications" description="View all your notifications" />
@@ -67,18 +108,37 @@ export default function NotificationsPage() {
         exit={{ opacity: 0 }}
         className="sm:p-6 p-4 max-w-3xl mx-auto pb-32"
       >
-        <div className="flex items-center gap-3 mb-8">
+        <div className="flex items-center gap-3 mb-6">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <Icon name="arrow_back" size={20} />
           </Button>
           <h1 className="text-headline-sm font-bold">Notifications</h1>
         </div>
 
+        <div className="flex flex-col gap-3 mb-4 sm:flex-row">
+          <div className="relative flex-1">
+            <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search notifications"
+              className="pl-10"
+              aria-label="Search notifications"
+            />
+          </div>
+          <OptionsSelect
+            options={[{ value: 'all', label: 'All categories' }, ...categories]}
+            value={category}
+            onValueChange={(v: string) => setCategory(v)}
+            className="sm:w-52"
+          />
+        </div>
+
         <motion.div variants={cardStackReveal} custom={0}>
           <Tabs value={filter} onValueChange={(v) => setFilter(v as 'all' | 'unread')}>
             <TabsList className="w-full overflow-x-auto inline-flex">
-              <TabsTrigger value="all">All ({items.length})</TabsTrigger>
-              <TabsTrigger value="unread">Unread ({items.filter((n) => !n.read).length})</TabsTrigger>
+              <TabsTrigger value="all">All ({displayed.length})</TabsTrigger>
+              <TabsTrigger value="unread">Unread ({displayed.filter((n) => !n.read).length})</TabsTrigger>
             </TabsList>
 
             <TabsContent value={filter} className="mt-6">
@@ -121,13 +181,31 @@ export default function NotificationsPage() {
                                   <Icon name="schedule" size={12} /> {relativeTime(n.createdAt)}
                                 </p>
                               </div>
-                              <Badge variant="outline" className="shrink-0 text-[10px] capitalize">{n.type}</Badge>
+                              <div className="flex flex-col items-end gap-2 shrink-0">
+                                <Badge variant="outline" className="text-[10px] capitalize">{n.type}</Badge>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(n.id); }}
+                                  aria-label="Delete notification"
+                                >
+                                  <Icon name="delete" size={16} />
+                                </Button>
+                              </div>
                             </div>
                           </CardContent>
                         </Card>
                       </Link>
                     </motion.div>
                   ))}
+                  {items.length === limit && (
+                    <div className="flex justify-center pt-2">
+                      <Button variant="outline" size="sm" onClick={handleLoadMore}>
+                        Load more
+                      </Button>
+                    </div>
+                  )}
                 </motion.div>
               )}
             </TabsContent>

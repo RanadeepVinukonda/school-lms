@@ -286,9 +286,19 @@ export async function getCompletedAssignmentAttempts(studentId: string): Promise
   }));
 }
 
-/** Fetch notifications for a specific user. */
-export async function getNotificationsByUser(userId: string): Promise<NotificationItem[]> {
-  const { data, error } = await supabase.from(NOTIFICATIONS_COLLECTION).select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(50);
+/** Fetch notifications for a specific user (paginated). */
+export async function getNotificationsByUser(
+  userId: string,
+  options: { limit?: number; offset?: number } = {},
+): Promise<NotificationItem[]> {
+  const { limit = 50, offset = 0 } = options;
+  const query = supabase
+    .from(NOTIFICATIONS_COLLECTION)
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+  const { data, error } = await query;
   if (error) throw error;
   return (data || []).map((n: Record<string, unknown>) => ({
     id: n.id as string,
@@ -321,6 +331,12 @@ export async function markNotificationRead(notificationId: string): Promise<void
 /** Mark all unread notifications as read for a user. */
 export async function markAllNotificationsRead(userId: string): Promise<void> {
   const { error } = await supabase.from(NOTIFICATIONS_COLLECTION).update({ read: true, read_at: new Date().toISOString() }).eq('user_id', userId).eq('read', false);
+  if (error) throw error;
+}
+
+/** Delete a single notification owned by the current user. */
+export async function deleteNotification(notificationId: string): Promise<void> {
+  const { error } = await supabase.from(NOTIFICATIONS_COLLECTION).delete().eq('id', notificationId);
   if (error) throw error;
 }
 

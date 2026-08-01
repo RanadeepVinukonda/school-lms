@@ -1,6 +1,5 @@
 import { getSupabaseAdmin } from './supabase';
-
-const CATEGORIES = ['assignments', 'grades', 'attendance', 'ai_tutor', 'challenges', 'announcements'];
+import { CATEGORIES } from './push.mappings';
 
 export async function getPreferences(userId: string) {
   const supabase = getSupabaseAdmin();

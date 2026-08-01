@@ -1,7 +1,8 @@
 import { getSupabaseAdmin } from './supabase';
-import { NotFoundError } from '../utils/errors';
+import { NotFoundError, ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { sendPush, sendPushBulk } from './push.service';
+import { typeToCategory } from './push.mappings';
 
 // ── Public API ───────────────────────────────────────────
 
@@ -14,12 +15,26 @@ export async function createNotification(data: {
   title: string;
   body: string;
   data?: Record<string, unknown>;
+  link?: string;
   priority?: string;
   schoolId?: string;
 }) {
   const prefs = await getNotificationPreferences(data.userId);
   if (!prefs.in_app_enabled) {
     logger.info('Skipping in-app notification (user preference)', { userId: data.userId });
+    return null;
+  }
+
+  // Per-category in-app preference
+  const category = typeToCategory(data.type);
+  const { data: catPref } = await supabase()
+    .from('notification_preferences')
+    .select('in_app_enabled')
+    .eq('user_id', data.userId)
+    .eq('category', category)
+    .maybeSingle();
+  if (catPref && catPref.in_app_enabled === false) {
+    logger.info('Skipping in-app notification (category preference)', { userId: data.userId, category });
     return null;
   }
 
@@ -38,11 +53,13 @@ export async function createNotification(data: {
     created_at: new Date().toISOString(),
   };
   if (school_id) row.school_id = school_id;
+  if (data.data && Object.keys(data.data).length > 0) row.data = data.data;
+  if (data.link) row.link = data.link;
 
   const { data: inserted, error } = await supabase().from('notifications').insert(row).select('id').single();
   if (error) throw new Error(`Failed to create notification: ${error.message}`);
 
-  sendPush(data.userId, data.type, data.title, data.body, data.data);
+  sendPush(data.userId, data.type, data.title, data.body, { ...data.data, ...(data.link ? { link: data.link } : {}) });
   return inserted;
 }
 
@@ -176,7 +193,7 @@ const BATCH_SIZE = 100;
 
 /** Create multiple notifications in a single batch. */
 export async function createBulkNotifications(
-  notifications: Array<{ userId: string; type: string; title: string; body: string; data?: Record<string, unknown> }>,
+  notifications: Array<{ userId: string; type: string; title: string; body: string; data?: Record<string, unknown>; link?: string }>,
   fallbackSchoolId?: string,
 ) {
   if (notifications.length === 0) return [];
@@ -194,14 +211,32 @@ export async function createBulkNotifications(
     if (u.school_id) schoolMap.set(u.id, u.school_id as string);
   }
 
+  // Per-category in-app preferences for all target users
+  const catPrefMap = new Map<string, Map<string, boolean>>();
+  const { data: catPrefRows } = await db
+    .from('notification_preferences')
+    .select('user_id, category, in_app_enabled')
+    .in('user_id', userIds);
+  for (const row of catPrefRows || []) {
+    const byCat = catPrefMap.get(row.user_id) || new Map<string, boolean>();
+    byCat.set(row.category, row.in_app_enabled === true);
+    catPrefMap.set(row.user_id, byCat);
+  }
+
   const rows = notifications
-    .filter((n) => prefsMap.get(n.userId)?.in_app_enabled !== false)
+    .filter((n) => {
+      if (prefsMap.get(n.userId)?.in_app_enabled === false) return false;
+      const cat = typeToCategory(n.type);
+      return catPrefMap.get(n.userId)?.get(cat) !== false;
+    })
     .map((n) => {
       const r: Record<string, unknown> = {
         user_id: n.userId, type: n.type,
         title: n.title, message: n.body,
         read: false, created_at: new Date().toISOString(),
       };
+      if (n.data && Object.keys(n.data).length > 0) r.data = n.data;
+      if (n.link) r.link = n.link;
       const sid = schoolMap.get(n.userId) || fallbackSchoolId;
       if (sid) r.school_id = sid;
       return r;
@@ -221,6 +256,63 @@ export async function createBulkNotifications(
   }
 
   logger.info('Bulk notifications created', { count: results.length });
-  sendPushBulk(notifications);
+  sendPushBulk(notifications.map((n) => ({
+    ...n,
+    data: { ...(n.data || {}), ...(n.link ? { link: n.link } : {}) },
+  })));
   return results;
+}
+
+/**
+ * Resolve a set of target users (by userIds, role, class or school) and deliver
+ * an in-app + push notification to all of them. Used by the admin/teacher send API.
+ */
+export async function sendNotificationToTargets(params: {
+  type: string;
+  title: string;
+  body: string;
+  data?: Record<string, unknown>;
+  link?: string;
+  userIds?: string[];
+  role?: string;
+  classId?: string;
+  schoolId?: string;
+}): Promise<{ count: number; notificationIds: string[] }> {
+  const db = supabase();
+  let targets: string[] = [];
+
+  if (params.userIds && params.userIds.length > 0) {
+    targets = params.userIds;
+  } else if (params.role) {
+    let q = db.from('users').select('id').eq('role', params.role);
+    if (params.schoolId) q = q.eq('school_id', params.schoolId);
+    const { data, error } = await q;
+    if (error) throw error;
+    targets = (data || []).map((u: any) => u.id);
+  } else if (params.classId) {
+    const { data, error } = await db.from('users').select('id').contains('class_ids', [params.classId]);
+    if (error) throw error;
+    targets = (data || []).map((u: any) => u.id);
+  } else if (params.schoolId) {
+    const { data, error } = await db.from('users').select('id').eq('school_id', params.schoolId);
+    if (error) throw error;
+    targets = (data || []).map((u: any) => u.id);
+  } else {
+    throw new ValidationError('No target specified: provide userIds, role, classId or schoolId');
+  }
+
+  targets = [...new Set(targets)];
+  if (targets.length === 0) return { count: 0, notificationIds: [] };
+
+  const rows = targets.map((userId) => ({
+    userId,
+    type: params.type,
+    title: params.title,
+    body: params.body,
+    data: params.data,
+    link: params.link,
+  }));
+
+  const ids = await createBulkNotifications(rows, params.schoolId);
+  return { count: ids.length, notificationIds: ids };
 }

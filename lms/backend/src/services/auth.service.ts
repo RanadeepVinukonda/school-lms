@@ -3,6 +3,7 @@ import { getUserByPhone } from '../database/auth';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { env } from '../config/env';
+import { sendPush } from './push.service';
 import { ServiceResult, success, failure } from '../types/service-result';
 
 export interface UserProfile {
@@ -271,6 +272,10 @@ export async function verifyOtp(phone: string, token: string): Promise<ServiceRe
     const userData = mapUserRow((userRow || { id: uid, role }) as Record<string, unknown>);
 
     logger.info('User logged in', { uid, phone, role });
+
+    // Login/security alert (fire-and-forget push to registered devices)
+    sendPush(uid, 'login', 'New sign-in detected', `A new device signed in to your Genesis account.`).catch(() => {});
+
     return success({
       user: userData,
       uid,
