@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
+import { Capacitor } from '@capacitor/core';
 import {
   requestPermission,
   getFCMToken,
@@ -78,14 +79,16 @@ export function usePushNotifications(autoRequest = false) {
     }
   }, [autoRequest, request]);
 
-  // Show a toast when a push arrives while the app is in the foreground.
-  // Backend already gates pushes by the user's per-category in-app preference,
-  // so only opted-in categories reach this handler.
+  // On Android, foreground pushes are surfaced by the native heads-up
+  // notification (GenesisMessagingService) — never by an in-app toast/banner.
+  // On web (PWA) the Sonner toast remains. Backend already gates pushes by the
+  // user's per-category in-app preference, so only opted-in categories reach this.
   useEffect(() => {
     if (!isFirebaseConfigured()) return;
     let unsub: (() => void) | undefined;
     onForegroundMessage((payload) => {
       if (!payload.title && !payload.body) return;
+      if (Capacitor.isNativePlatform()) return;
       toast(payload.title, {
         description: payload.body,
         action: payload.data
