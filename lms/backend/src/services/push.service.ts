@@ -120,7 +120,8 @@ export function buildAndroidDataMessage(
     tokens,
     android: {
       priority: 'high',
-      ttl: '86400',
+      // No explicit TTL: firebase-admin rejects plain '86400' strings, and FCM's
+      // default TTL (4 weeks) is fine for school notifications.
     },
   };
 
