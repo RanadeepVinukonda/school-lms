@@ -19,6 +19,7 @@ import {
   deleteNotification,
 } from '@/services/dataService';
 import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
+import { useNotificationStore } from '@/store/notificationStore';
 import { cn } from '@/lib/utils';
 import { ErrorState } from '@/components/common/ErrorState';
 
@@ -39,6 +40,7 @@ function relativeTime(iso: string): string {
 
 export default function NotificationsPage() {
   const user = useAuthStore((s) => s.user);
+  const refreshUnreadCount = useNotificationStore((s) => s.refreshUnreadCount);
   const navigate = useNavigate();
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [search, setSearch] = useState('');
@@ -84,12 +86,14 @@ export default function NotificationsPage() {
     if (!user) return;
     await markAllNotificationsRead(user.id);
     refetch();
+    await refreshUnreadCount(user.id);
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteNotification(id);
       refetch();
+      if (user) await refreshUnreadCount(user.id);
     } catch {
       // Realtime invalidation will reconcile the list if the delete landed.
     }

@@ -109,6 +109,16 @@ describe('buildFCMMessage', () => {
     expect((msg as any).android.notification.sound).toBe('default');
   });
 
+  it('exposes notification on the lock screen and sets badge count from unread', () => {
+    const withCount = buildFCMMessage(['tok'], 'T', 'B', {}, 'notice', 5);
+    expect((withCount as any).android.notification.visibility).toBe('public');
+    expect((withCount as any).android.notification.notificationCount).toBe(5);
+
+    const noCount = buildFCMMessage(['tok'], 'T', 'B', {}, 'notice');
+    expect((noCount as any).android.notification.visibility).toBe('public');
+    expect((noCount as any).android.notification.notificationCount).toBeUndefined();
+  });
+
   it('stringifies data and includes type/category', () => {
     const msg = buildFCMMessage(['tok'], 'T', 'B', { key: { nested: 1 }, entityId: 'a1' }, 'quiz');
     expect(msg.data.key).toBe('{"nested":1}');

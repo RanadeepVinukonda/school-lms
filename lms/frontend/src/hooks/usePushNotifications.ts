@@ -135,6 +135,29 @@ export function usePushNotifications(autoRequest = false) {
     syncBadge(unreadCount);
   }, [unreadCount]);
 
+  // Re-sync unread count (and therefore the badge) whenever the app returns to
+  // the foreground — notifications may have arrived while backgrounded/killed.
+  // The Android WebView fires visibilitychange/focus on resume, and the same
+  // events cover the PWA, so no extra native plugin is required.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const resync = () => {
+      const userId = useAuthStore.getState().user?.id;
+      if (userId) {
+        useNotificationStore.getState().refreshUnreadCount(userId);
+      }
+    };
+    const onVisibility = () => {
+      if (!document.hidden) resync();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('focus', resync);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('focus', resync);
+    };
+  }, []);
+
   // Deregister this device's token and clear the badge on logout.
   useEffect(() => {
     if (isAuthenticated) {

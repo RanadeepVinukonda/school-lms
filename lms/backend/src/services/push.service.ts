@@ -49,6 +49,7 @@ export function buildFCMMessage(
   body: string,
   data?: Record<string, unknown>,
   type?: string,
+  unreadCount?: number,
 ) {
   const category = type ? typeToCategory(type) : 'general';
   const entityId = data?.entityId ?? data?.id;
@@ -65,6 +66,11 @@ export function buildFCMMessage(
         sound: 'default',
         color: '#2563eb',
         icon: 'ic_stat_genesis',
+        // Show content on the lock screen (matches 'public' visibility).
+        visibility: 'public',
+        // System-applied launcher badge count (Android 12+ supported launchers)
+        // so the app-icon badge updates even when the app is closed.
+        ...(unreadCount && unreadCount > 0 ? { notificationCount: unreadCount } : {}),
       },
     },
     webpush: {
@@ -189,7 +195,7 @@ async function cleanupStaleTokens(tokens: string[], responses: Array<{ success: 
   }
 }
 
-async function sendFCMPush(tokens: string[], title: string, body: string, data?: Record<string, unknown>, type?: string) {
+async function sendFCMPush(tokens: string[], title: string, body: string, data?: Record<string, unknown>, type?: string, unreadCount?: number) {
   const fcm = await getFirebaseMessaging();
   if (tokens.length === 0) return { successCount: 0, failureCount: 0 };
   if (!fcm) {
@@ -202,7 +208,7 @@ async function sendFCMPush(tokens: string[], title: string, body: string, data?:
 
   for (let i = 0; i < tokens.length; i += FCM_BATCH_SIZE) {
     const chunk = tokens.slice(i, i + FCM_BATCH_SIZE);
-    const message = buildFCMMessage(chunk, title, body, data, type);
+    const message = buildFCMMessage(chunk, title, body, data, type, unreadCount);
     const result = await sendFCMChunkWithRetry(fcm, message);
 
     // Clean up stale tokens from this chunk
@@ -273,9 +279,19 @@ export async function sendPush(userId: string, type: string, title: string, body
   }
 
   // Send to both channels in parallel
+  let unreadCount = 0;
+  if (fcmTokens.length > 0) {
+    const { count } = await supabase
+      .from('notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('read', false);
+    unreadCount = count || 0;
+  }
+
   const [expoResult, fcmResult] = await Promise.all([
     sendExpoPush(expoTokens, title, body, data),
-    sendFCMPush(fcmTokens, title, body, data, type),
+    sendFCMPush(fcmTokens, title, body, data, type, unreadCount),
   ]);
 
   const totalSuccess = expoResult.successCount + fcmResult.successCount;

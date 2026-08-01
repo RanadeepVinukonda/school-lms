@@ -7,6 +7,8 @@ interface NotificationStore {
   incrementUnread: () => void;
   decrementUnread: () => void;
   resetUnread: () => void;
+  /** Re-fetch the exact unread count from the backend (source of truth). */
+  refreshUnreadCount: (userId: string) => Promise<void>;
   /** Subscribe to Realtime notifications for a given user ID. Returns unsubscribe function. */
   subscribeToNotifications: (userId: string) => () => void;
 }
@@ -19,19 +21,23 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     set({ unreadCount: Math.max(0, get().unreadCount - 1) }),
   resetUnread: () => set({ unreadCount: 0 }),
 
+  refreshUnreadCount: async (userId: string) => {
+    try {
+      const { count } = await supabase
+        .from('notifications')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('read', false);
+      if (count != null) set({ unreadCount: count });
+    } catch {
+      /* ignore */
+    }
+  },
+
   subscribeToNotifications: (userId: string) => {
     // Fetch initial unread count
     (async () => {
-      try {
-        const { count } = await supabase
-          .from('notifications')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', userId)
-          .eq('read', false);
-        if (count != null) set({ unreadCount: count });
-      } catch {
-        /* ignore */
-      }
+      await get().refreshUnreadCount(userId);
     })();
 
     // Use timestamped channel name to prevent 'cannot add postgres_changes
@@ -66,6 +72,19 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
           if (Old.read === false && New.read === true) {
             set((state) => ({ unreadCount: Math.max(0, state.unreadCount - 1) }));
           }
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          // Deleting an unread notification must keep the badge consistent.
+          get().refreshUnreadCount(userId);
         },
       )
       .subscribe();
