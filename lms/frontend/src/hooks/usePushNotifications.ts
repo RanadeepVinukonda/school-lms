@@ -64,13 +64,17 @@ export function usePushNotifications(autoRequest = false) {
     // Bootstrap: replay offline token queue, reconnect flush, create channels.
     initFCM();
     ensureNotificationChannels();
-    if (getNotificationPermission() === 'granted') {
+    // On native there is no web Notification API, so getNotificationPermission()
+    // always reads as 'denied' and the granted/default gates below would never
+    // trigger registration. When autoRequest is set (logged-in layouts), request
+    // unconditionally: requestNativePermission() checks the OS state and only
+    // shows the system dialog if the user hasn't decided yet.
+    if (autoRequest) {
+      request();
+    } else if (getNotificationPermission() === 'granted') {
       getFCMToken().then((t) => {
         if (t) setToken(t);
       });
-    }
-    if (autoRequest && getNotificationPermission() === 'default') {
-      request();
     }
   }, [autoRequest, request]);
 
