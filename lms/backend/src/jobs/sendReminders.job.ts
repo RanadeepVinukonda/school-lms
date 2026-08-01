@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '../services/supabase';
+import { createNotification } from '../services/notification.service';
 import { logger } from '../utils/logger';
 
 const SENT_REMINDERS_COLLECTION = 'sentReminders';
@@ -60,15 +61,14 @@ export async function checkUpcomingDeadlines() {
           if (await hasReminderBeenSent(reminderType, assignment.id, studentId)) {
             continue;
           }
-          const { error } = await supabase.from('notifications').insert({
-            user_id: studentId,
+          await createNotification({
+            userId: studentId,
             type: reminderType,
             title: 'Assignment Due Soon',
-            message: `"${assignment.title}" is due within 24 hours`,
-            read: false,
-            created_at: new Date().toISOString(),
+            body: `"${assignment.title}" is due within 24 hours`,
+            data: { assignmentId: assignment.id, dueDate: assignment.due_date },
+            link: `/assignments/${assignment.id}`,
           });
-          if (error) throw error;
           await markReminderSent(reminderType, assignment.id, studentId);
         }
       }
@@ -99,15 +99,14 @@ export async function checkUpcomingDeadlines() {
             if (await hasReminderBeenSent(reminderType, exam.id, student.id)) {
               continue;
             }
-            const { error } = await supabase.from('notifications').insert({
-              user_id: student.id,
+            await createNotification({
+              userId: student.id,
               type: reminderType,
               title: 'Upcoming Exam',
-              message: `"${exam.title}" is scheduled soon`,
-              read: false,
-              created_at: new Date().toISOString(),
+              body: `"${exam.title}" is scheduled soon`,
+              data: { examId: exam.id, startDate: exam.start_date },
+              link: `/exams/${exam.id}`,
             });
-            if (error) throw error;
             await markReminderSent(reminderType, exam.id, student.id);
           }
         }

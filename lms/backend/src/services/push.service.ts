@@ -191,7 +191,11 @@ async function cleanupStaleTokens(tokens: string[], responses: Array<{ success: 
 
 async function sendFCMPush(tokens: string[], title: string, body: string, data?: Record<string, unknown>, type?: string) {
   const fcm = await getFirebaseMessaging();
-  if (!fcm || tokens.length === 0) return { successCount: 0, failureCount: 0 };
+  if (tokens.length === 0) return { successCount: 0, failureCount: 0 };
+  if (!fcm) {
+    logger.warn('Push skipped: FCM not initialized (check FIREBASE_SERVICE_ACCOUNT_KEY)', { tokens: tokens.length });
+    return { successCount: 0, failureCount: tokens.length };
+  }
 
   let successCount = 0;
   let failureCount = 0;
@@ -249,7 +253,10 @@ export async function sendPush(userId: string, type: string, title: string, body
     .eq('user_id', userId)
     .is('deleted_at', null);
 
-  if (!tokens || tokens.length === 0) return;
+  if (!tokens || tokens.length === 0) {
+    logger.warn('Push skipped: no active device tokens', { userId, category });
+    return;
+  }
 
   // Split tokens by format: Expo push tokens vs FCM tokens
   const expoTokens: string[] = [];
