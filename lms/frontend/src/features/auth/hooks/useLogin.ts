@@ -83,13 +83,35 @@ function handleLoginSuccess(
   result: { uid: string; email: string; displayName: string; role: string; isActive: boolean; avatar?: string; studentId?: string; classId?: string; classIds?: string[]; teacherId?: string; firstName?: string; lastName?: string; phone?: string; dateOfBirth?: string; bio?: string; address?: string; tutorialSeen?: boolean; createdAt: string; updatedAt: string; token: string; refreshToken: string },
   navigate: ReturnType<typeof useNavigate>,
   location: ReturnType<typeof useLocation>,
-  setToken: (token: string | null) => void,
   setUser: (user: any) => void,
+  setSessionTokens: (token: string | null, refreshToken?: string | null) => void,
 ) {
   const { uid, email, displayName, role, isActive, avatar, studentId, classId, classIds, teacherId, firstName, lastName, phone, dateOfBirth, bio, address, tutorialSeen, createdAt, updatedAt, token, refreshToken } = result;
-  setToken(token);
   setUser({ id: uid, email, displayName, role, isActive, avatar, studentId, classId, classIds, teacherId, firstName, lastName, phone, dateOfBirth, bio, address, tutorialSeen, createdAt, updatedAt });
-  api.post('/auth/refresh', { refresh_token: refreshToken }).catch(() => {});
+
+  // Establish the httpOnly cookie session WITHOUT desyncing the SDK. The backend
+  // rotates the refresh token, so we MUST sync the rotated tokens back into both
+  // the Supabase client and the persisted store — otherwise the next refresh uses
+  // a dead token and the session self-destructs ~1h after login.
+  (async () => {
+    try {
+      const res = await api.post('/auth/refresh', { refresh_token: refreshToken }, { timeout: 10000 });
+      const newToken = res.data?.data?.token;
+      const newRefreshToken = res.data?.data?.refresh_token;
+      if (newToken) {
+        await supabase.auth.setSession({
+          access_token: newToken,
+          refresh_token: newRefreshToken || refreshToken,
+        });
+        setSessionTokens(newToken, newRefreshToken || refreshToken);
+        return;
+      }
+    } catch {
+      // Refresh unavailable — keep the SDK session untouched (nothing was rotated).
+    }
+    setSessionTokens(token, refreshToken);
+  })();
+
   startTokenRefresh();
   toast.success('Welcome back!');
   const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname;
@@ -113,7 +135,7 @@ function getErrorMessage(error: ApiError): string {
 export function useLogin() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setUser, setToken } = useAuthStore();
+  const { setUser, setSessionTokens } = useAuthStore();
 
   return useMutation({
     mutationFn: async (data: LoginInput) => {
@@ -128,7 +150,7 @@ export function useLogin() {
       return fetchProfile(authData.user.id, authData.session.access_token, authData.session.refresh_token);
     },
     onSuccess: (result) => {
-      handleLoginSuccess(result, navigate, location, setToken, setUser);
+      handleLoginSuccess(result, navigate, location, setUser, setSessionTokens);
     },
     onError: (error: ApiError) => {
       toast.error(getErrorMessage(error));

@@ -23,7 +23,7 @@ function setupDashboard(role: string): string {
 
 export function useRegister() {
   const navigate = useNavigate();
-  const { setToken, setUser } = useAuthStore();
+  const { setSessionTokens, setUser } = useAuthStore();
 
   return useMutation({
     mutationFn: async (data: RegisterInput) => {
@@ -42,13 +42,14 @@ export function useRegister() {
       if (error) throw error;
       const uid = authData.user?.id || '';
       const token = authData.session?.access_token || '';
-      return { uid, token, role: data.role };
+      const refreshToken = authData.session?.refresh_token || '';
+      return { uid, token, refreshToken, role: data.role };
     },
     onSuccess: async (result) => {
       if ('otpSent' in result) return;
 
-      const { uid, token, role } = result;
-      setToken(token);
+      const { uid, token, refreshToken, role } = result;
+      setSessionTokens(token, refreshToken);
       const { data: userData } = await supabase.from('users').select('*').eq('id', uid).maybeSingle();
       if (userData) {
         setUser({
@@ -92,7 +93,7 @@ export function useRegister() {
 
 export function useRegisterVerifyOtp() {
   const navigate = useNavigate();
-  const { setToken, setUser } = useAuthStore();
+  const { setSessionTokens, setUser } = useAuthStore();
 
   return useMutation({
     mutationFn: async (data: { phone: string; token: string; displayName: string; role: string }) => {
@@ -106,6 +107,7 @@ export function useRegisterVerifyOtp() {
 
       const uid = authData.user.id;
       const token = authData.session?.access_token || '';
+      const refreshToken = authData.session?.refresh_token || '';
 
       // Update user profile with display name and role
       const { error: updateError } = await supabase
@@ -114,10 +116,10 @@ export function useRegisterVerifyOtp() {
         .eq('id', uid);
       if (updateError) console.warn('Could not update profile:', updateError);
 
-      return { uid, token, role: data.role };
+      return { uid, token, refreshToken, role: data.role };
     },
-    onSuccess: async ({ uid, token, role }) => {
-      setToken(token);
+    onSuccess: async ({ uid, token, refreshToken, role }) => {
+      setSessionTokens(token, refreshToken);
       const { data: userData } = await supabase.from('users').select('*').eq('id', uid).maybeSingle();
       if (userData) {
         setUser({

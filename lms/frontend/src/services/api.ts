@@ -85,8 +85,10 @@ function isTokenExpired(token: string): boolean {
   if (!token) return true;
   const payload = decodeJwtPayload(token);
   if (!payload || !payload.exp) return true;
-  // Treat as expired 30 seconds before actual expiry to be safe
-  return (payload.exp as number) * 1000 - 30000 < Date.now();
+  // Treat as expired only 60s AFTER the real expiry time. This gives tolerance for
+  // device clock skew (a fast clock would otherwise trigger premature refresh
+  // storms); genuinely-expired tokens get caught by the backend 401 + refresh flow.
+  return (payload.exp as number) * 1000 + 60 * 1000 < Date.now();
 }
 
 const AUTH_TIMEOUT_MS = 10000;
@@ -109,6 +111,7 @@ async function getAccessToken(): Promise<string | null> {
       cachedToken = session.access_token;
       const payload = decodeJwtPayload(session.access_token);
       tokenExpiresAt = payload?.exp ? (payload.exp as number) * 1000 : 0;
+      useAuthStore.getState().setSessionTokens(session.access_token, session.refresh_token || undefined);
       return cachedToken;
     }
   } catch { /* fall through */ }
@@ -190,6 +193,7 @@ async function tryRefreshToken(): Promise<boolean> {
     if (session?.access_token) {
       cachedToken = session.access_token;
       tokenExpiresAt = decodeAndGetExp(session.access_token);
+      useAuthStore.getState().setSessionTokens(session.access_token, session.refresh_token || undefined);
       return true;
     }
   } catch { /* ignore */ }
@@ -258,10 +262,12 @@ api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError<{ error?: { message: string; code?: string; details?: Array<{ field: string; message: string }> }; message?: string; code?: string }>) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const isRefreshCall = (originalRequest?.url || '').includes('/auth/refresh');
 
     if (
       error.response?.status === 401 &&
-      !originalRequest._retry
+      !originalRequest._retry &&
+      !isRefreshCall
     ) {
       if (isRefreshing) {
         return new Promise<void>((resolve, reject) => {
@@ -276,21 +282,25 @@ api.interceptors.response.use(
 
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        const refreshToken = session?.refresh_token;
+        const storeState = useAuthStore.getState();
+        // Fall back to the persisted refresh token when the SDK session is
+        // missing/stale (WebView storage cleared, background throttle, desync).
+        const refreshToken = session?.refresh_token || storeState.refreshToken;
         if (!refreshToken) throw new Error('No refresh token');
 
         const refreshRes = await api.post('/auth/refresh', { refresh_token: refreshToken }, { timeout: 5000 });
-        // Sync refreshed tokens back into Supabase client session
+        // Sync refreshed tokens back into the Supabase client AND the persisted
+        // store so the rotated refresh token is never lost.
         const newToken = refreshRes.data?.data?.token;
         const newRefreshToken = refreshRes.data?.data?.refresh_token;
         if (newToken) {
           cachedToken = newToken; // update cache
-          const payload = decodeJwtPayload(newToken);
-          tokenExpiresAt = payload?.exp ? (payload.exp as number) * 1000 : 0;
+          tokenExpiresAt = decodeAndGetExp(newToken);
           await supabase.auth.setSession({
             access_token: newToken,
             refresh_token: newRefreshToken || refreshToken,
           });
+          useAuthStore.getState().setSessionTokens(newToken, newRefreshToken || refreshToken);
           processQueue(null);
         } else {
           // No new token returned — treat as refresh failure
@@ -299,14 +309,32 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError);
-        cachedToken = null;
-        await useAuthStore.getState().logout();
-        const errData = error.response?.data;
-        const errorMessage = errData?.error?.message || errData?.message || 'Session expired. Please sign in again.';
+        // Distinguish a genuinely-dead session from a transient blip (offline,
+        // Render cold start, timeout). Only a dead session logs the user out.
+        const refreshStatus = (refreshError as any)?.response?.status ?? (refreshError as any)?.status;
+        const code = (refreshError as any)?.code;
+        const msg = String((refreshError as any)?.message || '').toLowerCase();
+        const transient = !refreshStatus || refreshStatus === 502 || refreshStatus === 503 || refreshStatus >= 500 || code === 'ECONNABORTED' || msg.includes('network');
+
+        if (!transient) {
+          cachedToken = null;
+          await useAuthStore.getState().logout();
+          const errData = error.response?.data;
+          const errorMessage = errData?.error?.message || errData?.message || 'Your session has expired. Please sign in again.';
+          const apiError: ApiError = {
+            message: errorMessage,
+            code: errData?.error?.code || 'SESSION_EXPIRED',
+            status: 401,
+          };
+          return Promise.reject(apiError);
+        }
+
+        // Transient — keep the session; surface a retryable error so pages show a
+        // friendly "try again" instead of booting the user out.
         const apiError: ApiError = {
-          message: errorMessage,
-          code: errData?.error?.code || 'SESSION_EXPIRED',
-          status: 401,
+          message: 'Temporarily unable to connect. Please try again.',
+          code: 'NETWORK_ERROR',
+          status: 0,
         };
         return Promise.reject(apiError);
       } finally {

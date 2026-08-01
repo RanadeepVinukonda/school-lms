@@ -8,10 +8,12 @@ import type { UserProfile, UserRole } from '@/types';
 interface AuthStore {
   user: UserProfile | null;
   token: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   setUser: (user: UserProfile | null) => void;
   setToken: (token: string | null) => void;
+  setSessionTokens: (token: string | null, refreshToken?: string | null) => void;
   setLoading: (loading: boolean) => void;
   hasRole: (roles: UserRole[]) => boolean;
   logout: () => Promise<void>;
@@ -77,11 +79,17 @@ export const useAuthStore = create<AuthStore>()(
     (set, get) => ({
       user: null,
       token: null,
+      refreshToken: null,
       isAuthenticated: false,
       isLoading: true,
       setUser: (user) =>
         set({ user, isAuthenticated: !!user }),
       setToken: (token) => set({ token }),
+      setSessionTokens: (token, refreshToken) =>
+        set((s) => ({
+          token,
+          refreshToken: refreshToken !== undefined ? refreshToken : s.refreshToken,
+        })),
       setLoading: (isLoading) => set({ isLoading }),
   hasRole: (roles) => {
     const user = get().user;
@@ -93,7 +101,7 @@ export const useAuthStore = create<AuthStore>()(
     cachedEffectiveRole = null;
     await supabase.auth.signOut();
     initPromise = null;
-    set({ user: null, token: null, isAuthenticated: false, isLoading: false });
+    set({ user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: false });
   },
   initialize: async () => {
     if (initPromise) return initPromise;
@@ -105,12 +113,26 @@ export const useAuthStore = create<AuthStore>()(
         try {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.access_token) {
-            set({ token: session.access_token });
+            set({ token: session.access_token, refreshToken: session.refresh_token || get().refreshToken });
             // Validate the session is still active — DON'T replace the persisted user
             // because /auth/me returns a ServiceResult wrapper that doesn't carry all
             // identity fields (id, displayName, firstName, lastName, teacherId, etc.).
             // The persisted user from the original login has the COMPLETE profile.
             await api.post('/auth/verify-token', {}, { timeout: 10000 });
+          } else if (get().refreshToken) {
+            // SDK session is missing/stale (e.g. WebView storage cleared or token
+            // was rotated out of sync) — silently restore from the persisted refresh token.
+            const res = await api.post('/auth/refresh', { refresh_token: get().refreshToken }, { timeout: 10000 });
+            const newToken = res.data?.data?.token;
+            const newRefreshToken = res.data?.data?.refresh_token;
+            if (newToken) {
+              await supabase.auth.setSession({
+                access_token: newToken,
+                refresh_token: newRefreshToken || get().refreshToken || '',
+              });
+              set({ token: newToken, refreshToken: newRefreshToken || get().refreshToken });
+              await api.post('/auth/verify-token', {}, { timeout: 10000 });
+            }
           }
         } catch {
           // Background validation failed — keep persisted state, user stays logged in
@@ -145,7 +167,7 @@ export const useAuthStore = create<AuthStore>()(
         // Step 2: Supabase SDK session
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.access_token) {
-          set({ token: session.access_token });
+          set({ token: session.access_token, refreshToken: session.refresh_token || get().refreshToken });
           const res = await api.get(`/auth/me?t=${Date.now()}`, { timeout: 10000 });
           const body = res.data?.data as Record<string, unknown> | undefined;
           // Unwrap ServiceResult if present (backend wraps getUserProfile result)
@@ -182,6 +204,7 @@ export const useAuthStore = create<AuthStore>()(
     partialize: (state) => ({
       user: state.user,
       token: state.token,
+      refreshToken: state.refreshToken,
       isAuthenticated: state.isAuthenticated,
     }),
   },
