@@ -210,7 +210,7 @@ export default function ParentReportsPage() {
                           )}
 
                           {r.gamification && (
-                            <div className="grid grid-cols-4 gap-3">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                               {[
                                 { label: 'XP', value: r.gamification.xp, icon: 'bolt' },
                                 { label: 'Level', value: r.gamification.level, icon: 'auto_awesome' },

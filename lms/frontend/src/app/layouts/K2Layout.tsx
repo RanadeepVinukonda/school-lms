@@ -59,7 +59,7 @@ export default function K2Layout() {
         <Outlet />
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-surface border-t-2 border-outline-variant shadow-2xl rounded-t-3xl">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-surface border-t-2 border-outline-variant shadow-2xl rounded-t-3xl pb-safe">
         <div className="flex items-center justify-around h-[68px] px-2 max-w-6xl mx-auto">
           {navItems.map((item) => (
             <NavLink
