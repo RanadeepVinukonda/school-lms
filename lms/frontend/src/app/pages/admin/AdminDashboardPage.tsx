@@ -20,8 +20,8 @@ import { teacherClassSubjectService, type TeacherClassSubject } from '@/services
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
-interface ExamDoc { id: string; title: string; startDate?: string; endDate?: string; createdAt?: string; }
-interface AssignmentDoc { id: string; title: string; dueDate?: string; createdAt?: string; }
+interface ExamDoc { id: string; title: string; startDate?: string; endDate?: string; createdAt?: string; start_date?: string; end_date?: string; created_at?: string; }
+interface AssignmentDoc { id: string; title: string; dueDate?: string; createdAt?: string; due_date?: string; created_at?: string; }
 
 function SectionTitle({ label, title }: { label: string; title: string }) {
   const ref = useRef(null);
@@ -46,8 +46,10 @@ export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'oversight' | 'tests_monitor' | 'monitor'>('overview');
   const [oversightSearch, setOversightSearch] = useState('');
   const [oversightStatusFilter, setOversightStatusFilter] = useState('all');
+  const [oversightSearchOpen, setOversightSearchOpen] = useState(false);
   const [testsSearch, setTestsSearch] = useState('');
   const [testsTypeFilter, setTestsTypeFilter] = useState('all');
+  const [testsSearchOpen, setTestsSearchOpen] = useState(false);
   const [inspectTest, setInspectTest] = useState<any | null>(null);
 
   const { data: conductedTestsData = [], isLoading: isTestsLoading, isError: isTestsError, refetch: refetchTests } = useQuery({
@@ -96,7 +98,10 @@ export default function AdminDashboardPage() {
 
       const studentCount = users.filter((u) => u.role === 'student').length;
       const teacherCount = users.filter((u) => u.role === 'teacher').length;
-      const upcomingExamCount = exams.filter((e) => e.startDate && new Date(e.startDate) > new Date()).length;
+      const upcomingExamCount = exams.filter((e) => {
+        const start = (e.startDate ?? e.start_date) as string;
+        return !!start && new Date(start) > new Date();
+      }).length;
 
       // At-risk from actual attempt data stored in firestore_docs
       const attemptScores = new Map<string, { total: number; count: number; itemName: string }>();
@@ -133,9 +138,10 @@ export default function AdminDashboardPage() {
       }));
 
       const feed: Array<{ id: string; title: string; desc: string; ts: string }> = [];
-      for (const exam of exams) { feed.push({ id: `e-${exam.id}`, title: 'New Exam Created', desc: exam.title, ts: exam.endDate ?? exam.createdAt ?? '' }); }
-      for (const a of assignments) { feed.push({ id: `a-${a.id}`, title: 'New Assignment Posted', desc: a.title, ts: a.dueDate ?? a.createdAt ?? '' }); }
+      for (const exam of exams) { const ts = (exam.endDate || exam.end_date || exam.createdAt || exam.created_at || '') as string; if (ts) feed.push({ id: `e-${exam.id}`, title: 'New Exam Created', desc: exam.title as string, ts }); }
+      for (const a of assignments) { const ts = (a.dueDate || a.due_date || a.createdAt || a.created_at || '') as string; if (ts) feed.push({ id: `a-${a.id}`, title: 'New Assignment Posted', desc: a.title as string, ts }); }
       for (const g of grades) {
+        if (!g.createdAt) continue;
         const s = users.find((u) => u.id === g.studentId);
         feed.push({ id: `g-${g.id}`, title: 'Grade Submitted', desc: `${s?.displayName ?? 'Unknown'} \u2014 ${g.itemName ?? ''}: ${g.score}/${g.totalPoints}`, ts: g.createdAt });
       }
@@ -172,6 +178,8 @@ export default function AdminDashboardPage() {
 
   const filteredOversight = useMemo(() => {
     return oversightData.filter((item: any) => {
+      // Show only concepts a teacher actually gave a quiz/task for
+      if ((item.quizCount ?? 0) <= 0 && (item.taskCount ?? 0) <= 0) return false;
       const q = oversightSearch.toLowerCase();
       const matchesSearch =
         item.className.toLowerCase().includes(q) ||
@@ -421,15 +429,21 @@ export default function AdminDashboardPage() {
               {activeTab === 'oversight' && (
                 <div className="space-y-6">
                   <div className="flex gap-3 items-center flex-wrap">
-                    <div className="relative flex-1 min-w-0 sm:min-w-[200px]">
-                      <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                      <Input
-                        placeholder={_('Search concept oversight...')}
-                        className="pl-10"
-                        value={oversightSearch}
-                        onChange={(e) => setOversightSearch(e.target.value)}
-                      />
-                    </div>
+                    {oversightSearchOpen && (
+                      <div className="relative flex-1 min-w-0 sm:min-w-[200px]">
+                        <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                        <Input
+                          placeholder={_('Search concept oversight...')}
+                          className="pl-10"
+                          value={oversightSearch}
+                          onChange={(e) => setOversightSearch(e.target.value)}
+                          autoFocus
+                        />
+                      </div>
+                    )}
+                    <Button variant="outline" size="icon" onClick={() => setOversightSearchOpen((o) => !o)} aria-label={_('Toggle search')}>
+                      <Icon name={oversightSearchOpen ? 'close' : 'search'} size={18} />
+                    </Button>
                     <OptionsSelect
                       options={[
                         { value: 'all', label: _('All Concepts') },
@@ -465,10 +479,15 @@ export default function AdminDashboardPage() {
               {activeTab === 'tests_monitor' && (
                 <div className="space-y-6">
                   <div className="flex gap-3 items-center flex-wrap">
-                    <div className="relative flex-1 min-w-0 sm:min-w-[200px]">
-                      <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                      <Input placeholder={_('Search tests...')} className="pl-10" value={testsSearch} onChange={(e) => setTestsSearch(e.target.value)} />
-                    </div>
+                    {testsSearchOpen && (
+                      <div className="relative flex-1 min-w-0 sm:min-w-[200px]">
+                        <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                        <Input placeholder={_('Search tests...')} className="pl-10" value={testsSearch} onChange={(e) => setTestsSearch(e.target.value)} autoFocus />
+                      </div>
+                    )}
+                    <Button variant="outline" size="icon" onClick={() => setTestsSearchOpen((o) => !o)} aria-label={_('Toggle search')}>
+                      <Icon name={testsSearchOpen ? 'close' : 'search'} size={18} />
+                    </Button>
                     <select
                       className="h-10 px-3 rounded-lg border border-border/60 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary w-48 text-sm"
                       value={testsTypeFilter}
