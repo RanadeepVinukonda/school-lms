@@ -4,10 +4,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '@/hooks/useTranslation';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
+import { ResourceCard } from '@/components/resources/ResourceCard';
+import { cn } from '@/lib/utils';
 import {
   getTeacherRequests,
   searchResourcesForConcept,
@@ -89,25 +91,32 @@ function ApproveDialog({ request, onClose }: ApproveDialogProps) {
           )}
           <div className="grid gap-3 sm:grid-cols-2">
             {(search.data || []).map((v) => (
-              <label
+              <div
                 key={v.id}
-                className={`flex gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${selected.has(v.id) ? 'border-primary bg-primary/5' : 'border-border/60 hover:border-border'}`}
+                className={cn(
+                  'rounded-2xl transition-all cursor-pointer',
+                  selected.has(v.id) && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
+                )}
+                onClick={() => toggle(v.id)}
               >
-                <input
-                  type="checkbox"
-                  className="mt-1 accent-primary"
-                  checked={selected.has(v.id)}
-                  onChange={() => toggle(v.id)}
+                <ResourceCard
+                  resource={v}
+                  className={cn(selected.has(v.id) && 'border-primary')}
+                  action={
+                    <span
+                      className={cn(
+                        'flex h-6 w-6 items-center justify-center rounded-md border transition-colors',
+                        selected.has(v.id) ? 'bg-primary border-primary text-primary-foreground' : 'border-outline bg-background',
+                      )}
+                      role="checkbox"
+                      aria-checked={selected.has(v.id)}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {selected.has(v.id) && <Icon name="check" size={16} />}
+                    </span>
+                  }
                 />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1 mb-1">
-                    <Badge variant="secondary" className="text-[10px]">{v.sourceLabel}</Badge>
-                    {v.duration && <Badge variant="outline" className="text-[10px]">{v.duration}</Badge>}
-                  </div>
-                  <h3 className="font-semibold text-sm line-clamp-2 leading-snug">{v.title}</h3>
-                  <p className="text-xs text-muted-foreground truncate mt-1">{v.channelName}</p>
-                </div>
-              </label>
+              </div>
             ))}
           </div>
         </div>

@@ -16,7 +16,7 @@ export interface EducationalVideo {
 }
 
 export async function searchVideos(query: string, maxResults = 8): Promise<EducationalVideo[]> {
-  const res = await api.get('/api/educational-video/search', {
+  const res = await api.get('/educational-video/search', {
     params: { query, maxResults },
   });
   return res.data?.data || [];
@@ -27,7 +27,7 @@ export async function searchVideosForConcept(
   conceptTitle: string,
   maxResults = 5,
 ): Promise<EducationalVideo[]> {
-  const res = await api.post('/api/educational-video/search-concept', {
+  const res = await api.post('/educational-video/search-concept', {
     subject,
     conceptTitle,
     maxResults,

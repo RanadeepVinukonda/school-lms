@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
+import { ResourceCardGrid } from '@/components/resources/ResourceCardGrid';
 import {
   getRecommendations,
   getMyResources,
@@ -169,43 +170,14 @@ export default function StudentResourcesPage() {
                           <Icon name="folder" size={18} className="text-primary" />
                           {group.subject}
                         </h2>
-                        <div className="space-y-4">
+                        <div className="space-y-5">
                           {group.concepts.map((c) => (
-                            <Card key={c.concept} className="border-border/60">
-                              <CardHeader className="pb-3">
-                                <CardTitle className="text-title-sm">{c.concept}</CardTitle>
-                              </CardHeader>
-                              <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                {c.items.map((v) => (
-                                  <a
-                                    key={v.id}
-                                    href={v.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="group block overflow-hidden rounded-xl border border-border/60 hover:shadow-md transition-shadow bg-card"
-                                  >
-                                    <div className="aspect-video bg-muted relative overflow-hidden">
-                                      <img
-                                        src={v.thumbnail || `https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg`}
-                                        alt={v.title}
-                                        className="w-full h-full object-cover"
-                                        loading="lazy"
-                                      />
-                                      <Badge className="absolute bottom-2 right-2 bg-background/80 text-foreground backdrop-blur-sm border-0">
-                                        {v.duration}
-                                      </Badge>
-                                    </div>
-                                    <div className="p-3 space-y-1">
-                                      <h3 className="font-semibold text-sm line-clamp-2 leading-snug">{v.title}</h3>
-                                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                        <Icon name="play_circle" size={14} />
-                                        {v.channelName || v.sourceLabel}
-                                      </p>
-                                    </div>
-                                  </a>
-                                ))}
-                              </CardContent>
-                            </Card>
+                            <div key={c.concept}>
+                              <h3 className="text-body-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                                {c.concept}
+                              </h3>
+                              <ResourceCardGrid items={c.items} />
+                            </div>
                           ))}
                         </div>
                       </div>
