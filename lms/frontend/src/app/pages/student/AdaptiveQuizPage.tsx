@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Icon } from '@/components/ui/Icon';
 import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
@@ -44,6 +45,81 @@ function answersMatch(expected: string, actual: string): boolean {
   const an = parseFloat(a);
   if (e !== '' && !Number.isNaN(en) && !Number.isNaN(an)) return en === an;
   return false;
+}
+
+/** Parse a matching question's options into left/right pairs. */
+function parseMatchingPairs(options?: string[]) {
+  return (options || []).map((opt) => {
+    const sep = opt.includes(' - ') ? ' - ' : opt.includes(': ') ? ': ' : '|';
+    const idx = opt.indexOf(sep);
+    return idx > 0
+      ? { left: opt.slice(0, idx).trim(), right: opt.slice(idx + sep.length).trim() }
+      : { left: opt, right: opt };
+  });
+}
+
+/** Human-readable correct answer for matching questions. */
+function formatMatchingCorrect(question: GeneratedQuestion): string {
+  return parseMatchingPairs(question.options).map((p) => `${p.left} - ${p.right}`).join(', ');
+}
+
+/** Evaluate a matching answer string against the expected pairs. */
+function matchingIsCorrect(question: GeneratedQuestion, answer: string): boolean {
+  const expected = new Map(parseMatchingPairs(question.options).map((p) => [normalizeAnswer(p.left), p.right]));
+  const given: Record<string, string> = {};
+  String(answer).split('|').forEach((part) => {
+    const [k, v] = part.split(':');
+    if (k && v) given[normalizeAnswer(k)] = v.trim();
+  });
+  if (Object.keys(given).length === 0) return false;
+  return Array.from(expected.entries()).every(([left, right]) => given[left] === right);
+}
+
+function MatchingRenderer({ question, answer, onAnswerChange, disabled }: {
+  question: GeneratedQuestion;
+  answer: string;
+  onAnswerChange: (value: string) => void;
+  disabled?: boolean;
+}) {
+  const { pairs, rights } = useMemo(() => {
+    const p = parseMatchingPairs(question.options);
+    return { pairs: p, rights: p.map((x) => x.right).sort(() => Math.random() - 0.5) };
+  }, [question.options]);
+
+  const matchAnswers = useMemo(() => {
+    const parsed: Record<string, string> = {};
+    if (answer) {
+      answer.split('|').forEach((part) => {
+        const [k, v] = part.split(':');
+        if (k && v) parsed[k.trim()] = v.trim();
+      });
+    }
+    return parsed;
+  }, [answer]);
+
+  const handleSelect = (left: string, right: string) => {
+    if (disabled) return;
+    const next = { ...matchAnswers, [left]: right };
+    onAnswerChange(pairs.map((p) => `${p.left}:${next[p.left] || ''}`).join('|'));
+  };
+
+  return (
+    <div className="space-y-3">
+      {pairs.map((p) => (
+        <div key={p.left} className="flex items-center gap-3">
+          <div className="flex-1 p-3 rounded-xl border-2 bg-card font-medium text-body-md">{p.left}</div>
+          <Select value={matchAnswers[p.left] || ''} onValueChange={(v) => handleSelect(p.left, v)} disabled={disabled}>
+            <SelectTrigger className="flex-1"><SelectValue placeholder="Select match..." /></SelectTrigger>
+            <SelectContent>
+              {rights.map((r) => (
+                <SelectItem key={r} value={r}>{r}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function selectQuestions(
@@ -124,14 +200,19 @@ export default function AdaptiveQuizPage() {
     const userAnswer = answers.get(question.id);
     if (!userAnswer) return;
 
-    const correct = Array.isArray(question.correctAnswer)
-      ? question.correctAnswer.map(String)
-      : [String(question.correctAnswer)];
+    let isCorrect = false;
+    if (question.type === 'matching') {
+      isCorrect = matchingIsCorrect(question, String(userAnswer));
+    } else {
+      const correct = Array.isArray(question.correctAnswer)
+        ? question.correctAnswer.map(String)
+        : [String(question.correctAnswer)];
 
-    const userArr = Array.isArray(userAnswer) ? userAnswer.map(String) : [String(userAnswer)];
-    const isCorrect =
-      correct.length === userArr.length &&
-      correct.every((c) => userArr.some((u) => answersMatch(c, u)));
+      const userArr = Array.isArray(userAnswer) ? userAnswer.map(String) : [String(userAnswer)];
+      isCorrect =
+        correct.length === userArr.length &&
+        correct.every((c) => userArr.some((u) => answersMatch(c, u)));
+    }
 
     setResults((prev) => new Map(prev).set(question.id, isCorrect));
     setAnsweredIds((prev) => new Set(prev).add(question.id));
@@ -182,6 +263,15 @@ export default function AdaptiveQuizPage() {
     if (!currentQuestion) return false;
     const a = answers.get(currentQuestion.id);
     if (a === undefined || a === null) return false;
+    if (currentQuestion.type === 'matching') {
+      const given = String(a);
+      if (!given) return false;
+      const pairs = parseMatchingPairs(currentQuestion.options);
+      return pairs.every((p) => {
+        const part = given.split('|').find((seg) => seg.startsWith(`${p.left}:`));
+        return !!part && part.slice(p.left.length + 1).trim() !== '';
+      });
+    }
     return typeof a === 'string' ? a.trim().length > 0 : a.length > 0;
   })();
 
@@ -275,6 +365,17 @@ export default function AdaptiveQuizPage() {
                               </span>
                             </div>
                             <p className="text-body-md font-medium mt-2 mb-3">{currentQuestion.text}</p>
+
+                            {currentQuestion.type === 'matching' ? (
+                              <div className="mt-1">
+                                <MatchingRenderer
+                                  question={currentQuestion}
+                                  answer={typeof answers.get(currentQuestion.id) === 'string' ? (answers.get(currentQuestion.id) as string) : ''}
+                                  onAnswerChange={(v) => handleAnswer(currentQuestion.id, v)}
+                                  disabled={answeredCurrent}
+                                />
+                              </div>
+                            ) : null}
 
                             {currentQuestion.options && currentQuestion.options.length > 0 && (
                               <div className="space-y-1.5">
@@ -381,7 +482,34 @@ export default function AdaptiveQuizPage() {
                                     </p>
                                   </>
                                 )}
+                                {answeredCurrent && currentQuestion.type === 'matching' && (
+                                  <p className="text-body-md mt-2">
+                                    {_('Your answer')}:{' '}
+                                    <span className="font-medium text-foreground">
+                                      {(() => {
+                                        const given: Record<string, string> = {};
+                                        String(answers.get(currentQuestion.id) || '').split('|').forEach((part) => {
+                                          const [k, v] = part.split(':');
+                                          if (k && v) given[k.trim()] = v.trim();
+                                        });
+                                        const lines = parseMatchingPairs(currentQuestion.options).map((p) => {
+                                          const chosen = given[p.left];
+                                          const ok = chosen && chosen === p.right;
+                                          return `${p.left} - ${chosen || '—'}${ok ? ' ✓' : ' ✗'}`;
+                                        });
+                                        return lines.join(' | ');
+                                      })()}
+                                    </span>
+                                  </p>
+                                )}
                                 {!results.get(currentQuestion.id) && (() => {
+                                  if (currentQuestion.type === 'matching') {
+                                    return (
+                                      <p className="text-body-md mt-1">
+                                        {_('Correct answer')}: <span className="font-medium text-foreground">{formatMatchingCorrect(currentQuestion)}</span>
+                                      </p>
+                                    );
+                                  }
                                   const correctAnswer = Array.isArray(currentQuestion.correctAnswer)
                                     ? currentQuestion.correctAnswer.join(', ')
                                     : currentQuestion.correctAnswer;

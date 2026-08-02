@@ -67,21 +67,36 @@ export async function getYearlyReport(studentId: string, academicYear: string): 
 
   const { data: student } = await supabase.from('users').select('display_name, email, class_ids, school_id').eq('id', studentId).maybeSingle();
 
+  const year = parseInt(academicYear, 10) || new Date().getFullYear();
+  const yearStart = `${year}-01-01`;
+  const yearEnd = `${year + 1}-01-01`;
+
   const { data: grades } = await supabase.from('firestore_docs')
     .select('data')
-    .eq('collection', 'grades_v2')
-    .textSearch('data', `"studentId":"${studentId}"`)
+    .eq('collection', 'grades')
+    .eq('data->>studentId', studentId)
     .limit(500);
 
   const allGrades = (grades || []).map(g => g.data as any);
-  const yearGrades = allGrades.filter(g => (g.academicYear || '').includes(academicYear));
+  const yearGrades = allGrades.filter(g => {
+    const created = (g.createdAt as string) || '';
+    return !created || (created >= yearStart && created < yearEnd);
+  });
+
+  const subjectIds = [...new Set(yearGrades.map(g => g.subjectId).filter(Boolean))];
+  let subjectNameMap = new Map<string, string>();
+  if (subjectIds.length > 0) {
+    const { data: subjects } = await supabase.from('subjects').select('id, name').in('id', subjectIds);
+    subjectNameMap = new Map((subjects || []).map((s: any) => [s.id, s.name]));
+  }
 
   const subjectMap: Record<string, { scores: number[]; totalPoints: number; maxPoints: number }> = {};
   for (const g of yearGrades) {
-    if (!subjectMap[g.subjectName]) subjectMap[g.subjectName] = { scores: [], totalPoints: 0, maxPoints: 0 };
-    subjectMap[g.subjectName].scores.push(g.percentage || 0);
-    subjectMap[g.subjectName].totalPoints += g.score || 0;
-    subjectMap[g.subjectName].maxPoints += g.maxScore || 100;
+    const name = subjectNameMap.get(g.subjectId) || 'General';
+    if (!subjectMap[name]) subjectMap[name] = { scores: [], totalPoints: 0, maxPoints: 0 };
+    subjectMap[name].scores.push(g.percentage || 0);
+    subjectMap[name].totalPoints += g.score || 0;
+    subjectMap[name].maxPoints += g.totalPoints || g.maxScore || 100;
   }
 
   const subjects = Object.entries(subjectMap).map(([name, data]) => ({
@@ -160,6 +175,10 @@ async function computeRanks(
 ): Promise<{ globalRank: number | null; classRank: number | null; totalStudents: number; classTotalStudents: number }> {
   const supabase = getSupabaseAdmin()!;
 
+  const year = parseInt(academicYear, 10) || new Date().getFullYear();
+  const yearStart = `${year}-01-01`;
+  const yearEnd = `${year + 1}-01-01`;
+
   let studentQuery = supabase.from('users').select('id, class_ids').eq('role', 'student');
   if (schoolId) studentQuery = studentQuery.eq('school_id', schoolId);
   const { data: students } = await studentQuery.limit(2000);
@@ -169,17 +188,18 @@ async function computeRanks(
   const { data: allGrades } = await supabase
     .from('firestore_docs')
     .select('data')
-    .eq('collection', 'grades_v2')
-    .textSearch('data', `"academicYear":"${academicYear}"`)
+    .eq('collection', 'grades')
     .limit(5000);
 
   const perStudent: Record<string, { totalPoints: number; maxPoints: number }> = {};
   (allGrades || []).forEach((row: any) => {
     const g = row.data as any;
     if (!g || !g.studentId || !ids.includes(g.studentId)) return;
+    const created = (g.createdAt as string) || '';
+    if (created && (created < yearStart || created >= yearEnd)) return;
     if (!perStudent[g.studentId]) perStudent[g.studentId] = { totalPoints: 0, maxPoints: 0 };
     perStudent[g.studentId].totalPoints += g.score || 0;
-    perStudent[g.studentId].maxPoints += g.maxScore || 100;
+    perStudent[g.studentId].maxPoints += g.totalPoints || g.maxScore || 100;
   });
 
   const scored = Object.entries(perStudent).map(([id, s]) => ({

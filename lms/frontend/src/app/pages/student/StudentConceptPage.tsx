@@ -31,6 +31,7 @@ const questionConfig: Record<QuestionType, { label: string; icon: string }> = {
   short_answer: { label: 'Short Answer', icon: 'short_text' },
   long_answer: { label: 'Long Answer', icon: 'subject' },
   descriptive: { label: 'Descriptive', icon: 'subject' },
+  matching: { label: 'Matching', icon: 'link' },
   numerical: { label: 'Numerical', icon: 'calculate' },
   scenario: { label: 'Scenario', icon: 'psychology' },
 };
@@ -85,6 +86,7 @@ function QuestionInput({
       );
     case 'long_answer':
     case 'scenario':
+    case 'descriptive':
       return (
         <Textarea
           className="mt-2 min-h-[100px]"
@@ -93,6 +95,30 @@ function QuestionInput({
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
         />
+      );
+    case 'matching':
+      return (
+        <div className="mt-2 space-y-1">
+          {(question.options ?? []).map((opt, oi) => (
+            <label
+              key={oi}
+              className={`flex items-center gap-2 text-sm p-2 rounded-lg cursor-pointer transition-colors ${
+                value === opt ? 'bg-primary/10 border border-primary/30' : 'hover:bg-muted/50 border border-transparent'
+              }`}
+            >
+              <input
+                type="radio"
+                name={`q_${question.id}`}
+                value={opt}
+                checked={value === opt}
+                onChange={() => onChange(opt)}
+                disabled={disabled}
+                className="text-primary"
+              />
+              <span>{String.fromCharCode(65 + oi)}. {opt}</span>
+            </label>
+          ))}
+        </div>
       );
     case 'numerical':
       return (
