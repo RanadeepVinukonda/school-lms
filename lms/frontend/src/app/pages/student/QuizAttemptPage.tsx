@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
 import { motion } from 'framer-motion';
@@ -17,11 +17,102 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { getQuiz } from '@/services/dataService';
 import type { Quiz, Question } from '@/types';
+
+const normalize = (v: unknown) => String(v ?? '').toLowerCase().trim();
+
+/** Parse a matching question's options into left/right pairs. */
+function parseMatchingPairs(options?: string[]) {
+  return (options || []).map((opt) => {
+    const sep = opt.includes(' - ') ? ' - ' : opt.includes(': ') ? ': ' : '|';
+    const idx = opt.indexOf(sep);
+    return idx > 0
+      ? { left: opt.slice(0, idx).trim(), right: opt.slice(idx + sep.length).trim() }
+      : { left: opt, right: opt };
+  });
+}
+
+/** Robust per-question correctness that handles arrays + matching answers. */
+function isAnswerCorrect(question: Question, answer: unknown): boolean {
+  const correct = question.correctAnswer;
+  if (answer === undefined || answer === null || String(answer).trim() === '') return false;
+
+  if (question.type === 'matching') {
+    const expected = new Map(parseMatchingPairs(question.options).map((p) => [p.left, p.right]));
+    const given: Record<string, string> = {};
+    String(answer).split('|').forEach((part) => {
+      const [k, v] = part.split(':');
+      if (k && v) given[k.trim()] = v.trim();
+    });
+    return Array.from(expected.entries()).every(([left, right]) => given[left] === right);
+  }
+
+  if (Array.isArray(correct)) {
+    const expected = correct.map(normalize);
+    return expected.length > 0 && expected.includes(normalize(answer));
+  }
+  return normalize(answer) === normalize(correct);
+}
+
+/** Human-readable correct answer for the results view. */
+function formatCorrectAnswer(question: Question): string {
+  const correct = question.correctAnswer;
+  if (Array.isArray(correct)) return correct.join(', ');
+  if (question.type === 'matching') {
+    return parseMatchingPairs(question.options).map((p) => `${p.left} - ${p.right}`).join(', ');
+  }
+  return String(correct ?? '');
+}
+
+function MatchingRenderer({ question, answer, onAnswerChange }: {
+  question: Question;
+  answer: string;
+  onAnswerChange: (value: string) => void;
+}) {
+  const { pairs, rights } = useMemo(() => {
+    const p = parseMatchingPairs(question.options);
+    return { pairs: p, rights: p.map((x) => x.right).sort(() => Math.random() - 0.5) };
+  }, [question.options]);
+
+  const matchAnswers = useMemo(() => {
+    const parsed: Record<string, string> = {};
+    if (answer) {
+      answer.split('|').forEach((part) => {
+        const [k, v] = part.split(':');
+        if (k && v) parsed[k.trim()] = v.trim();
+      });
+    }
+    return parsed;
+  }, [answer]);
+
+  const handleSelect = (left: string, right: string) => {
+    const next = { ...matchAnswers, [left]: right };
+    onAnswerChange(pairs.map((p) => `${p.left}:${next[p.left] || ''}`).join('|'));
+  };
+
+  return (
+    <div className="space-y-3">
+      {pairs.map((p) => (
+        <div key={p.left} className="flex items-center gap-3">
+          <div className="flex-1 p-3 rounded-xl border-2 bg-card font-medium text-body-md">{p.left}</div>
+          <Select value={matchAnswers[p.left] || ''} onValueChange={(v) => handleSelect(p.left, v)}>
+            <SelectTrigger className="flex-1"><SelectValue placeholder="Select match..." /></SelectTrigger>
+            <SelectContent>
+              {rights.map((r) => (
+                <SelectItem key={r} value={r}>{r}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function QuizSkeleton() {
   return (
@@ -156,7 +247,7 @@ export default function QuizAttemptPage() {
     );
   }
 
-  const quizTotalCorrect = quiz.questions?.filter(q => answers[q.id] === q.correctAnswer).length || 0;
+  const quizTotalCorrect = quiz.questions?.filter(q => isAnswerCorrect(q, answers[q.id])).length || 0;
   const quizTotalPoints = quiz.questions?.reduce((s, q) => s + q.points, 0) || 0;
   const quizTotalScore = totalQuestions > 0 ? quizTotalCorrect * (quizTotalPoints / totalQuestions) : 0;
   const quizPercentage = quizTotalPoints > 0 ? Math.round((quizTotalScore / quizTotalPoints) * 100) : 0;
@@ -178,15 +269,18 @@ export default function QuizAttemptPage() {
                 <p className="text-body-md text-muted-foreground">{quizPercentage}% &middot; {quizTotalCorrect}/{totalQuestions} {_('correct')}</p>
                 <Badge variant={quizPassed ? 'success' : 'destructive'} className="mx-auto">{quizPassed ? _('Passed') : _('Failed')}</Badge>
                 <div className="text-left space-y-2 mt-4">
-                  {quiz.questions?.map((question, i) => (
-                    <div key={question.id} className={cn('p-3 rounded-lg text-body-md', answers[question.id] === question.correctAnswer ? 'bg-emerald-500/5 border border-emerald-500/20' : 'bg-destructive/5 border border-destructive/20')}>
+                  {quiz.questions?.map((question, i) => {
+                    const correct = isAnswerCorrect(question, answers[question.id]);
+                    return (
+                    <div key={question.id} className={cn('p-3 rounded-lg text-body-md', correct ? 'bg-emerald-500/5 border border-emerald-500/20' : 'bg-destructive/5 border border-destructive/20')}>
                       <p className="font-medium mb-1">Q{i + 1}. {question.text}</p>
                       <p className="text-label-xs text-muted-foreground">{_('Your answer:')} {answers[question.id] || _('Not answered')}</p>
-                      {answers[question.id] !== question.correctAnswer && (
-                        <p className="text-label-xs text-emerald-500">{_('Correct:')} {question.correctAnswer}</p>
+                      {!correct && (
+                        <p className="text-label-xs text-emerald-500">{_('Correct:')} {formatCorrectAnswer(question)}</p>
                       )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 <Button className="w-full" onClick={() => navigate('/student/dashboard')}>{_('Back to Dashboard')}</Button>
               </CardContent>
@@ -236,7 +330,7 @@ export default function QuizAttemptPage() {
             </div>
             <p className="font-medium text-body-lg mb-4">{q.text}</p>
 
-            {q.type === 'multiple_choice' && (
+            {(q.type === 'multiple_choice' || q.type === 'mcq') && (
               <RadioGroup value={answers[q.id] || ''} onValueChange={v => setAnswers(prev => ({ ...prev, [q.id]: v }))}>
                 {q.options?.map(opt => (
                   <div key={opt} className="flex items-center gap-2 p-2 rounded-lg hover:bg-accent">
@@ -258,12 +352,28 @@ export default function QuizAttemptPage() {
               </RadioGroup>
             )}
 
-            {q.type === 'short_answer' && (
+            {(q.type === 'short_answer' || q.type === 'descriptive' || q.type === 'essay') && (
               <Textarea
                 placeholder={_('Type your answer...')}
-                rows={3}
+                rows={4}
                 value={answers[q.id] || ''}
                 onChange={e => setAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
+              />
+            )}
+
+            {(q.type === 'fill_blank' || q.type === 'numerical') && (
+              <Input
+                placeholder={_('Type your answer...')}
+                value={answers[q.id] || ''}
+                onChange={e => setAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
+              />
+            )}
+
+            {q.type === 'matching' && (
+              <MatchingRenderer
+                question={q}
+                answer={answers[q.id] || ''}
+                onAnswerChange={v => setAnswers(prev => ({ ...prev, [q.id]: v }))}
               />
             )}
           </CardContent>

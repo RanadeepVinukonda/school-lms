@@ -1,4 +1,4 @@
-export type QuestionType = 'multiple_choice' | 'true_false' | 'short_answer' | 'essay' | 'matching';
+export type QuestionType = 'multiple_choice' | 'mcq' | 'true_false' | 'short_answer' | 'essay' | 'descriptive' | 'fill_blank' | 'numerical' | 'matching';
 export type QuizStatus = 'draft' | 'published' | 'closed';
 
 export interface Quiz {

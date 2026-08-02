@@ -59,6 +59,14 @@ export default function ParentReportsPage() {
     return child?.displayName ?? 'Child';
   };
 
+  const getChildClassName = (id: string) => {
+    if (!children) return null;
+    const child = children.find((c: any) => c.id === id);
+    return child?.classInfo?.name ?? child?.class_name ?? null;
+  };
+
+  const selectedChildClassName = yearlyChildId ? getChildClassName(yearlyChildId) : null;
+
   return (
     <>
       <SEOHead title="Reports" description="AI-generated weekly progress reports" canonical="/parent/reports" />
@@ -79,12 +87,12 @@ export default function ParentReportsPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-title-md flex items-center gap-2 flex-wrap">
                   <Icon name="assignment" size={18} className="text-muted-foreground" />
-                  Yearly Report Card
+                  Report Card
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-5 space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  View a comprehensive yearly progress report card for your child, including subject-wise grades, attendance, and gamification achievements.
+                  View a comprehensive progress report card for your child, including subject-wise grades, attendance, and gamification achievements.
                 </p>
 
                 {children && children.length > 0 && (
@@ -135,7 +143,10 @@ export default function ParentReportsPage() {
                         >
                           <div className="rounded-xl border border-border/60 bg-gradient-to-br from-primary/5 to-primary/10 p-5 text-center">
                             <p className="text-title-sm font-bold">{r.student?.name}</p>
-                            <p className="text-sm text-muted-foreground">Class: {r.student?.class || 'N/A'} &middot; Academic Year: {r.academicYear}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Class: {selectedChildClassName || r.student?.class || 'N/A'}{' '}
+                              &middot; Academic Year: {r.academicYear}
+                            </p>
                             <div className="mt-3 flex items-center justify-center gap-6">
                               <div>
                                 <p className="text-display-sm font-bold">{r.overallPercentage}%</p>
