@@ -9,6 +9,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Icon } from '@/components/ui/Icon';
 import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
@@ -28,6 +30,20 @@ function estimateSkillLevel(correct: number, total: number): 'beginner' | 'inter
   if (rate >= 0.85) return 'advanced';
   if (rate >= 0.6) return 'intermediate';
   return 'beginner';
+}
+
+function normalizeAnswer(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function answersMatch(expected: string, actual: string): boolean {
+  const e = normalizeAnswer(expected);
+  const a = normalizeAnswer(actual);
+  if (e === a) return true;
+  const en = parseFloat(e);
+  const an = parseFloat(a);
+  if (e !== '' && !Number.isNaN(en) && !Number.isNaN(an)) return en === an;
+  return false;
 }
 
 function selectQuestions(
@@ -109,13 +125,13 @@ export default function AdaptiveQuizPage() {
     if (!userAnswer) return;
 
     const correct = Array.isArray(question.correctAnswer)
-      ? question.correctAnswer
-      : [question.correctAnswer];
+      ? question.correctAnswer.map(String)
+      : [String(question.correctAnswer)];
 
-    const userArr = Array.isArray(userAnswer) ? userAnswer : [userAnswer];
+    const userArr = Array.isArray(userAnswer) ? userAnswer.map(String) : [String(userAnswer)];
     const isCorrect =
       correct.length === userArr.length &&
-      correct.every((c) => userArr.includes(c));
+      correct.every((c) => userArr.some((u) => answersMatch(c, u)));
 
     setResults((prev) => new Map(prev).set(question.id, isCorrect));
     setAnsweredIds((prev) => new Set(prev).add(question.id));
@@ -161,6 +177,17 @@ export default function AdaptiveQuizPage() {
   }, [phase, conceptId, finalScore]);
 
   const currentQuestion = currentBatch[currentIndex];
+
+  const hasAnswer = (() => {
+    if (!currentQuestion) return false;
+    const a = answers.get(currentQuestion.id);
+    if (a === undefined || a === null) return false;
+    return typeof a === 'string' ? a.trim().length > 0 : a.length > 0;
+  })();
+
+  const isTextQuestion = !!currentQuestion &&
+    !(currentQuestion.options && currentQuestion.options.length > 0) &&
+    currentQuestion.type !== 'true_false';
 
   return (
     <>
@@ -307,12 +334,38 @@ export default function AdaptiveQuizPage() {
                                       className={`flex items-center justify-center gap-2 p-4 rounded-xl border text-body-md font-medium transition-colors ${borderClass} ${answeredCurrent ? 'cursor-default' : 'cursor-pointer'}`}
                                       disabled={answeredCurrent}
                                     >
-                                      {opt}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            )}
+                                        {opt}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                            {currentQuestion.type === 'fill_blank' || currentQuestion.type === 'short_answer' || currentQuestion.type === 'numerical' ? (
+                              <Input
+                                value={typeof answers.get(currentQuestion.id) === 'string' ? (answers.get(currentQuestion.id) as string) : ''}
+                                onChange={(e) => {
+                                  if (!answeredCurrent) handleAnswer(currentQuestion.id, e.target.value);
+                                }}
+                                placeholder={_('Type your answer')}
+                                disabled={answeredCurrent}
+                                className="mt-2"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && !answeredCurrent && hasAnswer) submitAnswer();
+                                }}
+                              />
+                            ) : currentQuestion.type === 'long_answer' || currentQuestion.type === 'scenario' ? (
+                              <Textarea
+                                value={typeof answers.get(currentQuestion.id) === 'string' ? (answers.get(currentQuestion.id) as string) : ''}
+                                onChange={(e) => {
+                                  if (!answeredCurrent) handleAnswer(currentQuestion.id, e.target.value);
+                                }}
+                                placeholder={_('Type your answer')}
+                                disabled={answeredCurrent}
+                                rows={4}
+                                className="mt-2"
+                              />
+                            ) : null}
 
                             {answeredCurrent && (
                               <div className={`mt-4 p-4 rounded-xl border ${results.get(currentQuestion.id) ? 'bg-success/5 border-success/20' : 'bg-destructive/5 border-destructive/20'}`}>
@@ -321,6 +374,16 @@ export default function AdaptiveQuizPage() {
                                   {results.get(currentQuestion.id) ? _('Correct!') : _('Incorrect')}
                                 </p>
                                 <p className="text-body-md text-muted-foreground mt-1">{currentQuestion.explanation}</p>
+                                {isTextQuestion && (
+                                  <>
+                                    <p className="text-body-md mt-2">
+                                      {_('Your answer')}: <span className="font-medium text-foreground">{typeof answers.get(currentQuestion.id) === 'string' ? (answers.get(currentQuestion.id) as string) : ''}</span>
+                                    </p>
+                                    <p className="text-body-md mt-1">
+                                      {_('Correct answer')}: <span className="font-medium text-foreground">{Array.isArray(currentQuestion.correctAnswer) ? currentQuestion.correctAnswer.join(', ') : currentQuestion.correctAnswer}</span>
+                                    </p>
+                                  </>
+                                )}
                               </div>
                             )}
                           </CardContent>
@@ -330,7 +393,7 @@ export default function AdaptiveQuizPage() {
 
                     <div className="flex justify-center pt-2">
                       {!answeredCurrent ? (
-                        <Button onClick={submitAnswer} disabled={!answers.has(currentQuestion?.id || '')}>
+                        <Button onClick={submitAnswer} disabled={!hasAnswer}>
                           <Icon name="check" size={16} className="mr-2" />
                           {_('Submit Answer')}
                         </Button>
