@@ -496,7 +496,11 @@ export async function getQuiz(id: string): Promise<QuizItem | null> {
         .select('*')
         .eq('concept_id', v2Data.conceptId);
       if (qErr) throw qErr;
-      result.questions = (questions || []) as any[];
+      result.questions = (questions || []).map((q: any) => ({
+        ...q,
+        text: q.question || q.text,
+        correctAnswer: q.correctAnswer || q.correct_answer || q.answer || '',
+      }));
     } catch { /* questions not available */ }
   }
   return result;

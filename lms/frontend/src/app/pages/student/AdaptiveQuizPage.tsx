@@ -379,11 +379,19 @@ export default function AdaptiveQuizPage() {
                                     <p className="text-body-md mt-2">
                                       {_('Your answer')}: <span className="font-medium text-foreground">{typeof answers.get(currentQuestion.id) === 'string' ? (answers.get(currentQuestion.id) as string) : ''}</span>
                                     </p>
-                                    <p className="text-body-md mt-1">
-                                      {_('Correct answer')}: <span className="font-medium text-foreground">{Array.isArray(currentQuestion.correctAnswer) ? currentQuestion.correctAnswer.join(', ') : currentQuestion.correctAnswer}</span>
-                                    </p>
                                   </>
                                 )}
+                                {!results.get(currentQuestion.id) && (() => {
+                                  const correctAnswer = Array.isArray(currentQuestion.correctAnswer)
+                                    ? currentQuestion.correctAnswer.join(', ')
+                                    : currentQuestion.correctAnswer;
+                                  if (!correctAnswer) return null;
+                                  return (
+                                    <p className="text-body-md mt-1">
+                                      {_('Correct answer')}: <span className="font-medium text-foreground">{correctAnswer}</span>
+                                    </p>
+                                  );
+                                })()}
                               </div>
                             )}
                           </CardContent>

@@ -256,6 +256,7 @@ export async function getConceptsForChapter(textbookId: string, chapterId: strin
     concept.questionBank = (questionsRes.data || []).map((q: any) => ({
       ...q,
       text: q.question || q.text,
+      correctAnswer: q.correctAnswer || q.correct_answer || q.answer || '',
       bloomLevel: q.bloom_level || q.data?.bloomLevel || null,
       hots: q.hots === true || q.hots === 'true' || q.data?.hots === true || false,
       topic: q.topic || q.data?.topic || null,
