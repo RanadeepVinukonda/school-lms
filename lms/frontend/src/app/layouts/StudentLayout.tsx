@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/supabase/config';
 import { useAuthStore } from '@/store/authStore';
@@ -183,7 +183,7 @@ export default function StudentLayout() {
       {/* Main content area */}
       <div
         className={cn(
-          'transition-all duration-300 ease-in-out pb-24 lg:pb-6',
+          'transition-all duration-300 ease-in-out pb-8',
           sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64',
         )}
       >
@@ -261,36 +261,6 @@ export default function StudentLayout() {
         <main id="main-content" className="min-h-[calc(100vh-8rem)]">
           <Outlet />
         </main>
-
-        {/* Bottom navigation (mobile only) */}
-        <nav className="fixed bottom-0 left-0 right-0 z-40 h-[68px] bg-surface border-t border-outline-variant lg:hidden">
-          <div className="flex items-center h-full px-1">
-            {navItems.slice(0, 5).map((item) => (
-              <NavLink
-                key={item.href}
-                to={item.href}
-                className={({ isActive }) =>
-                  cn(
-                    'relative flex flex-col items-center justify-center px-1 text-[10px] font-medium transition-colors rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-w-0 flex-1 h-full',
-                    isActive
-                      ? 'text-primary'
-                      : 'text-on-surface-variant hover:text-on-surface',
-                  )
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    {isActive && (
-                      <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
-                    )}
-                    <Icon name={item.icon} size={20} className={cn(isActive ? 'fill-icon' : '')} />
-                    <span className="text-[10px] leading-none mt-0.5">{getLabel(item.label)}</span>
-                  </>
-                )}
-              </NavLink>
-            ))}
-          </div>
-        </nav>
       </div>
       <GlobalSearchDialog isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
       <TutorialGuide open={tutorialOpen} onComplete={() => setTutorialOpen(false)} />
