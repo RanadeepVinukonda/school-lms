@@ -137,6 +137,10 @@ const TYPE_TO_CATEGORY: Record<string, NotificationCategory> = {
   concept: 'adaptive',
   concept_review: 'adaptive',
   personalized: 'adaptive',
+  resource_request: 'adaptive',
+  resource_approved: 'adaptive',
+  resource_declined: 'adaptive',
+  resource_pushed: 'adaptive',
   // ai / recommendations
   ai: 'ai',
   ai_tutor: 'ai',

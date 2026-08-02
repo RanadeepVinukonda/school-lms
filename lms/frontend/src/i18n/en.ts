@@ -36,6 +36,8 @@ export const en = {
     virtuallabs: 'Virtual Labs',
     mindmaps: 'Mind Maps',
     coding: 'Coding',
+    resources: 'Resources',
+    resourcerequests: 'Resource Requests',
     // Teacher
     teachingspace: 'Teaching Space',
     quizzes: 'Quizzes',

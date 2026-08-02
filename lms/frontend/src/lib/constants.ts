@@ -111,6 +111,8 @@ export const ROUTES = {
   STUDENT_ADAPTIVE_QUIZ: (conceptId: string) => `/student/concepts/${conceptId}/adaptive-quiz`,
   TEACHER_NEP_QUESTIONS: '/teacher/nep-questions',
   TEACHER_RUBRICS: '/teacher/rubrics',
+  STUDENT_RESOURCES: '/student/resources',
+  TEACHER_RESOURCE_REQUESTS: '/teacher/resource-requests',
   K2_DASHBOARD: '/k2/dashboard',
   K2_TRACING: '/k2/tracing',
   K2_PHONICS: '/k2/phonics',

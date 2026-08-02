@@ -53,6 +53,7 @@ const StudentNoticeBoardPage = lazyRetry(() => import('@/app/pages/student/Stude
 const StudentTimetablePage = lazyRetry(() => import('@/app/pages/student/StudentTimetablePage'));
 const StudentReportPage = lazyRetry(() => import('@/app/pages/student/StudentReportPage'));
 const StudentMindMapPage = lazyRetry(() => import('@/app/pages/student/StudentMindMapPage'));
+const StudentResourcesPage = lazyRetry(() => import('@/app/pages/student/StudentResourcesPage'));
 const K2DashboardPage = lazyRetry(() => import('@/app/pages/student/K2DashboardPage'));
 const K2TracingPage = lazyRetry(() => import('@/app/pages/student/K2TracingPage'));
 const K2PhonicsPage = lazyRetry(() => import('@/app/pages/student/K2PhonicsPage'));
@@ -92,6 +93,7 @@ const TeacherOCRPage = lazyRetry(() => import('@/app/pages/teacher/TeacherOCRPag
 const TeacherMindMapPage = lazyRetry(() => import('@/app/pages/teacher/TeacherMindMapPage'));
 const TeacherReportPage = lazyRetry(() => import('@/app/pages/teacher/TeacherReportPage'));
 const TeacherUnifiedTestPage = lazyRetry(() => import('@/app/pages/teacher/TeacherUnifiedTestPage'));
+const TeacherResourceRequestsPage = lazyRetry(() => import('@/app/pages/teacher/TeacherResourceRequestsPage'));
 
 const AdminDashboardPage = lazyRetry(() => import('@/app/pages/admin/AdminDashboardPage'));
 
@@ -179,6 +181,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.STUDENT_NOTICEBOARD, element: <Suspense fallback={<PageFallback />}><StudentNoticeBoardPage /></Suspense> },
       { path: ROUTES.STUDENT_TIMETABLE, element: <Suspense fallback={<PageFallback />}><StudentTimetablePage /></Suspense> },
       { path: ROUTES.STUDENT_MINDMAPS, element: <Suspense fallback={<PageFallback />}><StudentMindMapPage /></Suspense> },
+      { path: ROUTES.STUDENT_RESOURCES, element: <Suspense fallback={<PageFallback />}><StudentResourcesPage /></Suspense> },
       { path: ROUTES.STUDENT_REPORT, element: <Suspense fallback={<PageFallback />}><StudentReportPage /></Suspense> },
     ],
   },
@@ -224,6 +227,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.TEACHER_NOTICEBOARD, element: <Suspense fallback={<PageFallback />}><TeacherNoticeBoardPage /></Suspense> },
       { path: ROUTES.TEACHER_TIMETABLE, element: <Suspense fallback={<PageFallback />}><TeacherTimetablePage /></Suspense> },
       { path: ROUTES.TEACHER_REPORT, element: <Suspense fallback={<PageFallback />}><TeacherReportPage /></Suspense> },
+      { path: ROUTES.TEACHER_RESOURCE_REQUESTS, element: <Suspense fallback={<PageFallback />}><TeacherResourceRequestsPage /></Suspense> },
       { path: ROUTES.TEACHER_QUESTION_BANK, element: <Suspense fallback={<PageFallback />}><NotFoundPage /></Suspense> },
       { path: ROUTES.TEACHER_REWARDS, element: <Suspense fallback={<PageFallback />}><NotFoundPage /></Suspense> },
     ],

@@ -45,6 +45,7 @@ const navGroups: NavGroup[] = [
       { label: 'Attendance', href: ROUTES.TEACHER_ATTENDANCE, icon: 'checklist' },
       { label: 'Timetable', href: ROUTES.TEACHER_TIMETABLE, icon: 'calendar_view_week' },
       { label: 'Notice Board', href: ROUTES.TEACHER_NOTICEBOARD, icon: 'campaign' },
+      { label: 'Resource Requests', href: ROUTES.TEACHER_RESOURCE_REQUESTS, icon: 'video_library' },
       { label: 'Report & Suggestion', href: ROUTES.TEACHER_REPORT, icon: 'feedback' },
     ],
   },
@@ -57,6 +58,7 @@ const mobileNavItems: NavItem[] = [
   { label: 'Exams', href: ROUTES.TEACHER_EXAMS, icon: 'assignment' },
   { label: 'Tests', href: ROUTES.TEACHER_TEST_SCHEDULE, icon: 'analytics' },
   { label: 'Mind Maps', href: ROUTES.TEACHER_MINDMAP, icon: 'psychology' },
+  { label: 'Resource Requests', href: ROUTES.TEACHER_RESOURCE_REQUESTS, icon: 'video_library' },
   { label: 'Attendance', href: ROUTES.TEACHER_ATTENDANCE, icon: 'checklist' },
   { label: 'Notice Board', href: ROUTES.TEACHER_NOTICEBOARD, icon: 'campaign' },
 ];

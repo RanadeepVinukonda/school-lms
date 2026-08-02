@@ -38,6 +38,7 @@ import notificationRoutes from '../notification.routes';
 import noticeRoutes from '../notice.routes';
 import ltiRoutes from '../lti.routes';
 import reportFeedbackRoutes from '../report-feedback.routes';
+import resourceRequestRoutes from '../resource-request.routes';
 
 const router = Router();
 
@@ -81,5 +82,6 @@ router.use('/notifications', notificationRoutes);
 router.use('/notices', noticeRoutes);
 router.use('/lti', ltiRoutes);
 router.use('/report-feedback', reportFeedbackRoutes);
+router.use('/resource-requests', resourceRequestRoutes);
 
 export default router;
