@@ -46,6 +46,56 @@ interface QuizAttemptResult {
   status: string;
 }
 
+/**
+ * Resolve which concepts a quiz assesses so a low score can drive
+ * adaptive recommendations + resource requests. Best-effort, never throws:
+ *   1. explicit `conceptId` -> that concept
+ *   2. `chapterId`         -> every concept in that chapter
+ *   3. `subjectId`         -> the student's most-recently-reviewed mastery
+ *                            concepts within that subject (capped)
+ */
+async function resolveQuizConceptIds(quizData: Record<string, unknown>, studentId: string): Promise<string[]> {
+  const supabase = getSupabaseAdmin()!;
+  try {
+    const direct = quizData.conceptId as string;
+    if (direct) return [direct];
+
+    const chapterId = quizData.chapterId as string;
+    if (chapterId) {
+      const { data } = await supabase.from('concepts').select('id').eq('chapter_id', chapterId);
+      const ids = (data || []).map((c: any) => c.id as string);
+      if (ids.length > 0) return ids;
+    }
+
+    const subjectId = quizData.subjectId as string;
+    if (subjectId) {
+      const { data: textbooks } = await supabase.from('textbooks').select('id').eq('subject_id', subjectId);
+      const textbookIds = (textbooks || []).map((t: any) => t.id as string);
+      if (textbookIds.length === 0) return [];
+      const { data: chapters } = await supabase.from('chapters').select('id').in('textbook_id', textbookIds);
+      const chapterIds = (chapters || []).map((c: any) => c.id as string);
+      if (chapterIds.length === 0) return [];
+      const { data: subjectConcepts } = await supabase.from('concepts').select('id').in('chapter_id', chapterIds);
+      const subjectSet = new Set((subjectConcepts || []).map((c: any) => c.id as string));
+      if (subjectSet.size === 0) return [];
+
+      const { data: mastered } = await supabase
+        .from('concept_mastery')
+        .select('concept_id, last_reviewed_at')
+        .eq('student_id', studentId)
+        .order('last_reviewed_at', { ascending: false })
+        .limit(50);
+      return (mastered || [])
+        .map((m: any) => m.concept_id as string)
+        .filter((id) => subjectSet.has(id))
+        .slice(0, 3);
+    }
+  } catch (err) {
+    logger.warn('Failed to resolve quiz concepts for mastery', { quizId: quizData.id, error: err });
+  }
+  return [];
+}
+
 export async function submitQuizAttempt(attemptId: string, studentId: string, data: {
   answers: Array<{
     questionId: string;
@@ -271,9 +321,12 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     logger.error('Gamification reward failed', { studentId, quizId: attemptData.quizId, error: gamErr });
   }
 
-  if (quizData.conceptId) {
-    computeMastery(studentId, quizData.conceptId as string, accuracy).catch(err =>
-      logger.error('Mastery update failed', { studentId, conceptId: quizData.conceptId, error: err })
+  const resolvedConceptIds = await resolveQuizConceptIds(quizData, studentId);
+  const primaryConceptId = resolvedConceptIds[0] || null;
+
+  for (const conceptId of resolvedConceptIds) {
+    computeMastery(studentId, conceptId, accuracy).catch(err =>
+      logger.error('Mastery update failed', { studentId, conceptId, error: err })
     );
   }
 
@@ -281,16 +334,16 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     getRecommendations(studentId, quizData.schoolId as string).catch(err =>
       logger.warn('Failed to get recommendations', { studentId, error: err })
     );
-    if (quizData.conceptId) {
+    if (primaryConceptId) {
       createNotification({
         userId: studentId,
         type: 'warning',
         title: 'Improve Your Score',
         body: `You scored ${percentage}%. Practice the concept to improve your understanding.`,
-        data: { link: `/student/adaptive-quiz/${quizData.conceptId}`, quizId: attemptData.quizId },
+        data: { link: `/student/adaptive-quiz/${primaryConceptId}`, quizId: attemptData.quizId },
       }).catch(err => logger.warn('Failed to send improvement notification', { error: err }));
 
-      getRemediationPlan(studentId, quizData.conceptId as string).then((plan) => {
+      getRemediationPlan(studentId, primaryConceptId).then((plan) => {
         for (const item of plan) {
           if (item.status !== 'Proficient') {
             const resourceInfo = item.resources.length > 0
@@ -309,13 +362,13 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     }
   }
 
-  if (percentage >= 70 && quizData.conceptId) {
+  if (percentage >= 70 && primaryConceptId) {
     (async () => {
       try {
         const supabase = getSupabaseAdmin()!;
         const { data: concept } = await supabase.from('concepts')
           .select('id, title, textbook_id')
-          .eq('id', quizData.conceptId as string)
+          .eq('id', primaryConceptId)
           .single();
         if (!concept?.textbook_id) return;
         const { data: next } = await supabase.from('concepts')
