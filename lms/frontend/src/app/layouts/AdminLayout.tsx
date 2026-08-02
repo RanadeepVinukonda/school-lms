@@ -129,7 +129,7 @@ export function AdminLayout() {
               to={item.href}
               className={({ isActive }) =>
                 cn(
-                  'flex flex-col items-center justify-center gap-1 rounded-xl w-full px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  'flex items-center gap-3 rounded-xl w-full px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   isActive
                     ? 'bg-secondary-container text-on-secondary-container'
                     : 'text-on-surface-variant hover:bg-surface-variant/50',
@@ -138,7 +138,7 @@ export function AdminLayout() {
               }
             >
               <Icon name={item.icon} size={24} />
-              {!sidebarCollapsed && <span className="text-center leading-tight">{getLabel(item.label)}</span>}
+              {!sidebarCollapsed && <span className="leading-none">{getLabel(item.label)}</span>}
             </NavLink>
           ))}
         </nav>
@@ -203,7 +203,7 @@ export function AdminLayout() {
                       to={item.href}
                       className={({ isActive }) =>
                         cn(
-                          'flex flex-col items-center justify-center gap-1 rounded-xl w-full px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                          'flex items-center gap-3 rounded-xl w-full px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                           isActive
                             ? 'bg-secondary-container text-on-secondary-container'
                             : 'text-on-surface-variant hover:bg-surface-variant/50',
@@ -211,7 +211,7 @@ export function AdminLayout() {
                       }
                     >
                       <Icon name={item.icon} size={20} />
-                      <span className="text-center leading-tight">{getLabel(item.label)}</span>
+                      <span className="leading-none">{getLabel(item.label)}</span>
                     </NavLink>
                   </SheetClose>
                 ))}
