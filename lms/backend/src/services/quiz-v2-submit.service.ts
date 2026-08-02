@@ -339,30 +339,42 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
       logger.warn('Failed to get recommendations', { studentId, error: err })
     );
     if (primaryConceptId) {
-      createNotification({
-        userId: studentId,
-        type: 'warning',
-        title: 'Improve Your Score',
-        body: `You scored ${percentage}%. Practice the concept to improve your understanding.`,
-        data: { link: `/student/adaptive-quiz/${primaryConceptId}`, quizId: attemptData.quizId },
-      }).catch(err => logger.warn('Failed to send improvement notification', { error: err }));
+      (async () => {
+        try {
+          const supabase = getSupabaseAdmin()!;
+          const { data: concept } = await supabase.from('concepts')
+            .select('textbook_id')
+            .eq('id', primaryConceptId)
+            .maybeSingle();
+          const textbookQuery = concept?.textbook_id ? `?textbookId=${concept.textbook_id}` : '';
+          await createNotification({
+            userId: studentId,
+            type: 'warning',
+            title: 'Improve Your Score',
+            body: `You scored ${percentage}%. Practice the concept to improve your understanding.`,
+            data: { link: `/student/concepts/${primaryConceptId}/adaptive-quiz${textbookQuery}`, quizId: attemptData.quizId },
+          }).catch(err => logger.warn('Failed to send improvement notification', { error: err }));
 
-      getRemediationPlan(studentId, primaryConceptId).then((plan) => {
-        for (const item of plan) {
-          if (item.status !== 'Proficient') {
-            const resourceInfo = item.resources.length > 0
-              ? ` Review ${item.resources[0].sourceLabel} resources for "${item.title}".`
-              : '';
-            createNotification({
-              userId: studentId,
-              type: 'info',
-              title: `Review Prerequisite: ${item.title}`,
-              body: `Mastery: ${Math.round(item.masteryScore * 100)}%.${resourceInfo}`,
-              data: { link: `/student/adaptive-quiz/${item.conceptId}`, conceptId: item.conceptId },
-            }).catch(err => logger.warn('Failed to send prerequisite notification', { error: err }));
-          }
+          getRemediationPlan(studentId, primaryConceptId).then((plan) => {
+            for (const item of plan) {
+              if (item.status !== 'Proficient') {
+                const resourceInfo = item.resources.length > 0
+                  ? ` Review ${item.resources[0].sourceLabel} resources for "${item.title}".`
+                  : '';
+                createNotification({
+                  userId: studentId,
+                  type: 'info',
+                  title: `Review Prerequisite: ${item.title}`,
+                  body: `Mastery: ${Math.round(item.masteryScore * 100)}%.${resourceInfo}`,
+                  data: { link: `/student/concepts/${item.conceptId}/adaptive-quiz?textbookId=${item.textbookId}`, conceptId: item.conceptId },
+                }).catch(err => logger.warn('Failed to send prerequisite notification', { error: err }));
+              }
+            }
+          }).catch(err => logger.warn('Failed to get remediation plan', { error: err }));
+        } catch (err) {
+          logger.warn('Failed to send improvement notification', { error: err });
         }
-      }).catch(err => logger.warn('Failed to get remediation plan', { error: err }));
+      })();
     }
   }
 
@@ -388,7 +400,7 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
             type: 'achievement',
             title: 'Concept Mastered!',
             body: `You've mastered this concept. Next: "${next.title}" is now unlocked.`,
-            data: { link: `/student/concepts/${next.id}`, conceptId: next.id as string },
+            data: { link: `/student/concepts/${next.id}?textbookId=${concept.textbook_id}`, conceptId: next.id as string },
           });
         }
       } catch (err) {

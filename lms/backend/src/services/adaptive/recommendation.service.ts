@@ -1,6 +1,16 @@
 import { getSupabaseAdmin } from '../supabase';
 
-export async function getRecommendations(studentId: string, schoolId: string): Promise<Array<{ conceptId: string; reason: string; priority: number }>> {
+export interface AdaptiveRecommendation {
+  conceptId: string;
+  conceptTitle: string;
+  masteryScore: number;
+  priorityScore: number;
+  textbookId: string;
+  reason: string;
+  priority: number;
+}
+
+export async function getRecommendations(studentId: string, schoolId: string): Promise<AdaptiveRecommendation[]> {
   const supabase = getSupabaseAdmin();
   if (!supabase) return [];
 
@@ -18,16 +28,35 @@ export async function getRecommendations(studentId: string, schoolId: string): P
   if (!lowMastery || lowMastery.length === 0) {
     const { data: unreviewed, error: unreviewedErr } = await supabase
       .from('concepts')
-      .select('id')
+      .select('id, title, textbook_id')
       .eq('school_id', schoolId)
       .limit(3);
     if (unreviewedErr) throw new Error(unreviewedErr.message);
 
     return (unreviewed || []).map(c => ({
       conceptId: c.id as string,
+      conceptTitle: (c.title as string) || 'Concept',
+      masteryScore: 0,
+      priorityScore: 0,
+      textbookId: (c.textbook_id as string) || '',
       reason: 'New concept to explore',
       priority: 0,
     }));
+  }
+
+  const conceptIds = lowMastery.map((c: any) => c.concept_id as string);
+  const { data: conceptRows, error: conceptErr } = await supabase
+    .from('concepts')
+    .select('id, title, textbook_id')
+    .in('id', conceptIds);
+  if (conceptErr) throw new Error(conceptErr.message);
+
+  const byId = new Map<string, { title: string; textbookId: string }>();
+  for (const row of conceptRows || []) {
+    byId.set(row.id as string, {
+      title: (row.title as string) || 'Concept',
+      textbookId: (row.textbook_id as string) || '',
+    });
   }
 
   const scored = lowMastery.map((c: any) => {
@@ -37,8 +66,13 @@ export async function getRecommendations(studentId: string, schoolId: string): P
       : 30;
     const attempts = (c.attempt_count as number) || 0;
     const priority = Math.round((1 - mastery) * 50 + Math.min(daysSinceReview, 30) + Math.min(attempts, 10));
+    const meta = byId.get(c.concept_id as string);
     return {
       conceptId: c.concept_id as string,
+      conceptTitle: meta?.title || 'Concept',
+      masteryScore: mastery,
+      priorityScore: priority,
+      textbookId: meta?.textbookId || '',
       reason: `Needs practice (mastery: ${Math.round(mastery * 100)}%, ${Math.round(daysSinceReview)}d ago)`,
       priority,
     };

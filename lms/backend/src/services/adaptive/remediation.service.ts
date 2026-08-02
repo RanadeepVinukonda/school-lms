@@ -7,6 +7,7 @@ export interface RemediationItem {
   title: string;
   masteryScore: number;
   attemptCount: number;
+  textbookId: string;
   status: 'Needs Remediation' | 'In Progress' | 'Proficient';
   resources: teachResourcesService.TeachResource[];
 }
@@ -98,6 +99,7 @@ export async function getRemediationPlan(
       title: prereq.title,
       masteryScore,
       attemptCount,
+      textbookId: concept.textbook_id || '',
       status,
       resources,
     });
@@ -179,6 +181,7 @@ export async function getStudentAdaptiveSummary(studentId: string): Promise<{
       title: concept.title,
       masteryScore: lm.mastery_score || 0,
       attemptCount: lm.attempt_count || 0,
+      textbookId: concept.textbook_id || '',
       status: (lm.attempt_count || 0) > 0 ? 'In Progress' : 'Needs Remediation',
       resources,
     });

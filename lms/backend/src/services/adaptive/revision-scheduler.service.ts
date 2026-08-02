@@ -1,6 +1,14 @@
 import { getSupabaseAdmin } from '../supabase';
 
-export async function getOverdueConcepts(studentId: string): Promise<Array<{ conceptId: string; daysSinceReview: number }>> {
+export interface OverdueConcept {
+  conceptId: string;
+  conceptTitle: string;
+  masteryScore: number;
+  daysSinceReview: number;
+  textbookId: string;
+}
+
+export async function getOverdueConcepts(studentId: string): Promise<OverdueConcept[]> {
   const supabase = getSupabaseAdmin();
   if (!supabase) return [];
 
@@ -13,16 +21,43 @@ export async function getOverdueConcepts(studentId: string): Promise<Array<{ con
   if (!data) return [];
 
   const now = Date.now();
-  return data
-    .filter((c: Record<string, unknown>) => {
-      const lastReview = c.last_reviewed_at ? new Date(c.last_reviewed_at as string).getTime() : 0;
-      const daysSinceReview = (now - lastReview) / 86400000;
-      const mastery = (c.mastery_score as number) || 0;
-      const interval = mastery < 0.5 ? 1 : mastery < 0.8 ? 3 : 7;
-      return daysSinceReview > interval;
-    })
-    .map((c: Record<string, unknown>) => ({
-      conceptId: c.concept_id as string,
-      daysSinceReview: Math.floor((now - new Date((c.last_reviewed_at as string) || now).getTime()) / 86400000),
-    }));
+  const DAY_MS = 86400000;
+
+  const overdue = data.filter((c: Record<string, unknown>) => {
+    const lastReview = c.last_reviewed_at ? new Date(c.last_reviewed_at as string).getTime() : 0;
+    const daysSinceReview = (now - lastReview) / DAY_MS;
+    const mastery = (c.mastery_score as number) || 0;
+    const interval = mastery < 0.5 ? 1 : mastery < 0.8 ? 3 : 7;
+    return daysSinceReview > interval;
+  });
+
+  if (overdue.length === 0) return [];
+
+  const conceptIds = overdue.map((c: Record<string, unknown>) => c.concept_id as string);
+  const { data: conceptRows, error: conceptErr } = await supabase
+    .from('concepts')
+    .select('id, title, textbook_id')
+    .in('id', conceptIds);
+  if (conceptErr) throw new Error(conceptErr.message);
+
+  const titleById = new Map<string, { title: string; textbookId: string }>();
+  for (const row of conceptRows || []) {
+    titleById.set(row.id as string, {
+      title: (row.title as string) || 'Concept',
+      textbookId: (row.textbook_id as string) || '',
+    });
+  }
+
+  return overdue.map((c: Record<string, unknown>) => {
+    const conceptId = c.concept_id as string;
+    const lastReviewTime = c.last_reviewed_at ? new Date(c.last_reviewed_at as string).getTime() : now;
+    const meta = titleById.get(conceptId);
+    return {
+      conceptId,
+      conceptTitle: meta?.title || 'Concept',
+      masteryScore: (c.mastery_score as number) || 0,
+      daysSinceReview: Math.max(0, Math.floor((now - lastReviewTime) / DAY_MS)),
+      textbookId: meta?.textbookId || '',
+    };
+  });
 }

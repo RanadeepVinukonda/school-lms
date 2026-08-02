@@ -122,6 +122,7 @@ export default function StudentDashboardPage() {
         proficiencyPercentage: number;
         needsRemediation: Array<{
           conceptId: string; title: string; masteryScore: number; attemptCount: number;
+          textbookId: string;
           status: 'Needs Remediation' | 'In Progress' | 'Proficient';
           resources: Array<{ id: string; source: string; sourceLabel: string; title: string; url: string }>;
         }>;
@@ -137,7 +138,7 @@ export default function StudentDashboardPage() {
     enabled: !!studentId,
     queryFn: async () => {
       const res = await api.get(`/adaptive/recommendations/${studentId}`);
-      return res.data.data as Array<{ conceptId: string; conceptTitle: string; masteryScore: number; priorityScore: number }>;
+      return res.data.data as Array<{ conceptId: string; conceptTitle: string; masteryScore: number; priorityScore: number; textbookId: string }>;
     },
     refetchOnWindowFocus: true,
   });
@@ -147,7 +148,7 @@ export default function StudentDashboardPage() {
     enabled: !!studentId,
     queryFn: async () => {
       const res = await api.get(`/adaptive/overdue/${studentId}`);
-      return res.data.data as Array<{ conceptId: string; conceptTitle: string; daysSinceReview: number; masteryScore: number }>;
+      return res.data.data as Array<{ conceptId: string; conceptTitle: string; daysSinceReview: number; masteryScore: number; textbookId: string }>;
     },
     refetchOnWindowFocus: true,
   });
@@ -317,7 +318,7 @@ export default function StudentDashboardPage() {
                                       <Badge className={`text-[10px] ${statusColor}`}>{_(item.status)}</Badge>
                                     </div>
                                     <p className="text-label-sm text-muted-foreground mt-1">
-                                      {_('Mastery')}: {Math.round(item.masteryScore * 100)}% &middot; {_('Attempts')}: {item.attemptCount}
+                                      {_('Mastery')}: {Math.round((item.masteryScore ?? 0) * 100)}% &middot; {_('Attempts')}: {item.attemptCount}
                                     </p>
                                     {item.resources.length > 0 && (
                                       <div className="flex flex-wrap gap-2 mt-2">
@@ -334,7 +335,7 @@ export default function StudentDashboardPage() {
                                   </div>
                                   <div className="flex gap-2 shrink-0">
                                     <Button size="sm" variant="outline" asChild>
-                                      <Link to={`/student/adaptive-quiz/${item.conceptId}`}>
+                                      <Link to={`${ROUTES.STUDENT_ADAPTIVE_QUIZ(item.conceptId)}?textbookId=${item.textbookId}`}>
                                         <Icon name="refresh" size={14} className="mr-1" />{_('Retake')}
                                       </Link>
                                     </Button>
@@ -388,11 +389,11 @@ export default function StudentDashboardPage() {
                             <div className="flex-1 min-w-0">
                               <p className="text-title-sm font-semibold truncate">{rec.conceptTitle || _('Concept')}</p>
                               <div className="flex items-center gap-2 mt-0.5">
-                                <Badge variant="warning" className="text-[10px]">{Math.round(rec.masteryScore * 100)}% {_('mastery')}</Badge>
+                                <Badge variant="warning" className="text-[10px]">{Math.round((rec.masteryScore ?? 0) * 100)}% {_('mastery')}</Badge>
                               </div>
                             </div>
                             <Button size="sm" variant="outline" asChild>
-                              <Link to={`/student/adaptive-quiz/${rec.conceptId}`}>
+                              <Link to={`${ROUTES.STUDENT_ADAPTIVE_QUIZ(rec.conceptId)}?textbookId=${rec.textbookId}`}>
                                 <Icon name="play_arrow" size={14} className="mr-1" />{_('Practice')}
                               </Link>
                             </Button>
@@ -412,7 +413,7 @@ export default function StudentDashboardPage() {
                               <p className="text-label-sm text-muted-foreground">{oc.daysSinceReview} {_('days since review')}</p>
                             </div>
                             <Button size="sm" variant="outline" asChild>
-                              <Link to={`/student/adaptive-quiz/${oc.conceptId}`}>
+                              <Link to={`${ROUTES.STUDENT_ADAPTIVE_QUIZ(oc.conceptId)}?textbookId=${oc.textbookId}`}>
                                 <Icon name="refresh" size={14} className="mr-1" />{_('Review')}
                               </Link>
                             </Button>
