@@ -207,7 +207,7 @@ export default function StudentLayout() {
                         )
                       }
                     >
-                      <Icon name={item.icon} size={20} />
+                      <Icon name={item.icon} size={24} />
                       <span className="leading-none">{getLabel(item.label)}</span>
                     </NavLink>
                   </SheetClose>
