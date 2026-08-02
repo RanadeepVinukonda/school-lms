@@ -147,6 +147,13 @@ export async function createResourceRequest(input: {
     .maybeSingle();
   if (existing) throw new ValidationError('You already have a pending request for this concept');
 
+  // Some legacy concepts have no school_id — fall back to the student's school.
+  let schoolId = ctx.schoolId;
+  if (!schoolId) {
+    const { data: student } = await supabase().from('users').select('school_id').eq('id', input.studentId).maybeSingle();
+    schoolId = (student?.school_id as string | null) || null;
+  }
+
   const { data: inserted, error } = await supabase()
     .from('resource_requests')
     .insert({
@@ -159,7 +166,7 @@ export async function createResourceRequest(input: {
       concept_title: ctx.conceptTitle,
       chapter_title: ctx.chapterTitle,
       reason: input.reason || '',
-      school_id: ctx.schoolId,
+      school_id: schoolId,
     })
     .select('*')
     .single();
@@ -173,7 +180,7 @@ export async function createResourceRequest(input: {
       subjectId: ctx.subjectId,
       subjectName: ctx.subjectName,
       conceptTitle: ctx.conceptTitle,
-      schoolId: ctx.schoolId,
+      schoolId,
     });
   } catch (notifyErr) {
     logger.error('Resource request teacher notify failed', { requestId, error: (notifyErr as Error).message });
@@ -258,7 +265,7 @@ export async function listTeacherRequests(teacherId: string, schoolId: string | 
     .order('created_at', { ascending: false })
     .limit(50);
 
-  if (schoolId) query = query.eq('school_id', schoolId);
+  if (schoolId) query = query.or(`school_id.eq.${schoolId},school_id.is.null`);
   const { data, error } = await query;
   if (error) throw new Error(error.message);
 
