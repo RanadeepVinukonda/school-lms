@@ -32,8 +32,20 @@ export default function StudentResourcesPage() {
   const [activeTab, setActiveTab] = useState('recommended');
   const qc = useQueryClient();
 
-  const recommendations = useQuery({ queryKey: ['student-resources-recommendations'], queryFn: getRecommendations });
-  const resources = useQuery({ queryKey: ['student-resources-mine'], queryFn: getMyResources });
+  const recommendations = useQuery({
+    queryKey: ['student-resources-recommendations'],
+    queryFn: getRecommendations,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+  });
+  const resources = useQuery({
+    queryKey: ['student-resources-mine'],
+    queryFn: getMyResources,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+  });
   const requests = useQuery({ queryKey: ['student-resource-requests'], queryFn: getMyRequests });
 
   const requestMutation = useMutation({

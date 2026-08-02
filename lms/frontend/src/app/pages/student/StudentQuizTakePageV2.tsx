@@ -358,6 +358,8 @@ export default function StudentQuizTakePageV2() {
       queryClient.invalidateQueries({ queryKey: ['student-exams'] });
       queryClient.invalidateQueries({ queryKey: ['student-dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['parent-child-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['student-resources-recommendations'] });
+      queryClient.invalidateQueries({ queryKey: ['student-resources-mine'] });
       refetchPastAttempts();
     } catch (err: any) {
       toast.error(err.message || _('Failed to submit assessment'));

@@ -324,9 +324,13 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
   const resolvedConceptIds = await resolveQuizConceptIds(quizData, studentId);
   const primaryConceptId = resolvedConceptIds[0] || null;
 
-  for (const conceptId of resolvedConceptIds) {
-    computeMastery(studentId, conceptId, accuracy).catch(err =>
-      logger.error('Mastery update failed', { studentId, conceptId, error: err })
+  if (resolvedConceptIds.length > 0) {
+    await Promise.all(
+      resolvedConceptIds.map((conceptId) =>
+        computeMastery(studentId, conceptId, accuracy).catch((err) =>
+          logger.error('Mastery update failed', { studentId, conceptId, error: err })
+        ),
+      ),
     );
   }
 
