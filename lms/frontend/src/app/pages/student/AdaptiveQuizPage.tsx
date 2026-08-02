@@ -354,7 +354,7 @@ export default function AdaptiveQuizPage() {
                                   if (e.key === 'Enter' && !answeredCurrent && hasAnswer) submitAnswer();
                                 }}
                               />
-                            ) : currentQuestion.type === 'long_answer' || currentQuestion.type === 'scenario' ? (
+                            ) : currentQuestion.type === 'long_answer' || currentQuestion.type === 'scenario' || currentQuestion.type === 'descriptive' ? (
                               <Textarea
                                 value={typeof answers.get(currentQuestion.id) === 'string' ? (answers.get(currentQuestion.id) as string) : ''}
                                 onChange={(e) => {
@@ -399,7 +399,15 @@ export default function AdaptiveQuizPage() {
                       </motion.div>
                     )}
 
-                    <div className="flex justify-center pt-2">
+                    <div className="flex items-center justify-between pt-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => currentIndex > 0 && setCurrentIndex(currentIndex - 1)}
+                        disabled={currentIndex === 0}
+                      >
+                        <Icon name="arrow_back" size={16} className="mr-2" />
+                        {_('Previous')}
+                      </Button>
                       {!answeredCurrent ? (
                         <Button onClick={submitAnswer} disabled={!hasAnswer}>
                           <Icon name="check" size={16} className="mr-2" />

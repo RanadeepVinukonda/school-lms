@@ -30,6 +30,7 @@ const questionConfig: Record<QuestionType, { label: string; icon: string }> = {
   fill_blank: { label: 'Fill in the Blank', icon: 'space_bar' },
   short_answer: { label: 'Short Answer', icon: 'short_text' },
   long_answer: { label: 'Long Answer', icon: 'subject' },
+  descriptive: { label: 'Descriptive', icon: 'subject' },
   numerical: { label: 'Numerical', icon: 'calculate' },
   scenario: { label: 'Scenario', icon: 'psychology' },
 };

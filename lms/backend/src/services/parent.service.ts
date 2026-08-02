@@ -121,6 +121,7 @@ export async function getYearlyReport(studentId: string, academicYear: string): 
   const gamificationData = (gamification?.data as any) || {};
 
   const classId = student?.class_ids?.[0];
+  const { globalRank, classRank, totalStudents, classTotalStudents } = await computeRanks(studentId, student?.school_id, classId, academicYear);
 
   return {
     student: { name: student?.display_name, id: studentId, class: classId },
@@ -142,8 +143,79 @@ export async function getYearlyReport(studentId: string, academicYear: string): 
       streak: gamificationData.streak || 0,
     },
     totalAssessments: yearGrades.length,
+    rank: globalRank || null,
+    globalRank: globalRank || null,
+    classRank: classRank || null,
+    totalStudents: totalStudents || 0,
+    classTotalStudents: classTotalStudents || 0,
     generatedAt: new Date().toISOString(),
   };
+}
+
+async function computeRanks(
+  studentId: string,
+  schoolId: string | undefined,
+  classId: string | undefined,
+  academicYear: string,
+): Promise<{ globalRank: number | null; classRank: number | null; totalStudents: number; classTotalStudents: number }> {
+  const supabase = getSupabaseAdmin()!;
+
+  let studentQuery = supabase.from('users').select('id, class_ids').eq('role', 'student');
+  if (schoolId) studentQuery = studentQuery.eq('school_id', schoolId);
+  const { data: students } = await studentQuery.limit(2000);
+  if (!students || students.length === 0) return { globalRank: null, classRank: null, totalStudents: 0, classTotalStudents: 0 };
+
+  const ids = students.map((s: any) => s.id);
+  const { data: allGrades } = await supabase
+    .from('firestore_docs')
+    .select('data')
+    .eq('collection', 'grades_v2')
+    .textSearch('data', `"academicYear":"${academicYear}"`)
+    .limit(5000);
+
+  const perStudent: Record<string, { totalPoints: number; maxPoints: number }> = {};
+  (allGrades || []).forEach((row: any) => {
+    const g = row.data as any;
+    if (!g || !g.studentId || !ids.includes(g.studentId)) return;
+    if (!perStudent[g.studentId]) perStudent[g.studentId] = { totalPoints: 0, maxPoints: 0 };
+    perStudent[g.studentId].totalPoints += g.score || 0;
+    perStudent[g.studentId].maxPoints += g.maxScore || 100;
+  });
+
+  const scored = Object.entries(perStudent).map(([id, s]) => ({
+    id,
+    pct: s.maxPoints > 0 ? Math.round((s.totalPoints / s.maxPoints) * 100) : 0,
+  })).sort((a, b) => b.pct - a.pct || a.id.localeCompare(b.id));
+
+  const selfPct = perStudent[studentId]?.maxPoints > 0
+    ? Math.round((perStudent[studentId].totalPoints / perStudent[studentId].maxPoints) * 100)
+    : null;
+
+  let globalRank: number | null = null;
+  if (selfPct != null && scored.length > 0) {
+    const selfIndex = scored.findIndex(s => s.id === studentId);
+    if (selfIndex >= 0) {
+      let r = selfIndex + 1;
+      while (r > 1 && scored[r - 2].pct === selfPct) r--;
+      globalRank = r;
+    }
+  }
+
+  let classRank: number | null = null;
+  let classTotalStudents = 0;
+  if (classId && selfPct != null) {
+    const classIds = new Set(students.filter((s: any) => (s.class_ids || []).includes(classId)).map((s: any) => s.id));
+    classTotalStudents = classIds.size;
+    const classScored = scored.filter(s => classIds.has(s.id));
+    const selfIndex = classScored.findIndex(s => s.id === studentId);
+    if (selfIndex >= 0) {
+      let r = selfIndex + 1;
+      while (r > 1 && classScored[r - 2].pct === selfPct) r--;
+      classRank = r;
+    }
+  }
+
+  return { globalRank, classRank, totalStudents: scored.length, classTotalStudents };
 }
 
 function getLetterGrade(pct: number): string {

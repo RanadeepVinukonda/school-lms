@@ -147,18 +147,31 @@ export default function ParentReportsPage() {
                               Class: {selectedChildClassName || r.student?.class || 'N/A'}{' '}
                               &middot; Academic Year: {r.academicYear}
                             </p>
-                            <div className="mt-3 flex items-center justify-center gap-6">
-                              <div>
-                                <p className="text-display-sm font-bold">{r.overallPercentage}%</p>
-                                <p className="text-label-xs text-muted-foreground">Overall Score</p>
+                            <div className="mt-4">
+                              <p className="text-[2.5rem] leading-none font-bold tracking-tight">{r.overallPercentage}%</p>
+                              <p className="mt-1 text-label-xs text-muted-foreground uppercase tracking-wider">Overall Score</p>
+                              {r.gpa != null && (
+                                <p className="mt-1 text-sm text-muted-foreground">GPA: {r.gpa}</p>
+                              )}
+                            </div>
+                            <div className="mt-4 grid grid-cols-2 gap-3">
+                              <div className="rounded-lg bg-background/80 border border-border/60 px-3 py-2">
+                                <p className="text-headline-sm font-bold text-primary">
+                                  {r.classRank != null ? `#${r.classRank}` : '-'}
+                                  <span className="text-label-xs text-muted-foreground font-normal"> / {r.classTotalStudents || '—'}</span>
+                                </p>
+                                <p className="text-label-xs text-muted-foreground mt-0.5">Class Rank</p>
                               </div>
-                              <div className="h-14 w-14 rounded-full bg-primary flex items-center justify-center">
-                                <span className="text-headline-sm font-bold text-white">{r.letterGrade}</span>
+                              <div className="rounded-lg bg-background/80 border border-border/60 px-3 py-2">
+                                <p className="text-headline-sm font-bold text-primary">
+                                  {r.globalRank != null ? `#${r.globalRank}` : '-'}
+                                  <span className="text-label-xs text-muted-foreground font-normal"> / {r.totalStudents || '—'}</span>
+                                </p>
+                                <p className="text-label-xs text-muted-foreground mt-0.5">Global Rank</p>
                               </div>
                             </div>
                             <div className="mt-3 flex items-center justify-center gap-4 text-sm text-muted-foreground">
                               <span>{r.totalAssessments} Assessments</span>
-                              <span>Rank: {r.rank}</span>
                             </div>
                           </div>
 

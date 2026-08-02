@@ -65,7 +65,7 @@ export interface CachedVideo {
 
 export interface GeneratedQuestion {
   id: string;
-  type: 'mcq' | 'true_false' | 'fill_blank' | 'short_answer' | 'long_answer' | 'numerical' | 'scenario';
+  type: 'mcq' | 'true_false' | 'fill_blank' | 'short_answer' | 'long_answer' | 'descriptive' | 'numerical' | 'scenario';
   difficulty: 'easy' | 'medium' | 'hard';
   category: 'recall' | 'application' | 'critical_thinking';
   text: string;
