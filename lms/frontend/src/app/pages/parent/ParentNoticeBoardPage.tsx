@@ -84,7 +84,7 @@ export default function ParentNoticeBoardPage() {
                                     <Badge variant="secondary" className="text-[10px]">All Classes</Badge>
                                   )}
                                 </div>
-                                <p className="text-body-md text-foreground whitespace-pre-wrap">{n.content}</p>
+                                <p className="text-body-md text-foreground whitespace-pre-wrap break-words">{n.content}</p>
                                 <div className="flex items-center gap-3 mt-2 text-label-xs text-muted-foreground">
                                   <span className="flex items-center gap-1">
                                     <Icon name="calendar_today" size={14} />

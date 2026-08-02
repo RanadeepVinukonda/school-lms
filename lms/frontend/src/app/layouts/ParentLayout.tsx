@@ -7,7 +7,6 @@ import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
 import NotificationDropdown from '@/components/common/NotificationDropdown';
-import GlobalSearchDialog from '@/components/common/GlobalSearchDialog';
 import { TutorialGuide } from '@/components/common/TutorialGuide';
 import { useNotificationStore } from '@/store/notificationStore';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
@@ -55,7 +54,6 @@ const mobileNavItems: NavItem[] = [
 export default function ParentLayout() {
   const user = useAuthStore((s) => s.user);
   const { sidebarCollapsed, setSidebarCollapsed } = useUIStore();
-  const [searchOpen, setSearchOpen] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const { t } = useTranslation();
   const subscribeToNotifications = useNotificationStore((s) => s.subscribeToNotifications);
@@ -65,17 +63,6 @@ export default function ParentLayout() {
     const val = t(key as any);
     return val === key ? label : val;
   };
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        setSearchOpen(true);
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -110,14 +97,17 @@ export default function ParentLayout() {
           )}
         >
           {sidebarCollapsed ? (
-            <Button
-              variant="text"
-              size="icon-sm"
-              onClick={() => setSidebarCollapsed(false)}
-              className="text-on-surface-variant"
-            >
-              <Icon name="chevron_right" size={18} />
-            </Button>
+            <div className="flex flex-col items-center gap-1">
+              <img src="/genesis_icon.png" alt="Genesis" className="h-8 w-8 object-contain" />
+              <button
+                type="button"
+                onClick={() => setSidebarCollapsed(false)}
+                className="text-on-surface-variant hover:text-primary transition-colors"
+                aria-label="Expand sidebar"
+              >
+                <Icon name="chevron_right" size={16} />
+              </button>
+            </div>
           ) : (
             <div className="w-full flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -156,19 +146,19 @@ export default function ParentLayout() {
                   <NavLink
                     key={item.href}
                     to={item.href}
-                    className={({ isActive }) =>
-                      cn(
-                        'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                        isActive
-                          ? 'bg-secondary-container text-on-secondary-container'
-                          : 'text-on-surface-variant hover:bg-surface-variant/50',
-                        sidebarCollapsed && 'justify-center px-2',
-                      )
-                    }
-                  >
-                    <Icon name={item.icon} size={24} />
-                    {!sidebarCollapsed && <span>{getLabel(item.label)}</span>}
-                  </NavLink>
+                      className={({ isActive }) =>
+                        cn(
+                          'flex flex-col items-center justify-center gap-1 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                          isActive
+                            ? 'bg-secondary-container text-on-secondary-container'
+                            : 'text-on-surface-variant hover:bg-surface-variant/50',
+                          sidebarCollapsed && 'justify-center px-2',
+                        )
+                      }
+                    >
+                      <Icon name={item.icon} size={24} />
+                      {!sidebarCollapsed && <span className="text-center leading-tight">{getLabel(item.label)}</span>}
+                    </NavLink>
                 ))}
               </div>
             </div>
@@ -232,18 +222,18 @@ export default function ParentLayout() {
                         <SheetClose asChild key={item.href}>
                           <NavLink
                             to={item.href}
-                            className={({ isActive }) =>
-                              cn(
-                                'flex items-center gap-3 rounded-xl w-full px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                                isActive
-                                  ? 'bg-secondary-container text-on-secondary-container'
-                                  : 'text-on-surface-variant hover:bg-surface-variant/50',
-                              )
-                            }
-                          >
-                            <Icon name={item.icon} size={20} />
-                            <span>{getLabel(item.label)}</span>
-                          </NavLink>
+                              className={({ isActive }) =>
+                                cn(
+                                  'flex flex-col items-center justify-center gap-1 rounded-xl w-full px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                  isActive
+                                    ? 'bg-secondary-container text-on-secondary-container'
+                                    : 'text-on-surface-variant hover:bg-surface-variant/50',
+                                )
+                              }
+                            >
+                              <Icon name={item.icon} size={20} />
+                              <span className="text-center leading-tight">{getLabel(item.label)}</span>
+                            </NavLink>
                         </SheetClose>
                       ))}
                     </div>
@@ -277,12 +267,9 @@ export default function ParentLayout() {
           </Sheet>
 
           <span className="text-title-md font-bold text-primary hidden sm:block shrink-0">Genesis</span>
-          <img src="/genesis_icon.png" alt="Genesis" className="h-full w-auto object-contain pt-1.5 sm:hidden shrink-0" />
+          <img src="/genesis_icon.png" alt="Genesis" className="h-9 w-9 object-contain sm:hidden shrink-0" />
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             <ThemeToggle />
-            <Button variant="ghost" size="icon" onClick={() => setSearchOpen(true)} aria-label="Search" className="shrink-0">
-              <Icon name="search" size={20} />
-            </Button>
             {user && <NotificationDropdown />}
             {user && <UserAvatar />}
           </div>
@@ -292,7 +279,6 @@ export default function ParentLayout() {
           <Outlet />
         </main>
       </div>
-      <GlobalSearchDialog isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
       <TutorialGuide open={tutorialOpen} onComplete={() => setTutorialOpen(false)} />
     </div>
   );

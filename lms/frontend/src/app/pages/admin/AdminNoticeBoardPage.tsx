@@ -181,7 +181,7 @@ export default function AdminNoticeBoardPage() {
                                 <Badge variant="secondary" className="text-[10px]">All Classes</Badge>
                               )}
                             </div>
-                            <p className="text-body-md text-foreground line-clamp-2 whitespace-pre-wrap">{n.content}</p>
+                            <p className="text-body-md text-foreground line-clamp-2 whitespace-pre-wrap break-words">{n.content}</p>
                             <div className="flex items-center gap-3 mt-2 text-label-xs text-muted-foreground">
                               <span>{new Date(n.created_at).toLocaleDateString()}</span>
                               {n.expires_at && (
