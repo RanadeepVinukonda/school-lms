@@ -270,9 +270,27 @@ export async function gradeExamAttempt(attemptId: string, graderId: string, data
 
   logger.info('Exam attempt graded', { attemptId, graderId });
 
-  computeMastery(attempt.student_id as string, attempt.exam_id as string, (data.score / (attempt.total_points || 1))).catch(err =>
-    logger.error('Mastery update failed after exam grading', { studentId: attempt.student_id, examId: attempt.exam_id, error: err })
-  );
+  (async () => {
+    try {
+      const { data: examRow } = await supabase
+        .from('exams')
+        .select('textbook_id, chapter_id')
+        .eq('id', attempt.exam_id)
+        .maybeSingle();
+      if (!examRow?.chapter_id) return;
+      const { data: conceptRows } = await supabase
+        .from('concepts')
+        .select('id')
+        .eq('chapter_id', examRow.chapter_id);
+      for (const c of conceptRows || []) {
+        computeMastery(attempt.student_id as string, c.id as string, (data.score / (attempt.total_points || 1))).catch((err: unknown) =>
+          logger.error('Mastery update failed after exam grading', { studentId: attempt.student_id, conceptId: c.id, error: err })
+        );
+      }
+    } catch (err) {
+      logger.error('Mastery concept lookup failed after exam grading', { studentId: attempt.student_id, examId: attempt.exam_id, error: err });
+    }
+  })();
 
   try {
     const supabase2 = getSupabaseAdmin()!;

@@ -11,11 +11,21 @@ export async function computeMasteryInline(studentId: string, conceptId: string,
 
   const { data: existing, error: existingErr } = await supabase
     .from('concept_mastery')
-    .select('mastery_score, attempt_count')
+    .select('mastery_score, attempt_count, school_id')
     .eq('student_id', studentId)
     .eq('concept_id', conceptId)
     .maybeSingle();
   if (existingErr) throw new Error(existingErr.message);
+
+  let schoolId = existing?.school_id as string | null | undefined;
+  if (!schoolId) {
+    const { data: student } = await supabase
+      .from('users')
+      .select('school_id')
+      .eq('id', studentId)
+      .maybeSingle();
+    schoolId = (student?.school_id as string | null) || null;
+  }
 
   const prevScore = (existing?.mastery_score as number) || 0;
   const attemptCount = (existing?.attempt_count as number) || 0;
@@ -27,6 +37,7 @@ export async function computeMasteryInline(studentId: string, conceptId: string,
   const { error } = await supabase.from('concept_mastery').upsert({
     student_id: studentId,
     concept_id: conceptId,
+    school_id: schoolId,
     accuracy,
     attempt_count: attemptCount + 1,
     mastery_score: Math.round(newScore * 100) / 100,

@@ -306,6 +306,7 @@ export const feePayments = pgTable('fee_payments', {
 export const conceptMastery = pgTable('concept_mastery', {
   studentId: text('student_id').notNull(),
   conceptId: text('concept_id').notNull(),
+  schoolId: text('school_id'),
   accuracy: real('accuracy').notNull().default(0),
   attemptCount: integer('attempt_count').notNull().default(0),
   masteryScore: real('mastery_score').notNull().default(0),
