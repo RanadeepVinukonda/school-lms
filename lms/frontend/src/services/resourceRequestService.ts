@@ -116,22 +116,22 @@ function mapResource(r: any): StudentResource {
 }
 
 export async function getRecommendations(): Promise<ConceptRecommendation[]> {
-  const res = await api.get('/api/resource-requests/recommendations');
+  const res = await api.get('/resource-requests/recommendations');
   return res.data?.data || [];
 }
 
 export async function createResourceRequest(conceptId: string, reason?: string): Promise<ResourceRequest> {
-  const res = await api.post('/api/resource-requests/requests', { conceptId, reason });
+  const res = await api.post('/resource-requests/requests', { conceptId, reason });
   return mapRequest(res.data?.data);
 }
 
 export async function getMyRequests(): Promise<ResourceRequest[]> {
-  const res = await api.get('/api/resource-requests/requests/mine');
+  const res = await api.get('/resource-requests/requests/mine');
   return (res.data?.data || []).map(mapRequest);
 }
 
 export async function getMyResources(): Promise<StudentResourceGroup[]> {
-  const res = await api.get('/api/resource-requests/resources/mine');
+  const res = await api.get('/resource-requests/resources/mine');
   const groups = res.data?.data || [];
   return groups.map((g: any) => ({
     subject: g.subject,
@@ -143,21 +143,21 @@ export async function getMyResources(): Promise<StudentResourceGroup[]> {
 }
 
 export async function getTeacherRequests(): Promise<ResourceRequest[]> {
-  const res = await api.get('/api/resource-requests/requests');
+  const res = await api.get('/resource-requests/requests');
   return (res.data?.data || []).map(mapRequest);
 }
 
 export async function searchResourcesForConcept(conceptId: string, maxResults = 6): Promise<TeachResource[]> {
-  const res = await api.get(`/api/resource-requests/search/${conceptId}`, { params: { max: maxResults } });
+  const res = await api.get(`/resource-requests/search/${conceptId}`, { params: { max: maxResults } });
   return res.data?.data || [];
 }
 
 export async function approveResourceRequest(requestId: string, resources: TeachResource[]): Promise<ResourceRequest> {
-  const res = await api.post(`/api/resource-requests/requests/${requestId}/approve`, { resources });
+  const res = await api.post(`/resource-requests/requests/${requestId}/approve`, { resources });
   return mapRequest(res.data?.data);
 }
 
 export async function declineResourceRequest(requestId: string, reason?: string): Promise<ResourceRequest> {
-  const res = await api.post(`/api/resource-requests/requests/${requestId}/decline`, { reason });
+  const res = await api.post(`/resource-requests/requests/${requestId}/decline`, { reason });
   return mapRequest(res.data?.data);
 }
