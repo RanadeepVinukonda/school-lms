@@ -32,6 +32,8 @@ import { getUserDependencies } from '@/services/dependencyService';
 import { logAudit } from '@/services/auditService';
 import api from '@/services/api';
 import AdminProfileEditPage from './AdminProfileEditPage';
+import ProfileHeader from '@/components/profile/ProfileHeader';
+import { useAuthStore } from '@/store/authStore';
 import type { UserDoc } from '@/services/dataService';
 import type { DependencyReport } from '@/services/dependencyService';
 import type { User } from '@/types';
@@ -78,6 +80,7 @@ function getActionBadge(action: string) {
 
 export default function AdminSettingsPage() {
   const queryClient = useQueryClient();
+  const authUser = useAuthStore((s) => s.user);
   const [activeTab, setActiveTab] = useState('general');
 
   // -------------------------------------------------------------
@@ -341,7 +344,8 @@ export default function AdminSettingsPage() {
             {/* -------------------------------------------------------------
                 TAB CONTENT: PROFILE
                ------------------------------------------------------------- */}
-            <TabsContent value="profile" className="mt-4">
+            <TabsContent value="profile" className="mt-4 space-y-6">
+              <ProfileHeader user={authUser ?? {}} roleLabel="Administrator" />
               <AdminProfileEditPage />
             </TabsContent>
 

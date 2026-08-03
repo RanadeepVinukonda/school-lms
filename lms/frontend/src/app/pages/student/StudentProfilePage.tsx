@@ -7,11 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Icon } from '@/components/ui/Icon';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from '@/components/ui/dialog';
-import { cn, getInitials, formatDate } from '@/lib/utils';
+import { cn, formatDate } from '@/lib/utils';
 import { getLetterGrade } from '@/lib/format';
 import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
@@ -24,6 +23,7 @@ import { XPBar } from '@/components/gamification/XPBar';
 import { XP_THRESHOLDS } from '@/components/gamification/constants';
 import api from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import ProfileHeader from '@/components/profile/ProfileHeader';
 
 function EmptySection({ icon, message }: { icon: string; message: string }) {
   return (
@@ -94,57 +94,15 @@ export default function StudentProfilePage() {
         <DataFetchWrapper data={data} isLoading={isLoading} error={isError ? error ?? new Error(_('Failed to load profile')) : null} loadingType="profile" emptyMessage={_('Could not load profile information')} onRetry={() => refetch()} errorTitle={_('Failed to load profile')}>
           {(d) => (
             <div className="space-y-16">
-              {/* School Information */}
+              {/* School + User Header */}
               <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
-                <Card className="border-border/60 rounded-2xl">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-5">
-                      <img src="/genesis_icon.png" alt={_('Genesis School Crest')} className="h-20 w-auto object-contain shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <h2 className="text-headline-sm font-bold">{_('Genesis International Montessori & STEM School')}</h2>
-                        <p className="text-warning uppercase text-xs tracking-wider font-semibold mt-0.5">{_('Learn · Lead · Achieve')}</p>
-                        <p className="text-body-sm text-muted-foreground mt-2">{_('A premier institution dedicated to academic excellence, leadership development, and holistic student growth.')}</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-border">
-                          <div>
-                            <p className="text-xs text-muted-foreground">{_('Academic Year')}</p>
-                            <p className="text-sm font-semibold">2025&ndash;2026</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">{_('Campus')}</p>
-                            <p className="text-sm font-semibold">{_('Main Campus')}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">{_('School Motto')}</p>
-                            <p className="text-sm font-semibold">{_('Learn · Lead · Achieve')}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              {/* Personal Information */}
-              <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
-                <Card className="border-border/60">
-                  <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-5">
-                    <Avatar className="h-20 w-20">
-                      <AvatarImage src={d?.user?.avatar} alt={d?.user?.displayName ?? ''} />
-                      <AvatarFallback className="text-xl font-bold bg-primary-container text-primary">{getInitials(d?.user?.displayName ?? 'S')}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 text-center sm:text-left">
-                      <h2 className="text-title-md font-bold">{d?.user?.displayName ?? 'Student'}</h2>
-                      <p className="text-body-md text-muted-foreground">{_('Student')} &middot; {_('Roll No')}: {d.user.studentId ?? _('N/A')}</p>
-                      <div className="flex items-center justify-center sm:justify-start gap-3 mt-2 flex-wrap">
-                        <Badge variant="secondary" className="text-xs gap-1"><Icon name="mail" size={12} />{d.user.email}</Badge>
-                        {d.className && <Badge variant="info" className="text-xs gap-1"><Icon name="school" size={12} />{d.className}{d.classGrade ? ` (${_('Grade')} ${d.classGrade})` : ''}</Badge>}
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm" className="gap-2" asChild>
-                      <Link to="/student/profile/edit"><Icon name="edit" size={14} />{_('Edit')}</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
+                <ProfileHeader
+                  user={d.user}
+                  roleLabel={_('Student')}
+                  subtitle={d.user.studentId ? `${_('Roll No')}: ${d.user.studentId}` : undefined}
+                  badges={d.className ? <Badge variant="info" className="text-xs gap-1"><Icon name="school" size={12} />{d.className}{d.classGrade ? ` (${_('Grade')} ${d.classGrade})` : ''}</Badge> : undefined}
+                  editHref="/student/profile/edit"
+                />
               </motion.div>
 
               {/* Academic Overview */}

@@ -1,21 +1,18 @@
 import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Icon } from '@/components/ui/Icon';
-import { getInitials } from '@/lib/utils';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
+import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { getUser, getUserByRole } from '@/services/dataService';
 import { getChildren } from '@/services/parentService';
 import { ROUTES } from '@/lib/constants';
 import { useTranslation } from '@/hooks/useTranslation';
+import ProfileHeader from '@/components/profile/ProfileHeader';
 
 interface ProfileData {
   user: import('@/services/dataService').UserDoc;
@@ -71,31 +68,12 @@ export default function ParentProfilePage() {
           {(profileData) => (
             <>
               <motion.div variants={cardStackReveal} custom={0}>
-                <Card className="border-border/60 overflow-hidden">
-                  <div className="h-24 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent" />
-                  <CardContent className="p-5 -mt-12">
-                    <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4">
-                      <Avatar className="h-24 w-24 border-4 border-background ring-2 ring-primary/20">
-                        <AvatarFallback className="text-2xl">{getInitials(profileData.user.displayName ?? 'P')}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 text-center sm:text-left">
-                        <h1 className="text-headline-sm">{profileData.user.displayName ?? 'Parent'}</h1>
-                        <p className="text-body-md text-muted-foreground">{profileData.user.email ?? ''}</p>
-                        <div className="flex items-center justify-center sm:justify-start gap-2 mt-1 flex-wrap">
-                          <Badge variant="info" className="text-label-xs">
-                            <Icon name="family_history" size={11} className="mr-1" />Parent
-                          </Badge>
-
-                        </div>
-                        <Link to={ROUTES.PARENT_PROFILE_EDIT}>
-                          <Button variant="outline" size="sm" className="mt-2">
-                            <Icon name="edit" size={15} className="mr-1" />{_('Edit Profile')}
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <ProfileHeader
+                  user={profileData.user}
+                  roleLabel="Parent"
+                  subtitle={profileData.linkedChildrenCount > 0 ? `${profileData.linkedChildrenCount} ${profileData.linkedChildrenCount === 1 ? _('Linked Child') : _('Linked Children')}` : undefined}
+                  editHref={ROUTES.PARENT_PROFILE_EDIT}
+                />
               </motion.div>
 
               <motion.div variants={cardStackReveal} custom={0}>
