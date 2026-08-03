@@ -154,6 +154,33 @@ export async function getAllAssignments() {
   }));
 }
 
+/** Get assignments for a class with resolved subject + teacher names (students use this). */
+export async function getClassAssignments(classId: string): Promise<(TeacherClassSubject & { teacherName: string; subjectName: string })[]> {
+  const supabase = getSupabaseAdmin();
+  const { data: rows, error } = await supabase.from('firestore_docs').select('doc_id, data')
+    .eq('collection', 'teacherClassSubject')
+    .contains('data', { classId });
+  if (error) throw new Error('Failed to fetch assignments: ' + error.message);
+  const assignments = (rows || []).map((r) => ({ id: r.doc_id, ...r.data as Record<string, unknown> } as unknown as TeacherClassSubject));
+
+  const teacherIds = [...new Set(assignments.map((a) => a.teacherId))];
+  const subjectIds = [...new Set(assignments.map((a) => a.subjectId))];
+
+  const [teacherRes, subjectRes] = await Promise.all([
+    Promise.all(teacherIds.map(async (id) => { const { data, error: e } = await supabase.from('users').select('id, display_name').eq('id', id).maybeSingle(); if (e) throw new Error('Failed to fetch user: ' + e.message); return data; })),
+    Promise.all(subjectIds.map(async (id) => { const { data, error: e } = await supabase.from('subjects').select('id, name').eq('id', id).maybeSingle(); if (e) throw new Error('Failed to fetch subject: ' + e.message); return data; })),
+  ]);
+
+  const teacherMap = new Map(teacherRes.filter(Boolean).map((s: any) => [s.id, s.display_name || s.id]));
+  const subjectMap = new Map(subjectRes.filter(Boolean).map((s: any) => [s.id, s.name || s.id]));
+
+  return assignments.map((a) => ({
+    ...a,
+    teacherName: teacherMap.get(a.teacherId) || 'Unknown',
+    subjectName: subjectMap.get(a.subjectId) || 'Unknown',
+  }));
+}
+
 /** Remove a teacher-class-subject assignment. */
 export async function removeAssignment(assignmentId: string) {
   const supabase = getSupabaseAdmin();

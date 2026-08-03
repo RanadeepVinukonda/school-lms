@@ -160,7 +160,7 @@ function MarkerCanvas() {
       </div>
       <canvas
         ref={canvasRef}
-        className={`w-full h-[400px] border rounded-xl bg-white touch-none ${drawingEnabled ? 'cursor-crosshair' : 'cursor-default'}`}
+        className={`w-full h-[400px] border rounded-xl bg-white ${drawingEnabled ? 'touch-none cursor-crosshair' : 'touch-pan-y cursor-default'}`}
         onMouseDown={startDrawing}
         onMouseMove={draw}
         onMouseUp={stopDrawing}
@@ -211,25 +211,7 @@ export default function TeacherConceptViewPage() {
   const chapter = data?.chapter;
   const textbook = data?.textbook;
 
-  const teachResourcesQuery = useQuery({
-    queryKey: ['teach-resources', conceptId],
-    queryFn: async () => {
-      if (!conceptId) return [];
-      try {
-        const res = await api.get<{ data: TeachResource[] }>(`/teach-resources/search/${conceptId}`);
-        const all = res.data?.data ?? [];
-        // Deduplicate against already-saved videos
-        const savedIds = new Set((data?.concept?.videos ?? []).map((v) => v.youtubeId));
-        return all.filter((r) => !savedIds.has(r.videoId ?? r.id));
-      } catch (err) {
-        console.warn('Failed to fetch teach resources:', err);
-        return [];
-      }
-    },
-    enabled: !!conceptId,
-    staleTime: 5 * 60 * 1000,
-    retry: 1,
-  });
+
 
   const pushConceptMutation = useMutation({
     mutationFn: async () => {
@@ -293,7 +275,7 @@ export default function TeacherConceptViewPage() {
                     )}
                     <Badge variant="outline" className="text-[10px]">
                       <Icon name="smart_display" size={12} className="mr-1" />
-                      {(d.concept.videos ?? []).length + (teachResourcesQuery.data?.length ?? 0)} video{(d.concept.videos ?? []).length + (teachResourcesQuery.data?.length ?? 0) !== 1 ? 's' : ''}
+                      {(d.concept.videos ?? []).length} video{(d.concept.videos ?? []).length !== 1 ? 's' : ''}
                     </Badge>
                     <Badge variant="outline" className="text-[10px]">
                       <Icon name="quiz" size={12} className="mr-1" />
@@ -324,7 +306,7 @@ export default function TeacherConceptViewPage() {
                           <Icon name="smart_display" size={16} className="text-primary" />
                           {_('Saved Resources')}
                         </h3>
-                        {d.concept.videos.map((video) => (
+                        {d.concept.videos.slice(0, 3).map((video) => (
                           <Card key={video.id} className="border-border/60">
                             <CardContent className="p-5">
                               <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-muted">
@@ -349,63 +331,14 @@ export default function TeacherConceptViewPage() {
                       </>
                     )}
 
-                    {teachResourcesQuery.isLoading ? (
-                      <div className="flex items-center justify-center py-4">
-                        <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
-                      </div>
-                    ) : teachResourcesQuery.data && teachResourcesQuery.data.length > 0 ? (
-                      <>
-                        <h3 className="text-title-sm font-semibold flex items-center gap-2">
-                          <Icon name="school" size={16} className="text-primary" />
-                          {_('External Resources')}
-                        </h3>
-                        {teachResourcesQuery.data.map((resource) => (
-                          <Card key={resource.id} className="border-border/60">
-                            <CardContent className="p-5">
-                              <div className="flex gap-4">
-                                <div className="w-48 shrink-0">
-                                  <img
-                                    src={resource.thumbnail}
-                                    alt={resource.title}
-                                    className="w-full aspect-video object-cover rounded-lg"
-                                    onError={(e) => { (e.target as HTMLImageElement).src = ''; }}
-                                  />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-start justify-between gap-2">
-                                    <div>
-                                      <h3 className="font-semibold text-title-sm line-clamp-2">{resource.title}</h3>
-                                      <p className="text-label-xs text-muted-foreground mt-1">
-                                        {resource.channelName} &middot; {resource.duration}
-                                      </p>
-                                    </div>
-                                    <Badge className={resource.source === 'khan_academy' ? 'bg-emerald-600' : 'bg-red-600'}>
-                                      {resource.sourceLabel}
-                                    </Badge>
-                                  </div>
-                                  <p className="text-label-sm text-muted-foreground mt-2 line-clamp-2">{resource.description}</p>
-                                  <div className="mt-3">
-                                    <a href={resource.url} target="_blank" rel="noopener noreferrer">
-                                      <Button variant="outline" size="sm">
-                                        <Icon name="open_in_new" size={14} className="mr-1.5" />
-                                        Open Resource
-                                      </Button>
-                                    </a>
-                                  </div>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </>
-                    ) : (d.concept.videos ?? []).length === 0 ? (
+                    {(d.concept.videos ?? []).length === 0 && (
                       <Card className="border-border/60">
                         <CardContent className="p-8 text-center text-muted-foreground">
                           <Icon name="search_off" size={40} className="mx-auto mb-2 opacity-40" />
-                          <p className="text-body-md">No external learning resources available.</p>
+                          <p className="text-body-md">No learning resources available.</p>
                         </CardContent>
                       </Card>
-                    ) : null}
+                    )}
 
                     <Card className="border-border/60">
                       <CardContent className="p-5">

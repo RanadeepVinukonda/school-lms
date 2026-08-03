@@ -45,8 +45,8 @@ export const mindmapService = {
     return res.data.data;
   },
 
-  async pushToClasses(id: string, classIds: string[]) {
-    const res = await api.post<ApiResponse<MindMap>>(`/mindmaps/${id}/push-to-classes`, { classIds });
+  async pushToClasses(id: string, classIds: string[], subjectId?: string, subjectName?: string) {
+    const res = await api.post<ApiResponse<MindMap>>(`/mindmaps/${id}/push-to-classes`, { classIds, subjectId, subjectName });
     return res.data.data;
   },
 

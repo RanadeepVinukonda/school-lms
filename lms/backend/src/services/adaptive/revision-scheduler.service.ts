@@ -6,6 +6,26 @@ export interface OverdueConcept {
   masteryScore: number;
   daysSinceReview: number;
   textbookId: string;
+  subjectName?: string;
+}
+
+async function resolveSubjectNames(textbookIds: string[]): Promise<Map<string, string>> {
+  const supabase = getSupabaseAdmin();
+  const map = new Map<string, string>();
+  if (!supabase || textbookIds.length === 0) return map;
+  const { data: textbooks } = await supabase
+    .from('textbooks')
+    .select('id, subject_id')
+    .in('id', textbookIds);
+  const subjectIds = [...new Set((textbooks || []).map((t: any) => t.subject_id).filter(Boolean))];
+  if (subjectIds.length === 0) return map;
+  const { data: subjects } = await supabase
+    .from('subjects')
+    .select('id, name')
+    .in('id', subjectIds);
+  const nameById = new Map((subjects || []).map((s: any) => [s.id, s.name]));
+  for (const t of textbooks || []) map.set(t.id, nameById.get(t.subject_id) || '');
+  return map;
 }
 
 export async function getOverdueConcepts(studentId: string): Promise<OverdueConcept[]> {
@@ -48,6 +68,10 @@ export async function getOverdueConcepts(studentId: string): Promise<OverdueConc
     });
   }
 
+  const subjectNameByTextbook = await resolveSubjectNames(
+    [...new Set((conceptRows || []).map((r: any) => (r.textbook_id as string) || '').filter(Boolean))],
+  );
+
   return overdue.map((c: Record<string, unknown>) => {
     const conceptId = c.concept_id as string;
     const lastReviewTime = c.last_reviewed_at ? new Date(c.last_reviewed_at as string).getTime() : now;
@@ -58,6 +82,7 @@ export async function getOverdueConcepts(studentId: string): Promise<OverdueConc
       masteryScore: (c.mastery_score as number) || 0,
       daysSinceReview: Math.max(0, Math.floor((now - lastReviewTime) / DAY_MS)),
       textbookId: meta?.textbookId || '',
+      subjectName: subjectNameByTextbook.get(meta?.textbookId || '') || '',
     };
   });
 }

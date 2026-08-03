@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import type { CSSProperties } from 'react';
 import ReactFlow, {
-  Background, Controls, MiniMap, MarkerType,
+  Background, MarkerType,
   Node, Edge, useNodesState, useEdgesState,
   type OnNodesChange, type OnEdgesChange,
 } from 'reactflow';
@@ -216,15 +216,6 @@ export function MindMapCanvas({
         zoomOnScroll
       >
         <Background />
-        <Controls />
-        {showMiniMap && (
-          <MiniMap
-            nodeStrokeColor="#94a3b8"
-            nodeColor={(n) => (n.style?.background as string) || (isDark ? '#1e293b' : '#e0f2fe')}
-            maskColor="rgba(0,0,0,0.1)"
-            style={{ bottom: 10, right: 10 }}
-          />
-        )}
       </ReactFlow>
     </div>
   );

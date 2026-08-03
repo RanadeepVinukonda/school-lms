@@ -18,6 +18,8 @@ import { uploadProfileImage } from '@/services/avatarService';
 import { getUser, updateUser } from '@/services/dataService';
 import { ROUTES } from '@/lib/constants';
 
+const ADMIN_SETTINGS_PROFILE = `${ROUTES.ADMIN_SETTINGS}?tab=profile`;
+
 export default function AdminProfileEditPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -80,12 +82,14 @@ export default function AdminProfileEditPage() {
       const data: Record<string, unknown> = { ...form };
       if (avatarPreview) data.photoURL = avatarPreview;
       await updateUser(user.id, data);
-      setUser({ ...user, ...data } as typeof user);
+      const { photoURL, ...rest } = data;
+      setUser({ ...user, ...rest, avatar: (photoURL as string | undefined) || user.avatar } as typeof user);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-profile-edit', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['admin-users-stats'] });
       toast.success('Profile updated');
-      navigate(ROUTES.ADMIN_DASHBOARD);
+      navigate(ADMIN_SETTINGS_PROFILE);
     },
     onError: () => toast.error('Failed to update profile'),
   });
@@ -101,7 +105,7 @@ export default function AdminProfileEditPage() {
       >
         <motion.div variants={cardStackReveal} custom={0} className="space-y-16">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate(ROUTES.ADMIN_DASHBOARD)}>
+            <Button variant="ghost" size="sm" onClick={() => navigate(ADMIN_SETTINGS_PROFILE)}>
               <Icon name="arrow_back" size={18} />
             </Button>
             <h1 className="text-headline-sm font-bold">Edit Profile</h1>
@@ -147,7 +151,7 @@ export default function AdminProfileEditPage() {
               </div>
 
               <div className="flex gap-3 pt-2">
-                <Button variant="outline" className="flex-1" onClick={() => navigate(ROUTES.ADMIN_DASHBOARD)}>Cancel</Button>
+                <Button variant="outline" className="flex-1" onClick={() => navigate(ADMIN_SETTINGS_PROFILE)}>Cancel</Button>
                 <Button className="flex-1" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || loadingProfile}>
                   {saveMutation.isPending ? 'Saving...' : loadingProfile ? 'Loading...' : 'Save Changes'}
                 </Button>

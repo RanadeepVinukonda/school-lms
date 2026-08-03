@@ -7,7 +7,6 @@ import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
 import NotificationDropdown from '@/components/common/NotificationDropdown';
-import GlobalSearchDialog from '@/components/common/GlobalSearchDialog';
 import { TutorialGuide } from '@/components/common/TutorialGuide';
 import { useNotificationStore } from '@/store/notificationStore';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
@@ -66,8 +65,8 @@ const mobileNavItems: NavItem[] = [
 export default function TeacherLayout() {
   const user = useAuthStore((s) => s.user);
   const { sidebarCollapsed, setSidebarCollapsed } = useUIStore();
-  const [searchOpen, setSearchOpen] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { t } = useTranslation();
   const subscribeToNotifications = useNotificationStore((s) => s.subscribeToNotifications);
   usePushNotifications(!!user);
@@ -82,17 +81,6 @@ export default function TeacherLayout() {
     const unsub = subscribeToNotifications(user.id);
     return unsub;
   }, [user?.id, subscribeToNotifications]);
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        setSearchOpen(true);
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -123,14 +111,17 @@ export default function TeacherLayout() {
           )}
         >
           {sidebarCollapsed ? (
-            <Button
-              variant="text"
-              size="icon-sm"
-              onClick={() => setSidebarCollapsed(false)}
-              className="text-on-surface-variant"
-            >
-              <Icon name="chevron_right" size={18} />
-            </Button>
+            <div className="flex flex-col items-center gap-1">
+              <img src="/genesis_icon.png" alt="Genesis" className="h-8 w-8 object-contain" />
+              <button
+                type="button"
+                onClick={() => setSidebarCollapsed(false)}
+                className="text-on-surface-variant hover:text-primary transition-colors"
+                aria-label="Expand sidebar"
+              >
+                <Icon name="chevron_right" size={16} />
+              </button>
+            </div>
           ) : (
             <div className="w-full flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -160,7 +151,7 @@ export default function TeacherLayout() {
         <nav className="flex-1 overflow-y-auto p-3 space-y-4">
           {navGroups.map((group) => (
             <div key={group.label}>
-              {!sidebarCollapsed && (
+              {!sidebarCollapsed && group.label !== 'Main' && (
                 <p className="text-label-xs font-semibold text-on-surface-variant uppercase tracking-wider px-3 pb-1.5">
                   {group.label}
                 </p>
@@ -170,19 +161,19 @@ export default function TeacherLayout() {
                   <NavLink
                     key={item.href}
                     to={item.href}
-                    className={({ isActive }) =>
-                      cn(
-                        'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                        isActive
-                          ? 'bg-secondary-container text-on-secondary-container'
-                          : 'text-on-surface-variant hover:bg-surface-variant/50',
-                        sidebarCollapsed && 'justify-center px-2',
-                      )
-                    }
-                  >
-                    <Icon name={item.icon} size={24} />
-                    {!sidebarCollapsed && <span>{getLabel(item.label)}</span>}
-                  </NavLink>
+                      className={({ isActive }) =>
+                        cn(
+                          'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                          isActive
+                            ? 'bg-secondary-container text-on-secondary-container'
+                            : 'text-on-surface-variant hover:bg-surface-variant/50',
+                          sidebarCollapsed && 'justify-center px-2',
+                        )
+                      }
+                    >
+                      <Icon name={item.icon} size={24} />
+                      {!sidebarCollapsed && <span>{getLabel(item.label)}</span>}
+                    </NavLink>
                 ))}
               </div>
             </div>
@@ -222,8 +213,8 @@ export default function TeacherLayout() {
         )}
       >
         {/* Top app bar */}
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-2 sm:gap-4 border-b border-outline-variant bg-surface/80 px-3 sm:px-4 backdrop-blur-md supports-[backdrop-filter]:bg-surface/60">
-          <Sheet>
+        <header className="relative z-30 flex h-16 items-center gap-2 sm:gap-4 border-b border-outline-variant bg-surface px-3 sm:px-4">
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden text-on-surface shrink-0" aria-label="Menu">
                 <Icon name="menu" size={24} />
@@ -243,26 +234,28 @@ export default function TeacherLayout() {
               <nav className="flex-1 overflow-y-auto py-2 px-2 flex flex-col gap-0.5">
                 {navGroups.map((group) => (
                   <div key={group.label}>
-                    <p className="text-label-xs font-semibold text-on-surface-variant uppercase tracking-wider px-3 pb-1">
-                      {group.label}
-                    </p>
+                    {group.label !== 'Main' && (
+                      <p className="text-label-xs font-semibold text-on-surface-variant uppercase tracking-wider px-3 pb-1">
+                        {group.label}
+                      </p>
+                    )}
                     <div className="flex flex-col gap-0.5">
                       {group.items.map((item) => (
                         <SheetClose asChild key={item.href}>
                           <NavLink
                             to={item.href}
-                            className={({ isActive }) =>
-                              cn(
-                                'flex items-center gap-3 rounded-xl w-full px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                                isActive
-                                  ? 'bg-secondary-container text-on-secondary-container'
-                                  : 'text-on-surface-variant hover:bg-surface-variant/50',
-                              )
-                            }
-                          >
-                            <Icon name={item.icon} size={20} />
-                            <span>{getLabel(item.label)}</span>
-                          </NavLink>
+                              className={({ isActive }) =>
+                                cn(
+                                  'flex items-center gap-3 rounded-xl w-full px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                  isActive
+                                    ? 'bg-secondary-container text-on-secondary-container'
+                                    : 'text-on-surface-variant hover:bg-surface-variant/50',
+                                )
+                              }
+                            >
+                              <Icon name={item.icon} size={24} />
+                              <span>{getLabel(item.label)}</span>
+                            </NavLink>
                         </SheetClose>
                       ))}
                     </div>
@@ -297,12 +290,9 @@ export default function TeacherLayout() {
           </Sheet>
 
           <span className="text-title-md font-bold text-primary hidden sm:block shrink-0">Genesis</span>
-          <img src="/genesis_icon.png" alt="Genesis" className="h-full w-auto object-contain pt-1.5 sm:hidden shrink-0" />
+          <img src="/genesis_icon.png" alt="Genesis" className="h-9 w-9 object-contain sm:hidden shrink-0" />
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             <ThemeToggle />
-            <Button variant="ghost" size="icon" onClick={() => setSearchOpen(true)} aria-label="Search" className="shrink-0">
-              <Icon name="search" size={20} />
-            </Button>
             {user && <NotificationDropdown />}
             {user && <UserAvatar />}
           </div>
@@ -312,7 +302,7 @@ export default function TeacherLayout() {
           <Outlet />
         </main>
       </div>
-      <GlobalSearchDialog isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+
       <TutorialGuide open={tutorialOpen} onComplete={() => setTutorialOpen(false)} />
     </div>
   );

@@ -75,7 +75,7 @@ export default function TeacherNoticeBoardPage() {
                                   <h3 className="text-title-sm font-semibold md:truncate">{n.title}</h3>
                                   {priorityBadge(n.priority)}
                                 </div>
-                                <p className="text-body-md text-foreground whitespace-pre-wrap">{n.content}</p>
+                                <p className="text-body-md text-foreground whitespace-pre-wrap break-words">{n.content}</p>
                                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-label-xs text-muted-foreground">
                                   <span className="flex items-center gap-1 whitespace-nowrap">
                                     <Icon name="calendar_today" size={14} />

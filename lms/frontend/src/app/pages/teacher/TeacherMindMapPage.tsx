@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
@@ -8,7 +9,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/store/authStore';
 import { mindmapService } from '@/services/mindmapService';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
-import { getAllClasses } from '@/services/dataService';
+import { getAllClasses, getAllSubjects } from '@/services/dataService';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -31,9 +32,7 @@ export default function TeacherMindMapPage() {
   const [pushOpen, setPushOpen] = useState(false);
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
   const [pushing, setPushing] = useState(false);
-  const [pushDone, setPushDone] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [viewId, setViewId] = useState<string | null>(null);
 
   const { data: savedMindMaps, isLoading: savedLoading, error: savedError, refetch: refetchSaved } = useQuery({
@@ -72,7 +71,6 @@ export default function TeacherMindMapPage() {
   const generateMindmap = useCallback(async () => {
     if (!text.trim() || !title.trim()) return;
     setLoading(true);
-    setPushDone(false);
     try {
       const result = await mindmapService.generate(text, title);
       setGeneratedId(result.id);
@@ -92,25 +90,30 @@ export default function TeacherMindMapPage() {
       refetchSaved();
     } catch (err: any) {
       console.error('Mindmap generation failed', err);
+      toast.error(_('Failed to generate mind map'));
     } finally {
       setLoading(false);
     }
   }, [text, title]);
 
   const [assignedClasses, setAssignedClasses] = useState<{ id: string; name: string }[]>([]);
+  const [allSubjects, setAllSubjects] = useState<{ id: string; name: string }[]>([]);
+  const [selectedSubjectId, setSelectedSubjectId] = useState('');
   useEffect(() => {
     (async () => {
       try {
-        const [assignmentsRes, allClasses] = await Promise.all([
+        const [assignmentsRes, classes, subjects] = await Promise.all([
           teacherClassSubjectService.getMyAssignments(),
           getAllClasses(),
+          getAllSubjects(),
         ]);
         const myAssignments = assignmentsRes?.data ?? [];
         const myClassIds = [...new Set(myAssignments.map((a) => a.classId))];
-        const myClasses = allClasses
+        const myClasses = classes
           .filter((c: any) => myClassIds.includes(c.id))
           .map((c: any) => ({ id: c.id, name: `${c.name || ''}${c.section ? ` - ${c.section}` : ''}`.trim() || c.code || c.id }));
         setAssignedClasses(myClasses);
+        setAllSubjects((subjects || []).map((s: any) => ({ id: s.id, name: s.name || s.code || s.id })));
       } catch (e) {
         console.error('Failed to load assigned classes', e);
       }
@@ -119,7 +122,7 @@ export default function TeacherMindMapPage() {
 
   const openPushDialog = useCallback(() => {
     setSelectedClassIds([]);
-    setPushDone(false);
+    setSelectedSubjectId('');
     setPushOpen(true);
   }, []);
 
@@ -132,7 +135,6 @@ export default function TeacherMindMapPage() {
   const handleSave = useCallback(async () => {
     if (!generatedId) return;
     setSaving(true);
-    setSaved(false);
     try {
       await mindmapService.update(generatedId, {
         title,
@@ -150,11 +152,11 @@ export default function TeacherMindMapPage() {
           label: typeof e.label === 'string' ? e.label : '',
         })),
       });
-      setSaved(true);
+      toast.success(_('Mind map saved'));
       refetchSaved();
-      setTimeout(() => setSaved(false), 2000);
     } catch (err: any) {
       console.error('Failed to save mind map', err);
+      toast.error(_('Failed to save mind map'));
     } finally {
       setSaving(false);
     }
@@ -164,14 +166,17 @@ export default function TeacherMindMapPage() {
     if (!generatedId || selectedClassIds.length === 0) return;
     setPushing(true);
     try {
-      await mindmapService.pushToClasses(generatedId, selectedClassIds);
-      setPushDone(true);
+      const subject = allSubjects.find((s) => s.id === selectedSubjectId);
+      await mindmapService.pushToClasses(generatedId, selectedClassIds, selectedSubjectId, subject?.name);
+      setPushOpen(false);
+      toast.success(_('Pushed to selected classes'));
     } catch (err: any) {
       console.error('Failed to push mind map', err);
+      toast.error(_('Failed to push mind map'));
     } finally {
       setPushing(false);
     }
-  }, [generatedId, selectedClassIds]);
+  }, [generatedId, selectedClassIds, selectedSubjectId, allSubjects]);
 
   return (
     <>
@@ -188,8 +193,8 @@ export default function TeacherMindMapPage() {
             </div>
           </div>
         </div>
-        <div className="flex flex-1 gap-4 p-4 overflow-hidden">
-          <Card className="w-96 p-4 flex flex-col gap-4 shrink-0">
+        <div className="flex flex-1 flex-col lg:flex-row gap-4 p-4 overflow-y-auto lg:overflow-hidden">
+          <Card className="w-full lg:w-96 p-4 flex flex-col gap-4 shrink-0">
             <input
               type="text"
               value={title}
@@ -208,7 +213,7 @@ export default function TeacherMindMapPage() {
               <Icon name="psychology" size={18} className="mr-2" />
               {loading ? _('Generating...') : _('Generate Mind Map')}
             </Button>
-            {generatedId && !pushDone && (
+            {generatedId && (
               <div className="flex flex-col gap-2">
                 <Button variant="outline" onClick={handleSave} disabled={saving}>
                   <Icon name="save" size={18} className="mr-2" />
@@ -220,18 +225,8 @@ export default function TeacherMindMapPage() {
                 </Button>
               </div>
             )}
-            {saved && (
-              <div className="text-center text-label-sm text-success font-medium py-2 rounded-lg bg-success-container/40">
-                {_('Saved')}
-              </div>
-            )}
-            {pushDone && (
-              <div className="text-center text-label-sm text-success font-medium py-2 rounded-lg bg-success-container/40">
-                {_('Pushed to selected classes')}
-              </div>
-            )}
           </Card>
-          <div className="flex-1 border border-outline-variant rounded-xl overflow-hidden">
+          <div className="flex-1 min-h-[50vh] lg:min-h-0 border border-outline-variant rounded-xl overflow-hidden">
             <MindMapCanvas
               nodes={nodes}
               edges={edges}
@@ -314,6 +309,16 @@ export default function TeacherMindMapPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
+            <select
+              value={selectedSubjectId}
+              onChange={(e) => setSelectedSubjectId(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-background text-foreground text-sm"
+            >
+              <option value="">{_('Select subject...')}</option>
+              {allSubjects.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
             {assignedClasses.length === 0 && (
               <p className="text-label-sm text-muted-foreground text-center py-4">
                 {_('No assigned classes found.')}
@@ -336,7 +341,7 @@ export default function TeacherMindMapPage() {
             <DialogClose asChild>
               <Button variant="outline">{_('Cancel')}</Button>
             </DialogClose>
-            <Button onClick={handlePush} disabled={pushing || selectedClassIds.length === 0}>
+            <Button onClick={handlePush} disabled={pushing || selectedClassIds.length === 0 || !selectedSubjectId}>
               {pushing ? _('Pushing...') : _('Send')}
             </Button>
           </DialogFooter>

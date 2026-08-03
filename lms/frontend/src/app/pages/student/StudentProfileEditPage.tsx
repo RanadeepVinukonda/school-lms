@@ -84,7 +84,8 @@ export default function StudentProfileEditPage() {
       const data: Record<string, unknown> = { ...form };
       if (avatarPreview) data.photoURL = avatarPreview;
       await updateUser(user.id, data);
-      setUser({ ...user, ...data } as typeof user);
+      const { photoURL, ...rest } = data;
+      setUser({ ...user, ...rest, avatar: (photoURL as string | undefined) || user.avatar } as typeof user);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['student-profile-edit', user?.id] });

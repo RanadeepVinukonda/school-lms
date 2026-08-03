@@ -138,7 +138,7 @@ export default function StudentDashboardPage() {
     enabled: !!studentId,
     queryFn: async () => {
       const res = await api.get(`/adaptive/recommendations/${studentId}`);
-      return res.data.data as Array<{ conceptId: string; conceptTitle: string; masteryScore: number; priorityScore: number; textbookId: string }>;
+      return res.data.data as Array<{ conceptId: string; conceptTitle: string; masteryScore: number; priorityScore: number; textbookId: string; subjectName?: string }>;
     },
     refetchOnWindowFocus: true,
   });
@@ -148,7 +148,7 @@ export default function StudentDashboardPage() {
     enabled: !!studentId,
     queryFn: async () => {
       const res = await api.get(`/adaptive/overdue/${studentId}`);
-      return res.data.data as Array<{ conceptId: string; conceptTitle: string; daysSinceReview: number; masteryScore: number; textbookId: string }>;
+      return res.data.data as Array<{ conceptId: string; conceptTitle: string; daysSinceReview: number; masteryScore: number; textbookId: string; subjectName?: string }>;
     },
     refetchOnWindowFocus: true,
   });
@@ -364,6 +364,7 @@ export default function StudentDashboardPage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-title-sm font-semibold truncate">{mm.title}</p>
+                              {mm.subjectName && <Badge variant="secondary" className="text-[10px] mt-0.5">{mm.subjectName}</Badge>}
                               {mm.description && <p className="text-label-sm text-muted-foreground truncate">{mm.description}</p>}
                             </div>
                             <Icon name="chevron_right" size={18} className="text-muted-foreground shrink-0" />
@@ -389,6 +390,7 @@ export default function StudentDashboardPage() {
                             <div className="flex-1 min-w-0">
                               <p className="text-title-sm font-semibold truncate">{rec.conceptTitle || _('Concept')}</p>
                               <div className="flex items-center gap-2 mt-0.5">
+                                <Badge variant="secondary" className="text-[10px]">{rec.subjectName || _('General')}</Badge>
                                 <Badge variant="warning" className="text-[10px]">{Math.round((rec.masteryScore ?? 0) * 100)}% {_('mastery')}</Badge>
                               </div>
                             </div>
@@ -410,6 +412,9 @@ export default function StudentDashboardPage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-title-sm font-semibold truncate">{oc.conceptTitle || _('Concept')}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <Badge variant="secondary" className="text-[10px]">{oc.subjectName || _('General')}</Badge>
+                              </div>
                               <p className="text-label-sm text-muted-foreground">{oc.daysSinceReview} {_('days since review')}</p>
                             </div>
                             <Button size="sm" variant="outline" asChild>

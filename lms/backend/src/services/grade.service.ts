@@ -35,7 +35,7 @@ export async function getStudentGrades(studentId: string, academicYear?: string,
   if (schoolId) query = query.eq('data->>schoolId', schoolId);
   const { data: rows, error } = await query.order('data->>createdAt', { ascending: false });
   if (error) throw new Error('Failed to fetch grades: ' + error.message);
-  let grades = (rows || []).map(r => (r as any).data).map(toGradeResponse);
+let grades = (rows || []).map(r => (r as any)?.data).filter(Boolean).map(toGradeResponse);
   if (academicYear) {
     grades = grades.filter((g: any) => (g.academicYear || '').includes(academicYear));
   }
@@ -228,7 +228,6 @@ export async function generateReport(studentId: string, academicYear: string, te
     },
   };
 }
-
 // ── Helpers ──────────────────────────────────────────────
 
 function toGradeResponse(row: Record<string, unknown>): Record<string, unknown> {

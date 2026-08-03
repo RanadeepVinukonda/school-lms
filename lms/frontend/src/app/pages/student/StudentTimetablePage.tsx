@@ -133,7 +133,7 @@ export default function StudentTimetablePage() {
                                       {(entry.teacher_id || entry.teacherId) && (
                                         <p className="text-[10px] text-muted-foreground leading-none flex items-center gap-1.5 truncate">
                                           <Icon name="person" size={10} className="text-muted-foreground/60 shrink-0" />
-                                          <span className="truncate">{teacherMap.get(entry.teacher_id || entry.teacherId || '') || entry.teacher_id || entry.teacherId}</span>
+                                          <span className="truncate">{teacherMap.get(entry.teacher_id || entry.teacherId || '') || '—'}</span>
                                         </p>
                                       )}
                                       {entry.room && (
@@ -145,7 +145,7 @@ export default function StudentTimetablePage() {
                                       {(entry.start_time || entry.startTime || entry.end_time || entry.endTime) && (
                                         <p className="text-[9px] text-muted-foreground/60 font-mono leading-none flex items-center gap-1.5 mt-0.5 border-t border-border/20 pt-1.5">
                                           <Icon name="schedule" size={10} className="text-muted-foreground/40 shrink-0" />
-                                          <span>{formatClockTime(entry.start_time || entry.startTime, true) || '—'} &ndash; {formatClockTime(entry.end_time || entry.endTime, true) || '—'}</span>
+                                          <span>{formatClockTime(entry.start_time || entry.startTime) || '—'} &ndash; {formatClockTime(entry.end_time || entry.endTime) || '—'}</span>
                                         </p>
                                       )}
                                     </div>

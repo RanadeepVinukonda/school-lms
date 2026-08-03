@@ -1,5 +1,5 @@
-import { useNavigate } from 'react-router-dom';
-import { LogOut, Settings, User, Globe } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { LogOut, User, Globe } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -16,17 +16,30 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
-import { hasRole, getPrimaryRole } from '@/lib/roleHelpers';
+import { getPrimaryRole } from '@/lib/roleHelpers';
 import { useTranslation } from '@/hooks/useTranslation';
+
+const PROFILE_ROUTES: string[] = [
+  ROUTES.STUDENT_PROFILE,
+  ROUTES.STUDENT_PROFILE_EDIT,
+  ROUTES.TEACHER_PROFILE,
+  ROUTES.TEACHER_PROFILE_EDIT,
+  ROUTES.PARENT_PROFILE,
+  ROUTES.PARENT_PROFILE_EDIT,
+  ROUTES.ADMIN_SETTINGS,
+  ROUTES.ADMIN_PROFILE_EDIT,
+];
 
 function roleProfileRoute(role: string): string {
   const primaryRole = getPrimaryRole(role);
   switch (primaryRole) {
     case 'admin':
     case 'super_admin':
-      return ROUTES.ADMIN_SETTINGS;
+      return `${ROUTES.ADMIN_SETTINGS}?tab=profile`;
     case 'teacher':
       return ROUTES.TEACHER_PROFILE;
+    case 'parent':
+      return ROUTES.PARENT_PROFILE;
     case 'student':
     default:
       return ROUTES.STUDENT_PROFILE;
@@ -36,9 +49,11 @@ function roleProfileRoute(role: string): string {
 export function UserAvatar() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
   const { lang, changeLanguage } = useTranslation();
 
   if (!user) return null;
+  if (PROFILE_ROUTES.includes(location.pathname)) return null;
 
   const initials = user.displayName
     ? user.displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
@@ -70,18 +85,6 @@ export function UserAvatar() {
             <User className="h-4 w-4" />
             Profile
           </DropdownMenuItem>
-          {(hasRole(user.role, 'admin') || hasRole(user.role, 'super_admin')) && (
-            <DropdownMenuItem onClick={() => navigate(ROUTES.ADMIN_SETTINGS)} className="gap-2">
-              <Settings className="h-4 w-4" />
-              Settings
-            </DropdownMenuItem>
-          )}
-          {hasRole(user.role, 'teacher') && (
-            <DropdownMenuItem onClick={() => navigate(ROUTES.TEACHER_PROFILE)} className="gap-2">
-              <Settings className="h-4 w-4" />
-              Settings
-            </DropdownMenuItem>
-          )}
           <DropdownMenuSub>
             <DropdownMenuSubTrigger className="gap-2">
               <Globe className="h-4 w-4" />

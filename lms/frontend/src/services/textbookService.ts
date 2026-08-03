@@ -19,6 +19,16 @@ const snakeToCamel = (obj: any): any => {
   }, {} as any);
 };
 
+const camelToSnake = (obj: any): any => {
+  if (!obj || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(camelToSnake);
+  return Object.keys(obj).reduce((acc, key) => {
+    const snake = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+    acc[snake] = obj[key];
+    return acc;
+  }, {} as any);
+};
+
 /** Create a new textbook document in Supabase. Returns the new document id. */
 export async function createTextbook(data: Omit<Textbook, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -72,10 +82,16 @@ export async function createTextbook(data: Omit<Textbook, 'id' | 'createdAt' | '
 /** Update a textbook document's fields. */
 export async function updateTextbook(id: string, data: Partial<Textbook>): Promise<void> {
   const { chapters, ...rest } = data;
-  await supabase.from(TEXTBOOKS_COLLECTION).update({
-    ...rest,
-    updatedAt: new Date().toISOString(),
+  const dbData = camelToSnake(rest);
+  const { error } = await supabase.from(TEXTBOOKS_COLLECTION).update({
+    ...dbData,
+    updated_at: new Date().toISOString(),
   }).eq('id', id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
   logAudit({
     action: 'textbook.update',
     targetId: id,

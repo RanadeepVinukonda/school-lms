@@ -504,7 +504,7 @@ export default function TeacherExamsPage() {
                   >
                     <option value="">{_('Select a textbook...')}</option>
                     {textbooks.map((tb: Textbook) => (
-                      <option key={tb.id} value={tb.id}>{tb.title || tb.id}</option>
+                      <option key={tb.id} value={tb.id}>{tb.title || _('Untitled')}</option>
                     ))}
                   </select>
                 </div>

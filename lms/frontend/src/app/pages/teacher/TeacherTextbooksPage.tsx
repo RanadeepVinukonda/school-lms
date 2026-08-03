@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -16,8 +16,34 @@ import { teacherClassSubjectService } from '@/services/teacherClassSubjectServic
 
 export default function TeacherTextbooksPage() {
   const { _ } = useTranslation();
-  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
-  const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedClassId = searchParams.get('classId');
+  const selectedSubjectId = searchParams.get('subjectId');
+
+  const setSelectedClassId = (id: string | null) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (id) {
+        next.set('classId', id);
+      } else {
+        next.delete('classId');
+      }
+      next.delete('subjectId');
+      return next;
+    });
+  };
+
+  const setSelectedSubjectId = (id: string | null) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (id) {
+        next.set('subjectId', id);
+      } else {
+        next.delete('subjectId');
+      }
+      return next;
+    });
+  };
 
   const { data: rawData, isLoading, error, refetch } = useQuery({
     queryKey: ['teacher-teaching-space'],
@@ -137,17 +163,6 @@ export default function TeacherTextbooksPage() {
                   : `${_('Browse textbooks or upload materials for')} ${selectedSubject?.name ?? ''}.`}
               </p>
             </div>
-            {selectedClassId && selectedSubjectId && currentTextbooks.length > 0 && (
-              <Button asChild>
-                <Link
-                  to={`/teacher/textbooks/upload?classId=${selectedClassId}&subjectId=${selectedSubjectId}`}
-                  className="gap-1"
-                >
-                  <Icon name="upload_file" size={16} />
-                  {_('Upload Textbook')}
-                </Link>
-              </Button>
-            )}
           </div>
         </div>
 

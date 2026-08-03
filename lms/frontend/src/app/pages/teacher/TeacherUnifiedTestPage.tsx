@@ -591,7 +591,7 @@ export default function TeacherUnifiedTestPage() {
                                   }}
                                   className="text-primary"
                                 />
-                                <span className="text-sm">{s.displayName || s.email || s.id}</span>
+                                <span className="text-sm">{s.displayName || s.email || 'Student'}</span>
                               </label>
                             );
                           })}

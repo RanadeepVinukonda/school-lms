@@ -54,6 +54,11 @@ export async function getAllAssignments(_req: Request, res: Response) {
   sendSuccess(res, result);
 }
 
+export async function getClassAssignments(req: Request, res: Response) {
+  const result = await tcsService.getClassAssignments(req.params.classId);
+  sendSuccess(res, result);
+}
+
 export async function removeAssignment(req: Request, res: Response) {
   await tcsService.removeAssignment(req.params.assignmentId);
   sendSuccess(res, null, 'Assignment removed');

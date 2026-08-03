@@ -106,16 +106,17 @@ export async function getYearlyReport(studentId: string, academicYear: string): 
     assessmentsCount: data.scores.length,
   }));
 
-  const overallPercentage = subjects.length > 0
-    ? Math.round(subjects.reduce((sum, s) => sum + s.averagePercentage, 0) / subjects.length)
-    : 0;
+  const subjectEntries = Object.entries(subjectMap);
+  const overallTotal = subjectEntries.reduce((sum, [, d]) => sum + d.totalPoints, 0);
+  const overallMax = subjectEntries.reduce((sum, [, d]) => sum + d.maxPoints, 0);
+  const overallPercentage = overallMax > 0 ? Math.round((overallTotal / overallMax) * 100) : 0;
   const gpa = (overallPercentage / 25).toFixed(1);
 
   const { data: attendance } = await supabase.from('attendance')
     .select('status')
     .eq('student_id', studentId)
-    .gte('date', `${academicYear}-01-01`)
-    .lte('date', `${academicYear}-12-31`);
+    .gte('date', `${year}-01-01`)
+    .lte('date', `${year}-12-31`);
 
   const totalDays = attendance?.length || 0;
   const presentDays = attendance?.filter(a => a.status === 'present').length || 0;

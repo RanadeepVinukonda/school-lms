@@ -11,15 +11,25 @@ import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/
 import { useQuery } from '@tanstack/react-query';
 import { getTextbooksBySubject, getChaptersForTextbook } from '@/services/textbookService';
 import { getSubject, getGradesByStudent } from '@/services/dataService';
+import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
+import { supabase } from '@/supabase/config';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
 import type { Textbook } from '@/types/textbook';
 
+interface TextbookDetails {
+  id: string;
+  title: string;
+  chapters: Array<{ id: string; title: string; concepts: Array<{ id: string; title: string }> }>;
+}
+
 interface DashboardData {
   subject: NonNullable<Awaited<ReturnType<typeof getSubject>>>;
+  teacherName?: string;
   currentChapter: { textbookId: string; textbookTitle: string; id: string; title: string; order: number; conceptCount: number } | null;
   recentGrade: { itemName: string; score: number; maxScore: number; percentage: number; gradedAt: string } | null;
   textbooks: Array<Textbook & { chapterCount: number }>;
+  textbookDetails: TextbookDetails[];
 }
 
 export default function SubjectDetailPage() {
@@ -33,10 +43,11 @@ export default function SubjectDetailPage() {
       const studentId = authUser?.id;
       if (!studentId) return null;
 
-      const [subject, firestoreTextbooks, grades] = await Promise.all([
+      const [subject, firestoreTextbooks, grades, classAssignments] = await Promise.all([
         getSubject(id),
         getTextbooksBySubject(id),
         studentId ? getGradesByStudent(studentId) : Promise.resolve([]),
+        authUser?.classId ? teacherClassSubjectService.getClassAssignments(authUser.classId).catch(() => []) : Promise.resolve([]),
       ]);
 
       if (!subject) return null;
@@ -44,6 +55,22 @@ export default function SubjectDetailPage() {
       const textbooks = firestoreTextbooks
         .filter((tb) => tb.status !== 'processing' && (!authUser?.classId || tb.classId === authUser.classId))
         .map((tb) => ({ ...tb, chapterCount: tb.chapterCount ?? 0 }));
+      const assignment = (classAssignments || []).find((a) => a.subjectId === id);
+      const teacherName = assignment?.teacherName;
+
+      const textbookDetails: TextbookDetails[] = await Promise.all(
+        textbooks.map(async (tb) => {
+          const chapters = await getChaptersForTextbook(tb.id);
+          const withConcepts = await Promise.all(
+            chapters.map(async (ch) => {
+              const { data: concepts } = await supabase
+                .from('concepts').select('id, title').eq('chapter_id', ch.id).order('order');
+              return { id: ch.id, title: ch.title, concepts: (concepts || []) as Array<{ id: string; title: string }> };
+            })
+          );
+          return { id: tb.id, title: tb.title, chapters: withConcepts };
+        })
+      );
       const firstTb = textbooks[0];
       let currentChapter: { textbookId: string; textbookTitle: string; id: string; title: string; order: number; conceptCount: number } | null = null;
       if (firstTb) {
@@ -66,9 +93,11 @@ export default function SubjectDetailPage() {
 
       return {
         subject,
+        teacherName,
         currentChapter,
         recentGrade: recentGrade ? { itemName: recentGrade.itemName ?? 'Assessment', score: recentGrade.score, maxScore: recentGrade.totalPoints, percentage: recentGrade.percentage, gradedAt: recentGrade.createdAt } : null,
         textbooks,
+        textbookDetails,
       };
     },
     enabled: !!id && !!authUser?.id,
@@ -111,6 +140,11 @@ export default function SubjectDetailPage() {
                         <p className="text-body-md text-muted-foreground">{d.subject.code}</p>
                         <div className="flex flex-wrap gap-2 mt-3">
                           {d.subject.category && <Badge variant="secondary" className="text-[10px]">{d.subject.category}</Badge>}
+                          {d.teacherName && (
+                            <Badge variant="outline" className="text-[10px] gap-1">
+                              <Icon name="person" size={12} /> Teacher: {d.teacherName}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -248,6 +282,53 @@ export default function SubjectDetailPage() {
                       </motion.div>
                     ))}
                   </motion.div>
+                )}
+              </motion.div>
+
+              {/* Chapters & Concepts (read-only) */}
+              <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                <div className="mb-6">
+                  <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">CURRICULUM</p>
+                  <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">Chapters &amp; Concepts</h2>
+                </div>
+                {d.textbookDetails.length === 0 ? (
+                  <Card className="border-border/60">
+                    <CardContent className="flex flex-col items-center gap-3 py-10">
+                      <Icon name="account_tree" size={40} className="text-muted-foreground/50" />
+                      <p className="text-body-md text-muted-foreground">No chapters uploaded yet by your teacher.</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="space-y-4">
+                    {d.textbookDetails.map((tb) => (
+                      <Card key={tb.id} className="border-border/60 overflow-hidden">
+                        <div className="h-1.5" style={{ backgroundColor: d.subject.color }} />
+                        <CardContent className="p-5">
+                          <p className="font-semibold flex items-center gap-2 mb-4">
+                            <Icon name="auto_stories" size={18} style={{ color: d.subject.color }} /> {tb.title}
+                          </p>
+                          <div className="space-y-3">
+                            {tb.chapters.map((ch) => (
+                              <div key={ch.id} className="rounded-lg border border-border/60 p-3">
+                                <p className="text-body-md font-medium flex items-center gap-2">
+                                  <Icon name="menu_book" size={15} className="text-muted-foreground" /> {ch.title}
+                                </p>
+                                {ch.concepts.length > 0 && (
+                                  <div className="flex flex-wrap gap-1.5 mt-2 pl-6">
+                                    {ch.concepts.map((c) => (
+                                      <span key={c.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-label-sm text-muted-foreground">
+                                        <Icon name="psychology" size={12} /> {c.title}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 )}
               </motion.div>
 

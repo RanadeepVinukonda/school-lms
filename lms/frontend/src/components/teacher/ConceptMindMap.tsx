@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import ReactFlow, {
-  Background, Controls, MiniMap,
+  Background,
   Node, Edge, MarkerType,
   useNodesState, useEdgesState,
 } from 'reactflow';
@@ -272,18 +272,6 @@ export function ConceptMindMap({ concepts, chapterTitle, chapters, onSelectConce
                 zoomOnScroll={true}
               >
                 <Background />
-                <Controls />
-                <MiniMap
-                  nodeStrokeColor="#94a3b8"
-                  nodeColor={(n) => {
-                    const d = n.data as any;
-                    if (d?.type === 'textbook') return '#1e40af';
-                    if (d?.type === 'chapter') return '#3b82f6';
-                    return '#e0f2fe';
-                  }}
-                  maskColor="rgba(0,0,0,0.1)"
-                  style={{ bottom: 10, right: 10 }}
-                />
               </ReactFlow>
             </div>
           </CardContent>

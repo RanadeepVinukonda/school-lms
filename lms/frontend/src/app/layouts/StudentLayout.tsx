@@ -6,7 +6,6 @@ import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
 import NotificationDropdown from '@/components/common/NotificationDropdown';
-import GlobalSearchDialog from '@/components/common/GlobalSearchDialog';
 import { TutorialGuide } from '@/components/common/TutorialGuide';
 import { useNotificationStore } from '@/store/notificationStore';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
@@ -29,7 +28,6 @@ const navItems: NavItem[] = [
   { label: 'Quizzes & Tasks', href: ROUTES.STUDENT_TASKS, icon: 'checklist' },
   { label: 'Exams', href: ROUTES.STUDENT_EXAMS, icon: 'assignment' },
   { label: 'AI Tutor', href: ROUTES.STUDENT_AI_TUTOR, icon: 'smart_toy' },
-  { label: 'Profile', href: ROUTES.STUDENT_PROFILE, icon: 'person' },
   { label: 'Rewards', href: ROUTES.STUDENT_GAMIFICATION, icon: 'emoji_events' },
   { label: 'Leaderboard', href: ROUTES.STUDENT_LEADERBOARD, icon: 'leaderboard' },
   { label: 'Mind Maps', href: ROUTES.STUDENT_MINDMAPS, icon: 'psychology' },
@@ -43,7 +41,6 @@ const navItems: NavItem[] = [
 export default function StudentLayout() {
   const user = useAuthStore((s) => s.user);
   const { sidebarCollapsed, setSidebarCollapsed } = useUIStore();
-  const [searchOpen, setSearchOpen] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const { t } = useTranslation();
   const subscribeToNotifications = useNotificationStore((s) => s.subscribeToNotifications);
@@ -59,17 +56,6 @@ export default function StudentLayout() {
     const val = t(key as any);
     return val === key ? label : val;
   };
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        setSearchOpen(true);
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -100,14 +86,17 @@ export default function StudentLayout() {
           )}
         >
           {sidebarCollapsed ? (
-            <Button
-              variant="text"
-              size="icon-sm"
-              onClick={() => setSidebarCollapsed(false)}
-              className="text-on-surface-variant"
-            >
-              <Icon name="chevron_right" size={18} />
-            </Button>
+            <div className="flex flex-col items-center gap-1">
+              <img src="/genesis_icon.png" alt="Genesis" className="h-8 w-8 object-contain" />
+              <button
+                type="button"
+                onClick={() => setSidebarCollapsed(false)}
+                className="text-on-surface-variant hover:text-primary transition-colors"
+                aria-label="Expand sidebar"
+              >
+                <Icon name="chevron_right" size={16} />
+              </button>
+            </div>
           ) : (
             <div className="w-full flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -149,7 +138,7 @@ export default function StudentLayout() {
                 )
               }
             >
-              <Icon name={item.icon} size={24} className={cn(sidebarCollapsed && '')} />
+              <Icon name={item.icon} size={24} />
               {!sidebarCollapsed && <span>{getLabel(item.label)}</span>}
             </NavLink>
           ))}
@@ -188,7 +177,7 @@ export default function StudentLayout() {
         )}
       >
         {/* Top app bar */}
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-2 sm:gap-4 border-b border-outline-variant bg-surface/80 px-3 sm:px-4 backdrop-blur-md supports-[backdrop-filter]:bg-surface/60">
+        <header className="relative z-30 flex h-16 items-center gap-2 sm:gap-4 border-b border-outline-variant bg-surface px-3 sm:px-4">
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden text-on-surface shrink-0" aria-label="Menu">
@@ -217,7 +206,7 @@ export default function StudentLayout() {
                         )
                       }
                     >
-                      <Icon name={item.icon} size={20} />
+                      <Icon name={item.icon} size={24} />
                       <span>{getLabel(item.label)}</span>
                     </NavLink>
                   </SheetClose>
@@ -247,12 +236,9 @@ export default function StudentLayout() {
           </Sheet>
 
           <span className="text-title-md font-bold text-primary hidden sm:block shrink-0">Genesis</span>
-          <img src="/genesis_icon.png" alt="Genesis" className="h-full w-auto object-contain pt-1.5 sm:hidden shrink-0" />
+          <img src="/genesis_icon.png" alt="Genesis" className="h-9 w-9 object-contain sm:hidden shrink-0" />
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             <ThemeToggle />
-            <Button variant="ghost" size="icon" onClick={() => setSearchOpen(true)} aria-label="Search" className="shrink-0">
-              <Icon name="search" size={20} />
-            </Button>
             {user && <NotificationDropdown />}
             {user && <UserAvatar />}
           </div>
@@ -262,7 +248,6 @@ export default function StudentLayout() {
           <Outlet />
         </main>
       </div>
-      <GlobalSearchDialog isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
       <TutorialGuide open={tutorialOpen} onComplete={() => setTutorialOpen(false)} />
     </div>
   );

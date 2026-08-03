@@ -55,33 +55,9 @@ export default function K2Layout() {
         )}
       </header>
 
-      <main className="max-w-6xl mx-auto p-4 pb-28">
+      <main className="max-w-6xl mx-auto p-4 pb-4">
         <Outlet />
       </main>
-
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-surface border-t-2 border-outline-variant shadow-2xl rounded-t-3xl pb-safe">
-        <div className="flex items-center justify-around h-[68px] px-2 max-w-6xl mx-auto">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.href}
-              to={item.href}
-              className={({ isActive }) =>
-                `flex flex-col items-center justify-center gap-0.5 px-3 py-1 text-xs font-bold transition-all rounded-2xl min-w-0 flex-1 h-full ${
-                  isActive ? 'text-primary scale-110' : 'text-on-surface-variant hover:text-primary/70'
-                }`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <Icon name={item.icon} size={28} />
-                  <span className="text-xs leading-none mt-0.5">{getLabel(item.label)}</span>
-                  {isActive && <span className="w-6 h-1 bg-primary rounded-full mt-0.5" />}
-                </>
-              )}
-            </NavLink>
-          ))}
-        </div>
-      </nav>
     </div>
   );
 }

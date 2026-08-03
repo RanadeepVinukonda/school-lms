@@ -65,6 +65,7 @@ export const ROUTES = {
   ADMIN_CLASSES: '/admin/classes',
   ADMIN_SUBJECTS: '/admin/subjects',
   ADMIN_SETTINGS: '/admin/settings',
+  ADMIN_PROFILE_EDIT: '/admin/profile/edit',
   ADMIN_USERS: '/admin/users',
   ADMIN_AUDIT_LOGS: '/admin/audit-logs',
   ADMIN_SCHOOL_ANALYTICS: '/admin/school-analytics',

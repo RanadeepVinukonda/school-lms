@@ -572,7 +572,7 @@ export default function TeacherAssessmentCreatePage() {
       text: q.text.trim(),
       type: q.type,
       points: q.points,
-      options: q.type === 'multiple_choice' ? q.options.filter((o) => o.trim()) : undefined,
+      options: q.type === 'multiple_choice' || q.type === 'matching' ? q.options.filter((o) => o.trim()) : undefined,
       correctAnswer: q.correctAnswer.trim(),
     }));
 
@@ -614,7 +614,7 @@ export default function TeacherAssessmentCreatePage() {
         if (field === 'type' && value !== 'multiple_choice') {
           updated.options = [];
         }
-        if (field === 'type' && value === 'multiple_choice' && q.options.length === 0) {
+        if (field === 'type' && (value === 'multiple_choice' || value === 'matching') && q.options.length === 0) {
           updated.options = [''];
         }
         return updated;
@@ -1316,15 +1316,35 @@ export default function TeacherAssessmentCreatePage() {
                                       </Button>
                                     </div>
                                     <div className="space-y-1">
-                                      {q.options.map((opt: string, oi: number) => (
+                                      {q.options.map((opt: string, oi: number) => {
+                                        const parts = q.type === 'matching' ? opt.split(' - ') : null;
+                                        return (
                                         <div key={oi} className="flex items-center gap-1.5">
                                           <span className="text-[10px] font-medium text-muted-foreground w-4">{String.fromCharCode(65 + oi)}.</span>
-                                          <Input
-                                            value={opt}
-                                            onChange={(e) => updateReviewOption(q.id, oi, e.target.value)}
-                                            className="flex-1 h-7 text-xs"
-                                            placeholder={`Option ${String.fromCharCode(65 + oi)}`}
-                                          />
+                                          {parts ? (
+                                            <>
+                                              <Input
+                                                value={parts[0] ?? ''}
+                                                onChange={(e) => updateReviewOption(q.id, oi, `${e.target.value} - ${parts.slice(1).join(' - ')}`)}
+                                                className="flex-1 h-7 text-xs"
+                                                placeholder="Left item"
+                                              />
+                                              <span className="text-muted-foreground text-xs">-</span>
+                                              <Input
+                                                value={parts.slice(1).join(' - ')}
+                                                onChange={(e) => updateReviewOption(q.id, oi, `${parts[0] ?? ''} - ${e.target.value}`)}
+                                                className="flex-1 h-7 text-xs"
+                                                placeholder="Right item"
+                                              />
+                                            </>
+                                          ) : (
+                                            <Input
+                                              value={opt}
+                                              onChange={(e) => updateReviewOption(q.id, oi, e.target.value)}
+                                              className="flex-1 h-7 text-xs"
+                                              placeholder={`Option ${String.fromCharCode(65 + oi)}`}
+                                            />
+                                          )}
                                           {q.options.length > 1 && (
                                             <button
                                               type="button"
@@ -1335,7 +1355,8 @@ export default function TeacherAssessmentCreatePage() {
                                             </button>
                                           )}
                                         </div>
-                                      ))}
+                                        );
+                                      })}
                                     </div>
                                   </div>
                                 )}
@@ -1362,6 +1383,8 @@ export default function TeacherAssessmentCreatePage() {
                                       <option value="true">True</option>
                                       <option value="false">False</option>
                                     </select>
+                                  ) : q.type === 'matching' ? (
+                                    <p className="text-xs text-muted-foreground">{_('Matches are derived from the pairs above')}</p>
                                   ) : (
                                     <Input
                                       value={q.correctAnswer || ''}
@@ -1569,6 +1592,51 @@ export default function TeacherAssessmentCreatePage() {
                               </div>
                             )}
 
+                            {question.type === 'matching' && (
+                              <div>
+                                <div className="flex items-center justify-between mb-1">
+                                  <Label className="text-label-xs">{_('Matching Pairs')}</Label>
+                                  <Button variant="ghost" size="icon-sm" onClick={() => addOption(question.id)}>
+                                    <Icon name="add_circle" size={14} className="text-primary" />
+                                  </Button>
+                                </div>
+                                <div className="space-y-2">
+                                  {question.options.map((opt, oi) => {
+                                    const sepIdx = opt.indexOf(' - ');
+                                    const left = sepIdx >= 0 ? opt.slice(0, sepIdx) : opt;
+                                    const right = sepIdx >= 0 ? opt.slice(sepIdx + 3) : '';
+                                    return (
+                                      <div key={oi} className="flex items-center gap-2">
+                                        <Input
+                                          value={left}
+                                          onChange={(e) => updateOption(question.id, oi, `${e.target.value} - ${right}`)}
+                                          placeholder={_('Left item')}
+                                          className="flex-1"
+                                        />
+                                        <span className="text-muted-foreground text-sm shrink-0">-</span>
+                                        <Input
+                                          value={right}
+                                          onChange={(e) => updateOption(question.id, oi, `${left} - ${e.target.value}`)}
+                                          placeholder={_('Right item')}
+                                          className="flex-1"
+                                        />
+                                        {question.options.length > 1 && (
+                                          <button
+                                            type="button"
+                                            onClick={() => removeOption(question.id, oi)}
+                                            className="text-muted-foreground hover:text-destructive shrink-0"
+                                          >
+                                            <Icon name="remove_circle" size={14} />
+                                          </button>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {question.type !== 'matching' && (
                             <div>
                               <Label className="mb-1 block text-label-xs">{_('Correct Answer')}</Label>
                               {question.type === 'multiple_choice' ? (
@@ -1602,6 +1670,7 @@ export default function TeacherAssessmentCreatePage() {
                                 />
                               )}
                             </div>
+                            )}
                           </CardContent>
                         </Card>
                       ))}
@@ -1763,15 +1832,35 @@ export default function TeacherAssessmentCreatePage() {
                                       </Button>
                                     </div>
                                     <div className="space-y-1">
-                                      {q.options.map((opt: string, oi: number) => (
+                                      {q.options.map((opt: string, oi: number) => {
+                                        const parts = q.type === 'matching' ? opt.split(' - ') : null;
+                                        return (
                                         <div key={oi} className="flex items-center gap-1.5">
                                           <span className="text-[10px] font-medium text-muted-foreground w-4">{String.fromCharCode(65 + oi)}.</span>
-                                          <Input
-                                            value={opt}
-                                            onChange={(e) => updatePaperOption(q.id, oi, e.target.value)}
-                                            className="flex-1 h-7 text-xs"
-                                            placeholder={`Option ${String.fromCharCode(65 + oi)}`}
-                                          />
+                                          {parts ? (
+                                            <>
+                                              <Input
+                                                value={parts[0] ?? ''}
+                                                onChange={(e) => updatePaperOption(q.id, oi, `${e.target.value} - ${parts.slice(1).join(' - ')}`)}
+                                                className="flex-1 h-7 text-xs"
+                                                placeholder="Left item"
+                                              />
+                                              <span className="text-muted-foreground text-xs">-</span>
+                                              <Input
+                                                value={parts.slice(1).join(' - ')}
+                                                onChange={(e) => updatePaperOption(q.id, oi, `${parts[0] ?? ''} - ${e.target.value}`)}
+                                                className="flex-1 h-7 text-xs"
+                                                placeholder="Right item"
+                                              />
+                                            </>
+                                          ) : (
+                                            <Input
+                                              value={opt}
+                                              onChange={(e) => updatePaperOption(q.id, oi, e.target.value)}
+                                              className="flex-1 h-7 text-xs"
+                                              placeholder={`Option ${String.fromCharCode(65 + oi)}`}
+                                            />
+                                          )}
                                           {q.options.length > 1 && (
                                             <button
                                               type="button"
@@ -1782,7 +1871,8 @@ export default function TeacherAssessmentCreatePage() {
                                             </button>
                                           )}
                                         </div>
-                                      ))}
+                                        );
+                                      })}
                                     </div>
                                   </div>
                                 )}
@@ -1809,6 +1899,8 @@ export default function TeacherAssessmentCreatePage() {
                                       <option value="true">True</option>
                                       <option value="false">False</option>
                                     </select>
+                                  ) : q.type === 'matching' ? (
+                                    <p className="text-xs text-muted-foreground">{_('Matches are derived from the pairs above')}</p>
                                   ) : (
                                     <Input
                                       value={q.correctAnswer || ''}

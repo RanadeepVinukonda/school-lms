@@ -1,21 +1,19 @@
 import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Icon } from '@/components/ui/Icon';
-import { getInitials } from '@/lib/utils';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
+import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
-import { getUser, getUserByRole } from '@/services/dataService';
+import { getUser } from '@/services/dataService';
 import { getChildren } from '@/services/parentService';
 import { ROUTES } from '@/lib/constants';
 import { useTranslation } from '@/hooks/useTranslation';
+import ProfileHeader from '@/components/profile/ProfileHeader';
+import ProfileDetails from '@/components/profile/ProfileDetails';
+import ProfilePreferences from '@/components/profile/ProfilePreferences';
 
 interface ProfileData {
   user: import('@/services/dataService').UserDoc;
@@ -53,11 +51,6 @@ export default function ParentProfilePage() {
     };
   }, [raw, authUser]);
 
-  const statCards = [
-    { icon: 'group', label: 'Linked Children', value: data.linkedChildrenCount, bg: 'bg-primary-container', color: 'text-on-primary-container' },
-    { icon: 'analytics', label: 'Reports Available', value: data.linkedChildrenCount > 0 ? 'Yes' : 'No', bg: 'bg-secondary-container', color: 'text-on-secondary-container' },
-  ];
-
   return (
     <>
       <SEOHead title="My Profile" description="Parent profile and account information" canonical="/parent/profile" />
@@ -71,51 +64,12 @@ export default function ParentProfilePage() {
           {(profileData) => (
             <>
               <motion.div variants={cardStackReveal} custom={0}>
-                <Card className="border-border/60 overflow-hidden">
-                  <div className="h-24 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent" />
-                  <CardContent className="p-5 -mt-12">
-                    <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4">
-                      <Avatar className="h-24 w-24 border-4 border-background ring-2 ring-primary/20">
-                        <AvatarFallback className="text-2xl">{getInitials(profileData.user.displayName ?? 'P')}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 text-center sm:text-left">
-                        <h1 className="text-headline-sm">{profileData.user.displayName ?? 'Parent'}</h1>
-                        <p className="text-body-md text-muted-foreground">{profileData.user.email ?? ''}</p>
-                        <div className="flex items-center justify-center sm:justify-start gap-2 mt-1 flex-wrap">
-                          <Badge variant="info" className="text-label-xs">
-                            <Icon name="family_history" size={11} className="mr-1" />Parent
-                          </Badge>
-                          {profileData.user.id && (
-                            <Badge variant="secondary" className="text-label-xs">{profileData.user.id}</Badge>
-                          )}
-                        </div>
-                        <Link to={ROUTES.PARENT_PROFILE_EDIT}>
-                          <Button variant="outline" size="sm" className="mt-2">
-                            <Icon name="edit" size={15} className="mr-1" />{_('Edit Profile')}
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              <motion.div variants={cardStackReveal} custom={0}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {statCards.map((stat) => (
-                    <Card key={stat.label} className="border-border/60">
-                      <CardContent className="p-5 flex items-center gap-3">
-                        <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${stat.bg}`}>
-                          <Icon name={stat.icon} size={20} className={stat.color} />
-                        </div>
-                        <div>
-                          <p className="text-display-xs font-bold tabular-nums">{stat.value}</p>
-                          <p className="text-label-xs text-muted-foreground">{stat.label}</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                <ProfileHeader
+                  user={profileData.user}
+                  roleLabel="Parent"
+                  subtitle={profileData.linkedChildrenCount > 0 ? `${profileData.linkedChildrenCount} ${profileData.linkedChildrenCount === 1 ? _('Linked Child') : _('Linked Children')}` : undefined}
+                  editHref={ROUTES.PARENT_PROFILE_EDIT}
+                />
               </motion.div>
 
               {profileData.childrenList.length > 0 && (
@@ -135,7 +89,6 @@ export default function ParentProfilePage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-title-sm font-medium">{child.displayName}</p>
-                              <p className="text-label-xs text-muted-foreground">ID: {child.id}</p>
                             </div>
                           </motion.div>
                         ))}
@@ -146,33 +99,11 @@ export default function ParentProfilePage() {
               )}
 
               <motion.div variants={cardStackReveal} custom={0}>
-                <Card className="border-border/60">
-                  <CardHeader className="pb-3">
-                      <CardTitle className="text-title-sm flex items-center gap-2 flex-wrap">
-                        <Icon name="info" size={18} className="text-muted-foreground" />Account Information
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-body-md">
-                      <div>
-                        <p className="text-label-xs text-muted-foreground">Email</p>
-                        <p className="text-title-sm font-medium">{profileData.user.email ?? ''}</p>
-                      </div>
-                      <div>
-                        <p className="text-label-xs text-muted-foreground">Role</p>
-                        <p className="text-title-sm font-medium capitalize">{profileData.user.role ?? 'parent'}</p>
-                      </div>
-                      <div>
-                        <p className="text-label-xs text-muted-foreground">User ID</p>
-                        <p className="text-title-sm font-medium">{profileData.user.id ?? 'N/A'}</p>
-                      </div>
-                      <div>
-                        <p className="text-label-xs text-muted-foreground">Account Status</p>
-                        <Badge variant="success" className="text-label-xs mt-0.5">Active</Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <ProfileDetails user={profileData.user} />
+              </motion.div>
+
+              <motion.div variants={cardStackReveal} custom={0}>
+                <ProfilePreferences />
               </motion.div>
             </>
           )}

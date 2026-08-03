@@ -86,19 +86,19 @@ export default function StudentNoticeBoardPage() {
                                     <Badge variant="secondary" className="text-[10px]">All Classes</Badge>
                                   )}
                                 </div>
-                                <p className="text-body-md text-foreground whitespace-pre-wrap">{n.content}</p>
-                                <div className="flex items-center gap-3 mt-2 text-label-xs text-muted-foreground">
-                                  <span className="flex items-center gap-1">
+                                <p className="text-body-md text-foreground whitespace-pre-wrap break-words">{n.content}</p>
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-label-xs text-muted-foreground">
+                                  <span className="flex items-center gap-1 whitespace-nowrap">
                                     <Icon name="calendar_today" size={14} />
                                     {new Date(n.created_at).toLocaleDateString()}
                                   </span>
                                   {n.expires_at && (
-                                    <span className="flex items-center gap-1">
+                                    <span className="flex items-center gap-1 whitespace-nowrap">
                                       <Icon name="schedule" size={14} />
                                       Expires {new Date(n.expires_at).toLocaleDateString()}
                                     </span>
                                   )}
-                                  {n.created_by_name && <span>by {n.created_by_role ? `${n.created_by_role} - ` : ''}{n.created_by_name}</span>}
+                                  {n.created_by_name && <span className="flex items-center gap-1 w-full sm:w-auto">by {n.created_by_role ? `${n.created_by_role} - ` : ''}{n.created_by_name}</span>}
                                 </div>
                               </div>
                             </div>

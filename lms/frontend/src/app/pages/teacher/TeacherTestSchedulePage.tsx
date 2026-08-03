@@ -108,6 +108,16 @@ export default function TeacherTestSchedulePage() {
     onError: onError(_('Failed to update grades visibility')),
   });
 
+  const toggleAssignmentGradesMutation = useMutation({
+    mutationFn: ({ id, showResults }: { id: string; showResults: boolean }) =>
+      api.put(`/assignments-v2/${id}/grades`, { showResults }).then((r) => r.data.data),
+    onSuccess: () => {
+      toast.success(_('Grades visibility updated'));
+      queryClient.invalidateQueries({ queryKey: ['assignments-v2-class', selectedClassId] });
+    },
+    onError: onError(_('Failed to update grades visibility')),
+  });
+
   const releaseWithGradesMutation = useMutation({
     mutationFn: async ({
       type, id, showResults, action,
@@ -373,10 +383,10 @@ export default function TeacherTestSchedulePage() {
                                     <Icon name="autorenew" size={15} />{_('Republish')}
                                   </Button>
                                 )}
-                                {isRepublished && (
+                                {!isDraft && (
                                   <div className="flex items-center gap-2">
                                     <span className="text-label-xs text-muted-foreground">{_('Grades')}</span>
-                                    <Switch checked={quiz.showResults} onCheckedChange={(checked) => toggleQuizGradesMutation.mutate({ id: quiz.id, showResults: checked })} disabled={toggleQuizGradesMutation.isPending && toggleQuizGradesMutation.variables?.id === quiz.id} />
+                                    <Switch checked={!!quiz.showResults} onCheckedChange={(checked) => toggleQuizGradesMutation.mutate({ id: quiz.id, showResults: checked })} disabled={toggleQuizGradesMutation.isPending && toggleQuizGradesMutation.variables?.id === quiz.id} />
                                   </div>
                                 )}
                               </div>
@@ -444,6 +454,12 @@ export default function TeacherTestSchedulePage() {
                                   <Button size="sm" onClick={() => { setModalConfig({ type: 'release', assessmentType: 'assignment', id: as.id, title: as.title }); setModalOpen(true); }} className="gap-1">
                                     <Icon name="publish" size={15} />{_('Release')}
                                   </Button>
+                                )}
+                                {as.releasedAt && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-label-xs text-muted-foreground">{_('Grades')}</span>
+                                    <Switch checked={!!as.showResults} onCheckedChange={(checked) => toggleAssignmentGradesMutation.mutate({ id: as.id, showResults: checked })} disabled={toggleAssignmentGradesMutation.isPending && toggleAssignmentGradesMutation.variables?.id === as.id} />
+                                  </div>
                                 )}
                               </div>
                             </td>
