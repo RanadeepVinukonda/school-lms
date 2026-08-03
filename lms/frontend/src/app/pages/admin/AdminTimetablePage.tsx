@@ -453,7 +453,7 @@ export default function AdminTimetablePage() {
                                             {(entry.start_time || entry.startTime || entry.end_time || entry.endTime) && (
                                               <p className="text-[11px] text-muted-foreground/60 font-mono mt-2 pt-2 border-t border-border/20 flex items-center gap-1.5">
                                                 <Icon name="schedule" size={11} className="text-muted-foreground/40 shrink-0" />
-                                                <span>{formatClockTime(entry.start_time || entry.startTime, true) || '—'} &ndash; {formatClockTime(entry.end_time || entry.endTime, true) || '—'}</span>
+                                                <span>{formatClockTime(entry.start_time || entry.startTime) || '—'} &ndash; {formatClockTime(entry.end_time || entry.endTime) || '—'}</span>
                                               </p>
                                             )}
                                           </div>
