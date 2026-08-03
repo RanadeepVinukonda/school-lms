@@ -208,12 +208,12 @@ export default function TeacherLayout() {
       {/* Main content area */}
       <div
         className={cn(
-          'transition-all duration-300 ease-in-out pb-20 lg:pb-8',
+          'transition-all duration-300 ease-in-out pb-8',
           sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64',
         )}
       >
         {/* Top app bar */}
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-2 sm:gap-4 border-b border-outline-variant bg-surface/80 px-3 sm:px-4 backdrop-blur-md supports-[backdrop-filter]:bg-surface/60">
+        <header className="relative z-30 flex h-16 items-center gap-2 sm:gap-4 border-b border-outline-variant bg-surface px-3 sm:px-4">
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden text-on-surface shrink-0" aria-label="Menu">
@@ -301,35 +301,6 @@ export default function TeacherLayout() {
         </main>
       </div>
 
-      {/* Mobile bottom nav */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface border-t border-outline-variant pb-safe">
-        <div className="grid grid-cols-6">
-          {mobileNavItems.slice(0, 5).map((item) => (
-            <NavLink
-              key={item.href}
-              to={item.href}
-              className={({ isActive }) =>
-                cn(
-                  'flex flex-col items-center gap-0.5 py-2 text-label-xs font-medium transition-colors',
-                  isActive ? 'text-primary' : 'text-on-surface-variant',
-                )
-              }
-            >
-              <Icon name={item.icon} size={22} />
-              <span className="leading-none">{getLabel(item.label)}</span>
-            </NavLink>
-          ))}
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(true)}
-            className="flex flex-col items-center gap-0.5 py-2 text-label-xs font-medium text-on-surface-variant"
-            aria-label="Open menu"
-          >
-            <Icon name="menu" size={22} />
-            <span className="leading-none">{getLabel('More')}</span>
-          </button>
-        </div>
-      </nav>
       <TutorialGuide open={tutorialOpen} onComplete={() => setTutorialOpen(false)} />
     </div>
   );

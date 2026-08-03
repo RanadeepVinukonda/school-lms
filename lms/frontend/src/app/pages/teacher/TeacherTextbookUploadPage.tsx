@@ -38,12 +38,8 @@ export default function TeacherTextbookUploadPage() {
   const querySubjectId = searchParams.get('subjectId') ?? '';
 
   const handleBack = useCallback(() => {
-    if (queryClassId && querySubjectId) {
-      navigate(ROUTES.TEACHER_SUBJECT(queryClassId, querySubjectId));
-    } else {
-      navigate(-1);
-    }
-  }, [navigate, queryClassId, querySubjectId]);
+    navigate(-1);
+  }, [navigate]);
 
   const user = useAuthStore((s) => s.user);
   const fileInputRef = useRef<HTMLInputElement>(null);
