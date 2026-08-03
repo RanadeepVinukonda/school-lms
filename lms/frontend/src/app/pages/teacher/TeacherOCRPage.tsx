@@ -17,6 +17,7 @@ import api from '@/services/api';
 import LatexRenderer from '@/components/common/LatexRenderer';
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore, ChatMsg } from '@/store/chatStore';
+import AssistantCameraCapture from '@/components/ocr/AssistantCameraCapture';
 
 
 function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, meta: { title: string; subjectId: string; questions: any[]; studentIds: string[] }) => Promise<void> }) {
@@ -263,7 +264,8 @@ export default function TeacherOCRPage() {
   const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const userId = user?.id || 'anonymous';
-  const [useTextInput, setUseTextInput] = useState(false);
+  const [inputMode, setInputMode] = useState<'text' | 'image' | 'camera'>('text');
+  const [dropActive, setDropActive] = useState(false);
   
   const emptyMessages = useMemo(() => [] as ChatMsg[], []);
   const messages = useChatStore((s) => s.teacherOcrMessages[userId] || emptyMessages);
@@ -327,18 +329,34 @@ export default function TeacherOCRPage() {
     }
   }, [input, pendingFiles, pendingImages, messages]);
 
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+  const addFiles = useCallback((files: File[]) => {
+    if (files.length === 0) return;
     const urls = files.map((f) => URL.createObjectURL(f));
     setPendingImages((prev) => [...prev, ...urls]);
     setPendingFiles((prev) => [...prev, ...files]);
   }, []);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    addFiles(Array.from(e.target.files || []));
+    e.target.value = '';
+  }, [addFiles]);
 
   const removePending = useCallback((i: number) => {
     URL.revokeObjectURL(pendingImages[i]);
     setPendingImages((prev) => prev.filter((_, idx) => idx !== i));
     setPendingFiles((prev) => prev.filter((_, idx) => idx !== i));
   }, [pendingImages]);
+
+  const handleCameraCapture = useCallback((file: File) => {
+    addFiles([file]);
+    setInputMode('text');
+  }, [addFiles]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDropActive(false);
+    addFiles(Array.from(e.dataTransfer?.files || []).filter((f) => f.type.startsWith('image/')));
+  }, [addFiles]);
 
   const handleDeleteQuiz = useCallback(async (quizId: string) => {
     try {
@@ -458,7 +476,46 @@ export default function TeacherOCRPage() {
           </CardContent>
 
           <div className="border-t border-border/60 p-4 bg-muted/20">
-            {!useTextInput && pendingImages.length > 0 && (
+            <div className="flex items-center gap-1.5 mb-3">
+              {([
+                ['text', 'edit_note', _('Text')],
+                ['image', 'image', _('Image')],
+                ['camera', 'photo_camera', _('Camera')],
+              ] as const).map(([mode, icon, label]) => (
+                <button
+                  key={mode}
+                  onClick={() => setInputMode(mode)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${inputMode === mode ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}
+                >
+                  <Icon name={icon} size={14} className="mr-1" />
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {inputMode === 'image' && (
+              <div
+                onDragOver={(e) => { e.preventDefault(); setDropActive(true); }}
+                onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDropActive(false); }}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`mb-3 rounded-xl border-2 border-dashed transition-colors cursor-pointer ${dropActive ? 'border-primary bg-primary/5' : 'border-border/60 hover:border-primary/50'}`}
+              >
+                <div className="flex flex-col items-center justify-center gap-1.5 py-6 text-on-surface-variant">
+                  <Icon name="upload_file" size={26} />
+                  <p className="text-sm font-medium">{_('Drag & drop images here, or click to browse')}</p>
+                  <p className="text-[11px]">{_('Multiple images supported — they combine with your text')}</p>
+                </div>
+              </div>
+            )}
+
+            {inputMode === 'camera' && (
+              <div className="mb-3">
+                <AssistantCameraCapture onUse={handleCameraCapture} onCancel={() => setInputMode('text')} isLoading={isLoading} />
+              </div>
+            )}
+
+            {pendingImages.length > 0 && (
               <div className="flex gap-2 mb-3 flex-wrap">
                 {pendingImages.map((url, i) => (
                   <div key={i} className="relative group">
@@ -468,51 +525,27 @@ export default function TeacherOCRPage() {
                 ))}
               </div>
             )}
-            <div className="flex items-center gap-2 mb-2">
-              <button
-                onClick={() => setUseTextInput((p) => !p)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${useTextInput ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
-              >
-                <Icon name={useTextInput ? 'edit_note' : 'image'} size={14} className="mr-1" />
-                {useTextInput ? _('Text Mode') : _('Image Mode')}
-              </button>
+
+            <div className="flex items-center gap-2">
+              <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileSelect} />
+              <Button variant="outline" size="icon" onClick={() => fileInputRef.current?.click()} title={_('Attach images')} disabled={isLoading}>
+                <Icon name="image" size={18} />
+              </Button>
+              <Button variant="outline" size="icon" onClick={() => setInputMode('camera')} title={_('Camera')} disabled={isLoading}>
+                <Icon name="photo_camera" size={18} />
+              </Button>
+              <Input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                placeholder={_('Type your request... (combine text with images or a photo)')}
+                disabled={isLoading}
+                className="flex-1"
+              />
+              <Button onClick={handleSend} loading={isLoading} disabled={isLoading || (!input.trim() && pendingFiles.length === 0)}>
+                <Icon name="send" size={18} />
+              </Button>
             </div>
-            {useTextInput ? (
-              <div className="space-y-2">
-                <textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder={_('e.g. "Generate 20 questions on Polynomials" or "Create 10 MCQs on Photosynthesis"')}
-                  disabled={isLoading}
-                  rows={4}
-                  className="w-full px-3 py-2 rounded-lg border border-border/60 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                />
-                <div className="flex gap-2">
-                  <Button onClick={handleSend} loading={isLoading} disabled={isLoading || !input.trim()} className="flex-1">
-                    <Icon name="auto_awesome" size={16} className="mr-1.5" />
-                    {_('Generate')}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileSelect} />
-                <Button variant="outline" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
-                  <Icon name="image" size={18} />
-                </Button>
-                <Input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                  placeholder={_('Type your request or upload images first...')}
-                  disabled={isLoading}
-                  className="flex-1"
-                />
-                <Button onClick={handleSend} loading={isLoading} disabled={isLoading || (!input.trim() && pendingFiles.length === 0)}>
-                  <Icon name="send" size={18} />
-                </Button>
-              </div>
-            )}
           </div>
         </Card>
       </div>
