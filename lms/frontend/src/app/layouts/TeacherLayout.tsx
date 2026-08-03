@@ -151,7 +151,7 @@ export default function TeacherLayout() {
         <nav className="flex-1 overflow-y-auto p-3 space-y-4">
           {navGroups.map((group) => (
             <div key={group.label}>
-              {!sidebarCollapsed && (
+              {!sidebarCollapsed && group.label !== 'Main' && (
                 <p className="text-label-xs font-semibold text-on-surface-variant uppercase tracking-wider px-3 pb-1.5">
                   {group.label}
                 </p>
@@ -172,7 +172,7 @@ export default function TeacherLayout() {
                       }
                     >
                       <Icon name={item.icon} size={24} />
-                      {!sidebarCollapsed && <span className="leading-none">{getLabel(item.label)}</span>}
+                      {!sidebarCollapsed && <span>{getLabel(item.label)}</span>}
                     </NavLink>
                 ))}
               </div>
@@ -234,9 +234,11 @@ export default function TeacherLayout() {
               <nav className="flex-1 overflow-y-auto py-2 px-2 flex flex-col gap-0.5">
                 {navGroups.map((group) => (
                   <div key={group.label}>
-                    <p className="text-label-xs font-semibold text-on-surface-variant uppercase tracking-wider px-3 pb-1">
-                      {group.label}
-                    </p>
+                    {group.label !== 'Main' && (
+                      <p className="text-label-xs font-semibold text-on-surface-variant uppercase tracking-wider px-3 pb-1">
+                        {group.label}
+                      </p>
+                    )}
                     <div className="flex flex-col gap-0.5">
                       {group.items.map((item) => (
                         <SheetClose asChild key={item.href}>
@@ -252,7 +254,7 @@ export default function TeacherLayout() {
                               }
                             >
                               <Icon name={item.icon} size={24} />
-                              <span className="leading-none">{getLabel(item.label)}</span>
+                              <span>{getLabel(item.label)}</span>
                             </NavLink>
                         </SheetClose>
                       ))}

@@ -139,7 +139,7 @@ export default function StudentLayout() {
               }
             >
               <Icon name={item.icon} size={24} />
-              {!sidebarCollapsed && <span className="leading-none">{getLabel(item.label)}</span>}
+              {!sidebarCollapsed && <span>{getLabel(item.label)}</span>}
             </NavLink>
           ))}
         </nav>
@@ -207,7 +207,7 @@ export default function StudentLayout() {
                       }
                     >
                       <Icon name={item.icon} size={24} />
-                      <span className="leading-none">{getLabel(item.label)}</span>
+                      <span>{getLabel(item.label)}</span>
                     </NavLink>
                   </SheetClose>
                 ))}
