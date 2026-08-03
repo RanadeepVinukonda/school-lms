@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -23,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icon } from '@/components/ui/Icon';
 import { ConceptMindMap } from '@/components/teacher/ConceptMindMap';
 import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
-import { getTextbook, getChaptersForTextbook, getConceptsForChapter, reprocessTextbook, deleteTextbook } from '@/services/textbookService';
+import { getTextbook, getChaptersForTextbook, getConceptsForChapter, reprocessTextbook, deleteTextbook, updateTextbook } from '@/services/textbookService';
 import { getSubject } from '@/services/dataService';
 import type { Chapter, Concept } from '@/types/textbook';
 
@@ -36,6 +36,35 @@ export default function TeacherTextbookDetailPage() {
   const { textbookId } = useParams<{ textbookId: string }>();
   const navigate = useNavigate();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  const queryClient = useQueryClient();
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState('');
+
+  const updateTitleMutation = useMutation({
+    mutationFn: async (newTitle: string) => {
+      if (!textbookId) return;
+      await updateTextbook(textbookId, { title: newTitle });
+    },
+    onSuccess: () => {
+      toast.success(_('Textbook title updated'));
+      setIsEditingTitle(false);
+      queryClient.invalidateQueries({ queryKey: ['teacher-textbook', textbookId] });
+      queryClient.invalidateQueries({ queryKey: ['teacher-subject-detail'] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || _('Failed to update title.'));
+    },
+  });
+
+  const handleSaveTitle = () => {
+    const trimmed = editedTitle.trim();
+    if (!trimmed) {
+      toast.error(_('Title cannot be empty'));
+      return;
+    }
+    updateTitleMutation.mutate(trimmed);
+  };
 
   const textbookQuery = useQuery({
     queryKey: ['teacher-textbook', textbookId],
@@ -272,7 +301,41 @@ export default function TeacherTextbookDetailPage() {
                       </Link>
                     </Button>
                     <div>
-                      <h1 className="text-headline-sm">{tb.title}</h1>
+                      {isEditingTitle ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={editedTitle}
+                            onChange={(e) => setEditedTitle(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveTitle();
+                              else if (e.key === 'Escape') setIsEditingTitle(false);
+                            }}
+                            className="text-headline-sm bg-background border border-border rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-primary font-semibold max-w-xs sm:max-w-md"
+                            autoFocus
+                          />
+                          <Button size="icon-sm" variant="ghost" onClick={handleSaveTitle} disabled={updateTitleMutation.isPending}>
+                            <Icon name="check" className="text-green-600" size={16} />
+                          </Button>
+                          <Button size="icon-sm" variant="ghost" onClick={() => setIsEditingTitle(false)} disabled={updateTitleMutation.isPending}>
+                            <Icon name="close" className="text-red-600" size={16} />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <h1 className="text-headline-sm">{tb.title}</h1>
+                          <Button
+                            size="icon-sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditedTitle(tb.title);
+                              setIsEditingTitle(true);
+                            }}
+                          >
+                            <Icon name="edit" className="text-muted-foreground hover:text-foreground" size={16} />
+                          </Button>
+                        </div>
+                      )}
                       <p className="text-sm text-muted-foreground">{subjectQuery.data?.name ?? _('Unknown Subject')}</p>
                     </div>
                   </div>

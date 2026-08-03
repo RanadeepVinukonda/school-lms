@@ -87,7 +87,7 @@ export default function TeacherSubjectDetailPage() {
                     {_('There are no textbooks assigned to this subject.')}
                   </p>
                   <Button asChild variant="outline" className="mt-2">
-                    <Link to={ROUTES.TEACHER_TEXTBOOK_UPLOAD}>
+                    <Link to={`${ROUTES.TEACHER_TEXTBOOK_UPLOAD}?classId=${classId}&subjectId=${subjectId}`}>
                       <Icon name="add" size={16} className="mr-2" />
                       {_('Upload Textbook')}
                     </Link>

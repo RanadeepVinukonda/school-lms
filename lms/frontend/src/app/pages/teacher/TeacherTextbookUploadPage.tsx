@@ -37,6 +37,14 @@ export default function TeacherTextbookUploadPage() {
   const queryClassId = searchParams.get('classId') ?? '';
   const querySubjectId = searchParams.get('subjectId') ?? '';
 
+  const handleBack = useCallback(() => {
+    if (queryClassId && querySubjectId) {
+      navigate(ROUTES.TEACHER_SUBJECT(queryClassId, querySubjectId));
+    } else {
+      navigate(-1);
+    }
+  }, [navigate, queryClassId, querySubjectId]);
+
   const user = useAuthStore((s) => s.user);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
@@ -56,7 +64,7 @@ export default function TeacherTextbookUploadPage() {
       const allSubjects = await getAllSubjects();
       const subjectMap = new Map(allSubjects.map((s) => [s.id, s]));
       const classMap = new Map(allClasses.map((c) => [c.id, c]));
-      return myAssignments.map((data) => {
+      const mapped = myAssignments.map((data) => {
         const subject = subjectMap.get(data.subjectId);
         const cls = classMap.get(data.classId);
         return {
@@ -67,6 +75,17 @@ export default function TeacherTextbookUploadPage() {
           subjectName: subject?.name ?? _('Unknown Subject'),
         } as TeacherAssignment;
       });
+
+      const seen = new Set<string>();
+      const uniqueAssignments: TeacherAssignment[] = [];
+      for (const item of mapped) {
+        const key = `${item.classId}-${item.subjectId}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          uniqueAssignments.push(item);
+        }
+      }
+      return uniqueAssignments;
     },
     enabled: !!user?.id,
   });
@@ -298,7 +317,7 @@ export default function TeacherTextbookUploadPage() {
         <SEOHead title={_('Upload Textbook')} description={_('Upload and process textbook PDFs')} canonical="/teacher/textbooks/upload" />
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-3xl mx-auto space-y-16 pb-32">
           <motion.div variants={cardStackReveal} custom={0}>
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
+            <Button variant="ghost" size="sm" onClick={handleBack} className="mb-2">
               <Icon name="arrow_back" size={16} className="mr-1" />
               {_('Back')}
             </Button>
@@ -328,7 +347,7 @@ export default function TeacherTextbookUploadPage() {
       <UploadProgressBanner />
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-3xl mx-auto space-y-16 pb-32">
         <motion.div variants={cardStackReveal} custom={0}>
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
+          <Button variant="ghost" size="sm" onClick={handleBack} className="mb-2">
             <Icon name="arrow_back" size={16} className="mr-1" />
             {_('Back')}
           </Button>
