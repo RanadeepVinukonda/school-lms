@@ -38,6 +38,8 @@ function roleProfileRoute(role: string): string {
       return `${ROUTES.ADMIN_SETTINGS}?tab=profile`;
     case 'teacher':
       return ROUTES.TEACHER_PROFILE;
+    case 'parent':
+      return ROUTES.PARENT_PROFILE;
     case 'student':
     default:
       return ROUTES.STUDENT_PROFILE;
