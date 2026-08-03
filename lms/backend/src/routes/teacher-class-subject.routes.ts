@@ -24,6 +24,7 @@ router.post('/setup', authenticate, requireRole('teacher'), validate(setupTeache
 router.get('/my', authenticate, requireRole('teacher'), asyncHandler(tcsController.getMyAssignments));
 router.get('/my/class/:classId', authenticate, requireRole('teacher'), asyncHandler(tcsController.getAssignmentForClass));
 router.get('/unassigned/:classId', authenticate, requireRole('admin', 'teacher'), asyncHandler(tcsController.getUnassignedSubjects));
+router.get('/class/:classId', authenticate, requireRole('teacher', 'admin', 'student'), asyncHandler(tcsController.getClassAssignments));
 router.get('/all', authenticate, requireRole('admin'), asyncHandler(tcsController.getAllAssignments));
 router.delete('/:assignmentId', authenticate, requireRole('admin'), asyncHandler(tcsController.removeAssignment));
 

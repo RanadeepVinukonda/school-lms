@@ -157,8 +157,9 @@ export default function TeacherAnalyticsPage() {
 
             <TabsContent value="overview">
               <DataFetchWrapper data={classData} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="card">
-                {(data) => <div className="space-y-16">
-                  <motion.div variants={cardStackReveal} custom={0}>
+                {(data) => (data.assessments && data.assessments.length > 0) ? (
+                  <div className="space-y-16">
+                    <motion.div variants={cardStackReveal} custom={0}>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                       <StatCard icon="school" label={_('Students')} value={data.totalStudents ?? 0} color="bg-blue-600" />
                       <StatCard icon="quiz" label={_('Assessments')} value={data.totalAssessments ?? 0} color="bg-purple-600" />
@@ -187,7 +188,7 @@ export default function TeacherAnalyticsPage() {
                     </motion.div>
                   )}
 
-                  {data.assessments && data.assessments.length > 0 ? (
+                  {data.assessments && data.assessments.length > 0 && (
                     <motion.div variants={cardStackReveal} custom={0}>
                       <Card className="border-border/60">
                         <CardHeader><CardTitle className="text-title-sm">{_('Assessments')} ({data.assessments.length})</CardTitle></CardHeader>
@@ -198,23 +199,25 @@ export default function TeacherAnalyticsPage() {
                         </CardContent>
                       </Card>
                     </motion.div>
-                  ) : (
-                    <motion.div variants={cardStackReveal} custom={0}>
-                      <Card className="border-border/60">
-                        <CardContent className="p-5 text-center text-muted-foreground">
-                          <p>{_('No assessments found for this class')}</p>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
                   )}
-                </div>}
+                  </div>
+                ) : (
+                  <motion.div variants={cardStackReveal} custom={0}>
+                    <Card className="border-border/60">
+                      <CardContent className="p-5 text-center text-muted-foreground">
+                        <Icon name="analytics" size={48} className="mx-auto mb-3 opacity-40" />
+                        <p>{_('No assessments conducted yet for this class')}</p>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )}
               </DataFetchWrapper>
             </TabsContent>
 
             <TabsContent value="concepts">
               <DataFetchWrapper data={conceptMastery} isLoading={masteryLoading} error={masteryError} loadingType="card">
                 {(data) => {
-                  const concepts: any[] = Array.isArray(data) ? data : [];
+                  const concepts: any[] = Array.isArray(data) ? data.filter((c: any) => (c.attemptCount ?? 0) > 0) : [];
                   if (concepts.length === 0) return (
                     <motion.div variants={cardStackReveal} custom={0}>
                       <Card className="border-border/60"><CardContent className="p-5 text-center text-muted-foreground"><p>{_('No concept data available. Create assessments linked to concepts to see mastery here.')}</p></CardContent></Card>

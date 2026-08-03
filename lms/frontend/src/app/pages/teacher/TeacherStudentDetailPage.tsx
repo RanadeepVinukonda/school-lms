@@ -14,8 +14,9 @@ import { Icon } from '@/components/ui/Icon';
 import { getInitials } from '@/lib/utils';
 import { formatDate, getLetterGrade } from '@/lib/format';
 import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
-import type { UserDoc, Subject, GradeEntry } from '@/services/dataService';
-import { getUser, getClass, getAllSubjects, getGradesByStudent } from '@/services/dataService';
+import type { UserDoc, Subject, GradeEntry, AttemptEntry } from '@/services/dataService';
+import { getUser, getClass, getAllSubjects, getCompletedQuizAttempts, getCompletedAssignmentAttempts } from '@/services/dataService';
+import { supabase } from '@/supabase/config';
 
 interface SubjectPerformance {
   id: string;
@@ -37,6 +38,7 @@ interface StudentDetailData {
   subjectPerformance: SubjectPerformance[];
   grades: GradeRow[];
   performanceTrend: GradeRow[];
+  overallAverage: number | null;
 }
 
 function pctColor(pct: number) {
@@ -52,21 +54,46 @@ export default function TeacherStudentDetailPage() {
     queryFn: async (): Promise<StudentDetailData | null> => {
       if (!id) return null;
 
-      const [student, allSubjects, grades] = await Promise.all([
+      const [student, allSubjects, quizAttempts, assignAttempts, examRows] = await Promise.all([
         getUser(id),
         getAllSubjects(),
-        getGradesByStudent(id),
+        getCompletedQuizAttempts(id),
+        getCompletedAssignmentAttempts(id),
+        supabase
+          .from('firestore_docs')
+          .select('doc_id, data, created_at')
+          .eq('collection', 'examAttemptV2')
+          .filter('data->>studentId', 'eq', id),
       ]);
 
       if (!student) return null;
 
+      const examAttempts: AttemptEntry[] = (examRows.data || []).map((r: any) => ({
+        id: r.doc_id,
+        studentId: id,
+        courseId: r.data?.courseId,
+        subjectId: r.data?.subjectId,
+        classId: r.data?.classId,
+        itemName: r.data?.itemName,
+        score: r.data?.score ?? 0,
+        totalPoints: r.data?.totalPoints ?? 0,
+        percentage: r.data?.percentage ?? 0,
+        createdAt: r.created_at || r.data?.submittedAt || new Date().toISOString(),
+      }));
+
+      const tagged = [
+        ...quizAttempts.map((a) => ({ ...a, type: 'quiz' })),
+        ...assignAttempts.map((a) => ({ ...a, type: 'assignment' })),
+        ...examAttempts.map((a) => ({ ...a, type: 'exam' })),
+      ];
+
       const studentClass = student.classId ? await getClass(student.classId) : null;
 
-      const gradesWithSubject: GradeRow[] = grades
+      const gradesWithSubject: GradeRow[] = tagged
         .map((g) => ({
           ...g,
           subject: allSubjects.find((s) => s.id === g.subjectId),
-          type: (g as unknown as { type: string }).type ?? 'assignment',
+          type: g.type,
         }))
         .sort(
           (a, b) =>
@@ -74,7 +101,7 @@ export default function TeacherStudentDetailPage() {
         );
 
       const bySubject = new Map<string, { scores: number[]; totalPoints: number[] }>();
-      grades.forEach((g) => {
+      tagged.forEach((g) => {
         const existing = bySubject.get(g.subjectId ?? '') ?? {
           scores: [],
           totalPoints: [],
@@ -101,12 +128,17 @@ export default function TeacherStudentDetailPage() {
         )
         .slice(-10);
 
+      const overallAverage = tagged.length > 0
+        ? Math.round(tagged.reduce((sum, a) => sum + a.percentage, 0) / tagged.length)
+        : null;
+
       return {
         student,
         studentClass: studentClass ? { id: studentClass.id, name: studentClass.name } : null,
         subjectPerformance,
         grades: gradesWithSubject,
         performanceTrend,
+        overallAverage,
       };
     },
   });
@@ -184,6 +216,14 @@ export default function TeacherStudentDetailPage() {
                             </span>
                           </div>
                         </div>
+                        {d.overallAverage != null && (
+                          <div className="flex-shrink-0 text-right">
+                            <p className={`text-3xl font-bold tabular-nums ${pctColor(d.overallAverage)}`}>
+                              {d.overallAverage}%
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">{_('overall average')}</p>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>

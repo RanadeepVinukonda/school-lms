@@ -31,6 +31,8 @@ const shareMindMapSchema = z.object({
 
 const pushToClassesSchema = z.object({
   classIds: z.array(z.string()).min(1),
+  subjectId: z.string().optional(),
+  subjectName: z.string().optional(),
 }).passthrough();
 
 const pinResourceSchema = z.object({

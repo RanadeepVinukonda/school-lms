@@ -20,6 +20,8 @@ export interface MindMap {
   id: string;
   title: string;
   description?: string;
+  subjectId?: string;
+  subjectName?: string;
   ownerId: string;
   nodes: MindMapNode[];
   edges: MindMapEdge[];

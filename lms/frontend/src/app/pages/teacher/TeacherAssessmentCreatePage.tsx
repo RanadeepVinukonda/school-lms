@@ -1316,15 +1316,35 @@ export default function TeacherAssessmentCreatePage() {
                                       </Button>
                                     </div>
                                     <div className="space-y-1">
-                                      {q.options.map((opt: string, oi: number) => (
+                                      {q.options.map((opt: string, oi: number) => {
+                                        const parts = q.type === 'matching' ? opt.split(' - ') : null;
+                                        return (
                                         <div key={oi} className="flex items-center gap-1.5">
                                           <span className="text-[10px] font-medium text-muted-foreground w-4">{String.fromCharCode(65 + oi)}.</span>
-                                          <Input
-                                            value={opt}
-                                            onChange={(e) => updateReviewOption(q.id, oi, e.target.value)}
-                                            className="flex-1 h-7 text-xs"
-                                            placeholder={`Option ${String.fromCharCode(65 + oi)}`}
-                                          />
+                                          {parts ? (
+                                            <>
+                                              <Input
+                                                value={parts[0] ?? ''}
+                                                onChange={(e) => updateReviewOption(q.id, oi, `${e.target.value} - ${parts.slice(1).join(' - ')}`)}
+                                                className="flex-1 h-7 text-xs"
+                                                placeholder="Left item"
+                                              />
+                                              <span className="text-muted-foreground text-xs">-</span>
+                                              <Input
+                                                value={parts.slice(1).join(' - ')}
+                                                onChange={(e) => updateReviewOption(q.id, oi, `${parts[0] ?? ''} - ${e.target.value}`)}
+                                                className="flex-1 h-7 text-xs"
+                                                placeholder="Right item"
+                                              />
+                                            </>
+                                          ) : (
+                                            <Input
+                                              value={opt}
+                                              onChange={(e) => updateReviewOption(q.id, oi, e.target.value)}
+                                              className="flex-1 h-7 text-xs"
+                                              placeholder={`Option ${String.fromCharCode(65 + oi)}`}
+                                            />
+                                          )}
                                           {q.options.length > 1 && (
                                             <button
                                               type="button"
@@ -1335,7 +1355,8 @@ export default function TeacherAssessmentCreatePage() {
                                             </button>
                                           )}
                                         </div>
-                                      ))}
+                                        );
+                                      })}
                                     </div>
                                   </div>
                                 )}
@@ -1362,6 +1383,8 @@ export default function TeacherAssessmentCreatePage() {
                                       <option value="true">True</option>
                                       <option value="false">False</option>
                                     </select>
+                                  ) : q.type === 'matching' ? (
+                                    <p className="text-xs text-muted-foreground">{_('Matches are derived from the pairs above')}</p>
                                   ) : (
                                     <Input
                                       value={q.correctAnswer || ''}
@@ -1763,15 +1786,35 @@ export default function TeacherAssessmentCreatePage() {
                                       </Button>
                                     </div>
                                     <div className="space-y-1">
-                                      {q.options.map((opt: string, oi: number) => (
+                                      {q.options.map((opt: string, oi: number) => {
+                                        const parts = q.type === 'matching' ? opt.split(' - ') : null;
+                                        return (
                                         <div key={oi} className="flex items-center gap-1.5">
                                           <span className="text-[10px] font-medium text-muted-foreground w-4">{String.fromCharCode(65 + oi)}.</span>
-                                          <Input
-                                            value={opt}
-                                            onChange={(e) => updatePaperOption(q.id, oi, e.target.value)}
-                                            className="flex-1 h-7 text-xs"
-                                            placeholder={`Option ${String.fromCharCode(65 + oi)}`}
-                                          />
+                                          {parts ? (
+                                            <>
+                                              <Input
+                                                value={parts[0] ?? ''}
+                                                onChange={(e) => updatePaperOption(q.id, oi, `${e.target.value} - ${parts.slice(1).join(' - ')}`)}
+                                                className="flex-1 h-7 text-xs"
+                                                placeholder="Left item"
+                                              />
+                                              <span className="text-muted-foreground text-xs">-</span>
+                                              <Input
+                                                value={parts.slice(1).join(' - ')}
+                                                onChange={(e) => updatePaperOption(q.id, oi, `${parts[0] ?? ''} - ${e.target.value}`)}
+                                                className="flex-1 h-7 text-xs"
+                                                placeholder="Right item"
+                                              />
+                                            </>
+                                          ) : (
+                                            <Input
+                                              value={opt}
+                                              onChange={(e) => updatePaperOption(q.id, oi, e.target.value)}
+                                              className="flex-1 h-7 text-xs"
+                                              placeholder={`Option ${String.fromCharCode(65 + oi)}`}
+                                            />
+                                          )}
                                           {q.options.length > 1 && (
                                             <button
                                               type="button"
@@ -1782,7 +1825,8 @@ export default function TeacherAssessmentCreatePage() {
                                             </button>
                                           )}
                                         </div>
-                                      ))}
+                                        );
+                                      })}
                                     </div>
                                   </div>
                                 )}
@@ -1809,6 +1853,8 @@ export default function TeacherAssessmentCreatePage() {
                                       <option value="true">True</option>
                                       <option value="false">False</option>
                                     </select>
+                                  ) : q.type === 'matching' ? (
+                                    <p className="text-xs text-muted-foreground">{_('Matches are derived from the pairs above')}</p>
                                   ) : (
                                     <Input
                                       value={q.correctAnswer || ''}

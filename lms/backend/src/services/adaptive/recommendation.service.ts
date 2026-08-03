@@ -6,8 +6,28 @@ export interface AdaptiveRecommendation {
   masteryScore: number;
   priorityScore: number;
   textbookId: string;
+  subjectName?: string;
   reason: string;
   priority: number;
+}
+
+async function resolveSubjectNames(textbookIds: string[]): Promise<Map<string, string>> {
+  const supabase = getSupabaseAdmin();
+  const map = new Map<string, string>();
+  if (!supabase || textbookIds.length === 0) return map;
+  const { data: textbooks } = await supabase
+    .from('textbooks')
+    .select('id, subject_id')
+    .in('id', textbookIds);
+  const subjectIds = [...new Set((textbooks || []).map((t: any) => t.subject_id).filter(Boolean))];
+  if (subjectIds.length === 0) return map;
+  const { data: subjects } = await supabase
+    .from('subjects')
+    .select('id, name')
+    .in('id', subjectIds);
+  const nameById = new Map((subjects || []).map((s: any) => [s.id, s.name]));
+  for (const t of textbooks || []) map.set(t.id, nameById.get(t.subject_id) || '');
+  return map;
 }
 
 export async function getRecommendations(studentId: string, schoolId: string): Promise<AdaptiveRecommendation[]> {
@@ -33,12 +53,17 @@ export async function getRecommendations(studentId: string, schoolId: string): P
       .limit(3);
     if (unreviewedErr) throw new Error(unreviewedErr.message);
 
+    const subjectNameByTextbook = await resolveSubjectNames(
+      [...new Set((unreviewed || []).map((c: any) => (c.textbook_id as string) || '').filter(Boolean))],
+    );
+
     return (unreviewed || []).map(c => ({
       conceptId: c.id as string,
       conceptTitle: (c.title as string) || 'Concept',
       masteryScore: 0,
       priorityScore: 0,
       textbookId: (c.textbook_id as string) || '',
+      subjectName: subjectNameByTextbook.get((c.textbook_id as string) || '') || '',
       reason: 'New concept to explore',
       priority: 0,
     }));
@@ -59,6 +84,10 @@ export async function getRecommendations(studentId: string, schoolId: string): P
     });
   }
 
+  const subjectNameByTextbook = await resolveSubjectNames(
+    [...new Set((conceptRows || []).map((r: any) => (r.textbook_id as string) || '').filter(Boolean))],
+  );
+
   const scored = lowMastery.map((c: any) => {
     const mastery = (c.mastery_score as number) || 0;
     const daysSinceReview = c.last_reviewed_at
@@ -73,6 +102,7 @@ export async function getRecommendations(studentId: string, schoolId: string): P
       masteryScore: mastery,
       priorityScore: priority,
       textbookId: meta?.textbookId || '',
+      subjectName: subjectNameByTextbook.get(meta?.textbookId || '') || '',
       reason: `Needs practice (mastery: ${Math.round(mastery * 100)}%, ${Math.round(daysSinceReview)}d ago)`,
       priority,
     };

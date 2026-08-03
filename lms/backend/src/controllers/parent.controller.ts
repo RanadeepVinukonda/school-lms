@@ -9,6 +9,7 @@ import { logger } from '../utils/logger';
 import { env } from '../config/env';
 import { getRecommendations as getAdaptiveRecommendations } from '../services/adaptive/recommendation.service';
 import { getSupabaseAdmin } from '../services/supabase';
+import { getCurrentAcademicYear } from '../services/academic-year.service';
 
 export async function getChildren(req: Request, res: Response) {
   if (!req.user) throw new ValidationError('Authentication required');
@@ -192,7 +193,7 @@ Generate a JSON report with this exact structure:
 export async function getYearlyReport(req: Request, res: Response) {
   if (!req.user) throw new ValidationError('Authentication required');
   const { studentId } = req.params;
-  const academicYear = req.query.academicYear as string || new Date().getFullYear().toString();
+  const academicYear = req.query.academicYear as string || getCurrentAcademicYear().name;
   const parentId = req.user.uid;
 
   const isChild = await parentService.verifyChildOwnership(parentId, studentId);
@@ -276,7 +277,7 @@ export async function getRecommendations(req: Request, res: Response) {
         const conceptRecs = await getAdaptiveRecommendations(childId, stu.school_id as string);
         for (const cr of conceptRecs) {
           recs.push({
-            area: `Concept: ${cr.conceptId}`,
+            area: `Concept: ${cr.conceptTitle || cr.conceptId}`,
             suggestion: cr.reason,
             priority: cr.priority > 50 ? 'high' as const : cr.priority > 20 ? 'medium' as const : 'low' as const,
           });

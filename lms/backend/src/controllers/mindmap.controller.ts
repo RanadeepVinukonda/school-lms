@@ -72,8 +72,8 @@ export async function generateTextbookMindMap(req: Request, res: Response) {
 
 export async function pushMindMapToClasses(req: Request, res: Response) {
   if (!req.user) throw new ValidationError('Authentication required');
-  const { classIds } = req.body;
-  const mindMap = await mindmapService.pushToClasses(req.params.id, req.user.uid, classIds);
+  const { classIds, subjectId, subjectName } = req.body;
+  const mindMap = await mindmapService.pushToClasses(req.params.id, req.user.uid, classIds, subjectId, subjectName);
   sendSuccess(res, mindMap, 'Mind map pushed to classes');
 }
 

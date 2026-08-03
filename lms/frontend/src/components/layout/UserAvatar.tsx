@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Settings, User, Globe } from 'lucide-react';
+import { LogOut, User, Globe } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
-import { hasRole, getPrimaryRole } from '@/lib/roleHelpers';
+import { getPrimaryRole } from '@/lib/roleHelpers';
 import { useTranslation } from '@/hooks/useTranslation';
 
 function roleProfileRoute(role: string): string {
@@ -70,18 +70,6 @@ export function UserAvatar() {
             <User className="h-4 w-4" />
             Profile
           </DropdownMenuItem>
-          {(hasRole(user.role, 'admin') || hasRole(user.role, 'super_admin')) && (
-            <DropdownMenuItem onClick={() => navigate(ROUTES.ADMIN_SETTINGS)} className="gap-2">
-              <Settings className="h-4 w-4" />
-              Settings
-            </DropdownMenuItem>
-          )}
-          {hasRole(user.role, 'teacher') && (
-            <DropdownMenuItem onClick={() => navigate(ROUTES.TEACHER_PROFILE)} className="gap-2">
-              <Settings className="h-4 w-4" />
-              Settings
-            </DropdownMenuItem>
-          )}
           <DropdownMenuSub>
             <DropdownMenuSubTrigger className="gap-2">
               <Globe className="h-4 w-4" />

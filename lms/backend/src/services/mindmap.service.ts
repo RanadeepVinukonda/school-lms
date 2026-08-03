@@ -26,6 +26,8 @@ export interface MindMap {
   id: string;
   title: string;
   description?: string;
+  subjectId?: string;
+  subjectName?: string;
   ownerId: string;
   nodes: MindMapNode[];
   edges: MindMapEdge[];
@@ -274,6 +276,8 @@ export async function pushToClasses(
   mindmapId: string,
   userId: string,
   classIds: string[],
+  subjectId?: string,
+  subjectName?: string,
 ): Promise<MindMap> {
   const existing = await ensureOwnership(mindmapId, userId);
   if (existing.ownerId !== userId) {
@@ -309,6 +313,8 @@ export async function pushToClasses(
     ...existing,
     sharedWith: merged,
     pushedToClasses: pushedClasses,
+    subjectId: subjectId || existing.subjectId,
+    subjectName: subjectName || existing.subjectName,
     updatedAt: new Date().toISOString(),
   };
   await setDoc(mindmapId, updated as unknown as Record<string, unknown>);

@@ -10,6 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { getAllSubjects, getClass } from '@/services/dataService';
+import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
 
 export default function SubjectsPage() {
   const user = useAuthStore((s) => s.user);
@@ -18,16 +19,22 @@ export default function SubjectsPage() {
     queryKey: ['student-subjects', user?.id, user?.classId],
     queryFn: async () => {
       if (!user?.classId) return [];
-      const [allSubjects, studentClass] = await Promise.all([
+      const [allSubjects, studentClass, classAssignments] = await Promise.all([
         getAllSubjects(),
         getClass(user.classId),
+        teacherClassSubjectService.getClassAssignments(user.classId).catch(() => []),
       ]);
+      const teacherBySubject = new Map<string, string>(
+        (classAssignments || [])
+          .filter((a) => a.subjectId && a.teacherName)
+          .map((a) => [a.subjectId, a.teacherName] as [string, string])
+      );
       if (!studentClass || !studentClass.subjectIds) return [];
       const subjects = studentClass.subjectIds
         .map((subId) => {
           const subject = allSubjects.find((s) => s.id === subId);
           if (!subject) return null;
-          return { ...subject, status: 'active' };
+          return { ...subject, status: 'active', teacherName: teacherBySubject.get(subId) };
         })
         .filter((s): s is NonNullable<typeof s> => s !== null);
       return subjects;
@@ -103,6 +110,12 @@ export default function SubjectsPage() {
                           <Badge variant="secondary" className="text-[10px]">
                             {subject.category}
                           </Badge>
+                          {subject.teacherName && (
+                            <p className="text-label-sm text-muted-foreground flex items-center gap-1 min-w-0">
+                              <Icon name="person" size={14} className="shrink-0" />
+                              <span className="truncate">{subject.teacherName}</span>
+                            </p>
+                          )}
                         </div>
                         <Button
                           size="sm"

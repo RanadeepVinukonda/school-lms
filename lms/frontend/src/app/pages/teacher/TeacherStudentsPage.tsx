@@ -17,9 +17,9 @@ import {
   getUserByRole,
   getAllClasses,
   getAllSubjects,
-  getAllGrades,
 } from '@/services/dataService';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
+import { supabase } from '@/supabase/config';
 
 interface StudentRow {
   id: string;
@@ -37,22 +37,37 @@ export default function TeacherStudentsPage() {
   const { isLoading, error, refetch, data } = useQuery({
     queryKey: ['teacher-students'],
     queryFn: async () => {
-      const [students, classes, subjects, grades, assignmentsRes] = await Promise.all([
+      const [students, classes, subjects, quizAttempts, examAttempts, submissionAttempts, assignmentsRes] = await Promise.all([
         getUserByRole('student'),
         getAllClasses(),
         getAllSubjects(),
-        getAllGrades(),
+        supabase.from('firestore_docs').select('data').eq('collection', 'quizAttemptV2').then(r => r.data || []),
+        supabase.from('firestore_docs').select('data').eq('collection', 'examAttemptV2').then(r => r.data || []),
+        supabase.from('firestore_docs').select('data').eq('collection', 'assignmentSubmissionV2').then(r => r.data || []),
         teacherClassSubjectService.getMyAssignments().catch(() => ({ data: [] })),
       ]);
-      return { students, classes, subjects, grades, assignments: assignmentsRes?.data ?? [] };
+      return { students, classes, subjects, quizAttempts, examAttempts, submissionAttempts, assignments: assignmentsRes?.data ?? [] };
     },
   });
 
   const allStudents = data?.students ?? [];
   const allClasses = data?.classes ?? [];
   const allSubjects = data?.subjects ?? [];
-  const allGrades = data?.grades ?? [];
   const myAssignments = data?.assignments ?? [];
+
+  const attemptPcts = useMemo(() => {
+    const map = new Map<string, number[]>();
+    for (const arr of [data?.quizAttempts ?? [], data?.examAttempts ?? [], data?.submissionAttempts ?? []]) {
+      for (const a of arr) {
+        const pct = (a as any)?.data?.percentage;
+        const sid = (a as any)?.data?.studentId;
+        if (pct == null || !sid) continue;
+        if (!map.has(sid)) map.set(sid, []);
+        map.get(sid)!.push(pct);
+      }
+    }
+    return map;
+  }, [data]);
 
   const myClassIds = useMemo(() => [...new Set(myAssignments.map((a) => a.classId))], [myAssignments]);
   const mySubjectIds = useMemo(() => [...new Set(myAssignments.map((a) => a.subjectId))], [myAssignments]);
@@ -83,14 +98,10 @@ export default function TeacherStudentsPage() {
     return filteredStudents
       .map((user) => {
         const studentClass = allClasses.find((c) => c.id === user.classId);
-        const studentGrades = allGrades.filter((g) => g.studentId === user.id);
-        const overallPercentage =
-          studentGrades.length > 0
-            ? Math.round(
-                studentGrades.reduce((sum, g) => sum + g.percentage, 0) /
-                  studentGrades.length,
-              )
-            : 0;
+        const pcts = attemptPcts.get(user.id) || [];
+        const overallPercentage = pcts.length > 0
+          ? Math.round(pcts.reduce((sum, p) => sum + p, 0) / pcts.length)
+          : 0;
 
         return {
           id: user.id,
@@ -102,7 +113,7 @@ export default function TeacherStudentsPage() {
         } as StudentRow;
       })
       .sort((a, b) => b.overallPercentage - a.overallPercentage);
-  }, [selectedSubjectId, allStudents, allClasses, allGrades, myAssignments]);
+  }, [selectedSubjectId, allStudents, allClasses, attemptPcts, myAssignments]);
 
   return (
     <>

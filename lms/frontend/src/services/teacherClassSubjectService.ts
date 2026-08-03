@@ -33,6 +33,12 @@ export const teacherClassSubjectService = {
     return response.data;
   },
 
+  /** Get all assignments for a class with teacher names (students). */
+  async getClassAssignments(classId: string) {
+    const response = await api.get<ApiResponse<TeacherClassSubject[]>>(`/teacher-class-subject/class/${classId}`);
+    return response.data.data;
+  },
+
   /** Get unassigned subjects for a class. */
   async getUnassigned(classId: string) {
     const response = await api.get<ApiResponse<any[]>>(`/teacher-class-subject/unassigned/${classId}`);
