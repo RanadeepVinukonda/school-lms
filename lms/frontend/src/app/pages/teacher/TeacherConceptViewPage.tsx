@@ -160,7 +160,7 @@ function MarkerCanvas() {
       </div>
       <canvas
         ref={canvasRef}
-        className={`w-full h-[400px] border rounded-xl bg-white touch-none ${drawingEnabled ? 'cursor-crosshair' : 'cursor-default'}`}
+        className={`w-full h-[400px] border rounded-xl bg-white ${drawingEnabled ? 'touch-none cursor-crosshair' : 'touch-pan-y cursor-default'}`}
         onMouseDown={startDrawing}
         onMouseMove={draw}
         onMouseUp={stopDrawing}
@@ -324,7 +324,7 @@ export default function TeacherConceptViewPage() {
                           <Icon name="smart_display" size={16} className="text-primary" />
                           {_('Saved Resources')}
                         </h3>
-                        {d.concept.videos.map((video) => (
+                        {d.concept.videos.slice(0, 3).map((video) => (
                           <Card key={video.id} className="border-border/60">
                             <CardContent className="p-5">
                               <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-muted">
@@ -359,7 +359,7 @@ export default function TeacherConceptViewPage() {
                           <Icon name="school" size={16} className="text-primary" />
                           {_('External Resources')}
                         </h3>
-                        {teachResourcesQuery.data.map((resource) => (
+                        {teachResourcesQuery.data.slice(0, 3).map((resource) => (
                           <Card key={resource.id} className="border-border/60">
                             <CardContent className="p-5">
                               <div className="flex gap-4">

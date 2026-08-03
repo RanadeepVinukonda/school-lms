@@ -137,17 +137,6 @@ export default function TeacherTextbooksPage() {
                   : `${_('Browse textbooks or upload materials for')} ${selectedSubject?.name ?? ''}.`}
               </p>
             </div>
-            {selectedClassId && selectedSubjectId && currentTextbooks.length > 0 && (
-              <Button asChild>
-                <Link
-                  to={`/teacher/textbooks/upload?classId=${selectedClassId}&subjectId=${selectedSubjectId}`}
-                  className="gap-1"
-                >
-                  <Icon name="upload_file" size={16} />
-                  {_('Upload Textbook')}
-                </Link>
-              </Button>
-            )}
           </div>
         </div>
 
