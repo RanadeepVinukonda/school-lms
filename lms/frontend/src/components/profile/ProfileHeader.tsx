@@ -22,7 +22,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 interface ProfileHeaderProps {
-  user: { displayName?: string | null; email?: string | null; role?: string; avatar?: string | null };
+  user: { displayName?: string | null; email?: string | null; role?: string; avatar?: string | null; photoURL?: string | null };
   roleLabel: string;
   editHref?: string;
   subtitle?: string;
@@ -54,7 +54,7 @@ export default function ProfileHeader({ user, roleLabel, editHref, subtitle, bad
         </div>
         <div className="flex items-center gap-4 p-6 border-t border-border/60 flex-wrap">
           <Avatar className="h-16 w-16 shrink-0">
-            <AvatarImage src={user.avatar ?? ''} alt={user.displayName ?? ''} />
+            <AvatarImage src={user.avatar ?? user.photoURL ?? ''} alt={user.displayName ?? ''} />
             <AvatarFallback className="text-lg font-bold bg-primary-container text-primary">{getInitials(user.displayName ?? 'U')}</AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
