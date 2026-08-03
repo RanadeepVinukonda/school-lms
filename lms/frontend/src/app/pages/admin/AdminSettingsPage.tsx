@@ -31,6 +31,7 @@ import { invalidateClasses } from '@/hooks/useClasses';
 import { getUserDependencies } from '@/services/dependencyService';
 import { logAudit } from '@/services/auditService';
 import api from '@/services/api';
+import AdminProfileEditPage from './AdminProfileEditPage';
 import type { UserDoc } from '@/services/dataService';
 import type { DependencyReport } from '@/services/dependencyService';
 import type { User } from '@/types';
@@ -331,10 +332,18 @@ export default function AdminSettingsPage() {
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full max-w-md inline-flex overflow-x-auto">
+              <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="general">General Settings</TabsTrigger>
               <TabsTrigger value="parents">Parents</TabsTrigger>
               <TabsTrigger value="audit">Audit Logs</TabsTrigger>
             </TabsList>
+
+            {/* -------------------------------------------------------------
+                TAB CONTENT: PROFILE
+               ------------------------------------------------------------- */}
+            <TabsContent value="profile" className="mt-4">
+              <AdminProfileEditPage />
+            </TabsContent>
 
             {/* -------------------------------------------------------------
                 TAB CONTENT: GENERAL SETTINGS

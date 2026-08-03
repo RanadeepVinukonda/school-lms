@@ -24,7 +24,7 @@ function roleProfileRoute(role: string): string {
   switch (primaryRole) {
     case 'admin':
     case 'super_admin':
-      return ROUTES.ADMIN_PROFILE_EDIT;
+      return ROUTES.ADMIN_SETTINGS;
     case 'teacher':
       return ROUTES.TEACHER_PROFILE;
     case 'student':
@@ -70,6 +70,12 @@ export function UserAvatar() {
             <User className="h-4 w-4" />
             Profile
           </DropdownMenuItem>
+          {(hasRole(user.role, 'admin') || hasRole(user.role, 'super_admin')) && (
+            <DropdownMenuItem onClick={() => navigate(ROUTES.ADMIN_SETTINGS)} className="gap-2">
+              <Settings className="h-4 w-4" />
+              Settings
+            </DropdownMenuItem>
+          )}
           {hasRole(user.role, 'teacher') && (
             <DropdownMenuItem onClick={() => navigate(ROUTES.TEACHER_PROFILE)} className="gap-2">
               <Settings className="h-4 w-4" />
