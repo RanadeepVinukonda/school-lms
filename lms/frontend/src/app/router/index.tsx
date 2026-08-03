@@ -94,6 +94,9 @@ const TeacherMindMapPage = lazyRetry(() => import('@/app/pages/teacher/TeacherMi
 const TeacherReportPage = lazyRetry(() => import('@/app/pages/teacher/TeacherReportPage'));
 const TeacherUnifiedTestPage = lazyRetry(() => import('@/app/pages/teacher/TeacherUnifiedTestPage'));
 const TeacherResourceRequestsPage = lazyRetry(() => import('@/app/pages/teacher/TeacherResourceRequestsPage'));
+const TeacherAwaitingGradingPage = lazyRetry(() => import('@/app/pages/teacher/TeacherAwaitingGradingPage'));
+const TeacherLateSubmissionsPage = lazyRetry(() => import('@/app/pages/teacher/TeacherLateSubmissionsPage'));
+const TeacherNeedCorrectionPage = lazyRetry(() => import('@/app/pages/teacher/TeacherNeedCorrectionPage'));
 
 const AdminDashboardPage = lazyRetry(() => import('@/app/pages/admin/AdminDashboardPage'));
 
@@ -228,6 +231,9 @@ export const router = createBrowserRouter([
       { path: ROUTES.TEACHER_TIMETABLE, element: <Suspense fallback={<PageFallback />}><TeacherTimetablePage /></Suspense> },
       { path: ROUTES.TEACHER_REPORT, element: <Suspense fallback={<PageFallback />}><TeacherReportPage /></Suspense> },
       { path: ROUTES.TEACHER_RESOURCE_REQUESTS, element: <Suspense fallback={<PageFallback />}><TeacherResourceRequestsPage /></Suspense> },
+      { path: ROUTES.TEACHER_AWAITING_GRADING, element: <Suspense fallback={<PageFallback />}><TeacherAwaitingGradingPage /></Suspense> },
+      { path: ROUTES.TEACHER_LATE_SUBMISSIONS, element: <Suspense fallback={<PageFallback />}><TeacherLateSubmissionsPage /></Suspense> },
+      { path: ROUTES.TEACHER_NEED_CORRECTION, element: <Suspense fallback={<PageFallback />}><TeacherNeedCorrectionPage /></Suspense> },
       { path: ROUTES.TEACHER_QUESTION_BANK, element: <Suspense fallback={<PageFallback />}><NotFoundPage /></Suspense> },
       { path: ROUTES.TEACHER_REWARDS, element: <Suspense fallback={<PageFallback />}><NotFoundPage /></Suspense> },
     ],

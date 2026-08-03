@@ -58,6 +58,9 @@ export const ROUTES = {
   TEACHER_MINDMAP: '/teacher/mindmap',
   TEACHER_OCR: '/teacher/ocr',
   TEACHER_UNIFIED_TEST: '/teacher/unified-test',
+  TEACHER_AWAITING_GRADING: '/teacher/awaiting-grading',
+  TEACHER_LATE_SUBMISSIONS: '/teacher/late-submissions',
+  TEACHER_NEED_CORRECTION: '/teacher/need-correction',
 
   ADMIN_DASHBOARD: '/admin/dashboard',
   ADMIN_STUDENTS: '/admin/students',

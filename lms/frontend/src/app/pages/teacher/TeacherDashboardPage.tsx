@@ -166,9 +166,9 @@ export default function TeacherDashboardPage() {
 
       return {
         needsAttention: [
-          { icon: 'rate_review', label: _('Awaiting Grading'), count: awaitingGradingCount, color: 'text-warning', bg: 'bg-warning-container', link: '/teacher/assignments', description: _('Assignments to review') },
-          { icon: 'fact_check', label: _('Need Correction'), count: awaitingCorrectionCount, color: 'text-error', bg: 'bg-error-container', link: '/teacher/exams', description: _('Exams to mark') },
-          { icon: 'warning', label: _('Late Submissions'), count: lateAssignmentsCount, color: 'text-destructive', bg: 'bg-destructive/10', link: '/teacher/assignments?filter=late', description: _('Past due date') },
+          { icon: 'rate_review', label: _('Awaiting Grading'), count: awaitingGradingCount, color: 'text-warning', bg: 'bg-warning-container', link: ROUTES.TEACHER_AWAITING_GRADING, description: _('Assignments to review') },
+          { icon: 'fact_check', label: _('Need Correction'), count: awaitingCorrectionCount, color: 'text-error', bg: 'bg-error-container', link: ROUTES.TEACHER_NEED_CORRECTION, description: _('Exams to mark') },
+          { icon: 'warning', label: _('Late Submissions'), count: lateAssignmentsCount, color: 'text-destructive', bg: 'bg-destructive/10', link: ROUTES.TEACHER_LATE_SUBMISSIONS, description: _('Past due date') },
         ],
         stats: [
           { icon: 'trending_up', label: _('Avg Score'), value: `${avgScore}%`, color: 'text-success', bg: 'bg-success-container', isPerformanceLogo: true },
