@@ -33,6 +33,7 @@ import { logAudit } from '@/services/auditService';
 import api from '@/services/api';
 import AdminProfileEditPage from './AdminProfileEditPage';
 import ProfileHeader from '@/components/profile/ProfileHeader';
+import ProfileDetails from '@/components/profile/ProfileDetails';
 import { useAuthStore } from '@/store/authStore';
 import type { UserDoc } from '@/services/dataService';
 import type { DependencyReport } from '@/services/dependencyService';
@@ -106,6 +107,8 @@ export default function AdminSettingsPage() {
   const teacherCount = users.filter((u) => u.role === 'teacher').length;
   const adminCount = users.filter((u) => u.role === 'admin' || u.role === 'super_admin').length;
   const classCount = classes.length;
+
+  const adminSelf = useMemo(() => users.find((u) => u.id === authUser?.id), [users, authUser?.id]);
 
   const statsConfig = [
     { icon: 'school', label: 'Students', value: `${studentCount} Active`, bg: 'bg-primary-container text-on-primary-container' },
@@ -345,7 +348,8 @@ export default function AdminSettingsPage() {
                 TAB CONTENT: PROFILE
                ------------------------------------------------------------- */}
             <TabsContent value="profile" className="mt-4 space-y-6">
-              <ProfileHeader user={authUser ?? {}} roleLabel="Administrator" />
+              <ProfileHeader user={adminSelf ?? authUser ?? {}} roleLabel="Administrator" />
+              <ProfileDetails user={adminSelf ?? authUser ?? {}} />
               <AdminProfileEditPage />
             </TabsContent>
 
