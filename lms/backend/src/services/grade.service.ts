@@ -31,12 +31,15 @@ const gradeBase = new GradeBaseService();
 /** Get all grades for a student. */
 export async function getStudentGrades(studentId: string, academicYear?: string, schoolId?: string) {
   const supabase = getSupabaseAdmin();
-  let query = supabase.from('grades').select('*').eq('studentId', studentId);
-  if (schoolId) query = query.eq('schoolId', schoolId);
-  if (academicYear) query = query.eq('academicYear', academicYear);
-  const { data: rows, error } = await query.order('createdAt', { ascending: false });
+  let query = supabase.from('firestore_docs').select('data').eq('collection', 'grades').eq('data->>studentId', studentId);
+  if (schoolId) query = query.eq('data->>schoolId', schoolId);
+  const { data: rows, error } = await query.order('data->>createdAt', { ascending: false });
   if (error) throw new Error('Failed to fetch grades: ' + error.message);
-  return (rows || []).map(toGradeResponse);
+  let grades = (rows || []).map(r => (r as any).data).map(toGradeResponse);
+  if (academicYear) {
+    grades = grades.filter((g: any) => (g.academicYear || '').includes(academicYear));
+  }
+  return grades;
 }
 
 /** Query the gradebook with filters, paginated. */
@@ -56,10 +59,10 @@ export async function getGradebook(query: {
   const offset = (page - 1) * limit;
 
   let dbQuery = supabase.from('grades').select('*', { count: 'exact' });
-  if (query.schoolId) dbQuery = dbQuery.eq('schoolId', query.schoolId);
-  if (query.courseId) dbQuery = dbQuery.eq('courseId', query.courseId);
+  if (query.schoolId) dbQuery = dbQuery.eq('school_id', query.schoolId);
+  if (query.courseId) dbQuery = dbQuery.eq('course_id', query.courseId);
   if (query.term) dbQuery = dbQuery.eq('term', query.term);
-  if (query.academicYear) dbQuery = dbQuery.eq('academicYear', query.academicYear);
+  if (query.academicYear) dbQuery = dbQuery.eq('academic_year', query.academicYear);
 
   const { data: rows, count, error } = await dbQuery
     .order('createdAt', { ascending: false })
@@ -145,15 +148,15 @@ export async function bulkUpdate(grades: Array<{
 
     if (existing) {
       await supabase.from('grades').update({
-        score: grade.score, totalPoints: grade.totalPoints, percentage,
-        feedback: grade.feedback || '', gradedBy: gradedBy, updatedAt: now,
+        score: grade.score, total_points: grade.totalPoints, percentage,
+        feedback: grade.feedback || '', graded_by: gradedBy, updated_at: now,
       }).eq('id', gradeId);
     } else {
       const { error: insertErr } = await supabase.from('grades').insert({
-        id: gradeId, studentId: grade.studentId, courseId,
-        score: grade.score, totalPoints: grade.totalPoints, percentage,
-        feedback: grade.feedback || '', gradedBy: gradedBy,
-        schoolId: schoolId || '', createdAt: now, updatedAt: now,
+        id: gradeId, student_id: grade.studentId, course_id: courseId,
+        score: grade.score, total_points: grade.totalPoints, percentage,
+        feedback: grade.feedback || '', graded_by: gradedBy,
+        school_id: schoolId || '', created_at: now, updated_at: now,
       });
       if (insertErr) throw new Error(`Failed to insert grade: ${insertErr.message}`);
     }
@@ -201,10 +204,10 @@ export async function bulkUpdate(grades: Array<{
 export async function generateReport(studentId: string, academicYear: string, term: string, schoolId?: string) {
   const supabase = getSupabaseAdmin();
   let query = supabase.from('grades').select('*')
-    .eq('studentId', studentId)
-    .eq('academicYear', academicYear)
+    .eq('student_id', studentId)
+    .eq('academic_year', academicYear)
     .eq('term', term);
-  if (schoolId) query = query.eq('schoolId', schoolId);
+  if (schoolId) query = query.eq('school_id', schoolId);
 
   const { data: rows, error } = await query;
   if (error) throw new Error('Failed to fetch report grades: ' + error.message);
