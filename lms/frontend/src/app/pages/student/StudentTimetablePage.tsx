@@ -133,7 +133,7 @@ export default function StudentTimetablePage() {
                                       {(entry.teacher_id || entry.teacherId) && (
                                         <p className="text-[10px] text-muted-foreground leading-none flex items-center gap-1.5 truncate">
                                           <Icon name="person" size={10} className="text-muted-foreground/60 shrink-0" />
-                                          <span className="truncate">{teacherMap.get(entry.teacher_id || entry.teacherId || '') || entry.teacher_id || entry.teacherId}</span>
+                                          <span className="truncate">{teacherMap.get(entry.teacher_id || entry.teacherId || '') || '—'}</span>
                                         </p>
                                       )}
                                       {entry.room && (

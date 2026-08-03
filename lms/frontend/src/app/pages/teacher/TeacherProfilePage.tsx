@@ -117,9 +117,7 @@ export default function TeacherProfilePage() {
                           <Badge variant="info" className="text-label-xs">
                             <Icon name="school" size={11} className="mr-1" />{_('Teacher')}
                           </Badge>
-                          {profileData.user.id && (
-                            <Badge variant="secondary" className="text-label-xs">{profileData.user.id}</Badge>
-                          )}
+
                         </div>
                       </div>
                       <Button variant="outline" size="sm" className="gap-1" asChild>
@@ -236,10 +234,6 @@ export default function TeacherProfilePage() {
                       <div>
                         <p className="text-label-xs text-muted-foreground">{_('Role')}</p>
                         <p className="text-title-sm font-medium capitalize">{profileData.user.role ?? 'teacher'}</p>
-                      </div>
-                      <div>
-                        <p className="text-label-xs text-muted-foreground">{_('User ID')}</p>
-                        <p className="text-title-sm font-medium">{profileData.user.id ?? 'N/A'}</p>
                       </div>
                       <div>
                         <p className="text-label-xs text-muted-foreground">{_('Account Status')}</p>

@@ -138,7 +138,7 @@ export default function ParentReportsPage() {
                           {r.subjects && r.subjects.length > 0 && (
                             <div>
                               <p className="text-title-sm font-bold mb-2">Subject Performance</p>
-                              <div className="border border-border/60 rounded-xl overflow-hidden">
+                              <div className="border border-border/60 rounded-xl overflow-x-auto">
                                 <table className="w-full text-left text-sm">
                                   <thead>
                                     <tr className="bg-muted/30 border-b border-border/60">

@@ -85,9 +85,7 @@ export default function ParentProfilePage() {
                           <Badge variant="info" className="text-label-xs">
                             <Icon name="family_history" size={11} className="mr-1" />Parent
                           </Badge>
-                          {profileData.user.id && (
-                            <Badge variant="secondary" className="text-label-xs">{profileData.user.id}</Badge>
-                          )}
+
                         </div>
                         <Link to={ROUTES.PARENT_PROFILE_EDIT}>
                           <Button variant="outline" size="sm" className="mt-2">
@@ -135,7 +133,6 @@ export default function ParentProfilePage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-title-sm font-medium">{child.displayName}</p>
-                              <p className="text-label-xs text-muted-foreground">ID: {child.id}</p>
                             </div>
                           </motion.div>
                         ))}
@@ -161,10 +158,6 @@ export default function ParentProfilePage() {
                       <div>
                         <p className="text-label-xs text-muted-foreground">Role</p>
                         <p className="text-title-sm font-medium capitalize">{profileData.user.role ?? 'parent'}</p>
-                      </div>
-                      <div>
-                        <p className="text-label-xs text-muted-foreground">User ID</p>
-                        <p className="text-title-sm font-medium">{profileData.user.id ?? 'N/A'}</p>
                       </div>
                       <div>
                         <p className="text-label-xs text-muted-foreground">Account Status</p>

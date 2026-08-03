@@ -345,7 +345,7 @@ export default function AdminFeePage() {
                                   const sched = (schedulesData as any[])?.find((s: any) => s.id === (p.fee_structure_id || p.feeScheduleId));
                                   return (
                                     <tr key={p.id} className="hover:bg-muted/20">
-                                      <td className="px-4 py-3 font-semibold">{sched?.name || p.fee_structure_id || p.feeScheduleId}</td>
+                                      <td className="px-4 py-3 font-semibold">{sched?.name || '—'}</td>
                                       <td className="px-4 py-3 font-mono font-bold">Rs. {(p.amount || p.amountPaid)?.toFixed(2)}</td>
                                       <td className="px-4 py-3 capitalize">{p.payment_method || p.paymentMethod || '-'}</td>
                                       <td className="px-4 py-3 text-muted-foreground">{new Date(p.created_at || p.paymentDate).toLocaleDateString()}</td>

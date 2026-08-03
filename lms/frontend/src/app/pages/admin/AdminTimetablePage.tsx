@@ -441,7 +441,7 @@ export default function AdminTimetablePage() {
                                             {(entry.teacher_id || entry.teacherId) && (
                                               <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
                                                 <Icon name="person" size={12} className="text-muted-foreground/50 shrink-0" />
-                                                <span className="break-words">{teacherMap.get(entry.teacher_id || entry.teacherId || '') || entry.teacher_id || entry.teacherId}</span>
+                                                <span className="break-words">{teacherMap.get(entry.teacher_id || entry.teacherId || '') || '—'}</span>
                                               </p>
                                             )}
                                             {entry.room && (
