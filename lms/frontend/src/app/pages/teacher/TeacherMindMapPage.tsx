@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
@@ -31,9 +32,7 @@ export default function TeacherMindMapPage() {
   const [pushOpen, setPushOpen] = useState(false);
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
   const [pushing, setPushing] = useState(false);
-  const [pushDone, setPushDone] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [viewId, setViewId] = useState<string | null>(null);
 
   const { data: savedMindMaps, isLoading: savedLoading, error: savedError, refetch: refetchSaved } = useQuery({
@@ -72,7 +71,6 @@ export default function TeacherMindMapPage() {
   const generateMindmap = useCallback(async () => {
     if (!text.trim() || !title.trim()) return;
     setLoading(true);
-    setPushDone(false);
     try {
       const result = await mindmapService.generate(text, title);
       setGeneratedId(result.id);
@@ -92,6 +90,7 @@ export default function TeacherMindMapPage() {
       refetchSaved();
     } catch (err: any) {
       console.error('Mindmap generation failed', err);
+      toast.error(_('Failed to generate mind map'));
     } finally {
       setLoading(false);
     }
@@ -124,7 +123,6 @@ export default function TeacherMindMapPage() {
   const openPushDialog = useCallback(() => {
     setSelectedClassIds([]);
     setSelectedSubjectId('');
-    setPushDone(false);
     setPushOpen(true);
   }, []);
 
@@ -137,7 +135,6 @@ export default function TeacherMindMapPage() {
   const handleSave = useCallback(async () => {
     if (!generatedId) return;
     setSaving(true);
-    setSaved(false);
     try {
       await mindmapService.update(generatedId, {
         title,
@@ -155,11 +152,11 @@ export default function TeacherMindMapPage() {
           label: typeof e.label === 'string' ? e.label : '',
         })),
       });
-      setSaved(true);
+      toast.success(_('Mind map saved'));
       refetchSaved();
-      setTimeout(() => setSaved(false), 2000);
     } catch (err: any) {
       console.error('Failed to save mind map', err);
+      toast.error(_('Failed to save mind map'));
     } finally {
       setSaving(false);
     }
@@ -171,9 +168,11 @@ export default function TeacherMindMapPage() {
     try {
       const subject = allSubjects.find((s) => s.id === selectedSubjectId);
       await mindmapService.pushToClasses(generatedId, selectedClassIds, selectedSubjectId, subject?.name);
-      setPushDone(true);
+      setPushOpen(false);
+      toast.success(_('Pushed to selected classes'));
     } catch (err: any) {
       console.error('Failed to push mind map', err);
+      toast.error(_('Failed to push mind map'));
     } finally {
       setPushing(false);
     }
@@ -214,7 +213,7 @@ export default function TeacherMindMapPage() {
               <Icon name="psychology" size={18} className="mr-2" />
               {loading ? _('Generating...') : _('Generate Mind Map')}
             </Button>
-            {generatedId && !pushDone && (
+            {generatedId && (
               <div className="flex flex-col gap-2">
                 <Button variant="outline" onClick={handleSave} disabled={saving}>
                   <Icon name="save" size={18} className="mr-2" />
@@ -224,16 +223,6 @@ export default function TeacherMindMapPage() {
                   <Icon name="send" size={18} className="mr-2" />
                   {_('Push to Class')}
                 </Button>
-              </div>
-            )}
-            {saved && (
-              <div className="text-center text-label-sm text-success font-medium py-2 rounded-lg bg-success-container/40">
-                {_('Saved')}
-              </div>
-            )}
-            {pushDone && (
-              <div className="text-center text-label-sm text-success font-medium py-2 rounded-lg bg-success-container/40">
-                {_('Pushed to selected classes')}
               </div>
             )}
           </Card>
