@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
 import {
-  getAllSubjects, getAllClasses, getUserByRole, getAllGrades,
+  getAllSubjects, getAllClasses, getUserByRole,
   getExamsBySubject, getAssignmentsBySubject, getCorrectionsByExam,
   getSubmissionsByAssignment, getNotificationsByUser,
 } from '@/services/dataService';
@@ -104,8 +104,8 @@ export default function TeacherDashboardPage() {
   const { isLoading, error, refetch, data } = useQuery({
     queryKey: ['teacher-dashboard', user?.id],
     queryFn: async (): Promise<DashboardData> => {
-      const [allSubjects, allClasses, students, allGrades, assignmentsRes] = await Promise.all([
-        getAllSubjects(), getAllClasses(), getUserByRole('student'), getAllGrades(),
+      const [allSubjects, allClasses, students, assignmentsRes] = await Promise.all([
+        getAllSubjects(), getAllClasses(), getUserByRole('student'),
         teacherClassSubjectService.getMyAssignments().catch(() => ({ data: [] })),
       ]);
 
@@ -140,10 +140,23 @@ export default function TeacherDashboardPage() {
       const assignedStudents = students.filter(
         (s): s is typeof s & { classId: string } => !!s.classId && myClassIds.includes(s.classId)
       );
-      const myStudentIds = new Set(assignedStudents.map(s => s.id));
-      const gradedEntries = allGrades.filter((g) => g.percentage != null && myStudentIds.has(g.studentId));
-      const avgScore = gradedEntries.length > 0
-        ? Math.round(gradedEntries.reduce((sum, g) => sum + g.percentage, 0) / gradedEntries.length) : 0;
+      // Avg Score from analytics-v2 (attempts in firestore_docs); legacy grades table is stale/empty.
+      const classStats = await Promise.all(myClasses.map(async (c) => {
+        try {
+          const res = await api.get(`/analytics-v2/class/${c.id}`);
+          const assessments = res.data?.data?.assessments ?? [];
+          return assessments.reduce(
+            (acc: { attempts: number; total: number }, a: { attemptCount?: number; avgScore?: number }) => ({
+              attempts: acc.attempts + (a.attemptCount ?? 0),
+              total: acc.total + ((a.avgScore ?? 0) * (a.attemptCount ?? 0)),
+            }),
+            { attempts: 0, total: 0 },
+          );
+        } catch { return { attempts: 0, total: 0 }; }
+      }));
+      const totalAttempts = classStats.reduce((s, c) => s + c.attempts, 0);
+      const avgScore = totalAttempts > 0
+        ? Math.round(classStats.reduce((s, c) => s + c.total, 0) / totalAttempts) : 0;
 
       const textbookArrays = await Promise.all(
         subjectIds.map((sid) => getTextbooksBySubject(sid).catch(() => [] as any[])),
