@@ -28,7 +28,6 @@ const navItems: NavItem[] = [
   { label: 'Quizzes & Tasks', href: ROUTES.STUDENT_TASKS, icon: 'checklist' },
   { label: 'Exams', href: ROUTES.STUDENT_EXAMS, icon: 'assignment' },
   { label: 'AI Tutor', href: ROUTES.STUDENT_AI_TUTOR, icon: 'smart_toy' },
-  { label: 'Profile', href: ROUTES.STUDENT_PROFILE, icon: 'person' },
   { label: 'Rewards', href: ROUTES.STUDENT_GAMIFICATION, icon: 'emoji_events' },
   { label: 'Leaderboard', href: ROUTES.STUDENT_LEADERBOARD, icon: 'leaderboard' },
   { label: 'Mind Maps', href: ROUTES.STUDENT_MINDMAPS, icon: 'psychology' },

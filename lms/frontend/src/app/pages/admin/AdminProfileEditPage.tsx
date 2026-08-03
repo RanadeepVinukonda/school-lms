@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -15,8 +16,12 @@ import { getInitials } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import { uploadProfileImage } from '@/services/avatarService';
 import { getUser, updateUser } from '@/services/dataService';
+import { ROUTES } from '@/lib/constants';
+
+const ADMIN_SETTINGS_PROFILE = `${ROUTES.ADMIN_SETTINGS}?tab=profile`;
 
 export default function AdminProfileEditPage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
@@ -83,6 +88,7 @@ export default function AdminProfileEditPage() {
       queryClient.invalidateQueries({ queryKey: ['admin-profile-edit', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['admin-users-stats'] });
       toast.success('Profile updated');
+      navigate(ADMIN_SETTINGS_PROFILE);
     },
     onError: () => toast.error('Failed to update profile'),
   });
@@ -97,7 +103,12 @@ export default function AdminProfileEditPage() {
         className="sm:p-6 p-4 max-w-2xl mx-auto pb-32"
       >
         <motion.div variants={cardStackReveal} custom={0} className="space-y-16">
-          <h1 className="text-headline-sm font-bold">Edit Profile</h1>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => navigate(ADMIN_SETTINGS_PROFILE)}>
+              <Icon name="arrow_back" size={18} />
+            </Button>
+            <h1 className="text-headline-sm font-bold">Edit Profile</h1>
+          </div>
 
           <Card className="border-border/60">
             <CardContent className="p-5 space-y-6">
@@ -138,9 +149,12 @@ export default function AdminProfileEditPage() {
                 <Input className="border-border/60 placeholder:text-muted-foreground" value={form.address} onChange={(e) => handleChange('address', e.target.value)} placeholder="Your address" />
               </div>
 
-              <Button className="w-full" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || loadingProfile}>
-                {saveMutation.isPending ? 'Saving...' : loadingProfile ? 'Loading...' : 'Save Changes'}
-              </Button>
+              <div className="flex gap-3 pt-2">
+                <Button variant="outline" className="flex-1" onClick={() => navigate(ADMIN_SETTINGS_PROFILE)}>Cancel</Button>
+                <Button className="flex-1" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || loadingProfile}>
+                  {saveMutation.isPending ? 'Saving...' : loadingProfile ? 'Loading...' : 'Save Changes'}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </motion.div>

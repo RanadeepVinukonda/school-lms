@@ -15,6 +15,7 @@ import { teacherClassSubjectService } from '@/services/teacherClassSubjectServic
 import type { Subject, ClassEntry } from '@/services/dataService';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import ProfileDetails from '@/components/profile/ProfileDetails';
+import ProfilePreferences from '@/components/profile/ProfilePreferences';
 
 interface ProfileData {
   user: import('@/services/dataService').UserDoc;
@@ -123,6 +124,10 @@ export default function TeacherProfilePage() {
 
               <motion.div variants={cardStackReveal} custom={0}>
                 <ProfileDetails user={profileData.user} />
+              </motion.div>
+
+              <motion.div variants={cardStackReveal} custom={0}>
+                <ProfilePreferences />
               </motion.div>
             </>
           )}

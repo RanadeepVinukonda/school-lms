@@ -13,6 +13,7 @@ import { ROUTES } from '@/lib/constants';
 import { useTranslation } from '@/hooks/useTranslation';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import ProfileDetails from '@/components/profile/ProfileDetails';
+import ProfilePreferences from '@/components/profile/ProfilePreferences';
 
 interface ProfileData {
   user: import('@/services/dataService').UserDoc;
@@ -99,6 +100,10 @@ export default function ParentProfilePage() {
 
               <motion.div variants={cardStackReveal} custom={0}>
                 <ProfileDetails user={profileData.user} />
+              </motion.div>
+
+              <motion.div variants={cardStackReveal} custom={0}>
+                <ProfilePreferences />
               </motion.div>
             </>
           )}

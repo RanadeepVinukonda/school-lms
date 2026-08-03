@@ -35,7 +35,7 @@ const navItems: NavItem[] = [
   { label: 'Notice Board', href: ROUTES.ADMIN_NOTICEBOARD, icon: 'campaign' },
   { label: 'Reports & Suggestions', href: ROUTES.ADMIN_REPORTS, icon: 'feedback' },
   { label: 'ERP Dashboard', href: ROUTES.ADMIN_ERP_DASHBOARD, icon: 'business' },
-  { label: 'Profile', href: ROUTES.ADMIN_SETTINGS, icon: 'person' },
+  { label: 'Settings & Logs', href: ROUTES.ADMIN_SETTINGS, icon: 'settings' },
 ];
 
 export function AdminLayout() {

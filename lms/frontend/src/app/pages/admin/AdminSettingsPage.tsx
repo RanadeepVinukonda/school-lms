@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -24,6 +25,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { cardStackReveal } from '@/lib/motion';
 import { getInitials, formatDate } from '@/lib/utils';
+import { ROUTES } from '@/lib/constants';
 import { settingsService } from '@/services/settingsService';
 import { getAllUsers, getAllClasses } from '@/services/dataService';
 import { userService } from '@/services/userService';
@@ -31,9 +33,9 @@ import { invalidateClasses } from '@/hooks/useClasses';
 import { getUserDependencies } from '@/services/dependencyService';
 import { logAudit } from '@/services/auditService';
 import api from '@/services/api';
-import AdminProfileEditPage from './AdminProfileEditPage';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import ProfileDetails from '@/components/profile/ProfileDetails';
+import ProfilePreferences from '@/components/profile/ProfilePreferences';
 import { useAuthStore } from '@/store/authStore';
 import type { UserDoc } from '@/services/dataService';
 import type { DependencyReport } from '@/services/dependencyService';
@@ -82,7 +84,15 @@ function getActionBadge(action: string) {
 export default function AdminSettingsPage() {
   const queryClient = useQueryClient();
   const authUser = useAuthStore((s) => s.user);
-  const [activeTab, setActiveTab] = useState('general');
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState<string>(() => (tabParam === 'profile' ? 'profile' : 'general'));
+
+  useEffect(() => {
+    if (tabParam === 'profile' || tabParam === 'general' || tabParam === 'parents' || tabParam === 'audit') {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   // -------------------------------------------------------------
   // TAB 1: GENERAL SETTINGS
@@ -348,9 +358,9 @@ export default function AdminSettingsPage() {
                 TAB CONTENT: PROFILE
                ------------------------------------------------------------- */}
             <TabsContent value="profile" className="mt-4 space-y-6">
-              <ProfileHeader user={adminSelf ?? authUser ?? {}} roleLabel="Administrator" />
+              <ProfileHeader user={adminSelf ?? authUser ?? {}} roleLabel="Administrator" editHref={ROUTES.ADMIN_PROFILE_EDIT} />
               <ProfileDetails user={adminSelf ?? authUser ?? {}} />
-              <AdminProfileEditPage />
+              <ProfilePreferences />
             </TabsContent>
 
             {/* -------------------------------------------------------------
