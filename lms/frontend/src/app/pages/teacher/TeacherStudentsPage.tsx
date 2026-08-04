@@ -200,18 +200,18 @@ export default function TeacherStudentsPage() {
                                   {letterGrade}
                                 </Badge>
                               </div>
-                              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                                 <span className="flex items-center gap-1">
                                   <Icon name="badge" size={13} />
-                                  {student.studentId}
+                                  <span className="truncate">{student.studentId}</span>
                                 </span>
                                 <span className="flex items-center gap-1">
                                   <Icon name="school" size={13} />
-                                  {student.className}
+                                  <span className="truncate">{student.className}</span>
                                 </span>
                                 <span className="flex items-center gap-1">
                                   <Icon name="menu_book" size={13} />
-                                  {student.subjectCount} {student.subjectCount !== 1 ? _('subjects') : _('subject')}
+                                  <span className="truncate">{student.subjectCount} {student.subjectCount !== 1 ? _('subjects') : _('subject')}</span>
                                 </span>
                               </div>
                             </div>

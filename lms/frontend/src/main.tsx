@@ -6,12 +6,14 @@ import { Toaster } from 'sonner';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { ActiveAcademicYearProvider } from '@/context/ActiveAcademicYearContext';
 import { setupChunkReload } from '@/lib/lazyRetry';
+import { initNativeBridge } from '@/lib/native';
 import App from './app/App';
 import './index.css';
 import './lib/motion.css';
 import 'katex/dist/katex.min.css';
 
 setupChunkReload();
+initNativeBridge();
 
 window.addEventListener('error', (event) => {
   console.error('[Global] Uncaught error:', event.error || event.message);

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/supabase/config';
@@ -177,7 +177,7 @@ export default function StudentLayout() {
         )}
       >
         {/* Top app bar */}
-        <header className="relative z-30 flex h-16 items-center gap-2 sm:gap-4 border-b border-outline-variant bg-surface px-3 sm:px-4">
+        <header className="sticky top-0 z-40 flex min-h-16 items-center gap-2 sm:gap-4 border-b border-outline-variant bg-surface/85 backdrop-blur-md px-3 sm:px-4 pt-[env(safe-area-inset-top)]">
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden text-on-surface shrink-0" aria-label="Menu">
@@ -244,7 +244,7 @@ export default function StudentLayout() {
           </div>
         </header>
 
-        <main id="main-content" className="min-h-[calc(100vh-8rem)]">
+        <main id="main-content" className="min-h-[calc(100vh-8rem)] pb-[env(safe-area-inset-bottom)]">
           <Outlet />
         </main>
       </div>

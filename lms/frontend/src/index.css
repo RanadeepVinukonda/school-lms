@@ -609,3 +609,74 @@
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
 }
+
+/* ── Android / Capacitor native refinements (additive, no layout changes) ── */
+@media (max-width: 700px) {
+  .fixed,
+  .sticky,
+  .sonner-toaster,
+  [role="dialog"] {
+    padding-left: max(env(safe-area-inset-left), 0px);
+    padding-right: max(env(safe-area-inset-right), 0px);
+  }
+}
+
+html.genesis-native {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+html.genesis-native body {
+  overscroll-behavior-y: none;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+@media (prefers-color-scheme: dark) {
+  html.genesis-native {
+    color-scheme: dark;
+  }
+}
+
+/* ── Mobile / Android polish (additive — desktop & business logic unchanged) ── */
+@media (max-width: 640px) {
+  /* Comfortable touch targets for primary interactive controls */
+  button.inline-flex,
+  a.inline-flex,
+  [role="button"].inline-flex {
+    min-height: 48px;
+  }
+
+  /* Full-width form controls — nothing overflows */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]),
+  select,
+  textarea {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Prevent clipped / overflowing long text */
+  h1, h2, h3, h4, h5, h6, p, a, li, td, th, label {
+    overflow-wrap: break-word;
+  }
+
+  /* Media never blows out the viewport */
+  img, video, canvas, iframe {
+    max-width: 100%;
+  }
+
+  /* Consistent breathing room on page containers */
+  #root > .container {
+    padding-left: max(env(safe-area-inset-left), 1rem);
+    padding-right: max(env(safe-area-inset-right), 1rem);
+  }
+}
+
+/* Tablet: two-column dashboards unless a page already declares its own grid */
+@media (min-width: 641px) and (max-width: 1023px) {
+  #root > .container {
+    padding-left: max(env(safe-area-inset-left), 1.25rem);
+    padding-right: max(env(safe-area-inset-right), 1.25rem);
+  }
+}

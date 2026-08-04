@@ -440,14 +440,14 @@ export default function TeacherOCRPage() {
   return (
     <>
       <SEOHead title={_('AI Teaching Assistant')} description={_('Chat with AI to create quizzes, assignments, and mind maps from textbook images')} />
-      <div className="max-w-5xl mx-auto px-6 py-6 h-[calc(100vh-80px)] flex flex-col">
-        <div className="mb-6">
+      <div className="mx-auto flex h-[calc(100dvh-7.5rem)] w-full max-w-5xl flex-col px-3 py-4 sm:px-6 sm:py-6">
+        <div className="mb-4 sm:mb-6">
           <h1 className="text-headline-md font-bold">{_('AI Teaching Assistant')}</h1>
           <p className="text-muted-foreground text-sm mt-1">{_('Upload textbook images and tell me what to create — quiz, assignment, mind map, or ask a question')}</p>
         </div>
 
-        <Card className="flex-1 flex flex-col overflow-hidden shadow-md">
-          <CardContent className="flex-1 overflow-y-auto p-5 space-y-4 scroll-smooth">
+        <Card className="flex-1 flex flex-col overflow-hidden shadow-md min-h-0">
+          <CardContent className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 scroll-smooth">
             {messages.map((msg, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] rounded-2xl px-5 py-3.5 ${msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-md shadow-sm' : 'bg-card text-card-foreground rounded-bl-md border border-border/60 shadow-sm'}`}>
@@ -475,8 +475,8 @@ export default function TeacherOCRPage() {
             <div ref={chatEndRef} />
           </CardContent>
 
-          <div className="border-t border-border/60 p-4 bg-muted/20">
-            <div className="flex items-center gap-1.5 mb-3">
+          <div className="border-t border-border/60 p-3 sm:p-4 bg-muted/20 space-y-3">
+            <div className="grid grid-cols-3 gap-2">
               {([
                 ['text', 'edit_note', _('Text')],
                 ['image', 'image', _('Image')],
@@ -485,10 +485,11 @@ export default function TeacherOCRPage() {
                 <button
                   key={mode}
                   onClick={() => setInputMode(mode)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${inputMode === mode ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}
+                  aria-pressed={inputMode === mode}
+                  className={`flex min-h-[44px] items-center justify-center gap-1.5 rounded-full px-2 text-sm font-semibold transition-colors ${inputMode === mode ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-card text-muted-foreground border border-border/60 hover:bg-muted'}`}
                 >
-                  <Icon name={icon} size={14} className="mr-1" />
-                  {label}
+                  <Icon name={icon} size={18} className="shrink-0" />
+                  <span className="truncate">{label}</span>
                 </button>
               ))}
             </div>
@@ -526,13 +527,13 @@ export default function TeacherOCRPage() {
               </div>
             )}
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-end gap-2">
               <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileSelect} />
-              <Button variant="outline" size="icon" onClick={() => fileInputRef.current?.click()} title={_('Attach images')} disabled={isLoading}>
-                <Icon name="image" size={18} />
+              <Button variant="outline" size="icon" className="h-12 w-12 shrink-0 rounded-full" onClick={() => fileInputRef.current?.click()} title={_('Gallery')} disabled={isLoading}>
+                <Icon name="image" size={20} />
               </Button>
-              <Button variant="outline" size="icon" onClick={() => setInputMode('camera')} title={_('Camera')} disabled={isLoading}>
-                <Icon name="photo_camera" size={18} />
+              <Button variant="outline" size="icon" className="h-12 w-12 shrink-0 rounded-full" onClick={() => setInputMode('camera')} title={_('Camera')} disabled={isLoading}>
+                <Icon name="photo_camera" size={20} />
               </Button>
               <Input
                 value={input}
@@ -540,10 +541,10 @@ export default function TeacherOCRPage() {
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder={_('Type your request... (combine text with images or a photo)')}
                 disabled={isLoading}
-                className="flex-1"
+                className="h-12 min-w-0 flex-1 rounded-2xl text-base"
               />
-              <Button onClick={handleSend} loading={isLoading} disabled={isLoading || (!input.trim() && pendingFiles.length === 0)}>
-                <Icon name="send" size={18} />
+              <Button onClick={handleSend} loading={isLoading} disabled={isLoading || (!input.trim() && pendingFiles.length === 0)} className="h-12 w-12 shrink-0 rounded-full">
+                <Icon name="send" size={20} />
               </Button>
             </div>
           </div>

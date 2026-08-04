@@ -8,9 +8,40 @@ const config: CapacitorConfig = {
   server: {
     url: 'https://genesis-frontend-teal.vercel.app',
     androidScheme: 'https',
+    cleartext: false,
     allowNavigation: [
       'school-lms-api-b8cn.onrender.com',
+      'jfqpukpzgmzwzzjrcxra.supabase.co',
+      'school-ca94b.firebaseapp.com',
+      'school-ca94b.firebasestorage.app',
+      'school-ca94b.firebaseio.com',
+      'genesis-frontend-teal.vercel.app',
     ],
+  },
+  android: {
+    allowMixedContent: false,
+    captureInput: true,
+    webViewDebuggingEnabled: false,
+  },
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 1200,
+      launchAutoHide: true,
+      backgroundColor: '#F9FAFB',
+      androidScaleType: 'FIT_CENTER',
+      showSpinner: false,
+      splashFullScreen: true,
+      splashImmersive: true,
+    },
+    StatusBar: {
+      style: 'DARK',
+      backgroundColor: '#00000000',
+      overlaysWebView: true,
+    },
+    Keyboard: {
+      resize: 'body',
+      resizeOnFullScreen: true,
+    },
   },
 };
 
