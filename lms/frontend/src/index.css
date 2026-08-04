@@ -305,7 +305,7 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
-    overflow-x: hidden;
+    overflow-x: clip;
     -webkit-overflow-scrolling: touch;
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: none;
@@ -321,7 +321,7 @@
   }
 
   #root {
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   body::after {

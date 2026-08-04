@@ -178,7 +178,7 @@ export function AdminLayout() {
         )}
       >
         {/* Top app bar */}
-        <header className="sticky top-0 z-40 flex min-h-16 items-center gap-2 sm:gap-4 border-b border-outline-variant bg-surface/85 backdrop-blur-md px-3 sm:px-4 pt-[env(safe-area-inset-top)]">
+        <header className="sticky top-0 z-40 flex min-h-16 items-center gap-2 sm:gap-4 border-b border-outline-variant bg-surface/85 backdrop-blur-md px-3 sm:px-4 pt-[calc(env(safe-area-inset-top)+20px)]">
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden text-on-surface shrink-0" aria-label="Menu">
