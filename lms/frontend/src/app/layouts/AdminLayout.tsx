@@ -244,7 +244,7 @@ export function AdminLayout() {
           </Sheet>
 
           <span className="text-title-md font-bold text-primary hidden sm:block shrink-0">Genesis</span>
-          <img src="/genesis_icon.png" alt="Genesis" className="h-9 w-9 object-contain sm:hidden shrink-0" />
+          <img src="/genesis_icon.png" alt="Genesis" className="h-[52px] w-[52px] object-contain sm:hidden shrink-0" />
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             <ThemeToggle />
             {user && <NotificationDropdown />}
