@@ -620,6 +620,10 @@ async function main() {
     await createAuthUsers(client, authUsers, adminEmails);
     console.log(`Auth: ${authUsers.length} accounts created (bcrypt)`);
 
+    // 19b. Sync concept_videos from concepts.video_links (Teach page datasource)
+    const videoSync = await syncConceptVideos(client);
+    console.log(`Concept videos synced: ${videoSync.rows} rows across ${videoSync.concepts} concepts`);
+
     await client.query('COMMIT');
     console.log('\n✅ SEED COMMITTED');
 
@@ -633,6 +637,51 @@ async function main() {
     client.release();
     await pool.end();
   }
+}
+
+// ────────────────────────── video sync ──────────────────────────
+// The Teach page reads videos from `concept_videos`, but content is authored via
+// `concepts.video_links`. Copy each concept's video_links into concept_videos so
+// videos stay visible. Idempotent (replaces rows for the school's concepts).
+async function syncConceptVideos(client) {
+  const schoolConcepts = await client.query(
+    `SELECT c.id, c.title, c.chapter_id, c.textbook_id, tx.school_id, c.video_links
+       FROM concepts c
+       JOIN textbooks tx ON tx.id = c.textbook_id`
+  );
+  const rows = [];
+  for (const cpt of schoolConcepts.rows) {
+    for (const link of (cpt.video_links || [])) {
+      const m = String(link).match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+      const videoId = m ? m[1] : null;
+      if (!videoId) continue;
+      rows.push({
+        id: uid(), concept_id: cpt.id, textbook_id: cpt.textbook_id, chapter_id: cpt.chapter_id,
+        school_id: cpt.school_id, video_id: videoId, title: cpt.title, description: '',
+        channel: 'YouTube', thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+        duration: '', score: 1.0,
+        data: JSON.stringify({ source: 'youtube', sourceLabel: 'YouTube', url: `https://www.youtube.com/watch?v=${videoId}`, embedUrl: `https://www.youtube.com/embed/${videoId}` }),
+      });
+    }
+  }
+  const conceptsWithVideos = new Set(rows.map((r) => r.concept_id));
+  if (conceptsWithVideos.size) {
+    await client.query(`DELETE FROM public.concept_videos WHERE concept_id = ANY($1::uuid[])`, [[...conceptsWithVideos]]);
+  }
+  if (rows.length) {
+    const cols = ['id','concept_id','textbook_id','chapter_id','school_id','video_id','title','description','channel','thumbnail','duration','score','data'];
+    const params = [];
+    const ph = [];
+    for (const row of rows) {
+      const rowPh = cols.map((cn) => { params.push(row[cn]); return `$${params.length}`; });
+      ph.push(`(${rowPh.join(', ')})`);
+    }
+    await client.query(
+      `INSERT INTO public.concept_videos (${cols.map((cn) => `"${cn}"`).join(', ')}) VALUES ${ph.join(', ')}`,
+      params
+    );
+  }
+  return { rows: rows.length, concepts: conceptsWithVideos.size };
 }
 
 // ────────────────────────── batch insert ──────────────────────────
