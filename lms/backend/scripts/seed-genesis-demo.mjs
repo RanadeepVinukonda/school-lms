@@ -627,6 +627,30 @@ async function main() {
     await client.query('COMMIT');
     console.log('\n✅ SEED COMMITTED');
 
+    // 19c. Live enrichment: Khan Academy first, YouTube fallback (post-commit so a
+    //     network failure never blocks the seed — offline video_links rows remain).
+    if (process.env.SKIP_LIVE_VIDEOS === '1') {
+      console.log('Live concept-video enrichment skipped (SKIP_LIVE_VIDEOS=1)');
+    } else {
+      try {
+        const { syncConceptVideosForConcepts } = await import('./lib/fetch-concept-videos.mjs');
+        const { rows: liveConcepts } = await client.query(`
+          SELECT c.id, c.title, c.chapter_id, c.textbook_id, c.video_links, tx.school_id,
+                 ch.title AS chapter, s.name AS subject_name
+          FROM concepts c
+          JOIN chapters ch ON ch.id = c.chapter_id
+          JOIN textbooks tx ON tx.id = c.textbook_id
+          LEFT JOIN subjects s ON s.id = tx.subject_id
+          WHERE c.deleted_at IS NULL AND c.status IS DISTINCT FROM 'archived'
+        `);
+        const live = await syncConceptVideosForConcepts(client, liveConcepts);
+        const khanRows = live.summary.reduce((n, s) => n + s.khan, 0);
+        console.log(`Concept videos live-enriched: ${live.summary.length} concepts (Khan Academy ${khanRows}, YouTube fallback)`);
+      } catch (e) {
+        console.warn('Live concept-video enrichment skipped (offline video_links remain):', e.message);
+      }
+    }
+
     // 20. Validation + credentials doc
     await validateAndReport();
   } catch (e) {

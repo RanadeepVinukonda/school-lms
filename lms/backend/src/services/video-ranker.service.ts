@@ -118,7 +118,12 @@ export async function searchAndRankVideos(
       })
     );
 
-    scoredVideos.sort((a, b) => b.score - a.score);
+    // Always prioritize Khan Academy content, then rank the rest by similarity.
+    scoredVideos.sort((a, b) => {
+      const aKhan = a.source === 'khan_academy' ? 0 : 1;
+      const bKhan = b.source === 'khan_academy' ? 0 : 1;
+      return aKhan - bKhan || b.score - a.score;
+    });
 
     logger.info('Video ranking complete', {
       conceptTitle,
