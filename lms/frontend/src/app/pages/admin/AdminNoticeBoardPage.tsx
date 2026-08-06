@@ -15,6 +15,7 @@ import { noticeService } from '@/services/noticeService';
 import { useClasses } from '@/hooks/useClasses';
 import { formatClassName } from '@/services/classService';
 import ClassSelect from '@/components/common/ClassSelect';
+import NoticeDetailsModal from '@/components/common/NoticeDetailsModal';
 import type { CreateNoticeData } from '@/services/noticeService';
 
 const priorityBadge = (p: string) => {
@@ -36,6 +37,7 @@ export default function AdminNoticeBoardPage() {
   const queryClient = useQueryClient();
   const { data: classes = [] } = useClasses();
   const [form, setForm] = useState<CreateNoticeData>({ title: '', content: '', priority: 'medium', expires_at: '', target_class_id: null });
+  const [selectedNotice, setSelectedNotice] = useState<any>(null);
 
   const { data: noticesRes, isLoading, error, refetch } = useQuery({
     queryKey: ['admin-notices'],
@@ -163,7 +165,10 @@ export default function AdminNoticeBoardPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <Card className="border-border/60 hover:border-border transition-colors">
+                    <Card
+                      className="border-border/60 hover:border-border transition-colors cursor-pointer"
+                      onClick={() => setSelectedNotice(n)}
+                    >
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1 min-w-0">
@@ -196,7 +201,8 @@ export default function AdminNoticeBoardPage() {
                             variant="ghost"
                             size="icon"
                             className="shrink-0 text-muted-foreground hover:text-error"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               if (window.confirm('Delete this notice?')) {
                                 deleteMutation.mutate(n.id);
                               }
@@ -216,6 +222,12 @@ export default function AdminNoticeBoardPage() {
           </DataFetchWrapper>
         </div>
       </div>
+
+      <NoticeDetailsModal
+        open={!!selectedNotice}
+        notice={selectedNotice}
+        onClose={() => setSelectedNotice(null)}
+      />
     </>
   );
 }

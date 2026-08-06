@@ -7,9 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { noticeService } from '@/services/noticeService';
+import NoticeDetailsModal from '@/components/common/NoticeDetailsModal';
+import { useState } from 'react';
 
 export default function TeacherNoticeBoardPage() {
   const { _ } = useTranslation();
+  const [selectedNotice, setSelectedNotice] = useState<any>(null);
 
   function priorityBadge(p: string) {
     switch (p) {
@@ -67,7 +70,10 @@ export default function TeacherNoticeBoardPage() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <Card className="border-border/60 hover:border-border transition-colors">
+                        <Card
+                          className="border-border/60 hover:border-border transition-colors cursor-pointer"
+                          onClick={() => setSelectedNotice(n)}
+                        >
                           <CardContent className="p-3 md:p-4">
                             <div className="flex items-start gap-3 md:gap-4">
                               <div className="flex-1 min-w-0">
@@ -102,6 +108,13 @@ export default function TeacherNoticeBoardPage() {
           )}
         </DataFetchWrapper>
       </div>
+
+      <NoticeDetailsModal
+        open={!!selectedNotice}
+        notice={selectedNotice}
+        onClose={() => setSelectedNotice(null)}
+        t={_}
+      />
     </>
   );
 }

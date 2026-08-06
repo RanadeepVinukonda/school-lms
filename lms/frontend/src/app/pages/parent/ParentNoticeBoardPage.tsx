@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +9,7 @@ import { Icon } from '@/components/ui/Icon';
 import { noticeService } from '@/services/noticeService';
 import { useClasses } from '@/hooks/useClasses';
 import { formatClassName } from '@/services/classService';
+import NoticeDetailsModal from '@/components/common/NoticeDetailsModal';
 
 function priorityBadge(p: string) {
   switch (p) {
@@ -20,6 +22,7 @@ function priorityBadge(p: string) {
 
 export default function ParentNoticeBoardPage() {
   const { data: classes = [] } = useClasses();
+  const [selectedNotice, setSelectedNotice] = useState<any>(null);
 
   const { data: noticesRes, isLoading, error, refetch } = useQuery({
     queryKey: ['parent-notices'],
@@ -69,7 +72,10 @@ export default function ParentNoticeBoardPage() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <Card className="border-border/60 hover:border-border transition-colors">
+                        <Card
+                          className="border-border/60 hover:border-border transition-colors cursor-pointer"
+                          onClick={() => setSelectedNotice(n)}
+                        >
                           <CardContent className="p-4">
                             <div className="flex items-start gap-4">
                               <div className="flex-1 min-w-0">
@@ -111,6 +117,12 @@ export default function ParentNoticeBoardPage() {
           )}
         </DataFetchWrapper>
       </div>
+
+      <NoticeDetailsModal
+        open={!!selectedNotice}
+        notice={selectedNotice}
+        onClose={() => setSelectedNotice(null)}
+      />
     </>
   );
 }

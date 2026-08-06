@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,9 +10,11 @@ import { Icon } from '@/components/ui/Icon';
 import { noticeService } from '@/services/noticeService';
 import { useClasses } from '@/hooks/useClasses';
 import { formatClassName } from '@/services/classService';
+import NoticeDetailsModal from '@/components/common/NoticeDetailsModal';
 
 export default function StudentNoticeBoardPage() {
   const { _ } = useTranslation();
+  const [selectedNotice, setSelectedNotice] = useState<any>(null);
 
   function priorityBadge(p: string) {
     switch (p) {
@@ -71,7 +74,10 @@ export default function StudentNoticeBoardPage() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <Card className="border-border/60 hover:border-border transition-colors">
+                        <Card
+                          className="border-border/60 hover:border-border transition-colors cursor-pointer"
+                          onClick={() => setSelectedNotice(n)}
+                        >
                           <CardContent className="p-4">
                             <div className="flex items-start gap-4">
                               <div className="flex-1 min-w-0">
@@ -113,6 +119,13 @@ export default function StudentNoticeBoardPage() {
           )}
         </DataFetchWrapper>
       </div>
+
+      <NoticeDetailsModal
+        open={!!selectedNotice}
+        notice={selectedNotice}
+        onClose={() => setSelectedNotice(null)}
+        t={_}
+      />
     </>
   );
 }

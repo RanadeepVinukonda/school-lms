@@ -15,6 +15,8 @@
  *  - Helpers: native share, clipboard write, external URL opening.
  */
 
+import { consumeBackPress } from './backHandler';
+
 let routerModule: Promise<{ router: typeof import('@/app/router').router }> | null = null;
 function getRouter(): Promise<{ router: typeof import('@/app/router').router }> {
   if (!routerModule) {
@@ -141,6 +143,9 @@ function watchDeepLinks() {
 function watchBackButton() {
   import('@capacitor/app').then(({ App }) => {
     App.addListener('backButton', (event: { canGoBack: boolean }) => {
+      if (consumeBackPress()) {
+        return;
+      }
       if (event.canGoBack) {
         window.history.back();
       } else {
