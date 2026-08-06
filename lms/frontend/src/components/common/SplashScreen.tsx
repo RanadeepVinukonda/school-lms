@@ -60,7 +60,7 @@ export default function SplashScreen({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.2, ease: 'easeOut' }}
             >
-              Genesis LMS
+              Genesis
             </motion.h1>
 
             <motion.p
