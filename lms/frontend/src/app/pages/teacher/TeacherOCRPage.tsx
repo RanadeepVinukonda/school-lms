@@ -440,7 +440,7 @@ export default function TeacherOCRPage() {
   return (
     <>
       <SEOHead title={_('AI Teaching Assistant')} description={_('Chat with AI to create quizzes, assignments, and mind maps from textbook images')} />
-      <div className="mx-auto flex h-[calc(100dvh-7.5rem)] w-full max-w-5xl flex-col px-3 py-4 sm:px-6 sm:py-6">
+      <div className="mx-auto flex h-[calc(100dvh-3.5rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] w-full max-w-5xl flex-col px-3 py-4 sm:px-6 sm:py-6">
         <div className="mb-4 sm:mb-6">
           <h1 className="text-headline-md font-bold">{_('AI Teaching Assistant')}</h1>
           <p className="text-muted-foreground text-sm mt-1">{_('Upload textbook images and tell me what to create — quiz, assignment, mind map, or ask a question')}</p>
@@ -475,7 +475,7 @@ export default function TeacherOCRPage() {
             <div ref={chatEndRef} />
           </CardContent>
 
-          <div className="border-t border-border/60 p-3 sm:p-4 bg-muted/20 space-y-3">
+          <div className="border-t border-border/60 p-3 sm:p-4 bg-muted/20 space-y-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
             <div className="grid grid-cols-3 gap-2">
               {([
                 ['text', 'edit_note', _('Text')],
