@@ -20,6 +20,28 @@ import { useChatStore, ChatMsg } from '@/store/chatStore';
 import AssistantCameraCapture from '@/components/ocr/AssistantCameraCapture';
 
 
+function normalizeQuestions(raw: any[]): any[] {
+  return (raw || []).map((q: any) => {
+    if (typeof q === 'string') {
+      return { id: `q_${Math.random().toString(36).slice(2, 9)}`, type: 'short_answer', question: q, options: [], correctAnswer: '', explanation: '', difficulty: 'medium', points: 1 };
+    }
+    const text = q?.question ?? q?.text ?? q?.question_text ?? q?.questionText ?? q?.q ?? q?.stem ?? q?.prompt ?? q?.title ?? q?.content ?? '';
+    const options = Array.isArray(q?.options)
+      ? q.options.map((o: any) => (typeof o === 'string' ? o : o?.text ?? o?.label ?? o?.option ?? o?.value ?? String(o ?? '')))
+      : [];
+    return {
+      id: q?.id || `q_${Math.random().toString(36).slice(2, 9)}`,
+      type: q?.type || 'short_answer',
+      question: typeof text === 'string' ? text : '',
+      options,
+      correctAnswer: q?.correctAnswer ?? q?.correct_answer ?? q?.correct ?? q?.answer ?? '',
+      explanation: q?.explanation || '',
+      difficulty: q?.difficulty || 'medium',
+      points: Number(q?.points ?? q?.marks) || 1,
+    };
+  });
+}
+
 function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, meta: { title: string; subjectId: string; questions: any[]; studentIds: string[] }) => Promise<void> }) {
   const { _ } = useTranslation();
   const [selectedClass, setSelectedClass] = useState('');
@@ -28,18 +50,7 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
   const [pushMode, setPushMode] = useState<'class' | 'students'>('class');
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [pushing, setPushing] = useState(false);
-  const [questions, setQuestions] = useState<any[]>(() =>
-    (data?.questions || []).map((q: any) => ({
-      id: q.id || `q_${Math.random().toString(36).slice(2, 9)}`,
-      type: q.type || 'short_answer',
-      question: q.question || q.text || '',
-      options: Array.isArray(q.options) ? [...q.options] : [],
-      correctAnswer: q.correctAnswer || '',
-      explanation: q.explanation || '',
-      difficulty: q.difficulty || 'medium',
-      points: Number(q.points) || 1,
-    })),
-  );
+  const [questions, setQuestions] = useState<any[]>(() => normalizeQuestions(data?.questions || []));
   const { data: myAssignments = [] } = useQuery({
     queryKey: ['my-class-subjects'],
     queryFn: () => teacherClassSubjectService.getMyAssignments().then((r) => r.data),
@@ -117,10 +128,18 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
 
       {questions.map((q: any, i: number) => (
         <div key={q.id || i} className="p-3 rounded-lg border border-border/60 space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-muted-foreground shrink-0">{i + 1}.</span>
-            <div className="flex-1 min-w-0"><Input value={q.question} onChange={(e) => updateQuestion(i, { question: e.target.value })} placeholder={_('Question text')} className="h-8 text-xs w-full" /></div>
-            <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-start gap-2">
+            <span className="text-xs font-semibold text-muted-foreground shrink-0 mt-2">{i + 1}.</span>
+            <div className="flex-1 min-w-0">
+              <textarea
+                value={q.question}
+                onChange={(e) => updateQuestion(i, { question: e.target.value })}
+                placeholder={_('Question text')}
+                rows={Math.max(2, Math.ceil((q.question || '').length / 60))}
+                className="w-full resize-y rounded-md border border-input bg-background px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            </div>
+            <div className="flex items-center gap-1 shrink-0 mt-1">
               <span className="text-[10px] text-muted-foreground">{_('Marks')}</span>
               <Input type="number" min={1} value={q.points} onChange={(e) => updateQuestion(i, { points: e.target.value })} className="h-8 w-16 text-center text-xs" />
             </div>
@@ -128,17 +147,32 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
           {q.options && q.options.length > 0 && (
             <div className="space-y-1 pl-6">
               {q.options.map((o: string, j: number) => (
-                <div key={j} className="flex items-center gap-1.5">
-                  <div className="flex-1 min-w-0"><Input value={o} onChange={(e) => updateOption(i, j, e.target.value)} placeholder={`${_('Option')} ${j + 1}`} className="h-7 text-xs w-full" /></div>
+                <div key={j} className="flex items-start gap-1.5">
+                  <div className="flex-1 min-w-0">
+                    <textarea
+                      value={o}
+                      onChange={(e) => updateOption(i, j, e.target.value)}
+                      placeholder={`${_('Option')} ${j + 1}`}
+                      rows={Math.max(1, Math.ceil((o || '').length / 60))}
+                      className="w-full resize-y rounded-md border border-input bg-background px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    />
+                  </div>
                   <button type="button" onClick={() => removeOption(i, j)} className="text-muted-foreground hover:text-error text-sm shrink-0 px-1">✕</button>
                 </div>
               ))}
               <button type="button" onClick={() => addOption(i)} className="text-[10px] text-primary hover:underline">{_('+ Add option')}</button>
             </div>
           )}
-          <div className="flex items-center gap-2 pl-6">
-            <span className="text-[10px] text-muted-foreground shrink-0">{_('Correct answer')}</span>
-            <div className="flex-1 min-w-0"><Input value={q.correctAnswer} onChange={(e) => updateQuestion(i, { correctAnswer: e.target.value })} className="h-7 text-xs w-full" /></div>
+          <div className="flex items-start gap-2 pl-6">
+            <span className="text-[10px] text-muted-foreground shrink-0 mt-1.5">{_('Correct answer')}</span>
+            <div className="flex-1 min-w-0">
+              <textarea
+                value={q.correctAnswer}
+                onChange={(e) => updateQuestion(i, { correctAnswer: e.target.value })}
+                rows={Math.max(1, Math.ceil((q.correctAnswer || '').length / 60))}
+                className="w-full resize-y rounded-md border border-input bg-background px-2 py-1.5 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            </div>
           </div>
         </div>
       ))}
@@ -440,7 +474,7 @@ export default function TeacherOCRPage() {
   return (
     <>
       <SEOHead title={_('AI Teaching Assistant')} description={_('Chat with AI to create quizzes, assignments, and mind maps from textbook images')} />
-      <div className="mx-auto flex h-[calc(100dvh-3.5rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] w-full max-w-5xl flex-col px-3 py-4 sm:px-6 sm:py-6">
+      <div className="mx-auto flex h-[calc(100dvh_-_3.5rem_-_env(safe-area-inset-top)_-_env(safe-area-inset-bottom))] w-full max-w-5xl flex-col px-3 py-4 sm:px-6 sm:py-6">
         <div className="mb-4 sm:mb-6">
           <h1 className="text-headline-md font-bold">{_('AI Teaching Assistant')}</h1>
           <p className="text-muted-foreground text-sm mt-1">{_('Upload textbook images and tell me what to create — quiz, assignment, mind map, or ask a question')}</p>
