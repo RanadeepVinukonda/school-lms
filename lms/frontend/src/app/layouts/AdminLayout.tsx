@@ -18,6 +18,7 @@ import { UserAvatar } from '@/components/layout/UserAvatar';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { pageTransition } from '@/lib/motion';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useDrawerSwipeLeft } from '@/hooks/useDrawerSwipeLeft';
 
 interface NavItem {
   label: string;
@@ -42,6 +43,8 @@ export function AdminLayout() {
   const { sidebarCollapsed, setSidebarCollapsed } = useUIStore();
   const user = useAuthStore((s) => s.user);
   const [tutorialOpen, setTutorialOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const drawerSwipe = useDrawerSwipeLeft(() => setMobileMenuOpen(false));
   const { t } = useTranslation();
   const subscribeToNotifications = useNotificationStore((s) => s.subscribeToNotifications);
   usePushNotifications(!!user);
@@ -178,23 +181,14 @@ export function AdminLayout() {
         )}
       >
         {/* Top app bar */}
-        <header className="sticky top-0 z-40 flex min-h-16 items-center gap-2 sm:gap-4 border-b border-outline-variant bg-surface/85 backdrop-blur-md px-3 sm:px-4 pt-[calc(env(safe-area-inset-top)+20px)]">
-          <Sheet>
+        <header className="sticky top-0 z-40 flex h-14 items-center gap-2 sm:gap-4 border-b border-outline-variant bg-surface/85 backdrop-blur-md px-3 sm:px-4 pt-[calc(env(safe-area-inset-top))]">
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden text-on-surface shrink-0" aria-label="Menu">
                 <Icon name="menu" size={24} />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="gap-0 p-0 flex flex-col h-full border-r border-outline-variant bg-surface">
-              {/* Drawer Brand */}
-              <div className="flex items-center h-16 px-5 border-b border-outline-variant shrink-0">
-                <img
-                  src="/genesis_icon.png"
-                  alt="Genesis"
-                  className="h-8 w-auto object-contain"
-                />
-              </div>
-
+            <SheetContent side="left" hideCloseButton className="gap-0 p-0 flex flex-col h-full border-r border-outline-variant bg-surface" {...drawerSwipe}>
               {/* Drawer Links */}
               <nav className="flex-1 overflow-y-auto py-2 px-2 flex flex-col gap-0.5">
                 {navItems.map((item) => (
@@ -244,7 +238,7 @@ export function AdminLayout() {
           </Sheet>
 
           <span className="text-title-md font-bold text-primary hidden sm:block shrink-0">Genesis</span>
-          <img src="/genesis_icon.png" alt="Genesis" className="h-[52px] w-[52px] object-contain sm:hidden shrink-0" />
+          <img src="/genesis_icon.png" alt="Genesis" className="h-9 w-9 object-contain sm:hidden shrink-0" />
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             <ThemeToggle />
             {user && <NotificationDropdown />}

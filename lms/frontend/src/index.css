@@ -640,10 +640,10 @@ html.genesis-native body {
 
 /* ── Mobile / Android polish (additive — desktop & business logic unchanged) ── */
 @media (max-width: 640px) {
-  /* Comfortable touch targets for primary interactive controls */
-  button.inline-flex,
+  /* Comfortable touch targets for primary interactive controls — switches excluded (keep their compact size) */
+  button.inline-flex:not([role="switch"]),
   a.inline-flex,
-  [role="button"].inline-flex {
+  [role="button"].inline-flex:not([role="switch"]) {
     min-height: 48px;
   }
 
@@ -670,6 +670,53 @@ html.genesis-native body {
   #root > .container {
     padding-left: max(env(safe-area-inset-left), 1rem);
     padding-right: max(env(safe-area-inset-right), 1rem);
+  }
+}
+
+/* ── Responsive helpers (opt-in classes; existing layouts untouched) ── */
+@media (max-width: 640px) {
+  /* Allow a flex row to wrap on small screens */
+  .flex-wrap-small {
+    flex-wrap: wrap;
+  }
+
+  .flex-wrap-nowrap {
+    flex-wrap: nowrap;
+  }
+
+  /* Scrollable chip / tab rows instead of wrapping off-screen */
+  .scroll-row {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Truncate-tolerant body text inside flex rows */
+  .truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Forms never exceed viewport width */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: 1rem;
+  }
+
+  /* Tables scroll horizontally instead of overflowing page */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Buttons with long labels wrap label text within their bounds */
+  .btn-text-wrap {
+    white-space: normal;
+    word-break: break-word;
   }
 }
 

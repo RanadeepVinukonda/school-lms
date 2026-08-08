@@ -1,5 +1,5 @@
-import React, { useCallback, useRef, useState, useMemo } from 'react';
-import { StyleSheet, View, Text, ActivityIndicator, StatusBar } from 'react-native';
+import React, { useCallback, useRef, useState, useMemo, useEffect } from 'react';
+import { StyleSheet, View, Text, ActivityIndicator, StatusBar, TouchableOpacity } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
@@ -58,15 +58,33 @@ export default function App() {
   const onMessage = useCallback((event: WebViewMessageEvent) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
-      if (data.type === 'jsError' || data.type === 'consoleError') {
+      // Only surface real JS errors — console.error noise is filtered out.
+      if (data.type === 'jsError') {
         setError(data.message);
       }
     } catch {}
   }, []);
 
+  const dismissError = useCallback(() => setError(null), []);
+
+  // Auto-dismiss the error banner after 6s so it never blocks the UI.
+  useEffect(() => {
+    if (!error) return;
+    const timer = setTimeout(dismissError, 6000);
+    return () => clearTimeout(timer);
+  }, [error, dismissError]);
+
+  // Grant common Android webview permissions (camera/mic/geolocation) so
+  // camera-capture features inside the web app keep working on device.
+  const onPermissionRequest = useCallback((event: any) => {
+    try {
+      event?.nativeEvent?.request?.('grant');
+    } catch {}
+  }, []);
+
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle="dark-content" backgroundColor="#FAFAF5" />
+      <StatusBar hidden />
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         {loading && (
           <View style={styles.loadingOverlay}>
@@ -75,7 +93,12 @@ export default function App() {
         )}
         {error && (
           <View style={styles.errorBanner}>
-            <Text style={styles.errorText} numberOfLines={5}>{error}</Text>
+            <View style={styles.errorBannerContent}>
+              <Text style={styles.errorText} numberOfLines={3}>{error}</Text>
+              <TouchableOpacity onPress={dismissError} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={styles.errorDismiss}>
+                <Text style={styles.errorDismissText}>✕</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
         <WebView
@@ -85,6 +108,7 @@ export default function App() {
           onLoadEnd={onLoadEnd}
           onError={onError}
           onMessage={onMessage}
+          onPermissionRequest={onPermissionRequest}
           injectedJavaScriptBeforeContentLoaded={injectedJs}
           javaScriptEnabled
           domStorageEnabled
@@ -121,5 +145,14 @@ const styles = StyleSheet.create({
     position: 'absolute', bottom: 0, left: 0, right: 0,
     backgroundColor: '#FFEBEE', padding: 8, zIndex: 20,
   },
-  errorText: { color: '#C62828', fontSize: 12, textAlign: 'center' },
+  errorBannerContent: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+  },
+  errorDismiss: {
+    paddingHorizontal: 4, paddingVertical: 2,
+  },
+  errorDismissText: {
+    color: '#C62828', fontSize: 14, fontWeight: '700',
+  },
+  errorText: { color: '#C62828', fontSize: 12, flex: 1, textAlign: 'left' },
 });

@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +8,8 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
 import { settingsService } from '@/services/settingsService';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useAuthStore } from '@/store/authStore';
+import { ROUTES } from '@/lib/constants';
 
 const FALLBACK_SCHOOL = 'Genesis International Montessori & STEM School';
 const SCHOOL_TAGLINE = 'Learn · Lead · Achieve';
@@ -31,7 +32,8 @@ interface ProfileHeaderProps {
 
 export default function ProfileHeader({ user, roleLabel, editHref, subtitle, badges }: ProfileHeaderProps) {
   const { _ } = useTranslation();
-  const [showEdit, setShowEdit] = useState(false);
+  const navigate = useNavigate();
+  const logout = useAuthStore((s) => s.logout);
 
   const { data: settings } = useQuery({
     queryKey: ['profile-school'],
@@ -41,6 +43,11 @@ export default function ProfileHeader({ user, roleLabel, editHref, subtitle, bad
 
   const schoolName = (settings as any)?.schoolName || FALLBACK_SCHOOL;
   const role = (user.role && ROLE_LABELS[user.role]) || roleLabel;
+
+  const handleLogout = async () => {
+    await logout();
+    navigate(ROUTES.LOGIN);
+  };
 
   return (
     <Card className="border-border/60 rounded-2xl overflow-hidden">
@@ -70,16 +77,14 @@ export default function ProfileHeader({ user, roleLabel, editHref, subtitle, bad
           </div>
           {editHref && (
             <div className="flex flex-col items-end gap-2">
-              <Button variant="ghost" size="icon-sm" onClick={() => setShowEdit((s) => !s)} title={_('Edit Profile')} aria-label={_('Edit Profile')}>
+              <Button variant="ghost" size="icon-sm" onClick={() => navigate(editHref)} title={_('Edit Profile')} aria-label={_('Edit Profile')}>
                 <Icon name="edit" size={16} />
               </Button>
-              {showEdit && (
-                <Button variant="outline" size="sm" className="gap-1.5" asChild>
-                  <Link to={editHref}><Icon name="edit" size={13} />{_('Edit Profile')}</Link>
-                </Button>
-              )}
             </div>
           )}
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={handleLogout} title={_('Logout')}>
+            <Icon name="logout" size={13} />{_('Logout')}
+          </Button>
         </div>
       </CardContent>
     </Card>

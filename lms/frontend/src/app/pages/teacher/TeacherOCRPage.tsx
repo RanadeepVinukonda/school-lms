@@ -119,7 +119,7 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
         <div key={q.id || i} className="p-3 rounded-lg border border-border/60 space-y-2">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-muted-foreground shrink-0">{i + 1}.</span>
-            <Input value={q.question} onChange={(e) => updateQuestion(i, { question: e.target.value })} placeholder={_('Question text')} className="h-8 text-xs flex-1" />
+            <div className="flex-1 min-w-0"><Input value={q.question} onChange={(e) => updateQuestion(i, { question: e.target.value })} placeholder={_('Question text')} className="h-8 text-xs w-full" /></div>
             <div className="flex items-center gap-1 shrink-0">
               <span className="text-[10px] text-muted-foreground">{_('Marks')}</span>
               <Input type="number" min={1} value={q.points} onChange={(e) => updateQuestion(i, { points: e.target.value })} className="h-8 w-16 text-center text-xs" />
@@ -129,7 +129,7 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
             <div className="space-y-1 pl-6">
               {q.options.map((o: string, j: number) => (
                 <div key={j} className="flex items-center gap-1.5">
-                  <Input value={o} onChange={(e) => updateOption(i, j, e.target.value)} placeholder={`${_('Option')} ${j + 1}`} className="h-7 text-xs flex-1" />
+                  <div className="flex-1 min-w-0"><Input value={o} onChange={(e) => updateOption(i, j, e.target.value)} placeholder={`${_('Option')} ${j + 1}`} className="h-7 text-xs w-full" /></div>
                   <button type="button" onClick={() => removeOption(i, j)} className="text-muted-foreground hover:text-error text-sm shrink-0 px-1">✕</button>
                 </div>
               ))}
@@ -138,7 +138,7 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
           )}
           <div className="flex items-center gap-2 pl-6">
             <span className="text-[10px] text-muted-foreground shrink-0">{_('Correct answer')}</span>
-            <Input value={q.correctAnswer} onChange={(e) => updateQuestion(i, { correctAnswer: e.target.value })} className="h-7 text-xs flex-1" />
+            <div className="flex-1 min-w-0"><Input value={q.correctAnswer} onChange={(e) => updateQuestion(i, { correctAnswer: e.target.value })} className="h-7 text-xs w-full" /></div>
           </div>
         </div>
       ))}

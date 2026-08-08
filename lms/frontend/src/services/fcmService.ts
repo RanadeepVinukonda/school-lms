@@ -69,7 +69,10 @@ async function getMessaging() {
   if (!config) return null;
   try {
     const { initializeApp } = await import('firebase/app');
-    const { getMessaging } = await import('firebase/messaging');
+    const { getMessaging, isSupported } = await import('firebase/messaging');
+    // FCM messaging swaps unsupported (bad push service provider, insecure context,
+    // or no SW support). Avoid initialising app/messaging in those environments.
+    if (!(await isSupported())) return null;
     const app = initializeApp(config);
     messagingInstance = getMessaging(app);
     return messagingInstance;
