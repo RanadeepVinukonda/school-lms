@@ -131,12 +131,14 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
       <p className="text-[10px] text-muted-foreground">{_('You can edit the questions, marks and options before pushing.')}</p>
 
       {questions.map((q: any, i: number) => (
-        <div key={q.id || i} className="p-3 rounded-lg border border-border/60 space-y-2.5">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-semibold text-muted-foreground">{`${_('Question')} ${i + 1}`}</span>
+        <div key={q.id || i} className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-border/60 p-3 space-y-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 min-w-0">
+            <span className="text-xs font-semibold text-muted-foreground shrink-0">{`${_('Question')} ${i + 1}`}</span>
             <div className="flex items-center gap-1.5 shrink-0">
               <span className="text-[10px] text-muted-foreground">{_('Marks')}</span>
-              <Input type="number" min={1} value={q.points} onChange={(e) => updateQuestion(i, { points: e.target.value })} className="h-8 w-16 text-center text-xs" />
+              <div className="w-14 shrink-0">
+                <Input type="number" min={1} value={q.points} onChange={(e) => updateQuestion(i, { points: e.target.value })} className="h-8 w-full px-1 text-center text-xs" />
+              </div>
             </div>
           </div>
           <textarea
@@ -144,12 +146,12 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
             onChange={(e) => updateQuestion(i, { question: e.target.value })}
             placeholder={_('Question text')}
             rows={Math.max(2, Math.ceil((q.question || '').length / 60))}
-            className="w-full min-h-[52px] resize-y rounded-md border border-input bg-background px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="w-full max-w-full min-h-[52px] resize-y rounded-md border border-input bg-background px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
           {q.options && q.options.length > 0 && (
-            <div className="space-y-1.5">
+            <div className="w-full max-w-full space-y-1.5">
               {q.options.map((o: string, j: number) => (
-                <div key={j} className="flex items-start gap-1.5">
+                <div key={j} className="flex w-full items-start gap-1.5 min-w-0">
                   <span className="mt-2 text-[10px] font-semibold text-muted-foreground shrink-0 w-4 text-center">{String.fromCharCode(65 + j)}</span>
                   <div className="flex-1 min-w-0">
                     <textarea
@@ -157,7 +159,7 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
                       onChange={(e) => updateOption(i, j, e.target.value)}
                       placeholder={`${_('Option')} ${j + 1}`}
                       rows={Math.max(1, Math.ceil((o || '').length / 60))}
-                      className="w-full resize-y rounded-md border border-input bg-background px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="w-full max-w-full resize-y rounded-md border border-input bg-background px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     />
                   </div>
                   <button type="button" onClick={() => removeOption(i, j)} className="text-muted-foreground hover:text-error text-sm shrink-0 px-1 mt-1.5">✕</button>
@@ -166,13 +168,13 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
               <button type="button" onClick={() => addOption(i)} className="text-[10px] text-primary hover:underline">{_('+ Add option')}</button>
             </div>
           )}
-          <div className="space-y-1">
+          <div className="w-full max-w-full space-y-1">
             <span className="block text-[10px] text-muted-foreground">{_('Correct answer')}</span>
             <textarea
               value={q.correctAnswer}
               onChange={(e) => updateQuestion(i, { correctAnswer: e.target.value })}
               rows={Math.max(1, Math.ceil((q.correctAnswer || '').length / 60))}
-              className="w-full min-h-[34px] resize-y rounded-md border border-input bg-background px-2 py-1.5 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="w-full max-w-full min-h-[34px] resize-y rounded-md border border-input bg-background px-2 py-1.5 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
         </div>
@@ -510,7 +512,7 @@ export default function TeacherOCRPage() {
                 </div>
               </motion.div>
             )}
-            <div ref={chatEndRef} />
+            <div ref={chatEndRef} className="h-6 sm:h-8" />
           </CardContent>
 
           <div className="border-t border-border/60 p-3 sm:p-4 bg-muted/20 space-y-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
