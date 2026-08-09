@@ -756,3 +756,15 @@ html.genesis-native body {
     padding-right: max(env(safe-area-inset-right), 1.25rem);
   }
 }
+
+/* ── Material Symbols alignment ──
+   The icon glyphs sit slightly high/low on the text baseline. Pin them to a
+   box that exactly matches their font-size and center the glyph, so icons in
+   nav links, menu items and buttons align perfectly with adjacent text. */
+.material-symbols-outlined {
+  display: inline-block;
+  width: 1em;
+  line-height: 1;
+  vertical-align: middle;
+  text-align: center;
+}

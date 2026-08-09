@@ -121,17 +121,17 @@ export default function StudentOCRPage() {
         <AnimatePresence mode="wait">
           {step === 'capture' && (
             <motion.div key="capture" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <div className="flex gap-2 p-1 bg-muted rounded-lg w-fit mb-4">
+              <div className="flex flex-wrap gap-2 p-1 bg-muted rounded-lg w-fit max-w-full mb-4">
                 <button
                   onClick={() => setMode('image')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${mode === 'image' ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
+                  className={`px-3 sm:px-4 py-2 rounded-md text-sm whitespace-nowrap font-medium transition-colors ${mode === 'image' ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
                 >
                   <Icon name="camera_alt" size={16} className="mr-1.5 inline" />
                   Image Mode
                 </button>
                 <button
                   onClick={() => setMode('text')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${mode === 'text' ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
+                  className={`px-3 sm:px-4 py-2 rounded-md text-sm whitespace-nowrap font-medium transition-colors ${mode === 'text' ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
                 >
                   <Icon name="text_fields" size={16} className="mr-1.5 inline" />
                   Text Mode

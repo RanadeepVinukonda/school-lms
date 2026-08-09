@@ -206,11 +206,11 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
         ) : null}
 
         <div>
-          <div className="flex gap-2 mb-2">
-            <button type="button" onClick={() => setPushMode('class')} className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${pushMode === 'class' ? 'bg-primary text-primary-foreground border-primary' : 'bg-surface text-muted-foreground border-border/60'}`}>
+          <div className="flex flex-wrap gap-2 mb-2">
+            <button type="button" onClick={() => setPushMode('class')} className={`px-3 py-1 whitespace-nowrap rounded-full text-xs font-bold border transition-colors ${pushMode === 'class' ? 'bg-primary text-primary-foreground border-primary' : 'bg-surface text-muted-foreground border-border/60'}`}>
               {_('Entire Class')}
             </button>
-            <button type="button" onClick={() => setPushMode('students')} className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${pushMode === 'students' ? 'bg-primary text-primary-foreground border-primary' : 'bg-surface text-muted-foreground border-border/60'}`}>
+            <button type="button" onClick={() => setPushMode('students')} className={`px-3 py-1 whitespace-nowrap rounded-full text-xs font-bold border transition-colors ${pushMode === 'students' ? 'bg-primary text-primary-foreground border-primary' : 'bg-surface text-muted-foreground border-border/60'}`}>
               {_('Select Students')}
             </button>
           </div>

@@ -536,8 +536,8 @@ export default function TeacherExamsPage() {
               {selectedClassId && (
                 <div>
                   <Label className="mb-2 block">{_('Push to')}</Label>
-                  <div className="flex gap-3 mb-3">
-                    <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer flex-1 ${
+                  <div className="flex flex-wrap gap-3 mb-3">
+                    <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer flex-1 min-w-[140px] ${
                       publishScope === 'class'
                         ? 'border-primary bg-primary/5'
                         : 'border-border hover:border-muted-foreground/30'
@@ -549,9 +549,9 @@ export default function TeacherExamsPage() {
                         onChange={() => { setPublishScope('class'); setSelectedStudentIds([]); }}
                         className="text-primary"
                       />
-                      <span className="text-sm">{_('Whole Class')}</span>
+                      <span className="text-sm whitespace-nowrap">{_('Whole Class')}</span>
                     </label>
-                    <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer flex-1 ${
+                    <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer flex-1 min-w-[140px] ${
                       publishScope === 'students'
                         ? 'border-primary bg-primary/5'
                         : 'border-border hover:border-muted-foreground/30'
@@ -563,7 +563,7 @@ export default function TeacherExamsPage() {
                         onChange={() => setPublishScope('students')}
                         className="text-primary"
                       />
-                      <span className="text-sm">{_('Selected Students')}</span>
+                      <span className="text-sm whitespace-nowrap">{_('Selected Students')}</span>
                     </label>
                   </div>
                   {publishScope === 'students' && (

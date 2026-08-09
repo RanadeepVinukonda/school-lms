@@ -950,8 +950,8 @@ export default function TeacherAssessmentCreatePage() {
               {selectedClassId && (
                 <div>
                   <Label className="mb-2 block">{_('Push to')}</Label>
-                  <div className="flex gap-3 mb-3">
-                    <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer flex-1 ${
+                  <div className="flex flex-wrap gap-3 mb-3">
+                    <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer flex-1 min-w-[140px] ${
                       publishScope === 'class'
                         ? 'border-primary bg-primary/5'
                         : 'border-border hover:border-muted-foreground/30'
@@ -963,9 +963,9 @@ export default function TeacherAssessmentCreatePage() {
                         onChange={() => { setPublishScope('class'); setSelectedStudentIds([]); }}
                         className="text-primary"
                       />
-                      <span className="text-sm">{_('Whole Class')}</span>
+                      <span className="text-sm whitespace-nowrap">{_('Whole Class')}</span>
                     </label>
-                    <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer flex-1 ${
+                    <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer flex-1 min-w-[140px] ${
                       publishScope === 'students'
                         ? 'border-primary bg-primary/5'
                         : 'border-border hover:border-muted-foreground/30'
@@ -977,7 +977,7 @@ export default function TeacherAssessmentCreatePage() {
                         onChange={() => setPublishScope('students')}
                         className="text-primary"
                       />
-                      <span className="text-sm">{_('Selected Students')}</span>
+                      <span className="text-sm whitespace-nowrap">{_('Selected Students')}</span>
                     </label>
                   </div>
                   {publishScope === 'students' && (
@@ -1011,16 +1011,16 @@ export default function TeacherAssessmentCreatePage() {
         <motion.div variants={cardStackReveal} custom={0}>
           <Card className="border-border/60">
             <CardContent className="p-5 space-y-6">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2 min-w-0">
                 <div className="flex items-center gap-2">
                   <Icon name="assignment" size={16} className="text-primary" />
                   <span className="text-title-sm">{_('Assessment Type')}</span>
                 </div>
-                <div className="inline-flex rounded-lg border border-border p-0.5 bg-muted/50">
+                <div className="inline-flex rounded-lg border border-border p-0.5 bg-muted/50 shrink-0">
                   <button
                     type="button"
                     onClick={() => setAssessmentType('quiz')}
-                    className={`px-4 py-1.5 text-sm rounded-md font-medium transition-colors ${
+                    className={`px-3 sm:px-4 py-1.5 text-sm whitespace-nowrap rounded-md font-medium transition-colors ${
                       assessmentType === 'quiz'
                         ? 'bg-background text-foreground shadow-sm'
                         : 'text-muted-foreground hover:text-foreground'
@@ -1032,7 +1032,7 @@ export default function TeacherAssessmentCreatePage() {
                   <button
                     type="button"
                     onClick={() => setAssessmentType('assignment')}
-                    className={`px-4 py-1.5 text-sm rounded-md font-medium transition-colors ${
+                    className={`px-3 sm:px-4 py-1.5 text-sm whitespace-nowrap rounded-md font-medium transition-colors ${
                       assessmentType === 'assignment'
                         ? 'bg-background text-foreground shadow-sm'
                         : 'text-muted-foreground hover:text-foreground'

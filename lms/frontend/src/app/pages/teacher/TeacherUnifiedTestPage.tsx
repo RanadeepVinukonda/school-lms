@@ -552,8 +552,8 @@ export default function TeacherUnifiedTestPage() {
 
                 <div>
                   <Label className="mb-2 block">Publish To</Label>
-                  <div className="flex gap-4">
-                    <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer flex-1 ${
+                  <div className="flex flex-wrap gap-4">
+                    <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer flex-1 min-w-[150px] ${
                       publishScope === 'class' ? 'border-primary bg-primary/5' : 'border-border'
                     }`}>
                       <input type="radio" name="scope" checked={publishScope === 'class'} onChange={() => { setPublishScope('class'); setSelectedStudentIds([]); }} className="text-primary" />
@@ -562,7 +562,7 @@ export default function TeacherUnifiedTestPage() {
                         <p className="text-label-xs text-muted-foreground">All students in this class</p>
                       </div>
                     </label>
-                    <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer flex-1 ${
+                    <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer flex-1 min-w-[150px] ${
                       publishScope === 'students' ? 'border-primary bg-primary/5' : 'border-border'
                     }`}>
                       <input type="radio" name="scope" checked={publishScope === 'students'} onChange={() => setPublishScope('students')} className="text-primary" />

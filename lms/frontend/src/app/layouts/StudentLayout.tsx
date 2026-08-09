@@ -89,30 +89,17 @@ export default function StudentLayout() {
           )}
         >
           {sidebarCollapsed ? (
-            <div className="flex flex-col items-center gap-1">
-              <img src="/genesis_icon.png" alt="Genesis" className="h-8 w-8 object-contain" />
-              <button
-                type="button"
-                onClick={() => setSidebarCollapsed(false)}
-                className="text-on-surface-variant hover:text-primary transition-colors"
-                aria-label="Expand sidebar"
-              >
-                <Icon name="chevron_right" size={16} />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setSidebarCollapsed(false)}
+              className="text-on-surface-variant hover:text-primary transition-colors"
+              aria-label="Expand sidebar"
+            >
+              <Icon name="chevron_right" size={20} />
+            </button>
           ) : (
             <div className="w-full flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <img
-                  src="/genesis_icon.png"
-                  alt="Genesis"
-                  className="h-14 w-auto object-contain"
-                />
-                  <div>
-                    <p className="text-title-sm font-bold text-primary">Genesis</p>
-                    <p className="text-label-sm text-on-surface-variant tracking-wider">Student</p>
-                  </div>
-              </div>
+              <p className="text-label-lg font-bold text-primary">Genesis</p>
               <Button
                 variant="text"
                 size="icon-sm"
@@ -180,7 +167,7 @@ export default function StudentLayout() {
         )}
       >
         {/* Top app bar */}
-        <header className="sticky top-0 z-40 flex h-[calc(env(safe-area-inset-top)+3.5rem)] items-center gap-2 sm:gap-4 border-b border-outline-variant bg-surface/85 backdrop-blur-md px-3 sm:px-4 pt-[env(safe-area-inset-top)]">
+        <header className="sticky top-0 z-40 flex h-[calc(env(safe-area-inset-top)+3.5rem)] items-center gap-2 sm:gap-4 border-b border-outline-variant bg-surface/85 backdrop-blur-md px-3 sm:px-4 pt-[env(safe-area-inset-top)] relative">
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden text-on-surface shrink-0" aria-label="Menu">
@@ -231,8 +218,10 @@ export default function StudentLayout() {
             </SheetContent>
           </Sheet>
 
-          <span className="text-title-md font-bold text-primary hidden sm:block shrink-0">Genesis</span>
-          <img src="/genesis_icon.png" alt="Genesis" className="h-9 w-9 object-contain sm:hidden shrink-0" />
+          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
+            <img src="/genesis_icon.png" alt="" aria-hidden className="h-8 w-8 object-contain" />
+            <span className="text-title-md font-bold text-primary whitespace-nowrap">Genesis</span>
+          </span>
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             <ThemeToggle />
             {user && <NotificationDropdown />}
