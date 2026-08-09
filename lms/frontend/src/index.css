@@ -311,22 +311,9 @@
     overscroll-behavior-y: none;
   }
 
-  /* Text selection: keep native Android behavior (copy / paste / cut /
-     select-all, long-press handles). Only neutralize the giant highlight
-     block by making ::selection affect the actual glyphs — nothing else.
-     No user-select locks: everything stays selectable/copyable. */
-  ::selection {
-    background: hsl(var(--primary) / 0.2);
-    color: inherit;
-  }
-  ::-moz-selection {
-    background: hsl(var(--primary) / 0.2);
-    color: inherit;
-  }
-  ::-webkit-selection {
-    background: hsl(var(--primary) / 0.2);
-    color: inherit;
-  }
+  /* Text selection: use the platform default highlight (Android native
+     glyph-only selection). No custom ::selection colors, no user-select
+     locks — everything stays selectable/copyable with native behavior. */
 
   button,
   a,
