@@ -30,17 +30,18 @@ const config: CapacitorConfig = {
       backgroundColor: '#8DA6E2',
       androidScaleType: 'FIT_CENTER',
       showSpinner: false,
-      splashFullScreen: true,
-      splashImmersive: true,
+      splashFullScreen: false,
+      splashImmersive: false,
     },
+    // Keep the app below the real system status bar: no fake in-app status UI.
     StatusBar: {
       style: 'DARK',
-      backgroundColor: '#00000000',
-      overlaysWebView: true,
+      backgroundColor: '#FFFFFF',
+      overlaysWebView: false,
     },
     Keyboard: {
       resize: 'body',
-      resizeOnFullScreen: true,
+      resizeOnFullScreen: false,
     },
   },
 };

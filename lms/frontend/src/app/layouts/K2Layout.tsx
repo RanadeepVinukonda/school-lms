@@ -32,7 +32,7 @@ export default function K2Layout() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-100 via-pink-50 to-yellow-50 dark:from-blue-950 dark:via-pink-950 dark:to-yellow-950">
-      <header className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 p-4 shadow-lg relative">
+      <header className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 px-4 pb-4 pt-[calc(env(safe-area-inset-top)+1rem)] shadow-lg relative">
         <div className="flex items-center justify-between max-w-6xl mx-auto">
           <div className="flex items-center gap-3">
             <span className="text-4xl">🦁</span>

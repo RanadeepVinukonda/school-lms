@@ -6,7 +6,7 @@ export function AuthLayout() {
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md">
         Skip to content
       </a>
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-muted p-4 relative overflow-hidden">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-muted p-4 relative overflow-hidden pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)]">
         <div className="pointer-events-none absolute inset-0" aria-hidden="true">
           <div className="absolute -top-48 -right-48 h-[36rem] w-[36rem] rounded-full bg-primary/6 blur-3xl" />
           <div className="absolute -bottom-48 -left-48 h-[30rem] w-[30rem] rounded-full bg-tertiary/5 blur-3xl" />
