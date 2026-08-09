@@ -25,17 +25,21 @@ function normalizeQuestions(raw: any[]): any[] {
     if (typeof q === 'string') {
       return { id: `q_${Math.random().toString(36).slice(2, 9)}`, type: 'short_answer', question: q, options: [], correctAnswer: '', explanation: '', difficulty: 'medium', points: 1 };
     }
-    const text = q?.question ?? q?.text ?? q?.question_text ?? q?.questionText ?? q?.q ?? q?.stem ?? q?.prompt ?? q?.title ?? q?.content ?? '';
+    if (!q || typeof q !== 'object') {
+      return { id: `q_${Math.random().toString(36).slice(2, 9)}`, type: 'short_answer', question: '', options: [], correctAnswer: '', explanation: '', difficulty: 'medium', points: 1 };
+    }
+    const text = q?.question ?? q?.text ?? q?.question_text ?? q?.questionText ?? q?.q ?? q?.stem ?? q?.prompt ?? q?.title ?? q?.content ?? q?.statement ?? q?.question_statement ?? '';
     const options = Array.isArray(q?.options)
       ? q.options.map((o: any) => (typeof o === 'string' ? o : o?.text ?? o?.label ?? o?.option ?? o?.value ?? String(o ?? '')))
       : [];
+    const type = typeof q?.type === 'string' ? q?.type : (options.length > 0 ? 'mcq' : 'short_answer');
     return {
       id: q?.id || `q_${Math.random().toString(36).slice(2, 9)}`,
-      type: q?.type || 'short_answer',
+      type,
       question: typeof text === 'string' ? text : '',
       options,
       correctAnswer: q?.correctAnswer ?? q?.correct_answer ?? q?.correct ?? q?.answer ?? '',
-      explanation: q?.explanation || '',
+      explanation: q?.explanation ?? q?.solution ?? '',
       difficulty: q?.difficulty || 'medium',
       points: Number(q?.points ?? q?.marks) || 1,
     };
@@ -127,27 +131,26 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
       <p className="text-[10px] text-muted-foreground">{_('You can edit the questions, marks and options before pushing.')}</p>
 
       {questions.map((q: any, i: number) => (
-        <div key={q.id || i} className="p-3 rounded-lg border border-border/60 space-y-2">
-          <div className="flex items-start gap-2">
-            <span className="text-xs font-semibold text-muted-foreground shrink-0 mt-2">{i + 1}.</span>
-            <div className="flex-1 min-w-0">
-              <textarea
-                value={q.question}
-                onChange={(e) => updateQuestion(i, { question: e.target.value })}
-                placeholder={_('Question text')}
-                rows={Math.max(2, Math.ceil((q.question || '').length / 60))}
-                className="w-full resize-y rounded-md border border-input bg-background px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              />
-            </div>
-            <div className="flex items-center gap-1 shrink-0 mt-1">
+        <div key={q.id || i} className="p-3 rounded-lg border border-border/60 space-y-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-semibold text-muted-foreground">{`${_('Question')} ${i + 1}`}</span>
+            <div className="flex items-center gap-1.5 shrink-0">
               <span className="text-[10px] text-muted-foreground">{_('Marks')}</span>
               <Input type="number" min={1} value={q.points} onChange={(e) => updateQuestion(i, { points: e.target.value })} className="h-8 w-16 text-center text-xs" />
             </div>
           </div>
+          <textarea
+            value={q.question}
+            onChange={(e) => updateQuestion(i, { question: e.target.value })}
+            placeholder={_('Question text')}
+            rows={Math.max(2, Math.ceil((q.question || '').length / 60))}
+            className="w-full min-h-[52px] resize-y rounded-md border border-input bg-background px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
           {q.options && q.options.length > 0 && (
-            <div className="space-y-1 pl-6">
+            <div className="space-y-1.5">
               {q.options.map((o: string, j: number) => (
                 <div key={j} className="flex items-start gap-1.5">
+                  <span className="mt-2 text-[10px] font-semibold text-muted-foreground shrink-0 w-4 text-center">{String.fromCharCode(65 + j)}</span>
                   <div className="flex-1 min-w-0">
                     <textarea
                       value={o}
@@ -157,22 +160,20 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
                       className="w-full resize-y rounded-md border border-input bg-background px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     />
                   </div>
-                  <button type="button" onClick={() => removeOption(i, j)} className="text-muted-foreground hover:text-error text-sm shrink-0 px-1">✕</button>
+                  <button type="button" onClick={() => removeOption(i, j)} className="text-muted-foreground hover:text-error text-sm shrink-0 px-1 mt-1.5">✕</button>
                 </div>
               ))}
               <button type="button" onClick={() => addOption(i)} className="text-[10px] text-primary hover:underline">{_('+ Add option')}</button>
             </div>
           )}
-          <div className="flex items-start gap-2 pl-6">
-            <span className="text-[10px] text-muted-foreground shrink-0 mt-1.5">{_('Correct answer')}</span>
-            <div className="flex-1 min-w-0">
-              <textarea
-                value={q.correctAnswer}
-                onChange={(e) => updateQuestion(i, { correctAnswer: e.target.value })}
-                rows={Math.max(1, Math.ceil((q.correctAnswer || '').length / 60))}
-                className="w-full resize-y rounded-md border border-input bg-background px-2 py-1.5 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              />
-            </div>
+          <div className="space-y-1">
+            <span className="block text-[10px] text-muted-foreground">{_('Correct answer')}</span>
+            <textarea
+              value={q.correctAnswer}
+              onChange={(e) => updateQuestion(i, { correctAnswer: e.target.value })}
+              rows={Math.max(1, Math.ceil((q.correctAnswer || '').length / 60))}
+              className="w-full min-h-[34px] resize-y rounded-md border border-input bg-background px-2 py-1.5 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
           </div>
         </div>
       ))}
@@ -351,7 +352,7 @@ export default function TeacherOCRPage() {
         files,
       );
       const data = result.data || result;
-      const reply = data.content || data.data?.message || data.data?.text || data.data?.response || data.data?.content || (typeof data === 'string' ? data : null) || _('Done!');
+      const reply = result.content || data.content || data.data?.message || data.data?.text || data.data?.response || data.data?.content || (typeof data === 'string' ? data : null) || _('Done!');
       setMessages((prev) => [...prev, { role: 'assistant', content: reply, data }]);
     } catch (err: any) {
       setMessages((prev) => [...prev, { role: 'assistant', content: err?.message || _('Sorry, something went wrong. Please try again.') }]);
@@ -482,20 +483,23 @@ export default function TeacherOCRPage() {
 
         <Card className="flex-1 flex flex-col overflow-hidden shadow-md min-h-0">
           <CardContent className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 scroll-smooth">
-            {messages.map((msg, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] rounded-2xl px-5 py-3.5 ${msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-md shadow-sm' : 'bg-card text-card-foreground rounded-bl-md border border-border/60 shadow-sm'}`}>
-                  {msg.images && (
-                    <div className="flex gap-2 mb-2 flex-wrap">
-                      {msg.images.map((url, j) => (
-                        <img key={j} src={url} alt="" className="w-16 h-16 object-cover rounded-lg border" />
-                      ))}
-                    </div>
-                  )}
-                  {msg.role === 'user' ? <LatexRenderer content={msg.content} className="text-sm" /> : renderContent(msg)}
-                </div>
-              </motion.div>
-            ))}
+            {messages.map((msg, i) => {
+              const isStructured = !!msg.data && (msg.data.data?.action === 'quiz' || msg.data.action === 'quiz' || Array.isArray(msg.data?.questions) || Array.isArray(msg.data?.data?.questions));
+              return (
+                <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`${isStructured ? 'w-full max-w-full' : 'max-w-[85%]'} rounded-2xl px-5 py-3.5 ${msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-md shadow-sm' : 'bg-card text-card-foreground rounded-bl-md border border-border/60 shadow-sm'}`}>
+                    {msg.images && (
+                      <div className="flex gap-2 mb-2 flex-wrap">
+                        {msg.images.map((url, j) => (
+                          <img key={j} src={url} alt="" className="w-16 h-16 object-cover rounded-lg border" />
+                        ))}
+                      </div>
+                    )}
+                    {msg.role === 'user' ? <LatexRenderer content={msg.content} className="text-sm" /> : renderContent(msg)}
+                  </div>
+                </motion.div>
+              );
+            })}
             {isLoading && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
                 <div className="bg-card rounded-2xl rounded-bl-md px-5 py-3.5 border border-border/60 shadow-sm">

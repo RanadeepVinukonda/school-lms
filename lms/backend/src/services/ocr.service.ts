@@ -48,6 +48,49 @@ export interface GeneratedQuestion {
   difficulty: 'easy' | 'medium' | 'hard';
 }
 
+function normalizeQuizQuestions(parsed: any): { questions: Record<string, any>[] } | null {
+  let questions: any[] | null = null;
+  if (parsed && typeof parsed === 'object') {
+    if (Array.isArray(parsed)) {
+      questions = parsed;
+    } else if (Array.isArray(parsed.questions)) {
+      questions = parsed.questions;
+    } else if (parsed.data && Array.isArray(parsed.data.questions)) {
+      questions = parsed.data.questions;
+    } else if (parsed.data && Array.isArray(parsed.data)) {
+      questions = parsed.data;
+    }
+  }
+  if (!questions || questions.length === 0) return null;
+
+  const first = questions[0];
+  if (typeof first !== 'object' || first === null) return null;
+  const looksLikeQuestion = typeof first.question === 'string' || typeof first.questionText === 'string'
+    || typeof first.text === 'string' || Array.isArray(first.options);
+  if (!looksLikeQuestion) return null;
+
+  const questionKeys = ['question', 'q', 'question_text', 'questionText', 'stem', 'prompt', 'title', 'content', 'name', 'text'];
+
+  const normalized = questions.map((q: any) => {
+    const text = (questionKeys.map((k) => q && q[k]).find((v) => typeof v === 'string' && v.trim().length > 0)) || '';
+    const options = Array.isArray(q?.options)
+      ? q.options.map((o: any) => (typeof o === 'string' ? o : (o?.text ?? o?.label ?? o?.option ?? o?.value ?? String(o ?? '')))).filter((s: any) => typeof s === 'string')
+      : [];
+    return {
+      id: q?.id || `q_${Math.random().toString(36).slice(2, 9)}`,
+      type: (q?.type && typeof q.type === 'string') ? q.type : (options.length > 0 ? 'mcq' : 'short_answer'),
+      question: text,
+      options,
+      correctAnswer: (q?.correctAnswer ?? q?.correct_answer ?? q?.correct ?? q?.answer ?? ''),
+      explanation: (q?.explanation || ''),
+      difficulty: (q?.difficulty || 'medium'),
+      points: Number(q?.points ?? q?.marks ?? 1) || 1,
+    };
+  });
+
+  return { questions: normalized };
+}
+
 export interface OCRMappingResult {
   conceptId: string;
   conceptName: string;
@@ -90,7 +133,9 @@ For general questions and chat, just give a helpful answer in plain text.
 CRITICAL LANGUAGE RULE: If extracted textbook text is provided, ALWAYS generate questions and responses in the SAME LANGUAGE as that text. Detect the language from the extracted content and use it consistently.
 
 Only use structured JSON when the user explicitly asks for:
-- "quiz" → {"action":"quiz","data":{"questions":[{"id":"q1","type":"mcq","question":"...","options":["A","B","C","D"],"correctAnswer":"A","explanation":"...","difficulty":"easy","points":1}, {"id":"q2","type":"true_false","question":"...","correctAnswer":"True","explanation":"...","difficulty":"medium","points":1}, {"id":"q3","type":"short_answer","question":"...","correctAnswer":"...","explanation":"...","difficulty":"hard","points":2}, {"id":"q4","type":"matching","question":"Match the following","options":["Term1 - Definition1","Term2 - Definition2"],"correctAnswer":"Term1:Definition1|Term2:Definition2","explanation":"...","difficulty":"medium","points":2}]}}
+- "quiz" → {"action":"quiz","data":{"questions":[{"id":"q1","type":"mcq","question":"Full question text here","options":["A","B","C","D"],"correctAnswer":"A","explanation":"...","difficulty":"easy","points":1}]}}
+
+RULE FOR EVERY QUESTION: The "question" field MUST contain the complete, real question text and MUST NEVER be empty. For example: "What is the result of 120 - 78?" is a valid question; an empty string is never allowed.
 - "assignment" → {"action":"assignment","data":{...}}
 - "mindmap" → {"action":"mindmap","data":{...}}
 
@@ -130,8 +175,13 @@ Extracted text from images (if any) is below. Use it as context. Remember: write
       return { role: 'assistant', content: messageText, data: parsed };
     }
 
-    if (parsed.data?.questions) {
-      return { role: 'assistant', content: `Generated ${parsed.data.questions.length} questions`, data: parsed };
+    const quizNormalized = normalizeQuizQuestions(parsed);
+    if (quizNormalized) {
+      return {
+        role: 'assistant',
+        content: `Generated ${quizNormalized.questions.length} questions`,
+        data: { action: 'quiz', data: quizNormalized },
+      };
     }
     if (parsed.data?.title) {
       return { role: 'assistant', content: `Generated assignment: ${parsed.data.title}`, data: parsed };
