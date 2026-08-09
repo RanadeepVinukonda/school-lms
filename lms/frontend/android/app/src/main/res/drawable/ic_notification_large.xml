@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Full-color Genesis logo used as the Android notification "large icon".
+  Appears in the notification shade, heads-up popup and lock screen, matching
+  the launcher app icon (teal badge + white speech-bubble glyph). Only the
+  small status-bar icon is limited to the monochrome alpha mask
+  (ic_stat_genesis.xml). Glyph traced 1:1 from the launcher foreground.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="432"
+    android:viewportHeight="432">
+    <path
+        android:fillColor="#26A69A"
+        android:pathData="M216,216m-216,0a216,216 0,1 1,432 0a216,216 0,1 1,-432 0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillType="nonZero"
+        android:pathData="M207,17 L230,17 L258,23 L276,30 L292,39 L313,55 L326,69 L339,87 L349,107 L355,124 L359,146 L359,177 L356,193 L348,218 L332,246 L321,259 L316,257 L312,258 L311,260 L320,261 L324,264 L325,286 L348,289 L358,293 L358,336 L348,329 L332,324 L305,319 L285,319 L282,315 L283,311 L285,310 L284,308 L276,309 L259,306 L201,304 L191,304 L188,306 L176,305 L133,311 L125,313 L125,316 L147,311 L148,316 L146,319 L130,318 L116,321 L113,320 L87,327 L72,336 L72,293 L75,291 L105,286 L105,296 L107,297 L106,265 L108,262 L115,259 L114,257 L110,259 L92,237 L82,217 L74,192 L71,174 L71,147 L76,122 L82,105 L92,86 L104,69 L114,58 L138,39 L170,24 L190,19 L206,18 Z" />
+</vector>

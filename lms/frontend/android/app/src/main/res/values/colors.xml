@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand / material colors for the base theme. -->
+    <color name="colorPrimary">#1E3A8A</color>
+    <color name="colorPrimaryDark">#172554</color>
+    <color name="colorAccent">#26A69A</color>
+
+    <!-- Splash background (light theme) matching the Genesis splash (primary navy). -->
+    <color name="splash_background">#233661</color>
+
+    <color name="notification_icon_color">#26A69A</color>
+</resources>

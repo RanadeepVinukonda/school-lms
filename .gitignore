@@ -29,7 +29,6 @@ scratch/
 
 # Expo native directories
 .expo/
-android/
 ios/
 
 # Custom ignored patterns for repository cleanup
