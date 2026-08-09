@@ -311,30 +311,21 @@
     overscroll-behavior-y: none;
   }
 
-  /* Static UI must not show selection overlays; editable fields stay fully selectable */
-  body,
-  button,
-  a,
-  [role="button"],
-  h1, h2, h3, h4, h5, h6,
-  p, span, label,
-  div, nav, header, footer, aside, section,
-  ul, ol, li,
-  table, td, th,
-  img, svg, i, em, strong, small {
-    -webkit-user-select: none;
-    user-select: none;
-    -webkit-touch-callout: none;
+  /* Text selection: keep native Android behavior (copy / paste / cut /
+     select-all, long-press handles). Only neutralize the giant highlight
+     block by making ::selection affect the actual glyphs — nothing else.
+     No user-select locks: everything stays selectable/copyable. */
+  ::selection {
+    background: hsl(var(--primary) / 0.2);
+    color: inherit;
   }
-
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]),
-  textarea,
-  select,
-  [contenteditable="true"],
-  [contenteditable=""] {
-    -webkit-user-select: text;
-    user-select: text;
-    -webkit-touch-callout: default;
+  ::-moz-selection {
+    background: hsl(var(--primary) / 0.2);
+    color: inherit;
+  }
+  ::-webkit-selection {
+    background: hsl(var(--primary) / 0.2);
+    color: inherit;
   }
 
   button,
@@ -650,15 +641,10 @@
 html.genesis-native {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
 }
 
 html.genesis-native body {
   overscroll-behavior-y: none;
-  -webkit-user-select: none;
-  user-select: none;
 }
 
 @media (prefers-color-scheme: dark) {
