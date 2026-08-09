@@ -125,7 +125,7 @@ export function AdminLayout() {
               to={item.href}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 rounded-xl w-full px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  'flex items-center gap-3 rounded-xl w-full px-3 py-2.5 text-sm font-medium transition-colors [&_.material-symbols-outlined]:leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   isActive
                     ? 'bg-secondary-container text-on-secondary-container'
                     : 'text-on-surface-variant hover:bg-surface-variant/50',
@@ -174,7 +174,7 @@ export function AdminLayout() {
         )}
       >
         {/* Top app bar */}
-        <header className="sticky top-0 z-40 grid grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-4 border-b border-outline-variant bg-surface/85 backdrop-blur-md px-3 sm:px-4 h-[calc(env(safe-area-inset-top)+3.5rem)] pt-[env(safe-area-inset-top)] relative">
+        <header className="sticky top-0 z-40 flex items-center gap-2 sm:gap-4 border-b border-outline-variant bg-surface/85 backdrop-blur-md px-3 sm:px-4 h-[calc(env(safe-area-inset-top)+3.5rem)] pt-[env(safe-area-inset-top)] relative">
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden text-on-surface shrink-0" aria-label="Menu">
@@ -183,14 +183,14 @@ export function AdminLayout() {
             </SheetTrigger>
             <SheetContent side="left" hideCloseButton className="gap-0 p-0 flex flex-col h-full border-r border-outline-variant bg-surface pt-[env(safe-area-inset-top)]" {...drawerSwipe}>
               {/* Drawer Links */}
-              <nav className="flex-1 overflow-y-auto px-2 pt-3 pb-[env(safe-area-inset-bottom)] flex flex-col gap-0.5">
+              <nav className="flex-1 overflow-y-auto px-2 pt-6 pb-[env(safe-area-inset-bottom)] flex flex-col gap-0.5">
                 {navItems.map((item) => (
                   <SheetClose asChild key={item.href}>
                     <NavLink
                       to={item.href}
                       className={({ isActive }) =>
                         cn(
-                          'flex items-center gap-3 rounded-xl w-full px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                          'flex items-center gap-3 rounded-xl w-full px-3 py-2.5 text-sm font-medium transition-colors [&_.material-symbols-outlined]:leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                           isActive
                             ? 'bg-secondary-container text-on-secondary-container'
                             : 'text-on-surface-variant hover:bg-surface-variant/50',
@@ -230,10 +230,6 @@ export function AdminLayout() {
             </SheetContent>
           </Sheet>
 
-          <div className="flex items-center justify-center gap-2 min-w-0 pointer-events-none">
-            <img src="/genesis_icon.png" alt="" aria-hidden className="h-8 w-8 object-contain shrink-0" />
-            <span className="text-title-md font-bold text-primary whitespace-nowrap shrink-0">Genesis</span>
-          </div>
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             <ThemeToggle />
             {user && <NotificationDropdown />}
