@@ -650,6 +650,9 @@
 html.genesis-native {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 html.genesis-native body {
