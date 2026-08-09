@@ -311,9 +311,21 @@
     overscroll-behavior-y: none;
   }
 
-  /* Text selection: use the platform default highlight (Android native
-     glyph-only selection). No custom ::selection colors, no user-select
-     locks — everything stays selectable/copyable with native behavior. */
+  /* Text selection: render NO highlight box behind selected text on Android
+     (Chromium's default paints a solid blue block). Keep selection, the
+     copy/paste toolbar, and caret fully functional via native behavior. */
+  ::selection {
+    background: transparent;
+    color: inherit;
+  }
+  ::-moz-selection {
+    background: transparent;
+    color: inherit;
+  }
+  ::-webkit-selection {
+    background: transparent;
+    color: inherit;
+  }
 
   button,
   a,
