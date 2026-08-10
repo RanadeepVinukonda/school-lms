@@ -1,4 +1,3 @@
-import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -17,11 +16,11 @@ interface ProfileDetailsProps {
 
 function DetailRow({ icon, label, value }: { icon: string; label: string; value?: string | null }) {
   return (
-    <div className="flex items-center gap-3">
-      <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+    <div className="flex items-start gap-3">
+      <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0 mt-0.5">
         <Icon name={icon} size={16} className="text-muted-foreground" />
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="text-label-xs text-muted-foreground">{label}</p>
         <p className="text-title-sm font-medium break-words">{value || '—'}</p>
       </div>
@@ -42,17 +41,9 @@ export default function ProfileDetails({ user, includeDob }: ProfileDetailsProps
         </CardTitle>
       </CardHeader>
       <CardContent className="p-5">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
           <DetailRow icon="mail" label={_('Email')} value={user.email} />
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-              <Icon name="badge" size={16} className="text-muted-foreground" />
-            </div>
-            <div>
-              <p className="text-label-xs text-muted-foreground">{_('Role')}</p>
-              <Badge variant="secondary" className="text-label-xs mt-0.5">{role}</Badge>
-            </div>
-          </div>
+          <DetailRow icon="badge" label={_('Role')} value={role} />
           <DetailRow icon="phone" label={_('Phone')} value={user.phone} />
           {includeDob && <DetailRow icon="cake" label={_('Date of Birth')} value={user.dateOfBirth ? user.dateOfBirth.slice(0, 10) : undefined} />}
           <DetailRow icon="home" label={_('Address')} value={user.address} />

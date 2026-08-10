@@ -28,7 +28,7 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string) {
     throw new Error('SMTP not configured');
   }
 
-  const subject = 'Reset your School LMS password';
+  const subject = 'Reset your Genesis password';
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
       <h2 style="color: #1e293b;">Password Reset</h2>

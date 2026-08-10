@@ -126,7 +126,7 @@ export async function processChatMessage(
     extractedText = results.map((r) => r.text).filter(Boolean).join('\n\n---\n\n');
   }
 
-  const systemPrompt = `You are a friendly AI teaching assistant for a school LMS. Respond conversationally and naturally — like a real tutor.
+  const systemPrompt = `You are a friendly AI teaching assistant for a school on Genesis. Respond conversationally and naturally — like a real tutor.
 
 For general questions and chat, just give a helpful answer in plain text.
 

@@ -3,7 +3,7 @@ import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
 const DEFAULT_SETTINGS = {
-  schoolName: 'School LMS',
+  schoolName: 'Genesis',
   schoolCode: '',
   address: '',
   phone: '',

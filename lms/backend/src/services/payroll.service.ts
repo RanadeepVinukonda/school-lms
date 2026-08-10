@@ -93,7 +93,7 @@ export async function generatePayslipPdf(schoolId: string, payrollId: string): P
 
   const pageWidth = doc.page.width - 100;
 
-  doc.fontSize(22).font('Helvetica-Bold').text(school?.name || 'School LMS', { align: 'center' });
+  doc.fontSize(22).font('Helvetica-Bold').text(school?.name || 'Genesis', { align: 'center' });
   doc.moveDown(0.5);
   doc.fontSize(16).font('Helvetica').text('Staff Payslip', { align: 'center' });
   doc.moveDown(1);

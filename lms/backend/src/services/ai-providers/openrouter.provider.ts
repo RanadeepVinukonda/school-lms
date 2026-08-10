@@ -32,7 +32,7 @@ export async function openaiChatCompletion(
 
   if (env.AI_BASE_URL.includes('openrouter.ai')) {
     headers['HTTP-Referer'] = 'https://school-lms-nine-phi.vercel.app';
-    headers['X-Title'] = 'School LMS';
+    headers['X-Title'] = 'Genesis';
   }
 
   let useResponseFormat = jsonMode;
@@ -145,7 +145,7 @@ export async function textbookChatCompletion(params: {
 
   if (baseUrl.includes('openrouter.ai')) {
     headers['HTTP-Referer'] = 'https://school-lms-nine-phi.vercel.app';
-    headers['X-Title'] = 'School LMS';
+    headers['X-Title'] = 'Genesis';
   }
 
   let useResponseFormat = jsonMode;

@@ -4,9 +4,9 @@ const options: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'School LMS API',
+      title: 'Genesis API',
       version: '1.0.0',
-      description: 'REST API for School Learning Management System',
+      description: 'REST API for Genesis School Learning Management System',
     },
     servers: [
       { url: '/api', description: 'Development (local)' },

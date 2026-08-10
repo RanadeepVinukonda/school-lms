@@ -11,7 +11,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
 
-const FALLBACK_SCHOOL = 'Genesis International Montessori & STEM School';
+const FALLBACK_SCHOOL = 'Genesis';
 const SCHOOL_TAGLINE = 'Learn · Lead · Achieve';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -19,7 +19,7 @@ const ROLE_LABELS: Record<string, string> = {
   teacher: 'Teacher',
   student: 'Student',
   admin: 'Administrator',
-  super_admin: 'Administrator',
+  super_admin: 'Super Administrator',
 };
 
 interface ProfileHeaderProps {
@@ -51,39 +51,44 @@ export default function ProfileHeader({ user, roleLabel, editHref, subtitle, bad
 
   return (
     <Card className="border-border/60 rounded-2xl overflow-hidden">
-      <CardContent className="p-0">
-        <div className="flex items-center gap-4 p-6 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
-          <img src="/genesis_icon.png" alt={_('School Crest')} className="h-14 w-auto object-contain shrink-0" />
-          <div className="min-w-0">
-            <h2 className="text-title-md font-bold truncate">{schoolName}</h2>
-            <p className="text-warning uppercase text-[10px] tracking-wider font-semibold">{_(SCHOOL_TAGLINE)}</p>
-          </div>
+      {/* School crest banner */}
+      <div className="flex items-center gap-3 px-6 py-5 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-b border-border/60">
+        <img src="/genesis_icon.png" alt={_('School Crest')} className="h-12 w-12 object-contain shrink-0" />
+        <div className="min-w-0">
+          <h2 className="text-title-md font-bold leading-snug break-words">{schoolName}</h2>
+          <p className="text-warning uppercase text-[10px] tracking-wider font-semibold mt-0.5">{_(SCHOOL_TAGLINE)}</p>
         </div>
-        <div className="flex items-center gap-4 p-6 border-t border-border/60 flex-wrap">
+      </div>
+
+      {/* User identity */}
+      <CardContent className="p-6">
+        <div className="flex items-start gap-4">
           <Avatar className="h-16 w-16 shrink-0">
             <AvatarImage src={user.avatar ?? user.photoURL ?? ''} alt={user.displayName ?? ''} />
             <AvatarFallback className="text-lg font-bold bg-primary-container text-primary">{getInitials(user.displayName ?? 'U')}</AvatarFallback>
           </Avatar>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-title-md font-bold truncate">{user.displayName}</h2>
-            <p className="text-body-sm text-muted-foreground truncate">{user.email}</p>
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <Badge variant="info" className="text-label-xs">
-                <Icon name="badge" size={11} className="mr-1" />{role}
+          <div className="flex-1 min-w-0 pt-0.5">
+            <h2 className="text-title-md font-bold break-words leading-snug">{user.displayName}</h2>
+            <p className="text-body-sm text-muted-foreground break-all mt-0.5">{user.email}</p>
+            <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+              <Badge variant="info" className="text-label-xs gap-1 whitespace-nowrap">
+                <Icon name="badge" size={11} />{role}
               </Badge>
-              {subtitle && <Badge variant="secondary" className="text-label-xs">{subtitle}</Badge>}
+              {subtitle && <Badge variant="outline" className="text-label-xs whitespace-nowrap">{subtitle}</Badge>}
               {badges}
             </div>
           </div>
+        </div>
+
+        {/* Actions */}
+        <div className="mt-6 pt-4 border-t border-border/60 flex items-center justify-between gap-3 flex-wrap">
           {editHref && (
-            <div className="flex flex-col items-end gap-2">
-              <Button variant="ghost" size="icon-sm" onClick={() => navigate(editHref)} title={_('Edit Profile')} aria-label={_('Edit Profile')}>
-                <Icon name="edit" size={16} />
-              </Button>
-            </div>
+            <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => navigate(editHref)}>
+              <Icon name="edit" size={14} />{_('Edit Profile')}
+            </Button>
           )}
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={handleLogout} title={_('Logout')}>
-            <Icon name="logout" size={13} />{_('Logout')}
+          <Button variant="outline" size="sm" className="gap-1.5 text-error" onClick={handleLogout}>
+            <Icon name="logout" size={14} />{_('Logout')}
           </Button>
         </div>
       </CardContent>

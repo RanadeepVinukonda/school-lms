@@ -113,7 +113,7 @@ app.use('/api/v1', apiRateLimit, academicYearMiddleware, auditMiddleware, routes
 app.use('/user', gdprRoutes);
 
 app.get('/', (_req, res) => {
-  res.json({ success: true, status: 'ok', message: 'School LMS API is running.' });
+  res.json({ success: true, status: 'ok', message: 'Genesis API is running.' });
 });
 
 // 404 catch-all — must come after all routes
