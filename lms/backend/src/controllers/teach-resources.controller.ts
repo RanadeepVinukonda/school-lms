@@ -84,25 +84,49 @@ export async function searchTeachResources(req: Request, res: Response) {
       gradeLevel,
     );
 
-    // Persist found resources to concept_videos so they appear on reload
+    // Persist found resources to concept_videos so they appear on reload.
+    // Merge instead of blind insert: refresh metadata for videos that already
+    // exist, insert brand-new ones, and keep any videos already persisted for
+    // this concept that the latest search did not return.
     if (resources.length > 0) {
       const { v4: uuidv4 } = await import('uuid');
-      const rows = resources.map((r) => ({
-        id: uuidv4(),
-        concept_id: concept.id,
-        textbook_id: concept.textbook_id,
-        chapter_id: concept.chapter_id,
-        video_id: r.videoId || r.id,
-        title: r.title,
-        description: r.description || '',
-        channel: r.channelName || r.sourceLabel,
-        thumbnail: r.thumbnail || '',
-        duration: r.duration || '',
-        score: r.relevance || 0.5,
-        data: { source: r.source, sourceLabel: r.sourceLabel, url: r.url, embedUrl: r.embedUrl },
-      }));
-      const { error: insertError } = await supabase.from('concept_videos').insert(rows);
-      if (insertError) logger.warn('Failed to persist teach resources', { error: insertError });
+      const { data: existingRows } = await supabase
+        .from('concept_videos')
+        .select('id, video_id')
+        .eq('concept_id', concept.id);
+
+      const existingById = new Map<string, string>();
+      for (const row of existingRows || []) existingById.set(row.video_id, row.id);
+
+      const toInsert: any[] = [];
+      for (const r of resources) {
+        const videoKey = r.videoId || r.id;
+        const payload = {
+          title: r.title,
+          description: r.description || '',
+          channel: r.channelName || r.sourceLabel,
+          thumbnail: r.thumbnail || '',
+          duration: r.duration || '',
+          score: r.relevance || 0.5,
+          data: { source: r.source, sourceLabel: r.sourceLabel, url: r.url, embedUrl: r.embedUrl },
+        };
+
+        const existingId = existingById.get(videoKey);
+        if (existingId) {
+          const { error: updateError } = await supabase
+            .from('concept_videos')
+            .update(payload)
+            .eq('id', existingId);
+          if (updateError) logger.warn('Failed to update persisted teach resource', { videoKey, error: updateError });
+        } else {
+          toInsert.push({ ...payload, id: uuidv4(), concept_id: concept.id, textbook_id: concept.textbook_id, chapter_id: concept.chapter_id, video_id: videoKey });
+        }
+      }
+
+      if (toInsert.length > 0) {
+        const { error: insertError } = await supabase.from('concept_videos').insert(toInsert);
+        if (insertError) logger.warn('Failed to persist teach resources', { error: insertError });
+      }
     }
 
     return sendSuccess(res, resources);
