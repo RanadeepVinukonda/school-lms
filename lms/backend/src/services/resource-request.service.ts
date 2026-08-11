@@ -34,6 +34,7 @@ export interface ConceptContext {
   chapterTitle: string;
   subjectId: string | null;
   subjectName: string;
+  gradeLevel?: string;
   schoolId: string | null;
 }
 
@@ -59,9 +60,14 @@ async function getConceptContext(conceptId: string): Promise<ConceptContext> {
 
   let subjectId: string | null = textbook?.subject_id as string | null || null;
   let subjectName = '';
+  let gradeLevel: string | undefined;
   if (subjectId) {
-    const { data: subject } = await db.from('subjects').select('name').eq('id', subjectId).maybeSingle();
+    const { data: subject } = await db.from('subjects').select('name, "classId"').eq('id', subjectId).maybeSingle();
     subjectName = subject?.name as string || '';
+    if (subject?.classId) {
+      const { data: cls } = await db.from('classes').select('name, grade').eq('id', subject.classId).maybeSingle();
+      if (cls) gradeLevel = (cls.grade as string) || (cls.name as string) || undefined;
+    }
   }
 
   return {
@@ -72,6 +78,7 @@ async function getConceptContext(conceptId: string): Promise<ConceptContext> {
     chapterTitle: chapter?.title as string || '',
     subjectId,
     subjectName,
+    gradeLevel,
     schoolId: concept.school_id as string | null || null,
   };
 }
@@ -434,6 +441,6 @@ export async function getStudentResources(studentId: string) {
 /** Search candidate resources (Khan Academy / YouTube) for a concept, to help teachers push. */
 export async function searchResourcesForConcept(conceptId: string, maxResults = 6): Promise<TeachResource[]> {
   const ctx = await getConceptContext(conceptId);
-  const results = await searchTeachResources(ctx.subjectName, ctx.chapterTitle, ctx.conceptTitle, [], maxResults);
+  const results = await searchTeachResources(ctx.subjectName, ctx.chapterTitle, ctx.conceptTitle, [], maxResults, ctx.gradeLevel);
   return results;
 }

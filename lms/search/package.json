@@ -1,7 +1,7 @@
 {
   "name": "lms-search",
   "version": "1.0.0",
-  "description": "Elasticsearch indexing and search microservice for School LMS",
+  "description": "Elasticsearch indexing and search microservice for Genesis",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",

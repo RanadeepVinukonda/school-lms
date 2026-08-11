@@ -13,6 +13,7 @@ const envSchema = z.object({
   AI_API_KEY: z.string().optional().default(''),
   AI_BASE_URL: z.string().default('https://openrouter.ai/api/v1/chat/completions'),
   AI_MODEL: z.string().default('openai/gpt-4o-mini'),
+  YOUTUBE_API_KEY: z.string().optional().default(''),
 
   AI_TEXTBOOK_API_KEY: z.string().optional(),
   AI_TEXTBOOK_BASE_URL: z.string().optional(),

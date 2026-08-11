@@ -30,6 +30,7 @@ export async function searchTeachResources(req: Request, res: Response) {
 
     let chapterTitle = '';
     let subjectName = '';
+    let gradeLevel: string | undefined;
 
     const { data: chapter } = await supabase
       .from('chapters')
@@ -49,10 +50,18 @@ export async function searchTeachResources(req: Request, res: Response) {
       if (textbook?.subject_id) {
         const { data: subject } = await supabase
           .from('subjects')
-          .select('name')
+          .select('name, "classId"')
           .eq('id', textbook.subject_id)
           .single();
         if (subject) subjectName = subject.name;
+        if (subject?.classId) {
+          const { data: cls } = await supabase
+            .from('classes')
+            .select('name, grade')
+            .eq('id', subject.classId)
+            .single();
+          if (cls) gradeLevel = (cls.grade as string) || (cls.name as string) || undefined;
+        }
       }
     }
 
@@ -71,6 +80,8 @@ export async function searchTeachResources(req: Request, res: Response) {
       chapterTitle,
       concept.title,
       keywords,
+      undefined,
+      gradeLevel,
     );
 
     // Persist found resources to concept_videos so they appear on reload
