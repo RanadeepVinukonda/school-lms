@@ -19,7 +19,7 @@
     "package": "com.genesis.app",
     "adaptiveIcon": {
       "foregroundImage": "./assets/genesis_icon.png",
-      "backgroundColor": "#FAFAF5"
+      "backgroundColor": "#FFFFFF"
     }
   },
   "owner": "chandhini2005s-team",

@@ -30,6 +30,7 @@ scratch/
 # Expo native directories
 .expo/
 ios/
+android/
 
 # Custom ignored patterns for repository cleanup
 .agent/
