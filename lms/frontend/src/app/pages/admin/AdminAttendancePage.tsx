@@ -92,6 +92,10 @@ export default function AdminAttendancePage() {
                       // content:// URI — WebViews swallow downloads, so the file
                       // would otherwise be lost. No clipboard involved.
                       const native = await exportFileOnNative(blob, filename, 'text/csv');
+                      if (native === 'excel') {
+                        toast.success('Attendance CSV opened in Excel');
+                        return;
+                      }
                       if (native === 'shared') {
                         toast.success('Attendance CSV ready — choose an app to open it');
                         return;

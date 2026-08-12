@@ -214,14 +214,15 @@ function blobToBase64(blob: Blob): Promise<string> {
  * the type. No clipboard is involved.
  *
  * Returns 'unsupported' on web (caller uses the normal browser download),
- * 'shared' when the file was handed to the chooser, 'dismissed' when the user
- * cancelled, or 'failed' when no app on the device can open/share the file.
+ * 'excel' when the CSV was handed straight to Excel/Microsoft 365, 'shared'
+ * when it was handed to the Open With / share chooser, 'dismissed' when the
+ * user cancelled, or 'failed' when no app on the device can open/share it.
  */
 export async function exportFileOnNative(
   blob: Blob,
   filename: string,
   mimeType = 'text/csv',
-): Promise<'shared' | 'dismissed' | 'failed' | 'unsupported'> {
+): Promise<'excel' | 'shared' | 'dismissed' | 'failed' | 'unsupported'> {
   if (!(await isNativeAsync())) return 'unsupported';
 
   try {
@@ -230,8 +231,8 @@ export async function exportFileOnNative(
       open: (opts: { filename: string; mimeType: string; content: string }) => Promise<{ status: string }>;
     }>('FileShare');
     const content = await blobToBase64(blob);
-    await FileShare.open({ filename, mimeType, content });
-    return 'shared';
+    const result = await FileShare.open({ filename, mimeType, content });
+    return result?.status === 'excel' ? 'excel' : 'shared';
   } catch (err) {
     const e = err as { code?: string; message?: string } | null;
     const code = e?.code || '';

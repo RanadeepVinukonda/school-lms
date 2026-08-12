@@ -16,6 +16,9 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Genesis file-export bridge.
@@ -27,15 +30,58 @@ import java.io.FileOutputStream;
  *     file into the app cache.
  *  2. Exposes it to other apps through a FileProvider {@code content://} URI
  *     (never a raw {@code file://} URI).
- *  3. Launches the system "Open With" chooser (ACTION_VIEW) so the file can be
- *     opened in Excel, Google Sheets, Drive, etc. — falling back to the share
- *     sheet (ACTION_SEND → Save to Files / messaging) when no app can open it.
+ *  3. Opens the CSV straight into Excel (or Microsoft 365) when installed — the
+ *     file opens as a spreadsheet with no chooser in between. Otherwise it
+ *     launches the system "Open With" chooser (ACTION_VIEW) and finally falls
+ *     back to the share sheet (ACTION_SEND → Save to Files / messaging).
  *
- * No clipboard involved: the user always gets a real file + system chooser.
+ * No clipboard involved: the user always gets a real file + spreadsheet.
  */
 @CapacitorPlugin(name = "FileShare")
 public class FileSharePlugin extends Plugin {
 
+    /** Excel / Microsoft 365 package names, newest first. */
+    private static final String[] EXCEL_PACKAGES = {
+        "com.microsoft.office.excel",
+        "com.microsoft.office.officehubrow",
+        "com.microsoft.office.officehub",
+    };
+
+    /** Spreadsheet MIME types Excel understands for CSV data. */
+    private static final String[] CSV_MIMES = {
+        "text/csv",
+        "application/vnd.ms-excel",
+        "text/comma-separated-values",
+        "application/csv",
+    };
+
+    /**
+     * Try to open the file directly in Excel / Microsoft 365. Returns true when
+     * an Excel app was launched — the CSV then opens as a spreadsheet without
+     * any chooser in between.
+     */
+    private boolean openInExcel(Uri uri, String mimeType) {
+        PackageManager pm = getContext().getPackageManager();
+        List<String> mimes = new ArrayList<>();
+        if (mimeType != null && !mimeType.isEmpty() && !mimes.contains(mimeType)) mimes.add(mimeType);
+        for (String m : CSV_MIMES) {
+            if (!mimes.contains(m)) mimes.add(m);
+        }
+
+        for (String pkg : EXCEL_PACKAGES) {
+            for (String mime : mimes) {
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setDataAndType(uri, mime);
+                intent.setPackage(pkg);
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                if (pm.resolveActivity(intent, PackageManager.MATCH_ALL) != null) {
+                    getActivity().startActivity(intent);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
     @PluginMethod
     public void open(PluginCall call) {
         String filename = call.getString("filename");
@@ -76,7 +122,17 @@ public class FileSharePlugin extends Plugin {
                     getContext().getPackageName() + ".fileprovider",
                     file);
 
-            // 1) "Open With" — Excel / Google Sheets / any compatible handler.
+            PackageManager pm = getContext().getPackageManager();
+
+            // 1) Prefer Excel / Microsoft 365 — the CSV opens as a spreadsheet
+            //    directly, no chooser in between.
+            if (openInExcel(uri, mimeType)) {
+                call.resolve(new JSObject().put("status", "excel"));
+                return;
+            }
+
+            // 2) "Open With" — any compatible handler (Google Sheets cannot open
+            //    CSVs this way, so Excel is the primary spreadsheet target).
             Intent view = new Intent(Intent.ACTION_VIEW);
             view.setDataAndType(uri, mimeType);
             view.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -84,7 +140,6 @@ public class FileSharePlugin extends Plugin {
             // MATCH_ALL: on Android 11+ (package visibility) matching apps are
             // invisible without <queries>; MATCH_ALL sees every handler so the
             // chooser is offered even when Excel/Sheets are installed.
-            PackageManager pm = getContext().getPackageManager();
             if (pm.resolveActivity(view, PackageManager.MATCH_ALL) != null) {
                 Intent chooser = Intent.createChooser(view, "Open " + safeName + " with");
                 chooser.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -93,7 +148,7 @@ public class FileSharePlugin extends Plugin {
                 return;
             }
 
-            // 2) Share sheet — Save to Files / Drive / messaging apps.
+            // 3) Share sheet — Save to Files / Drive / messaging apps.
             Intent send = new Intent(Intent.ACTION_SEND);
             send.setType(mimeType);
             send.putExtra(Intent.EXTRA_STREAM, uri);
