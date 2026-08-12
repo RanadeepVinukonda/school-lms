@@ -209,6 +209,64 @@ export async function nativeCopy(text: string): Promise<boolean> {
   }
 }
 
+/** Convert a Blob into a base64 string (no data: prefix). */
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      resolve(result.split(',')[1] ?? result);
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+/** Plain-text version of the file (used for the clipboard fallback). */
+async function blobToText(blob: Blob): Promise<string> {
+  return blob.text();
+}
+
+/**
+ * Export a file (CSV/PDF) on native platforms.
+ *
+ * Android WebViews silently swallow browser-style `<a download>` clicks, so the
+ * file never lands in Downloads. Instead we open the system share sheet with
+ * the file attached (Web Share API Level 2 — supported by modern Android
+ * WebViews) so the user can "Save to Files", open it in Sheets/Drive, or send
+ * it via WhatsApp. If file sharing is unavailable, the raw text is copied to
+ * the clipboard so the data is never lost.
+ *
+ * Returns 'unsupported' on web (caller uses the normal browser download),
+ * 'shared' after the share sheet completed, 'copied' when the file was copied
+ * to the clipboard instead, 'dismissed' when the user cancelled.
+ */
+export async function exportFileOnNative(blob: Blob, filename: string): Promise<'shared' | 'copied' | 'dismissed' | 'unsupported'> {
+  if (!(await isNativeAsync())) return 'unsupported';
+
+  // 1) System share sheet with the file attached.
+  if (typeof navigator.share === 'function') {
+    try {
+      const file = new File([blob], filename, { type: blob.type || 'text/plain' });
+      await navigator.share({ title: filename, files: [file] });
+      return 'shared';
+    } catch (err) {
+      const name = (err as Error)?.name || '';
+      if (name === 'AbortError') return 'dismissed'; // user closed the sheet
+      // NotSupportedError / NotAllowedError → fall through to clipboard.
+    }
+  }
+
+  // 2) Clipboard fallback — the CSV text is always recoverable.
+  try {
+    const text = await blobToText(blob);
+    const ok = await nativeCopy(text);
+    return ok ? 'copied' : 'dismissed';
+  } catch {
+    return 'dismissed';
+  }
+}
+
 /** Open a URL in an in-app browser on native; new tab on web. */
 export async function openExternal(url: string): Promise<void> {
   if (!(await isNativeAsync())) {

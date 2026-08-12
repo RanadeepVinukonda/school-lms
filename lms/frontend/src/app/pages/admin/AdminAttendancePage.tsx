@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
 import { attendanceService } from '@/services/attendanceService';
+import { exportFileOnNative } from '@/lib/native';
 import ClassSelect from '@/components/common/ClassSelect';
 
 export default function AdminAttendancePage() {
@@ -76,10 +77,27 @@ export default function AdminAttendancePage() {
                         toast.error(msg);
                         return;
                       }
+                      const filename = `attendance-${selectedClass}.csv`;
+                      // On the mobile app, open the system share sheet with the CSV
+                      // attached (Save to Files / Drive / Sheets) — WebViews swallow
+                      // downloads, so the file would otherwise be lost.
+                      const native = await exportFileOnNative(blob, filename);
+                      if (native === 'shared') {
+                        toast.success('Attendance CSV ready — choose where to save it');
+                        return;
+                      }
+                      if (native === 'copied') {
+                        toast.success('CSV copied to clipboard — paste it into a spreadsheet app');
+                        return;
+                      }
+                      if (native === 'dismissed') {
+                        toast.info('Attendance export cancelled');
+                        return;
+                      }
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
                       a.href = url;
-                      a.download = `attendance-${selectedClass}.csv`;
+                      a.download = filename;
                       // Append to the DOM: some engines (Firefox, Android WebView)
                       // ignore click() on detached anchors.
                       document.body.appendChild(a);
