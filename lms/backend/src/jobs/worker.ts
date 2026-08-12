@@ -251,12 +251,21 @@ Concept context: ${conceptTitle} Chapter: ${chapterTitle} Source: ${contextText.
     const topVideos = videosResult.value;
     const videoRows = topVideos.map((video: any) => ({
       id: uuidv4(), concept_id: conceptId, textbook_id: textbookId, chapter_id: chapterId,
-      video_id: video.youtubeId, title: video.title, description: video.description,
+      video_id: video.videoId || video.youtubeId || video.video_id || video.id,
+      title: video.title, description: video.description,
       channel: video.channelName, thumbnail: video.thumbnail, duration: video.duration,
       score: video.score || 1.0, embedding: video.embedding || null, created_at: new Date().toISOString(),
-    }));
-    if (videoRows.length > 0) await supabase.from('concept_videos').insert(videoRows);
-    const videoLinks = topVideos.map((v: any) => v.embedUrl || `https://www.youtube.com/watch?v=${v.youtubeId}`);
+    })).filter((row) => row.video_id && row.title);
+    if (videoRows.length > 0) {
+      try {
+        await supabase.from('concept_videos').insert(videoRows);
+      } catch (insertErr) {
+        logger.error('Failed to persist concept videos', { conceptId, error: insertErr instanceof Error ? insertErr.message : String(insertErr) });
+      }
+    }
+    const videoLinks = topVideos
+      .map((v: any) => v.embedUrl || (v.videoId ? `https://www.youtube.com/watch?v=${v.videoId}` : ''))
+      .filter(Boolean);
     await supabase.from('concepts').update({ video_links: videoLinks }).eq('id', conceptId);
   } else { errors.push(`videos: ${reasonOf(videosResult)}`); }
 
