@@ -209,19 +209,6 @@ export async function nativeCopy(text: string): Promise<boolean> {
   }
 }
 
-/** Convert a Blob into a base64 string (no data: prefix). */
-function blobToBase64(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = typeof reader.result === 'string' ? reader.result : '';
-      resolve(result.split(',')[1] ?? result);
-    };
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(blob);
-  });
-}
-
 /** Plain-text version of the file (used for the clipboard fallback). */
 async function blobToText(blob: Blob): Promise<string> {
   return blob.text();
