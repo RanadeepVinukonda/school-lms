@@ -25,6 +25,8 @@ function tryParseJson(raw: string, fallback: any): any {
 import { AppError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { textbookChatCompletion } from './ai.service';
+import fs from 'fs';
+import path from 'path';
 
 export interface OCRBlock {
   text: string;
@@ -99,19 +101,43 @@ export interface OCRMappingResult {
 
 let worker: any = null;
 
+/**
+ * Resolve the folder that ships traineddata files (eng.traineddata sits at the
+ * backend root, next to src/ and dist/). Returns null when no local file is
+ * available so callers can fall back to tesseract.js's CDN download.
+ */
+function resolveTraineddataDir(): string | null {
+  try {
+    const candidate = path.resolve(__dirname, '..', '..');
+    return fs.existsSync(path.join(candidate, 'eng.traineddata')) ? candidate : null;
+  } catch {
+    return null;
+  }
+}
+
 async function getWorker() {
   if (!worker) {
     const T = await loadTesseract();
-    worker = await T.createWorker('eng+hin', 3, {
+    const localDir = resolveTraineddataDir();
+    // Use local .traineddata files when present so OCR works instantly on a
+    // cold worker — no slow/fragile CDN download mid-request. Only request a
+    // language when its file actually exists locally.
+    const langs = localDir && fs.existsSync(path.join(localDir, 'hin.traineddata')) ? 'eng+hin' : 'eng';
+    const options: Record<string, unknown> = {
       logger: (m: any) => {
         if (m.status === 'loading tesseract core') logger.debug('OCR: loading core');
         else if (m.status === 'initializing tesseract') logger.debug('OCR: initializing');
         else if (m.status === 'loading language traineddata') logger.debug('OCR: loading language data');
         else if (m.status === 'initializing api') logger.debug('OCR: initializing API');
       },
-    });
+    };
+    if (localDir) {
+      options.langPath = localDir;
+      options.gzip = false; // local files are uncompressed
+    }
+    worker = await T.createWorker(langs, 3, options);
     await worker.setParameters({ tessedit_pageseg_mode: T.PSM.AUTO });
-    logger.info('OCR worker created (LSTM+Legacy, PSM AUTO)');
+    logger.info('OCR worker created (LSTM+Legacy, PSM AUTO)', { langs, langPath: localDir || 'cdn' });
   }
   return worker;
 }

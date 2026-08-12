@@ -74,7 +74,8 @@ export async function scanMultipleImages(images: File[]): Promise<{ text: string
     const resized = new File([blob], img.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' });
     formData.append('images', resized);
   }
-  const res = await api.post('/ocr/scan-multiple', formData, { timeout: 120000 });
+  // Server-side OCR of up to 10 images can take a while — allow up to 4 min.
+  const res = await api.post('/ocr/scan-multiple', formData, { timeout: 240000 });
   return res.data.data;
 }
 
@@ -101,7 +102,8 @@ export async function sendChatMessage(
       formData.append('images', resized);
     }
   }
-  const res = await api.post('/ocr/chat', formData);
+  // OCR extraction + AI generation with retries can take minutes — allow up to 5 min.
+  const res = await api.post('/ocr/chat', formData, { timeout: 300000 });
   return res.data.data;
 }
 

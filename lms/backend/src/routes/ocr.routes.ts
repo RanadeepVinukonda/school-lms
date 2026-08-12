@@ -5,10 +5,14 @@ import { asyncHandler } from '../middlewares/asyncHandler';
 import { authenticate } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/role.middleware';
 import { uploadRateLimit } from '../middlewares/rateLimit.middleware';
+import { extendTimeout } from '../middlewares/timeout.middleware';
 import { validate } from '../middlewares/validate.middleware';
 import * as ocrController from '../controllers/ocr.controller';
 
 const router = Router();
+
+// OCR + AI pipelines can legitimately take minutes (Tesseract extraction, then
+// LLM generation with retries). Extend the global 30s request budget here.
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
@@ -37,11 +41,11 @@ const mapToConceptSchema = z.object({
   pageRange: z.string().optional(),
 }).passthrough();
 
-router.post('/scan', authenticate, uploadRateLimit, upload.single('image'), asyncHandler(ocrController.scanImage));
+router.post('/scan', authenticate, uploadRateLimit, extendTimeout(180_000), upload.single('image'), asyncHandler(ocrController.scanImage));
 
-router.post('/scan-multiple', authenticate, uploadRateLimit, upload.array('images', 10), asyncHandler(ocrController.scanMultipleImages));
+router.post('/scan-multiple', authenticate, uploadRateLimit, extendTimeout(180_000), upload.array('images', 10), asyncHandler(ocrController.scanMultipleImages));
 
-router.post('/chat', authenticate, upload.array('images', 10), asyncHandler(ocrController.chat));
+router.post('/chat', authenticate, extendTimeout(240_000), upload.array('images', 10), asyncHandler(ocrController.chat));
 
 router.post('/push-quiz', authenticate, requireRole('admin', 'teacher'), validate(pushQuizSchema), asyncHandler(ocrController.pushQuiz));
 

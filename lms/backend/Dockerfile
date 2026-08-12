@@ -11,6 +11,9 @@ RUN addgroup --system app && adduser --system --ingroup app app
 COPY package*.json ./
 RUN npm ci --ignore-scripts --omit=dev && npm cache clean --force
 COPY --from=builder /app/dist ./dist
+# OCR traineddata must be present at runtime — ocr.service resolves it via langPath
+COPY --from=builder /app/eng.traineddata ./eng.traineddata
+COPY --from=builder /app/hin.traineddata ./hin.traineddata
 USER app
 EXPOSE 4000
 ENV NODE_ENV=production
