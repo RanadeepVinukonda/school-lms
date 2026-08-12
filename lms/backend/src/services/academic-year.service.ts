@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ConflictError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { deleteDocument } from './document.service';
-import { deriveAcademicYear } from '../middlewares/academicYear.middleware';
+import { invalidateActiveAcademicYearCache } from '../middlewares/academicYear.middleware';
 
 async function nosqlDoc(collection: string, docId: string) {
   const supabase = getSupabaseAdmin()!;
@@ -56,11 +56,13 @@ export async function createAcademicYear(data: {
       await setNosqlDoc('academicYears', d.doc_id, { ...d.data as Record<string, unknown>, isCurrent: false, updatedAt: now });
     }
     await setNosqlDoc('academicYears', id, yearData);
+    invalidateActiveAcademicYearCache();
     return yearData;
   }
 
   const yearData = { ...data, id, status: data.status || 'active', createdAt: now, updatedAt: now };
   await setNosqlDoc('academicYears', id, yearData);
+  invalidateActiveAcademicYearCache();
   logger.info('Academic year created', { id, name: data.name });
   return yearData;
 }
@@ -93,6 +95,7 @@ export async function updateAcademicYear(id: string, data: Record<string, unknow
     await setNosqlDoc('academicYears', id, merged);
   }
 
+  invalidateActiveAcademicYearCache();
   const updated = await nosqlDoc('academicYears', id);
   return { ...(updated?.data as Record<string, unknown> || {}) };
 }
@@ -101,6 +104,7 @@ export async function deleteAcademicYear(id: string) {
   const existing = await nosqlDoc('academicYears', id);
   if (!existing) throw new NotFoundError('Academic year not found');
   await deleteDocument('academicYears', id);
+  invalidateActiveAcademicYearCache();
   logger.info('Academic year deleted', { id });
 }
 
@@ -130,7 +134,47 @@ export async function listAcademicYears(query: { status?: string; page?: string;
   return { items, total, page: 1, limit: total };
 }
 
-export function getCurrentAcademicYear() {
+/**
+ * Resolve the active academic year from the admin-configured record
+ * (isCurrent: true in the academicYears collection), falling back to the
+ * July 1 – June 30 convention only when no record has been configured yet.
+ */
+export async function getCurrentAcademicYear(): Promise<{
+  id?: string;
+  name: string;
+  code?: string;
+  startDate: string;
+  endDate: string;
+  isCurrent: boolean;
+  status?: string;
+}> {
+  try {
+    const supabase = getSupabaseAdmin();
+    if (supabase) {
+      const { data: rows } = await supabase
+        .from('firestore_docs')
+        .select('doc_id, data')
+        .eq('collection', 'academicYears')
+        .contains('data', { isCurrent: true })
+        .limit(1);
+      const rec = rows?.[0]?.data as Record<string, unknown> | undefined;
+      const docId = rows?.[0]?.doc_id as string | undefined;
+      if (rec && rec.name) {
+        return {
+          id: docId,
+          name: String(rec.name),
+          code: rec.code ? String(rec.code) : undefined,
+          startDate: rec.startDate ? String(rec.startDate) : `${String(rec.name).split('-')[0] || new Date().getFullYear()}-07-01`,
+          endDate: rec.endDate ? String(rec.endDate) : `${String(rec.name).split('-')[0] || new Date().getFullYear()}-06-30`,
+          isCurrent: true,
+          status: rec.status ? String(rec.status) : 'active',
+        };
+      }
+    }
+  } catch (err) {
+    logger.warn('getCurrentAcademicYear: DB lookup failed, using convention', { error: err });
+  }
+
   const now = new Date();
   const year = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1;
   const name = `${year}-${year + 1}`;
@@ -145,7 +189,7 @@ export function getCurrentAcademicYear() {
  */
 export async function promoteAllStudents(): Promise<{ promoted: number; graduated: number }> {
   const supabase = getSupabaseAdmin()!;
-  const newYear = deriveAcademicYear();
+  const { name: newYear } = await getCurrentAcademicYear();
   let promoted = 0;
   let graduated = 0;
 

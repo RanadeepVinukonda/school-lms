@@ -144,7 +144,7 @@ export async function getAttendanceReport(classId: string) {
     .contains('class_ids', [classId]);
   if (studentError) throw studentError;
 
-  const currentYear = getCurrentAcademicYear();
+  const currentYear = await getCurrentAcademicYear();
   const yearStart = currentYear?.startDate ? new Date(currentYear.startDate as string) : new Date();
   const yearEnd = new Date();
 

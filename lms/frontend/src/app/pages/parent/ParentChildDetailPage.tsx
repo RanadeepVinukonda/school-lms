@@ -132,7 +132,7 @@ export default function ParentChildDetailPage() {
                 <motion.div variants={cardStackReveal} custom={0}>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {[
-                      { icon: 'graded', label: 'Total Assessments', value: d.totalAttempts, bg: 'bg-primary-container', color: 'text-primary' },
+                      { icon: 'task_alt', label: 'Total Assessments', value: d.totalAttempts, bg: 'bg-primary-container', color: 'text-primary' },
                       { icon: 'trending_up', label: 'Overall Avg Score', value: `${d.overallAvgScore}%`, bg: 'bg-secondary-container', color: 'text-secondary', isPerformanceLogo: true },
                       { icon: 'school', label: 'Class', value: d.className ?? 'N/A', bg: 'bg-success-container', color: 'text-success' },
                     ].map((stat) => (
@@ -198,14 +198,14 @@ export default function ParentChildDetailPage() {
                   <Card className="border-border/60">
                     <CardHeader className="pb-3">
                         <CardTitle className="text-title-md flex items-center gap-2 flex-wrap">
-                          <Icon name="graded" size={18} className="text-muted-foreground" />
+                          <Icon name="score" size={18} className="text-muted-foreground" />
                           Grades
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
                       {grades.length === 0 ? (
                         <div className="flex flex-col items-center gap-2 py-8 text-center">
-                          <Icon name="graded" size={32} className="text-muted-foreground/40" />
+                          <Icon name="score" size={32} className="text-muted-foreground/40" />
                           <p className="text-sm text-muted-foreground">No grades yet</p>
                         </div>
                       ) : (

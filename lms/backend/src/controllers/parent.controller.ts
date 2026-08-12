@@ -193,7 +193,8 @@ Generate a JSON report with this exact structure:
 export async function getYearlyReport(req: Request, res: Response) {
   if (!req.user) throw new ValidationError('Authentication required');
   const { studentId } = req.params;
-  const academicYear = req.query.academicYear as string || getCurrentAcademicYear().name;
+  const currentYear = await getCurrentAcademicYear();
+  const academicYear = req.query.academicYear as string || currentYear.name;
   const parentId = req.user.uid;
 
   const isChild = await parentService.verifyChildOwnership(parentId, studentId);

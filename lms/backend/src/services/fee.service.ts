@@ -2,7 +2,7 @@ import { getSupabaseAdmin } from './supabase';
 import { getConnectionPool } from '../database/connection-manager';
 import { ValidationError } from '../utils/errors';
 import { BaseService, DbRecord } from '../lib/base-service';
-import { deriveAcademicYear } from '../middlewares/academicYear.middleware';
+import { getCurrentAcademicYear } from './academic-year.service';
 import { createBulkNotifications } from './notification.service';
 import { logger } from '../utils/logger';
 import { buildOutstandingReport } from '../utils/fee-report';
@@ -48,7 +48,7 @@ export async function createFeeSchedule(data: {
     amount: data.amount,
     due_date: data.dueDate || null,
     class_id: data.classId,
-    academic_year: data.academicYear || deriveAcademicYear(),
+    academic_year: data.academicYear || (await getCurrentAcademicYear()).name,
     description: data.description || null,
   } as Partial<FeeStructureRecord>);
   // notify students and parents in the class

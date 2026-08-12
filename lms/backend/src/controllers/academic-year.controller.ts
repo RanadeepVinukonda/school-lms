@@ -29,7 +29,7 @@ export async function listAcademicYears(req: Request, res: Response) {
 }
 
 export async function getCurrentAcademicYear(_req: Request, res: Response) {
-  const result = academicYearService.getCurrentAcademicYear();
+  const result = await academicYearService.getCurrentAcademicYear();
   sendSuccess(res, {
     academicYear: result.name,
     ...result,

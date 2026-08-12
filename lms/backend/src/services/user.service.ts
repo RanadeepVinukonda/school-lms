@@ -1,7 +1,7 @@
 import { getSupabaseAdmin } from './supabase';
 import { createUser as createAuthUser, updateUser as updateAuthUser, deleteUser, getUserByPhone } from '../database/auth';
 import { NotFoundError, ValidationError, ConflictError } from '../utils/errors';
-import { deriveAcademicYear } from '../middlewares/academicYear.middleware';
+import { getCurrentAcademicYear } from './academic-year.service';
 import { logger } from '../utils/logger';
 import { parsePagination } from '../utils/pagination';
 import { generateStudentId } from '../utils/studentIdGenerator.js';
@@ -57,6 +57,7 @@ export async function createUser(data: {
   rollNo?: number; gender?: string; childrenIds?: string[]; schoolId?: string; academicYear?: string;
 }) {
   const supabase = getSupabaseAdmin();
+  const { name: ayName } = await getCurrentAcademicYear();
   let studentId = '';
   let finalClassIds = data.classIds || [];
   let studentClassId = data.classId || '';
@@ -67,7 +68,7 @@ export async function createUser(data: {
     const { data: classRow } = await supabase.from('classes').select('*').eq('id', data.classId).maybeSingle();
     if (!classRow) throw new NotFoundError('Assigned Class not found');
 
-    const acYear = data.academicYear || classRow.academic_year || new Date().getFullYear().toString();
+    const acYear = data.academicYear || classRow.academic_year || ayName;
     const { data: existingWithRoll } = await supabase
       .from('users')
       .select('id, display_name')
@@ -130,7 +131,7 @@ export async function createUser(data: {
         role: data.role, phone_number: data.phone || '', photo_url: data.photoURL || '',
         class_ids: finalClassIds, class_id: studentClassId || null,
         student_id: studentId || null, roll_no: data.rollNo || null,
-        academic_year: deriveAcademicYear(), gender: data.gender || null,
+        academic_year: ayName, gender: data.gender || null,
         children_ids: resolvedChildrenIds, is_active: true, school_id: data.schoolId || null,
         created_at: now, updated_at: now,
       };
@@ -179,7 +180,7 @@ export async function createUser(data: {
           role: data.role, phone_number: data.phone || '', photo_url: data.photoURL || '',
           class_ids: finalClassIds, class_id: studentClassId || null,
           student_id: studentId || null, roll_no: data.rollNo || null,
-          academic_year: deriveAcademicYear(), gender: data.gender || null,
+          academic_year: ayName, gender: data.gender || null,
           children_ids: resolvedChildrenIds, is_active: true, school_id: data.schoolId || null,
           created_at: now, updated_at: now,
         };
@@ -201,7 +202,7 @@ export async function createUser(data: {
     role: data.role, phone_number: data.phone || '', photo_url: data.photoURL || '',
     class_ids: finalClassIds, class_id: studentClassId || null,
     student_id: studentId || null, roll_no: data.rollNo || null,
-    academic_year: deriveAcademicYear(), gender: data.gender || null,
+    academic_year: ayName, gender: data.gender || null,
     children_ids: resolvedChildrenIds, is_active: true, school_id: data.schoolId || null,
     created_at: now, updated_at: now,
   };
@@ -250,6 +251,7 @@ export async function updateUser(uid: string, data: {
   version?: number; password?: string;
 }) {
   const supabase = getSupabaseAdmin();
+  const { name: ayName } = await getCurrentAcademicYear();
   const { exists, data: existing } = await getUserDoc(uid);
   if (!exists || !existing) throw new NotFoundError('User not found');
 
@@ -293,7 +295,7 @@ export async function updateUser(uid: string, data: {
       const { data: cls } = await supabase.from('classes').select('*').eq('id', finalClassId).maybeSingle();
       if (cls) {
         const classCode = (cls.code || cls.section ? `${cls.grade || ''}${cls.section || ''}` : 'CLASS').toUpperCase().replace(/\s+/g, '');
-        updateData.student_id = generateStudentId(deriveAcademicYear(), classCode, finalRollNo);
+        updateData.student_id = generateStudentId(ayName, classCode, finalRollNo);
       }
     }
   }

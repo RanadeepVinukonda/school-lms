@@ -25,25 +25,33 @@ export function ActiveAcademicYearProvider({ children }: { children: ReactNode }
   const refresh = useCallback(async () => {
     try {
       setLoading(true);
-      const settings = await settingsService.getSettings();
-      const year = settings?.academicYear || new Date().getFullYear().toString();
-      setActiveYearState(year);
+      let year = '';
+      let yearLabels: string[] = [];
 
-      // Also try to get all academic years from the backend
+      // 1) Prefer the admin-configured current academic year (isCurrent record).
       try {
         const res = await api.get('/academic-years');
         const items = res.data?.data?.items ?? res.data?.data ?? [];
-        const yearLabels = items.map((y: any) => y.name || y.code || y.id).filter(Boolean);
-        if (yearLabels.length > 0) {
-          setYears(yearLabels);
-        } else {
-          // Fallback: use the single current year
-          setYears([year]);
-        }
+        const current = items.find((y: any) => y.isCurrent === true);
+        if (current?.name) year = String(current.name);
+        yearLabels = items.map((y: any) => y.name || y.code || y.id).filter(Boolean);
       } catch {
-        // If fetching academic years list fails, provide the current year as the only option
-        setYears([year]);
+        // List fetch failed — fall through to settings/date fallback.
       }
+
+      // 2) Fallback: legacy settings value, then the calendar year.
+      if (!year) {
+        try {
+          const settings = await settingsService.getSettings();
+          year = settings?.academicYear || '';
+        } catch {
+          year = '';
+        }
+      }
+      if (!year) year = new Date().getFullYear().toString();
+
+      setActiveYearState(year);
+      setYears(yearLabels.length > 0 ? yearLabels : [year]);
     } catch {
       const fallback = new Date().getFullYear().toString();
       setActiveYearState(fallback);
@@ -64,7 +72,20 @@ export function ActiveAcademicYearProvider({ children }: { children: ReactNode }
     } catch {
       // Best-effort persist; context stays optimistic
     }
-  }, []);
+    // Best-effort: mark the matching academicYears record as current so every
+    // backend resolver (report cards, attendance, fees...) follows this choice.
+    try {
+      const res = await api.get('/academic-years');
+      const items = res.data?.data?.items ?? res.data?.data ?? [];
+      const match = items.find((y: any) => y.name === year || y.code === year);
+      if (match?.id && match.isCurrent !== true) {
+        await api.put(`/academic-years/${match.id}`, { isCurrent: true });
+      }
+    } catch {
+      // Best-effort; the settings value above still applies.
+    }
+    refresh();
+  }, [refresh]);
 
   return (
     <ActiveAcademicYearContext.Provider value={{ activeYear, years, loading, setActiveYear, refresh }}>

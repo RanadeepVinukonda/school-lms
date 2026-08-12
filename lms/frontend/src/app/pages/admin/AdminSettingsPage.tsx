@@ -37,6 +37,8 @@ import ProfileHeader from '@/components/profile/ProfileHeader';
 import ProfileDetails from '@/components/profile/ProfileDetails';
 import ProfilePreferences from '@/components/profile/ProfilePreferences';
 import { useAuthStore } from '@/store/authStore';
+import { useActiveAcademicYear } from '@/context/ActiveAcademicYearContext';
+import { AcademicYearsManager } from '@/app/pages/admin/AdminAcademicYearsPage';
 import type { UserDoc } from '@/services/dataService';
 import type { DependencyReport } from '@/services/dependencyService';
 import type { User } from '@/types';
@@ -89,17 +91,19 @@ export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<string>(() => (tabParam === 'profile' ? 'profile' : 'general'));
 
   useEffect(() => {
-    if (tabParam === 'profile' || tabParam === 'general' || tabParam === 'parents' || tabParam === 'audit') {
+    if (tabParam === 'profile' || tabParam === 'general' || tabParam === 'parents' || tabParam === 'audit' || tabParam === 'academic-year') {
       setActiveTab(tabParam);
     }
   }, [tabParam]);
+
+  const { refresh: refreshActiveYear, activeYear: ctxActiveYear } = useActiveAcademicYear();
 
   // -------------------------------------------------------------
   // TAB 1: GENERAL SETTINGS
   // -------------------------------------------------------------
   const [threshold, setThreshold] = useState<number>(50);
   const [schoolName, setSchoolName] = useState<string>('Genesis Academy');
-  const [academicYear, setAcademicYear] = useState<string>('2026');
+  const [academicYear, setAcademicYear] = useState<string>('');
   const [semester, setSemester] = useState<string>('First Semester');
 
   // Load backend stats
@@ -137,10 +141,10 @@ export default function AdminSettingsPage() {
     if (settings) {
       setThreshold(settings.conceptFlaggingThreshold ?? 50);
       setSchoolName(settings.schoolName ?? 'Genesis Academy');
-      setAcademicYear(settings.academicYear ?? '2026');
+      setAcademicYear(settings.academicYear ?? ctxActiveYear ?? '');
       setSemester(settings.semester ?? 'First Semester');
     }
-  }, [settings]);
+  }, [settings, ctxActiveYear]);
 
   const updateSettingsMutation = useMutation({
     mutationFn: (data: any) => settingsService.updateSettings(data),
@@ -351,6 +355,7 @@ export default function AdminSettingsPage() {
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="general">General Settings</TabsTrigger>
               <TabsTrigger value="parents">Parents</TabsTrigger>
+              <TabsTrigger value="academic-year">Academic Year</TabsTrigger>
               <TabsTrigger value="audit">Audit Logs</TabsTrigger>
             </TabsList>
 
@@ -571,6 +576,13 @@ export default function AdminSettingsPage() {
                   </table>
                 </div>
               )}
+            </TabsContent>
+
+            {/* -------------------------------------------------------------
+                TAB CONTENT: ACADEMIC YEAR
+               ------------------------------------------------------------- */}
+            <TabsContent value="academic-year" className="mt-4 space-y-6">
+              <AcademicYearsManager onYearChanged={() => refreshActiveYear()} />
             </TabsContent>
 
             {/* -------------------------------------------------------------
