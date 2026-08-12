@@ -8,9 +8,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.drawable.Drawable;
 import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
@@ -35,11 +32,12 @@ import org.json.JSONObject;
  * locked, screen off), giving us full control over the notification experience.
  *
  * Rendering (WhatsApp/Gmail-style):
- *  - Every arrival posts a child notification with the full-color Genesis logo,
- *    its per-category channel, high priority, heads-up popup, lock-screen
- *    visibility and a deep-link tap action. It appears as its own card in the
- *    shade; an update for the same entity replaces that card instead of stacking
- *    a duplicate (tag = category:entityId).
+ *  - Every arrival posts a child notification with the monochrome Genesis status
+ *    icon (the only icon in the shade — no large/logo image on the right), its
+ *    per-category channel, high priority, heads-up popup, lock-screen visibility
+ *    and a deep-link tap action. It appears as its own card in the shade; an
+ *    update for the same entity replaces that card instead of stacking a
+ *    duplicate (tag = category:entityId).
  *  - A single app-wide summary card keeps the stack collapsed, exactly like
  *    "WhatsApp · 5 new messages": title "Genesis", body "N new notifications"
  *    and an expandable Inbox-style list of the most recent titles. The summary
@@ -189,9 +187,11 @@ public class GenesisMessagingService extends FirebaseMessagingService {
      * (open, background, killed) exactly like WhatsApp / Gmail.
      */
     private NotificationCompat.Builder baseBuilder(String channelId) {
+        // Small (status-bar) icon only: Android renders it as the monochrome
+        // Genesis glyph on the left. No largeIcon is set on purpose — the full
+        // logo image on the right of the shade is redundant and non-standard.
         return new NotificationCompat.Builder(this, channelId)
                 .setSmallIcon(R.drawable.ic_stat_genesis)
-                .setLargeIcon(largeIcon())
                 .setColor(ContextCompat.getColor(this, R.color.notification_icon_color))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -334,17 +334,6 @@ public class GenesisMessagingService extends FirebaseMessagingService {
         return count == 1
                 ? count + " new notification"
                 : count + " new notifications";
-    }
-
-    private Bitmap largeIcon() {
-        Drawable d = ContextCompat.getDrawable(this, R.drawable.ic_notification_large);
-        if (d == null) return null;
-        int size = Math.round(64 * getResources().getDisplayMetrics().density);
-        Bitmap bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bmp);
-        d.setBounds(0, 0, size, size);
-        d.draw(canvas);
-        return bmp;
     }
 
     private static final class Line {

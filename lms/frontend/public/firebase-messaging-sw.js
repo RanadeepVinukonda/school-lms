@@ -8,7 +8,7 @@ fetch('/firebase-config.json')
     const messaging = firebase.messaging();
 
     messaging.onBackgroundMessage((payload) => {
-      const title = payload.notification?.title || payload.data?.title || 'Genesis LMS';
+      const title = payload.notification?.title || payload.data?.title || 'Genesis';
       const body = payload.notification?.body || payload.data?.body || '';
       const icon = payload.notification?.icon || payload.data?.icon || '/genesis_icon.png';
       const url = payload.data?.url || payload.data?.click_action || '/';

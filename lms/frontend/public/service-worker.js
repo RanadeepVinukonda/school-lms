@@ -31,7 +31,7 @@ self.addEventListener('push', (e) => {
 
   const n = payload.notification || {};
   const d = payload.data || {};
-  const title = n.title || d.title || 'New notification';
+  const title = n.title || d.title || 'Genesis';
   const body = n.body || d.body || d.message || '';
   const icon = n.icon || d.icon || '/icon-192x192.png';
 

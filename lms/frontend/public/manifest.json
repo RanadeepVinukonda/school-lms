@@ -1,6 +1,6 @@
 {
   "name": "Genesis Adaptive Learning Platform",
-  "short_name": "Genesis LMS",
+  "short_name": "Genesis",
   "description": "Adaptive learning platform with personalized curriculum, AI tutoring, and offline support for students, teachers, and parents.",
   "start_url": "/",
   "display": "standalone",

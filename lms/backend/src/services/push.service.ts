@@ -64,7 +64,9 @@ export function buildFCMMessage(
       notification: {
         channelId: categoryToChannelId(category),
         sound: 'default',
-        color: '#3B82F6',
+        // Brand teal — must match the native renderer tint (notification_icon_color)
+        // so the system-fallback notification is tinted identically.
+        color: '#26A69A',
         icon: 'ic_stat_genesis',
         // Show content on the lock screen (matches 'public' visibility).
         visibility: 'public',
@@ -132,7 +134,9 @@ export function buildAndroidDataMessage(
       // default TTL (4 weeks) is fine for school notifications.
       notification: {
         channelId: categoryToChannelId(category),
-        color: '#3B82F6',
+        // Brand teal — must match the native renderer tint (notification_icon_color)
+        // so the system-fallback notification is tinted identically.
+        color: '#26A69A',
         icon: 'ic_stat_genesis',
         // Show content on the lock screen (matches 'public' visibility).
         visibility: 'public',

@@ -263,7 +263,7 @@ export async function onForegroundMessage(
       const handle = await PushNotifications.addListener('pushNotificationReceived', (event: any) => {
         const payload = event?.notification || event || {};
         handler({
-          title: payload.title || payload?.data?.title || 'Genesis LMS',
+          title: payload.title || payload?.data?.title || 'Genesis',
           body: payload.body || payload?.data?.body || '',
           data: payload?.data || {},
         });
@@ -279,7 +279,7 @@ export async function onForegroundMessage(
     const { onMessage } = await import('firebase/messaging');
     const unsubscribe = onMessage(messaging, (payload: any) => {
       handler({
-        title: payload?.notification?.title || payload?.data?.title || 'Genesis LMS',
+        title: payload?.notification?.title || payload?.data?.title || 'Genesis',
         body: payload?.notification?.body || payload?.data?.body || '',
         data: payload?.data || {},
         notification: payload?.notification,
