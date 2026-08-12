@@ -114,7 +114,7 @@ export async function getStudentPerformance(studentId: string) {
   if (userDocErr) throw new Error(userDocErr.message);
   const userLevel = userDoc ? (userDoc.data as any)?.level || 'beginner' : 'beginner';
 
-  const allAttempts: Array<{ type: string; title: string; percentage: number; passed: boolean; submittedAt: string; level: string }> = [];
+  const allAttempts: Array<{ type: string; title: string; percentage: number; hasScore: boolean; passed: boolean; submittedAt: string; level: string }> = [];
 
   for (const type of ['quiz', 'assignment', 'exam'] as const) {
     const attemptCollectionName = type === 'quiz' ? 'quizAttemptV2' : type === 'assignment' ? 'assignmentSubmissionV2' : 'examAttemptV2';
@@ -150,6 +150,9 @@ export async function getStudentPerformance(studentId: string) {
         type,
         title,
         percentage: at.percentage ?? 0,
+        // Distinguish a graded 0% attempt (must count in the average) from an
+        // ungraded attempt (no percentage stored — must not drag it down).
+        hasScore: at.percentage != null,
         passed: at.passed ?? false,
         submittedAt: subDate,
         level: at.level || 'beginner',
@@ -159,7 +162,9 @@ export async function getStudentPerformance(studentId: string) {
 
   allAttempts.sort((a, b) => (b.submittedAt || '').localeCompare(a.submittedAt || ''));
 
-  const scored = allAttempts.filter((a) => a.percentage > 0);
+  // Include graded 0% attempts so the average matches the report card's overall
+  // score (a 0/15 assessment counts toward the total, it is not silently dropped).
+  const scored = allAttempts.filter((a) => a.hasScore);
   const overallAvg = scored.length > 0
     ? safePct(Math.round(scored.reduce((s, a) => s + a.percentage, 0) / scored.length))
     : 0;

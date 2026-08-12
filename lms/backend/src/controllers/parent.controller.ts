@@ -60,11 +60,23 @@ export async function getChildDashboard(req: Request, res: Response) {
     ? Math.round(scoredGrades.reduce((s: number, g) => s + (g.percentage as number), 0) / scoredGrades.length)
     : 0;
 
+  // Use the SAME merged-grade computation as the report card and recommendations
+  // (both grade stores, zero-scored assessments included, academic-year window)
+  // so the dashboard's "Overall Avg" always matches the Report Card.
+  // `??` keeps a genuine 0% intact; the previous analytics values only kick in
+  // if the merged computation itself failed.
+  let overallScore: { overallPercentage: number; totalAssessments: number } | null = null;
+  try {
+    overallScore = await parentService.getStudentOverallScore(studentId);
+  } catch (err) {
+    logger.warn('Failed to compute overall score for dashboard', { studentId, error: err });
+  }
+
   sendSuccess(res, {
     student,
     className,
-    overallAvgScore: (performance?.overallAvgScore as number) ?? avgScore,
-    totalAttempts: (performance?.totalAttempts as number) ?? 0,
+    overallAvgScore: overallScore?.overallPercentage ?? avgScore,
+    totalAttempts: overallScore?.totalAssessments ?? ((performance?.totalAttempts as number) ?? 0),
     recentActivity: (performance?.recentActivity ?? []) as Record<string, unknown>[],
     grades: grades,
   });
