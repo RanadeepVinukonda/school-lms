@@ -225,16 +225,14 @@ export async function getRecommendations(req: Request, res: Response) {
     const studentName = nameMap.get(childId);
     if (!studentName) continue;
 
-    const performance = (await analyticsService.getStudentPerformance(childId)) as Record<string, unknown> | null;
-    const scores = [
-      ...((performance?.quizzes ?? []) as Record<string, unknown>[]).map((q) => q.percentage as number),
-      ...((performance?.assignments ?? []) as Record<string, unknown>[]).map((a) => a.percentage as number),
-      ...((performance?.exams ?? []) as Record<string, unknown>[]).map((e) => e.percentage as number),
-    ].filter((p: number) => p > 0);
+    // Use the same merged-grade computation as the report card so the
+    // recommendations "Avg" always matches the card's "Overall Score"
+    // (includes zero-scored assessments instead of dropping them).
+    const report = await parentService.getStudentOverallScore(childId);
+    const avgScore = report.overallPercentage;
+    const totalAssessments = report.totalAssessments;
 
-    const avgScore = scores.length > 0
-      ? Math.round(scores.reduce((s: number, p: number) => s + p, 0) / scores.length)
-      : 0;
+    const performance = (await analyticsService.getStudentPerformance(childId)) as Record<string, unknown> | null;
 
     const weakSubjects: string[] = [];
     if (((performance?.quizzes ?? []) as unknown[]).length > 0) {
@@ -292,7 +290,7 @@ export async function getRecommendations(req: Request, res: Response) {
       studentId: childId,
       studentName,
       averageScore: avgScore,
-      totalAssessments: (performance?.totalAttempts as number) ?? 0,
+      totalAssessments,
       recommendations: recs,
     });
   }

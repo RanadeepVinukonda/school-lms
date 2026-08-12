@@ -321,6 +321,29 @@ export async function getChildDisplayNames(childIds: string[]): Promise<Map<stri
   return nameMap;
 }
 
+/**
+ * Lightweight overall score for a student using the SAME grade sources and
+ * math as the report card (merged stores + attempt fallback + academic-year
+ * window). Used by the recommendations engine so its "Avg" always matches the
+ * report card's "Overall Score" — including zero-scored assessments.
+ */
+export async function getStudentOverallScore(
+  studentId: string,
+  academicYear?: string,
+): Promise<{ overallPercentage: number; totalAssessments: number }> {
+  const supabase = getSupabaseAdmin()!;
+  const current = await getCurrentAcademicYear();
+  const year = academicYear || current.name;
+  const { yearStart, yearEnd } = await academicYearWindow(supabase, year);
+
+  let reportGrades = await fetchGradesForStudent(supabase, studentId, yearStart, yearEnd);
+  if (reportGrades.length === 0) {
+    reportGrades = await fetchAttemptsForStudent(supabase, studentId, yearStart, yearEnd);
+  }
+  const { overallPercentage } = aggregateGrades(reportGrades, new Map());
+  return { overallPercentage, totalAssessments: reportGrades.length };
+}
+
 export async function getYearlyReport(studentId: string, academicYear: string): Promise<any> {
   const supabase = getSupabaseAdmin()!;
 
