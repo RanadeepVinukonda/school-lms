@@ -3,6 +3,19 @@ import { getEmbedding, cosineSimilarity } from './transformers.service';
 import { getSupabaseAdmin } from './supabase';
 import { logger } from '../utils/logger';
 import { chatCompletion } from './ai.service';
+import { tokenize, countKeywordHits } from '../utils/relevance';
+
+// Minimum cosine similarity for a video to be considered relevant. Below this
+// a video only survives if its title shares real keywords with the concept
+// (a single shared word like "math" must not pull in an unrelated video).
+const MIN_SEMANTIC_SCORE = 0.28;
+// Boost added per distinct concept keyword found in the video title. Applied
+// on top of the semantic score so exact-topic videos outrank loose matches.
+const TITLE_KEYWORD_BOOST = 0.09;
+const DESC_KEYWORD_BOOST = 0.03;
+// Only titles that share at least this many concept keywords are kept when the
+// semantic score is below MIN_SEMANTIC_SCORE.
+const MIN_KEYWORD_HITS_FALLBACK = 1;
 
 async function generateSearchQueries(conceptTitle: string, subjectName: string): Promise<string[]> {
   try {
@@ -105,24 +118,68 @@ export async function searchAndRankVideos(
   try {
     const conceptText = `${conceptTitle}. ${conceptSummary}`.slice(0, 1000);
     const conceptVector = await getEmbedding(conceptText);
+    // Real topic keywords — used to stop unrelated videos from ranking just
+    // because a single generic word (e.g. "lesson") appears in both titles.
+    const conceptKeywords = tokenize(conceptTitle).filter((kw) => kw.length >= 3);
 
     const scoredVideos = await Promise.all(
       uniqueVideos.map(async (video: any) => {
         try {
-          const videoText = `${video.title}. ${video.description}`.slice(0, 1000);
+          const titleText = String(video.title || '');
+          const descText = String(video.description || '');
+          const videoText = `${titleText}. ${descText}`.slice(0, 1000);
           const videoVector = await getEmbedding(videoText);
-          const score = cosineSimilarity(conceptVector, videoVector);
+          const semantic = cosineSimilarity(conceptVector, videoVector);
 
-          return { ...video, score, embedding: videoVector, source: video.source || 'youtube', sourceLabel: video.sourceLabel || 'YouTube' };
+          // Keyword overlap boost: videos whose title actually names the topic
+          // get a head start over videos that merely resemble the concept text.
+          const titleHits = countKeywordHits(titleText, conceptKeywords);
+          const descHits = countKeywordHits(descText, conceptKeywords);
+          const keywordBoost =
+            Math.min(titleHits, 3) * TITLE_KEYWORD_BOOST +
+            Math.min(descHits, 3) * DESC_KEYWORD_BOOST;
+          const score = semantic + keywordBoost;
+
+          return {
+            ...video,
+            score,
+            semantic,
+            keywordHits: titleHits + descHits,
+            titleKeywordHits: titleHits,
+            embedding: videoVector,
+            source: video.source || 'youtube',
+            sourceLabel: video.sourceLabel || 'YouTube',
+          };
         } catch (err) {
+          // Embedding failed for this video — fall back to lexical relevance so
+          // a transient model error doesn't silently drop a clearly on-topic
+          // video (title keyword hits still keep it in the ranking).
           logger.error('Error generating embedding for video comparison', { title: video.title, err });
-          return { ...video, score: 0.1, embedding: [], source: video.source || 'youtube', sourceLabel: video.sourceLabel || 'YouTube' };
+          const titleHits = countKeywordHits(String(video.title || ''), conceptKeywords);
+          return {
+            ...video,
+            score: titleHits > 0 ? titleHits * TITLE_KEYWORD_BOOST : 0.1,
+            semantic: 0.1,
+            keywordHits: titleHits,
+            titleKeywordHits: titleHits,
+            embedding: [],
+            source: video.source || 'youtube',
+            sourceLabel: video.sourceLabel || 'YouTube',
+          };
         }
       })
     );
 
+    // Relevance gate — drop videos that are neither semantically close nor
+    // share real topic keywords. This is the fix for "completely different
+    // video came up because a word matched in the title".
+    const relevant = scoredVideos.filter((v: any) => {
+      if ((v.semantic ?? 0) >= MIN_SEMANTIC_SCORE) return true;
+      return (v.titleKeywordHits ?? 0) >= MIN_KEYWORD_HITS_FALLBACK;
+    });
+
     // Always prioritize Khan Academy content, then rank the rest by similarity.
-    scoredVideos.sort((a, b) => {
+    relevant.sort((a, b) => {
       const aKhan = a.source === 'khan_academy' ? 0 : 1;
       const bKhan = b.source === 'khan_academy' ? 0 : 1;
       return aKhan - bKhan || b.score - a.score;
@@ -131,10 +188,11 @@ export async function searchAndRankVideos(
     logger.info('Video ranking complete', {
       conceptTitle,
       totalScored: scoredVideos.length,
-      topScore: scoredVideos[0]?.score,
+      keptAfterRelevance: relevant.length,
+      topScore: relevant[0]?.score,
     });
 
-    return scoredVideos.slice(0, maxRankCount);
+    return relevant.slice(0, maxRankCount);
   } catch (err) {
     logger.error('Failed to calculate vector similarity for videos, returning default ranked list', { err });
     return uniqueVideos.slice(0, maxRankCount).map((v: any) => ({ ...v, score: 0.5, embedding: [], source: v.source || 'youtube', sourceLabel: v.sourceLabel || 'YouTube' }));

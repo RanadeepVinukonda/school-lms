@@ -1,5 +1,6 @@
 import { logger } from '../utils/logger';
 import { youtubeApiSearch, searchKhanAcademyViaApi, YtApiVideo } from './youtube-data-api.service';
+import { tokenize, countKeywordHits } from '../utils/relevance';
 
 const KA_GRAPHQL = 'https://www.khanacademy.org/api/internal/graphql';
 const WM_API = 'https://commons.wikimedia.org/w/api.php';
@@ -271,6 +272,9 @@ export async function searchEducationalVideosForConcept(
     `${conceptTitle} explained`,
   ];
 
+  const conceptKeywords = tokenize(conceptTitle);
+  const subjectKeywords = tokenize(subject);
+
   const allVideos: VideoResult[] = [];
   const seen = new Set<string>();
 
@@ -286,5 +290,24 @@ export async function searchEducationalVideosForConcept(
     if (allVideos.length >= maxResults * 2) break;
   }
 
-  return allVideos.slice(0, maxResults);
+  // Relevance gate: a video is kept when its title shares at least one real
+  // topic keyword with the concept, or the whole phrase appears. This stops
+  // unrelated videos returned by a loose search query from being attached to
+  // the concept just because a single word matched.
+  const relevant = allVideos
+    .map((v) => {
+      const titleHits = countKeywordHits(v.title, conceptKeywords);
+      const phrase = conceptTitle.toLowerCase();
+      const phraseHit = phrase.length >= 6 && (v.title.toLowerCase().includes(phrase) || v.description.toLowerCase().includes(phrase));
+      return { v, titleHits, phraseHit, score: titleHits * 3 + (countKeywordHits(v.title, subjectKeywords) > 0 ? 1 : 0) + (phraseHit ? 4 : 0) };
+    })
+    .filter(({ titleHits, phraseHit, score }) => {
+      if (titleHits >= 1 || phraseHit) return true;
+      // Concept with only generic words: fall back to a reasonable score.
+      if (conceptKeywords.length === 0) return score >= 2;
+      return false;
+    })
+    .sort((a, b) => b.score - a.score);
+
+  return relevant.slice(0, maxResults).map(({ v }) => v);
 }

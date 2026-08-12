@@ -52,6 +52,7 @@ export async function getUserByIdService(uid: string) {
 
 export async function createUser(data: {
   phone?: string; displayName: string; role: string;
+  email?: string; password?: string;
   photoURL?: string; classIds?: string[]; classId?: string;
   rollNo?: number; gender?: string; childrenIds?: string[]; schoolId?: string; academicYear?: string;
 }) {
@@ -87,9 +88,13 @@ export async function createUser(data: {
     studentClassId = data.classId;
   }
 
-  const placeholderEmail = data.role === 'student' && studentId
-    ? `${studentId.toLowerCase()}@school.edu`
-    : `${data.displayName.replace(/\s+/g, '').toLowerCase()}@school.edu`;
+  // Prefer the admin-provided email (parents/teachers/students are usually
+  // created with a real address). Fall back to the legacy generated address so
+  // existing callers that never send an email keep working unchanged.
+  const placeholderEmail = data.email
+    || (data.role === 'student' && studentId
+      ? `${studentId.toLowerCase()}@school.edu`
+      : `${data.displayName.replace(/\s+/g, '').toLowerCase()}@school.edu`);
 
   let resolvedChildrenIds = data.childrenIds || [];
   if (resolvedChildrenIds.length > 0) {
@@ -106,8 +111,22 @@ export async function createUser(data: {
     const existingUser = await getUserByPhone(data.phone);
     if (existingUser) {
       const now = new Date().toISOString();
+      const resolvedEmail = data.email || existingUser.email || placeholderEmail;
+      // Keep Supabase Auth in sync: an admin-provided email/password must work
+      // for login even when this phone already existed (e.g. an OTP-created
+      // account with a generated @school.edu address).
+      if (data.email !== undefined || data.password) {
+        try {
+          await updateAuthUser(existingUser.uid, {
+            email: data.email !== undefined ? resolvedEmail : undefined,
+            ...(data.password ? { password: data.password } : {}),
+          });
+        } catch (err: any) {
+          throw new ValidationError(`Failed to update existing account: ${err.message}`);
+        }
+      }
       const userData2 = {
-        id: existingUser.uid, email: placeholderEmail, display_name: data.displayName,
+        id: existingUser.uid, email: resolvedEmail, display_name: data.displayName,
         role: data.role, phone_number: data.phone || '', photo_url: data.photoURL || '',
         class_ids: finalClassIds, class_id: studentClassId || null,
         student_id: studentId || null, roll_no: data.rollNo || null,
@@ -122,12 +141,12 @@ export async function createUser(data: {
         const { error: rpcErr } = await supabase.rpc('increment_student_count', { class_id: data.classId!, delta: 1 });
         if (rpcErr) logger.warn('increment_student_count RPC failed', { classId: data.classId, error: rpcErr.message });
       }
-      return stripPw(userData2);
+      return { ...stripPw(userData2), generatedPassword: data.password || '' };
     }
   }
 
   let authUser: Awaited<ReturnType<typeof createAuthUser>>;
-  const autoPassword = generatePassword();
+  const autoPassword = data.password || generatePassword();
   try {
     authUser = await createAuthUser({
       phone: data.phone, displayName: data.displayName, photoURL: data.photoURL, password: autoPassword, email: placeholderEmail,
@@ -140,8 +159,23 @@ export async function createUser(data: {
       const authUser = authUsers?.users?.find((u: any) => u.phone === data.phone);
       if (authUser) {
         const now = new Date().toISOString();
+        // Keep the DB row's email consistent with what the auth user actually
+        // uses to log in: admin email if provided, otherwise the existing one.
+        const resolvedRecoveryEmail = data.email || authUser.email || placeholderEmail;
+        // Sync the admin-provided credentials onto the pre-existing auth user so
+        // the generated @school.edu address can't strand them on login.
+        if (data.email !== undefined || data.password) {
+          try {
+            await updateAuthUser(authUser.id, {
+              email: data.email !== undefined ? resolvedRecoveryEmail : undefined,
+              ...(data.password ? { password: data.password } : {}),
+            });
+          } catch (syncErr: any) {
+            throw new ValidationError(`Failed to update existing account: ${syncErr.message}`);
+          }
+        }
         const userData = {
-          id: authUser.id, email: placeholderEmail, display_name: data.displayName,
+          id: authUser.id, email: resolvedRecoveryEmail, display_name: data.displayName,
           role: data.role, phone_number: data.phone || '', photo_url: data.photoURL || '',
           class_ids: finalClassIds, class_id: studentClassId || null,
           student_id: studentId || null, roll_no: data.rollNo || null,
@@ -210,7 +244,7 @@ export async function createUser(data: {
 }
 
 export async function updateUser(uid: string, data: {
-  displayName?: string; phoneNumber?: string; photoURL?: string; disabled?: boolean;
+  displayName?: string; email?: string; phoneNumber?: string; photoURL?: string; disabled?: boolean;
   classIds?: string[]; classId?: string; rollNo?: number;
   childrenIds?: string[]; gender?: string;
   version?: number; password?: string;
@@ -226,6 +260,7 @@ export async function updateUser(uid: string, data: {
 
   const updateData: Record<string, unknown> = { updated_at: new Date().toISOString(), version: currentVersion + 1 };
   if (data.displayName) updateData.display_name = data.displayName;
+  if (data.email) updateData.email = data.email;
   if (data.phoneNumber !== undefined) updateData.phone_number = data.phoneNumber;
   if (data.photoURL !== undefined) updateData.photo_url = data.photoURL;
   if (data.disabled !== undefined) updateData.is_active = !data.disabled;
@@ -263,10 +298,17 @@ export async function updateUser(uid: string, data: {
     }
   }
 
+  // Update Supabase Auth first: if the new email is already taken or invalid,
+  // we fail before touching the users row so DB and auth never diverge.
+  if (data.disabled !== undefined || data.email) {
+    await updateAuthUser(uid, {
+      disabled: data.disabled,
+      email: data.email,
+    });
+  }
+
   const { error: updErr } = await supabase.from('users').update(updateData).eq('id', uid).eq('version', currentVersion);
   if (updErr) throw updErr;
-
-  if (data.disabled !== undefined) await updateAuthUser(uid, { disabled: data.disabled });
 
   const { data: updated } = await supabase.from('users').select('*').eq('id', uid).maybeSingle();
   if (!updated) throw new Error('Concurrent modification detected. Please retry.');

@@ -1,5 +1,6 @@
 import { logger } from '../utils/logger';
 import { chatCompletion } from './ai.service';
+import { tokenize, containsWord, countKeywordHits } from '../utils/relevance';
 
 import ytSearch from 'yt-search';
 
@@ -36,20 +37,35 @@ export async function searchVideos(query: string, maxResults = 5) {
 
 export async function searchVideosForConcept(subject: string, _chapterTitle: string, conceptTitle: string) {
   const query = `${subject} ${conceptTitle} tutorial`;
-  const allVideos = await searchVideos(query, 3);
+  const allVideos = await searchVideos(query, 5);
+
+  // Token-based relevance: a video is only returned when its title actually
+  // names the topic (whole-word match), never when a single generic substring
+  // like "math" appears somewhere in the description.
+  const conceptKeywords = tokenize(conceptTitle);
+  const subjectKeywords = tokenize(subject);
+
   const scored = allVideos.map((v: { title: string; description: string }) => {
     const title = v.title.toLowerCase();
     const desc = v.description.toLowerCase();
-    const ct = conceptTitle.toLowerCase();
     let score = 0;
-    if (title.includes(ct)) score += 3;
-    if (desc.includes(ct)) score += 1;
-    if (title.includes('tutorial') || title.includes('lesson')) score += 1;
-    if (title.includes('introduction') || title.includes('basics')) score += 1;
-    return { ...v, score };
+    const conceptTitleHits = countKeywordHits(title, conceptKeywords);
+    score += conceptTitleHits * 3;
+    if (countKeywordHits(desc, conceptKeywords) > 0) score += 1;
+    if (countKeywordHits(title, subjectKeywords) > 0) score += 1;
+    if (containsWord(title, 'tutorial') || containsWord(title, 'lesson')) score += 0.5;
+    if (containsWord(title, 'introduction') || containsWord(title, 'basics')) score += 0.5;
+    return { ...v, score, titleHits: conceptTitleHits };
   });
-  scored.sort((a: { score: number }, b: { score: number }) => b.score - a.score);
-  return scored.length > 0 ? [scored[0]] : [];
+
+  // Require at least one whole-word topic keyword in the title, or a strong
+  // aggregate score (title keyword + subject keyword). Prevents unrelated
+  // videos from sneaking in on a loose word match.
+  const relevant = scored
+    .filter((v: { score: number; titleHits: number }) => v.titleHits >= 1 || v.score >= 3)
+    .sort((a: { score: number }, b: { score: number }) => b.score - a.score);
+
+  return relevant.length > 0 ? [relevant[0]] : [];
 }
 
 async function generateMockVideos(query: string, maxResults: number) {

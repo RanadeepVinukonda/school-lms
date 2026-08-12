@@ -7,6 +7,8 @@ export const createUserSchema = z.object({
     .min(2, 'Name must be at least 2 characters')
     .max(100, 'Name must be at most 100 characters'),
   role: z.enum(['student', 'teacher', 'admin', 'parent']),
+  email: z.string().email('Invalid email address').optional(),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(128).optional(),
   photoURL: z.string().url('Invalid photo URL').optional(),
   classIds: z.array(z.string()).optional(),
   classId: z.string().optional(),
@@ -21,6 +23,7 @@ export const updateUserSchema = z.object({
     .min(2, 'Name must be at least 2 characters')
     .max(100, 'Name must be at most 100 characters')
     .optional(),
+  email: z.string().email('Invalid email address').optional(),
   phoneNumber: z.string().max(20).optional(),
   photoURL: z.string().url('Invalid photo URL').optional(),
   disabled: z.boolean().optional(),

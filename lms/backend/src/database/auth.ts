@@ -88,6 +88,8 @@ export async function updateUser(
   uid: string,
   params: {
     phone?: string;
+    email?: string;
+    password?: string;
     displayName?: string;
     photoURL?: string;
     disabled?: boolean;
@@ -98,6 +100,14 @@ export async function updateUser(
   if (!supabase) throw new Error('Supabase not configured');
   const updateBody: Record<string, unknown> = {};
   if (params.disabled !== undefined) updateBody.ban_duration = params.disabled ? '24h' : 'none';
+  if (params.email) {
+    updateBody.email = params.email;
+    // Keep the email confirmed — otherwise GoTrue clears email_confirmed_at
+    // on confirmation-enforced projects and the user can't sign in again
+    // (this mirrors how createUser creates accounts with email_confirm: true).
+    updateBody.email_confirm = true;
+  }
+  if (params.password) updateBody.password = params.password;
 
   const meta: Record<string, string> = {};
   if (params.displayName) meta.display_name = params.displayName;

@@ -12,6 +12,7 @@ import ClassSelect from '@/components/common/ClassSelect';
 
 export default function AdminAttendancePage() {
   const [selectedClass, setSelectedClass] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   const { data: reportData, isLoading: reportLoading, isError: reportError, refetch: refetchReport } = useQuery({
     queryKey: ['attendance-report', selectedClass],
@@ -58,17 +59,40 @@ export default function AdminAttendancePage() {
             {() => (
               <div className="space-y-6">
                 <div className="flex justify-end">
-                  <Button variant="outline" onClick={async () => {
+                  <Button variant="outline" disabled={exporting} onClick={async () => {
+                    if (exporting) return;
+                    setExporting(true);
                     try {
-                      const blob = await attendanceService.exportAttendanceCSV(selectedClass).then((r: any) => r);
-                      const csvBlob = new Blob([blob], { type: 'text/csv;charset=utf-8;' });
-                      const url = URL.createObjectURL(csvBlob);
+                      const blob: Blob = await attendanceService.exportAttendanceCSV(selectedClass).then((r: any) => r);
+                      // If the server answered with an error page (JSON), surface it
+                      // instead of silently downloading a broken .csv file.
+                      if (blob && blob.type && blob.type.includes('json')) {
+                        const text = await blob.text();
+                        let msg = 'Failed to export';
+                        try {
+                          const parsed = JSON.parse(text);
+                          msg = parsed?.error?.message || parsed?.message || msg;
+                        } catch { /* keep default */ }
+                        toast.error(msg);
+                        return;
+                      }
+                      const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
                       a.href = url;
                       a.download = `attendance-${selectedClass}.csv`;
+                      // Append to the DOM: some engines (Firefox, Android WebView)
+                      // ignore click() on detached anchors.
+                      document.body.appendChild(a);
                       a.click();
-                      URL.revokeObjectURL(url);
-                    } catch { toast.error('Failed to export'); }
+                      a.remove();
+                      // Revoke on a timer so the browser finishes reading the blob.
+                      setTimeout(() => URL.revokeObjectURL(url), 1000);
+                      toast.success('Attendance exported');
+                    } catch {
+                      toast.error('Failed to export');
+                    } finally {
+                      setExporting(false);
+                    }
                   }}>
                     <Icon name="download" size={16} className="mr-1.5" />
                     Export CSV

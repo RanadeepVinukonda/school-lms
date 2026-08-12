@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { Capacitor } from '@capacitor/core';
+import { PushNotificationToast } from '@/components/common/PushNotificationToast';
 import {
   requestPermission,
   getFCMToken,
@@ -89,16 +90,27 @@ export function usePushNotifications(autoRequest = false) {
     onForegroundMessage((payload) => {
       if (!payload.title && !payload.body) return;
       if (Capacitor.isNativePlatform()) return;
-      toast(payload.title, {
-        description: payload.body,
-        action: payload.data
-          ? {
-              label: 'Open',
-              onClick: () => {
-                router.navigate(resolveDeepLink(payload.data || {}));
-              },
-            }
-          : undefined,
+      const data = payload.data || {};
+      const target = resolveDeepLink(data);
+      const hasLink = Boolean(data?.link || data?.url || data?.type);
+      // Render the push with the same visual language as the app's own
+      // notification dropdown (type icon, priority accent, Open action)
+      // instead of a generic browser toast.
+      toast.custom((id) => (
+        <PushNotificationToast
+          id={id}
+          title={payload.title}
+          body={payload.body}
+          type={data?.type ? String(data.type) : undefined}
+          timestamp={Date.now()}
+          onOpen={hasLink ? () => router.navigate(target) : undefined}
+        />
+      ), {
+        duration: 6000,
+        position: 'top-right',
+        // The component draws its own surface/border/radius — don't let
+        // Sonner wrap it in its default padded toast chrome.
+        unstyled: true,
       });
     }).then((fn) => {
       unsub = fn;
