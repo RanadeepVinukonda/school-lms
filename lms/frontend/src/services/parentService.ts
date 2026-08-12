@@ -40,6 +40,6 @@ export async function getRecommendations() {
 
 export async function getYearlyReport(studentId: string, academicYear?: string) {
   const params = academicYear ? `?academicYear=${academicYear}` : '';
-  const { data } = await api.get(`/parent/children/${studentId}/yearly-report${params}`);
-  return data;
+  const res = await api.get(`/parent/children/${studentId}/yearly-report${params}`);
+  return res.data.data;
 }
