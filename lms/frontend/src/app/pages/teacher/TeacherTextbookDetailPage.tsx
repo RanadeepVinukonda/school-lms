@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -75,6 +75,13 @@ export default function TeacherTextbookDetailPage() {
       return tb;
     },
     enabled: !!textbookId,
+    // Poll while processing so progress updates continuously and the textbook
+    // auto-renders the moment processing completes, even if Supabase Realtime
+    // is unavailable.
+    refetchInterval: (query) => {
+      const tb = query.state.data as any;
+      return tb && tb.status === 'processing' ? 3000 : false;
+    },
   });
 
   useRealtimeInvalidation([{ table: 'textbooks', queryKey: ['teacher-textbook', textbookId ?? ''] }]);
@@ -409,13 +416,8 @@ export default function TeacherTextbookDetailPage() {
                                           to={`/teacher/textbooks/${textbookId}/chapters/${ch.id}/concepts/${cp.id}`}
                                           className="block group"
                                         >
-                                          <div className="border border-border/60 rounded-xl p-4 hover:border-primary/40 hover:shadow-sm transition-all bg-surface relative h-full">
-                                            <div className="flex items-start justify-between mb-2">
-                                              <h4 className="text-sm font-semibold group-hover:text-primary transition-colors line-clamp-2">{cp.title}</h4>
-                                              <span className="text-muted-foreground group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100 ml-1 shrink-0">
-                                                <Icon name="chevron_right" size={16} />
-                                              </span>
-                                            </div>
+                                          <div className="border border-border/60 rounded-xl p-4 hover:border-primary/40 hover:shadow-sm transition-all bg-surface h-full">
+                                            <h4 className="text-sm font-semibold group-hover:text-primary transition-colors line-clamp-2 mb-2">{cp.title}</h4>
                                             <div className="flex flex-wrap gap-1.5 mb-2">
                                               {cp.difficulty && (
                                                 <Badge variant="outline" className="text-[10px] capitalize">{cp.difficulty}</Badge>
@@ -427,14 +429,6 @@ export default function TeacherTextbookDetailPage() {
                                               <span className="flex items-center gap-1"><Icon name="quiz" size={12} />{cp.questionBank?.length || 0}</span>
                                               {cp.estimatedMinutes ? <span className="flex items-center gap-1"><Icon name="schedule" size={12} />{cp.estimatedMinutes}m</span> : null}
                                             </div>
-                                            <Link
-                                              to={`/teacher/assessments/create?textbookId=${textbookId}&chapterId=${ch.id}&conceptId=${cp.id}`}
-                                              className="absolute top-2 right-2 text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity"
-                                              onClick={(e) => e.stopPropagation()}
-                                              title="Create assessment"
-                                            >
-                                              <Icon name="add_circle" size={18} />
-                                            </Link>
                                           </div>
                                         </Link>
                                       ))}

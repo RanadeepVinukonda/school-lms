@@ -75,12 +75,15 @@ export async function searchAndRankVideos(
     }
   }
 
-  // Multi-source educational video search + local embedding ranking
-  const queries = await generateSearchQueries(conceptTitle, subjectName);
+  // Multi-source educational video search + local embedding ranking.
+  // Cap to 2 queries per concept to stay well within the YouTube Data API
+  // daily quota, and stop early once we have a healthy pool to rank.
+  const queries = (await generateSearchQueries(conceptTitle, subjectName)).slice(0, 2);
 
   const videoMap = new Map<string, any>();
 
   for (const query of queries) {
+    if (videoMap.size >= maxRankCount * 3) break;
     try {
       const results = await searchEducationalVideos(query, 5);
       for (const video of results) {

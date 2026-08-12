@@ -1,4 +1,5 @@
 import { logger } from '../utils/logger';
+import { youtubeApiSearch, searchKhanAcademyViaApi, YtApiVideo } from './youtube-data-api.service';
 
 const KA_GRAPHQL = 'https://www.khanacademy.org/api/internal/graphql';
 const WM_API = 'https://commons.wikimedia.org/w/api.php';
@@ -18,7 +19,34 @@ interface VideoResult {
   relevance: number;
 }
 
+function fromApiVideo(v: YtApiVideo, source: 'khan_academy' | 'youtube', sourceLabel: string): VideoResult {
+  return {
+    id: `${source === 'khan_academy' ? 'ka' : 'yt'}_${v.videoId}`,
+    source,
+    sourceLabel,
+    videoId: v.videoId,
+    title: v.title,
+    thumbnail: v.thumbnail || `https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg`,
+    duration: v.duration || '0:00',
+    channelName: source === 'khan_academy' ? 'Khan Academy' : v.channelTitle || 'YouTube',
+    description: v.description || '',
+    embedUrl: `https://www.youtube.com/embed/${v.videoId}`,
+    url: `https://www.youtube.com/watch?v=${v.videoId}`,
+    relevance: 1.0,
+  };
+}
+
 async function searchKhanAcademy(query: string, maxResults: number): Promise<VideoResult[]> {
+  // Official YouTube Data API search over Khan Academy channels first (reliable).
+  try {
+    const apiResults = await searchKhanAcademyViaApi(query, maxResults);
+    if (apiResults.length > 0) {
+      return apiResults.map((v) => fromApiVideo(v, 'khan_academy', 'Khan Academy'));
+    }
+  } catch (err) {
+    logger.warn('Khan Academy YouTube API search failed, falling back to GraphQL', { query, error: (err as Error).message });
+  }
+
   try {
     const body = JSON.stringify({
       operationName: 'search',
@@ -132,27 +160,39 @@ async function searchWikimedia(query: string, maxResults: number): Promise<Video
 }
 
 async function searchYouTube(query: string, maxResults: number): Promise<VideoResult[]> {
+  // yt-search first (free); the official YouTube Data API is the rescue path
+  // when scraping is blocked, so we do not spend daily API quota unnecessarily.
+  const ytSearch = require('yt-search');
   try {
-    const ytSearch = require('yt-search');
     const r = await ytSearch(query);
     const videos = (r.videos || []).slice(0, maxResults);
 
-    return videos.map((v: any, i: number) => ({
-      id: `yt_${v.videoId}`,
-      source: 'youtube' as const,
-      sourceLabel: 'YouTube',
-      videoId: v.videoId,
-      title: v.title,
-      thumbnail: v.thumbnail || `https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg`,
-      duration: v.timestamp || '0:00',
-      channelName: v.author?.name || 'Unknown',
-      description: v.description || '',
-      embedUrl: `https://www.youtube.com/embed/${v.videoId}`,
-      url: `https://www.youtube.com/watch?v=${v.videoId}`,
-      relevance: 1.0 - i * 0.15,
-    }));
+    if (videos.length > 0) {
+      return videos.map((v: any, i: number) => ({
+        id: `yt_${v.videoId}`,
+        source: 'youtube' as const,
+        sourceLabel: 'YouTube',
+        videoId: v.videoId,
+        title: v.title,
+        thumbnail: v.thumbnail || `https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg`,
+        duration: v.timestamp || '0:00',
+        channelName: v.author?.name || 'Unknown',
+        description: v.description || '',
+        embedUrl: `https://www.youtube.com/embed/${v.videoId}`,
+        url: `https://www.youtube.com/watch?v=${v.videoId}`,
+        relevance: 1.0 - i * 0.15,
+      }));
+    }
+    logger.warn('yt-search returned no results; falling back to YouTube Data API', { query });
   } catch (err) {
-    logger.warn('YouTube search failed', { query, error: (err as Error).message });
+    logger.warn('YouTube search failed; falling back to YouTube Data API', { query, error: (err as Error).message });
+  }
+
+  try {
+    const apiResults = await youtubeApiSearch({ query, maxResults });
+    return apiResults.map((v) => fromApiVideo(v, 'youtube', 'YouTube'));
+  } catch (err) {
+    logger.warn('YouTube Data API search failed', { query, error: (err as Error).message });
     return [];
   }
 }
