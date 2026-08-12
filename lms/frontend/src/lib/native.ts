@@ -12,7 +12,7 @@
  *  - Android back button: SPA-aware (browser history first, then minimize).
  *  - Deep links (`https://…` and `com.school.lms://…`): route inside the SPA.
  *  - Network status: surface a minimal offline banner + retry.
- *  - Helpers: native share, clipboard write, external URL opening.
+ *  - Helpers: native share, file export (FileShare plugin), external URL opening.
  */
 
 import { consumeBackPress } from './backHandler';
@@ -190,67 +190,58 @@ export async function nativeShare(payload: { title?: string; text?: string; url?
   }
 }
 
-/** Copy text to the clipboard (native plugin on Android, Web Clipboard API elsewhere). */
-export async function nativeCopy(text: string): Promise<boolean> {
-  if (!(await isNativeAsync())) {
-    try {
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-  try {
-    const { Clipboard } = await import('@capacitor/clipboard');
-    await Clipboard.write({ string: text });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/** Plain-text version of the file (used for the clipboard fallback). */
-async function blobToText(blob: Blob): Promise<string> {
-  return blob.text();
+/** Base64-encode a blob (safe, charset-proof transport for the native bridge). */
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result || '');
+      resolve(dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl);
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
 }
 
 /**
  * Export a file (CSV/PDF) on native platforms.
  *
  * Android WebViews silently swallow browser-style `<a download>` clicks, so the
- * file never lands in Downloads. Instead we open the system share sheet with
- * the file attached (Web Share API Level 2 — supported by modern Android
- * WebViews) so the user can "Save to Files", open it in Sheets/Drive, or send
- * it via WhatsApp. If file sharing is unavailable, the raw text is copied to
- * the clipboard so the data is never lost.
+ * file would never land in Downloads. The FileShare native plugin writes a real
+ * file into app storage and hands Android a `content://` URI (FileProvider),
+ * then opens the system **Open With** chooser (Excel / Google Sheets / …),
+ * falling back to the share sheet (Save to Files / Drive) when no app can open
+ * the type. No clipboard is involved.
  *
  * Returns 'unsupported' on web (caller uses the normal browser download),
- * 'shared' after the share sheet completed, 'copied' when the file was copied
- * to the clipboard instead, 'dismissed' when the user cancelled.
+ * 'shared' when the file was handed to the chooser, 'dismissed' when the user
+ * cancelled, or 'failed' when no app on the device can open/share the file.
  */
-export async function exportFileOnNative(blob: Blob, filename: string): Promise<'shared' | 'copied' | 'dismissed' | 'unsupported'> {
+export async function exportFileOnNative(
+  blob: Blob,
+  filename: string,
+  mimeType = 'text/csv',
+): Promise<'shared' | 'dismissed' | 'failed' | 'unsupported'> {
   if (!(await isNativeAsync())) return 'unsupported';
 
-  // 1) System share sheet with the file attached.
-  if (typeof navigator.share === 'function') {
-    try {
-      const file = new File([blob], filename, { type: blob.type || 'text/plain' });
-      await navigator.share({ title: filename, files: [file] });
-      return 'shared';
-    } catch (err) {
-      const name = (err as Error)?.name || '';
-      if (name === 'AbortError') return 'dismissed'; // user closed the sheet
-      // NotSupportedError / NotAllowedError → fall through to clipboard.
-    }
-  }
-
-  // 2) Clipboard fallback — the CSV text is always recoverable.
   try {
-    const text = await blobToText(blob);
-    const ok = await nativeCopy(text);
-    return ok ? 'copied' : 'dismissed';
-  } catch {
-    return 'dismissed';
+    const { registerPlugin } = await import('@capacitor/core');
+    const FileShare = registerPlugin<{
+      open: (opts: { filename: string; mimeType: string; content: string }) => Promise<{ status: string }>;
+    }>('FileShare');
+    const content = await blobToBase64(blob);
+    await FileShare.open({ filename, mimeType, content });
+    return 'shared';
+  } catch (err) {
+    const e = err as { code?: string; message?: string } | null;
+    const code = e?.code || '';
+    const message = e?.message || '';
+    // Old APK without the FileShare plugin → let the caller use the browser
+    // download path instead of a confusing error toast.
+    if (/not registered|unimplemented/i.test(code + message)) return 'unsupported';
+    // The plugin resolves as soon as the chooser opens, so a rejection is
+    // always a real failure (never a user cancel) — no "dismissed" path.
+    return 'failed';
   }
 }
 

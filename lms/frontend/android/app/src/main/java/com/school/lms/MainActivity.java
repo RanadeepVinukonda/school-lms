@@ -29,6 +29,10 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
+        // FileShare: real CSV/PDF export through the Android Open With / Share
+        // chooser (content:// URI via FileProvider). Registered before the
+        // bridge is built so the web layer can call Capacitor.Plugins.FileShare.
+        registerPlugin(FileSharePlugin.class);
         super.onCreate(savedInstanceState);
 
         WebView webView = getBridge().getWebView();

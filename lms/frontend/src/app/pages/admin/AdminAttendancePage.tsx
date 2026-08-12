@@ -10,10 +10,13 @@ import { Icon } from '@/components/ui/Icon';
 import { attendanceService } from '@/services/attendanceService';
 import { exportFileOnNative } from '@/lib/native';
 import ClassSelect from '@/components/common/ClassSelect';
+import { useClasses } from '@/hooks/useClasses';
+import { formatClassName } from '@/services/classService';
 
 export default function AdminAttendancePage() {
   const [selectedClass, setSelectedClass] = useState('');
   const [exporting, setExporting] = useState(false);
+  const { data: classes = [] } = useClasses();
 
   const { data: reportData, isLoading: reportLoading, isError: reportError, refetch: refetchReport } = useQuery({
     queryKey: ['attendance-report', selectedClass],
@@ -77,17 +80,24 @@ export default function AdminAttendancePage() {
                         toast.error(msg);
                         return;
                       }
-                      const filename = `attendance-${selectedClass}.csv`;
-                      // On the mobile app, open the system share sheet with the CSV
-                      // attached (Save to Files / Drive / Sheets) — WebViews swallow
-                      // downloads, so the file would otherwise be lost.
-                      const native = await exportFileOnNative(blob, filename);
+                      // Useful, human-readable filename, e.g.
+                      // Attendance_Grade_1_B_2026-08-12.csv
+                      const cls = classes.find((c) => c.id === selectedClass);
+                      const label = (formatClassName(cls) || selectedClass).replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+                      const now = new Date();
+                      const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                      const filename = `Attendance_${label || 'Class'}_${date}.csv`;
+                      // On the mobile app, the FileShare native plugin writes the real
+                      // .csv and opens the Android Open With / Share chooser with a
+                      // content:// URI — WebViews swallow downloads, so the file
+                      // would otherwise be lost. No clipboard involved.
+                      const native = await exportFileOnNative(blob, filename, 'text/csv');
                       if (native === 'shared') {
-                        toast.success('Attendance CSV ready — choose where to save it');
+                        toast.success('Attendance CSV ready — choose an app to open it');
                         return;
                       }
-                      if (native === 'copied') {
-                        toast.success('CSV copied to clipboard — paste it into a spreadsheet app');
+                      if (native === 'failed') {
+                        toast.error('Export failed — no app available to open the CSV on this device');
                         return;
                       }
                       if (native === 'dismissed') {
