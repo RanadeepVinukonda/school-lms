@@ -47,12 +47,17 @@ public class FileSharePlugin extends Plugin {
         "com.microsoft.office.officehub",
     };
 
-    /** Spreadsheet MIME types Excel understands for CSV data. */
+    /**
+     * Spreadsheet MIME types Excel understands for CSV data, most-registered
+     * first. Excel on Android is picky: several versions only register
+     * {@code application/vnd.ms-excel} and {@code text/comma-separated-values}
+     * (not {@code text/csv}), so those are tried before the plain CSV type.
+     */
     private static final String[] CSV_MIMES = {
-        "text/csv",
         "application/vnd.ms-excel",
         "text/comma-separated-values",
         "application/csv",
+        "text/csv",
     };
 
     /**
