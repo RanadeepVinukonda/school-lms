@@ -62,10 +62,13 @@ async function getConceptContext(conceptId: string): Promise<ConceptContext> {
   let subjectName = '';
   let gradeLevel: string | undefined;
   if (subjectId) {
-    const { data: subject } = await db.from('subjects').select('name, "classId"').eq('id', subjectId).maybeSingle();
+    // subjects/classes may carry class_id OR classId (different migrations created both) —
+    // request * and read whichever column exists so the lookup can't 500 on a bad column name.
+    const { data: subject } = await db.from('subjects').select('*').eq('id', subjectId).maybeSingle();
     subjectName = subject?.name as string || '';
-    if (subject?.classId) {
-      const { data: cls } = await db.from('classes').select('name, grade').eq('id', subject.classId).maybeSingle();
+    const classId = (subject?.classId as string | null) || (subject?.class_id as string | null) || null;
+    if (classId) {
+      const { data: cls } = await db.from('classes').select('*').eq('id', classId).maybeSingle();
       if (cls) gradeLevel = (cls.grade as string) || (cls.name as string) || undefined;
     }
   }
@@ -121,20 +124,26 @@ async function getExistingRequests(studentId: string, conceptIds: string[]): Pro
 /** Concepts the student scored low on (from exams), enriched with context + request status. */
 export async function getStudentRecommendations(studentId: string) {
   const weak = await getWeakConcepts(studentId);
-  const contexts = await Promise.all(weak.map((w) => getConceptContext(w.conceptId)));
-  const existing = await getExistingRequests(studentId, weak.map((w) => w.conceptId));
+  const contexts = await Promise.all(weak.map(async (w) => {
+    try {
+      return await getConceptContext(w.conceptId);
+    } catch (err) {
+      // concept_mastery row may point at a deleted concept — skip it instead of failing the whole tab.
+      logger.warn('Skipping orphaned weak concept', { studentId, conceptId: w.conceptId, error: (err as Error).message });
+      return null;
+    }
+  }));
+  const pairs = weak.map((w, i) => ({ w, ctx: contexts[i] })).filter((p): p is { w: typeof weak[number]; ctx: NonNullable<typeof contexts[number]> } => p.ctx !== null);
+  const existing = await getExistingRequests(studentId, pairs.map((p) => p.w.conceptId));
 
-  return contexts.map((ctx, i) => {
-    const w = weak[i];
-    return {
-      ...ctx,
-      masteryScore: w.masteryScore,
-      attemptCount: w.attemptCount,
-      lastReviewedAt: w.lastReviewedAt,
-      requestStatus: existing.get(ctx.conceptId) || 'none',
-      reason: `Needs practice (mastery: ${Math.round(w.masteryScore * 100)}%)`,
-    };
-  });
+  return pairs.map(({ w, ctx }) => ({
+    ...ctx,
+    masteryScore: w.masteryScore,
+    attemptCount: w.attemptCount,
+    lastReviewedAt: w.lastReviewedAt,
+    requestStatus: existing.get(ctx.conceptId) || 'none',
+    reason: `Needs practice (mastery: ${Math.round(w.masteryScore * 100)}%)`,
+  }));
 }
 
 /** Student requests curated resources for a concept they scored low on. */

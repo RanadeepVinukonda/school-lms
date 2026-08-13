@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '../supabase';
+import { logger } from '../../utils/logger';
 
 // ponytail: removed addMasteryJob call — always returned false, was dead code.
 export async function computeMastery(studentId: string, conceptId: string, accuracy: number): Promise<number> {
@@ -17,7 +18,10 @@ export async function computeMasteryInline(studentId: string, conceptId: string,
     .maybeSingle();
   if (existingErr) throw new Error(existingErr.message);
 
-  let schoolId = existing?.school_id as string | null | undefined;
+  // Resolve school_id from the existing row, then the student's profile, then the
+  // concept itself (legacy concepts are sometimes missing one of these). A null
+  // school_id used to hit the NOT NULL column and silently kill the whole upsert.
+  let schoolId = (existing?.school_id as string | null | undefined) || null;
   if (!schoolId) {
     const { data: student } = await supabase
       .from('users')
@@ -25,6 +29,14 @@ export async function computeMasteryInline(studentId: string, conceptId: string,
       .eq('id', studentId)
       .maybeSingle();
     schoolId = (student?.school_id as string | null) || null;
+  }
+  if (!schoolId) {
+    const { data: concept } = await supabase
+      .from('concepts')
+      .select('school_id')
+      .eq('id', conceptId)
+      .maybeSingle();
+    schoolId = (concept?.school_id as string | null) || null;
   }
 
   const prevScore = (existing?.mastery_score as number) || 0;
@@ -34,16 +46,23 @@ export async function computeMasteryInline(studentId: string, conceptId: string,
     ? accuracy
     : (prevScore * attemptCount + accuracy) / (attemptCount + 1);
 
-  const { error } = await supabase.from('concept_mastery').upsert({
+  const payload: Record<string, unknown> = {
     student_id: studentId,
     concept_id: conceptId,
-    school_id: schoolId,
     accuracy,
     attempt_count: attemptCount + 1,
     mastery_score: Math.round(newScore * 100) / 100,
     last_reviewed_at: new Date().toISOString(),
-  }, { onConflict: 'student_id,concept_id' });
-  if (error) throw new Error(`Failed to upsert concept mastery: ${error.message}`);
+  };
+  if (schoolId) payload.school_id = schoolId;
+
+  const { error } = await supabase.from('concept_mastery').upsert(payload, { onConflict: 'student_id,concept_id' });
+  if (error) {
+    if (!schoolId) {
+      logger.warn('Mastery upsert without school_id failed', { studentId, conceptId, error: error.message });
+    }
+    throw new Error(`Failed to upsert concept mastery: ${error.message}`);
+  }
 
   return newScore;
 }
