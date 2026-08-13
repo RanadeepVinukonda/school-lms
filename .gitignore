@@ -1,54 +1,67 @@
+# ---- Dependencies ----------------------------------------------------
 node_modules/
+
+# ---- Build output ----------------------------------------------------
 dist/
+coverage/
+coverage-report/
+tsc_out.txt
+tsc-output.txt
+*.tsbuildinfo
+*.apk
+dist-apk/
+
+# ---- Environment & secrets (NEVER commit real values) ---------------
 **/.env
 **/.env.local
 **/.env.vercel
-*.log
-.DS_Store
-_ignore_this/
-.vercel
+**/.env.*.local
 *_env.env
-.vscode/
-.kiro/
+.env.production
 
-# Agent config dirs
+# ---- Logs ------------------------------------------------------------
+*.log
+
+# ---- Editor / OS -----------------------------------------------------
+.DS_Store
+.vscode/
+.idea/
+.kiro/
+.kilo/
+.agent/
+
+# ---- Agent scratch ---------------------------------------------------
 .amazonq/
 .claude/
 .codex/
 .gemini/
 .kilocode/
 .opencode/
-
-# Build artifacts
-coverage/
-coverage-report/
-tsc_out.txt
-
-# Scratch
-scratch/
-
-# Expo native directories
-.expo/
-ios/
-android/
-
-# Custom ignored patterns for repository cleanup
 .agent/
-.kilo/
 graphify-out/
 openspec/
 mempalace.yaml
 entities.json
 lms-flowchart.html
-# package-lock.json files are needed for vercel/render builds (npm ci)
-# lms/package-lock.json is a stale monorepo root lock file
+skills-lock.json
+scratch/
+archive/
+_ignore_this/
+
+# ---- Vercel ----------------------------------------------------------
+.vercel/
+
+# ---- Expo / native ---------------------------------------------------
+.expo/
+ios/
+android/
+
+# ---- Monorepo lock files (stale roots) --------------------------------
+# Real lock files that npm ci needs are tracked:
+#   lms/backend/package-lock.json, lms/frontend/package-lock.json,
+#   genesis-webview/package-lock.json
 lms/package-lock.json
 package-lock.json
-skills-lock.json
-*.md
-**/docs/
 
-
+# ---- Mobile workspace -------------------------------------------------
 lms/mobile/
-dist-apk/
-
