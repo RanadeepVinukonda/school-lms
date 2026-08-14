@@ -79,16 +79,20 @@ async function resolveQuizConceptIds(quizData: Record<string, unknown>, studentI
       const subjectSet = new Set((subjectConcepts || []).map((c: any) => c.id as string));
       if (subjectSet.size === 0) return [];
 
+      // Prefer the student's most-recently-reviewed concepts in this subject, but
+      // fall back to the subject's concepts directly so a first-time low scorer still
+      // gets mastery written and shows up in Resources recommendations.
       const { data: mastered } = await supabase
         .from('concept_mastery')
         .select('concept_id, last_reviewed_at')
         .eq('student_id', studentId)
         .order('last_reviewed_at', { ascending: false })
         .limit(50);
-      return (mastered || [])
+      const reviewed = (mastered || [])
         .map((m: any) => m.concept_id as string)
-        .filter((id) => subjectSet.has(id))
-        .slice(0, 3);
+        .filter((id) => subjectSet.has(id));
+      if (reviewed.length > 0) return reviewed.slice(0, 3);
+      return [...subjectSet].slice(0, 3);
     }
   } catch (err) {
     logger.warn('Failed to resolve quiz concepts for mastery', { quizId: quizData.id, error: err });
