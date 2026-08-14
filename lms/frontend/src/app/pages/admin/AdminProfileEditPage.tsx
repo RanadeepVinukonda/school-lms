@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -11,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Icon } from '@/components/ui/Icon';
-import { cardStackReveal } from '@/lib/motion';
 import { getInitials } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import { uploadProfileImage } from '@/services/avatarService';
@@ -27,7 +25,6 @@ export default function AdminProfileEditPage() {
   const setUser = useAuthStore((s) => s.setUser);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const [form, setForm] = useState({
     displayName: '',
     email: '',
@@ -37,7 +34,6 @@ export default function AdminProfileEditPage() {
   });
 
   const [avatarPreview, setAvatarPreview] = useState('');
-
   const { data: userDoc, isLoading: loadingProfile } = useQuery({
     queryKey: ['admin-profile-edit', user?.id],
     queryFn: () => (user?.id ? getUser(user.id) : null),
@@ -97,13 +93,13 @@ export default function AdminProfileEditPage() {
   return (
     <>
       <SEOHead title="Edit Profile" description="Update your admin profile" />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-2xl mx-auto pb-32"
       >
-        <motion.div variants={cardStackReveal} custom={0} className="space-y-16">
+        <div className="space-y-16">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={() => navigate(ADMIN_SETTINGS_PROFILE)}>
               <Icon name="arrow_back" size={18} />
@@ -158,8 +154,8 @@ export default function AdminProfileEditPage() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </>
   );
 }

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
-import { motion } from 'framer-motion';
 import { supabase } from '@/supabase/config';
 import { useAuthStore } from '@/store/authStore';
 import { logAudit } from '@/services/auditService';
@@ -10,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ROUTES } from '@/lib/constants';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 
 export default function RollNumberEntryPage() {
   const { _ } = useTranslation();
@@ -36,7 +34,6 @@ export default function RollNumberEntryPage() {
     try {
       const grade = cleaned.slice(0, -2) || cleaned[0];
       const roll = cleaned.slice(-2);
-
       const { data: classRows, error: classErr } = await supabase.from('classes').select('*').eq('grade', grade).eq('status', 'active');
       if (classErr) throw classErr;
 
@@ -46,7 +43,6 @@ export default function RollNumberEntryPage() {
         return;
       }
       const classId = classRows[0].id;
-
       const { data: duplicates, error: dupErr } = await supabase.from('users').select('id').eq('class_id', classId).eq('student_id', cleaned);
       if (dupErr) throw dupErr;
       if (duplicates && duplicates.length > 0) {
@@ -114,13 +110,13 @@ export default function RollNumberEntryPage() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+    <div
+
+
+
       className="flex min-h-screen items-center justify-center bg-background sm:px-6 px-4"
     >
-      <motion.div variants={cardStackReveal} custom={0} className="w-full max-w-sm">
+      <div className="w-full max-w-sm">
         <form onSubmit={handleSubmit} className="w-full space-y-6">
           <div className="text-center space-y-2">
             <img src="/genesis_icon.png" alt={_('Genesis')} className="mx-auto h-16 w-auto" />
@@ -143,7 +139,7 @@ export default function RollNumberEntryPage() {
             {_('Continue')}
           </Button>
         </form>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }

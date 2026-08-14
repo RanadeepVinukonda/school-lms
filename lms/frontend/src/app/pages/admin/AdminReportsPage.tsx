@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -58,7 +57,6 @@ export default function AdminReportsPage() {
   const [remarks, setRemarks] = useState('');
   const [assignTo, setAssignTo] = useState('');
   const [newStatus, setNewStatus] = useState('');
-
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['admin-reports', activeTab],
     queryFn: () => {
@@ -80,9 +78,7 @@ export default function AdminReportsPage() {
   });
 
   const { data: classes } = useClasses();
-
   const classList = classes ?? [];
-
   const updateMutation = useMutation({
     mutationFn: () => api.put(`/report-feedback/${selectedReport?.id}`, {
       ...(newStatus && { status: newStatus }),
@@ -123,7 +119,7 @@ export default function AdminReportsPage() {
   return (
     <>
       <SEOHead title={_('Reports & Suggestions')} description={_('Manage user reports and suggestions')} />
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="sm:p-6 p-4 max-w-7xl mx-auto space-y-6 pb-32">
+      <div className="sm:p-6 p-4 max-w-7xl mx-auto space-y-6 pb-32">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-headline-md font-bold">{_('Reports & Suggestions')}</h1>
@@ -312,7 +308,7 @@ export default function AdminReportsPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </motion.div>
+      </div>
     </>
   );
 }

@@ -1,6 +1,5 @@
 import { useTranslation } from '@/hooks/useTranslation';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
 import { ROUTES } from '@/lib/constants';
-import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useTeacherReviewData } from '@/hooks/useTeacherReviewData';
 
 export default function TeacherNeedCorrectionPage() {
@@ -18,10 +16,8 @@ export default function TeacherNeedCorrectionPage() {
   return (
     <>
       <SEOHead title={_('Need Correction')} description={_('Exams that still need to be marked and corrected')} canonical="/teacher/need-correction" />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32"
       >
         <div className="mb-6 flex items-center gap-3">
@@ -36,7 +32,7 @@ export default function TeacherNeedCorrectionPage() {
 
         <DataFetchWrapper data={data} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="card">
           {(d) => (
-            <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-4">
+            <div className="space-y-4">
               {d.needCorrection.length === 0 ? (
                 <Card className="border-border/60">
                   <CardContent className="p-10 text-center">
@@ -49,7 +45,7 @@ export default function TeacherNeedCorrectionPage() {
                 d.needCorrection.map((item, idx) => {
                   const exam = item.exam;
                   return (
-                    <motion.div key={exam.id} variants={cardStackReveal} custom={idx}>
+                    <div key={exam.id}>
                       <Card className="border-border/60">
                         <CardContent className="p-5">
                           <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -79,14 +75,14 @@ export default function TeacherNeedCorrectionPage() {
                           </div>
                         </CardContent>
                       </Card>
-                    </motion.div>
+                    </div>
                   );
                 })
               )}
-            </motion.div>
+            </div>
           )}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

@@ -1,6 +1,5 @@
 import { useState, useMemo, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { motion, useInView } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -12,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Icon } from '@/components/ui/Icon';
 import { OptionsSelect } from '@/components/ui/select';
-import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { supabase } from '@/supabase/config';
 import { getAllUsers, getAllClasses, getAllGrades, getAllExams, getAllAssignments } from '@/services/dataService';
 import { analyticsService } from '@/services/analyticsService';
@@ -24,19 +22,13 @@ interface ExamDoc { id: string; title: string; startDate?: string; endDate?: str
 interface AssignmentDoc { id: string; title: string; dueDate?: string; createdAt?: string; due_date?: string; created_at?: string; }
 
 function SectionTitle({ label, title }: { label: string; title: string }) {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true });
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 24 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.5, ease: [0.05, 0, 0.133333, 0.06] }}
+    <div
       className="mb-6"
     >
       <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">{label}</p>
       <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">{title}</h2>
-    </motion.div>
+    </div>
   );
 }
 
@@ -51,7 +43,6 @@ export default function AdminDashboardPage() {
   const [testsTypeFilter, setTestsTypeFilter] = useState('all');
   const [testsSearchOpen, setTestsSearchOpen] = useState(false);
   const [inspectTest, setInspectTest] = useState<any | null>(null);
-
   const { data: conductedTestsData = [], isLoading: isTestsLoading, isError: isTestsError, refetch: refetchTests } = useQuery({
     queryKey: ['admin-conducted-tests'],
     queryFn: () => analyticsService.getConductedTests(),
@@ -95,7 +86,6 @@ export default function AdminDashboardPage() {
 
       const exams: ExamDoc[] = ((examsRaw || []) as unknown) as ExamDoc[];
       const assignments: AssignmentDoc[] = ((assignmentsRaw || []) as unknown) as AssignmentDoc[];
-
       const studentCount = users.filter((u) => u.role === 'student').length;
       const teacherCount = users.filter((u) => u.role === 'teacher').length;
       const upcomingExamCount = exams.filter((e) => {
@@ -245,14 +235,14 @@ export default function AdminDashboardPage() {
       <SEOHead title="School Health Dashboard" description="Actionable insights and school health metrics" canonical="/admin/dashboard" />
       <div className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-8">
         <section>
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.05, 0, 0.133333, 0.06] }}
+          <div
+
+
+
           >
             <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">{_('School Dashboard')}</h1>
             <p className="text-body-md text-muted-foreground mt-1">{_('Actionable oversight and analytics')}</p>
-          </motion.div>
+          </div>
 
           <div className="mt-6 flex gap-2 bg-muted/40 p-1.5 rounded-xl border border-border/60 w-full sm:w-fit overflow-x-auto">
             {TABS.map((tab) => (
@@ -285,25 +275,25 @@ export default function AdminDashboardPage() {
           loadingType="card"
         >
           {() => (
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              animate="show"
+            <div
+
+
+
               key={activeTab}
             >
               {activeTab === 'overview' && (
                 <div className="space-y-16">
                   <section>
                     <SectionTitle label={_('Metrics')} title={_('School-wide statistics')} />
-                    <motion.div
-                      variants={staggerContainer}
-                      initial="hidden"
-                      whileInView="show"
-                      viewport={{ once: true, margin: '-60px' }}
+                    <div
+
+
+
+
                       className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
                     >
                       {statCards.map((s) => (
-                        <motion.div key={s.label} variants={cardStackReveal} custom={0}>
+                        <div key={s.label}>
                           <Card className="border-border/60 h-full">
                             <CardContent className="p-5">
                               <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${s.bg}`}>
@@ -313,15 +303,15 @@ export default function AdminDashboardPage() {
                               <p className="text-label-sm text-muted-foreground mt-1">{s.label}</p>
                             </CardContent>
                           </Card>
-                        </motion.div>
+                        </div>
                       ))}
-                    </motion.div>
+                    </div>
                   </section>
 
                   <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div>
                       <SectionTitle label={_('Students')} title={_('At-risk & performance')} />
-                      <motion.div variants={cardStackReveal} custom={0}>
+                      <div>
                         <Card className="border-border/60">
                           <CardHeader className="pb-3">
                             <CardTitle className="text-title-sm flex items-center gap-2">
@@ -354,12 +344,12 @@ export default function AdminDashboardPage() {
                             )}
                           </CardContent>
                         </Card>
-                      </motion.div>
+                      </div>
                     </div>
 
                     <div>
                       <SectionTitle label={_('Staff')} title={_('Teacher workload')} />
-                      <motion.div variants={cardStackReveal} custom={0}>
+                      <div>
                         <Card className="border-border/60">
                           <CardHeader className="pb-3">
                             <CardTitle className="text-title-sm flex items-center gap-2">
@@ -385,13 +375,13 @@ export default function AdminDashboardPage() {
                             )}
                           </CardContent>
                         </Card>
-                      </motion.div>
+                      </div>
                     </div>
                   </section>
 
                   <section>
                     <SectionTitle label={_('Activity')} title={_('Recent activity feed')} />
-                    <motion.div variants={cardStackReveal} custom={0}>
+                    <div>
                       <Card className="border-border/60">
                         <CardHeader className="pb-3">
                           <CardTitle className="text-title-sm flex items-center gap-2">
@@ -421,7 +411,7 @@ export default function AdminDashboardPage() {
                           )}
                         </CardContent>
                       </Card>
-                    </motion.div>
+                    </div>
                   </section>
                 </div>
               )}
@@ -456,7 +446,7 @@ export default function AdminDashboardPage() {
                     />
                   </div>
 
-                    <motion.div variants={cardStackReveal} custom={0} className="space-y-4">
+                    <div className="space-y-4">
                     {filteredOversight.length === 0 ? (
                       <Card className="border-border/60">
                         <CardContent className="flex flex-col items-center gap-4 py-16 text-muted-foreground">
@@ -472,7 +462,7 @@ export default function AdminDashboardPage() {
                         _={_}
                       />
                     )}
-                  </motion.div>
+                  </div>
                 </div>
               )}
 
@@ -500,7 +490,7 @@ export default function AdminDashboardPage() {
                     </select>
                   </div>
 
-                  <motion.div variants={cardStackReveal} custom={0}>
+                  <div>
                     {filteredTests.length === 0 ? (
                       <Card className="border-border/60">
                         <CardContent className="flex flex-col items-center gap-4 py-16 text-muted-foreground">
@@ -564,7 +554,7 @@ export default function AdminDashboardPage() {
                         </table>
                       </div>
                     )}
-                  </motion.div>
+                  </div>
                 </div>
               )}
 
@@ -573,7 +563,7 @@ export default function AdminDashboardPage() {
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div>
                       <SectionTitle label={_('Staff')} title={_('Teachers') + ` (${teachersData.length})`} />
-                      <motion.div variants={cardStackReveal} custom={0}>
+                      <div>
                         <Card className="border-border/60">
                           <CardContent className="max-h-[400px] overflow-y-auto space-y-1 p-5">
                             {teachersData.length === 0 ? (
@@ -588,12 +578,12 @@ export default function AdminDashboardPage() {
                             )}
                           </CardContent>
                         </Card>
-                      </motion.div>
+                      </div>
                     </div>
 
                     <div>
                       <SectionTitle label={_('Students')} title={_('Students') + ` (${studentsData.length})`} />
-                      <motion.div variants={cardStackReveal} custom={0}>
+                      <div>
                         <Card className="border-border/60">
                           <CardContent className="max-h-[400px] overflow-y-auto space-y-1 p-5">
                             {studentsData.length === 0 ? (
@@ -611,13 +601,13 @@ export default function AdminDashboardPage() {
                             )}
                           </CardContent>
                         </Card>
-                      </motion.div>
+                      </div>
                     </div>
                   </div>
 
                   <section>
                     <SectionTitle label={_('Alerts')} title={_('At-risk students')} />
-                    <motion.div variants={cardStackReveal} custom={0}>
+                    <div>
                       <Card className="border-border/60">
                         <CardContent className="max-h-[400px] overflow-y-auto p-5">
                           {overviewData?.atRiskStudents?.length === 0 ? (
@@ -637,12 +627,12 @@ export default function AdminDashboardPage() {
                           )}
                         </CardContent>
                       </Card>
-                    </motion.div>
+                    </div>
                   </section>
 
                   <section>
                     <SectionTitle label={_('Activity')} title={_('Recent Activity')} />
-                    <motion.div variants={cardStackReveal} custom={0}>
+                    <div>
                       <Card className="border-border/60">
                         <CardContent className="p-5">
                           {overviewData?.activityFeed?.length === 0 ? (
@@ -665,11 +655,11 @@ export default function AdminDashboardPage() {
                           )}
                         </CardContent>
                       </Card>
-                    </motion.div>
+                    </div>
                   </section>
                 </div>
               )}
-            </motion.div>
+            </div>
           )}
         </DataFetchWrapper>
       </div>

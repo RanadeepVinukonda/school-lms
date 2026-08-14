@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
 import { RouterProvider } from 'react-router-dom';
-import { MotionConfig } from 'framer-motion';
 import { router } from '@/app/router';
 import SplashScreen from '@/components/common/SplashScreen';
 import UploadProgressBanner from '@/components/textbook/UploadProgressBanner';
@@ -11,8 +10,6 @@ import { useAuthStore } from '@/store/authStore';
 import { useLanguageStore } from '@/store/languageStore';
 import { getPrimaryRole } from '@/lib/roleHelpers';
 import { ROUTES } from '@/lib/constants';
-
-import { ClassScopeProvider } from '@/contexts/ClassScopeContext';
 
 function roleDashboard(userRole: string): string {
   const primaryRole = getPrimaryRole(userRole);
@@ -74,18 +71,14 @@ export default function App() {
 
   return (
     <AuthGate>
-      <MotionConfig reducedMotion="always" transition={{ duration: 0 }}>
-        <ClassScopeProvider>
-          <SplashScreen isLoading={showSplash} onFinish={() => setShowSplash(false)} />
-          <OfflineStatusBar />
-          <UploadProgressBanner />
-          <PWAInstallPrompt />
-          <PushNotificationManager />
-          <div className="container mx-auto px-4">
-            <RouterProvider router={router} />
-          </div>
-        </ClassScopeProvider>
-      </MotionConfig>
+      <SplashScreen isLoading={showSplash} onFinish={() => setShowSplash(false)} />
+      <OfflineStatusBar />
+      <UploadProgressBanner />
+      <PWAInstallPrompt />
+      <PushNotificationManager />
+      <div className="container mx-auto px-4">
+        <RouterProvider router={router} />
+      </div>
     </AuthGate>
   );
 }

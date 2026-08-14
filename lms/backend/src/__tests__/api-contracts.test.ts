@@ -52,21 +52,6 @@ function mockAuthUser() {
 }
 
 describe('API Contract: Auth endpoints', () => {
-  it('POST /auth/send-otp - accepts valid phone', async () => {
-    const res = await request(app).post('/auth/send-otp').send({ phone: '+919999999999' });
-    expect([200, 400, 429, 500]).toContain(res.status);
-  }, 30000);
-
-  it('POST /auth/send-otp - rejects missing phone', async () => {
-    const res = await request(app).post('/auth/send-otp').send({});
-    expect([400, 422]).toContain(res.status);
-  });
-
-  it('POST /auth/verify-otp - accepts phone + token', async () => {
-    const res = await request(app).post('/auth/verify-otp').send({ phone: '+919999999999', token: '000000' });
-    expect([200, 400, 429, 500]).toContain(res.status);
-  });
-
   it('GET /auth/profile - requires auth', async () => {
     const res = await request(app).get('/auth/profile');
     expect(res.status).toBe(401);

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -65,10 +64,10 @@ export default function AdminClassroomPage() {
     <>
       <SEOHead title="Google Classroom Integration" description="Link and sync rosters with Google Classroom" />
       <div className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-8">
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <div>
           <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">Google Classroom</h1>
           <p className="text-body-md text-muted-foreground mt-1">Connect your school's Google Classroom courses and sync student rosters</p>
-        </motion.div>
+        </div>
 
         {/* Token Configuration */}
         <Card className="border-border/60">

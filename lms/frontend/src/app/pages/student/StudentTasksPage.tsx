@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +6,6 @@ import { Icon } from '@/components/ui/Icon';
 import { useQuery } from '@tanstack/react-query';
 import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
 import api from '@/services/api';
-import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/lib/motion';
 import { getAllSubjects, getClass } from '@/services/dataService';
 import { useAuthStore } from '@/store/authStore';
 import type { AssignmentItem, ExamItem, QuizItem } from '@/services/dataService';
@@ -28,7 +26,6 @@ export default function StudentTasksPage() {
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const studentId = useAuthStore((s) => s.user?.id);
   const classId = useAuthStore((s) => s.user?.classId);
-
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-tasks', studentId, classId],
     refetchOnWindowFocus: true,
@@ -146,13 +143,13 @@ export default function StudentTasksPage() {
         title={overdueCount > 0 ? `${_('Tasks')} (${overdueCount} ${_('overdue')})` : _('Tasks')}
         description={_('View all upcoming tasks sorted by urgency')}
       />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-8 sm:space-y-16"
       >
-        <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+        <div>
           <div className="flex flex-col gap-3 sm:gap-4">
             <div>
               <h1 className="text-headline-sm font-bold flex items-center gap-3">
@@ -199,7 +196,7 @@ export default function StudentTasksPage() {
               </div>
             )}
           </div>
-        </motion.div>
+        </div>
 
         <DataFetchWrapper
           data={data}
@@ -212,28 +209,28 @@ export default function StudentTasksPage() {
           emptyIcon={<Icon name="task_alt" size={40} />}
         >
           {() => (
-            <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+            <div>
               <FilterBar active={activeFilter} onChange={setActiveFilter} overdueCount={overdueCount} />
 
               {filteredAndGrouped && filteredAndGrouped.all.length === 0 ? (
                 <EmptyFilterState filter={activeFilter} />
               ) : (
-                <motion.div
-                  variants={staggerContainer}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true, margin: '-60px' }}
+                <div
+
+
+
+
                   className="space-y-6"
                 >
                   {filteredAndGrouped?.sections.map((section) => (
                     <TaskSection key={section.level} level={section.level} tasks={section.tasks} />
                   ))}
-                </motion.div>
+                </div>
               )}
-            </motion.div>
+            </div>
           )}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

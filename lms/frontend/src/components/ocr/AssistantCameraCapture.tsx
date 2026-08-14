@@ -1,5 +1,4 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -30,10 +29,8 @@ export default function AssistantCameraCapture({ onUse, onCancel, isLoading }: A
   const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
   const [errType, setErrType] = useState<ErrType>(null);
   const [retryKey, setRetryKey] = useState(0);
-
   const isCameraSupported =
     typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia;
-
   const stopStream = useCallback(() => {
     setStream((current) => {
       if (current) {
@@ -155,9 +152,8 @@ export default function AssistantCameraCapture({ onUse, onCancel, isLoading }: A
   }, [stopStream, onCancel]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
+    <div
+
       className="rounded-xl border border-border/60 bg-surface/50 overflow-hidden"
     >
       {status === 'preview' && previewSrc ? (
@@ -262,6 +258,6 @@ export default function AssistantCameraCapture({ onUse, onCancel, isLoading }: A
           />
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

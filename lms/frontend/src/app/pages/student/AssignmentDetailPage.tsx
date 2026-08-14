@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,7 +7,6 @@ import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -46,10 +44,8 @@ export default function AssignmentDetailPage() {
   const [file, setFile] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
   const queryClient = useQueryClient();
-
   const { register, handleSubmit, watch, formState: { errors } } = useForm({ resolver: zodResolver(submitSchema) });
   const notes = watch('notes');
-
   const { data: assignment, isLoading, error, refetch } = useQuery({
     queryKey: ['assignment', assignmentId],
     queryFn: async () => {
@@ -113,7 +109,6 @@ export default function AssignmentDetailPage() {
 
   const sub = submissions?.[0] ?? null;
   const history = submissions?.slice(0) ?? [];
-
   const { isPending, mutate } = useMutation({
     mutationFn: async () => {
       await api.post(`/assignments/${assignmentId}/submit`, {
@@ -151,7 +146,6 @@ export default function AssignmentDetailPage() {
   };
 
   const assignmentFiles = []; // populated from API when available
-
   const formatRelativeTime = (d: string) => {
     const m = Math.floor((Date.now() - new Date(d).getTime()) / 60000);
     if (m < 1) return _('just now');
@@ -165,10 +159,10 @@ export default function AssignmentDetailPage() {
   return (
     <>
       <SEOHead title={assignment?.title || _('Assignment')} description={_('Assignment') + ': ' + (assignment?.title || '')} canonical={`/assignments/${assignmentId}`} />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
       >
         <Button variant="ghost" size="sm" asChild className="mb-1">
@@ -194,7 +188,7 @@ export default function AssignmentDetailPage() {
 
             return (
               <>
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <Card className="border-border/60">
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between gap-4">
@@ -219,18 +213,18 @@ export default function AssignmentDetailPage() {
                       </div>
                     </CardContent>
                   </Card>
-                </motion.div>
+                </div>
 
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <Card className="border-border/60">
                     <CardHeader className="pb-2"><CardTitle className="text-title-sm flex items-center gap-2"><Icon name="description" size={20} />{_('Instructions')}</CardTitle></CardHeader>
                     <CardContent className="p-5">
                       <div className="text-body-md prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: sanitizeHtml(a.description || '') }} />
                     </CardContent>
                   </Card>
-                </motion.div>
+                </div>
 
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <Card className="border-border/60">
                     <CardHeader className="pb-2"><CardTitle className="text-title-sm flex items-center gap-2"><Icon name="attachment" size={20} />{_('Resources')}</CardTitle></CardHeader>
                     <CardContent className="p-5 space-y-2">
@@ -252,9 +246,9 @@ export default function AssignmentDetailPage() {
                       )}
                     </CardContent>
                   </Card>
-                </motion.div>
+                </div>
 
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <Card className="border-border/60">
                     <CardHeader className="pb-2"><CardTitle className="text-title-sm flex items-center gap-2"><Icon name="school" size={20} />{_('Teacher Notes')}</CardTitle></CardHeader>
                     <CardContent className="p-5">
@@ -264,9 +258,9 @@ export default function AssignmentDetailPage() {
                       </div>
                     </CardContent>
                   </Card>
-                </motion.div>
+                </div>
 
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <Card className="border-border/60">
                     <CardHeader className="pb-2"><CardTitle className="text-title-sm flex items-center gap-2"><Icon name="upload_file" size={20} />{sub ? _('Your Submission') : _('Submit Assignment')}</CardTitle></CardHeader>
                     <CardContent className="p-5">
@@ -319,10 +313,10 @@ export default function AssignmentDetailPage() {
                       )}
                     </CardContent>
                   </Card>
-                </motion.div>
+                </div>
 
                 {history.length > 1 && (
-                  <motion.div variants={cardStackReveal} custom={0}>
+                  <div>
                     <Card className="border-border/60">
                       <CardHeader className="pb-2"><CardTitle className="text-title-sm flex items-center gap-2"><Icon name="history" size={20} />{_('Version History')}</CardTitle><CardDescription>{history.length} {_('submission(s)')}</CardDescription></CardHeader>
                       <CardContent className="p-5 space-y-2">
@@ -335,7 +329,7 @@ export default function AssignmentDetailPage() {
                         ))}
                       </CardContent>
                     </Card>
-                  </motion.div>
+                  </div>
                 )}
 
                 {confirm && (
@@ -353,7 +347,7 @@ export default function AssignmentDetailPage() {
             );
           }}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

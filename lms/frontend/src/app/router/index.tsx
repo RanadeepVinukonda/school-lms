@@ -35,7 +35,6 @@ const StudentProfilePage = lazyRetry(() => import('@/app/pages/student/StudentPr
 const StudentProfileEditPage = lazyRetry(() => import('@/app/pages/student/StudentProfileEditPage'));
 const AssignmentDetailPage = lazyRetry(() => import('@/app/pages/student/AssignmentDetailPage'));
 const QuizAttemptPage = lazyRetry(() => import('@/app/pages/student/QuizAttemptPage'));
-const ExamAttemptPage = lazyRetry(() => import('@/app/pages/student/ExamAttemptPage'));
 const StudentQuizTakePageV2 = lazyRetry(() => import('@/app/pages/student/StudentQuizTakePageV2'));
 const StudentConceptPage = lazyRetry(() => import('@/app/pages/student/StudentConceptPage'));
 const StudentGamificationPage = lazyRetry(() => import('@/app/pages/student/StudentGamificationPage'));
@@ -167,7 +166,6 @@ export const router = createBrowserRouter([
       { path: ROUTES.STUDENT_PROFILE_EDIT, element: <Suspense fallback={<PageFallback />}><StudentProfileEditPage /></Suspense> },
       { path: ROUTES.ASSIGNMENT_DETAIL(':id'), element: <Suspense fallback={<PageFallback />}><AssignmentDetailPage /></Suspense> },
       { path: ROUTES.QUIZ_ATTEMPT(':id'), element: <Suspense fallback={<PageFallback />}><QuizAttemptPage /></Suspense> },
-      { path: ROUTES.EXAM_DETAIL(':id'), element: <Suspense fallback={<PageFallback />}><ExamAttemptPage /></Suspense> },
       { path: ROUTES.STUDENT_TAKE_ASSESSMENT(':assessmentId'), element: <Suspense fallback={<PageFallback />}><StudentQuizTakePageV2 /></Suspense> },
       { path: ROUTES.STUDENT_CONCEPT(':conceptId'), element: <Suspense fallback={<PageFallback />}><StudentConceptPage /></Suspense> },
       { path: ROUTES.STUDENT_AI_TUTOR, element: <Suspense fallback={<PageFallback />}><StudentAITutorPage /></Suspense> },
@@ -234,8 +232,6 @@ export const router = createBrowserRouter([
       { path: ROUTES.TEACHER_AWAITING_GRADING, element: <Suspense fallback={<PageFallback />}><TeacherAwaitingGradingPage /></Suspense> },
       { path: ROUTES.TEACHER_LATE_SUBMISSIONS, element: <Suspense fallback={<PageFallback />}><TeacherLateSubmissionsPage /></Suspense> },
       { path: ROUTES.TEACHER_NEED_CORRECTION, element: <Suspense fallback={<PageFallback />}><TeacherNeedCorrectionPage /></Suspense> },
-      { path: ROUTES.TEACHER_QUESTION_BANK, element: <Suspense fallback={<PageFallback />}><NotFoundPage /></Suspense> },
-      { path: ROUTES.TEACHER_REWARDS, element: <Suspense fallback={<PageFallback />}><NotFoundPage /></Suspense> },
     ],
   },
 

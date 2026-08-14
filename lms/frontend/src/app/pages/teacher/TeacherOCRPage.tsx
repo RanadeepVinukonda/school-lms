@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent } from '@/components/ui/card';
@@ -61,7 +60,6 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
   });
 
   const { data: classes = [] } = useClasses();
-
   const { data: roster = [] } = useQuery({
     queryKey: ['class-roster-ocr', selectedClass],
     enabled: !!selectedClass && pushMode === 'students',
@@ -72,7 +70,6 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
   });
 
   const myClasses = classes.map((c) => ({ id: c.id, name: formatClassName(c) }));
-
   const mySubjects = useMemo(() => {
     if (!selectedClass) return [];
     const seen = new Map<string, string>();
@@ -105,7 +102,6 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
   };
 
   const pushDisabled = !selectedClass || !subjectId || !testName.trim() || (pushMode === 'students' && selectedStudentIds.length === 0) || pushing;
-
   const handlePush = () => {
     setPushing(true);
     onPush(data, selectedClass, {
@@ -303,12 +299,10 @@ export default function TeacherOCRPage() {
   const userId = user?.id || 'anonymous';
   const [inputMode, setInputMode] = useState<'text' | 'image' | 'camera'>('text');
   const [dropActive, setDropActive] = useState(false);
-  
   const emptyMessages = useMemo(() => [] as ChatMsg[], []);
   const messages = useChatStore((s) => s.teacherOcrMessages[userId] || emptyMessages);
   const setTeacherOcrMessages = useChatStore((s) => s.setTeacherOcrMessages);
   const clearMessages = useChatStore((s) => s.clearTeacherOcrMessages);
-
   const setMessages = useCallback((action: React.SetStateAction<ChatMsg[]>) => {
     if (typeof action === 'function') {
       setTeacherOcrMessages(userId, action(messages));
@@ -328,9 +322,7 @@ export default function TeacherOCRPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingPhase, setLoadingPhase] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
-
   const handleSend = useCallback(async () => {
     const text = input.trim();
     if (!text && pendingFiles.length === 0) return;
@@ -448,7 +440,6 @@ export default function TeacherOCRPage() {
   }, []);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const renderContent = (msg: ChatMsg) => {
     if (!msg.data) return <LatexRenderer content={msg.content} className="text-body-md leading-relaxed" />;
     const action = msg.data.data?.action || msg.data.action;
@@ -488,7 +479,7 @@ export default function TeacherOCRPage() {
             {messages.map((msg, i) => {
               const isStructured = !!msg.data && (msg.data.data?.action === 'quiz' || msg.data.action === 'quiz' || Array.isArray(msg.data?.questions) || Array.isArray(msg.data?.data?.questions));
               return (
-                <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`${isStructured ? 'w-full max-w-full' : 'max-w-[85%]'} rounded-2xl px-5 py-3.5 ${msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-md shadow-sm' : 'bg-card text-card-foreground rounded-bl-md border border-border/60 shadow-sm'}`}>
                     {msg.images && (
                       <div className="flex gap-2 mb-2 flex-wrap">
@@ -499,18 +490,18 @@ export default function TeacherOCRPage() {
                     )}
                     {msg.role === 'user' ? <LatexRenderer content={msg.content} className="text-sm" /> : renderContent(msg)}
                   </div>
-                </motion.div>
+                </div>
               );
             })}
             {isLoading && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
+              <div className="flex justify-start">
                 <div className="bg-card rounded-2xl rounded-bl-md px-5 py-3.5 border border-border/60 shadow-sm">
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                     <span className="text-xs text-muted-foreground">{loadingPhase || _('Processing...')}</span>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )}
             <div ref={chatEndRef} className="h-6 sm:h-8" />
           </CardContent>

@@ -1,5 +1,4 @@
 import { Link, useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Icon } from '@/components/ui/Icon';
-import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/lib/motion';
 import { useQuery } from '@tanstack/react-query';
 import { getTextbooksBySubject, getChaptersForTextbook } from '@/services/textbookService';
 import { getSubject, getGradesByStudent } from '@/services/dataService';
@@ -35,7 +33,6 @@ interface DashboardData {
 export default function SubjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const authUser = useAuthStore((s) => s.user);
-
   const { data, isLoading, isError, error, refetch } = useQuery<DashboardData | null>({
     queryKey: ['subject-detail', id, authUser?.id],
     queryFn: async () => {
@@ -57,7 +54,6 @@ export default function SubjectDetailPage() {
         .map((tb) => ({ ...tb, chapterCount: tb.chapterCount ?? 0 }));
       const assignment = (classAssignments || []).find((a) => a.subjectId === id);
       const teacherName = assignment?.teacherName;
-
       const textbookDetails: TextbookDetails[] = await Promise.all(
         textbooks.map(async (tb) => {
           const chapters = await getChaptersForTextbook(tb.id);
@@ -106,19 +102,19 @@ export default function SubjectDetailPage() {
   return (
     <>
       <SEOHead title={data?.subject?.name ?? 'Subject'} description={`${data?.subject?.name ?? 'Subject'} overview`} />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
       >
-        <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+        <div>
           <Button variant="ghost" size="sm" asChild className="mb-1">
             <Link to={ROUTES.STUDENT_SUBJECTS} className="gap-2">
               <Icon name="arrow_back" size={16} /> Back to Subjects
             </Link>
           </Button>
-        </motion.div>
+        </div>
         <DataFetchWrapper data={data} isLoading={isLoading} error={isError ? error ?? new Error('Failed to load subject') : null}
           loadingType="detail" emptyMessage="Subject not found" emptyIcon={<Icon name="menu_book" size={32} />}
           emptyAction={<Button asChild><Link to={ROUTES.STUDENT_SUBJECTS}><Icon name="arrow_back" size={16} className="mr-2" /> Back to Subjects</Link></Button>}
@@ -127,7 +123,7 @@ export default function SubjectDetailPage() {
           {(d) => (
             <div className="space-y-16">
               {/* Banner */}
-              <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+              <div>
                 <Card className="overflow-hidden border-0">
                   <div className="relative p-6 pb-12" style={{ background: `linear-gradient(135deg, ${d.subject.color}33 0%, transparent 100%)` }}>
                     <div className="absolute inset-0" style={{ backgroundColor: d.subject.color, opacity: 0.06 }} />
@@ -150,22 +146,22 @@ export default function SubjectDetailPage() {
                     </div>
                   </div>
                 </Card>
-              </motion.div>
+              </div>
 
               {/* Info grid */}
-              <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+              <div>
                 <div className="mb-6">
                   <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">OVERVIEW</p>
                   <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">Quick Stats</h2>
                 </div>
-                <motion.div
-                  variants={staggerContainer}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true, margin: '-60px' }}
+                <div
+
+
+
+
                   className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                 >
-                  <motion.div variants={cardStackReveal} custom={0}>
+                  <div>
                     <Card className="overflow-hidden border-border/60">
                       <div className="h-1.5" style={{ backgroundColor: d.subject.color }} />
                       <CardContent className="p-5">
@@ -178,9 +174,9 @@ export default function SubjectDetailPage() {
                         ) : <p className="text-body-sm text-muted-foreground">No chapters yet</p>}
                       </CardContent>
                     </Card>
-                  </motion.div>
+                  </div>
 
-                  <motion.div variants={cardStackReveal} custom={1}>
+                  <div>
                     <Card className="overflow-hidden border-border/60">
                       <div className="h-1.5" style={{ backgroundColor: d.subject.color }} />
                       <CardContent className="p-5">
@@ -189,9 +185,9 @@ export default function SubjectDetailPage() {
                         <p className="text-body-sm text-muted-foreground">{d.textbooks.reduce((s, t) => s + t.chapterCount, 0)} total chapters</p>
                       </CardContent>
                     </Card>
-                  </motion.div>
+                  </div>
 
-                  <motion.div variants={cardStackReveal} custom={2}>
+                  <div>
                     <Card className="overflow-hidden border-border/60">
                       <div className="h-1.5" style={{ backgroundColor: d.subject.color }} />
                       <CardContent className="p-5">
@@ -199,9 +195,9 @@ export default function SubjectDetailPage() {
                         <p className="text-body-sm text-muted-foreground">No pending assignments</p>
                       </CardContent>
                     </Card>
-                  </motion.div>
+                  </div>
 
-                  <motion.div variants={cardStackReveal} custom={3}>
+                  <div>
                     <Card className="overflow-hidden border-border/60">
                       <div className="h-1.5" style={{ backgroundColor: d.subject.color }} />
                       <CardContent className="p-5">
@@ -209,9 +205,9 @@ export default function SubjectDetailPage() {
                         <p className="text-body-sm text-muted-foreground">No exams scheduled</p>
                       </CardContent>
                     </Card>
-                  </motion.div>
+                  </div>
 
-                  <motion.div variants={cardStackReveal} custom={4}>
+                  <div>
                     <Card className="overflow-hidden border-border/60 sm:col-span-2">
                       <div className="h-1.5" style={{ backgroundColor: d.subject.color }} />
                       <CardContent className="p-5">
@@ -232,12 +228,12 @@ export default function SubjectDetailPage() {
                         ) : <p className="text-body-sm text-muted-foreground">No grades yet</p>}
                       </CardContent>
                     </Card>
-                  </motion.div>
-                </motion.div>
-              </motion.div>
+                  </div>
+                </div>
+              </div>
 
               {/* Textbooks section */}
-              <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+              <div>
                 <div className="mb-6">
                   <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">MATERIALS</p>
                   <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">Textbooks</h2>
@@ -250,15 +246,15 @@ export default function SubjectDetailPage() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <motion.div
-                    variants={staggerContainer}
-                    initial="hidden"
-                    whileInView="show"
-                    viewport={{ once: true, margin: '-60px' }}
+                  <div
+
+
+
+
                     className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                   >
                     {d.textbooks.map((tb, idx) => (
-                      <motion.div key={tb.id} variants={cardStackReveal} custom={idx}>
+                      <div key={tb.id}>
                         <Link to={ROUTES.STUDENT_TEXTBOOK(tb.id)} className="block h-full">
                           <Card className="h-full border-border/60 hover:-translate-y-1 transition-all duration-200 overflow-hidden">
                             <div className="h-2" style={{ backgroundColor: d.subject.color }} />
@@ -279,14 +275,14 @@ export default function SubjectDetailPage() {
                             </CardContent>
                           </Card>
                         </Link>
-                      </motion.div>
+                      </div>
                     ))}
-                  </motion.div>
+                  </div>
                 )}
-              </motion.div>
+              </div>
 
               {/* Chapters & Concepts (read-only) */}
-              <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+              <div>
                 <div className="mb-6">
                   <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">CURRICULUM</p>
                   <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">Chapters &amp; Concepts</h2>
@@ -330,10 +326,10 @@ export default function SubjectDetailPage() {
                     ))}
                   </div>
                 )}
-              </motion.div>
+              </div>
 
               {/* Quick actions */}
-              <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+              <div>
                 <div className="flex flex-wrap gap-3">
                   {d.textbooks.length > 0 && (
                     <Button variant="outline" asChild className="gap-2">
@@ -341,11 +337,11 @@ export default function SubjectDetailPage() {
                     </Button>
                   )}
                 </div>
-              </motion.div>
+              </div>
             </div>
           )}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -23,7 +22,6 @@ function priorityBadge(p: string) {
 export default function ParentNoticeBoardPage() {
   const { data: classes = [] } = useClasses();
   const [selectedNotice, setSelectedNotice] = useState<any>(null);
-
   const { data: noticesRes, isLoading, error, refetch } = useQuery({
     queryKey: ['parent-notices'],
     queryFn: () => noticeService.getNotices(),
@@ -35,10 +33,10 @@ export default function ParentNoticeBoardPage() {
     <>
       <SEOHead title="Notice Board" description="View school notices and announcements" />
       <div className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-8">
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <div>
           <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">Notice Board</h1>
           <p className="text-body-md text-muted-foreground mt-1">View school notices and announcements</p>
-        </motion.div>
+        </div>
 
         <DataFetchWrapper
           data={notices}
@@ -66,11 +64,8 @@ export default function ParentNoticeBoardPage() {
                     </div>
                   ) : (
                     (notices as any[])?.map((n: any) => (
-                      <motion.div
+                      <div
                         key={n.id}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
                       >
                         <Card
                           className="border-border/60 hover:border-border transition-colors cursor-pointer"
@@ -108,7 +103,7 @@ export default function ParentNoticeBoardPage() {
                             </div>
                           </CardContent>
                         </Card>
-                      </motion.div>
+                      </div>
                     ))
                   )}
                 </CardContent>

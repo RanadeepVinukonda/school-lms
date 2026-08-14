@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -12,7 +11,6 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Icon } from '@/components/ui/Icon';
 import { getInitials } from '@/lib/utils';
 import { formatDate, getLetterGrade } from '@/lib/format';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import { getChildDashboard } from '@/services/parentService';
 
@@ -22,7 +20,6 @@ function pctColor(pct: number) {
 
 export default function ParentChildDetailPage() {
   const { studentId } = useParams<{ studentId: string }>();
-
   const { isLoading, error, refetch, data } = useQuery({
     queryKey: ['parent-child-detail', studentId],
     queryFn: async () => {
@@ -33,7 +30,6 @@ export default function ParentChildDetailPage() {
   });
 
   const notFound = !isLoading && !error && !data && !!studentId;
-
   const grades = useMemo(() => {
     if (!data) return [];
     return ((data as any).grades ?? []).sort(
@@ -49,10 +45,10 @@ export default function ParentChildDetailPage() {
         title={data ? `${(data as any)?.student?.displayName ?? 'Child'} - Child Details` : 'Child Details'}
         description="View your child's performance and progress"
       />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto space-y-16 pb-32"
       >
         {notFound ? (
@@ -81,16 +77,16 @@ export default function ParentChildDetailPage() {
           >
             {(d: any) => (
               <>
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <Button variant="ghost" size="sm" asChild className="gap-1 -ml-2">
                     <Link to={ROUTES.PARENT_CHILDREN}>
                       <Icon name="arrow_back" size={16} />
                       Back to Children
                     </Link>
                   </Button>
-                </motion.div>
+                </div>
 
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <Card className="border-border/60">
                     <CardContent className="p-5">
                       <div className="flex items-center gap-5 flex-wrap">
@@ -127,9 +123,9 @@ export default function ParentChildDetailPage() {
                       </div>
                     </CardContent>
                   </Card>
-                </motion.div>
+                </div>
 
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {[
                       { icon: 'graded', label: 'Total Assessments', value: d.totalAttempts, bg: 'bg-primary-container', color: 'text-primary' },
@@ -153,10 +149,10 @@ export default function ParentChildDetailPage() {
                       </Card>
                     ))}
                   </div>
-                </motion.div>
+                </div>
 
                 {recentActivity.length > 0 && (
-                  <motion.div variants={cardStackReveal} custom={0}>
+                  <div>
                     <Card className="border-border/60">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-title-md flex items-center gap-2 flex-wrap">
@@ -165,11 +161,10 @@ export default function ParentChildDetailPage() {
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="p-5">
-                        <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-2">
+                        <div className="space-y-2">
                           {recentActivity.map((act: any, idx: number) => (
-                            <motion.div
+                            <div
                               key={idx}
-                              variants={scrollReveal}
                               className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors"
                             >
                               <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -186,15 +181,15 @@ export default function ParentChildDetailPage() {
                               <span className={`font-semibold tabular-nums text-sm ${pctColor(act.score)}`}>
                                 {act.score}%
                               </span>
-                            </motion.div>
+                            </div>
                           ))}
-                        </motion.div>
+                        </div>
                       </CardContent>
                     </Card>
-                  </motion.div>
+                  </div>
                 )}
 
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <Card className="border-border/60">
                     <CardHeader className="pb-3">
                         <CardTitle className="text-title-md flex items-center gap-2 flex-wrap">
@@ -245,9 +240,9 @@ export default function ParentChildDetailPage() {
                       )}
                     </CardContent>
                   </Card>
-                </motion.div>
+                </div>
 
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <div className="flex flex-wrap gap-3">
                     <Button asChild variant="outline" className="gap-1">
                       <Link to={ROUTES.PARENT_REPORTS}>
@@ -262,12 +257,12 @@ export default function ParentChildDetailPage() {
                       </Link>
                     </Button>
                   </div>
-                </motion.div>
+                </div>
               </>
             )}
           </DataFetchWrapper>
         )}
-      </motion.div>
+      </div>
     </>
   );
 }

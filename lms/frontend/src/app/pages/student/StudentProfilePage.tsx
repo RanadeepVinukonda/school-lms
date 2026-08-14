@@ -1,10 +1,8 @@
-import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { useQuery } from '@tanstack/react-query';
 import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
@@ -17,7 +15,6 @@ import ProfilePreferences from '@/components/profile/ProfilePreferences';
 export default function StudentProfilePage() {
   const { _ } = useTranslation();
   const authUser = useAuthStore((s) => s.user);
-
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-profile', authUser?.id],
     queryFn: async () => {
@@ -26,7 +23,6 @@ export default function StudentProfilePage() {
       if (!firestoreUser) throw new Error('User not found in Firestore');
       const user = firestoreUser as typeof firestoreUser & { studentId?: string; classId?: string };
       const authId = user.id;
-
       const [allSubjects, grades, classDoc] = await Promise.all([
         getAllSubjects(),
         getGradesByStudent(authId),
@@ -41,10 +37,8 @@ export default function StudentProfilePage() {
           return { ...s, icon: s.icon || 'school', color: s.color || 'hsl(var(--accent-default))' };
         })
         .filter((s): s is NonNullable<typeof s> => s !== null);
-
       const enrichedGrades = grades
         .map((g) => ({ ...g, subject: g.subjectId ? (subjectMap.get(g.subjectId)?.name ?? 'Unknown') : 'Unknown' }));
-
       const avgPercentage = enrichedGrades.length > 0
         ? enrichedGrades.reduce((sum, g) => sum + g.percentage, 0) / enrichedGrades.length
         : 0;
@@ -59,20 +53,20 @@ export default function StudentProfilePage() {
   return (
     <>
       <SEOHead title={_('My Profile')} description={_('Your student profile and academic summary')} />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
       >
-        <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+        <div>
           <h1 className="text-headline-sm md:text-headline-md font-bold tracking-tight">{_('My Profile')}</h1>
-        </motion.div>
+        </div>
         <DataFetchWrapper data={data} isLoading={isLoading} error={isError ? error ?? new Error(_('Failed to load profile')) : null} loadingType="profile" emptyMessage={_('Could not load profile information')} onRetry={() => refetch()} errorTitle={_('Failed to load profile')}>
           {(d) => (
             <div className="space-y-16">
               {/* School + User Header */}
-              <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+              <div>
                 <ProfileHeader
                   user={d.user}
                   roleLabel={_('Student')}
@@ -80,51 +74,51 @@ export default function StudentProfilePage() {
                   badges={d.className ? <Badge variant="info" className="text-xs gap-1"><Icon name="school" size={12} />{d.className}{d.classGrade ? ` (${_('Grade')} ${d.classGrade})` : ''}</Badge> : undefined}
                   editHref="/student/profile/edit"
                 />
-              </motion.div>
+              </div>
 
               {/* Academic Overview */}
-              <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
-                <motion.div
-                  variants={staggerContainer}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true, margin: '-60px' }}
+              <div>
+                <div
+
+
+
+
                   className="grid grid-cols-1 sm:grid-cols-3 gap-4"
                 >
-                  <motion.div variants={cardStackReveal} custom={0}>
+                  <div>
                     <Card className="p-5 flex items-center gap-4 border-border/60">
                       <div className="h-12 w-12 rounded-xl bg-primary-container flex items-center justify-center shrink-0"><Icon name="school" size={20} className="text-primary" /></div>
                       <div><p className="text-label-xs text-muted-foreground">{_('Subjects')}</p><p className="text-display-xs font-bold">{d.totalSubjects}</p></div>
                     </Card>
-                  </motion.div>
-                  <motion.div variants={cardStackReveal} custom={1}>
+                  </div>
+                  <div>
                     <Card className="p-5 flex items-center gap-4 border-border/60">
                       <div className="h-12 w-12 rounded-xl bg-success-container flex items-center justify-center shrink-0"><Icon name="grade" size={20} className="text-success" /></div>
                       <div><p className="text-label-xs text-muted-foreground">{_('Avg Grade')}</p><p className="text-display-xs font-bold">{d.avgPercentage.toFixed(0)}%</p></div>
                     </Card>
-                  </motion.div>
-                  <motion.div variants={cardStackReveal} custom={2}>
+                  </div>
+                  <div>
                     <Card className="p-5 flex items-center gap-4 border-border/60">
                       <div className="h-12 w-12 rounded-xl bg-warning-container flex items-center justify-center shrink-0"><Icon name="assignment" size={20} className="text-warning" /></div>
                       <div><p className="text-label-xs text-muted-foreground">{_('Completed')}</p><p className="text-display-xs font-bold">{d.grades.length}</p></div>
                     </Card>
-                  </motion.div>
-                </motion.div>
-              </motion.div>
+                  </div>
+                </div>
+              </div>
 
               {/* Account Details */}
-              <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+              <div>
                 <ProfileDetails user={d.user} includeDob />
-              </motion.div>
+              </div>
 
               {/* Preferences */}
-              <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+              <div>
                 <ProfilePreferences />
-              </motion.div>
+              </div>
             </div>
           )}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

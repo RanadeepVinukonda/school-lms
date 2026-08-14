@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -7,7 +6,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { ROUTES } from '@/lib/constants';
-import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { getChildren } from '@/services/parentService';
 
 export default function ParentChildrenPage() {
@@ -19,23 +17,23 @@ export default function ParentChildrenPage() {
   return (
     <>
       <SEOHead title="My Children" description="View your linked children" canonical="/parent/children" />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-4xl mx-auto pb-32"
       >
-        <motion.div variants={cardStackReveal} custom={0} className="mb-8">
+        <div className="mb-8">
           <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">My Children</h1>
           <p className="text-body-md text-muted-foreground mt-1">View and manage your linked children</p>
-        </motion.div>
+        </div>
 
         <DataFetchWrapper data={data} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="card">
           {(children) => (
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              animate="show"
+            <div
+
+
+
               className="space-y-4"
             >
               {children.length === 0 ? (
@@ -50,7 +48,7 @@ export default function ParentChildrenPage() {
                 </Card>
               ) : (
                 children.map((child: any, idx: number) => (
-                  <motion.div key={child.id} variants={cardStackReveal} custom={idx}>
+                  <div key={child.id}>
                     <Link
                       to={ROUTES.PARENT_CHILD(child.id)}
                       className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl block"
@@ -81,13 +79,13 @@ export default function ParentChildrenPage() {
                         </CardContent>
                       </Card>
                     </Link>
-                  </motion.div>
+                  </div>
                 ))
               )}
-            </motion.div>
+            </div>
           )}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

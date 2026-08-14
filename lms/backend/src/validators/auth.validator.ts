@@ -12,15 +12,6 @@ export const signUpSchema = z.object({
   photoURL: z.string().url('Invalid photo URL').optional(),
 });
 
-export const sendOtpSchema = z.object({
-  phone: phoneSchema,
-});
-
-export const verifyOtpSchema = z.object({
-  phone: phoneSchema,
-  token: z.string().length(6, 'OTP must be 6 digits'),
-});
-
 export const updateProfileSchema = z.object({
   displayName: z
     .string()

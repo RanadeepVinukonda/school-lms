@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useUploadStore, stageLabel, type UploadTask } from '@/store/uploadStore';
 import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/button';
@@ -38,7 +37,6 @@ interface TaskProgressItemProps {
 function TaskProgressItem({ task, isExpanded, onToggleExpand }: TaskProgressItemProps) {
   const isDone = task.stage === 'complete';
   const isError = task.stage === 'error';
-
   useEffect(() => {
     if (isDone) {
       const timer = setTimeout(() => {
@@ -49,11 +47,7 @@ function TaskProgressItem({ task, isExpanded, onToggleExpand }: TaskProgressItem
   }, [isDone, task.id]);
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: -12 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, height: 0 }}
+    <div
       className={[
         'rounded-lg border shadow-lg mb-2 overflow-hidden',
         isError ? 'border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/60' : 'bg-background border-border',
@@ -99,11 +93,8 @@ function TaskProgressItem({ task, isExpanded, onToggleExpand }: TaskProgressItem
         <div className="flex items-center gap-1 flex-shrink-0">
           {!isDone && !isError && task.progress > 0 && (
             <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
-              <motion.div
+              <div
                 className="h-full bg-primary rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${task.progress}%` }}
-                transition={{ duration: 0.4, ease: 'easeOut' }}
               />
             </div>
           )}
@@ -111,12 +102,12 @@ function TaskProgressItem({ task, isExpanded, onToggleExpand }: TaskProgressItem
         </div>
       </button>
 
-      <AnimatePresence>
+
         {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
+          <div
+
+
+
             className="border-t border-border px-3 py-2"
           >
             {/* Error detail */}
@@ -167,28 +158,26 @@ function TaskProgressItem({ task, isExpanded, onToggleExpand }: TaskProgressItem
                 Dismiss
               </Button>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
-    </motion.div>
+
+    </div>
   );
 }
 
 export default function UploadProgressBanner() {
   const tasks = useUploadStore((s) => s.tasks);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-
   if (tasks.length === 0) return null;
-
   const toggleExpand = (id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
   };
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
+
+      <div
+
+
         className="fixed top-0 left-0 right-0 z-50"
       >
         <div className="max-h-[80vh] overflow-y-auto mx-auto max-w-2xl px-4 pt-2">
@@ -201,8 +190,8 @@ export default function UploadProgressBanner() {
             />
           ))}
         </div>
-      </motion.div>
-    </AnimatePresence>
+      </div>
+
   );
 }
 

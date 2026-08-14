@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { Input } from '@/components/ui/input';
-import { cardStackReveal } from '@/lib/motion';
 import { generateRubric, saveRubric, getRubrics } from '@/services/nepQuestionsService';
 import type { GradingRubric, RubricCriterion } from '@/types/nepQuestions';
 
@@ -21,9 +19,7 @@ export function RubricGenerator({ assignments, onRubricSaved }: RubricGeneratorP
   const [selectedAssignment, setSelectedAssignment] = useState('');
   const [numCriteria, setNumCriteria] = useState(4);
   const [generatedRubric, setGeneratedRubric] = useState<GradingRubric | null>(null);
-
   const assignment = assignments.find((a) => a.id === selectedAssignment);
-
   const { data: savedRubrics } = useQuery({
     queryKey: ['rubrics', selectedAssignment],
     queryFn: () => getRubrics(selectedAssignment || undefined),
@@ -89,7 +85,7 @@ export function RubricGenerator({ assignments, onRubricSaved }: RubricGeneratorP
 
   return (
     <div className="space-y-8">
-      <motion.div variants={cardStackReveal} className="space-y-4">
+      <div className="space-y-4">
         <div>
           <label className="text-sm font-medium">Select Assignment</label>
           <select
@@ -125,10 +121,10 @@ export function RubricGenerator({ assignments, onRubricSaved }: RubricGeneratorP
           <Icon name="auto_awesome" size={18} className="mr-2" />
           Generate Rubric with AI
         </Button>
-      </motion.div>
+      </div>
 
       {savedRubrics && savedRubrics.length > 0 && (
-        <motion.div variants={cardStackReveal} className="space-y-3">
+        <div className="space-y-3">
           <h3 className="text-title-sm font-semibold">Saved Rubrics</h3>
           {savedRubrics.map((r) => (
             <Card key={r.id} className="border-border/60">
@@ -143,11 +139,11 @@ export function RubricGenerator({ assignments, onRubricSaved }: RubricGeneratorP
               </CardContent>
             </Card>
           ))}
-        </motion.div>
+        </div>
       )}
 
       {generatedRubric && (
-        <motion.div variants={cardStackReveal} className="space-y-4">
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-title-sm font-semibold">Generated Rubric</h3>
             <div className="flex gap-2">
@@ -230,7 +226,7 @@ export function RubricGenerator({ assignments, onRubricSaved }: RubricGeneratorP
               </p>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
     </div>
   );

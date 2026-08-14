@@ -1,11 +1,9 @@
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
 import { formatDate, cn } from '@/lib/utils';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { formatTime } from '@/lib/format';
 import type { AssignmentItem, ExamItem, QuizItem } from '@/services/dataService';
 import type { Subject } from '@/types';
@@ -95,7 +93,6 @@ export function getUrgencyLevel(date: Date | null): UrgencyLevel {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-
   const diffTime = target.getTime() - today.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -336,27 +333,26 @@ function TaskCard({ item }: { item: TaskItem }) {
 export function TaskSection({ level, tasks }: { level: UrgencyLevel; tasks: TaskItem[] }) {
   const { _ } = useTranslation();
   if (tasks.length === 0) return null;
-
   const section = urgencySectionLabels[level];
   const isNonUrgent = level === 'later';
 
   return (
-    <motion.div variants={cardStackReveal} custom={0}>
+    <div>
       <section>
         <h2 className={cn('text-title-sm font-semibold mb-2 sm:mb-3 flex items-center gap-1.5 sm:gap-2', isNonUrgent && 'text-muted-foreground')}>
           <Icon name={section.icon} size={18} className={isNonUrgent ? 'text-muted-foreground' : 'text-primary'} />
           {_(section.title)}
           <span className="text-body-md text-muted-foreground font-normal ml-1">({tasks.length})</span>
         </h2>
-        <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3">
+        <div className="space-y-3">
           {tasks.map((item) => (
-            <motion.div key={`${item.type}-${item.id}`} variants={scrollReveal}>
+            <div key={`${item.type}-${item.id}`}>
               <TaskCard item={item} />
-            </motion.div>
+            </div>
           ))}
-        </motion.div>
+        </div>
       </section>
-    </motion.div>
+    </div>
   );
 }
 

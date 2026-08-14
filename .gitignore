@@ -26,29 +26,16 @@ tsc_out.txt
 
 # Scratch
 scratch/
-
-# Expo native directories
-.expo/
-ios/
-android/
-
-# Custom ignored patterns for repository cleanup
 .agent/
 .kilo/
 graphify-out/
 openspec/
-mempalace.yaml
-entities.json
-lms-flowchart.html
-# package-lock.json files are needed for vercel/render builds (npm ci)
-# lms/package-lock.json is a stale monorepo root lock file
-lms/package-lock.json
-package-lock.json
-skills-lock.json
-*.md
-**/docs/
 
+# Expo / Capacitor native directories
+.expo/
+ios/
+android/
 
+# Mobile build output
 lms/mobile/
 dist-apk/
-

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -16,14 +15,12 @@ export default function AdminTransportDashboard() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState({ name: '', vehicle_number: '', driver_name: '', driver_phone: '' });
   const [editingRoute, setEditingRoute] = useState<TransportRoute | null>(null);
-
   const { data: routesRes, isLoading, error } = useQuery({
     queryKey: ['admin-transport-routes'],
     queryFn: () => transportService.getRoutes(),
   });
 
   const routes = routesRes?.data || [];
-
   const createMutation = useMutation({
     mutationFn: (data: typeof form) => transportService.createRoute(data),
     onSuccess: () => {
@@ -75,10 +72,10 @@ export default function AdminTransportDashboard() {
       <SEOHead title="Transport Dashboard" description="Manage school transport routes and drivers" />
       <div className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+          <div>
             <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">Transport Management</h1>
             <p className="text-body-md text-muted-foreground mt-1">Manage transport routes, vehicles, stops, and allocations</p>
-          </motion.div>
+          </div>
           {!showAddForm && !editingRoute && (
             <Button onClick={() => setShowAddForm(true)} className="self-start">
               <Icon name="add" size={16} className="mr-1.5" />

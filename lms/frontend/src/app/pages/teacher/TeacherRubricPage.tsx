@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -10,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { cardStackReveal } from '@/lib/motion';
 import { RubricGenerator } from '@/components/nep-questions/RubricGenerator';
 import { getRubrics } from '@/services/nepQuestionsService';
 import { useAuthStore } from '@/store/authStore';
@@ -21,7 +19,6 @@ export default function TeacherRubricPage() {
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
   const [showGenerator, setShowGenerator] = useState(false);
-
   const { data: rubrics, isLoading, error, refetch } = useQuery({
     queryKey: ['rubrics'],
     queryFn: () => getRubrics(),
@@ -42,13 +39,13 @@ export default function TeacherRubricPage() {
   return (
     <>
       <SEOHead title={_('Rubric Manager')} description={_('Create and manage AI-generated grading rubrics')} canonical="/teacher/rubrics" />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-6"
       >
-        <motion.div variants={cardStackReveal} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-headline-sm">{_('Rubric Manager')}</h1>
             <p className="text-body-md text-muted-foreground">{_('AI-generated grading rubrics for assignments')}</p>
@@ -56,9 +53,9 @@ export default function TeacherRubricPage() {
           <Button onClick={() => setShowGenerator(true)}>
             <Icon name="add" size={16} className="mr-1" />{_('Create Rubric')}
           </Button>
-        </motion.div>
+        </div>
 
-        <motion.div variants={cardStackReveal}>
+        <div>
           <DataFetchWrapper data={rubrics} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="list">
             {() => (
               <div className="space-y-3">
@@ -101,7 +98,7 @@ export default function TeacherRubricPage() {
               </div>
             )}
           </DataFetchWrapper>
-        </motion.div>
+        </div>
 
         <Dialog open={showGenerator} onOpenChange={(o) => { if (!o) setShowGenerator(false); }}>
           <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -115,7 +112,7 @@ export default function TeacherRubricPage() {
             />
           </DialogContent>
         </Dialog>
-      </motion.div>
+      </div>
     </>
   );
 }

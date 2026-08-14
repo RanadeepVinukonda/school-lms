@@ -1,7 +1,5 @@
-import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent } from '@/components/ui/card';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
 
@@ -103,22 +101,22 @@ export default function AboutSchoolPage() {
           <div className="absolute top-1/2 right-1/4 h-48 w-48 rounded-full bg-tertiary/5 blur-3xl" />
         </div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+        <div
+
+
+
           className="relative z-10 sm:p-6 p-4 max-w-6xl mx-auto pb-32"
         >
           {/* Hero Section */}
-          <motion.div
-            variants={cardStackReveal}
-            custom={0}
+          <div
+
+
             className="text-center mb-16"
           >
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: [0.05, 0, 0.133333, 0.06] }}
+            <div
+
+
+
               className="mb-8 inline-flex flex-col items-center"
             >
               <img
@@ -126,53 +124,44 @@ export default function AboutSchoolPage() {
                 alt="Genesis School Crest"
                 className="h-48 w-auto object-contain"
               />
-            </motion.div>
+            </div>
 
-            <motion.h1
+            <h1
               className="text-headline-md md:text-headline-lg font-bold tracking-tight text-primary mb-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
             >
               Genesis International Montessori &amp; STEM School
-            </motion.h1>
+            </h1>
 
-            <motion.p
+            <p
               className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
             >
               Learn &bull; Lead &bull; Achieve
-            </motion.p>
+            </p>
 
-            <motion.p
+            <p
               className="mx-auto max-w-3xl text-body-lg text-muted-foreground"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.25 }}
             >
               At Genesis, we believe that every child possesses unique gifts waiting to be discovered.
               Our institution seamlessly blends the time-honored Montessori philosophy with cutting-edge
               STEM education, creating an environment where students don&apos;t just learn — they thrive,
               lead, and achieve their fullest potential.
-            </motion.p>
-          </motion.div>
+            </p>
+          </div>
 
           {/* Mission & Vision Section */}
-          <motion.div
-            variants={cardStackReveal}
-            custom={1}
+          <div
+
+
             className="mb-16"
           >
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, amount: 0.2 }}
+            <div
+
+
+
+
               className="grid grid-cols-1 gap-6 md:grid-cols-2"
             >
-              <motion.div variants={cardStackReveal} custom={0}>
+              <div>
                 <Card className="h-full border-border/60 p-8">
                   <CardContent className="p-0">
                     <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
@@ -185,9 +174,9 @@ export default function AboutSchoolPage() {
                     </p>
                   </CardContent>
                 </Card>
-              </motion.div>
+              </div>
 
-              <motion.div variants={cardStackReveal} custom={1}>
+              <div>
                 <Card className="h-full border-border/60 p-8">
                   <CardContent className="p-0">
                     <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-tertiary/10">
@@ -200,35 +189,26 @@ export default function AboutSchoolPage() {
                     </p>
                   </CardContent>
                 </Card>
-              </motion.div>
-            </motion.div>
-          </motion.div>
+              </div>
+            </div>
+          </div>
 
           {/* Core Values Section */}
-          <motion.div
-            variants={cardStackReveal}
-            custom={2}
+          <div
+
+
             className="mb-16"
           >
-            <motion.h2
+            <h2
               className="text-headline-sm md:text-headline-md font-bold text-primary text-center mb-12"
-              variants={scrollReveal}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true }}
             >
               Our Core Values
-            </motion.h2>
+            </h2>
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-5">
               {coreValues.map((value, i) => (
-                <motion.div
+                <div
                   key={value.title}
-                  variants={cardStackReveal}
-                  custom={i}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true, margin: '-40px' }}
                 >
                   <Card
                     className={cn(
@@ -245,33 +225,29 @@ export default function AboutSchoolPage() {
                       </p>
                     </CardContent>
                   </Card>
-                </motion.div>
+                </div>
               ))}
             </div>
-          </motion.div>
+          </div>
 
           {/* School Information Section */}
-          <motion.div
-            variants={cardStackReveal}
-            custom={3}
+          <div
+
+
             className="mb-16"
           >
-            <motion.h2
+            <h2
               className="text-headline-sm md:text-headline-md font-bold text-primary text-center mb-12"
-              variants={scrollReveal}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true }}
             >
               School Information
-            </motion.h2>
+            </h2>
 
-            <motion.div
-              variants={cardStackReveal}
-              custom={0}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true }}
+            <div
+
+
+
+
+
             >
               <Card className="mx-auto max-w-4xl border-border/60 p-8 sm:p-10">
                 <CardContent className="p-0">
@@ -282,34 +258,25 @@ export default function AboutSchoolPage() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
 
           {/* Academic Programs Section */}
-          <motion.div
-            variants={cardStackReveal}
-            custom={4}
+          <div
+
+
             className="mb-16"
           >
-            <motion.h2
+            <h2
               className="text-headline-sm md:text-headline-md font-bold text-primary text-center mb-12"
-              variants={scrollReveal}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true }}
             >
               Academic Programs
-            </motion.h2>
+            </h2>
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
               {academicPrograms.map((program, i) => (
-                <motion.div
+                <div
                   key={program.title}
-                  variants={cardStackReveal}
-                  custom={i}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true, margin: '-40px' }}
                 >
                   <Card className="group h-full border-border/60 p-6 transition-all duration-300">
                     <CardContent className="p-0">
@@ -322,15 +289,15 @@ export default function AboutSchoolPage() {
                       </p>
                     </CardContent>
                   </Card>
-                </motion.div>
+                </div>
               ))}
             </div>
-          </motion.div>
+          </div>
 
           {/* School Motto Section */}
-          <motion.div
-            variants={cardStackReveal}
-            custom={5}
+          <div
+
+
           >
             <div className="text-center">
               <div className="mx-auto mb-6 h-px max-w-xs bg-gradient-to-r from-transparent via-tertiary/40 to-transparent" />
@@ -342,8 +309,8 @@ export default function AboutSchoolPage() {
               </p>
               <div className="mx-auto mt-6 h-px max-w-xs bg-gradient-to-r from-transparent via-tertiary/40 to-transparent" />
             </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </div>
     </>
   );

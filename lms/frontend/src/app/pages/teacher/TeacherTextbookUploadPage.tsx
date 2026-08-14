@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 
@@ -12,7 +11,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cardStackReveal } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import { useAuthStore } from '@/store/authStore';
 import { useUploadStore } from '@/store/uploadStore';
@@ -36,7 +34,6 @@ export default function TeacherTextbookUploadPage() {
   const [searchParams] = useSearchParams();
   const queryClassId = searchParams.get('classId') ?? '';
   const querySubjectId = searchParams.get('subjectId') ?? '';
-
   const handleBack = useCallback(() => {
     navigate(-1);
   }, [navigate]);
@@ -47,11 +44,8 @@ export default function TeacherTextbookUploadPage() {
   const [fileAssignments, setFileAssignments] = useState<Record<number, string>>({});
   const [dragActive, setDragActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-
   const queryClient = useQueryClient();
-
   const { data: allClasses = [] } = useClasses();
-
   const { data: assignments, isLoading: assignmentsLoading } = useQuery({
     queryKey: ['teacher-assignments', user?.id],
     queryFn: async () => {
@@ -87,7 +81,6 @@ export default function TeacherTextbookUploadPage() {
   });
 
   const assignmentList: TeacherAssignment[] = assignments ?? [];
-
   const getDefaultAssignmentId = useCallback(() => {
     if (!assignmentList.length) return '';
     if (queryClassId && querySubjectId) {
@@ -224,7 +217,6 @@ export default function TeacherTextbookUploadPage() {
       setIsUploading(true);
 
       let lastTextbookId: string | null = null;
-
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const assignment = getAssignmentForFile(i)!;
@@ -311,15 +303,15 @@ export default function TeacherTextbookUploadPage() {
     return (
       <>
         <SEOHead title={_('Upload Textbook')} description={_('Upload and process textbook PDFs')} canonical="/teacher/textbooks/upload" />
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-3xl mx-auto space-y-16 pb-32">
-          <motion.div variants={cardStackReveal} custom={0}>
+        <div className="sm:p-6 p-4 max-w-3xl mx-auto space-y-16 pb-32">
+          <div>
             <Button variant="ghost" size="sm" onClick={handleBack} className="mb-2">
               <Icon name="arrow_back" size={16} className="mr-1" />
               {_('Back')}
             </Button>
             <h1 className="text-headline-sm">{_('Upload Textbook')}</h1>
-          </motion.div>
-          <motion.div variants={cardStackReveal} custom={0}>
+          </div>
+          <div>
             <Card className="border-border/60">
               <CardContent className="p-12 text-center space-y-4">
                 <Icon name="school" size={48} className="text-muted-foreground mx-auto" />
@@ -331,8 +323,8 @@ export default function TeacherTextbookUploadPage() {
                 </Button>
               </CardContent>
             </Card>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </>
     );
   }
@@ -341,16 +333,16 @@ export default function TeacherTextbookUploadPage() {
     <>
       <SEOHead title="Upload Textbook" description="Upload and process textbook PDFs" canonical="/teacher/textbooks/upload" />
       <UploadProgressBanner />
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-3xl mx-auto space-y-16 pb-32">
-        <motion.div variants={cardStackReveal} custom={0}>
+      <div className="sm:p-6 p-4 max-w-3xl mx-auto space-y-16 pb-32">
+        <div>
           <Button variant="ghost" size="sm" onClick={handleBack} className="mb-2">
             <Icon name="arrow_back" size={16} className="mr-1" />
             {_('Back')}
           </Button>
           <h1 className="text-headline-sm">{_('Upload Textbooks')}</h1>
-        </motion.div>
+        </div>
 
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <Card className="border-border/60">
             <CardContent className="p-5 space-y-6">
 
@@ -448,8 +440,8 @@ export default function TeacherTextbookUploadPage() {
               </Button>
             </CardContent>
           </Card>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </>
   );
 }

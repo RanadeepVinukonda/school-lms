@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -13,10 +12,10 @@ interface DailyChallengeCardProps {
 
 export function DailyChallengeCard({ challenge, onComplete, completing, index = 0 }: DailyChallengeCardProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.08 }}
+    <div
+
+
+
       className={cn(
         'flex items-center gap-4 rounded-xl border p-4 transition-all duration-300',
         challenge.completed
@@ -51,6 +50,6 @@ export function DailyChallengeCard({ challenge, onComplete, completing, index = 
       >
         {challenge.completed ? 'Done' : completing ? '...' : 'Claim'}
       </Button>
-    </motion.div>
+    </div>
   );
 }

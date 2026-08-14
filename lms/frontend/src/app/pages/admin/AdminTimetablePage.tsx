@@ -1,5 +1,4 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -42,7 +41,6 @@ export default function AdminTimetablePage() {
   const [selectedDay, setSelectedDay] = useState<string>('');
   const [rows, setRows] = useState<PeriodRow[]>([]);
   const [nextPeriod, setNextPeriod] = useState(1);
-
   const { data: subjects = [] } = useQuery({
     queryKey: ['all-subjects'],
     queryFn: getAllSubjects,
@@ -59,7 +57,6 @@ export default function AdminTimetablePage() {
   });
 
   const teachers = useMemo(() => teachersData || [], [teachersData]);
-
   const { data: tcAssignments } = useQuery({
     queryKey: ['timetable-tc-assignments'],
     queryFn: () => teacherClassSubjectService.getAll().then((r) => r.data),
@@ -83,7 +80,6 @@ export default function AdminTimetablePage() {
   });
 
   const allEntries = useMemo(() => (allEntriesData as TimetableEntry[] | undefined) || [], [allEntriesData]);
-
   const entriesByDayPeriod = useMemo(() => {
     const map = new Map<string, TimetableEntry[]>();
     for (const e of allEntries) {
@@ -182,7 +178,7 @@ export default function AdminTimetablePage() {
     <>
       <SEOHead title="Timetable Management" description="Manage class timetables and scheduling" />
       <div className="sm:p-6 p-4 max-w-7xl mx-auto pb-32 space-y-8">
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <div>
           <div className="flex items-center gap-3 mb-1">
             <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center">
               <Icon name="calendar_view_week" size={24} className="text-primary" />
@@ -192,7 +188,7 @@ export default function AdminTimetablePage() {
               <p className="text-body-sm text-muted-foreground">Set up class schedules — add periods, assign subjects and teachers</p>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         <Card className="border-border/60 shadow-sm">
           <CardHeader className="pb-2">

@@ -1,11 +1,9 @@
 import { useParams, Link } from 'react-router-dom';
 import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useQuery } from '@tanstack/react-query';
 import { getLesson } from '@/services/dataService';
 import { getQuiz, getSubject } from '@/services/dataService';
@@ -16,7 +14,6 @@ import { ROUTES } from '@/lib/constants';
 import { useTranslation } from '@/hooks/useTranslation';
 
 type Entry = { c: string[]; s: string; e: [string, string][]; q: [string, string][] };
-
 const DATA: [string, Entry][] = [
   ['linear equation', { c: ['Variables represent unknown values', 'Inverse operations maintain equality', 'Isolate the variable step by step', 'Verify by substituting back'], s: 'Linear equations are the foundation of algebra. By isolating the variable using inverse operations, you can solve for unknowns with confidence.', e: [['Solve 3x + 7 = 22', 'x = 5'], ['Solve 2(x - 4) = 12', 'x = 10'], ['Solve 5x + 3 = 2x + 15', 'x = 4']], q: [['Solve: 4x - 9 = 23', 'x = 8'], ['Solve: 7(x + 2) = 49', 'x = 5'], ['Solve: 6x + 5 = 2x + 21', 'x = 4'], ['If 3x + 7 = 22, find 2x - 1', 'x = 5, so 2(5) - 1 = 9']] }],
   ['graph', { c: ['Coordinate plane with x and y axes', 'Slope-intercept form y = mx + b', 'Slope m is rise over run', 'Y-intercept b where line crosses y-axis'], s: 'Graphing transforms equations into visual lines. The slope-intercept form y = mx + b reveals steepness and starting point, making it easy to draw linear relationships.', e: [['Find slope and y-intercept of y = 3x - 2', 'm = 3, b = -2'], ['Graph y = -2x + 4', 'Plot (0,4), slope -2/1, go down 2 right 1']], q: [['Slope of y = -4x + 7?', 'm = -4'], ['Where does y = 3x - 5 cross y-axis?', '(0, -5)'], ['Slope between (2,1) and (6,9)?', 'm = 2']] }],
@@ -45,7 +42,6 @@ export default function LessonViewPage() {
   const { _ } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const [answersVisible, setAnswersVisible] = useState<Record<number, boolean>>({});
-
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['lesson', id],
     queryFn: async () => {
@@ -74,9 +70,7 @@ export default function LessonViewPage() {
   const summary = useMemo(() => (data?.lesson ? match(data.lesson.title, (e) => e.s) : ''), [data]);
   const examples = useMemo(() => (data?.lesson ? match(data.lesson.title, (e) => e.e) : []), [data]);
   const questions = useMemo(() => (data?.lesson ? match(data.lesson.title, (e) => e.q) : []), [data]);
-
   const nextLesson = null;
-
   const toggleAnswer = (i: number) => setAnswersVisible((p) => ({ ...p, [i]: !p[i] }));
 
   return (
@@ -85,10 +79,10 @@ export default function LessonViewPage() {
         title={data?.lesson?.title ?? _('Lesson')}
         description={`${data?.subject?.name ?? ''}: ${data?.lesson?.title ?? ''} — ${data?.lesson?.contentType === 'video' ? _('Video lesson') : _('Article lesson')} ${_('from')} ${data?.textbook?.title ?? ''}`}
       />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
       >
         <DataFetchWrapper
@@ -109,7 +103,7 @@ export default function LessonViewPage() {
           {(d) => (
             <>
               {/* 1. Lesson Header */}
-              <motion.div variants={cardStackReveal} custom={0}>
+              <div>
                 <section>
                   <Button variant="ghost" size="sm" asChild className="mb-3 -ml-2">
                     <Link to={d.textbook ? ROUTES.STUDENT_TEXTBOOK(d.textbook.id) : ROUTES.STUDENT_SUBJECTS} className="gap-1.5">
@@ -133,10 +127,10 @@ export default function LessonViewPage() {
                     </div>
                   </div>
                 </section>
-              </motion.div>
+              </div>
 
               {/* 2. Video / Article Content */}
-              <motion.div variants={cardStackReveal} custom={0}>
+              <div>
                 {d.lesson.contentType === 'video' && d.lesson.videoUrl ? (
                   <section>
                     <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-surface-container-high shadow-elevation-2">
@@ -159,10 +153,10 @@ export default function LessonViewPage() {
                     </div>
                   </section>
                 ) : null}
-              </motion.div>
+              </div>
 
               {/* 3. Key Concepts */}
-              <motion.div variants={cardStackReveal} custom={0}>
+              <div>
                 <section>
                   <h2 className="text-title-sm font-semibold text-on-surface flex items-center gap-2 mb-3">
                     <Icon name="lightbulb" size={20} className="text-primary" />{_('Key Concepts')}
@@ -180,10 +174,10 @@ export default function LessonViewPage() {
                     </ul>
                   </div>
                 </section>
-              </motion.div>
+              </div>
 
               {/* 4. Summary Notes */}
-              <motion.div variants={cardStackReveal} custom={0}>
+              <div>
                 <section>
                   <h2 className="text-title-sm font-semibold text-on-surface flex items-center gap-2 mb-3">
                     <Icon name="notes" size={20} className="text-primary" />{_('Summary Notes')}
@@ -192,11 +186,11 @@ export default function LessonViewPage() {
                     {summary}
                   </div>
                 </section>
-              </motion.div>
+              </div>
 
               {/* 5. Interactive Examples */}
               {examples.length > 0 && (
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <section>
                     <h2 className="text-title-sm font-semibold text-on-surface flex items-center gap-2 mb-3">
                       <Icon name="psychology" size={20} className="text-primary" />{_('Interactive Examples')}
@@ -226,12 +220,12 @@ export default function LessonViewPage() {
                       ))}
                     </div>
                   </section>
-                </motion.div>
+                </div>
               )}
 
               {/* 6. Practice Questions */}
               {questions.length > 0 && (
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <section>
                     <h2 className="text-title-sm font-semibold text-on-surface flex items-center gap-2 mb-3">
                       <Icon name="quiz" size={20} className="text-primary" />{_('Practice Questions')}
@@ -252,27 +246,27 @@ export default function LessonViewPage() {
                             <Icon name={answersVisible[i] ? 'expand_less' : 'expand_more'} size={20} className="text-muted-foreground flex-shrink-0" />
                           </button>
                           {answersVisible[i] && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
+                            <div
+
+
                               className="px-4 pb-4"
                             >
                               <div className="p-3 rounded-lg bg-success-container/30 border border-success/20 text-body-md text-on-success-container flex items-start gap-2">
                                 <Icon name="check_circle" size={18} className="text-success flex-shrink-0 mt-0.5" />
                                 {answer}
                               </div>
-                            </motion.div>
+                            </div>
                           )}
                         </div>
                       ))}
                     </div>
                   </section>
-                </motion.div>
+                </div>
               )}
 
               {/* 7. Mini Quiz */}
               {d.quiz && (
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <section>
                     <h2 className="text-title-sm font-semibold text-on-surface flex items-center gap-2 mb-3">
                       <Icon name="assignment" size={20} className="text-success" />{_('Mini Quiz')}
@@ -295,12 +289,12 @@ export default function LessonViewPage() {
                       </Button>
                     </div>
                   </section>
-                </motion.div>
+                </div>
               )}
 
               {/* 8. Assignment */}
               {d.assignment && (
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <section>
                     <h2 className="text-title-sm font-semibold text-on-surface flex items-center gap-2 mb-3">
                       <Icon name="description" size={20} className="text-warning" />{_('Assignment')}
@@ -322,12 +316,12 @@ export default function LessonViewPage() {
                       </Button>
                     </div>
                   </section>
-                </motion.div>
+                </div>
               )}
             </>
           )}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

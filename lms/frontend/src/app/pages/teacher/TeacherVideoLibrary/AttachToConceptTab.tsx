@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -12,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { staggerContainer } from '@/lib/motion';
 import api from '@/services/api';
 import { VideoCard } from './VideoCard';
 import type { TeacherVideo } from './types';
@@ -24,7 +22,6 @@ export function AttachToConceptTab() {
   const [selectedTextbookId, setSelectedTextbookId] = useState('');
   const [selectedChapterId, setSelectedChapterId] = useState('');
   const [selectedConceptId, setSelectedConceptId] = useState('');
-
   const textbooksQuery = useQuery({
     queryKey: ['teacher-textbooks-simple'],
     queryFn: () => api.get('/api/textbooks').then((r) => r.data.data as Textbook[]),
@@ -75,7 +72,6 @@ export function AttachToConceptTab() {
   const chapters = chaptersQuery.data ?? [];
   const concepts = conceptsQuery.data ?? [];
   const allVideos = videosQuery.data ?? [];
-
   const unattachedVideos = allVideos.filter((v) => !v.conceptId || (
     selectedConceptId ? v.conceptId !== selectedConceptId : true
   ));
@@ -150,7 +146,7 @@ export function AttachToConceptTab() {
           emptyMessage={_('All videos are already attached to this concept or your library is empty')}
         >
           {(videos) => (
-            <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
               {videos.map((video) => {
                 const isAttachedHere = video.conceptId === selectedConceptId;
                 return (
@@ -172,7 +168,7 @@ export function AttachToConceptTab() {
                   />
                 );
               })}
-            </motion.div>
+            </div>
           )}
         </DataFetchWrapper>
       )}

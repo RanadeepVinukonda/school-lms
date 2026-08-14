@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -8,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { ROUTES } from '@/lib/constants';
-import { cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { getAllSubjects, getAllClasses, getUser } from '@/services/dataService';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
@@ -26,7 +24,6 @@ interface ProfileData {
 export default function TeacherProfilePage() {
   const { _ } = useTranslation();
   const authUser = useAuthStore((s) => s.user);
-
   const { data: raw, isLoading, error, refetch } = useQuery({
     queryKey: ['teacher-profile', authUser?.id],
     queryFn: async () => {
@@ -61,20 +58,20 @@ export default function TeacherProfilePage() {
   return (
     <>
       <SEOHead title={_('My Profile')} description={_('Teacher profile')} canonical="/teacher/profile" />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-16"
       >
         <DataFetchWrapper data={data} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="profile">
           {(profileData) => (
             <>
-              <motion.div variants={cardStackReveal} custom={0}>
+              <div>
                 <ProfileHeader user={profileData.user} roleLabel={_('Teacher')} editHref={ROUTES.TEACHER_PROFILE_EDIT} />
-              </motion.div>
+              </div>
 
-              <motion.div variants={cardStackReveal} custom={0}>
+              <div>
                 <Card className="border-border/60">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-title-sm flex items-center gap-2">
@@ -120,19 +117,19 @@ export default function TeacherProfilePage() {
                     )}
                   </CardContent>
                 </Card>
-              </motion.div>
+              </div>
 
-              <motion.div variants={cardStackReveal} custom={0}>
+              <div>
                 <ProfileDetails user={profileData.user} />
-              </motion.div>
+              </div>
 
-              <motion.div variants={cardStackReveal} custom={0}>
+              <div>
                 <ProfilePreferences />
-              </motion.div>
+              </div>
             </>
           )}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

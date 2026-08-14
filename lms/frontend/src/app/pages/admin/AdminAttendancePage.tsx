@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -12,7 +11,6 @@ import ClassSelect from '@/components/common/ClassSelect';
 
 export default function AdminAttendancePage() {
   const [selectedClass, setSelectedClass] = useState('');
-
   const { data: reportData, isLoading: reportLoading, isError: reportError, refetch: refetchReport } = useQuery({
     queryKey: ['attendance-report', selectedClass],
     queryFn: () => attendanceService.getAttendanceReport(selectedClass).then((r) => r.data),
@@ -23,10 +21,10 @@ export default function AdminAttendancePage() {
     <>
       <SEOHead title="Attendance Management" description="Track student and teacher attendance" />
       <div className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-8">
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <div>
           <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">Attendance Management</h1>
           <p className="text-body-md text-muted-foreground mt-1">Track and manage attendance records</p>
-        </motion.div>
+        </div>
 
         <div className="flex gap-3 items-center flex-wrap">
           <div className="relative flex-1 min-w-0 sm:min-w-[200px]">

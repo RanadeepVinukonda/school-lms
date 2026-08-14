@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { Input } from '@/components/ui/input';
 import { QuestionTypeCard } from './QuestionTypeCard';
-import { cardStackReveal } from '@/lib/motion';
 import { generateQuestions, saveQuestions } from '@/services/nepQuestionsService';
 import type { NEPQuestion, NEPQuestionType } from '@/types/nepQuestions';
 
@@ -35,9 +33,7 @@ export function NEPQuestionGenerator({ concepts, onQuestionsSaved }: NEPQuestion
   const [difficulty, setDifficulty] = useState('medium');
   const [count, setCount] = useState(5);
   const [generatedQuestions, setGeneratedQuestions] = useState<NEPQuestion[]>([]);
-
   const concept = concepts.find((c) => c.id === selectedConcept);
-
   const generateMutation = useMutation({
     mutationFn: () => {
       if (!concept) throw new Error('Select a concept');
@@ -87,7 +83,7 @@ export function NEPQuestionGenerator({ concepts, onQuestionsSaved }: NEPQuestion
 
   return (
     <div className="space-y-8">
-      <motion.div variants={cardStackReveal} className="space-y-4">
+      <div className="space-y-4">
         <div>
           <label className="text-sm font-medium">Select Concept</label>
           <select
@@ -146,10 +142,10 @@ export function NEPQuestionGenerator({ concepts, onQuestionsSaved }: NEPQuestion
           <Icon name="auto_awesome" size={18} className="mr-2" />
           Generate Questions
         </Button>
-      </motion.div>
+      </div>
 
       {generatedQuestions.length > 0 && (
-        <motion.div variants={cardStackReveal} className="space-y-4">
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-title-sm font-semibold">Preview ({generatedQuestions.length} questions)</h3>
             <div className="flex gap-2">
@@ -198,7 +194,7 @@ export function NEPQuestionGenerator({ concepts, onQuestionsSaved }: NEPQuestion
               </Card>
             ))}
           </div>
-        </motion.div>
+        </div>
       )}
     </div>
   );

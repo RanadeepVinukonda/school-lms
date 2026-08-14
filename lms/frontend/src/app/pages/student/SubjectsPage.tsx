@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,14 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { useQuery } from '@tanstack/react-query';
-import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { getAllSubjects, getClass } from '@/services/dataService';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
 
 export default function SubjectsPage() {
   const user = useAuthStore((s) => s.user);
-
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-subjects', user?.id, user?.classId],
     queryFn: async () => {
@@ -45,20 +42,20 @@ export default function SubjectsPage() {
   return (
     <>
       <SEOHead title="My Subjects" description="View your subjects" />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
       >
-        <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+        <div>
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-headline-sm md:text-headline-md font-bold tracking-tight">My Subjects</h1>
               <p className="text-body-md text-muted-foreground">Subjects in your curriculum</p>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         <DataFetchWrapper
           data={data}
@@ -71,15 +68,15 @@ export default function SubjectsPage() {
           errorTitle="Failed to load subjects"
         >
           {(subjects) => (
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, margin: '-60px' }}
+            <div
+
+
+
+
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4"
             >
               {subjects.map((subject) => (
-                <motion.div key={subject.id} variants={cardStackReveal} custom={0}>
+                <div key={subject.id}>
                   <Link to={`/student/subjects/${subject.id}`} className="block h-full">
                     <Card className="overflow-hidden transition-all duration-300 h-full border-border/60 group">
                       <div
@@ -128,12 +125,12 @@ export default function SubjectsPage() {
                       </CardContent>
                     </Card>
                   </Link>
-                </motion.div>
+                </div>
               ))}
-            </motion.div>
+            </div>
           )}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

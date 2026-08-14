@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -30,7 +29,6 @@ export default function TeacherTimetablePage() {
     [_('Thursday')]: _('Thu'), [_('Friday')]: _('Fri'), [_('Saturday')]: _('Sat'),
   };
   const [selectedClassId, setSelectedClassId] = useState('');
-
   const { data: subjects = [] } = useQuery({
     queryKey: ['all-subjects'],
     queryFn: getAllSubjects,
@@ -64,7 +62,6 @@ export default function TeacherTimetablePage() {
   });
 
   const timetableEntries = ((timetableRes as any)?.data || []) as any[];
-
   const subjectMap = useMemo(() => {
     const m = new Map<string, string>();
     for (const s of subjects) m.set(s.id, s.name);
@@ -110,10 +107,10 @@ export default function TeacherTimetablePage() {
     <>
       <SEOHead title={_('My Timetable')} description={_('View your class schedule by period and day')} />
       <div className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-8">
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <div>
           <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">{_('My Timetable')}</h1>
           <p className="text-body-md text-muted-foreground mt-1">{_('View your assigned class schedule')}</p>
-        </motion.div>
+        </div>
 
         {uniqueClasses.length > 0 && (
           <div className="flex flex-wrap gap-2">

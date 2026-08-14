@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@/components/ui/Icon';
 import { registerBackHandler } from '@/lib/backHandler';
 import { useClasses } from '@/hooks/useClasses';
@@ -48,12 +47,9 @@ function formatAttachments(files: unknown): { name?: string; url?: string }[] {
 
 export default function NoticeDetailsModal({ open, notice, onClose, t }: NoticeDetailsModalProps) {
   const { data: classes = [] } = useClasses();
-  const [atTop, setAtTop] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     if (!open || !notice) return;
-    setAtTop(true);
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
     return registerBackHandler(() => {
       onClose();
@@ -76,33 +72,17 @@ export default function NoticeDetailsModal({ open, notice, onClose, t }: NoticeD
 
   return (
     <DialogPrimitive.Root open={open} onOpenChange={(val) => !val && onClose()}>
-      <AnimatePresence>
+
         {open && (
           <DialogPrimitive.Portal forceMount>
             <DialogPrimitive.Overlay asChild forceMount>
-              <motion.div
+              <div
                 className="fixed inset-0 z-[80] bg-black/60"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
               />
             </DialogPrimitive.Overlay>
 
             <DialogPrimitive.Content asChild forceMount>
-              <motion.div
-                drag={atTop ? 'y' : false}
-                dragConstraints={{ top: 0, bottom: 0 }}
-                dragElastic={{ top: 0, bottom: 0.6 }}
-                onDragEnd={(_, info) => {
-                  if (info.offset.y > 120 || info.velocity.y > 600) {
-                    onClose();
-                  }
-                }}
-                initial={{ y: '100%' }}
-                animate={{ y: 0 }}
-                exit={{ y: '100%' }}
-                transition={{ type: 'spring', damping: 30, stiffness: 320 }}
+              <div
                 className="fixed inset-x-0 bottom-0 z-[81] mx-auto w-full max-w-lg sm:max-w-md pb-[env(safe-area-inset-bottom)] bg-background rounded-t-[24px] shadow-2xl outline-none focus:outline-none"
               >
                 <div className="flex items-center justify-center pt-3 pb-1">
@@ -140,11 +120,6 @@ export default function NoticeDetailsModal({ open, notice, onClose, t }: NoticeD
 
                 <div
                   ref={scrollRef}
-                  onScroll={(e) => {
-                    const el = e.currentTarget;
-                    const next = el.scrollTop <= 4;
-                    if (next !== atTop) setAtTop(next);
-                  }}
                   className="max-h-[70dvh] overflow-y-auto overscroll-contain px-5 pb-8"
                 >
                   {notice.content ? (
@@ -226,11 +201,11 @@ export default function NoticeDetailsModal({ open, notice, onClose, t }: NoticeD
                     )}
                   </div>
                 </div>
-              </motion.div>
+              </div>
             </DialogPrimitive.Content>
           </DialogPrimitive.Portal>
         )}
-      </AnimatePresence>
+
     </DialogPrimitive.Root>
   );
 }

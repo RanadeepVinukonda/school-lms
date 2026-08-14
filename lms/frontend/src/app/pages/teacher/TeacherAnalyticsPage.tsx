@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -10,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icon } from '@/components/ui/Icon';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useClasses } from '@/hooks/useClasses';
 import { formatClassName } from '@/services/classService';
 import api from '@/services/api';
@@ -88,9 +86,7 @@ export default function TeacherAnalyticsPage() {
   const { _ } = useTranslation();
   const [selectedClassId, setSelectedClassId] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
-
   const { data: classes = [] } = useClasses();
-
   const { data: classData, isLoading, error, refetch } = useQuery({
     queryKey: ['class-analytics', selectedClassId],
     queryFn: () => api.get(`/analytics-v2/class/${selectedClassId}`).then((r) => r.data.data),
@@ -108,13 +104,13 @@ export default function TeacherAnalyticsPage() {
   return (
     <>
       <SEOHead title={_('Analytics')} description={_('Class performance analytics')} canonical="/teacher/analytics" />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
       >
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-headline-sm">{_('Analytics')}</h1>
@@ -133,43 +129,43 @@ export default function TeacherAnalyticsPage() {
               </select>
             )}
           </div>
-        </motion.div>
+        </div>
 
         {!selectedClassId && (
-          <motion.div variants={cardStackReveal} custom={0}>
+          <div>
             <Card className="border-border/60">
               <CardContent className="p-5 text-center text-muted-foreground">
                 <Icon name="analytics" size={48} className="mx-auto mb-3 opacity-40" />
                 <p>{_('Select a class to view analytics')}</p>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         )}
 
         {selectedClassId && (
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <motion.div variants={cardStackReveal} custom={0}>
+            <div>
               <TabsList className="w-full overflow-x-auto inline-flex">
                 <TabsTrigger value="overview">{_('Overview')}</TabsTrigger>
                 <TabsTrigger value="concepts">{_('Concept Mastery')}</TabsTrigger>
               </TabsList>
-            </motion.div>
+            </div>
 
             <TabsContent value="overview">
               <DataFetchWrapper data={classData} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="card">
                 {(data) => (data.assessments && data.assessments.length > 0) ? (
                   <div className="space-y-16">
-                    <motion.div variants={cardStackReveal} custom={0}>
+                    <div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                       <StatCard icon="school" label={_('Students')} value={data.totalStudents ?? 0} color="bg-blue-600" />
                       <StatCard icon="quiz" label={_('Assessments')} value={data.totalAssessments ?? 0} color="bg-purple-600" />
                       <StatCard icon="trending_up" label={_('Avg Score')} value={`${data.avgScore ?? 0}%`} color="bg-emerald-600" />
                       <StatCard icon="check_circle" label={_('Pass Rate')} value={`${data.passRate ?? 0}%`} color="bg-amber-600" />
                     </div>
-                  </motion.div>
+                  </div>
 
                   {data.studentLevelDistribution && (
-                    <motion.div variants={cardStackReveal} custom={0}>
+                    <div>
                       <Card className="border-border/60">
                         <CardHeader><CardTitle className="text-title-sm">{_('Student Level Distribution')}</CardTitle></CardHeader>
                         <CardContent className="p-5 space-y-3">
@@ -185,11 +181,11 @@ export default function TeacherAnalyticsPage() {
                           ))}
                         </CardContent>
                       </Card>
-                    </motion.div>
+                    </div>
                   )}
 
                   {data.assessments && data.assessments.length > 0 && (
-                    <motion.div variants={cardStackReveal} custom={0}>
+                    <div>
                       <Card className="border-border/60">
                         <CardHeader><CardTitle className="text-title-sm">{_('Assessments')} ({data.assessments.length})</CardTitle></CardHeader>
                         <CardContent className="p-5 space-y-2">
@@ -198,18 +194,18 @@ export default function TeacherAnalyticsPage() {
                           ))}
                         </CardContent>
                       </Card>
-                    </motion.div>
+                    </div>
                   )}
                   </div>
                 ) : (
-                  <motion.div variants={cardStackReveal} custom={0}>
+                  <div>
                     <Card className="border-border/60">
                       <CardContent className="p-5 text-center text-muted-foreground">
                         <Icon name="analytics" size={48} className="mx-auto mb-3 opacity-40" />
                         <p>{_('No assessments conducted yet for this class')}</p>
                       </CardContent>
                     </Card>
-                  </motion.div>
+                  </div>
                 )}
               </DataFetchWrapper>
             </TabsContent>
@@ -219,14 +215,14 @@ export default function TeacherAnalyticsPage() {
                 {(data) => {
                   const concepts: any[] = Array.isArray(data) ? data.filter((c: any) => (c.attemptCount ?? 0) > 0) : [];
                   if (concepts.length === 0) return (
-                    <motion.div variants={cardStackReveal} custom={0}>
+                    <div>
                       <Card className="border-border/60"><CardContent className="p-5 text-center text-muted-foreground"><p>{_('No concept data available. Create assessments linked to concepts to see mastery here.')}</p></CardContent></Card>
-                    </motion.div>
+                    </div>
                   );
                   return (
                     <div className="space-y-2">
                       {concepts.map((c: any, i: number) => (
-                        <motion.div key={i} variants={cardStackReveal} custom={i}>
+                        <div key={i}>
                           <Card className="border-border/60">
                             <CardContent className="p-5">
                               <div className="flex items-center justify-between gap-4">
@@ -253,7 +249,7 @@ export default function TeacherAnalyticsPage() {
                               )}
                             </CardContent>
                           </Card>
-                        </motion.div>
+                        </div>
                       ))}
                     </div>
                   );
@@ -262,7 +258,7 @@ export default function TeacherAnalyticsPage() {
             </TabsContent>
           </Tabs>
         )}
-      </motion.div>
+      </div>
     </>
   );
 }

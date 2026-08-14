@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '@/hooks/useTranslation';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -36,7 +35,6 @@ function ApproveDialog({ request, onClose }: ApproveDialogProps) {
   const { _ } = useTranslation();
   const qc = useQueryClient();
   const [selected, setSelected] = useState<Set<string>>(new Set());
-
   const search = useQuery({
     queryKey: ['resource-search', request.conceptId],
     queryFn: () => searchResourcesForConcept(request.conceptId, 8),
@@ -87,7 +85,7 @@ function ApproveDialog({ request, onClose }: ApproveDialogProps) {
             </p>
           )}
           {!searchLoading && (search.data || []).length === 0 && (
-            <p className="text-body-sm text-muted-foreground">{_('No candidate videos found. Try again or add a custom link.')}</p>
+            <p className="text-body-sm text-muted-foreground">{_('No candidate videos found. Try again or add a link.')}</p>
           )}
           <div className="grid gap-3 sm:grid-cols-2">
             {(search.data || []).map((v) => (
@@ -148,7 +146,6 @@ export default function TeacherResourceRequestsPage() {
   const { _ } = useTranslation();
   const qc = useQueryClient();
   const [activeRequest, setActiveRequest] = useState<ResourceRequest | null>(null);
-
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['teacher-resource-requests'],
     queryFn: getTeacherRequests,
@@ -167,12 +164,12 @@ export default function TeacherResourceRequestsPage() {
     <>
       <SEOHead title={_('Resource Requests')} description={_('Review student resource requests and push curated videos')} />
       <div className="sm:p-6 p-4 max-w-5xl mx-auto space-y-8 pb-32">
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <div>
           <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">{_('Resource Requests')}</h1>
           <p className="text-body-md text-muted-foreground mt-1">
             {_('Students request curated resources for concepts they scored low on. Review and push videos back to them.')}
           </p>
-        </motion.div>
+        </div>
 
         <DataFetchWrapper
           data={data}

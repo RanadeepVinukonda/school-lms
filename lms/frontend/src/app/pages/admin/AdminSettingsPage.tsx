@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -23,7 +22,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { cardStackReveal } from '@/lib/motion';
 import { getInitials, formatDate } from '@/lib/utils';
 import { ROUTES } from '@/lib/constants';
 import { settingsService } from '@/services/settingsService';
@@ -87,7 +85,6 @@ export default function AdminSettingsPage() {
   const [searchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState<string>(() => (tabParam === 'profile' ? 'profile' : 'general'));
-
   useEffect(() => {
     if (tabParam === 'profile' || tabParam === 'general' || tabParam === 'parents' || tabParam === 'audit') {
       setActiveTab(tabParam);
@@ -117,9 +114,7 @@ export default function AdminSettingsPage() {
   const teacherCount = users.filter((u) => u.role === 'teacher').length;
   const adminCount = users.filter((u) => u.role === 'admin' || u.role === 'super_admin').length;
   const classCount = classes.length;
-
   const adminSelf = useMemo(() => users.find((u) => u.id === authUser?.id), [users, authUser?.id]);
-
   const statsConfig = [
     { icon: 'school', label: 'Students', value: `${studentCount} Active`, bg: 'bg-primary-container text-on-primary-container' },
     { icon: 'badge', label: 'Teachers', value: `${teacherCount} Active`, bg: 'bg-success-container text-on-success-container' },
@@ -181,7 +176,6 @@ export default function AdminSettingsPage() {
     selectedStudentIds: [] as string[],
   });
   const [studentSearchQuery, setStudentSearchQuery] = useState('');
-
   const filteredStudents = useMemo(() => {
     const studentUsers = users.filter((u: any) => u.role === 'student');
     if (!studentSearchQuery) return studentUsers.slice(0, 20);
@@ -250,7 +244,6 @@ export default function AdminSettingsPage() {
   const [deleteParentTarget, setDeleteParentTarget] = useState<any | null>(null);
   const [parentDeleteLoading, setParentDeleteLoading] = useState(false);
   const [parentDependencyReport, setParentDependencyReport] = useState<DependencyReport | null>(null);
-
   const parentUsers = useMemo(() => {
     return users.filter((u) => u.role === 'parent');
   }, [users]);
@@ -297,7 +290,6 @@ export default function AdminSettingsPage() {
   const [auditPage, setAuditPage] = useState(1);
   const [auditActionFilter, setAuditActionFilter] = useState('');
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
-
   const auditLogsQuery = useQuery({
     queryKey: ['admin-audit-logs', auditPage, auditActionFilter],
     queryFn: async () => {
@@ -334,13 +326,13 @@ export default function AdminSettingsPage() {
   return (
     <>
       <SEOHead title="Settings & Logs" description="System configuration, administrators, and audit trails" canonical="/admin/settings" />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32"
       >
-        <motion.div variants={cardStackReveal} custom={0} className="space-y-16">
+        <div className="space-y-16">
           <div>
             <h1 className="text-headline-sm font-bold">Settings & Audit Hub</h1>
             <p className="text-body-md text-muted-foreground">General configurations, admin settings, and full system audit logs</p>
@@ -624,9 +616,9 @@ export default function AdminSettingsPage() {
                             </div>
 
                             {selectedLog?.id === log.id && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: 'auto', opacity: 1 }}
+                              <div
+
+
                                 className="mt-3 pt-3 border-t border-border/60 space-y-3 text-label-xs"
                               >
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-muted-foreground font-medium">
@@ -656,7 +648,7 @@ export default function AdminSettingsPage() {
                                     Recover Deleted Entity
                                   </Button>
                                 )}
-                              </motion.div>
+                              </div>
                             )}
                           </CardContent>
                         </Card>
@@ -685,8 +677,8 @@ export default function AdminSettingsPage() {
               </DataFetchWrapper>
             </TabsContent>
           </Tabs>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
       {/* -------------------------------------------------------------
           PARENT DIALOGS

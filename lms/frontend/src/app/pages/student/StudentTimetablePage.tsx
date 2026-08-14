@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -20,7 +19,6 @@ export default function StudentTimetablePage() {
   const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const selectedClassId = user?.classId || '';
-
   const { data: subjects = [] } = useQuery({
     queryKey: ['all-subjects'],
     queryFn: getAllSubjects,
@@ -32,7 +30,6 @@ export default function StudentTimetablePage() {
   });
 
   const teachers = useMemo(() => teachersData || [], [teachersData]);
-
   const { data: timetableRes, isLoading, error, refetch } = useQuery({
     queryKey: ['student-timetable', selectedClassId],
     queryFn: () => timetableService.getByClass(selectedClassId),
@@ -40,7 +37,6 @@ export default function StudentTimetablePage() {
   });
 
   const timetableEntries = (timetableRes?.data ?? []) as any[];
-
   const subjectMap = useMemo(() => {
     const m = new Map<string, string>();
     for (const s of subjects) m.set(s.id, s.name);
@@ -79,10 +75,10 @@ export default function StudentTimetablePage() {
     <>
       <SEOHead title={_('Timetable')} description={_('View your class timetable by period and day')} />
       <div className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-8">
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <div>
           <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">{_('Timetable')}</h1>
           <p className="text-body-md text-muted-foreground mt-1">{_('View class timetable by period, day, and subject')}</p>
-        </motion.div>
+        </div>
 
         <DataFetchWrapper
           data={timetableEntries}

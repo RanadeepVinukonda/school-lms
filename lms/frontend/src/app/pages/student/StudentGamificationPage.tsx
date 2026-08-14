@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -13,14 +12,12 @@ import { DailyChallengeCard } from '@/components/gamification/DailyChallengeCard
 import { useAuthStore } from '@/store/authStore';
 import { gamificationService } from '@/services/gamificationService';
 import { XP_THRESHOLDS } from '@/components/gamification/constants';
-import { scrollReveal, staggerContainer } from '@/lib/motion';
 
 export default function StudentGamificationPage() {
   const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const userId = user?.id;
   const queryClient = useQueryClient();
-
   const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
     queryKey: ['gamification-profile', userId],
     enabled: !!userId,
@@ -59,20 +56,20 @@ export default function StudentGamificationPage() {
   return (
     <>
       <SEOHead title={_('Rewards')} description={_('Your gamification rewards')} />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-8"
       >
-        <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+        <div>
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-headline-sm md:text-headline-md font-bold tracking-tight">{_('Rewards')}</h1>
               <p className="text-body-md text-muted-foreground">{_('Track your XP, badges, and daily challenges')}</p>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         <DataFetchWrapper data={profile} isLoading={profileLoading} error={profileError as Error | null} loadingType="card">
           {(p) => (
@@ -244,7 +241,7 @@ export default function StudentGamificationPage() {
             </DataFetchWrapper>
           </div>
         </div>
-      </motion.div>
+      </div>
     </>
   );
 }

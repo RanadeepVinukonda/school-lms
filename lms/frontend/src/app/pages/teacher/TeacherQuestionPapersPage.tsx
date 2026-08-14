@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -11,7 +10,6 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
 
@@ -24,7 +22,6 @@ export default function TeacherQuestionPapersPage() {
   const [description, setDescription] = useState('');
   const [duration, setDuration] = useState(60);
   const [sections, setSections] = useState([{ title: 'Section A', instructions: '', questionIds: [''], pointsPerQuestion: 1 }]);
-
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['question-papers', user?.id],
     queryFn: () => api.get('/question-papers', { params: { createdBy: user?.id } }).then((r) => r.data.data),
@@ -61,13 +58,13 @@ export default function TeacherQuestionPapersPage() {
   return (
     <>
       <SEOHead title={_('Question Papers')} description={_('Compose and manage question papers')} canonical="/teacher/question-papers" />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
       >
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-headline-sm">{_('Question Papers')}</h1>
@@ -75,9 +72,9 @@ export default function TeacherQuestionPapersPage() {
             </div>
             <Button onClick={() => setShowCreate(true)}><Icon name="add" size={16} className="mr-1" />{_('New Paper')}</Button>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <DataFetchWrapper data={data} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="list">
             {(papers: any[]) => (
               <div className="space-y-2">
@@ -117,7 +114,7 @@ export default function TeacherQuestionPapersPage() {
               </div>
             )}
           </DataFetchWrapper>
-        </motion.div>
+        </div>
 
         <Dialog open={showCreate} onOpenChange={(o) => { if (!o) resetForm(); setShowCreate(o); }}>
           <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -161,7 +158,7 @@ export default function TeacherQuestionPapersPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </motion.div>
+      </div>
     </>
   );
 }

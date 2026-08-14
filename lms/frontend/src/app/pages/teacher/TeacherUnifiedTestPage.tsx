@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -47,7 +46,6 @@ const TEST_TYPES = [
 export default function TeacherUnifiedTestPage() {
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
-
   const [activeTab, setActiveTab] = useState('create');
   const [testType, setTestType] = useState<'quiz' | 'assignment' | 'exam'>('quiz');
   const [selectedClassId, setSelectedClassId] = useState('');
@@ -56,7 +54,6 @@ export default function TeacherUnifiedTestPage() {
   const [selectedChapterId, setSelectedChapterId] = useState('');
   const [selectedConceptId, setSelectedConceptId] = useState('');
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
-
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [selectedModels, setSelectedModels] = useState<string[]>(['multiple_choice', 'true_false']);
@@ -69,11 +66,9 @@ export default function TeacherUnifiedTestPage() {
   const [publishScope, setPublishScope] = useState<'class' | 'students'>('class');
   const [publishToAll, setPublishToAll] = useState(true);
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
-
   const [templateName, setTemplateName] = useState('');
   const [templateDescription, setTemplateDescription] = useState('');
   const [reviewQuestions, setReviewQuestions] = useState<any[]>([]);
-
   const { data: assignments, isLoading: assignmentsLoading } = useQuery({
     queryKey: ['teacher-assignments', user?.id],
     queryFn: () => api.get('/teacher-class-subject/my').then((r) => r.data.data ?? []),
@@ -81,9 +76,7 @@ export default function TeacherUnifiedTestPage() {
   });
 
   const { data: classes = [] } = useClasses();
-
   const assignmentList = Array.isArray(assignments) ? assignments : [];
-
   const effectiveSubjectId = selectedSubjectId || '';
   const { data: textbooks } = useQuery({
     queryKey: ['teacher-textbooks', effectiveSubjectId],
@@ -119,9 +112,7 @@ export default function TeacherUnifiedTestPage() {
   const chapterList = chapters ?? [];
   const conceptList = concepts ?? [];
   const templateList = Array.isArray(templates) ? templates : [];
-
   const effectiveMaxAttempts = testType === 'exam' ? 1 : maxAttempts;
-
   const handleModelToggle = useCallback((model: string) => {
     setSelectedModels((prev) =>
       prev.includes(model) ? prev.filter((m) => m !== model) : [...prev, model],
@@ -282,7 +273,6 @@ export default function TeacherUnifiedTestPage() {
 
   const classAssignments = assignmentList.filter((a: any) => a.classId === selectedClassId);
   const selectedAssignment = classAssignments[0];
-
   useEffect(() => {
     if (classAssignments.length === 1 && !selectedSubjectId) {
       setSelectedSubjectId(classAssignments[0].subjectId);
@@ -292,7 +282,7 @@ export default function TeacherUnifiedTestPage() {
   return (
     <>
       <SEOHead title="Push Test" description="Create and publish unified tests" />
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="sm:p-6 p-4 max-w-5xl mx-auto pb-32 space-y-8">
+      <div className="sm:p-6 p-4 max-w-5xl mx-auto pb-32 space-y-8">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-headline-sm">Push Test</h1>
@@ -818,7 +808,7 @@ export default function TeacherUnifiedTestPage() {
             </Card>
           </TabsContent>
         </Tabs>
-      </motion.div>
+      </div>
     </>
   );
 }

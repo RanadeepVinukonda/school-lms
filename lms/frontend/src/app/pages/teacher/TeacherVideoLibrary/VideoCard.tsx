@@ -1,9 +1,7 @@
-import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
-import { cardStackReveal } from '@/lib/motion';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { TeacherVideo, EducationalVideoSearchResult, YouTubeSearchResult } from './types';
 
@@ -40,7 +38,7 @@ export function VideoCard({ video, onDelete, onAttach, onSave, saved }: VideoCar
   const source = getSource(video);
   const sourceLabel = getSourceLabel(video);
   return (
-    <motion.div variants={cardStackReveal} custom={0}>
+    <div>
       <Card className="border-border/60 overflow-hidden hover:shadow-md transition-shadow group h-full">
         <div className="aspect-video bg-muted relative overflow-hidden">
           <img src={getThumbnail(video)} alt={video.title} className="w-full h-full object-cover" loading="lazy" />
@@ -77,6 +75,6 @@ export function VideoCard({ video, onDelete, onAttach, onSave, saved }: VideoCar
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 }

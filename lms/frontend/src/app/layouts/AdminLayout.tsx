@@ -1,6 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
 import { NavLink, Outlet, Navigate, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { supabase } from '@/supabase/config';
 import { useAuthStore } from '@/store/authStore';
@@ -16,7 +15,6 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { UserAvatar } from '@/components/layout/UserAvatar';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
-import { pageTransition } from '@/lib/motion';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useDrawerSwipeLeft } from '@/hooks/useDrawerSwipeLeft';
 

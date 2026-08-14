@@ -54,7 +54,6 @@ const envSchema = z.object({
   API_DOCS_PASSWORD: z.string().optional(),
 
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
-  ADMIN_PHONE: z.string().default('8919473722'),
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -3,7 +3,6 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
-import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -22,7 +21,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icon } from '@/components/ui/Icon';
 import { ConceptMindMap } from '@/components/teacher/ConceptMindMap';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { getTextbook, getChaptersForTextbook, getConceptsForChapter, reprocessTextbook, deleteTextbook, updateTextbook } from '@/services/textbookService';
 import { getSubject } from '@/services/dataService';
 import type { Chapter, Concept } from '@/types/textbook';
@@ -36,11 +34,9 @@ export default function TeacherTextbookDetailPage() {
   const { textbookId } = useParams<{ textbookId: string }>();
   const navigate = useNavigate();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-
   const queryClient = useQueryClient();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
-
   const updateTitleMutation = useMutation({
     mutationFn: async (newTitle: string) => {
       if (!textbookId) return;
@@ -80,7 +76,6 @@ export default function TeacherTextbookDetailPage() {
   useRealtimeInvalidation([{ table: 'textbooks', queryKey: ['teacher-textbook', textbookId ?? ''] }]);
 
   const logEndRef = useRef<HTMLDivElement | null>(null);
-
   useEffect(() => {
     if (logEndRef.current) {
       logEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -141,7 +136,6 @@ export default function TeacherTextbookDetailPage() {
   });
 
   const allConcepts = (chaptersQuery.data ?? []).flatMap((ch) => ch.conceptsList);
-
   const renderProgressTracker = (tb: any) => {
     const isFailed = tb.status === 'failed';
     const isReady = tb.status === 'ready';
@@ -288,11 +282,11 @@ export default function TeacherTextbookDetailPage() {
   return (
     <>
       <SEOHead title={textbookQuery.data?.title ?? _('Textbook')} description={_('View textbook chapters and concepts')} />
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-6xl mx-auto space-y-16 pb-32">
+      <div className="sm:p-6 p-4 max-w-6xl mx-auto space-y-16 pb-32">
         <DataFetchWrapper data={textbookQuery.data} isLoading={textbookQuery.isLoading} error={textbookQuery.error} loadingType="detail">
           {(tb) => (
             <>
-              <motion.div variants={cardStackReveal} custom={0}>
+              <div>
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <Button variant="outline" size="sm" asChild>
@@ -368,9 +362,9 @@ export default function TeacherTextbookDetailPage() {
                     </DialogContent>
                   </Dialog>
                 </div>
-              </motion.div>
+              </div>
 
-              <motion.div variants={cardStackReveal} custom={0}>
+              <div>
                 {tb.status === 'processing' || tb.status === 'failed' ? (
                   renderProgressTracker(tb)
                 ) : (
@@ -389,9 +383,9 @@ export default function TeacherTextbookDetailPage() {
                         </TabsList>
 
                           <TabsContent value="chapters">
-                          <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3 mt-4">
+                          <div className="space-y-3 mt-4">
                             {chapters.map((ch) => (
-                              <motion.div key={ch.id} variants={scrollReveal}>
+                              <div key={ch.id}>
                                 <Card className="border-border/60">
                                   <CardContent className="p-5">
                                     <div className="flex items-start justify-between">
@@ -441,9 +435,9 @@ export default function TeacherTextbookDetailPage() {
                                     </div>
                                   </CardContent>
                                 </Card>
-                              </motion.div>
+                              </div>
                             ))}
-                          </motion.div>
+                          </div>
                         </TabsContent>
 
                         <TabsContent value="mindmap">
@@ -455,11 +449,11 @@ export default function TeacherTextbookDetailPage() {
                     )}
                   </DataFetchWrapper>
                 )}
-              </motion.div>
+              </div>
             </>
           )}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

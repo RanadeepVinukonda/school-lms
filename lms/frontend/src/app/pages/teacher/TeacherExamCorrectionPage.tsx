@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import api from '@/services/api';
@@ -13,7 +12,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Icon } from '@/components/ui/Icon';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import {
   getExam,
   getSubject,
@@ -35,7 +33,6 @@ interface ExamQuestion {
 }
 
 type SaveHandler = ReturnType<typeof setTimeout>;
-
 const studentAnswers: Record<string, Record<string, string>> = {
   s1: { eq1: 'x = (-b ± √(b²-4ac))/2a', eq2: 'Take coefficient of x, halve it, square it, add to both sides. Factor perfect square trinomial and solve.' },
   s2: { eq1: 'x = (-b ± √(b²-4ac))/2a', eq2: 'Completing the square rewrites ax²+bx+c as a(x-h)²+k. Find h=-b/2a and k=c-b²/4a.' },
@@ -72,7 +69,6 @@ export default function TeacherExamCorrectionPage() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
   const [proctoringLogs, setProctoringLogs] = useState<any[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
-
   useEffect(() => {
     if (!id || !studentId) return;
     setLoadingLogs(true);
@@ -130,15 +126,12 @@ export default function TeacherExamCorrectionPage() {
   const subject = examData?.subject ?? null;
   const corrections = examData?.corrections ?? [];
   const enrolled = examData?.enrolled ?? [];
-
   const questions = (exam?.questions ?? []) as ExamQuestion[];
-
   const student = useMemo(() => enrolled.find((s) => s.id === studentId) ?? null, [enrolled, studentId]);
   const correction = useMemo(() => corrections.find((c) => c.studentId === studentId) ?? null, [corrections, studentId]);
   const question = questions[qIdx];
   const totalGiven = questions.reduce((s, q) => s + getMark(marks, correction, q.id), 0);
   const totalMax = questions.reduce((s, q) => s + q.points, 0);
-
   useEffect(() => {
     if (enrolled.length > 0 && !studentId) setStudentId(enrolled[0].id);
   }, [enrolled, studentId]);
@@ -185,7 +178,6 @@ export default function TeacherExamCorrectionPage() {
 
   const qsRef = useRef(questions);
   qsRef.current = questions;
-
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     const ctrl = e.ctrlKey || e.metaKey;
     const isInput = document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA';
@@ -334,7 +326,7 @@ export default function TeacherExamCorrectionPage() {
               </Badge>
             )}
           </div>
-          
+
           {loadingLogs ? (
             <p className="text-label-xs text-muted-foreground animate-pulse">{_('Loading proctoring logs...')}</p>
           ) : proctoringLogs.length === 0 ? (
@@ -351,7 +343,7 @@ export default function TeacherExamCorrectionPage() {
                 log.event === 'tab_focus_gained' ? _('Returned to Exam') :
                 log.event === 'fullscreen_exit' ? _('Exited Fullscreen') :
                 log.event === 'fullscreen_enter' ? _('Entered Fullscreen') : log.event;
-                  
+
                 return (
                   <div key={log.id || li} className="flex items-start gap-2 text-[11px] leading-normal">
                     <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${isViolation ? 'bg-destructive' : 'bg-success'}`} />
@@ -375,19 +367,19 @@ export default function TeacherExamCorrectionPage() {
 
   if (examLoading) {
     return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-5xl mx-auto pb-32">
+      <div className="sm:p-6 p-4 max-w-5xl mx-auto pb-32">
           <SEOHead title={_('Exam Correction')} description={_('Grade student exam submissions')} />
           <Card className="border-border/60">
             <CardContent className="flex items-center justify-center py-12">
               <p className="text-muted-foreground">{_('Loading exam...')}</p>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
     );
   }
 
   if (!exam) return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-5xl mx-auto pb-32">
+    <div className="sm:p-6 p-4 max-w-5xl mx-auto pb-32">
       <SEOHead title={_('Exam Correction')} description={_('Grade student exam submissions')} />
       <Card className="border-border/60"><CardContent className="flex flex-col items-center gap-3 py-12">
         <Icon name="fact_check" size={48} className="text-muted-foreground/40" />
@@ -395,11 +387,11 @@ export default function TeacherExamCorrectionPage() {
         <p className="text-body-md text-muted-foreground">{_('The exam you\'re looking for doesn\'t exist.')}</p>
         <Button asChild><Link to="/teacher/exams"><Icon name="arrow_back" size={16} className="mr-1" /> {_('Back to Exams')}</Link></Button>
       </CardContent></Card>
-    </motion.div>
+    </div>
   );
 
   if (enrolled.length === 0) return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-5xl mx-auto pb-32">
+    <div className="sm:p-6 p-4 max-w-5xl mx-auto pb-32">
       <SEOHead title={_('Correcting') + `: ${exam.title}`} description={_('Grade submissions for') + ` ${exam.title}`} />
       <div className="flex flex-col items-center gap-3 py-12">
         <Icon name="group_off" size={48} className="text-muted-foreground/40" />
@@ -407,19 +399,19 @@ export default function TeacherExamCorrectionPage() {
         <p className="text-body-md text-muted-foreground">{_('There are no students assigned to this class/subject.')}</p>
         <Button asChild><Link to="/teacher/exams"><Icon name="arrow_back" size={16} className="mr-1" /> {_('Back to Exams')}</Link></Button>
       </div>
-    </motion.div>
+    </div>
   );
 
   return (
     <>
       <SEOHead title={_('Correcting') + `: ${exam.title}`} description={_('Grade submissions for') + ` ${exam.title}`} />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="min-h-screen flex flex-col"
       >
-        <motion.div variants={cardStackReveal} custom={0} className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
           <div className="flex items-center justify-between px-4 lg:px-6 py-3">
             <div className="flex items-center gap-3 min-w-0">
               <Button variant="ghost" size="icon-sm" asChild><Link to="/teacher/exams"><Icon name="arrow_back" size={20} /></Link></Button>
@@ -434,7 +426,7 @@ export default function TeacherExamCorrectionPage() {
               {enrolled.map((s) => <option key={s.id} value={s.id}>{s.displayName}</option>)}
             </select>
           </div>
-        </motion.div>
+        </div>
 
         <div className="flex-1 flex flex-col lg:flex-row">
           {renderNav()}
@@ -442,7 +434,7 @@ export default function TeacherExamCorrectionPage() {
           {renderTools()}
         </div>
 
-        <motion.div variants={cardStackReveal} custom={0} className="border-t bg-card/80 backdrop-blur-sm px-4 lg:px-6 py-3">
+        <div className="border-t bg-card/80 backdrop-blur-sm px-4 lg:px-6 py-3">
           <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3 lg:gap-6">
             <div className="flex items-center gap-3 shrink-0">
               <span className="text-title-sm font-semibold tabular-nums">{totalGiven}/{totalMax}</span>
@@ -462,9 +454,9 @@ export default function TeacherExamCorrectionPage() {
               <Button variant="outline" size="sm" onClick={() => toast.success(_('Published grades for') + ` ${enrolled.length} ${_('students')}`)} className="gap-1"><Icon name="publish" size={15} /> {_('All')}</Button>
             </div>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div variants={cardStackReveal} custom={0} className="border-t bg-muted/30 px-4 lg:px-6 py-2">
+        <div className="border-t bg-muted/30 px-4 lg:px-6 py-2">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <span className="text-label-xs text-muted-foreground font-medium">{_('Shortcuts:')}</span>
             {shortcuts.map((s) => (
@@ -474,8 +466,8 @@ export default function TeacherExamCorrectionPage() {
               </kbd>
             ))}
           </div>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </>
   );
 }

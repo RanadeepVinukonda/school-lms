@@ -1,5 +1,4 @@
 import { Link, useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -9,14 +8,12 @@ import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/button';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
 import { getAllSubjects, getAllClasses } from '@/services/dataService';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import { useAuthStore } from '@/store/authStore';
 
 export default function TeacherClassDetailPage() {
   const { id: classId } = useParams<{ id: string }>();
   const user = useAuthStore((s) => s.user);
-
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['teacher-class-detail', classId, user?.id],
     queryFn: async () => {
@@ -51,13 +48,13 @@ export default function TeacherClassDetailPage() {
   return (
     <>
       <SEOHead title={data?.className ?? 'Class'} description={`Subjects for ${data?.className}`} />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
       >
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" asChild>
               <Link to={ROUTES.TEACHER_DASHBOARD}>
@@ -69,14 +66,14 @@ export default function TeacherClassDetailPage() {
               <p className="text-body-md text-muted-foreground">Select a subject to view textbooks and materials</p>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         <DataFetchWrapper data={data} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="card">
           {(d) => (
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              animate="show"
+            <div
+
+
+
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
             >
               {d.subjects.length === 0 ? (
@@ -89,7 +86,7 @@ export default function TeacherClassDetailPage() {
                 </div>
               ) : (
                 d.subjects.map((subject) => (
-                  <motion.div key={subject.id} variants={cardStackReveal} custom={0}>
+                  <div key={subject.id}>
                     <Link
                       to={ROUTES.TEACHER_SUBJECT(classId!, subject.id)}
                       className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl"
@@ -117,13 +114,13 @@ export default function TeacherClassDetailPage() {
                         </CardContent>
                       </Card>
                     </Link>
-                  </motion.div>
+                  </div>
                 ))
               )}
-            </motion.div>
+            </div>
           )}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

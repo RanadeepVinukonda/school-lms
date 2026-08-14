@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
 import type { LeaderboardEntry } from '@/types/gamification';
@@ -25,11 +24,8 @@ export function LeaderboardTable({ entries, currentUserId, className }: Leaderbo
   return (
     <div className={cn('space-y-2', className)}>
       {entries.map((entry, i) => (
-        <motion.div
+        <div
           key={entry.userId}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.3, delay: i * 0.03 }}
           className={cn(
             'flex items-center gap-4 rounded-xl px-4 py-3 transition-colors',
             entry.userId === currentUserId
@@ -60,7 +56,7 @@ export function LeaderboardTable({ entries, currentUserId, className }: Leaderbo
             <p className="text-label-sm font-bold text-primary">{entry.xp.toLocaleString()}</p>
             <p className="text-label-xs text-muted-foreground">XP</p>
           </div>
-        </motion.div>
+        </div>
       ))}
       {entries.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
