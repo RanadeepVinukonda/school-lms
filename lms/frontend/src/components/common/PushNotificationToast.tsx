@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import {
   Bell, Star, FileText, HelpCircle, MessageSquare, Calendar, Info, AlertTriangle,
   MessageCircle, Siren, X,
@@ -7,7 +6,6 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 type Priority = 'urgent' | 'high' | 'medium' | 'low';
-
 const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   grade: Star, assignment: FileText, exam: HelpCircle, message: MessageSquare,
   schedule: Calendar, system: Info, warning: AlertTriangle,
@@ -67,11 +65,11 @@ export function PushNotificationToast({ id, title, body, type, timestamp, onOpen
   const accent = PRIORITY_ACCENT[priority];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -12, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -8, scale: 0.98 }}
-      transition={{ duration: 0.22, ease: [0.05, 0, 0.133333, 0.06] }}
+    <div
+
+
+
+
       className={cn(
         'pointer-events-auto relative w-[min(92vw,380px)] overflow-hidden rounded-2xl border border-border/70 bg-surface shadow-lg shadow-black/5 backdrop-blur',
         'border-l-2',
@@ -117,6 +115,6 @@ export function PushNotificationToast({ id, title, body, type, timestamp, onOpen
           Open
         </button>
       )}
-    </motion.div>
+    </div>
   );
 }

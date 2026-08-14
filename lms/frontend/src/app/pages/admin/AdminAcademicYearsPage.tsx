@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -11,7 +10,6 @@ import { Icon } from '@/components/ui/Icon';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { OptionsSelect } from '@/components/ui/select';
-import { cardStackReveal } from '@/lib/motion';
 import api from '@/services/api';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 
@@ -30,7 +28,6 @@ export function AcademicYearsManager({ onYearChanged }: { onYearChanged?: () => 
   const [endDate, setEndDate] = useState('');
   const [isCurrent, setIsCurrent] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<Record<string, unknown> | null>(null);
-
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['academic-years'],
     queryFn: () => api.get('/academic-years').then((r) => r.data.data),
@@ -190,16 +187,16 @@ export default function AdminAcademicYearsPage() {
   return (
     <>
       <SEOHead title="Academic Years" description="Manage academic years" />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32"
       >
-        <motion.div variants={cardStackReveal} custom={0} className="space-y-16">
+        <div className="space-y-16">
           <AcademicYearsManager />
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </>
   );
 }
