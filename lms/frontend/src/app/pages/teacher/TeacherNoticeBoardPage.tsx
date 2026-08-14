@@ -1,5 +1,4 @@
 import { useTranslation } from '@/hooks/useTranslation';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -33,10 +32,10 @@ export default function TeacherNoticeBoardPage() {
     <>
       <SEOHead title={_('Notice Board')} description={_('View school notices and announcements')} />
       <div className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-8">
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <div>
           <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">{_('Notice Board')}</h1>
           <p className="text-body-md text-muted-foreground mt-1">{_('View school notices and announcements')}</p>
-        </motion.div>
+        </div>
 
         <DataFetchWrapper
           data={notices}
@@ -64,11 +63,8 @@ export default function TeacherNoticeBoardPage() {
                     </div>
                   ) : (
                     (notices as any[])?.map((n: any) => (
-                      <motion.div
+                      <div
                         key={n.id}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
                       >
                         <Card
                           className="border-border/60 hover:border-border transition-colors cursor-pointer"
@@ -99,7 +95,7 @@ export default function TeacherNoticeBoardPage() {
                             </div>
                           </CardContent>
                         </Card>
-                      </motion.div>
+                      </div>
                     ))
                   )}
                 </CardContent>

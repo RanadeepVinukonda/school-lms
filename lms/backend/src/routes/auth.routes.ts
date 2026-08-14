@@ -4,7 +4,7 @@ import * as authController from '../controllers/auth.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/validate.middleware';
 import { authRateLimit } from '../middlewares/rateLimit.middleware';
-import { sendOtpSchema, verifyOtpSchema, updateProfileSchema } from '../validators/auth.validator';
+import { updateProfileSchema } from '../validators/auth.validator';
 import { asyncHandler } from '../middlewares/asyncHandler';
 
 const router = Router();
@@ -16,9 +16,6 @@ const refreshTokenSchema = z.object({
 }));
 
 router.use(authRateLimit);
-
-router.post('/send-otp', authRateLimit, validate(sendOtpSchema), asyncHandler(authController.sendOtp));
-router.post('/verify-otp', authRateLimit, validate(verifyOtpSchema), asyncHandler(authController.verifyOtpLogin));
 
 router.get('/profile', authenticate, asyncHandler(authController.getProfile));
 router.get('/me', authenticate, asyncHandler(authController.getProfile));

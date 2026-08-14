@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -12,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { scrollReveal, cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { useClasses } from '@/hooks/useClasses';
 import { formatClassName } from '@/services/classService';
@@ -76,7 +74,6 @@ export default function TeacherTestTemplatesPage() {
     });
   }
   const [compilingId, setCompilingId] = useState<string | null>(null);
-
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [classId, setClassId] = useState('');
@@ -93,7 +90,6 @@ export default function TeacherTestTemplatesPage() {
   const [easyCount, setEasyCount] = useState(3);
   const [mediumCount, setMediumCount] = useState(5);
   const [hardCount, setHardCount] = useState(2);
-
   useEffect(() => {
     const qClassId = searchParams.get('classId');
     const qSubjectId = searchParams.get('subjectId');
@@ -123,13 +119,10 @@ export default function TeacherTestTemplatesPage() {
   });
 
   const { data: classes = [] } = useClasses();
-
   const classOptions = classes.map((c) => ({ id: c.id, name: formatClassName(c) }));
-
   const subjectOptions = myAssignments
     ?.filter((a: any) => a.classId === classId)
     .map((a: any) => ({ id: a.subjectId, name: a.subjectName || a.subjectId })) ?? [];
-
   const { data: textbooks } = useQuery({
     queryKey: ['textbooks-by-subject', subjectId, classId],
     queryFn: () => (subjectId && classId) ? api.get(`/textbooks/by-class/${classId}/subject/${subjectId}`).then((r) => r.data.data) : Promise.resolve([]),
@@ -191,15 +184,15 @@ export default function TeacherTestTemplatesPage() {
   return (
     <>
       <SEOHead title={_('Test Templates')} description={_('Create reusable test templates')} canonical="/teacher/test-templates" />
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-6xl mx-auto space-y-16 pb-32">
-        <motion.div variants={cardStackReveal} custom={0} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="sm:p-6 p-4 max-w-6xl mx-auto space-y-16 pb-32">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-headline-sm">{_('Test Templates')}</h1>
           </div>
           <Button onClick={() => setShowCreate(true)}><Icon name="add" size={16} className="mr-1" />{_('New Template')}</Button>
-        </motion.div>
+        </div>
 
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <DataFetchWrapper data={templates} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="list">
             {() => (
               <div className="space-y-2">
@@ -240,7 +233,7 @@ export default function TeacherTestTemplatesPage() {
               </div>
             )}
           </DataFetchWrapper>
-        </motion.div>
+        </div>
 
         <Dialog open={showCreate} onOpenChange={(o) => { if (!o) resetForm(); setShowCreate(o); }}>
           <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
@@ -451,7 +444,7 @@ export default function TeacherTestTemplatesPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </motion.div>
+      </div>
     </>
   );
 }

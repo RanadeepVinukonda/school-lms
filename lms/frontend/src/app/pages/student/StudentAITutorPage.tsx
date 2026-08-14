@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
@@ -318,12 +317,10 @@ export default function StudentAITutorPage() {
   const user = useAuthStore((s) => s.user);
   const userId = user?.id || 'anonymous';
   const { _ } = useTranslation();
-
   const emptyMessages = useMemo(() => [] as ChatMsg[], []);
   const messages = useChatStore((s) => s.aiTutorMessages[userId] || emptyMessages);
   const addMessage = useChatStore((s) => s.addAiTutorMessage);
   const clearMessages = useChatStore((s) => s.clearAiTutorMessages);
-
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -332,7 +329,6 @@ export default function StudentAITutorPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<{ start: () => void; stop: () => void } | null>(null);
-
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
@@ -342,7 +338,6 @@ export default function StudentAITutorPage() {
   }, [messages, isLoading, scrollToBottom]);
 
   const language = useLanguageStore((s) => s.language);
-
   const sendMessage = useCallback(async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
@@ -398,7 +393,6 @@ export default function StudentAITutorPage() {
     recognition.lang = langToSpeech(language);
     recognition.continuous = false;
     recognition.interimResults = false;
-
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
       setInput(prev => prev + transcript);
@@ -504,13 +498,10 @@ export default function StudentAITutorPage() {
             </div>
           )}
 
-          <AnimatePresence initial={false}>
+
             {messages.map((msg) => (
-              <motion.div
+              <div
                 key={msg.id}
-                initial={{ opacity: 0, y: 12, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.25, ease: [0.05, 0, 0.133333, 0.06] }}
                 className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}
               >
                 <div className={cn('max-w-[90%] sm:max-w-[85%] md:max-w-[75%]', msg.role === 'user' && 'order-1')}>
@@ -541,33 +532,33 @@ export default function StudentAITutorPage() {
                     )}
                   </div>
                 </div>
-              </motion.div>
+              </div>
             ))}
-          </AnimatePresence>
+
 
           {isLoading && (
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
+            <div
+
+
               className="flex justify-start"
             >
               <div className="rounded-2xl bg-surface-variant/60 border border-outline-variant/40 rounded-bl-md">
                 <LoadingDots />
               </div>
-            </motion.div>
+            </div>
           )}
 
           {error && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+            <div
+
+
               className="flex justify-center"
             >
               <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-error-container/30 text-error text-label-sm">
                 <Icon name="error_outline" size={16} />
                 {error}
               </div>
-            </motion.div>
+            </div>
           )}
 
           <div ref={messagesEndRef} />

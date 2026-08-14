@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -11,7 +10,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icon } from '@/components/ui/Icon';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import { getTextbook, getChaptersForTextbook, getConceptsForChapter, getConceptRelease, setConceptRelease } from '@/services/textbookService';
 import { useAuthStore } from '@/store/authStore';
@@ -56,7 +54,6 @@ function MarkerCanvas() {
   const [color, setColor] = useState('#000000');
   const [lineWidth, setLineWidth] = useState(3);
   const [drawingEnabled, setDrawingEnabled] = useState(false);
-
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -184,7 +181,6 @@ export default function TeacherConceptViewPage() {
   const authUser = useAuthStore((s) => s.user);
   const teacherId = authUser?.id ?? '';
   const queryClient = useQueryClient();
-
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['teacher-concept', textbookId, conceptId],
     queryFn: async () => {
@@ -210,9 +206,6 @@ export default function TeacherConceptViewPage() {
   const concept = data?.concept;
   const chapter = data?.chapter;
   const textbook = data?.textbook;
-
-
-
   const pushConceptMutation = useMutation({
     mutationFn: async () => {
       if (!data) return;
@@ -235,13 +228,13 @@ export default function TeacherConceptViewPage() {
   return (
     <>
       <SEOHead title={concept?.title || _('Teaching')} description={`${_('Teach')} ${concept?.title || ''}`} />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
       >
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <Link
             to={textbookId ? `/teacher/textbooks/${textbookId}` : ROUTES.TEACHER_TEXTBOOKS}
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -249,7 +242,7 @@ export default function TeacherConceptViewPage() {
             <Icon name="arrow_back" size={16} />
             {_('Back to textbook')}
           </Link>
-        </motion.div>
+        </div>
 
         <DataFetchWrapper
           data={data}
@@ -261,7 +254,7 @@ export default function TeacherConceptViewPage() {
         >
           {(d) => (
             <div className="space-y-16">
-              <motion.div variants={cardStackReveal} custom={0}>
+              <div>
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <Badge variant="secondary">{d.textbook.title}</Badge>
@@ -283,9 +276,9 @@ export default function TeacherConceptViewPage() {
                     </Badge>
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
-              <motion.div variants={cardStackReveal} custom={0}>
+              <div>
                 <Tabs defaultValue="teach">
                   <TabsList className="w-full overflow-x-auto inline-flex">
                     <TabsTrigger value="teach" className="flex-1">
@@ -478,11 +471,11 @@ export default function TeacherConceptViewPage() {
                     )}
                   </TabsContent>
                 </Tabs>
-              </motion.div>
+              </div>
             </div>
           )}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

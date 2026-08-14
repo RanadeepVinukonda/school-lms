@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bell, BellOff, CheckCheck, Star, FileText, HelpCircle,
   MessageSquare, Calendar, Info, AlertTriangle, ChevronRight,
@@ -131,7 +130,6 @@ export default function NotificationDropdown() {
     [rawItems],
   );
   const unreadItems = useMemo(() => items.filter((n) => !n.read), [items]);
-
   useEffect(() => {
     if (!scrollRef.current || !loaderRef.current) return;
     const observer = new IntersectionObserver(
@@ -154,7 +152,6 @@ export default function NotificationDropdown() {
   }, [items]);
 
   const flatItems = useMemo(() => P_ORDER.flatMap((p) => grouped.get(p) ?? []), [grouped]);
-
   const resolveLink = useCallback((item: Item): string => {
     if (item.link) return item.link;
     const resolver = DEEP_LINKS[item.type];
@@ -212,7 +209,6 @@ export default function NotificationDropdown() {
   }, [activeIndex]);
 
   useEffect(() => { setActiveIndex(open && flatItems.length > 0 ? 0 : -1); }, [open, flatItems.length]);
-
   const renderContent = () => {
     if (error) {
       return (
@@ -326,17 +322,13 @@ export default function NotificationDropdown() {
         </div>
         <Separator />
         <div ref={listRef} className="overflow-y-auto" style={{ maxHeight: 380 }}>
-          <AnimatePresence mode="wait">
-            <motion.div
+
+            <div
               key={isLoading ? 'loading' : items.length === 0 ? 'empty' : 'content'}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
             >
               {renderContent()}
-            </motion.div>
-          </AnimatePresence>
+            </div>
+
         </div>
         <Separator />
         <div className="p-2">

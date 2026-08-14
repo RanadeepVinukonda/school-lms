@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -11,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Icon } from '@/components/ui/Icon';
-import { scrollReveal } from '@/lib/motion';
 import { getInitials } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import { uploadProfileImage } from '@/services/avatarService';
@@ -27,7 +25,6 @@ export default function StudentProfileEditPage() {
   const setUser = useAuthStore((s) => s.setUser);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const [form, setForm] = useState({
     displayName: '',
     email: '',
@@ -38,7 +35,6 @@ export default function StudentProfileEditPage() {
   });
 
   const [avatarPreview, setAvatarPreview] = useState('');
-
   const { data: userDoc, isLoading: loadingProfile } = useQuery({
     queryKey: ['student-profile-edit', user?.id],
     queryFn: () => (user?.id ? getUser(user.id) : null),
@@ -98,22 +94,22 @@ export default function StudentProfileEditPage() {
   return (
     <>
       <SEOHead title={_('Edit Profile')} description={_('Update your student profile')} />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-16"
       >
-        <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+        <div>
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={() => navigate(ROUTES.STUDENT_PROFILE)}>
               <Icon name="arrow_back" size={18} />
             </Button>
             <h1 className="text-headline-sm md:text-headline-md font-bold tracking-tight">{_('Edit Profile')}</h1>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+        <div>
           <Card className="border-border/60">
             <CardContent className="sm:p-6 p-4 space-y-6">
               <div className="flex flex-col items-center gap-3">
@@ -165,8 +161,8 @@ export default function StudentProfileEditPage() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </>
   );
 }

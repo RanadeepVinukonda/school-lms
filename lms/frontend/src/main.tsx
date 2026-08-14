@@ -9,7 +9,6 @@ import { setupChunkReload } from '@/lib/lazyRetry';
 import { initNativeBridge } from '@/lib/native';
 import App from './app/App';
 import './index.css';
-import './lib/motion.css';
 import 'katex/dist/katex.min.css';
 
 setupChunkReload();

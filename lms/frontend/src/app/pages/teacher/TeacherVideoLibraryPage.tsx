@@ -1,10 +1,8 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useTranslation } from '@/hooks/useTranslation';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icon } from '@/components/ui/Icon';
-import { scrollReveal, cardStackReveal } from '@/lib/motion';
 import { SearchYouTubeTab } from './TeacherVideoLibrary/SearchYouTubeTab';
 import { MyLibraryTab } from './TeacherVideoLibrary/MyLibraryTab';
 import { AttachToConceptTab } from './TeacherVideoLibrary/AttachToConceptTab';
@@ -20,19 +18,19 @@ export default function TeacherVideoLibraryPage() {
         description={_('Search, save, and manage educational videos for your classroom')}
         canonical="/teacher/videos"
       />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto space-y-16 pb-32"
       >
-        <motion.div variants={cardStackReveal} custom={0} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-headline-sm">{_('Video Library')}</h1>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="w-full overflow-x-auto inline-flex">
               <TabsTrigger value="search" className="gap-2">
@@ -64,8 +62,8 @@ export default function TeacherVideoLibraryPage() {
               <AttachToConceptTab />
             </TabsContent>
           </Tabs>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </>
   );
 }

@@ -1,11 +1,9 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '@/hooks/useTranslation';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cardStackReveal } from '@/lib/motion';
 import { NEPQuestionGenerator } from '@/components/nep-questions/NEPQuestionGenerator';
 import { RubricGenerator } from '@/components/nep-questions/RubricGenerator';
 import { FeedbackViewer } from '@/components/nep-questions/FeedbackViewer';
@@ -16,7 +14,6 @@ export default function TeacherNEPQuestionsPage() {
   const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [activeTab, setActiveTab] = useState('generate');
-
   const { data: textbooksData } = useQuery({
     queryKey: ['textbooks', user?.id],
     queryFn: () => api.get('/textbooks', { params: { createdBy: user?.id } }).then((r) => r.data.data),
@@ -60,18 +57,18 @@ export default function TeacherNEPQuestionsPage() {
   return (
     <>
       <SEOHead title={_('NEP Question Generator')} description={_('Generate NEP-aligned Olympiad, Competency, and Viva questions')} canonical="/teacher/nep-questions" />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-6"
       >
-        <motion.div variants={cardStackReveal} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-headline-sm">{_('NEP Question Generator')}</h1>
             <p className="text-body-md text-muted-foreground">{_('Olympiad, Competency-Based & Viva questions with AI rubrics and feedback')}</p>
           </div>
-        </motion.div>
+        </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full overflow-x-auto inline-flex">
@@ -104,7 +101,7 @@ export default function TeacherNEPQuestionsPage() {
             </DataFetchWrapper>
           </TabsContent>
         </Tabs>
-      </motion.div>
+      </div>
     </>
   );
 }

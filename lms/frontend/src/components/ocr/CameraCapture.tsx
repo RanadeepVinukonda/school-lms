@@ -1,5 +1,4 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
@@ -21,7 +20,6 @@ export default function CameraCapture({ onCapture, onFileUpload, isLoading }: Ca
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
   const [flashOn, setFlashOn] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
-
   const startCamera = useCallback(async () => {
     setCameraError(null);
     try {

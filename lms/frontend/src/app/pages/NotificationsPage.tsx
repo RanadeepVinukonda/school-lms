@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,7 +9,6 @@ import { Icon } from '@/components/ui/Icon';
 import { Input } from '@/components/ui/input';
 import { OptionsSelect } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import {
   getNotificationsByUser,
@@ -46,7 +44,6 @@ export default function NotificationsPage() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
   const [limit, setLimit] = useState(PAGE_STEP);
-
   const { data: items = [], refetch, error } = useQuery({
     queryKey: ['notifications-page', user?.id, limit],
     queryFn: () => getNotificationsByUser(user!.id, { limit }),
@@ -106,10 +103,8 @@ export default function NotificationsPage() {
   return (
     <>
       <SEOHead title="Notifications" description="View all your notifications" />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
         className="sm:p-6 p-4 max-w-3xl mx-auto pb-32"
       >
         <div className="flex items-center gap-3 mb-6">
@@ -138,7 +133,7 @@ export default function NotificationsPage() {
           />
         </div>
 
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <Tabs value={filter} onValueChange={(v) => setFilter(v as 'all' | 'unread')}>
             <TabsList className="w-full overflow-x-auto inline-flex">
               <TabsTrigger value="all">All ({displayed.length})</TabsTrigger>
@@ -156,10 +151,8 @@ export default function NotificationsPage() {
                   </CardContent>
                 </Card>
               ) : (
-                <motion.div
-                  variants={staggerContainer}
-                  initial="hidden"
-                  animate="show"
+                <div
+
                   className="space-y-3"
                 >
                   {displayed.length > 0 && filter === 'unread' && (
@@ -170,7 +163,7 @@ export default function NotificationsPage() {
                     </div>
                   )}
                   {displayed.map((n) => (
-                    <motion.div key={n.id} variants={cardStackReveal} custom={0}>
+                    <div key={n.id}>
                       <Link to={n.link || '#'} className="block" onClick={() => { if (!n.read) handleMarkRead(n.id); }}>
                         <Card className={cn('border-border/60 hover:shadow-md transition-shadow', !n.read && 'border-l-2 border-l-primary')}>
                           <CardContent className="p-5">
@@ -201,7 +194,7 @@ export default function NotificationsPage() {
                           </CardContent>
                         </Card>
                       </Link>
-                    </motion.div>
+                    </div>
                   ))}
                   {items.length === limit && (
                     <div className="flex justify-center pt-2">
@@ -210,12 +203,12 @@ export default function NotificationsPage() {
                       </Button>
                     </div>
                   )}
-                </motion.div>
+                </div>
               )}
             </TabsContent>
           </Tabs>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </>
   );
 }

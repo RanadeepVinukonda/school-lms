@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
-import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent } from '@/components/ui/card';
@@ -44,7 +43,6 @@ export default function StudentQuizzesPage() {
   const navigate = useNavigate();
   const { _ } = useTranslation();
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
-
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-quizzes-v2', user?.id, user?.classId],
     queryFn: async () => {
@@ -104,10 +102,10 @@ export default function StudentQuizzesPage() {
   return (
     <>
       <SEOHead title={_('Quizzes')} description={_('View and take your quizzes')} />
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      <div
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16">
 
-        <motion.div>
+        <div>
           <div className="flex flex-col gap-4">
             <div>
               <h1 className="text-headline-sm font-bold">{_('Quizzes')}</h1>
@@ -133,7 +131,7 @@ export default function StudentQuizzesPage() {
               </div>
             )}
           </div>
-        </motion.div>
+        </div>
 
         <DataFetchWrapper data={data} isLoading={isLoading}
           error={isError ? error ?? new Error(_('Failed to load quizzes')) : null}
@@ -151,9 +149,9 @@ export default function StudentQuizzesPage() {
                       <Badge variant="destructive" className="text-xs">{pending.length}</Badge>
                     </h2>
                   </div>
-                  <motion.div className="space-y-3">
+                  <div className="space-y-3">
                     {pending.filter(Boolean).map((quiz: any) => (
-                      <motion.div key={quiz.id}>
+                      <div key={quiz.id}>
                         <Card className="border-border/60 hover:border-primary/30 transition-all group cursor-pointer"
                           onClick={() => navigate(ROUTES.STUDENT_TAKE_ASSESSMENT(quiz.id))}>
                           <CardContent className="p-5">
@@ -186,9 +184,9 @@ export default function StudentQuizzesPage() {
                             </div>
                           </CardContent>
                         </Card>
-                      </motion.div>
+                      </div>
                     ))}
-                  </motion.div>
+                  </div>
                 </section>
               )}
 
@@ -199,9 +197,9 @@ export default function StudentQuizzesPage() {
                     <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">{_('HISTORY')}</p>
                     <h2 className="text-headline-sm font-bold">{_('Attempted')}</h2>
                   </div>
-                  <motion.div className="space-y-3">
+                  <div className="space-y-3">
                     {attempted.filter(Boolean).map((quiz: any) => (
-                      <motion.div key={quiz.id}>
+                      <div key={quiz.id}>
                         <Card className="border-border/60 hover:border-primary/20 transition-all cursor-pointer"
                           onClick={() => navigate(ROUTES.STUDENT_TAKE_ASSESSMENT(quiz.id))}>
                           <CardContent className="p-5">
@@ -234,9 +232,9 @@ export default function StudentQuizzesPage() {
                             </div>
                           </CardContent>
                         </Card>
-                      </motion.div>
+                      </div>
                     ))}
-                  </motion.div>
+                  </div>
                 </section>
               )}
 
@@ -252,7 +250,7 @@ export default function StudentQuizzesPage() {
             </div>
           )}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

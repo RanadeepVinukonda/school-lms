@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -13,7 +12,6 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Icon } from '@/components/ui/Icon';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { useClasses } from '@/hooks/useClasses';
 import { formatClassName } from '@/services/classService';
@@ -37,7 +35,6 @@ export default function TeacherTestSchedulePage() {
   const [activeTab, setActiveTab] = useState('exams');
   const [searchQuery, setSearchQuery] = useState('');
   const [subjectFilter, setSubjectFilter] = useState('');
-
   const { data: assignments } = useQuery({
     queryKey: ['teacher-assignments', user?.id],
     queryFn: () => api.get('/teacher-class-subject/my').then((r) => r.data.data),
@@ -45,9 +42,7 @@ export default function TeacherTestSchedulePage() {
   });
 
   const { data: classes = [], isLoading: classesLoading } = useClasses();
-
   const assignmentList: TeacherAssignment[] = assignments ?? [];
-
   const uniqueSubjects = useMemo(() => {
     const map = new Map<string, string>();
     assignmentList.forEach(a => { if (!map.has(a.subjectId)) map.set(a.subjectId, a.subjectName); });
@@ -149,7 +144,6 @@ export default function TeacherTestSchedulePage() {
   const examList: any[] = exams ?? [];
   const quizList: any[] = quizzes ?? [];
   const assignmentItems: any[] = assignmentsData ?? [];
-
   const filteredExamList = useMemo(() => {
     if (!searchQuery && !subjectFilter) return examList;
     return examList.filter((e: any) => {
@@ -177,20 +171,20 @@ export default function TeacherTestSchedulePage() {
   return (
     <>
       <SEOHead title={_('Manage Tests')} description={_('View all exams, quizzes and assignments by class')} />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto space-y-6 pb-32"
       >
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <h1 className="text-headline-sm">{_('Manage Tests')}</h1>
           <p className="text-body-md text-muted-foreground mt-1">
             {_('View all created exams, quizzes, and assignments by class')}
           </p>
-        </motion.div>
+        </div>
 
-        <motion.div variants={cardStackReveal} custom={1}>
+        <div>
           <Card className="border-border/60">
             <CardContent className="p-5">
               <label className="text-sm font-medium">{_('Select Class')}</label>
@@ -207,7 +201,7 @@ export default function TeacherTestSchedulePage() {
               </select>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
         {selectedClassId && (
           <>
@@ -483,7 +477,7 @@ export default function TeacherTestSchedulePage() {
             </CardContent>
           </Card>
         )}
-      </motion.div>
+      </div>
 
       {modalConfig && (
         <ReleaseRepublishModal

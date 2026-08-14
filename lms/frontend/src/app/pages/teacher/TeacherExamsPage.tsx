@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { useClasses } from '@/hooks/useClasses';
 import { formatClassName } from '@/services/classService';
@@ -47,12 +45,10 @@ export default function TeacherExamsPage() {
   const user = useAuthStore((s) => s.user);
   const teacherId = user?.id ?? '';
   const queryClient = useQueryClient();
-
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const [selectedTextbookId, setSelectedTextbookId] = useState('');
   const [selectedChapterId, setSelectedChapterId] = useState('');
-
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [timeLimitMinutes, setTimeLimitMinutes] = useState(60);
@@ -61,10 +57,8 @@ export default function TeacherExamsPage() {
   const [passingScore, setPassingScore] = useState(50);
   const [maxAttempts, setMaxAttempts] = useState(1);
   const [shuffleQuestions, setShuffleQuestions] = useState(true);
-
   const [publishScope, setPublishScope] = useState<'class' | 'students'>('class');
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
-
   const [distribution, setDistribution] = useState<Record<string, Record<string, number>>>({
     easy: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
     medium: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
@@ -164,12 +158,10 @@ export default function TeacherExamsPage() {
   });
 
   const { data: classes = [] } = useClasses();
-
   const assignmentList: TeacherAssignment[] = assignments ?? [];
   const classAssignments = assignmentList.filter((a) => a.classId === selectedClassId);
   const effectiveSubjectId = selectedSubjectId || classAssignments[0]?.subjectId || '';
   const selectedAssignment = classAssignments.find((a) => a.subjectId === effectiveSubjectId);
-
   useEffect(() => {
     if (classAssignments.length > 0) {
       setSelectedSubjectId(classAssignments[0].subjectId);
@@ -424,20 +416,20 @@ export default function TeacherExamsPage() {
   return (
     <>
       <SEOHead title={_('Exams')} description={_('Create chapter-level exams')} />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-6"
       >
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <h1 className="text-headline-sm">{_('Exams')}</h1>
           <p className="text-body-md text-muted-foreground">
             {_('Create chapter-level exams from all concepts in a chapter')}
           </p>
-        </motion.div>
+        </div>
 
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <Card className="border-border/60">
             <CardContent className="p-5 space-y-6">
               <div className="flex items-center gap-2">
@@ -592,9 +584,9 @@ export default function TeacherExamsPage() {
               )}
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <Card className="border-border/60">
             <CardContent className="p-5 space-y-6">
               <div className="flex items-center gap-2">
@@ -1005,8 +997,8 @@ export default function TeacherExamsPage() {
               )}
             </CardContent>
           </Card>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </>
   );
 }

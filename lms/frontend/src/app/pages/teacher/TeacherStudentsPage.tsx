@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -12,7 +11,6 @@ import { Icon } from '@/components/ui/Icon';
 import { OptionsSelect } from '@/components/ui/select';
 import { getInitials } from '@/lib/utils';
 import { getLetterGrade } from '@/lib/format';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import {
   getUserByRole,
   getAllClasses,
@@ -33,7 +31,6 @@ interface StudentRow {
 export default function TeacherStudentsPage() {
   const { _ } = useTranslation();
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('all');
-
   const { isLoading, error, refetch, data } = useQuery({
     queryKey: ['teacher-students'],
     queryFn: async () => {
@@ -54,7 +51,6 @@ export default function TeacherStudentsPage() {
   const allClasses = data?.classes ?? [];
   const allSubjects = data?.subjects ?? [];
   const myAssignments = data?.assignments ?? [];
-
   const attemptPcts = useMemo(() => {
     const map = new Map<string, number[]>();
     for (const arr of [data?.quizAttempts ?? [], data?.examAttempts ?? [], data?.submissionAttempts ?? []]) {
@@ -71,7 +67,6 @@ export default function TeacherStudentsPage() {
 
   const myClassIds = useMemo(() => [...new Set(myAssignments.map((a) => a.classId))], [myAssignments]);
   const mySubjectIds = useMemo(() => [...new Set(myAssignments.map((a) => a.subjectId))], [myAssignments]);
-
   const teacherSubjects = useMemo(
     () => allSubjects.filter((s) => mySubjectIds.includes(s.id)),
     [allSubjects, mySubjectIds],
@@ -90,7 +85,6 @@ export default function TeacherStudentsPage() {
       ? myAssignments
       : myAssignments.filter((a) => a.subjectId === selectedSubjectId);
     const activeClassIds = [...new Set(activeAssignments.map((a) => a.classId))];
-
     const filteredStudents = allStudents.filter(
       (u) => u.role === 'student' && u.classId && activeClassIds.includes(u.classId)
     );
@@ -118,15 +112,15 @@ export default function TeacherStudentsPage() {
   return (
     <>
       <SEOHead title={_('My Students')} description={_('View and manage your students')} canonical="/teacher/students" />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto space-y-16 pb-32"
       >
-        <motion.div
-          variants={cardStackReveal}
-          custom={0}
+        <div
+
+
           className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
         >
           <div>
@@ -143,7 +137,7 @@ export default function TeacherStudentsPage() {
               onValueChange={setSelectedSubjectId}
             />
           </div>
-        </motion.div>
+        </div>
 
         <DataFetchWrapper
           data={students}
@@ -164,14 +158,14 @@ export default function TeacherStudentsPage() {
           }
         >
           {(studentList) => (
-            <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-2">
+            <div className="space-y-2">
               {studentList.map((student) => {
                 const letterGrade = getLetterGrade(student.overallPercentage);
                 const isHighPerformer = student.overallPercentage >= 80;
                 const isLowPerformer = student.overallPercentage < 60;
 
                 return (
-                  <motion.div key={student.id} variants={scrollReveal}>
+                  <div key={student.id}>
                     <Link
                       to={`/teacher/students/${student.id}`}
                       className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl block"
@@ -238,13 +232,13 @@ export default function TeacherStudentsPage() {
                         </CardContent>
                       </Card>
                     </Link>
-                  </motion.div>
+                  </div>
                 );
               })}
-            </motion.div>
+            </div>
           )}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

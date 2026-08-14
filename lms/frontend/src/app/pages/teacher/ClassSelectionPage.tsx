@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { supabase } from '@/supabase/config';
 import { useAuthStore } from '@/store/authStore';
 import { logAudit } from '@/services/auditService';
@@ -11,7 +10,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import type { Class, UserRole } from '@/types';
 
@@ -241,31 +239,31 @@ export default function ClassSelectionPage() {
     );
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+    <div
+
+
+
       className="sm:p-6 p-4 max-w-2xl mx-auto pb-32"
     >
       <div className="space-y-16">
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <div className="text-center space-y-2">
             <img src="/genesis_icon.png" alt={_('Genesis')} className="mx-auto h-16 w-auto" />
             <h1 className="text-2xl font-bold">{_('Welcome,')} {user?.displayName ?? _('Teacher')}</h1>
             <p className="text-muted-foreground">{_('Select the classes you teach and your subjects')}</p>
           </div>
-        </motion.div>
+        </div>
 
         {error && (
-          <motion.div variants={cardStackReveal} custom={0}>
+          <div>
             <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive text-center">
               {error}
             </div>
-          </motion.div>
+          </div>
         )}
 
         {/* Step 1: Class selection */}
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <div>
             <h2 className="text-lg font-semibold mb-3">{_('Choose your classes')}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -306,11 +304,11 @@ export default function ClassSelectionPage() {
               </p>
             )}
           </div>
-        </motion.div>
+        </div>
 
         {/* Step 2: Subject selection per selected class */}
         {selectedIds.size > 0 && (
-          <motion.div variants={cardStackReveal} custom={0} className="space-y-6">
+          <div className="space-y-6">
             <hr className="border-border" />
             <div>
               <h2 className="text-lg font-semibold">{_('Choose your subject per class')}</h2>
@@ -386,11 +384,11 @@ export default function ClassSelectionPage() {
                 </div>
               );
             })}
-          </motion.div>
+          </div>
         )}
 
         {/* Submit */}
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <div className="flex justify-center pt-2">
             <Button
               size="lg"
@@ -405,8 +403,8 @@ export default function ClassSelectionPage() {
                   : `${_('Continue with')} ${selectedIds.size} ${selectedIds.size !== 1 ? _('classes') : _('class')} ${_('and')} ${totalSubjectsSelected} ${totalSubjectsSelected !== 1 ? _('subjects') : _('subject')}`}
             </Button>
           </div>
-        </motion.div>
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

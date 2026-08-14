@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -15,7 +14,6 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/skeleton';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useAuthStore } from '@/store/authStore';
 import { useClasses } from '@/hooks/useClasses';
 import { formatClassName } from '@/services/classService';
@@ -77,14 +75,12 @@ export default function TeacherAssessmentCreatePage() {
   ];
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-
   const [assessmentType, setAssessmentType] = useState<'quiz' | 'assignment'>('quiz');
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const [selectedTextbookId, setSelectedTextbookId] = useState('');
   const [selectedChapterId, setSelectedChapterId] = useState('');
   const [selectedConceptId, setSelectedConceptId] = useState('');
-
   const [quizTitle, setQuizTitle] = useState('');
   const [quizDescription, setQuizDescription] = useState('');
   const [selectedModels, setSelectedModels] = useState<string[]>(['multiple_choice', 'true_false']);
@@ -100,7 +96,6 @@ export default function TeacherAssessmentCreatePage() {
     hots: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
   });
   const [quizGeneratedPaper, setQuizGeneratedPaper] = useState<any[] | null>(null);
-
   const [assignmentTitle, setAssignmentTitle] = useState('');
   const [assignmentDescription, setAssignmentDescription] = useState('');
   const [assignmentTimeLimit, setAssignmentTimeLimit] = useState(60);
@@ -115,17 +110,14 @@ export default function TeacherAssessmentCreatePage() {
     hots: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
   });
   const [assignmentGeneratedPaper, setAssignmentGeneratedPaper] = useState<any[] | null>(null);
-
   const [publishScope, setPublishScope] = useState<'class' | 'students'>('class');
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
-
   const [searchParams] = useSearchParams();
   const urlClassId = searchParams.get('classId');
   const urlSubjectId = searchParams.get('subjectId');
   const urlTextbookId = searchParams.get('textbookId');
   const urlChapterId = searchParams.get('chapterId');
   const urlConceptId = searchParams.get('conceptId');
-
   const { data: classStudents } = useQuery({
     queryKey: ['teacher-class-students', selectedClassId],
     queryFn: () => getStudentsByClass(selectedClassId),
@@ -139,12 +131,10 @@ export default function TeacherAssessmentCreatePage() {
   });
 
   const { data: classes = [] } = useClasses();
-
   const assignmentList: TeacherAssignment[] = assignments ?? [];
   const classAssignments = assignmentList.filter((a) => a.classId === selectedClassId);
   const effectiveSubjectId = selectedSubjectId || classAssignments[0]?.subjectId || '';
   const selectedAssignment = classAssignments.find((a) => a.subjectId === effectiveSubjectId);
-
   const { data: textbooks, isLoading: textbooksLoading } = useQuery({
     queryKey: ['teacher-textbooks', selectedAssignment?.subjectId],
     queryFn: () => getTextbooksBySubject(selectedAssignment!.subjectId),
@@ -152,7 +142,6 @@ export default function TeacherAssessmentCreatePage() {
   });
 
   const textbookList = textbooks ?? [];
-
   const { data: chapters, isLoading: chaptersLoading } = useQuery({
     queryKey: ['teacher-chapters', selectedTextbookId],
     queryFn: () => getChaptersForTextbook(selectedTextbookId),
@@ -160,7 +149,6 @@ export default function TeacherAssessmentCreatePage() {
   });
 
   const chapterList = chapters ?? [];
-
   const { data: concepts, isLoading: conceptsLoading } = useQuery({
     queryKey: ['teacher-concepts', selectedTextbookId, selectedChapterId],
     queryFn: () => getConceptsForChapter(selectedTextbookId, selectedChapterId),
@@ -168,7 +156,6 @@ export default function TeacherAssessmentCreatePage() {
   });
 
   const conceptList = concepts ?? [];
-
   const { data: availableTypes = [] } = useQuery({
     queryKey: ['available-question-types', selectedConceptId],
     queryFn: () => api.get(`/exams-v2/concept/${selectedConceptId}/types`).then((r) => r.data.data),
@@ -199,7 +186,6 @@ export default function TeacherAssessmentCreatePage() {
   }, [availableTypes]);
 
   const TYPE_MAP: Record<string, string[]> = { multiple_choice: ['mcq', 'multiple_choice'] };
-
   useEffect(() => {
     if (selectedModels.length === 0 || questionCount === 0) {
       const empty = { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 };
@@ -276,7 +262,6 @@ export default function TeacherAssessmentCreatePage() {
   const [reviewQuestions, setReviewQuestions] = useState<any[]>([]);
   const [reviewTitle, setReviewTitle] = useState('');
   const [generatingPreview, setGeneratingPreview] = useState(false);
-
   const createQuizMutation = useMutation({
     mutationFn: (body: Record<string, unknown>) => api.post('/quizzes-v2', body).then((r) => r.data.data),
     onSuccess: () => {
@@ -753,8 +738,8 @@ export default function TeacherAssessmentCreatePage() {
     return (
       <>
         <SEOHead title="Create Assessment" description="Create quizzes and assignments for your class" canonical="/teacher/assessments/create" />
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-16">
-          <motion.div variants={cardStackReveal} custom={0}>
+        <div className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-16">
+          <div>
             <Card className="border-border/60">
               <CardContent className="p-5 text-center space-y-4">
                 <Icon name="error_outline" size={48} className="text-destructive mx-auto" />
@@ -764,8 +749,8 @@ export default function TeacherAssessmentCreatePage() {
                   </Button>
               </CardContent>
             </Card>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </>
     );
   }
@@ -774,12 +759,12 @@ export default function TeacherAssessmentCreatePage() {
     return (
       <>
         <SEOHead title="Create Assessment" description="Create quizzes and assignments for your class" canonical="/teacher/assessments/create" />
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-16">
-          <motion.div variants={cardStackReveal} custom={0}>
+        <div className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-16">
+          <div>
             <h1 className="text-headline-sm">{_('Create Assessment')}</h1>
             <p className="text-body-md text-muted-foreground">{_('Create quizzes and assignments for your class')}</p>
-          </motion.div>
-          <motion.div variants={cardStackReveal} custom={0}>
+          </div>
+          <div>
             <Card className="border-border/60">
               <CardContent className="p-5 text-center space-y-4">
                 <Icon name="school" size={48} className="text-muted-foreground mx-auto" />
@@ -791,8 +776,8 @@ export default function TeacherAssessmentCreatePage() {
                 </Button>
               </CardContent>
             </Card>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </>
     );
   }
@@ -800,20 +785,20 @@ export default function TeacherAssessmentCreatePage() {
   return (
     <>
       <SEOHead title="Quizzes & Tasks" description="Create and manage quizzes, assignments, and exams" />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-6"
       >
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <div>
             <h1 className="text-headline-sm">{_('Quizzes & Tasks')}</h1>
             <p className="text-body-md text-muted-foreground">{_('Create and manage assessments')}</p>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <Card className="border-border/60">
             <CardContent className="p-5 space-y-6">
               <div className="flex items-center gap-2">
@@ -1006,9 +991,9 @@ export default function TeacherAssessmentCreatePage() {
               )}
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <Card className="border-border/60">
             <CardContent className="p-5 space-y-6">
               <div className="flex flex-wrap items-center justify-between gap-2 min-w-0">
@@ -1959,9 +1944,9 @@ export default function TeacherAssessmentCreatePage() {
               )}
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
-      </motion.div>
+      </div>
     </>
   );
 }

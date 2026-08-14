@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -113,14 +112,14 @@ export default function StudentOCRPage() {
   return (
     <>
       <SEOHead title={_('Scan Textbook Page')} description={_('Scan textbook pages and take quick quizzes')} />
-      <motion.div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
         <div>
           <h1 className="text-title-lg font-bold">{_('Scan a Page')}</h1>
           <p className="text-on-surface-variant mt-1">{_('Capture a textbook page or paste text and get a quick quiz instantly')}</p>
         </div>
-        <AnimatePresence mode="wait">
+
           {step === 'capture' && (
-            <motion.div key="capture" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <div key="capture">
               <div className="flex flex-wrap gap-2 p-1 bg-muted rounded-lg w-fit max-w-full mb-4">
                 <button
                   onClick={() => setMode('image')}
@@ -166,11 +165,11 @@ export default function StudentOCRPage() {
                   </CardContent>
                 </Card>
               )}
-            </motion.div>
+            </div>
           )}
 
           {step === 'scanning' && (
-            <motion.div key="scanning" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <div key="scanning">
               <Card><CardContent className="py-12">
                 <div className="flex flex-col items-center gap-4">
                   <Icon name="document_scanner" size={48} className="text-primary" />
@@ -178,11 +177,11 @@ export default function StudentOCRPage() {
                   <p className="text-sm text-on-surface-variant">{isProcessing ? _('Generating quiz questions...') : _('Scanning and extracting text...')}</p>
                 </div>
               </CardContent></Card>
-            </motion.div>
+            </div>
           )}
 
           {step === 'quiz' && (
-            <motion.div key="quiz" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+            <div key="quiz" className="space-y-4">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -276,9 +275,9 @@ export default function StudentOCRPage() {
                   </CardContent>
                 </Card>
               )}
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
+
 
         {error && (
           <Card className="border-error">
@@ -289,7 +288,7 @@ export default function StudentOCRPage() {
             </CardContent>
           </Card>
         )}
-      </motion.div>
+      </div>
     </>
   );
 }

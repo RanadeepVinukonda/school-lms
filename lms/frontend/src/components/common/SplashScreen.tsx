@@ -1,5 +1,4 @@
 import { useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface SplashScreenProps {
   isLoading: boolean;
@@ -36,62 +35,43 @@ export default function SplashScreen({
   }, [isLoading, minimumDuration, handleFinish]);
 
   return (
-    <AnimatePresence>
+    <>
       {isLoading && (
-        <motion.div
+        <div
           className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-primary gap-6"
-          initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3, ease: 'easeInOut' }}
         >
-          <motion.img
+          <img
             src="/genesis_icon.png"
             alt="Genesis LMS"
             className="h-36 w-auto object-contain"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
           />
 
           <div className="flex flex-col items-center gap-1">
-            <motion.h1
+            <h1
               className="text-primary-foreground font-bold text-3xl tracking-tight"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.2, ease: 'easeOut' }}
             >
               Genesis
-            </motion.h1>
+            </h1>
 
-            <motion.p
+            <p
               className="text-primary-foreground/80 text-sm tracking-widest uppercase"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.35, ease: 'easeOut' }}
             >
               Learn &bull; Lead &bull; Achieve
-            </motion.p>
+            </p>
           </div>
 
-          <motion.div
+          <div
             className="flex items-center gap-1.5 mt-2"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.5 }}
           >
             {[0, 1, 2].map((i) => (
-              <motion.span
+              <span
                 key={i}
                 className="block h-2 w-2 rounded-full bg-primary-foreground"
-                variants={dotVariants}
-                initial="initial"
-                animate="animate"
-                custom={i}
               />
             ))}
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

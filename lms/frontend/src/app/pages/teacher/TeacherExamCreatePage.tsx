@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -16,7 +15,6 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/skeleton';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { formatDate } from '@/lib/format';
 import { useAuthStore } from '@/store/authStore';
 import { useClasses } from '@/hooks/useClasses';
@@ -72,7 +70,7 @@ function ExamCard({
   _t: (s: string) => string;
 }) {
   return (
-    <motion.div variants={cardStackReveal} custom={0}>
+    <div>
       <Card className="border-border/60 hover:shadow-md transition-all duration-200">
         <CardContent className="p-5">
           <div className="flex items-start gap-4">
@@ -150,7 +148,7 @@ function ExamCard({
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 }
 
@@ -171,7 +169,6 @@ export default function TeacherExamCreatePage() {
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const [selectedTextbookId, setSelectedTextbookId] = useState('');
   const [selectedChapterId, setSelectedChapterId] = useState('');
-
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [timeLimitMinutes, setTimeLimitMinutes] = useState('60');
@@ -186,12 +183,10 @@ export default function TeacherExamCreatePage() {
     hots: { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 },
   });
   const [generatedPaper, setGeneratedPaper] = useState<any[] | null>(null);
-
   const [searchParams] = useSearchParams();
   const urlTextbookId = searchParams.get('textbookId');
   const urlChapterId = searchParams.get('chapterId');
   const urlConceptId = searchParams.get('conceptId');
-
   const { data: assignments, isLoading: assignmentsLoading, error: assignmentsError } = useQuery({
     queryKey: ['teacher-assignments', user?.id],
     queryFn: () => api.get('/teacher-class-subject/my').then((r) => r.data.data),
@@ -199,12 +194,10 @@ export default function TeacherExamCreatePage() {
   });
 
   const { data: classes = [] } = useClasses();
-
   const assignmentList: TeacherAssignment[] = assignments ?? [];
   const classAssignments = assignmentList.filter((a) => a.classId === selectedClassId);
   const effectiveSubjectId = selectedSubjectId || classAssignments[0]?.subjectId || '';
   const selectedAssignment = classAssignments.find((a) => a.subjectId === effectiveSubjectId);
-
   useEffect(() => {
     if (classAssignments.length > 0) {
       setSelectedSubjectId(classAssignments[0].subjectId);
@@ -258,7 +251,6 @@ export default function TeacherExamCreatePage() {
   });
 
   const examsList: ExamV2[] = classExams ?? [];
-
   const createMutation = useMutation({
     mutationFn: async () => {
       const qc = Number(questionCount);
@@ -361,7 +353,6 @@ export default function TeacherExamCreatePage() {
   });
 
   const EXAM_TYPE_MAP: Record<string, string[]> = { multiple_choice: ['mcq', 'multiple_choice'] };
-
   useEffect(() => {
     if (selectedModels.length === 0 || !questionCount || Number(questionCount) === 0) {
       const empty = { mcq: 0, true_false: 0, fill_blank: 0, short_answer: 0, matching: 0 };
@@ -526,12 +517,12 @@ export default function TeacherExamCreatePage() {
     return (
       <>
         <SEOHead title={_('Create Exam')} description={_('Create chapter-level exams for your class')} />
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-16">
-          <motion.div variants={cardStackReveal} custom={0}>
+        <div className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-16">
+          <div>
             <h1 className="text-headline-sm">{_('Create Exam')}</h1>
             <p className="text-body-md text-muted-foreground">{_('Something went wrong loading your assignments')}</p>
-          </motion.div>
-          <motion.div variants={cardStackReveal} custom={0}>
+          </div>
+          <div>
             <Card className="border-border/60">
               <CardContent className="p-5 text-center space-y-4">
                 <Icon name="error" size={48} className="text-destructive mx-auto" />
@@ -542,8 +533,8 @@ export default function TeacherExamCreatePage() {
                 </Button>
               </CardContent>
             </Card>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </>
     );
   }
@@ -552,12 +543,12 @@ export default function TeacherExamCreatePage() {
     return (
       <>
         <SEOHead title="Create Exam" description="Create chapter-level exams for your class" />
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-16">
-          <motion.div variants={cardStackReveal} custom={0}>
+        <div className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-16">
+          <div>
             <h1 className="text-headline-sm">{_('Create Exam')}</h1>
             <p className="text-body-md text-muted-foreground">{_('Create chapter-level exams for your students')}</p>
-          </motion.div>
-          <motion.div variants={cardStackReveal} custom={0}>
+          </div>
+          <div>
             <Card className="border-border/60">
               <CardContent className="p-5 text-center space-y-4">
                 <Icon name="school" size={48} className="text-muted-foreground mx-auto" />
@@ -566,8 +557,8 @@ export default function TeacherExamCreatePage() {
                 </p>
               </CardContent>
             </Card>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </>
     );
   }
@@ -575,20 +566,20 @@ export default function TeacherExamCreatePage() {
   return (
     <>
       <SEOHead title={_('Create Exam')} description={_('Create chapter-level exams for your class')} />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-16"
       >
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <h1 className="text-headline-sm">{_('Create Exam')}</h1>
           <p className="text-body-md text-muted-foreground">
             {_('Create chapter-level exams from all concepts in a chapter')}
           </p>
-        </motion.div>
+        </div>
 
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <Card className="border-border/60">
             <CardHeader>
               <CardTitle className="text-title-sm flex items-center gap-2">
@@ -701,9 +692,9 @@ export default function TeacherExamCreatePage() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <Card className="border-border/60">
             <CardHeader>
               <CardTitle className="text-title-sm flex items-center gap-2">
@@ -1085,10 +1076,10 @@ export default function TeacherExamCreatePage() {
               </Button>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
         {selectedClassId && (
-          <motion.div variants={cardStackReveal} custom={0}>
+          <div>
             <Card className="border-border/60">
               <CardHeader>
                 <CardTitle className="text-title-sm flex items-center gap-2">
@@ -1124,9 +1115,9 @@ export default function TeacherExamCreatePage() {
                 </DataFetchWrapper>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         )}
-      </motion.div>
+      </div>
     </>
   );
 }

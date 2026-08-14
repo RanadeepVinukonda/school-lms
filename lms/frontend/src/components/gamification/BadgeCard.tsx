@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
 import type { Badge } from '@/types/gamification';
@@ -12,10 +11,10 @@ interface BadgeCardProps {
 
 export function BadgeCard({ badge, earned, earnedAt, index = 0 }: BadgeCardProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8, y: 20 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.05, ease: [0.05, 0, 0.133333, 0.06] }}
+    <div
+
+
+
       className={cn(
         'relative flex flex-col items-center gap-2 rounded-xl border p-4 text-center transition-all duration-300',
         earned
@@ -41,6 +40,6 @@ export function BadgeCard({ badge, earned, earnedAt, index = 0 }: BadgeCardProps
           <Icon name="lock" size={20} className="text-on-surface-variant" />
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

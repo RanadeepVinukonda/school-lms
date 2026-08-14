@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -161,10 +160,10 @@ export default function AdminInventoryPage() {
     <>
       <SEOHead title="Inventory Management" description="Track school assets, supplies, and orders" />
       <div className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-8">
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <div>
           <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">Inventory Management</h1>
           <p className="text-body-md text-muted-foreground mt-1 font-normal">Track school resources, stationeries, suppliers, and stocks</p>
-        </motion.div>
+        </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid grid-cols-1 sm:grid-cols-3 max-w-md">

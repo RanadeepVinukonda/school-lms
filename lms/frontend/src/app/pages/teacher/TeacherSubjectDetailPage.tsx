@@ -1,5 +1,4 @@
 import { Link, useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '@/hooks/useTranslation';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -10,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
 import { getAllSubjects, getAllClasses } from '@/services/dataService';
 import { getTextbooksBySubject } from '@/services/textbookService';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import { useAuthStore } from '@/store/authStore';
 
@@ -18,7 +16,6 @@ export default function TeacherSubjectDetailPage() {
   const { _ } = useTranslation();
   const { classId, subjectId } = useParams<{ classId: string; subjectId: string }>();
   const user = useAuthStore((s) => s.user);
-
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['teacher-subject-detail', classId, subjectId, user?.id],
     queryFn: async () => {
@@ -49,13 +46,13 @@ export default function TeacherSubjectDetailPage() {
   return (
     <>
       <SEOHead title={data?.subjectName ?? _('Subject')} description={_('Textbooks for') + ` ${data?.subjectName}`} />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto space-y-16 pb-32"
       >
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" asChild>
               <Link to={ROUTES.TEACHER_CLASS(classId!)}>
@@ -69,14 +66,14 @@ export default function TeacherSubjectDetailPage() {
               )}
             </div>
           </div>
-        </motion.div>
+        </div>
 
         <DataFetchWrapper data={data} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="card">
           {(d) => (
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              animate="show"
+            <div
+
+
+
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
             >
               {d.textbooks.length === 0 ? (
@@ -95,7 +92,7 @@ export default function TeacherSubjectDetailPage() {
                 </div>
               ) : (
                 d.textbooks.map((tb) => (
-                  <motion.div key={tb.id} variants={scrollReveal}>
+                  <div key={tb.id}>
                     <Link
                       to={ROUTES.TEACHER_TEXTBOOK(tb.id)}
                       className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl"
@@ -124,13 +121,13 @@ export default function TeacherSubjectDetailPage() {
                         </CardContent>
                       </Card>
                     </Link>
-                  </motion.div>
+                  </div>
                 ))
               )}
-            </motion.div>
+            </div>
           )}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

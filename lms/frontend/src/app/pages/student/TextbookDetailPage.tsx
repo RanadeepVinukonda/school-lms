@@ -1,5 +1,4 @@
 import { useParams, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -9,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Icon } from '@/components/ui/Icon';
-import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { getTextbook, getChaptersForTextbook, getConceptsForChapter, getAllConceptProgress } from '@/services/textbookService';
@@ -24,7 +22,6 @@ export default function TextbookDetailPage() {
   const [expandedChapter, setExpandedChapter] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'roadmap' | 'mindmap'>('roadmap');
   const authUser = useAuthStore((state) => state.user);
-
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['textbook-roadmap', id],
     queryFn: async () => {
@@ -33,7 +30,6 @@ export default function TextbookDetailPage() {
       if (!textbook) return null;
       const subject = await getSubject(textbook.subjectId);
       const conceptProgress = authUser?.id ? await getAllConceptProgress(authUser.id) : [];
-
       const chapters = await getChaptersForTextbook(id);
       const chaptersWithConcepts: any[] = [];
       for (const ch of chapters) {
@@ -59,7 +55,6 @@ export default function TextbookDetailPage() {
         ch.chapterLessons.length && ch.chapterLessons.every((c: { id: string }) => completedConceptIds.includes(c.id)),
       ).length;
       const progressPct = totalChapters > 0 ? Math.round((completedCount / totalChapters) * 100) : 0;
-
       const roadmapChapters = chaptersWithConcepts.map((ch, idx) => ({
         ...ch,
         status: idx < completedCount ? 'completed' as const
@@ -84,20 +79,20 @@ export default function TextbookDetailPage() {
         title={data?.textbook?.title ?? 'Textbook'}
         description={`Learning roadmap for ${data?.textbook?.title ?? 'textbook'}`}
       />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
       >
-        <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+        <div>
           <Button variant="ghost" size="sm" asChild className="mb-1">
             <Link to={data?.subject ? ROUTES.STUDENT_SUBJECT(data.subject.id) : ROUTES.STUDENT_SUBJECTS} className="gap-2">
               <Icon name="arrow_back" size={16} />
               {data?.subject ? _('Back to') + ' ' + data.subject.name : _('Back to Subjects')}
             </Link>
           </Button>
-        </motion.div>
+        </div>
 
         <DataFetchWrapper
           data={data}
@@ -117,7 +112,7 @@ export default function TextbookDetailPage() {
           {(d) => (
             <div className="space-y-16">
               {/* Header */}
-              <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+              <div>
                 <Card className="overflow-hidden border-border/60">
                   <div className="h-36 flex items-end p-6 relative" style={{ backgroundColor: `${d.subject?.color || 'hsl(var(--accent-default))'}20` }}>
                     <div className="flex items-center gap-4 relative z-10">
@@ -136,10 +131,10 @@ export default function TextbookDetailPage() {
                     </div>
                   </div>
                 </Card>
-              </motion.div>
+              </div>
 
               {/* Progress */}
-              <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+              <div>
                 <Card className="border-border/60">
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between mb-2">
@@ -154,10 +149,10 @@ export default function TextbookDetailPage() {
                     </p>
                   </CardContent>
                 </Card>
-              </motion.div>
+              </div>
 
               {/* Tab Switcher */}
-              <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+              <div>
                 <div className="flex gap-1 p-1 bg-surface-variant/50 rounded-xl w-fit">
                   <button
                     onClick={() => setActiveTab('roadmap')}
@@ -184,24 +179,19 @@ export default function TextbookDetailPage() {
                     {_('Mind Map')}
                   </button>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Tab Content */}
               {activeTab === 'roadmap' ? (
                 /* Learning Roadmap */
-                <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                <div>
                   <div className="relative pl-16">
                     {/* Vertical timeline line */}
                     <div className="absolute left-[31px] top-3 bottom-3 w-0.5 bg-border" />
 
                   {d.chapters.map((ch, ci) => (
-                    <motion.div
+                    <div
                       key={ch.id}
-                      variants={cardStackReveal}
-                      custom={ci}
-                      initial="hidden"
-                      whileInView="show"
-                      viewport={{ once: true, margin: '-60px' }}
                       className="relative pb-5"
                     >
                       {/* Timeline dot */}
@@ -280,14 +270,10 @@ export default function TextbookDetailPage() {
                         </div>
 
                         {/* Expandable lessons */}
-                        <AnimatePresence initial={false}>
+
                           {expandedChapter === ch.id && (
-                            <motion.div
+                            <div
                               key={`lessons-${ch.id}`}
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.25, ease: [0.2, 0, 0, 1] }}
                               className="overflow-hidden"
                             >
                               <div className="px-5 pb-5 pt-3 border-t border-border space-y-1">
@@ -327,24 +313,24 @@ export default function TextbookDetailPage() {
                                   ))
                                 )}
                               </div>
-                            </motion.div>
+                            </div>
                           )}
-                        </AnimatePresence>
+
                       </div>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
-              </motion.div>
+              </div>
               ) : (
                 /* Mind Map */
-                <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                <div>
                   {id && <TextbookMindMap textbookId={id} />}
-                </motion.div>
+                </div>
               )}
             </div>
           )}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

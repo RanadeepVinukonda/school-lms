@@ -9,29 +9,23 @@ Single source of truth for the entire codebase. Backend, frontend, database, inf
 ```
 D:\school-lms-build\
 ├── .github/workflows/
-│   ├── ci.yml                     # Lint + typecheck + test (Node 20, Postgres 16)
+│   ├── ci.yml                     # Lint + typecheck + test + build (Node 20, Postgres 16)
 │   └── render-deploy.yml          # Triggers Render deploy on push to main (backend changes)
-├── docker-compose.yml             # postgres:16-alpine, backend, frontend
-├── vercel.json                    # Frontend on Vercel, API proxy to Render
-├── genesis-webview/               # React Native (Expo) WebView wrapper for mobile
-│   ├── App.tsx
-│   ├── package.json               # Expo ~54.0.0, react-native-webview
-│   └── android/, ios/, assets/
 ├── lms/                           # Main monorepo
 │   ├── backend/                   # Express + Supabase + Drizzle ORM
 │   │   ├── src/
 │   │   │   ├── config/            # cors.ts, env.ts, logger.ts, swagger.ts, tracing.ts
 │   │   │   ├── controllers/       # 51 controllers (barrel export via index.ts)
 │   │   │   ├── database/          # schema/, auth.ts, connection-manager.ts, transaction-manager.ts
-│   │   │   ├── jobs/              # scheduler.ts, worker.ts, queue.ts, inngest/, 4 scheduled jobs, cleanup-idempotency.job.ts
-│   │   │   ├── lib/               # base-service.ts, container.ts (DI)
+│   │   │   ├── jobs/              # scheduler.ts, worker.ts, queue.ts, inngest/, scheduled jobs
+│   │   │   ├── lib/               # base-service.ts
 │   │   │   ├── middlewares/        # 22 middlewares + barrel export (includes accept-header, idempotency, sentry)
 │   │   │   ├── routes/            # 80 route files + 7 module index routers + barrel export (index.ts)
-│   │   │   ├── scripts/           # 21 DB/utility scripts
-│   │   │   ├── services/          # 80 services + ai-provider.helper.ts (barrel export via index.ts)
+│   │   │   ├── scripts/           # cleanupDemoData.ts (db:cleanup)
+│   │   │   ├── services/          # services + ai-provider.helper.ts (barrel export via index.ts)
 │   │   │   ├── types/             # common.ts, pg.d.ts, service-result.ts, dto.ts, service-interfaces.ts, express.d.ts
-│   │   │   ├── utils/             # 14 files: advisory-lock, cache, circuit-breaker, container, errors, events, fee-report, slow-query-logger, etc.
-│   │   │   ├── validators/        # 17 Zod validator files
+│   │   │   ├── utils/             # advisory-lock, cache, circuit-breaker, errors, events, fee-report, etc.
+│   │   │   ├── validators/        # Zod validator files
 │   │   │   ├── __tests__/         # unit/ + integration/ (circuit-breaker, cache, events, quiz-flow, fee-flow, class-flow, health, versioning, rate-limit)
 │   │   │   ├── app.ts
 │   │   │   └── index.ts
@@ -41,32 +35,27 @@ D:\school-lms-build\
 │   ├── frontend/                  # React + Vite + Tailwind CSS
 │   │   ├── src/
 │   │   │   ├── app/               # App.tsx, router/, layouts/, pages/
-│   │   │   ├── components/        # 12 groups: ui, common, layout, gamification, coding, mindmap, nep-questions, ocr, student, teacher, textbook, virtual-labs, assessment
+│   │   │   ├── components/        # groups: ui, common, layout, gamification, mindmap, nep-questions, ocr, student, teacher, textbook
 │   │   │   ├── context/           # ActiveAcademicYearContext.tsx
-│   │   │   ├── contexts/          # ClassScopeContext.tsx
 │   │   │   ├── features/auth/     # components/, hooks/, schemas/
 │   │   │   ├── hooks/             # usePushNotifications, useRealtimeSubscription, useTranslation
 │   │   │   ├── i18n/              # en, hi, kn, ta, te
-│   │   │   ├── lib/               # constants, format, sanitize, utils, pdfUtils, lazyRetry, motion, roleHelpers, useRealtimeInvalidation
-│   │   │   ├── services/          # 40 service files
-│   │   │   ├── store/             # 6 Zustand stores
+│   │   │   ├── lib/               # constants, format, sanitize, utils, pdfUtils, lazyRetry, roleHelpers
+│   │   │   ├── services/          # service files
+│   │   │   ├── store/             # Zustand stores
 │   │   │   ├── supabase/          # config.ts, auth.ts
-│   │   │   ├── types/             # 25 type definition files
+│   │   │   ├── types/             # type definition files
 │   │   │   ├── main.tsx, index.css
 │   │   │   └── test/setup.ts
-│   │   ├── e2e/                   # Playwright E2E tests
-│   │   ├── vite.config.ts, tailwind.config.ts, capacitor.config.ts, playwright.config.ts
+│   │   ├── vite.config.ts, tailwind.config.ts, capacitor.config.ts
 │   │   ├── Dockerfile, nginx.conf, vercel.json
 │   │   └── package.json
-│   ├── search/                    # Elasticsearch microservice
-│   │   ├── src/index.ts
-│   │   └── package.json
 │   ├── pgbouncer/
-│   ├── docker-compose.yml, docker-compose.prod.yml, docker-compose.test.yml
-│   ├── docs/, vercel.json, .lighthouserc.js
-│   └── package.json
+│   ├── docker-compose.yml         # dev stack: pgbouncer + postgres + backend + frontend
+│   ├── docker-compose.prod.yml    # prod stack (memory caps, healthchecks, no-new-privileges)
+│   └── docker-compose.test.yml
 ├── ARCHITECTURE.md                # This file
-└── entities.json, mempalace.yaml
+└── README.md
 ```
 
 ---
@@ -89,11 +78,9 @@ D:\school-lms-build\
 | Multer | ^1.4.5-lts.1 | File upload handling |
 | Zod | ^3.23.8 | Request validation |
 | Winston | ^3.14.0 | Logging |
-| Morgan | ^1.10.0 | HTTP request logging |
 | Helmet | ^7.1.0 | Security headers |
 | CORS | ^2.8.5 | Cross-origin |
 | express-rate-limit | ^7.4.0 | Rate limiting |
-| Nodemailer | ^9.0.3 | Email sending |
 | PDFKit | ^0.19.1 | PDF generation (receipts, payslips) |
 | pdf-parse | ^2.4.5 | PDF text extraction |
 | Tesseract.js | ^7.0.0 | OCR |
@@ -122,7 +109,6 @@ D:\school-lms-build\
 | Radix UI | Multiple ^1.x / ^2.x | Headless UI primitives |
 | class-variance-authority | ^0.7.1 | Component variants |
 | clsx + tailwind-merge | ^2.1.1 / ^2.5.5 | Class utilities |
-| Framer Motion | ^11.11.17 | Animations |
 | Lucide React | ^0.460.0 | Icons |
 | React Hook Form | ^7.53.2 | Form management |
 | @hookform/resolvers | ^3.9.1 | Zod form validation |
@@ -137,21 +123,7 @@ D:\school-lms-build\
 | Supabase JS | ^2.108.2 | Realtime subscriptions |
 | Capacitor | ^8.4.2 | Mobile app (Android) |
 | Vitest | ^4.1.8 | Unit testing |
-| Playwright | ^1.49.0 | E2E testing |
 | @testing-library/react | ^16.3.2 | Component testing |
-
-### Search Microservice
-| Tech | Version | Role |
-|------|---------|------|
-| Express | ^4.18.2 | HTTP server |
-| @elastic/elasticsearch | ^8.11.0 | Search engine |
-
-### Mobile (genesis-webview)
-| Tech | Version | Role |
-|------|---------|------|
-| Expo | ~54.0.0 | React Native framework |
-| React Native | 0.81.5 | Mobile UI |
-| react-native-webview | ^13.13.0 | WebView wrapper |
 
 ---
 
@@ -788,11 +760,6 @@ academic-year, assignment, attendance, auth, class, course, exam, fee, grade, in
 - CTE-based UPDATE+SELECT in single query (no pre-check race)
 - Advisory lock per item for serialized deductions
 
-#### Slow Query Logging
-- `utils/slow-query-logger.ts` — logs queries exceeding 500ms threshold
-- Applied to all database connections via connection manager
-- Slow queries counted in Prometheus (`slow_query_total`)
-
 ---
 
 ## Authentication
@@ -1124,8 +1091,6 @@ Centralized handler in `error.middleware.ts`. Stack traces only in development.
 
 ### Search
 - Global Search -- Search across textbooks, concepts, courses
-- Search Sync -- Index documents from DB to Elasticsearch
-- Search Microservice -- Dedicated Express + Elasticsearch (`lms/search/`)
 
 ### Compliance & Security
 - GDPR -- Data export (JSON, 7-day download link), account deletion (30-day grace, cascade anonymization)
@@ -1143,7 +1108,6 @@ Centralized handler in `error.middleware.ts`. Stack traces only in development.
 - Idempotency -- Middleware for POST/PUT/PATCH prevents duplicate mutations
 - Idempotency Key Cleanup -- Background job runs every 6h, purges expired keys
 - @types -- All `@types/*` packages moved to devDependencies
-- Slow Query Logging -- Queries exceeding 500ms logged automatically
 - Circuit Breaker -- Prevents cascade failures on AI, Supabase, and Cloudinary calls
 - Table Name Whitelist -- `TransactionManager` validates table names against allowed list (prevents SQL injection via dynamic table names)
 - Per-Account Lockout -- 5 failed login attempts within 15-minute window triggers temporary lockout
@@ -1228,11 +1192,6 @@ All via Supabase Realtime (WebSocket `wss://*.supabase.co`). No Socket.io.
 - Vitest `^4.1.8` + jsdom + @testing-library/react `^16.3.2`
 - Config: `lms/frontend/vite.config.ts`
 - Tests: `lms/frontend/src/__tests__/`
-
-### E2E
-- Playwright `^1.49.0`
-- Config: `lms/frontend/playwright.config.ts`
-- Tests: `lms/frontend/e2e/`
 
 ### CI Pipeline (`.github/workflows/ci.yml`)
 1. Lint: `npm run lint` (frontend + backend)

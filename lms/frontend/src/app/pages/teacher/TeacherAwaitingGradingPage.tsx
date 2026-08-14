@@ -3,7 +3,6 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { Link } from 'react-router-dom';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
 import api from '@/services/api';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -13,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Icon } from '@/components/ui/Icon';
 import { ROUTES } from '@/lib/constants';
-import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { formatDateTime, formatRelativeTime } from '@/lib/format';
 import { useTeacherReviewData } from '@/hooks/useTeacherReviewData';
 
@@ -28,7 +26,6 @@ export default function TeacherAwaitingGradingPage() {
   const { data, isLoading, error, refetch } = useTeacherReviewData();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [forms, setForms] = useState<Record<string, GradeForm>>({});
-
   const gradeMutation = useMutation({
     mutationFn: async (vars: { assignmentId: string; submissionId: string; score: number; feedback?: string; totalPoints: number }) => {
       const res = await api.put(
@@ -64,10 +61,8 @@ export default function TeacherAwaitingGradingPage() {
   return (
     <>
       <SEOHead title={_('Awaiting Grading')} description={_('Review and grade student assignment submissions')} canonical="/teacher/awaiting-grading" />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32"
       >
         <div className="mb-6 flex items-center gap-3">
@@ -82,7 +77,7 @@ export default function TeacherAwaitingGradingPage() {
 
         <DataFetchWrapper data={data} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="card">
           {(d) => (
-            <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-4">
+            <div className="space-y-4">
               {d.awaitingGrading.length === 0 ? (
                 <Card className="border-border/60">
                   <CardContent className="p-10 text-center">
@@ -97,7 +92,7 @@ export default function TeacherAwaitingGradingPage() {
                   const totalPoints = item.assignment.points ?? 10;
                   const isExpanded = expanded[sub.id];
                   return (
-                    <motion.div key={sub.id} variants={cardStackReveal} custom={idx}>
+                    <div key={sub.id}>
                       <Card className="border-border/60">
                         <CardContent className="p-5">
                           <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -172,14 +167,14 @@ export default function TeacherAwaitingGradingPage() {
                           )}
                         </CardContent>
                       </Card>
-                    </motion.div>
+                    </div>
                   );
                 })
               )}
-            </motion.div>
+            </div>
           )}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

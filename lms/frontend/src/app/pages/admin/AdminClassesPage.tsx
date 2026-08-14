@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -23,7 +22,6 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { OptionsSelect } from '@/components/ui/select';
-import { cardStackReveal } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/supabase/config';
 import { hasRole } from '@/lib/roleHelpers';
@@ -80,7 +78,6 @@ export default function AdminClassesPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('classes');
   const [searchParams] = useSearchParams();
-
   useEffect(() => {
     const tab = searchParams.get('tab');
     if (tab) setActiveTab(tab);
@@ -93,7 +90,6 @@ export default function AdminClassesPage() {
   });
 
   const { data: myClasses = [] } = useClasses();
-
   const { data: users = [], refetch: refetchUsers } = useQuery({
     queryKey: ['admin-users-list'],
     queryFn: getAllUsers,
@@ -136,12 +132,10 @@ export default function AdminClassesPage() {
   const [classRoomNumber, setClassRoomNumber] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [classCreateLoading, setClassCreateLoading] = useState(false);
-
   const [classDeleteTarget, setClassDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [classDeleteLoading, setClassDeleteLoading] = useState(false);
   const [classDependencyReport, setClassDependencyReport] = useState<DependencyReport | null>(null);
   const [showClassDependencyDialog, setShowClassDependencyDialog] = useState(false);
-
   const [showEditClass, setShowEditClass] = useState(false);
   const [editClassTarget, setEditClassTarget] = useState<ClassEntry | null>(null);
   const [editClassForm, setEditClassForm] = useState({ name: '', code: '', grade: '', section: '', roomNumber: '' });
@@ -173,7 +167,6 @@ export default function AdminClassesPage() {
     const num = parseInt(g, 10);
     const className = `${ordinal(num)} class`;
     const finalCode = classCode.trim().toUpperCase() || `G${num}${classSection.trim().toUpperCase()}`;
-
     const duplicate = fetchedClasses.find((c) => c.code === finalCode);
     if (duplicate) {
       toast.error(`Class code "${finalCode}" is already in use by "${duplicate.name}"`);
@@ -317,7 +310,6 @@ export default function AdminClassesPage() {
       const studentIds = new Set<string>();
       (studentsRes.data || []).forEach((s: any) => studentIds.add(s.id));
       (enrollmentsRes.data || []).forEach((e: any) => studentIds.add(e.student_id));
-
       const studentIdsArray = Array.from(studentIds);
 
       // 2. Delete student users from 'users' table (cascades to fee_payments, enrollments, etc.)
@@ -391,7 +383,6 @@ export default function AdminClassesPage() {
   const [addSubjectClassId, setAddSubjectClassId] = useState('');
   const [subjectForm, setSubjectForm] = useState({ name: '', code: '', category: 'STEM', icon: 'menu_book' });
   const [subjectCreateLoading, setSubjectCreateLoading] = useState(false);
-
   const handleAddSubjectClick = (classId: string) => {
     setAddSubjectClassId(classId);
     setSubjectForm({ name: '', code: '', category: 'STEM', icon: 'menu_book' });
@@ -440,7 +431,6 @@ export default function AdminClassesPage() {
   const [registerNewTeacherInline, setRegisterNewTeacherInline] = useState(false);
   const [newTeacherName, setNewTeacherName] = useState('');
   const [assignLoading, setAssignLoading] = useState(false);
-
   const handleAssignClick = (classId: string, subjectId: string) => {
     setAssignClassId(classId);
     setAssignSubjectId(subjectId);
@@ -577,7 +567,6 @@ export default function AdminClassesPage() {
   const [addStudentClassId, setAddStudentClassId] = useState('');
   const [studentForm, setStudentForm] = useState({ displayName: '', phone: '', rollNo: '', gender: '' });
   const [studentRegisterLoading, setStudentRegisterLoading] = useState(false);
-
   const getNextRollNo = (classId: string) => {
     const classStudents = users.filter((u: UserDoc) => hasRole(u.role, 'student') && u.classId === classId);
     if (classStudents.length === 0) return 1;
@@ -637,7 +626,6 @@ export default function AdminClassesPage() {
   // PROMOTE STUDENTS
   const [showPromoteConfirm, setShowPromoteConfirm] = useState(false);
   const [promoteLoading, setPromoteLoading] = useState(false);
-
   const handlePromoteStudents = async () => {
     setPromoteLoading(true);
     try {
@@ -675,7 +663,6 @@ export default function AdminClassesPage() {
   const [userDeleteLoading, setUserDeleteLoading] = useState(false);
   const [userDependencyReport, setUserDependencyReport] = useState<DependencyReport | null>(null);
   const [showUserDependencyDialog, setShowUserDependencyDialog] = useState(false);
-
   const teachers = useMemo(() => users.filter((u) => hasRole(u.role, 'teacher')), [users]);
   const filteredTeachers = useMemo(() => {
     return teachers.filter((t) => {
@@ -768,7 +755,6 @@ export default function AdminClassesPage() {
   const [editStudentTarget, setEditStudentTarget] = useState<UserDoc | null>(null);
   const [editStudentForm, setEditStudentForm] = useState({ displayName: '', rollNo: '', classId: '' });
   const [studentSaveLoading, setStudentSaveLoading] = useState(false);
-
   const students = useMemo(() => users.filter((u) => hasRole(u.role, 'student')), [users]);
   const classOptions = useMemo(() => myClasses.map((c) => ({
     value: c.id,
@@ -852,13 +838,13 @@ export default function AdminClassesPage() {
   return (
     <>
       <SEOHead title="Classes Hub" description="Unified classes, teachers, and student rosters" canonical="/admin/classes" />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-7xl mx-auto pb-32"
       >
-        <motion.div variants={cardStackReveal} custom={0} className="space-y-16">
+        <div className="space-y-16">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <h1 className="text-headline-sm font-bold">Classes Hub</h1>
@@ -1301,8 +1287,8 @@ export default function AdminClassesPage() {
               )}
             </TabsContent>
           </Tabs>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
       {/* -------------------------------------------------------------
           SHARED DIALOGS

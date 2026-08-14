@@ -49,7 +49,6 @@ export const ROUTES = {
   TEACHER_VIDEOS: '/teacher/videos',
   TEACHER_ANALYTICS: '/teacher/analytics',
   TEACHER_RESULTS_PUSH: '/teacher/release-grades',
-  TEACHER_QUESTION_BANK: '/teacher/question-bank',
   TEACHER_QUESTION_PAPERS: '/teacher/question-papers',
   TEACHER_TEST_TEMPLATES: '/teacher/test-templates',
   TEACHER_TEST_SCHEDULE: '/teacher/test-schedule',
@@ -78,7 +77,6 @@ export const ROUTES = {
   ADMIN_NOTICEBOARD: '/admin/noticeboard',
   ADMIN_ERP_DASHBOARD: '/admin/erp',
   TEACHER_TIMETABLE: '/teacher/timetable',
-  TEACHER_REWARDS: '/teacher/rewards',
   TEACHER_REPORT: '/teacher/report',
   STUDENT_REPORT: '/student/report',
   PARENT_REPORT: '/parent/report',
@@ -90,7 +88,6 @@ export const ROUTES = {
 
   ASSIGNMENT_DETAIL: (id: string) => `/assignments/${id}`,
   QUIZ_ATTEMPT: (id: string) => `/quizzes/${id}/attempt`,
-  EXAM_DETAIL: (id: string) => `/exams/${id}`,
   STUDENT_TAKE_ASSESSMENT: (id: string) => `/student/assessments/${id}/take`,
   NOTIFICATIONS: '/notifications',
   ABOUT: '/about',
@@ -108,8 +105,6 @@ export const ROUTES = {
   PARENT_PROFILE_EDIT: '/parent/profile/edit',
   PARENT_NOTICEBOARD: '/parent/noticeboard',
 
-  STUDENT_CODING: '/student/coding',
-  STUDENT_CODING_EDITOR: (id: string) => `/student/coding/${id}`,
   STUDENT_MINDMAPS: '/student/mindmaps',
   STUDENT_OCR: '/student/ocr',
   STUDENT_ADAPTIVE_QUIZ: (conceptId: string) => `/student/concepts/${conceptId}/adaptive-quiz`,

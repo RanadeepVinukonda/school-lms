@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -7,7 +6,6 @@ import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Icon } from '@/components/ui/Icon';
-import { staggerContainer } from '@/lib/motion';
 import api from '@/services/api';
 import { VideoCard } from './VideoCard';
 import type { TeacherVideo, EducationalVideoSearchResult } from './types';
@@ -17,7 +15,6 @@ export function SearchYouTubeTab() {
   const queryClient = useQueryClient();
   const [query, setQuery] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-
   const savedVideosQuery = useQuery({
     queryKey: ['teacher-videos'],
     queryFn: () => api.get('/api/teacher-videos').then((r) => r.data.data as TeacherVideo[]),
@@ -132,7 +129,7 @@ export function SearchYouTubeTab() {
           }
         >
           {(results) => (
-            <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
               {results.map((video) => (
                 <VideoCard
                   key={video.id || video.videoId}
@@ -141,7 +138,7 @@ export function SearchYouTubeTab() {
                   onSave={() => saveMutation.mutate(video)}
                 />
               ))}
-            </motion.div>
+            </div>
           )}
         </DataFetchWrapper>
       )}

@@ -1,7 +1,5 @@
-import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Icon } from '@/components/ui/Icon';
-import { cardStackReveal } from '@/lib/motion';
 
 interface QuestionTypeCardProps {
   type: 'olympiad' | 'competency' | 'viva';
@@ -40,8 +38,8 @@ export function QuestionTypeCard({ type, selected, onToggle }: QuestionTypeCardP
   const config = typeConfig[type];
 
   return (
-    <motion.button
-      variants={cardStackReveal}
+    <button
+
       type="button"
       onClick={onToggle}
       className={cn(
@@ -63,6 +61,6 @@ export function QuestionTypeCard({ type, selected, onToggle }: QuestionTypeCardP
           <Icon name="check" size={16} />
         </div>
       )}
-    </motion.button>
+    </button>
   );
 }

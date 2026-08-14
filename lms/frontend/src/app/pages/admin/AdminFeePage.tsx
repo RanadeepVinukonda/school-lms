@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -50,16 +49,13 @@ function OutstandingRow({ item }: { item: any }) {
 export default function AdminFeePage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('schedules');
-
   const [newSchedule, setNewSchedule] = useState({ name: '', amount: 0, dueDate: '', classId: '', academicYear: '', description: '' });
   const [editingSchedule, setEditingSchedule] = useState<any>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<any>(null);
   const [paymentData, setPaymentData] = useState({ studentId: '', feeScheduleId: '', amountPaid: 0, paymentMethod: 'cash', transactionId: '' });
   const [paymentStudentLookup, setPaymentStudentLookup] = useState('');
-
   const { data: classesData = [] } = useClasses();
   const { data: usersData = [] } = useQuery({ queryKey: ['admin-users'], queryFn: getAllUsers });
-
   const students = useMemo(() => usersData.filter((u) => u.role === 'student'), [usersData]);
   const filteredStudents = useMemo(() => {
     if (!paymentStudentLookup) return students;
@@ -151,10 +147,10 @@ export default function AdminFeePage() {
     <>
       <SEOHead title="Fee Management" description="Fee schedules, payments, and outstanding reports" />
       <div className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-8">
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <div>
           <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">Fee & ERP Management</h1>
           <p className="text-body-md text-muted-foreground mt-1">Manage fee schedules, payments, and outstanding reports</p>
-        </motion.div>
+        </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full overflow-x-auto inline-flex">

@@ -1,7 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Link } from 'react-router-dom';
-import { motion, useInView } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -22,7 +21,6 @@ import { getTextbooksBySubject } from '@/services/textbookService';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
 import { useClasses } from '@/hooks/useClasses';
 import { formatClassName } from '@/services/classService';
-import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
 import api from '@/services/api';
@@ -46,19 +44,13 @@ interface DashboardData {
 }
 
 function SectionTitle({ label, title }: { label: string; title: string }) {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true });
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 24 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.5, ease: [0.05, 0, 0.133333, 0.06] }}
+    <div
       className="mb-6"
     >
       <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">{label}</p>
       <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">{title}</h2>
-    </motion.div>
+    </div>
   );
 }
 
@@ -98,9 +90,7 @@ export default function TeacherDashboardPage() {
   const todayDate = useMemo(() => new Date(), []);
   const todayKey = todayDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
   const todayLabel = todayDate.toLocaleDateString('en-US', { weekday: 'long' });
-
   const queryClient = useQueryClient();
-
   const { isLoading, error, refetch, data } = useQuery({
     queryKey: ['teacher-dashboard', user?.id],
     queryFn: async (): Promise<DashboardData> => {
@@ -113,7 +103,6 @@ export default function TeacherDashboardPage() {
       const myClassIds = [...new Set(myAssignments.map((a) => a.classId))];
       const myClasses = allClasses.filter((c) => myClassIds.includes(c.id));
       const subjectIds = [...new Set(myAssignments.map((a) => a.subjectId))];
-
       const [examArrays, assignmentArrays] = await Promise.all([
         Promise.all(subjectIds.map((sid) => getExamsBySubject(sid))),
         Promise.all(subjectIds.map((sid) => getAssignmentsBySubject(sid))),
@@ -121,7 +110,6 @@ export default function TeacherDashboardPage() {
 
       const allExams = examArrays.flat();
       const allAssignments = assignmentArrays.flat();
-
       const [correctionArrays, submissionArrays] = await Promise.all([
         Promise.all(allExams.map(async (exam) => {
           try { return await getCorrectionsByExam(exam.id); }
@@ -131,12 +119,10 @@ export default function TeacherDashboardPage() {
       ]);
       const allCorrections = correctionArrays.flat();
       const allSubmissions = submissionArrays.flat();
-
       const correctedExamIds = new Set(allCorrections.map((c) => c.examId));
       const awaitingGradingCount = allSubmissions.filter((s) => s.status === 'submitted').length;
       const awaitingCorrectionCount = allExams.filter((e) => !correctedExamIds.has(e.id)).length;
       const lateAssignmentsCount = allAssignments.filter((a) => a.dueDate && new Date(a.dueDate) < todayDate).length;
-
       const assignedStudents = students.filter(
         (s): s is typeof s & { classId: string } => !!s.classId && myClassIds.includes(s.classId)
       );
@@ -157,7 +143,6 @@ export default function TeacherDashboardPage() {
       const totalAttempts = classStats.reduce((s, c) => s + c.attempts, 0);
       const avgScore = totalAttempts > 0
         ? Math.round(classStats.reduce((s, c) => s + c.total, 0) / totalAttempts) : 0;
-
       const textbookArrays = await Promise.all(
         subjectIds.map((sid) => getTextbooksBySubject(sid).catch(() => [] as any[])),
       );
@@ -237,57 +222,57 @@ export default function TeacherDashboardPage() {
   return (
     <>
       <SEOHead title={_('Teacher Dashboard')} description={_('Your classroom tasks and schedule at a glance')} canonical="/teacher/dashboard" />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32"
       >
         <DataFetchWrapper data={data} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="card">
           {(d) => (
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              animate="show"
+            <div
+
+
+
               className="space-y-20"
             >
               <section>
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">
                     {_('Welcome')}, {teacherName}
                   </h1>
                   <p className="text-body-md text-muted-foreground mt-1">{_('Overview of your classroom today')}</p>
-                </motion.div>
+                </div>
               </section>
 
               <section>
                 <SectionTitle label={_('Alerts')} title={_('Needs your attention')} />
-                <motion.div
-                  variants={staggerContainer}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true, margin: '-60px' }}
+                <div
+
+
+
+
                   className="grid grid-cols-1 sm:grid-cols-3 gap-4"
                 >
                   {d.needsAttention.map((item) => (
-                    <motion.div key={item.label} variants={cardStackReveal} custom={0}>
+                    <div key={item.label}>
                       <NeedsAttentionCard item={item} />
-                    </motion.div>
+                    </div>
                   ))}
-                </motion.div>
+                </div>
               </section>
 
               <section>
                 <SectionTitle label={_('Performance')} title={_('Class metrics')} />
-                <motion.div
-                  variants={staggerContainer}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true, margin: '-60px' }}
+                <div
+
+
+
+
                   className="grid grid-cols-1 sm:grid-cols-3 gap-4"
                 >
                   {d.stats.map((stat) => (
-                    <motion.div key={stat.label} variants={cardStackReveal} custom={0}>
+                    <div key={stat.label}>
                       <Card className="border-border/60">
                         <CardContent className="p-5 flex items-center gap-4">
                           {stat.isPerformanceLogo ? (
@@ -303,19 +288,19 @@ export default function TeacherDashboardPage() {
                           </div>
                         </CardContent>
                       </Card>
-                    </motion.div>
+                    </div>
                   ))}
-                </motion.div>
+                </div>
               </section>
 
               {skillDist && skillDist.total > 0 && (
                 <section>
                   <SectionTitle label={_('Skills')} title={_('Student skill levels')} />
-                  <motion.div
-                    variants={staggerContainer}
-                    initial="hidden"
-                    whileInView="show"
-                    viewport={{ once: true, margin: '-60px' }}
+                  <div
+
+
+
+
                     className="grid grid-cols-1 sm:grid-cols-3 gap-4"
                   >
                     {['beginner', 'intermediate', 'advanced'].map((level) => {
@@ -327,7 +312,7 @@ export default function TeacherDashboardPage() {
                         advanced: 'bg-success-container text-success border-success/20',
                       };
                       return (
-                        <motion.div key={level} variants={cardStackReveal} custom={0}>
+                        <div key={level}>
                           <Card className="border-border/60">
                             <CardContent className="p-5 text-center space-y-2">
                               <p className={cn('text-display-xs font-bold capitalize', colors[level].split(' ')[1])}>{count}</p>
@@ -338,10 +323,10 @@ export default function TeacherDashboardPage() {
                               <p className="text-label-xs text-muted-foreground">{pct}% {_('of class')}</p>
                             </CardContent>
                           </Card>
-                        </motion.div>
+                        </div>
                       );
                     })}
-                  </motion.div>
+                  </div>
                 </section>
               )}
 
@@ -359,11 +344,11 @@ export default function TeacherDashboardPage() {
                     ))}
                   </select>
                 </div>
-                <motion.div
-                  variants={staggerContainer}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true, margin: '-60px' }}
+                <div
+
+
+
+
                   className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
                 >
                   {d.teaching.classes.filter((cls: any) => !selectedClassFilter || cls.id === selectedClassFilter).map((cls: any) => {
@@ -372,7 +357,7 @@ export default function TeacherDashboardPage() {
                     const presentCount = todayAttendanceByClass[cls.id]?.present ?? 0;
                     const absentCount = todayAttendanceByClass[cls.id]?.absent ?? 0;
                     return (
-                      <motion.div key={cls.id} variants={cardStackReveal} custom={0}>
+                      <div key={cls.id}>
                         <Card className="border-border/60 hover:shadow-md transition-shadow">
                           <CardContent className="p-5">
                             <div className="flex items-start gap-4">
@@ -408,23 +393,23 @@ export default function TeacherDashboardPage() {
                             </div>
                           </CardContent>
                         </Card>
-                      </motion.div>
+                      </div>
                     );
                   })}
-                </motion.div>
+                </div>
               </section>
 
               <section>
                 <SectionTitle label={_('Actions')} title={_('Quick tasks')} />
-                <motion.div
-                  variants={staggerContainer}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true, margin: '-60px' }}
+                <div
+
+
+
+
                   className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
                 >
                   {QUICK_ACTIONS.map((action) => (
-                    <motion.div key={action.label} variants={cardStackReveal} custom={0}>
+                    <div key={action.label}>
                       <Link to={action.link} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl block">
                         <Card className="hover:shadow-md transition-shadow cursor-pointer h-full border-border/60">
                           <CardContent className="p-5 flex flex-col items-center gap-3 text-center">
@@ -435,14 +420,14 @@ export default function TeacherDashboardPage() {
                           </CardContent>
                         </Card>
                       </Link>
-                    </motion.div>
+                    </div>
                   ))}
-                </motion.div>
+                </div>
               </section>
-            </motion.div>
+            </div>
           )}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -14,7 +13,6 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icon } from '@/components/ui/Icon';
 import { QuestionRenderer } from '@/components/teacher/QuestionRenderer';
-import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import { getTextbook, getChaptersForTextbook, getConceptsForChapter, getConceptProgress, saveConceptProgress, getConceptRelease } from '@/services/textbookService';
 import { useAuthStore } from '@/store/authStore';
@@ -23,7 +21,6 @@ import { ConceptHierarchyMindMap } from '@/components/teacher/ConceptHierarchyMi
 import type { GeneratedQuestion } from '@/types/textbook';
 
 type QuestionType = GeneratedQuestion['type'];
-
 const questionConfig: Record<QuestionType, { label: string; icon: string }> = {
   mcq: { label: 'Multiple Choice', icon: 'radio_button_checked' },
   true_false: { label: 'True/False', icon: 'toggle_on' },
@@ -170,10 +167,8 @@ export default function StudentConceptPage() {
   const authUser = useAuthStore((s) => s.user);
   const userId = authUser?.id ?? '';
   const navigate = useNavigate();
-
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
-
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-concept', textbookId, conceptId, userId],
     queryFn: async () => {
@@ -209,7 +204,6 @@ export default function StudentConceptPage() {
   const release = data?.release;
   const questionBankReleased = release?.questionBankReleased ?? false;
   const practiceCompleted = progress?.practiceCompleted ?? false;
-
   const handleAnswer = useCallback((qId: string, value: string) => {
     setAnswers((prev) => ({ ...prev, [qId]: value }));
   }, []);
@@ -238,18 +232,18 @@ export default function StudentConceptPage() {
   return (
     <>
       <SEOHead title={concept?.title || _('Concept')} description={concept?.summary || ''} />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
       >
-        <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+        <div>
           <Link to={ROUTES.STUDENT_CHAPTER(textbookId, data?.chapter.id || '')} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
             <Icon name="arrow_back" size={16} />
             {_('Back to chapter')}
           </Link>
-        </motion.div>
+        </div>
 
         <DataFetchWrapper
           data={data}
@@ -265,12 +259,12 @@ export default function StudentConceptPage() {
             if (!isReleased) {
               return (
                 <div className="space-y-16">
-                  <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                  <div>
                     <Link to={`${ROUTES.STUDENT_CHAPTER(textbookId, d.chapter.id)}?textbookId=${textbookId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
                       <Icon name="arrow_back" size={16} />
                       {_('Back to chapter')}
                     </Link>
-                  </motion.div>
+                  </div>
                   <UnlockOverlay icon="lock" message={_('This concept has not yet been released by your teacher.')} />
                 </div>
               );
@@ -278,7 +272,7 @@ export default function StudentConceptPage() {
 
             return (
               <div className="space-y-16">
-                <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                <div>
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <Badge variant="secondary">{d.textbook.title}</Badge>
@@ -287,9 +281,9 @@ export default function StudentConceptPage() {
                     <h1 className="text-headline-sm md:text-headline-md font-bold tracking-tight">{d.concept.title}</h1>
                     <p className="text-muted-foreground mt-1">{d.concept.summary}</p>
                   </div>
-                </motion.div>
+                </div>
 
-                <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                <div>
                   <Tabs defaultValue="studyMaterial">
                     <TabsList className="w-full overflow-x-auto inline-flex">
                       <TabsTrigger value="studyMaterial" className="flex-1">
@@ -434,12 +428,12 @@ export default function StudentConceptPage() {
                       </Card>
                     </TabsContent>
                   </Tabs>
-                </motion.div>
+                </div>
               </div>
             );
           }}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

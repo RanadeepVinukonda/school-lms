@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -7,12 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
-import { staggerContainer, cardStackReveal, scrollReveal } from '@/lib/motion';
 import { getChildren, getRecommendations, getYearlyReport } from '@/services/parentService';
 
 export default function ParentReportsPage() {
   const [yearlyChildId, setYearlyChildId] = useState<string | null>(null);
-
   const { data: children } = useQuery({
     queryKey: ['parent-children'],
     queryFn: getChildren,
@@ -43,19 +40,19 @@ export default function ParentReportsPage() {
   return (
     <>
       <SEOHead title="Reports" description="Progress report cards and recommendations for your child" canonical="/parent/reports" />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
       >
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">Reports & Recommendations</h1>
           <p className="text-body-md text-muted-foreground mt-1">Progress insights and recommendations for your child</p>
-        </motion.div>
+        </div>
 
         <section>
-          <motion.div variants={cardStackReveal} custom={0}>
+          <div>
             <Card className="border-border/60">
               <CardHeader className="pb-3">
                 <CardTitle className="text-title-md flex items-center gap-2 flex-wrap">
@@ -95,10 +92,10 @@ export default function ParentReportsPage() {
                       loadingType="card"
                     >
                       {(r: any) => (
-                        <motion.div
-                          variants={staggerContainer}
-                          initial="hidden"
-                          animate="show"
+                        <div
+
+
+
                           className="space-y-4 mt-4"
                         >
                           <div className="rounded-xl border border-border/60 bg-gradient-to-br from-primary/5 to-primary/10 p-5 text-center">
@@ -209,7 +206,7 @@ export default function ParentReportsPage() {
                               ))}
                             </div>
                           )}
-                        </motion.div>
+                        </div>
                       )}
                     </DataFetchWrapper>
                   </>
@@ -223,11 +220,11 @@ export default function ParentReportsPage() {
                 )}
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         </section>
 
         <section>
-          <motion.div variants={cardStackReveal} custom={0}>
+          <div>
             <Card className="border-border/60">
               <CardHeader className="pb-3">
                 <CardTitle className="text-title-md flex items-center gap-2 flex-wrap">
@@ -251,14 +248,14 @@ export default function ParentReportsPage() {
                           <p className="text-sm text-muted-foreground">No recommendations available</p>
                         </div>
                       ) : (
-                        <motion.div
-                          variants={staggerContainer}
-                          initial="hidden"
-                          animate="show"
+                        <div
+
+
+
                           className="space-y-6"
                         >
                           {recs.recommendations?.map((childRec: any) => (
-                            <motion.div key={childRec.studentId} variants={scrollReveal}>
+                            <div key={childRec.studentId}>
                               <div className="flex items-center gap-2 mb-3">
                                 <div className="h-8 w-8 rounded-lg bg-primary-container flex items-center justify-center">
                                   <Icon name="person" size={16} className="text-primary" />
@@ -281,18 +278,18 @@ export default function ParentReportsPage() {
                                   </div>
                                 ))}
                               </div>
-                            </motion.div>
+                            </div>
                           ))}
-                        </motion.div>
+                        </div>
                       )}
                     </>
                   )}
                 </DataFetchWrapper>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         </section>
-      </motion.div>
+      </div>
     </>
   );
 }

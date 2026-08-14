@@ -1,6 +1,5 @@
 import { useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, useInView } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -9,32 +8,24 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
-import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { getChildren } from '@/services/parentService';
 import { formatDate } from '@/lib/format';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useRealtimeInvalidation } from '@/lib/useRealtimeInvalidation';
 
 function SectionTitle({ label, title }: { label: string; title: string }) {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true });
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 24 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.5, ease: [0.05, 0, 0.133333, 0.06] }}
+    <div
       className="mb-6"
     >
       <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">{label}</p>
       <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">{title}</h2>
-    </motion.div>
+    </div>
   );
 }
 
 export default function ParentDashboardPage() {
   const user = useAuthStore((s) => s.user);
-
   const { isLoading, error, refetch, data } = useQuery({
     queryKey: ['parent-dashboard', user?.id],
     refetchOnWindowFocus: true,
@@ -59,39 +50,39 @@ export default function ParentDashboardPage() {
   return (
     <>
       <SEOHead title="Parent Dashboard" description="Monitor your child's progress" canonical="/parent/dashboard" />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32"
       >
         <DataFetchWrapper data={data} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="card">
           {(d) => (
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              animate="show"
+            <div
+
+
+
               className="space-y-20"
             >
               <section>
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">
                     Welcome, {parentName}
                   </h1>
                   <p className="text-body-md text-muted-foreground mt-1">Stay informed about your child&apos;s learning journey</p>
-                </motion.div>
+                </div>
               </section>
 
               <section>
                 <SectionTitle label="Overview" title="Your family" />
-                <motion.div
-                  variants={staggerContainer}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true, margin: '-60px' }}
+                <div
+
+
+
+
                   className="grid grid-cols-1 sm:grid-cols-3 gap-4"
                 >
-                  <motion.div variants={cardStackReveal} custom={0}>
+                  <div>
                     <Card className="border-border/60">
                       <CardContent className="p-5 flex items-center gap-4">
                         <div className="h-12 w-12 rounded-xl bg-primary-container flex items-center justify-center shrink-0">
@@ -103,8 +94,8 @@ export default function ParentDashboardPage() {
                         </div>
                       </CardContent>
                     </Card>
-                  </motion.div>
-                  <motion.div variants={cardStackReveal} custom={0}>
+                  </div>
+                  <div>
                     <Card className="border-border/60">
                       <CardContent className="p-5 flex items-center gap-4">
                         <div className="h-12 w-12 rounded-xl bg-secondary-container flex items-center justify-center shrink-0">
@@ -118,8 +109,8 @@ export default function ParentDashboardPage() {
                         </div>
                       </CardContent>
                     </Card>
-                  </motion.div>
-                  <motion.div variants={cardStackReveal} custom={0}>
+                  </div>
+                  <div>
                     <Card className="border-border/60">
                       <CardContent className="p-5 flex items-center gap-4">
                         <div className="h-12 w-12 rounded-xl bg-success-container flex items-center justify-center shrink-0">
@@ -133,22 +124,22 @@ export default function ParentDashboardPage() {
                         </div>
                       </CardContent>
                     </Card>
-                  </motion.div>
-                </motion.div>
+                  </div>
+                </div>
               </section>
 
               {d.children.length > 0 && (
                 <section>
                   <SectionTitle label="Children" title="Your linked children" />
-                  <motion.div
-                    variants={staggerContainer}
-                    initial="hidden"
-                    whileInView="show"
-                    viewport={{ once: true, margin: '-60px' }}
+                  <div
+
+
+
+
                     className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                   >
                     {d.children.map((child: any) => (
-                      <motion.div key={child.id} variants={cardStackReveal} custom={0}>
+                      <div key={child.id}>
                         <Link
                           to={ROUTES.PARENT_CHILD(child.id)}
                           className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl block"
@@ -170,19 +161,19 @@ export default function ParentDashboardPage() {
                             </CardContent>
                           </Card>
                         </Link>
-                      </motion.div>
+                      </div>
                     ))}
-                  </motion.div>
+                  </div>
                 </section>
               )}
 
               <section>
                 <SectionTitle label="Actions" title="Quick links" />
-                <motion.div
-                  variants={staggerContainer}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true, margin: '-60px' }}
+                <div
+
+
+
+
                   className="grid grid-cols-1 sm:grid-cols-3 gap-4"
                 >
                   {[
@@ -190,7 +181,7 @@ export default function ParentDashboardPage() {
                     { icon: 'analytics', label: 'Reports', href: ROUTES.PARENT_REPORTS, bg: 'bg-secondary-container', color: 'text-secondary' },
                     { icon: 'notifications', label: 'Notifications', href: ROUTES.NOTIFICATIONS, bg: 'bg-warning-container', color: 'text-warning' },
                   ].map((action) => (
-                    <motion.div key={action.label} variants={cardStackReveal} custom={0}>
+                    <div key={action.label}>
                       <Link to={action.href} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl block">
                         <Card className="hover:shadow-md transition-shadow cursor-pointer h-full border-border/60">
                           <CardContent className="p-5 flex flex-col items-center gap-3 text-center">
@@ -201,14 +192,14 @@ export default function ParentDashboardPage() {
                           </CardContent>
                         </Card>
                       </Link>
-                    </motion.div>
+                    </div>
                   ))}
-                </motion.div>
+                </div>
               </section>
-            </motion.div>
+            </div>
           )}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

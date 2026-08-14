@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Link, useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -13,7 +12,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Icon } from '@/components/ui/Icon';
 import { getInitials } from '@/lib/utils';
 import { formatDate, getLetterGrade } from '@/lib/format';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import type { UserDoc, Subject, GradeEntry, AttemptEntry } from '@/services/dataService';
 import { getUser, getClass, getAllSubjects, getCompletedQuizAttempts, getCompletedAssignmentAttempts } from '@/services/dataService';
 import { supabase } from '@/supabase/config';
@@ -48,7 +46,6 @@ function pctColor(pct: number) {
 export default function TeacherStudentDetailPage() {
   const { _ } = useTranslation();
   const { id } = useParams<{ id: string }>();
-
   const { isLoading, error, refetch, data } = useQuery({
     queryKey: ['teacher-student-detail', id],
     queryFn: async (): Promise<StudentDetailData | null> => {
@@ -88,7 +85,6 @@ export default function TeacherStudentDetailPage() {
       ];
 
       const studentClass = student.classId ? await getClass(student.classId) : null;
-
       const gradesWithSubject: GradeRow[] = tagged
         .map((g) => ({
           ...g,
@@ -151,10 +147,10 @@ export default function TeacherStudentDetailPage() {
         title={data ? `${data?.student?.displayName ?? 'Student'} - ${_('Student Details')}` : _('Student Details')}
         description={data ? `${_('Performance and grades for')} ${data?.student?.displayName ?? 'Student'}` : _('View student details')}
       />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto space-y-16 pb-32"
       >
         {notFound ? (
@@ -183,16 +179,16 @@ export default function TeacherStudentDetailPage() {
           >
             {(d) => (
               <>
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <Button variant="ghost" size="sm" asChild className="gap-1 -ml-2">
                     <Link to="/teacher/students">
                       <Icon name="arrow_back" size={16} />
                       {_('Back to Students')}
                     </Link>
                   </Button>
-                </motion.div>
+                </div>
 
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <Card className="border-border/60">
                     <CardContent className="p-5">
                       <div className="flex items-center gap-5">
@@ -227,9 +223,9 @@ export default function TeacherStudentDetailPage() {
                       </div>
                     </CardContent>
                   </Card>
-                </motion.div>
+                </div>
 
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <Card className="border-border/60">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-title-md flex items-center gap-2">
@@ -267,9 +263,9 @@ export default function TeacherStudentDetailPage() {
                       )}
                     </CardContent>
                   </Card>
-                </motion.div>
+                </div>
 
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <Card className="border-border/60">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-title-md flex items-center gap-2">
@@ -324,9 +320,9 @@ export default function TeacherStudentDetailPage() {
                       )}
                     </CardContent>
                   </Card>
-                </motion.div>
+                </div>
 
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <Card className="border-border/60">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-title-md flex items-center gap-2">
@@ -343,14 +339,13 @@ export default function TeacherStudentDetailPage() {
                           </p>
                         </div>
                       ) : (
-                        <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-2">
+                        <div className="space-y-2">
                           {d.performanceTrend.map((grade, idx) => {
                             const prevGrade = idx > 0 ? d.performanceTrend[idx - 1] : null;
                             const diff = prevGrade != null ? grade.percentage - prevGrade.percentage : null;
                             return (
-                              <motion.div
+                              <div
                                 key={grade.id}
-                                variants={scrollReveal}
                                 className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors"
                               >
                                 <div className="flex-1 min-w-0">
@@ -370,16 +365,16 @@ export default function TeacherStudentDetailPage() {
                                     </span>
                                   )}
                                 </div>
-                              </motion.div>
+                              </div>
                             );
                           })}
-                        </motion.div>
+                        </div>
                       )}
                     </CardContent>
                   </Card>
-                </motion.div>
+                </div>
 
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <Card className="border-border/60">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-title-md flex items-center gap-2">
@@ -402,12 +397,12 @@ export default function TeacherStudentDetailPage() {
                       </div>
                     </CardContent>
                   </Card>
-                </motion.div>
+                </div>
               </>
             )}
           </DataFetchWrapper>
         )}
-      </motion.div>
+      </div>
     </>
   );
 }

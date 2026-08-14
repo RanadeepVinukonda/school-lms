@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '@/hooks/useTranslation';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -31,7 +30,6 @@ export default function StudentResourcesPage() {
   const { _ } = useTranslation();
   const [activeTab, setActiveTab] = useState('recommended');
   const qc = useQueryClient();
-
   const recommendations = useQuery({
     queryKey: ['student-resources-recommendations'],
     queryFn: getRecommendations,
@@ -47,7 +45,6 @@ export default function StudentResourcesPage() {
     staleTime: 0,
   });
   const requests = useQuery({ queryKey: ['student-resource-requests'], queryFn: getMyRequests });
-
   const requestMutation = useMutation({
     mutationFn: (conceptId: string) => createResourceRequest(conceptId),
     onSuccess: () => {
@@ -60,12 +57,12 @@ export default function StudentResourcesPage() {
     <>
       <SEOHead title={_('Resources')} description={_('Recommended concepts and curated learning resources')} />
       <div className="sm:p-6 p-4 max-w-5xl mx-auto space-y-8 pb-32">
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <div>
           <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">{_('Resources')}</h1>
           <p className="text-body-md text-muted-foreground mt-1">
             {_('Concepts you scored low on, plus curated resources shared by your teachers')}
           </p>
-        </motion.div>
+        </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full overflow-x-auto inline-flex">
@@ -98,11 +95,8 @@ export default function StudentResourcesPage() {
               {() => (
                 <div className="grid gap-4 md:grid-cols-2">
                   {(recommendations.data || []).map((item: ConceptRecommendation) => (
-                    <motion.div
+                    <div
                       key={item.conceptId}
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3 }}
                     >
                       <Card className="border-border/60 h-full flex flex-col">
                         <CardHeader className="pb-2">
@@ -155,7 +149,7 @@ export default function StudentResourcesPage() {
                           )}
                         </CardContent>
                       </Card>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
               )}

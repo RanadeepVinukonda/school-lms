@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -12,7 +11,6 @@ import { ltiService, LtiConfig } from '@/services/ltiService';
 
 export default function AdminLtiPage() {
   const { register, handleSubmit, reset } = useForm<LtiConfig>();
-
   const { data: configRes, isLoading } = useQuery({
     queryKey: ['lti-config'],
     queryFn: () => ltiService.getConfig(),
@@ -49,10 +47,10 @@ export default function AdminLtiPage() {
     <>
       <SEOHead title="Moodle LTI 1.3 Integration" description="Configure LTI registration details" />
       <div className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-8">
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <div>
           <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">Moodle LTI 1.3</h1>
           <p className="text-body-md text-muted-foreground mt-1">Register the LMS as an LTI External Tool inside Moodle</p>
-        </motion.div>
+        </div>
 
         {/* Tool Endpoints */}
         <Card className="border-border/60">

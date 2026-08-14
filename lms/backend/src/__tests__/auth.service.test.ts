@@ -31,7 +31,6 @@ jest.mock('../config/env', () => ({
     SUPABASE_ANON_KEY: 'test-anon-key',
     SUPABASE_SERVICE_ROLE_KEY: 'test-service-role',
     FRONTEND_URL: 'http://localhost:3000',
-    ADMIN_PHONE: '8919473722',
   },
 }));
 
@@ -44,7 +43,7 @@ jest.mock('@supabase/supabase-js', () => ({
   })),
 }));
 
-import { register, sendOtp, verifyOtp, refreshToken, getUserProfile, updateUserProfile, verifyUserToken } from '../services/auth.service';
+import { register, refreshToken, getUserProfile, updateUserProfile, verifyUserToken } from '../services/auth.service';
 import { getSupabaseAdmin } from '../services/supabase';
 
 function mockFetch(data: any, ok = true) {
@@ -88,42 +87,6 @@ describe('auth.service', () => {
       const r = await register({ phone: '+919999999999', displayName: 'X', role: 'student' });
       expect(r.success).toBe(false);
     });
-  });
-
-  describe('sendOtp', () => {
-    it('returns success for admin phone (bypass)', async () => {
-      const r = await sendOtp('+918919473722');
-      expect(r.success).toBe(true);
-    });
-
-    it('returns success for any phone (generates OTP)', async () => {
-      const r = await sendOtp('+919999999999');
-      expect(r.success).toBe(true);
-    });
-  });
-
-  describe('verifyOtp', () => {
-    it('rejects invalid OTP', async () => {
-      const r = await verifyOtp('+919999999999', 'wrong');
-      expect(r.success).toBe(false);
-    });
-
-    it('accepts valid OTP and returns session', async () => {
-      const q = _mockSupabase.query;
-      const future = Date.now() + 9999999;
-      q.maybeSingle
-        .mockResolvedValueOnce({ data: { data: { code: '123456', expiresAt: future } }, error: null } as any)
-        .mockResolvedValue({ data: null, error: null } as any);
-
-      const r = await verifyOtp('+918888888888', '123456');
-      expect(r.success).toBe(true);
-      if (r.success) {
-        expect(r.data.token).toBe('tok');
-      }
-    });
-
-    // admin bypass (sendOtp('+918919473722') + verifyOtp(_, '000000'))
-    // works in production; test skipped due to mock env module interaction
   });
 
   describe('refreshToken', () => {

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -14,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { staggerContainer } from '@/lib/motion';
 import api from '@/services/api';
 import { VideoCard } from './VideoCard';
 import type { TeacherVideo } from './types';
@@ -31,7 +29,6 @@ export function MyLibraryTab({ onTabChange }: MyLibraryTabProps) {
   const [selectedChapterId, setSelectedChapterId] = useState('');
   const [selectedConceptId, setSelectedConceptId] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<TeacherVideo | null>(null);
-
   const videosQuery = useQuery({
     queryKey: ['teacher-videos'],
     queryFn: () => api.get('/api/teacher-videos').then((r) => r.data.data as TeacherVideo[]),
@@ -72,7 +69,6 @@ export function MyLibraryTab({ onTabChange }: MyLibraryTabProps) {
   const chapters = chaptersQuery.data ?? [];
   const concepts = conceptsQuery.data ?? [];
   const allVideos = videosQuery.data ?? [];
-
   const filteredVideos = allVideos.filter((v) => {
     if (selectedTextbookId && v.textbookId !== selectedTextbookId) return false;
     if (selectedChapterId && v.chapterId !== selectedChapterId) return false;
@@ -160,7 +156,7 @@ export function MyLibraryTab({ onTabChange }: MyLibraryTabProps) {
         }
       >
         {(videos) => (
-          <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
             {videos.map((video) => (
               <VideoCard
                 key={video.id}
@@ -169,7 +165,7 @@ export function MyLibraryTab({ onTabChange }: MyLibraryTabProps) {
                 onAttach={() => onTabChange('attach')}
               />
             ))}
-          </motion.div>
+          </div>
         )}
       </DataFetchWrapper>
 

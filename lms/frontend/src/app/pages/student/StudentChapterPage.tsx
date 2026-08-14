@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -9,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icon } from '@/components/ui/Icon';
 import { ConceptMindMap } from '@/components/teacher/ConceptMindMap';
-import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import { getTextbook, getChaptersForTextbook, getConceptsForChapter, getAllConceptReleases } from '@/services/textbookService';
 import { getSubject } from '@/services/dataService';
@@ -20,17 +18,15 @@ import type { ConceptRelease } from '@/types/textbook';
 export default function StudentChapterPage() {
   const { _ } = useTranslation();
   const { textbookId, chapterId } = useParams<{ textbookId: string; chapterId: string }>();
-
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-chapter', textbookId, chapterId],
     queryFn: async () => {
       if (!textbookId || !chapterId) throw new Error('Missing params');
       const fb = await getTextbook(textbookId);
       if (!fb) throw new Error('Textbook not found');
-      
+
       const userClassId = useAuthStore.getState().user?.classId || '';
       const classId = userClassId || fb.classId || '';
-
       const [chapters, releases] = await Promise.all([
         getChaptersForTextbook(textbookId),
         getAllConceptReleases(classId, textbookId),
@@ -62,18 +58,18 @@ export default function StudentChapterPage() {
   return (
     <>
       <SEOHead title={data?.chapter?.title || _('Chapter')} description={data?.chapter?.description || `${_('Study')} ${data?.chapter?.title || _('chapter')}`} />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
       >
-        <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+        <div>
           <Link to={ROUTES.STUDENT_TEXTBOOK(textbookId!)} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
             <Icon name="arrow_back" size={16} />
             {_('Back to textbook')}
           </Link>
-        </motion.div>
+        </div>
 
         <DataFetchWrapper
           data={data}
@@ -90,7 +86,7 @@ export default function StudentChapterPage() {
             const concepts = (ch as any).concepts ?? [];
             return (
               <div className="space-y-16">
-                <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                <div>
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       {subj && <Badge variant="secondary" style={{ backgroundColor: `${subj.color}20`, color: subj.color }}>{subj.name}</Badge>}
@@ -99,10 +95,10 @@ export default function StudentChapterPage() {
                     <h1 className="text-headline-sm md:text-headline-md font-bold tracking-tight">{(ch as any).title}</h1>
                     {(ch as any).description && <p className="text-muted-foreground mt-1">{(ch as any).description}</p>}
                   </div>
-                </motion.div>
+                </div>
 
                 {concepts.length > 0 && (
-                  <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                  <div>
                     <Tabs defaultValue="list">
                       <TabsList className="w-full overflow-x-auto inline-flex">
                         <TabsTrigger value="list"><Icon name="list" size={14} className="mr-1" />{_('List')}</TabsTrigger>
@@ -114,15 +110,15 @@ export default function StudentChapterPage() {
                           <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">{_('LESSONS')}</p>
                           <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">{_('Concepts')} ({concepts.length})</h2>
                         </div>
-                        <motion.div
-                          variants={staggerContainer}
-                          initial="hidden"
-                          whileInView="show"
-                          viewport={{ once: true, margin: '-60px' }}
+                        <div
+
+
+
+
                           className="space-y-3"
                         >
                           {concepts.map((concept: any, i: number) => (
-                            <motion.div key={concept.id} variants={cardStackReveal} custom={0}>
+                            <div key={concept.id}>
                               <Link to={`${ROUTES.STUDENT_CONCEPT(concept.id)}?textbookId=${textbookId}`}>
                                 <Card className="border-border/60 hover:shadow-md transition-shadow cursor-pointer">
                                   <CardContent className="p-5">
@@ -153,9 +149,9 @@ export default function StudentChapterPage() {
                                   </CardContent>
                                 </Card>
                               </Link>
-                            </motion.div>
+                            </div>
                           ))}
-                        </motion.div>
+                        </div>
                       </TabsContent>
 
                       <TabsContent value="mindmap">
@@ -167,24 +163,24 @@ export default function StudentChapterPage() {
                         </div>
                       </TabsContent>
                     </Tabs>
-                  </motion.div>
+                  </div>
                 )}
 
                 {concepts.length === 0 && (
-                  <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                  <div>
                     <Card className="border-border/60">
                       <CardContent className="p-12 text-center">
                         <Icon name="menu_book" size={48} className="text-muted-foreground/30 mx-auto mb-3" />
                         <p className="text-muted-foreground">{_('No concepts generated yet. The AI is still processing this chapter.')}</p>
                       </CardContent>
                     </Card>
-                  </motion.div>
+                  </div>
                 )}
               </div>
             );
           }}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

@@ -1,6 +1,5 @@
 import { useTranslation } from '@/hooks/useTranslation';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/Icon';
 import { ROUTES } from '@/lib/constants';
-import { staggerContainer, cardStackReveal } from '@/lib/motion';
 import { formatDateTime } from '@/lib/format';
 import { useTeacherReviewData } from '@/hooks/useTeacherReviewData';
 
@@ -19,10 +17,8 @@ export default function TeacherLateSubmissionsPage() {
   return (
     <>
       <SEOHead title={_('Late Submissions')} description={_('Assignments that have passed their due date')} canonical="/teacher/late-submissions" />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32"
       >
         <div className="mb-6 flex items-center gap-3">
@@ -37,7 +33,7 @@ export default function TeacherLateSubmissionsPage() {
 
         <DataFetchWrapper data={data} isLoading={isLoading} error={error} onRetry={() => refetch()} loadingType="card">
           {(d) => (
-            <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-4">
+            <div className="space-y-4">
               {d.lateSubmissions.length === 0 ? (
                 <Card className="border-border/60">
                   <CardContent className="p-10 text-center">
@@ -50,7 +46,7 @@ export default function TeacherLateSubmissionsPage() {
                 d.lateSubmissions.map((item, idx) => {
                   const overdueDays = Math.max(0, Math.floor((Date.now() - new Date(item.assignment.dueDate!).getTime()) / 86400000));
                   return (
-                    <motion.div key={item.assignment.id} variants={cardStackReveal} custom={idx}>
+                    <div key={item.assignment.id}>
                       <Card className="border-border/60">
                         <CardContent className="p-5">
                           <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -96,14 +92,14 @@ export default function TeacherLateSubmissionsPage() {
                           </div>
                         </CardContent>
                       </Card>
-                    </motion.div>
+                    </div>
                   );
                 })
               )}
-            </motion.div>
+            </div>
           )}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

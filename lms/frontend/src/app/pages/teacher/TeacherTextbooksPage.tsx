@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Link, useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -9,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { getAllTextbooks } from '@/services/textbookService';
 import { getAllSubjects, getAllClasses } from '@/services/dataService';
 import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
@@ -19,7 +17,6 @@ export default function TeacherTextbooksPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedClassId = searchParams.get('classId');
   const selectedSubjectId = searchParams.get('subjectId');
-
   const setSelectedClassId = (id: string | null) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -105,10 +102,10 @@ export default function TeacherTextbooksPage() {
   return (
     <>
       <SEOHead title={_('Teaching Space')} description={_('Manage textbooks, classes, and subjects')} canonical="/teacher/textbooks" />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto space-y-10 pb-32"
       >
         {/* Navigation Breadcrumb / Header */}
@@ -185,19 +182,17 @@ export default function TeacherTextbooksPage() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <motion.div
-                    variants={staggerContainer}
-                    initial="hidden"
-                    animate="show"
+                  <div
+
+
+
                     className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
                   >
                     {assignedClasses.map((cls, idx) => {
                       const subjectsCount = myAssignments.filter((a) => a.classId === cls.id).length;
                       return (
-                        <motion.div
+                        <div
                           key={cls.id}
-                          variants={cardStackReveal}
-                          custom={idx}
                           onClick={() => setSelectedClassId(cls.id)}
                           className="cursor-pointer"
                         >
@@ -224,10 +219,10 @@ export default function TeacherTextbooksPage() {
                               <Icon name="arrow_forward" size={16} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                             </div>
                           </Card>
-                        </motion.div>
+                        </div>
                       );
                     })}
-                  </motion.div>
+                  </div>
                 )
               )}
 
@@ -249,10 +244,10 @@ export default function TeacherTextbooksPage() {
                     <Button variant="ghost" size="sm" onClick={() => setSelectedClassId(null)} className="gap-1">
                       <Icon name="arrow_back" size={16} /> {_('Back to Classes')}
                     </Button>
-                    <motion.div
-                      variants={staggerContainer}
-                      initial="hidden"
-                      animate="show"
+                    <div
+
+
+
                       className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
                     >
                       {assignedSubjectsInClass.map((sub, idx) => {
@@ -261,10 +256,8 @@ export default function TeacherTextbooksPage() {
                         ).length;
 
                         return (
-                          <motion.div
+                          <div
                             key={sub.id}
-                            variants={cardStackReveal}
-                            custom={idx}
                             onClick={() => setSelectedSubjectId(sub.id)}
                             className="cursor-pointer"
                           >
@@ -291,10 +284,10 @@ export default function TeacherTextbooksPage() {
                                 <Icon name="arrow_forward" size={16} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                               </div>
                             </Card>
-                          </motion.div>
+                          </div>
                         );
                       })}
-                    </motion.div>
+                    </div>
                   </div>
                 )
               )}
@@ -329,14 +322,14 @@ export default function TeacherTextbooksPage() {
                       </CardContent>
                     </Card>
                   ) : (
-                    <motion.div
-                      variants={staggerContainer}
-                      initial="hidden"
-                      animate="show"
+                    <div
+
+
+
                       className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
                     >
                       {currentTextbooks.map((tb, idx) => (
-                        <motion.div key={tb.id} variants={cardStackReveal} custom={idx}>
+                        <div key={tb.id}>
                           <Link to={`/teacher/textbooks/${tb.id}`} className="block h-full">
                             <Card className="border-border/60 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 h-full flex flex-col justify-between group">
                               <CardContent className="p-6">
@@ -371,16 +364,16 @@ export default function TeacherTextbooksPage() {
                               </div>
                             </Card>
                           </Link>
-                        </motion.div>
+                        </div>
                       ))}
-                    </motion.div>
+                    </div>
                   )}
                 </div>
               )}
             </>
           )}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

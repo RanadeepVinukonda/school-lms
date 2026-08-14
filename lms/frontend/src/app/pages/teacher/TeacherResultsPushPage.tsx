@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -9,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { cardStackReveal } from '@/lib/motion';
 import { useClasses } from '@/hooks/useClasses';
 import { formatClassName } from '@/services/classService';
 import api from '@/services/api';
@@ -27,9 +25,7 @@ export default function TeacherResultsPushPage() {
   const [selectedClassId, setSelectedClassId] = useState('');
   const [releaseType, setReleaseType] = useState('');
   const [showConfirm, setShowConfirm] = useState(false);
-
   const { data: classes = [] } = useClasses();
-
   const releaseMutation = useMutation({
     mutationFn: () => api.post('/results-push/release-class', { classId: selectedClassId, type: releaseType || undefined }).then((r) => r.data.data),
     onSuccess: (data) => {
@@ -45,18 +41,18 @@ export default function TeacherResultsPushPage() {
   return (
     <>
       <SEOHead title={_('Release Grades')} description={_('Batch release assessment grades to students')} canonical="/teacher/release-grades" />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-4xl mx-auto pb-32 space-y-16"
       >
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <h1 className="text-headline-sm">{_('Release Grades')}</h1>
           <p className="text-body-md text-muted-foreground">{_('Push assessment results to students')}</p>
-        </motion.div>
+        </div>
 
-        <motion.div variants={cardStackReveal} custom={0}>
+        <div>
           <Card className="border-border/60">
             <CardHeader className="pb-3">
               <CardTitle className="text-title-sm">{_('Step 1: Select Class')}</CardTitle>
@@ -74,10 +70,10 @@ export default function TeacherResultsPushPage() {
               </select>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
         {selectedClassId && (
-          <motion.div variants={cardStackReveal} custom={0}>
+          <div>
             <Card className="border-border/60">
               <CardHeader className="pb-3">
                 <CardTitle className="text-title-sm">{_('Step 2: Select Scope')}</CardTitle>
@@ -97,11 +93,11 @@ export default function TeacherResultsPushPage() {
                 ))}
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         )}
 
         {selectedClassId && (
-          <motion.div variants={cardStackReveal} custom={0}>
+          <div>
             <Card className="border-amber-200 dark:border-amber-800 border-border/60">
               <CardContent className="p-5 space-y-3">
                 <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
@@ -122,18 +118,18 @@ export default function TeacherResultsPushPage() {
                 </Button>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         )}
 
         {!selectedClassId && (
-          <motion.div variants={cardStackReveal} custom={0}>
+          <div>
             <Card className="border-border/60">
               <CardContent className="p-8 text-center text-muted-foreground">
                 <Icon name="send" size={48} className="mx-auto mb-3 opacity-40" />
                 <p className="text-body-md">{_('Select a class to release grades')}</p>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         )}
 
         <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
@@ -154,7 +150,7 @@ export default function TeacherResultsPushPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </motion.div>
+      </div>
     </>
   );
 }

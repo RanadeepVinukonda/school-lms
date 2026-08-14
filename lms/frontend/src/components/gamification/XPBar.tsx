@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
@@ -26,11 +25,8 @@ export function XPBar({ xp, level, xpForCurrentLevel, xpForNextLevel, className 
       </div>
       <div className="relative">
         <Progress value={progress} size="lg" />
-        <motion.div
+        <div
           className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/30 via-primary/10 to-transparent"
-          initial={{ opacity: 0, scaleX: 0 }}
-          animate={{ opacity: 1, scaleX: 1 }}
-          transition={{ duration: 0.8, ease: 'easeOut' }}
           style={{ transformOrigin: 'left' }}
         />
       </div>

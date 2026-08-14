@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
-import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import {
   Clock, AlertCircle, CheckCircle, XCircle, Loader2,
@@ -18,7 +17,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { getQuiz } from '@/services/dataService';
@@ -41,7 +39,6 @@ function parseMatchingPairs(options?: string[]) {
 function isAnswerCorrect(question: Question, answer: unknown): boolean {
   const correct = question.correctAnswer;
   if (answer === undefined || answer === null || String(answer).trim() === '') return false;
-
   if (question.type === 'matching') {
     const expected = new Map(parseMatchingPairs(question.options).map((p) => [p.left, p.right]));
     const given: Record<string, string> = {};
@@ -132,7 +129,6 @@ export default function QuizAttemptPage() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [timeLeft, setTimeLeft] = useState(0);
   const [showConfirm, setShowConfirm] = useState(false);
-
   const { data: quiz, isLoading, isError } = useQuery({
     queryKey: ['quiz', quizId],
     queryFn: async () => {
@@ -194,7 +190,6 @@ export default function QuizAttemptPage() {
   const answeredCount = Object.keys(answers).length;
   const totalQuestions = quiz.questions?.length || 0;
   const progress = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
-
   if (!q && phase === 'taking') {
     return (
       <div className="sm:p-6 p-4">
@@ -216,8 +211,8 @@ export default function QuizAttemptPage() {
     return (
       <>
         <SEOHead title={quiz.title} description={`${_('Quiz')}: ${quiz.title}`} canonical={`/quizzes/${quizId}`} />
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16">
-          <motion.div variants={cardStackReveal} custom={0} className="max-w-lg mx-auto">
+        <div className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16">
+          <div className="max-w-lg mx-auto">
             <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
               <ArrowLeft className="h-4 w-4 mr-1" />{_('Back')}
             </Button>
@@ -241,8 +236,8 @@ export default function QuizAttemptPage() {
                 <Button className="w-full" onClick={handleStart}><Play className="h-4 w-4 mr-2" />{_('Start Quiz')}</Button>
               </CardContent>
             </Card>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </>
     );
   }
@@ -252,13 +247,12 @@ export default function QuizAttemptPage() {
   const quizTotalScore = totalQuestions > 0 ? quizTotalCorrect * (quizTotalPoints / totalQuestions) : 0;
   const quizPercentage = quizTotalPoints > 0 ? Math.round((quizTotalScore / quizTotalPoints) * 100) : 0;
   const quizPassed = quizPercentage >= quiz.passingScore;
-
   if (phase === 'results') {
     return (
       <>
         <SEOHead title={`${quiz.title} - ${_('Results')}`} description={_('Quiz results')} />
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16">
-          <motion.div variants={cardStackReveal} custom={0} className="max-w-lg mx-auto">
+        <div className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16">
+          <div className="max-w-lg mx-auto">
             <Card className="border-border/60">
               <CardContent className="p-6 text-center space-y-4">
                 <div className={cn('h-12 w-12 rounded-xl mx-auto flex items-center justify-center', quizPassed ? 'bg-emerald-500/10' : 'bg-destructive/10')}>
@@ -285,8 +279,8 @@ export default function QuizAttemptPage() {
                 <Button className="w-full" onClick={() => navigate('/student/dashboard')}>{_('Back to Dashboard')}</Button>
               </CardContent>
             </Card>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </>
     );
   }

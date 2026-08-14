@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Badge } from '@/components/ui/badge';
@@ -17,10 +16,10 @@ export default function AdminStaffPage() {
     <>
       <SEOHead title="Staff Directory" description="Manage school staff" />
       <div className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-8">
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <div>
           <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">Staff Management</h1>
           <p className="text-body-md text-muted-foreground mt-1 font-normal">Directory of all registered school teachers and staff</p>
-        </motion.div>
+        </div>
 
         <DataFetchWrapper data={teacherUsers} isLoading={usersLoading} onRetry={refetchUsers} loadingType="table">
           {() => (

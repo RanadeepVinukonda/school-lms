@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
-import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/Icon';
 import { formatDate } from '@/lib/utils';
 import { getLetterGrade } from '@/lib/format';
-import { scrollReveal, staggerContainer, cardStackReveal, scaleFadeIn } from '@/lib/motion';
 import { useQuery } from '@tanstack/react-query';
 import { getAllSubjects, getClass, getExamsBySubject, getCorrectionsByStudent } from '@/services/dataService';
 import { useAuthStore } from '@/store/authStore';
@@ -21,13 +19,11 @@ import type { ExamItem, CorrectionItem } from '@/services/dataService';
 function Countdown({ endDate }: { endDate: string }) {
   const { _ } = useTranslation();
   const [remaining, setRemaining] = useState('');
-
   useEffect(() => {
     function calculate() {
       const now = new Date();
       const end = new Date(endDate);
       const diff = end.getTime() - now.getTime();
-
       if (diff <= 0) {
         setRemaining(_('Started'));
         return;
@@ -67,7 +63,6 @@ export default function StudentExamsPage() {
   const { _ } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
-
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student-exams', user?.id, user?.classId],
     refetchOnWindowFocus: true,
@@ -98,7 +93,6 @@ export default function StudentExamsPage() {
         ? await api.get(`/exams-v2/class/${user.classId}`).then((r) => r.data.data ?? [])
         : [];
       const releasedExams = examsResponse.filter((e: any) => !!e.releasedAt);
-
       const upcoming: ExamWithSubject[] = releasedExams.map((exam: any) => ({
         id: exam.id,
         title: exam.title,
@@ -123,7 +117,6 @@ export default function StudentExamsPage() {
       const legacyExamPromises = subjects.map((s) => getExamsBySubject(s.id));
       const legacyExamResults = await Promise.all(legacyExamPromises);
       const allLegacyExams = legacyExamResults.flat();
-
       const now = new Date();
       const past: PastExamResult[] = [];
 
@@ -168,13 +161,13 @@ export default function StudentExamsPage() {
   return (
     <>
       <SEOHead title={_('Exams')} description={_('View upcoming and past exam results')} />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
       >
-        <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+        <div>
           <div className="flex flex-col gap-4">
             <div>
               <h1 className="text-headline-sm font-bold">{_('Exams')}</h1>
@@ -214,7 +207,7 @@ export default function StudentExamsPage() {
               </div>
             )}
           </div>
-        </motion.div>
+        </div>
 
         <DataFetchWrapper
           data={data}
@@ -234,7 +227,7 @@ export default function StudentExamsPage() {
 
             return (
               <div className="space-y-16">
-                <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                <div>
                   <div className="mb-6">
                     <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">{_('SCHEDULED')}</p>
                     <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">{_('Upcoming Exams')}</h2>
@@ -247,15 +240,15 @@ export default function StudentExamsPage() {
                       </CardContent>
                     </Card>
                   ) : (
-                    <motion.div
-                      variants={staggerContainer}
-                      initial="hidden"
-                      whileInView="show"
-                      viewport={{ once: true, margin: '-60px' }}
+                    <div
+
+
+
+
                       className="space-y-3"
                     >
                       {filteredUpcoming.map((exam) => (
-                        <motion.div key={exam.id} variants={cardStackReveal} custom={0}>
+                        <div key={exam.id}>
                           <Link to={`/student/assessments/${exam.id}/take?type=exam`}>
                             <Card className="border-border/60 transition-all duration-300 group">
                               <CardContent className="p-5">
@@ -304,13 +297,13 @@ export default function StudentExamsPage() {
                               </CardContent>
                             </Card>
                           </Link>
-                        </motion.div>
+                        </div>
                       ))}
-                    </motion.div>
+                    </div>
                   )}
-                </motion.div>
+                </div>
 
-                <motion.div variants={scrollReveal} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}>
+                <div>
                   <div className="mb-6">
                     <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">{_('HISTORY')}</p>
                     <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">{_('Past Results')}</h2>
@@ -323,15 +316,15 @@ export default function StudentExamsPage() {
                       </CardContent>
                     </Card>
                   ) : (
-                    <motion.div
-                      variants={staggerContainer}
-                      initial="hidden"
-                      whileInView="show"
-                      viewport={{ once: true, margin: '-60px' }}
+                    <div
+
+
+
+
                       className="space-y-3"
                     >
                       {filteredPast.map((exam) => (
-                        <motion.div key={exam.id} variants={cardStackReveal} custom={0}>
+                        <div key={exam.id}>
                           {exam.correction ? (
                             <Card className="border-border/60 transition-all duration-300 group">
                               <CardContent className="p-5">
@@ -405,16 +398,16 @@ export default function StudentExamsPage() {
                               </CardContent>
                             </Card>
                           )}
-                        </motion.div>
+                        </div>
                       ))}
-                    </motion.div>
+                    </div>
                   )}
-                </motion.div>
+                </div>
               </div>
             );
           }}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }

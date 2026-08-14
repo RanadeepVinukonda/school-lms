@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -17,15 +16,15 @@ function BarChart({ data, labelKey, valueKey, color = 'bg-primary', maxValue }: 
         <div key={i} className="flex items-center gap-2 sm:gap-3">
           <span className="text-label-xs sm:text-label-sm font-medium w-20 sm:w-32 truncate shrink-0 text-right">{item[labelKey]}</span>
           <div className="flex-1 h-6 rounded-full bg-muted/40 overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${(Number(item[valueKey]) / max) * 100}%` }}
-              transition={{ duration: 0.6, delay: i * 0.05 }}
+            <div
+
+
+
               className={`h-full rounded-full ${color} flex items-center justify-end pr-2 text-[10px] text-white font-bold`}
               style={{ minWidth: Number(item[valueKey]) > 0 ? '2rem' : '0' }}
             >
               {item[valueKey]}%
-            </motion.div>
+            </div>
           </div>
         </div>
       ))}
@@ -35,7 +34,6 @@ function BarChart({ data, labelKey, valueKey, color = 'bg-primary', maxValue }: 
 
 export default function AdminSchoolAnalyticsPage() {
   const [activeTab, setActiveTab] = useState('overview');
-
   const { data: overviewData, isLoading: overviewLoading, isError: overviewError, refetch: refetchOverview } = useQuery({
     queryKey: ['school-analytics-overview'],
     queryFn: () => schoolAnalyticsService.getSchoolOverview().then((r) => r.data),
@@ -69,7 +67,6 @@ export default function AdminSchoolAnalyticsPage() {
   const loadingMap = { overview: overviewLoading, grades: gradeLoading, teachers: teacherLoading, classes: classLoading, trends: trendLoading } as const;
   const errorMap = { overview: overviewError, grades: gradeError, teachers: teacherError, classes: classError, trends: trendError } as const;
   const refetchMap = { overview: refetchOverview, grades: refetchGrade, teachers: refetchTeacher, classes: refetchClass, trends: refetchTrends } as const;
-
   const statCards = useMemo(() => {
     if (!overviewData) return [];
     return [
@@ -85,10 +82,10 @@ export default function AdminSchoolAnalyticsPage() {
     <>
       <SEOHead title="School Analytics" description="School-wide performance comparison and analytics" />
       <div className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-8">
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <div>
           <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">School Analytics</h1>
           <p className="text-body-md text-muted-foreground mt-1">Comparison panels and performance insights</p>
-        </motion.div>
+        </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full overflow-x-auto inline-flex">
@@ -296,27 +293,24 @@ export default function AdminSchoolAnalyticsPage() {
                                 const label = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
                                 const pct = t.averageScore;
                                 return (
-                                  <motion.div
+                                  <div
                                     key={t.month}
-                                    initial={{ opacity: 0, x: -12 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ duration: 0.3, delay: i * 0.06 }}
                                     className="flex items-center gap-3"
                                   >
                                     <span className="text-label-sm font-medium w-24 shrink-0 text-right">{label}</span>
                                     <div className="flex-1 h-7 rounded-full bg-muted/40 overflow-hidden">
-                                      <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${(pct / maxVal) * 100}%` }}
-                                        transition={{ duration: 0.5, delay: i * 0.08, ease: 'easeOut' }}
+                                      <div
+
+
+
                                         className="h-full rounded-full bg-primary flex items-center justify-end pr-2 text-[11px] text-white font-bold"
                                         style={{ minWidth: pct > 0 ? '2.5rem' : '0' }}
                                       >
                                         {pct}%
-                                      </motion.div>
+                                      </div>
                                     </div>
                                     <span className="text-label-xs text-muted-foreground w-16 shrink-0">{t.count} records</span>
-                                  </motion.div>
+                                  </div>
                                 );
                               });
                             })()}

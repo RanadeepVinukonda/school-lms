@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
@@ -20,7 +19,6 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/services/api';
@@ -106,14 +104,14 @@ function playSynthesizedSound(type: 'correct' | 'incorrect') {
   try {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioContextClass) return;
-    
+
     const ctx = new AudioContextClass();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    
+
     osc.connect(gain);
     gain.connect(ctx.destination);
-    
+
     if (type === 'correct') {
       osc.frequency.setValueAtTime(659.25, ctx.currentTime);
       osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.08);
@@ -143,7 +141,6 @@ export default function StudentQuizTakePageV2() {
   const navigate = useNavigate();
   const userId = useAuthStore((s) => s.user?.id);
   const assessmentType = (searchParams.get('type') || 'quiz') as AssessmentType;
-
   const [phase, setPhase] = useState<'select-models' | 'quiz' | 'result'>('select-models');
   const [selectedModels, setSelectedModels] = useState<QuestionModel[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -154,14 +151,11 @@ export default function StudentQuizTakePageV2() {
   const [result, setResult] = useState<V2SubmitResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(true);
-
   const [questionStatuses, setQuestionStatuses] = useState<Record<string, 'unvisited' | 'visited' | 'attempted' | 'review'>>({});
-  
   const [wrongOptions, setWrongOptions] = useState<Record<string, string[]>>({});
   const [interactiveCorrect, setInteractiveCorrect] = useState<Record<string, boolean>>({});
   const [interactiveError, setInteractiveError] = useState<Record<string, boolean>>({});
   const [customTextInput, setCustomTextInput] = useState('');
-
   useEffect(() => {
     if (result?.newBadges?.length) {
       gamificationService.getAllBadges().then(allBadges => {
@@ -175,7 +169,6 @@ export default function StudentQuizTakePageV2() {
   const questionTimeMapRef = useRef<Record<string, number>>({});
   const autoSubmitRef = useRef<() => void>();
   const phaseRef = useRef(phase);
-
   phaseRef.current = phase;
   const basePath = assessmentType === 'exam' ? `/exams-v2` : `/quizzes-v2`;
 
@@ -222,13 +215,12 @@ export default function StudentQuizTakePageV2() {
       setTimeLeft(limit * 60);
       questionStartTimeRef.current = Date.now();
       questionTimeMapRef.current = {};
-
       const initialStatuses: Record<string, 'unvisited' | 'visited' | 'attempted' | 'review'> = {};
       data.questions.forEach((q, idx) => {
         initialStatuses[q.id] = idx === 0 ? 'visited' : 'unvisited';
       });
       setQuestionStatuses(initialStatuses);
-      
+
       setPhase('quiz');
     },
     onError: (err: { message?: string }) => {
@@ -278,7 +270,7 @@ export default function StudentQuizTakePageV2() {
       if (index >= 0 && index < (attempt.questions?.length ?? 0)) {
         const currentQ = attempt.questions[currentIndex];
         if (currentQ) trackTimeOnQuestion(currentQ.id);
-        
+
         const nextQ = attempt.questions[index];
         setQuestionStatuses((prev) => {
           const currentStatus = prev[nextQ.id] || 'unvisited';
@@ -352,7 +344,7 @@ export default function StudentQuizTakePageV2() {
       setResult(submitResult);
       setPhase('result');
       toast.success(_('Assessment submitted successfully!'));
-      
+
       queryClient.invalidateQueries({ queryKey: ['student-quizzes-v2'] });
       queryClient.invalidateQueries({ queryKey: ['student-tasks'] });
       queryClient.invalidateQueries({ queryKey: ['student-exams'] });
@@ -376,7 +368,7 @@ export default function StudentQuizTakePageV2() {
     if (interactiveCorrect[q.id]) return;
 
     const isCorrect = optionValue.trim().toLowerCase() === q.correctAnswer?.trim().toLowerCase();
-    
+
     if (isCorrect) {
       playSynthesizedSound('correct');
       setInteractiveCorrect((prev) => ({ ...prev, [q.id]: true }));
@@ -410,7 +402,6 @@ export default function StudentQuizTakePageV2() {
 
     const formattedInput = customTextInput.trim().toLowerCase();
     const formattedCorrect = (q.correctAnswer || '').trim().toLowerCase();
-
     const isCorrect = q.type === 'descriptive' 
       ? formattedInput.length > 5 
       : formattedInput === formattedCorrect;
@@ -453,7 +444,7 @@ export default function StudentQuizTakePageV2() {
       };
       const url = `${api.defaults.baseURL || ''}${basePath}/attempts/${attempt.id}/logs`;
       const token = useAuthStore.getState().token;
-      
+
       fetch(url, {
         method: 'POST',
         headers: {
@@ -470,7 +461,6 @@ export default function StudentQuizTakePageV2() {
 
   useEffect(() => {
     if (phase !== 'quiz' || assessmentType !== 'exam' || !attempt) return;
-
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         logProctoring('tab_focus_lost');
@@ -557,7 +547,6 @@ export default function StudentQuizTakePageV2() {
   }
 
   const questionModels = assessmentInfo.selectedModels || [];
-
   if (questionModels.length === 0 && phase === 'select-models') {
     return (
       <div className="sm:p-6 p-4 max-w-lg mx-auto mt-12">
@@ -579,13 +568,13 @@ export default function StudentQuizTakePageV2() {
     return (
       <>
         <SEOHead title={assessmentInfo.title} description={`${assessmentType}: ${assessmentInfo.title}`} />
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+        <div
+
+
+
           className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
         >
-          <motion.div variants={cardStackReveal} custom={0} className="max-w-2xl mx-auto space-y-6">
+          <div className="max-w-2xl mx-auto space-y-6">
             <Button variant="ghost" size="sm" onClick={handleBack} className="mb-2">
           <ArrowLeft className="h-4 w-4 mr-1" />{_('Back')}
             </Button>
@@ -672,8 +661,8 @@ export default function StudentQuizTakePageV2() {
                 <><Play className="h-5 w-5 mr-2" />{_('Start')} {assessmentInfo.isRepublished ? _('Interactive Practice') : _('Exam')}</>
               )}
             </Button>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </>
     );
   }
@@ -703,13 +692,13 @@ export default function StudentQuizTakePageV2() {
     return (
       <>
         <SEOHead title={`${assessmentInfo?.title || _('Results')}`} description={_('Test results')} />
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+        <div
+
+
+
           className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
         >
-          <motion.div variants={cardStackReveal} custom={0} className="max-w-2xl mx-auto space-y-6">
+          <div className="max-w-2xl mx-auto space-y-6">
             <Card className="border-border/60">
               <CardContent className="p-6 text-center space-y-4">
                 <div
@@ -822,8 +811,8 @@ export default function StudentQuizTakePageV2() {
               <ArrowLeft className="h-4 w-4 mr-2" />
               {_('Back to Dashboard')}
             </Button>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </>
     );
   }
@@ -857,7 +846,6 @@ export default function StudentQuizTakePageV2() {
   }
 
   const currentStatus = questionStatuses[currentQuestion.id] || 'unvisited';
-
   const getStatusColor = (status: 'unvisited' | 'visited' | 'attempted' | 'review', isCurrent: boolean, qId?: string) => {
     if (isCurrent) return 'ring-2 ring-primary scale-110 font-bold bg-primary text-primary-foreground';
     if (isRepubMode && qId) {
@@ -876,7 +864,7 @@ export default function StudentQuizTakePageV2() {
     <>
       <SEOHead title={`${assessmentInfo.title} - ${_('Testing')}`} description={_('Exam Take page')} />
       <div className="fixed inset-0 bg-background z-50 flex flex-col md:flex-row overflow-hidden">
-        
+
         {/* MAIN EXAM WORKSPACE */}
         <div className="flex-1 flex flex-col overflow-y-auto">
           {/* Header Bar */}
@@ -1130,10 +1118,10 @@ export default function StudentQuizTakePageV2() {
       {/* CONFIRMATION DIALOG */}
       {showConfirm && (
         <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+          <div
+
+
+
             className="w-full max-w-sm"
           >
             <Card className="border-border/60">
@@ -1169,7 +1157,7 @@ export default function StudentQuizTakePageV2() {
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         </div>
       )}
 
@@ -1183,7 +1171,7 @@ export default function StudentQuizTakePageV2() {
               </div>
               <CardTitle className="text-headline-sm font-bold">{_('Fullscreen Required')}</CardTitle>
               <CardDescription className="text-body-md">
-                {_('Leaving fullscreen mode violates exam integrity policies. This exit has been logged.')}
+                {_('Leaving fullscreen mode violates exam integrity policies. This has been logged.')}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-5 flex flex-col gap-4 pt-4 text-center">

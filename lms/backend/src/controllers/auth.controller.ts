@@ -65,31 +65,6 @@ export async function refresh(req: Request, res: Response) {
   sendSuccess(res, result, 'Token refreshed');
 }
 
-export async function sendOtp(req: Request, res: Response) {
-  const { phone } = req.body;
-  const result = await authService.sendOtp(phone);
-  sendSuccess(res, result, 'OTP sent');
-}
-
-export async function verifyOtpLogin(req: Request, res: Response) {
-  const { phone, token } = req.body;
-  const result = await authService.verifyOtp(phone, token);
-
-  if (result.success && result.data) {
-    const maxAge = 7 * 24 * 60 * 60 * 1000;
-    res.cookie('token', result.data.token, {
-      httpOnly: true,
-      secure: env.COOKIE_SECURE,
-      sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax',
-      path: '/',
-      maxAge,
-      ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
-    });
-  }
-
-  sendSuccess(res, result, 'Login successful');
-}
-
 export async function getSession(req: Request, res: Response) {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   const cookies = parseCookies(req.headers.cookie);

@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -13,7 +12,6 @@ import { noticeService } from '@/services/noticeService';
 import { attendanceService } from '@/services/attendanceService';
 import { getAllClasses } from '@/services/dataService';
 import { timetableService } from '@/services/timetableService';
-import { staggerContainer, cardStackReveal } from '@/lib/motion';
 
 function SectionTitle({ title }: { title: string }) {
   return (
@@ -83,10 +81,8 @@ export default function AdminErpDashboardPage() {
 
   const loading = feeLoading || noticeLoading || ttLoading || attLoading;
   const hasError = feeError || noticeError || ttError || attError;
-
   const outstandingList = (outstandingRes as any[]) ?? [];
   const noticesList = ((noticesRes as any)?.data as any[]) ?? [];
-
   const statCards = useMemo(() => [
     {
       icon: 'payments',
@@ -132,10 +128,10 @@ export default function AdminErpDashboardPage() {
     <>
       <SEOHead title="ERP Dashboard" description="Consolidated school ERP management dashboard" />
       <div className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-8">
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <div>
           <h1 className="text-headline-md md:text-headline-lg font-bold tracking-tight">ERP Dashboard</h1>
           <p className="text-body-md text-muted-foreground mt-1">Consolidated operational view of school fees, timetables, attendances, and notice boards</p>
-        </motion.div>
+        </div>
 
         <DataFetchWrapper
           data={statCards}
@@ -145,10 +141,10 @@ export default function AdminErpDashboardPage() {
           loadingType="card"
         >
           {() => (
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              animate="show"
+            <div
+
+
+
               className="space-y-10"
             >
               {/* Key Metrics */}
@@ -156,7 +152,7 @@ export default function AdminErpDashboardPage() {
                 <SectionTitle title="Key Metrics" />
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {statCards.map((s, i) => (
-                    <motion.div key={s.label} variants={cardStackReveal} custom={i}>
+                    <div key={s.label}>
                       <Card className="border-border/60">
                         <CardContent className="p-6">
                           <p className="text-label-sm text-muted-foreground">{s.label}</p>
@@ -164,7 +160,7 @@ export default function AdminErpDashboardPage() {
                           <p className="text-label-sm text-muted-foreground mt-2">{s.sub}</p>
                         </CardContent>
                       </Card>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
               </section>
@@ -174,7 +170,7 @@ export default function AdminErpDashboardPage() {
                 <SectionTitle title="Quick Actions" />
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                   {QUICK_LINKS.map((link, idx) => (
-                    <motion.div key={link.href} variants={cardStackReveal} custom={idx + statCards.length}>
+                    <div key={link.href}>
                       <Link to={link.href}>
                         <Card className="border-border/60 hover:bg-muted/20 transition-colors">
                           <CardContent className="p-5 flex items-center gap-4">
@@ -185,7 +181,7 @@ export default function AdminErpDashboardPage() {
                           </CardContent>
                         </Card>
                       </Link>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
               </section>
@@ -257,7 +253,7 @@ export default function AdminErpDashboardPage() {
                   </Card>
                 </section>
               </div>
-            </motion.div>
+            </div>
           )}
         </DataFetchWrapper>
       </div>

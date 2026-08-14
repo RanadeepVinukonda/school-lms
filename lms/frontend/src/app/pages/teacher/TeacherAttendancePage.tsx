@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -27,9 +26,7 @@ export default function TeacherAttendancePage() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
   const [attendanceStatus, setAttendanceStatus] = useState<'present' | 'absent' | 'late' | 'holiday'>('present');
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
-
   const { data: teacherClasses = [] } = useClasses();
-
   const { data: classStudents = [], isLoading: studentsLoading } = useQuery({
     queryKey: ['teacher-class-students', selectedClass],
     queryFn: () => getStudentsByClass(selectedClass),
@@ -114,10 +111,10 @@ export default function TeacherAttendancePage() {
     <>
       <SEOHead title={_('Attendance')} description={_('Manage class attendance')} />
       <div className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-8">
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <div>
           <h1 className="text-headline-md font-bold tracking-tight">{_('Attendance')}</h1>
           <p className="text-body-md text-muted-foreground mt-1">{_('Record daily attendance for your classes')}</p>
-        </motion.div>
+        </div>
 
         <div className="flex gap-3 items-center flex-wrap">
           <select

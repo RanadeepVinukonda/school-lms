@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/common/SEOHead';
@@ -50,7 +49,6 @@ export default function AdminTransportPage() {
   const route = routeRes?.data;
   const stops = stopsRes?.data || [];
   const students = usersData.filter((u) => u.role === 'student');
-
   const filteredStudents = students.filter((s) => {
     if (!studentLookup) return true;
     const q = studentLookup.toLowerCase();
@@ -143,14 +141,14 @@ export default function AdminTransportPage() {
               <Icon name="arrow_back" size={16} />
             </Link>
           </Button>
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+          <div>
             <h1 className="text-headline-sm font-bold tracking-tight">{route?.name || 'Loading Route...'}</h1>
             {route && (
               <p className="text-body-sm text-muted-foreground mt-0.5">
                 Vehicle: {route.vehicle_number || 'N/A'} • Driver: {route.driver_name || 'N/A'}
               </p>
             )}
-          </motion.div>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

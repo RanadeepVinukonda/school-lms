@@ -1,7 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
@@ -13,7 +12,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Icon } from '@/components/ui/Icon';
-import { scrollReveal, staggerContainer, cardStackReveal } from '@/lib/motion';
 import { ROUTES } from '@/lib/constants';
 import { getTextbook, getChaptersForTextbook, getConceptsForChapter } from '@/services/textbookService';
 import type { GeneratedQuestion } from '@/types/textbook';
@@ -144,7 +142,6 @@ export default function AdaptiveQuizPage() {
   const { conceptId } = useParams<{ conceptId: string }>();
   const [searchParams] = useSearchParams();
   const textbookId = searchParams.get('textbookId') || '';
-
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['quiz-concept', textbookId, conceptId],
     queryFn: async () => {
@@ -172,11 +169,8 @@ export default function AdaptiveQuizPage() {
   const [skillLevel, setSkillLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner');
   const [round, setRound] = useState(1);
   const MAX_ROUNDS = 3;
-
   const bank = useMemo(() => data?.concept.questionBank || [], [data]);
-
   const answeredCurrent = results.has(currentBatch[currentIndex]?.id);
-
   const startQuiz = useCallback(() => {
     const batch = selectQuestions(bank, 'beginner', new Set(), 5);
     setCurrentBatch(batch);
@@ -258,7 +252,6 @@ export default function AdaptiveQuizPage() {
   }, [phase, conceptId, finalScore]);
 
   const currentQuestion = currentBatch[currentIndex];
-
   const hasAnswer = (() => {
     if (!currentQuestion) return false;
     const a = answers.get(currentQuestion.id);
@@ -282,10 +275,10 @@ export default function AdaptiveQuizPage() {
   return (
     <>
       <SEOHead title={_('Adaptive Quiz')} description={data?.concept.title ? `${_('Adaptive quiz for')} ${data.concept.title}` : _('Adaptive quiz')} />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
+
+
+
         className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
       >
         {phase !== 'intro' && (
@@ -306,7 +299,7 @@ export default function AdaptiveQuizPage() {
           {(d) => (
             <>
               {phase === 'intro' && (
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <div className="text-center py-12 space-y-4">
                     <Icon name="assignment_turned_in" size={64} className="text-primary/60 mx-auto" />
                     <h1 className="text-headline-sm font-bold">{_('Adaptive Quiz')}</h1>
@@ -335,11 +328,11 @@ export default function AdaptiveQuizPage() {
                       </Button>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               )}
 
               {phase === 'quiz' && (
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -354,7 +347,7 @@ export default function AdaptiveQuizPage() {
                     <Progress value={(answeredIds.size / Math.max(1, answeredIds.size + (currentBatch.length - currentIndex - 1))) * 100} className="h-1.5" />
 
                     {currentQuestion && (
-                      <motion.div key={currentQuestion.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+                      <div key={currentQuestion.id}>
                         <Card className="border-border/60">
                           <CardContent className="p-5">
                             <div className="flex items-center gap-2 mb-1">
@@ -385,7 +378,6 @@ export default function AdaptiveQuizPage() {
                                     ? currentQuestion.correctAnswer.includes(opt)
                                     : currentQuestion.correctAnswer === opt);
                                   const showResult = answeredCurrent;
-
                                   let borderClass = 'border-border hover:border-primary/50 hover:bg-muted/50';
                                   if (showResult && isCorrectAnswer) borderClass = 'border-success bg-success/5';
                                   if (showResult && isSelected && !isCorrectAnswer) borderClass = 'border-destructive bg-destructive/5';
@@ -421,7 +413,6 @@ export default function AdaptiveQuizPage() {
                                   const isSelected = answers.get(currentQuestion.id) === opt;
                                   const isCorrectAnswer = answeredCurrent && currentQuestion.correctAnswer === opt;
                                   const showResult = answeredCurrent;
-
                                   let borderClass = 'border-border hover:border-primary/50';
                                   if (showResult && isCorrectAnswer) borderClass = 'border-success bg-success/5';
                                   if (showResult && isSelected && !isCorrectAnswer) borderClass = 'border-destructive bg-destructive/5';
@@ -524,7 +515,7 @@ export default function AdaptiveQuizPage() {
                             )}
                           </CardContent>
                         </Card>
-                      </motion.div>
+                      </div>
                     )}
 
                     <div className="flex items-center justify-between pt-2">
@@ -549,11 +540,11 @@ export default function AdaptiveQuizPage() {
                       )}
                     </div>
                   </div>
-                </motion.div>
+                </div>
               )}
 
               {phase === 'result' && (
-                <motion.div variants={cardStackReveal} custom={0}>
+                <div>
                   <div className="text-center py-8 space-y-6">
                     <div className="relative inline-flex items-center justify-center">
                       <svg className="w-32 h-32" viewBox="0 0 100 100">
@@ -611,12 +602,12 @@ export default function AdaptiveQuizPage() {
                       </Button>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               )}
             </>
           )}
         </DataFetchWrapper>
-      </motion.div>
+      </div>
     </>
   );
 }
