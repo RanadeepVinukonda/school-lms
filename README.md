@@ -1,7 +1,7 @@
 # Genesis School LMS
 
 An end-to-end school management and learning platform: a React SPA, an Express
-(TypeScript) REST API, three mobile apps, and an optional search microservice.
+(TypeScript) REST API, and a Capacitor Android app.
 
 | Area | Tech |
 |---|---|
@@ -12,7 +12,8 @@ An end-to-end school management and learning platform: a React SPA, an Express
 | Jobs | Inngest (`textbook-pipeline`) + in-process scheduler timers |
 | AI | Gemini + OpenRouter, `@xenova/transformers` embeddings |
 | Files | Cloudinary + Supabase Storage |
-| Mobile | React Native (Expo) WebView wrappers (`genesis-webview/`) |
+| Mobile | Capacitor shell (`lms/frontend/android`, app id `com.school.lms`) |
+| CI/CD | GitHub Actions; Vercel (frontend); Docker (backend) |
 
 ---
 
@@ -20,34 +21,43 @@ An end-to-end school management and learning platform: a React SPA, an Express
 
 ```
 .
-├── .github/workflows/     # CI + Render deploy triggers
+├── .github/workflows/     # CI + (optional) Play Store AAB pipeline
 ├── deploy/                # Cloud-server templates (env, compose, nginx, vercel)
-├── docs/                  # Architecture, API codes, runbooks, compliance…
-├── genesis-webview/       # Expo WebView wrapper (the shipped Android app)
 ├── lms/
 │   ├── backend/           # Express REST API (port 4000 in Docker / 3001 dev)
-│   ├── frontend/          # React SPA (Vite) — deployed on Vercel
-│   ├── search/            # Optional Elasticsearch microservice
+│   ├── frontend/          # React SPA (Vite) + Capacitor Android project
 │   ├── pgbouncer/         # Optional connection pooler
-│   └── api/               # Vercel serverless functions
-├── public/                # Remaining static assets
-├── tests/load/            # Smoke / load scripts
+│   └── search/            # Optional Elasticsearch microservice
 ├── vercel.json            # Frontend deploy: rootDirectory + /api rewrite
-└── docker-compose.yml     # Local dev: postgres + backend + frontend
+├── README.md              # This file — quick start + docs index
+├── ARCHITECTURE.md        # System architecture
+└── GUIDE.md               # Server handoff + Google Play release guide
 ```
+
+---
+
+## Docs index
+
+| Doc | Purpose |
+|---|---|
+| `README.md` | This file — quick start, scripts, docs index |
+| `DOCUMENTATION.md` | Developer docs: setup, API, testing, migrations, contributing |
+| `ARCHITECTURE.md` | System architecture: stack, topology, middleware, security, decisions |
+| `GUIDE.md` | Cloud-server connection/handoff + Play Store AAB release workflow |
+| `LICENSE` | Proprietary license (see below) |
 
 ---
 
 ## Quick start
 
 Prerequisites: Node 20+, a Supabase project, Cloudinary account, and a Gemini API
-key. Full credential guidance is in [`ENV_MANIFEST.md`](ENV_MANIFEST.md).
+key. Credential guidance: `GUIDE.md` §4 (environment variables that matter).
 
 ### Backend
 
 ```bash
 cd lms/backend
-cp .env.example .env          # fill values (see ENV_MANIFEST.md)
+cp .env.example .env          # fill values (see GUIDE.md §4)
 npm install
 npm run dev                   # http://localhost:3001  (Swagger at /api-docs)
 ```
@@ -73,18 +83,21 @@ npm run dev                    # http://localhost:5173 (proxies /api → :3001)
 npm run build                   # dist/ for static hosting
 ```
 
+Key scripts (`lms/frontend/package.json`): `dev`, `build`, `lint`, `test`
+(vitest), `typecheck`, and the Android build scripts `android:sync`, `apk:debug`,
+`apk:release` (Windows), `apk:release:posix` (macOS/Linux).
+
 ### Local stack (Docker)
 
 ```bash
-docker-compose up --build      # postgres:5432, backend:4000, frontend:80
+cd lms && docker-compose up --build   # postgres:5432, backend:4000, frontend:80
 ```
 
 ---
 
 ## Architecture
 
-The authoritative architecture doc is [`ARCHITECTURE.md`](ARCHITECTURE.md) (monorepo
-root). Key facts:
+The authoritative architecture doc is [`ARCHITECTURE.md`](ARCHITECTURE.md). Key facts:
 
 - **Middleware chain** (backend): Sentry → gzip → requestId → nonce → security
   headers → CORS → Inngest `/api/inngest` → JSON body → metrics → timeout (30s) →
@@ -99,7 +112,7 @@ root). Key facts:
   embeddings (transformers), questions (Gemini), videos (YouTube), resources — all
   ranked, run inside the Inngest `textbook-pipeline` function or inline fallback.
 - **Caching**: TTL + LRU in-memory caches (`src/utils/cache.ts`); Redis is an
-  optional shared-cache enhancement (see `deploy/README.md` §7).
+  optional shared-cache enhancement (see `ARCHITECTURE.md` §5.5).
 - **Resilience**: circuit breakers (AI, Supabase, Cloudinary), idempotency keys,
   Postgres advisory locks, safe-compare helpers.
 
@@ -111,7 +124,7 @@ root). Key facts:
   `API_DOCS_ENABLED=true` (enabled by default outside production; Basic-auth
   protected in production via `API_DOCS_USERNAME`/`API_DOCS_PASSWORD`).
 - OpenAPI spec: `GET /api-docs.json`.
-- Response/error envelope and codes: [`docs/ERROR_CODES.md`](docs/ERROR_CODES.md).
+- Response/error envelope: `ARCHITECTURE.md` §8.
 - Route groups: auth, school (classes/subjects), finance (fees/payroll), academics
   (courses, assignments, quizzes, exams, textbooks, attendance, timetable, coding…),
   HR (staff/leave/transport/inventory), content (upload, AI, OCR, YouTube…),
@@ -124,34 +137,19 @@ endpoint reference.
 
 ## Deployment
 
-- **Frontend**: Vercel (see `vercel.json` — rewrites `/api/*` to the backend host).
-- **Backend**: Render today; the client's cloud server setup (Nginx + Docker +
-  optional Redis) is documented with ready-to-fill templates in
-  [`deploy/README.md`](deploy/README.md).
-- **Mobile APK**: [`BUILD_APK.md`](BUILD_APK.md) and `genesis-webview/`.
-- Env + secrets manifest (every variable, how to obtain, security): 
-  [`ENV_MANIFEST.md`](ENV_MANIFEST.md).
+| Surface | How | Docs |
+|---|---|---|
+| Web frontend | Vercel (auto-deploy on push to `main`) | `vercel.json`, `GUIDE.md` §3 |
+| Backend | Cloud server: Docker Compose + Nginx + certbot | `deploy/`, `GUIDE.md` §3–4 |
+| Android | `npm run apk:release` → AAB → Play Console | `GUIDE.md` §5 |
+
+Env + secrets guidance (every variable, how to obtain, what never to share):
+`GUIDE.md` §4.
 
 ---
 
-## Documentation index (`docs/`)
+## License
 
-| Doc | Purpose |
-|---|---|
-| `API.md` | HTTP API reference |
-| `DEPLOYMENT.md` | Where everything runs + cloud-server migration |
-| `TESTING.md` | Running tests |
-| `ARCHITECTURE.md` / `ARCHITECTURE_DIAGRAM.md` | Deep-dive diagrams |
-| `ERROR_CODES.md` | API error envelope + codes |
-| `CONTRIBUTING.md` | Contribution guidelines |
-| `COMPREHENSIVE_TEST_LIST.md` | Test inventory |
-| `RUNBOOKS.md`, `SLA.md`, `DISASTER_RECOVERY.md`, `ZERO_DOWNTIME_MIGRATIONS.md` | Ops |
-| `DATA_RETENTION.md`, `PRIVACY_POLICY.md`, `compliance/DPIA.md` | Compliance |
-| `DEMO_CREDENTIALS_2026-27.md` | Demo accounts |
-| `SPRINT_PROGRESS.md`, `POSTMORTEM_TEMPLATE.md` | Process |
-
----
-
-## License / status
-
-Commercial project. See `PRODUCTION_READINESS_AUDIT.md` for the current audit state.
+**Proprietary — © 2026 Ranadeep Vinukonda. All rights reserved.** See
+[`LICENSE`](LICENSE) for the single-school license terms. This is a commercial
+product; open use requires a separate written agreement with the author.

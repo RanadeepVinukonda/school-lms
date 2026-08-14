@@ -58,10 +58,6 @@ android/
 
 # ---- Monorepo lock files (stale roots) --------------------------------
 # Real lock files that npm ci needs are tracked:
-#   lms/backend/package-lock.json, lms/frontend/package-lock.json,
-#   genesis-webview/package-lock.json
+#   lms/backend/package-lock.json, lms/frontend/package-lock.json
 lms/package-lock.json
 package-lock.json
-
-# ---- Mobile workspace -------------------------------------------------
-lms/mobile/

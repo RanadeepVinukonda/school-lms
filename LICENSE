@@ -1,0 +1,59 @@
+# Genesis School LMS — Proprietary License
+
+**Copyright © 2026 Ranadeep Vinukonda. All rights reserved.**
+
+This software (the "Software") is the proprietary property of its author,
+Ranadeep Vinukonda (the "Author").
+
+## Grant of license
+
+The Author grants the School (the deployment licensee) a non-exclusive,
+non-transferable, revocable right to install and use the Software **for the
+single school named in the license agreement**, including all enrolled users
+(students, teachers, parents, and administrators).
+
+## Permitted use
+
+- Run the Software for the School's internal operations.
+- Request modifications or customizations; such work product remains the
+  Author's property unless a separate written agreement says otherwise.
+
+## Prohibited use
+
+Without prior written permission from the Author, you may NOT:
+
+- Copy, distribute, sublicense, sell, or otherwise make the Software available
+  to any third party (including other schools, companies, or resellers).
+- Modify, decompile, disassemble, or reverse-engineer the Software beyond
+  normal configuration.
+- Use the Software to provide hosted or SaaS services to third parties.
+- Remove or alter any copyright, trademark, or proprietary notices.
+
+## Ownership
+
+The Software (source code, designs, documentation, and all derivatives) is and
+remains the sole and exclusive property of the Author. Nothing in this license
+transfers ownership.
+
+## Warranty
+
+The Software is provided "as is", without warranty of any kind, express or
+implied, including but not limited to the warranties of merchantability,
+fitness for a particular purpose, and non-infringement.
+
+## Limitation of liability
+
+In no event shall the Author be liable for any claim, damages, or other
+liability arising from or in connection with the Software or its use, whether
+in an action of contract, tort, or otherwise.
+
+## Termination
+
+This license terminates automatically if the School breaches any term. Upon
+termination, use of the Software must cease. Rights survive for the School's
+data, which the School owns.
+
+---
+
+For licensing, customizations, or deployment support, contact the Author
+through the repository owner (`RanadeepVinukonda` on GitHub).

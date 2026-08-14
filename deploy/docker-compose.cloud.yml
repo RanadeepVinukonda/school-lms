@@ -10,7 +10,7 @@
 #   3. Point Nginx (nginx-backend.conf) at backend on 127.0.0.1:4000.
 #
 # Frontend is deliberately NOT here — it stays on Vercel. See
-# docs/CLOUD_DEPLOY_GUIDE.md for the vercel.json rewrite wiring.
+# GUIDE.md §3 for the vercel.json rewrite wiring.
 # ===================================================================
 
 services:
@@ -48,7 +48,7 @@ services:
         max-file: '3'
 
   # Optional — app does NOT read Redis yet. Enable when you add the
-  # redis helper (docs/CLOUD_DEPLOY_GUIDE.md §8). Uncomment to run it.
+  # redis helper (GUIDE.md / ARCHITECTURE.md §5.5). Uncomment to run it.
   # redis:
   #   image: redis:7-alpine
   #   command: ["redis-server", "--appendonly", "yes"]
