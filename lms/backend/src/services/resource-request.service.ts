@@ -93,7 +93,7 @@ async function getWeakConcepts(studentId: string): Promise<Array<{ conceptId: st
     .select('concept_id, mastery_score, attempt_count, last_reviewed_at')
     .eq('student_id', studentId)
     .lt('mastery_score', 0.7)
-    .order('mastery_score', { ascending: true })
+    .order('last_reviewed_at', { ascending: false })
     .limit(10);
   if (error) throw new Error(error.message);
   return (lowMastery || []).map((c: any) => ({
