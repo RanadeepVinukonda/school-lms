@@ -38,7 +38,7 @@ export default function SplashScreen({
     <>
       {isLoading && (
         <div
-          className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-primary gap-6"
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white gap-6"
         >
           <img
             src="/genesis_icon.png"
@@ -48,13 +48,13 @@ export default function SplashScreen({
 
           <div className="flex flex-col items-center gap-1">
             <h1
-              className="text-primary-foreground font-bold text-3xl tracking-tight"
+              className="text-slate-900 font-bold text-3xl tracking-tight"
             >
               Genesis
             </h1>
 
             <p
-              className="text-primary-foreground/80 text-sm tracking-widest uppercase"
+              className="text-slate-500 text-sm tracking-widest uppercase"
             >
               Learn &bull; Lead &bull; Achieve
             </p>
@@ -66,7 +66,7 @@ export default function SplashScreen({
             {[0, 1, 2].map((i) => (
               <span
                 key={i}
-                className="block h-2 w-2 rounded-full bg-primary-foreground"
+                className="block h-2 w-2 rounded-full bg-slate-900"
               />
             ))}
           </div>

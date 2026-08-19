@@ -1,1 +1,7 @@
-﻿'use client'; export { default } from '@/legacy/pages/student/K2DashboardPage';
+'use client';
+import LegacyPage from '@/legacy/pages/student/K2DashboardPage';
+import K2Layout from '@/legacy/layouts/K2Layout';
+import { PageContentProvider } from 'react-router-dom';
+export default function Page() {
+  return <K2Layout><PageContentProvider><LegacyPage /></PageContentProvider></K2Layout>;
+}

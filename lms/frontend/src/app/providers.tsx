@@ -64,9 +64,7 @@ export default function ClientProviders({ children }: { children: React.ReactNod
               <PWAInstallPrompt />
               <PushNotificationManager />
               <Suspense fallback={<div className="p-6">Loading...</div>}>
-                <div className="container mx-auto px-4">
-                  {children}
-                </div>
+                {children}
               </Suspense>
             </AuthGate>
           </ActiveAcademicYearProvider>

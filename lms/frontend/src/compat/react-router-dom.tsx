@@ -8,21 +8,19 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import NextLink from 'next/link';
 import { useRouter, usePathname, useSearchParams as useNextSearchParams } from 'next/navigation';
 
-// --- Context for nested layouts (replaces <Outlet />) ---
+// --- Outlet (replaces react-router-dom <Outlet />) ---
+// In Next.js, page wrappers pass legacy page content via PageContentContext.
+// Outlet renders that content.
 
-interface LayoutContextType {
-  children: React.ReactNode;
+const PageContentContext = createContext<React.ReactNode>(null);
+
+export function PageContentProvider({ children }: { children: React.ReactNode }) {
+  return <PageContentContext.Provider value={children}>{children}</PageContentContext.Provider>;
 }
-
-const LayoutContext = createContext<LayoutContextType>({ children: null });
 
 export function Outlet() {
-  const ctx = useContext(LayoutContext);
-  return <>{ctx.children}</>;
-}
-
-export function LayoutProvider({ children }: { children: React.ReactNode }) {
-  return <LayoutContext.Provider value={{ children }}>{children}</LayoutContext.Provider>;
+  const content = useContext(PageContentContext);
+  return <>{content}</>;
 }
 
 // --- Link (wraps next/link) ---
