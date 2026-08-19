@@ -2,6 +2,7 @@
 .next
 out
 node_modules
+public/firebase-config.json
 
 test-results/
 
