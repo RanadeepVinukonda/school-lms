@@ -24,8 +24,8 @@ const Progress = React.forwardRef<
         width={sizePx}
         height={sizePx}
         className={cn('rotate-[-90deg]', className)}
-        ref={ref as React.Ref<SVGSVGElement>}
-        {...(props as React.SVGProps<SVGSVGElement>)}
+        ref={ref as unknown as React.Ref<SVGSVGElement>}
+        {...(props as unknown as React.SVGProps<SVGSVGElement>)}
       >
         <circle
           cx={sizePx / 2}

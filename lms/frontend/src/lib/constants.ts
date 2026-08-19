@@ -126,9 +126,9 @@ export const ROUTES = {
 // (Cross-origin direct-to-Render calls rely on third-party cookies, which WebViews
 // often drop — that caused every create/edit to fail with a CSRF 403.)
 export const API_BASE_URL =
-  import.meta.env.DEV === false && Capacitor.isNativePlatform()
+  process.env.NODE_ENV !== 'development' && Capacitor.isNativePlatform()
     ? '/api'
-    : import.meta.env.VITE_API_BASE_URL || '/api';
+    : process.env.NEXT_PUBLIC_API_BASE_URL || '/api';
 
 export const PAGINATION = {
   DEFAULT_PAGE_SIZE: 20,

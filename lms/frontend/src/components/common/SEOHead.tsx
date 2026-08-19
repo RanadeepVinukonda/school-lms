@@ -11,7 +11,7 @@ interface SEOHeadProps {
 
 const SITE_NAME = 'Genesis';
 const DEFAULT_OG_IMAGE = '/og-image.png';
-const BASE_URL = import.meta.env.VITE_BASE_URL || 'https://genesis.app';
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://genesis.app';
 
 export function SEOHead({ title, description, ogTitle, ogDescription, ogImage = DEFAULT_OG_IMAGE, canonical }: SEOHeadProps) {
   const fullTitle = `${title} | ${SITE_NAME}`;

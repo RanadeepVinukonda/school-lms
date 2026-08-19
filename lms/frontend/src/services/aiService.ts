@@ -44,8 +44,9 @@ export function getModel(step: 'extract' | 'content' | 'question') {
     step === 'extract' ? 'VITE_OPENROUTER_MODEL_EXTRACT' :
       step === 'content' ? 'VITE_OPENROUTER_MODEL_CONTENT' :
         'VITE_OPENROUTER_MODEL_QUESTION';
-  const specific = import.meta.env[specificKey] as string | undefined;
-  return specific || (import.meta.env.VITE_OPENROUTER_MODEL as string) || 'google/gemini-2.0-flash-001:free';
+  const nextKey = specificKey.replace('VITE_', 'NEXT_PUBLIC_');
+  const specific = process.env[nextKey] as string | undefined;
+  return specific || (process.env.NEXT_PUBLIC_OPENROUTER_MODEL as string) || 'google/gemini-2.0-flash-001:free';
 }
 
 /** Strip control characters that break JSON.parse. */

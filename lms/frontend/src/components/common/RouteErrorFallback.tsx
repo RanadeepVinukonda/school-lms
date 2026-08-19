@@ -13,10 +13,11 @@ export function RouteErrorFallback() {
   let message = 'Something went wrong while loading this page.';
 
   const chunkError = isChunkError(error);
+  const typedError = error as { status?: number; statusText?: string; data?: { message?: string } };
 
   if (isRouteErrorResponse(error)) {
-    title = `${error.status} ${error.statusText}`;
-    message = error.data?.message || message;
+    title = `${typedError.status} ${typedError.statusText}`;
+    message = typedError.data?.message || message;
   } else if (error instanceof Error) {
     title = chunkError ? 'Updating application...' : 'Application Error';
     message = chunkError
@@ -59,7 +60,7 @@ export function RouteErrorFallback() {
       </div>
       <h2 className="text-headline-sm mb-2">{title}</h2>
       <p className="text-body-md text-on-surface-variant max-w-md mb-6">{message}</p>
-      {error instanceof Error && import.meta.env.DEV && (
+      {error instanceof Error && process.env.NODE_ENV === 'development' && (
         <pre className="text-left text-xs bg-red-100 text-red-800 p-4 rounded overflow-auto max-w-2xl max-h-60 mb-6 font-mono whitespace-pre-wrap">
           {error.stack}
         </pre>

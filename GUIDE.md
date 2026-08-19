@@ -1,4 +1,4 @@
-# Genesis School LMS — Server Handoff & Google Play Release Guide
+# Genesis School LMS — Server Handoff & Google Play xRelease Guide
 
 One document for the two handoffs you'll do as the app owner:
 

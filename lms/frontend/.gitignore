@@ -1,4 +1,7 @@
 .vercel
+.next
+out
+node_modules
 
 test-results/
 

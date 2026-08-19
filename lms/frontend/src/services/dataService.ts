@@ -168,7 +168,7 @@ export async function getClassesByIds(ids: string[]): Promise<ClassEntry[]> {
 export async function getClass(id: string): Promise<ClassEntry | null> {
   const { data, error } = await supabase.from(CLASSES_COLLECTION).select('*').eq('id', id).maybeSingle();
   if (error) throw error;
-  return (data ? snakeToCamel(data) : null) as ClassEntry | null;
+  return (data ? snakeToCamel(data) : null) as unknown as ClassEntry | null;
 }
 
 /** Fetch all classes from Supabase. */
@@ -221,8 +221,8 @@ export interface AttemptEntry {
 
 /** Fetch grades for a specific student. */
 export async function getGradesByStudent(studentId: string): Promise<GradeEntry[]> {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (supabaseUrl && supabaseKey) {
     try {
       const session = await supabase.auth.getSession();

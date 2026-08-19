@@ -1,0 +1,1 @@
+﻿'use client'; export { default } from '@/legacy/pages/student/K2StoriesPage';

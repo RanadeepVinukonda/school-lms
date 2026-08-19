@@ -43,23 +43,23 @@ function getServiceWorkerRegistration(): Promise<ServiceWorkerRegistration | und
 }
 
 function getFirebaseConfig() {
-  const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;
-  const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
-  const messagingSenderId = import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID;
-  const appId = import.meta.env.VITE_FIREBASE_APP_ID;
+  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+  const messagingSenderId = process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID;
+  const appId = process.env.NEXT_PUBLIC_FIREBASE_APP_ID;
   if (!apiKey || !projectId || !messagingSenderId || !appId) return null;
   return {
     apiKey,
     authDomain:
-      import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ||
+      process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ||
       `${projectId}.firebaseapp.com`,
     projectId,
     storageBucket:
-      import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ||
+      process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
       `${projectId}.appspot.com`,
     messagingSenderId,
     appId,
-    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
   };
 }
 
@@ -196,7 +196,7 @@ export async function requestPermission(): Promise<string | null> {
     if (permission !== 'granted') return null;
     const serviceWorkerRegistration = await getServiceWorkerRegistration();
     const token = await getToken(messaging, {
-      vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+      vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
       serviceWorkerRegistration,
     });
     if (token) {
