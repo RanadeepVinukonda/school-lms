@@ -3,5 +3,5 @@ import LegacyPage from '@/legacy/pages/student/StudentTimetablePage';
 import StudentLayout from '@/legacy/layouts/StudentLayout';
 import { PageContentProvider } from 'react-router-dom';
 export default function Page() {
-  return <StudentLayout><PageContentProvider><LegacyPage /></PageContentProvider></StudentLayout>;
+  return <PageContentProvider content={<LegacyPage />}><StudentLayout /></PageContentProvider>;
 }

@@ -14,8 +14,18 @@ import { useRouter, usePathname, useSearchParams as useNextSearchParams } from '
 
 const PageContentContext = createContext<React.ReactNode>(null);
 
-export function PageContentProvider({ children }: { children: React.ReactNode }) {
-  return <PageContentContext.Provider value={children}>{children}</PageContentContext.Provider>;
+export function PageContentProvider({
+  content,
+  children,
+}: {
+  content: React.ReactNode;
+  children?: React.ReactNode;
+}) {
+  return (
+    <PageContentContext.Provider value={content}>
+      {children}
+    </PageContentContext.Provider>
+  );
 }
 
 export function Outlet() {
