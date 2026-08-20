@@ -6,18 +6,11 @@ interface SplashScreenProps {
   minimumDuration?: number;
 }
 
-const dotVariants = {
-  initial: { y: 0 },
-  animate: (i: number) => ({
-    y: [0, -8, 0],
-    transition: {
-      duration: 0.6,
-      repeat: Infinity,
-      ease: 'easeInOut',
-      delay: i * 0.15,
-    },
-  }),
-};
+const dotKeyframes = `
+@keyframes dot-bounce {
+  0%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-8px); }
+}`;
 
 export default function SplashScreen({
   isLoading,
@@ -60,13 +53,15 @@ export default function SplashScreen({
             </p>
           </div>
 
-          <div
-            className="flex items-center gap-1.5 mt-2"
-          >
+          <style>{dotKeyframes}</style>
+          <div className="flex items-center gap-1.5 mt-2">
             {[0, 1, 2].map((i) => (
               <span
                 key={i}
                 className="block h-2 w-2 rounded-full bg-slate-900"
+                style={{
+                  animation: `dot-bounce 0.6s ease-in-out ${i * 0.15}s infinite`,
+                }}
               />
             ))}
           </div>
