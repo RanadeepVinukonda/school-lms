@@ -4,7 +4,7 @@ import { offlineService } from '@/services/offlineService';
 import { useTranslation } from '@/hooks/useTranslation';
 
 export function OfflineStatusBar() {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' && navigator.onLine);
   const [showBackOnline, setShowBackOnline] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const { t } = useTranslation();

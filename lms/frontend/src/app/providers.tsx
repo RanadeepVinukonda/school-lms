@@ -15,8 +15,13 @@ import { useAuthStore } from '@/store/authStore';
 import { useLanguageStore } from '@/store/languageStore';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 
-setupChunkReload();
-initNativeBridge();
+function BootstrapEffects() {
+  useEffect(() => {
+    setupChunkReload();
+    initNativeBridge();
+  }, []);
+  return null;
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -58,6 +63,7 @@ export default function ClientProviders({ children }: { children: React.ReactNod
         <QueryClientProvider client={queryClient}>
           <ActiveAcademicYearProvider>
             <AuthGate>
+              <BootstrapEffects />
               <SplashScreen isLoading={showSplash} onFinish={() => setShowSplash(false)} />
               <OfflineStatusBar />
               <UploadProgressBanner />
