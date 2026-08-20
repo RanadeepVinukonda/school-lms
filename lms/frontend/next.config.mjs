@@ -8,9 +8,13 @@ const __dirname = path.dirname(__filename);
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  output: 'standalone',
   transpilePackages: ['reactflow', '@radix-ui', 'lucide-react'],
   experimental: {
     optimizePackageImports: ['lucide-react', 'date-fns'],
+  },
+  images: {
+    unoptimized: true,
   },
   webpack: (config, { isServer, dev }) => {
     // Path alias: react-router-dom → our compatibility shim
