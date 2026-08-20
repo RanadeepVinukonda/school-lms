@@ -1192,12 +1192,6 @@ export default function AdminClassesPage() {
                   onChange={setStudentClassFilter}
                   className="w-44 bg-surface"
                 />
-                <button
-                  className="text-sm text-primary hover:underline font-semibold"
-                  onClick={() => { setStudentSearch(''); setStudentClassFilter('all'); }}
-                >
-                  Reset
-                </button>
               </div>
 
               {filteredStudents.length === 0 ? (
