@@ -38,13 +38,20 @@ if ('serviceWorker' in navigator) {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 2,
-      refetchOnWindowFocus: true,
+      retry: (failureCount, error) => {
+        const status = (error as any)?.status || (error as any)?.response?.status;
+        if (status === 429) return false;
+        return failureCount < 2;
+      },
+      refetchOnWindowFocus: false,
       staleTime: 30 * 1000,
       gcTime: 10 * 60 * 1000,
     },
     mutations: {
-      retry: 1,
+      retry: (failureCount, error) => {
+        const status = (error as any)?.status || (error as any)?.response?.status;
+        return status !== 429 && failureCount < 1;
+      },
     },
   },
 });

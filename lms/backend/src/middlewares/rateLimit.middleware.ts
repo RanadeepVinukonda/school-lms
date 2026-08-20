@@ -1,4 +1,5 @@
 import rateLimit from 'express-rate-limit';
+import { Request } from 'express';
 import { AppError } from '../utils/errors';
 import { env } from '../config/env';
 
@@ -8,6 +9,27 @@ const defaults = {
   validate: { xForwardedForHeader: false },
   skip: () => env.NODE_ENV === 'test',
 } as const;
+
+// The API is reached through a CDN/proxy (Vercel rewrite), so req.ip is the
+// proxy's address for every caller. Keying by IP would make ALL users share a
+// single bucket and any page load (10-30 parallel requests) trips the limit for
+// everyone. Instead, key by the authenticated user id (JWT `sub`) when present,
+// falling back to IP only for anonymous traffic.
+function userKey(req: Request): string {
+  const auth = req.headers.authorization;
+  if (auth && auth.startsWith('Bearer ')) {
+    try {
+      const token = auth.slice(7);
+      const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
+      if (payload && payload.sub) {
+        return `user:${payload.sub}`;
+      }
+    } catch {
+      /* ignore malformed tokens — fall through to IP key */
+    }
+  }
+  return req.ip || req.socket.remoteAddress || 'unknown';
+}
 
 export const authRateLimit = rateLimit({
   ...defaults,
@@ -23,6 +45,7 @@ export const apiRateLimit = rateLimit({
   ...defaults,
   windowMs: env.API_RATE_LIMIT_WINDOW_MS,
   max: env.API_RATE_LIMIT_MAX,
+  keyGenerator: userKey,
   skip: (req) => env.NODE_ENV === 'test' || (req.path.startsWith('/auth') && !['/me', '/profile', '/logout'].some(p => req.path === p)),
   handler: (_req, _res, next) => {
     next(new AppError(429, 'Too many requests. Please slow down.'));

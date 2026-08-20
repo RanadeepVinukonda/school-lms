@@ -57,7 +57,12 @@ app.use((req, _res, next) => {
 
 const healthRateLimit = rateLimit({
   windowMs: 60_000,
-  max: 30,
+  max: 600,
+  keyGenerator: (req) => {
+    // Health checks are anonymous but come through the same proxy — never
+    // collapse all clients into one shared IP bucket.
+    return req.headers['x-forwarded-for']?.toString().split(',')[0].trim() || req.ip || req.socket.remoteAddress || 'unknown';
+  },
   standardHeaders: true,
   legacyHeaders: false,
   validate: { xForwardedForHeader: false },

@@ -42,7 +42,7 @@ const envSchema = z.object({
 
   AUTH_RATE_LIMIT_MAX: z.coerce.number().default(100),
   AUTH_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(300000),
-  API_RATE_LIMIT_MAX: z.coerce.number().default(100),
+  API_RATE_LIMIT_MAX: z.coerce.number().default(500),
   API_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
   AI_RATE_LIMIT_MAX: z.coerce.number().default(10),
   AI_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
