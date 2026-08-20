@@ -14,7 +14,7 @@ import { useAuthStore } from '@/store/authStore';
 
 export default function TeacherSubjectDetailPage() {
   const { _ } = useTranslation();
-  const { classId, subjectId } = useParams<{ classId: string; subjectId: string }>();
+  const { id: classId, subjectId } = useParams<{ id: string; subjectId: string }>();
   const user = useAuthStore((s) => s.user);
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['teacher-subject-detail', classId, subjectId, user?.id],

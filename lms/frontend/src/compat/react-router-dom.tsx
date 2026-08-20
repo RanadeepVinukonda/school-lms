@@ -6,7 +6,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import NextLink from 'next/link';
-import { useRouter, usePathname, useSearchParams as useNextSearchParams } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams as useNextSearchParams, useParams as useNextParams } from 'next/navigation';
 
 // --- Outlet (replaces react-router-dom <Outlet />) ---
 // In Next.js, page wrappers pass legacy page content via PageContentContext.
@@ -124,14 +124,18 @@ export function useLocation() {
 
 // --- useParams ---
 
-// This works with Next.js dynamic route segments [param]
-// We parse them from the pathname since we can't use Next.js useParams in a shim
+// Uses Next.js's real route params (from the file-based [slug] segments),
+// and also exposes positional aliases for legacy code that read param0/param1.
 export function useParams<T extends Record<string, string> = Record<string, string>>(): T {
-  const pathname = usePathname();
-  // Return pathname segments as params — actual [param] values come from page-level extraction
-  // This is a best-effort shim; actual param values come from page components using useSearchParams or window
-  const segments = pathname.split('/').filter(Boolean);
+  const nextParams = useNextParams();
   const params: Record<string, string> = {};
+  const nextEntries = Object.entries(nextParams ?? {});
+  for (const [key, value] of nextEntries) {
+    if (typeof value === 'string') params[key] = value;
+  }
+  // Positional aliases (param0, param1, ...) in case legacy code depends on them.
+  const pathname = usePathname();
+  const segments = pathname.split('/').filter(Boolean);
   segments.forEach((seg, i) => {
     params[`param${i}`] = seg;
   });
