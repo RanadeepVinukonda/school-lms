@@ -9,25 +9,28 @@ import { tokenize, countKeywordHits } from '../utils/relevance';
 // a video only survives if its title shares real keywords with the concept
 // (a single shared word like "math" must not pull in an unrelated video).
 const MIN_SEMANTIC_SCORE = 0.28;
+// A video kept on a single title-keyword hit must be at least loosely on
+// topic semantically — one shared word alone is not enough.
+const MIN_SINGLE_KEYWORD_SEMANTIC = 0.2;
+// Tie-break bonus for curated sources (Khan Academy) applied after relevance.
+const KHAN_BONUS = 0.05;
 // Boost added per distinct concept keyword found in the video title. Applied
 // on top of the semantic score so exact-topic videos outrank loose matches.
 const TITLE_KEYWORD_BOOST = 0.09;
 const DESC_KEYWORD_BOOST = 0.03;
-// Only titles that share at least this many concept keywords are kept when the
-// semantic score is below MIN_SEMANTIC_SCORE.
-const MIN_KEYWORD_HITS_FALLBACK = 1;
 
-async function generateSearchQueries(conceptTitle: string, subjectName: string): Promise<string[]> {
+async function generateSearchQueries(conceptTitle: string, subjectName: string, chapterTitle?: string): Promise<string[]> {
+  const chapterContext = chapterTitle ? ` (chapter: "${chapterTitle}")` : '';
   try {
     const rawResponse = await chatCompletion({
       messages: [
         {
           role: 'system',
-          content: 'You are an educational assistant. Output 4 distinct, highly relevant educational video search queries for a student trying to learn the concept. Output ONLY as a raw JSON string array, like: ["query 1", "query 2"]',
+          content: 'You are an educational assistant. Output 4 distinct, highly relevant educational video search queries for a student trying to learn the concept. Queries MUST be about the specific concept topic, not the chapter or subject in general. Output ONLY as a raw JSON string array, like: ["query 1", "query 2"]',
         },
         {
           role: 'user',
-          content: `Concept: "${conceptTitle}" under subject "${subjectName}"`,
+          content: `Concept: "${conceptTitle}"${chapterContext} under subject "${subjectName}"`,
         },
       ],
       temperature: 0.3,
@@ -54,14 +57,25 @@ async function generateSearchQueries(conceptTitle: string, subjectName: string):
   ];
 }
 
+// Deterministic last-resort queries used when the primary queries returned an
+// empty pool (scraping blocked, quota exhausted, transient failures).
+function fallbackQueries(conceptTitle: string, subjectName: string, chapterTitle?: string): string[] {
+  return [
+    `${conceptTitle} explained`,
+    `${conceptTitle} ${chapterTitle || ''} ${subjectName}`.replace(/\s+/g, ' ').trim(),
+    `what is ${conceptTitle}`,
+  ].filter(Boolean);
+}
+
 export async function searchAndRankVideos(
   conceptTitle: string,
   conceptSummary: string,
   subjectName: string,
   maxRankCount = 3,
   conceptId?: string,
+  chapterTitle?: string,
 ) {
-  logger.info('Starting search and rank videos for concept', { conceptTitle, subjectName });
+  logger.info('Starting search and rank videos for concept', { conceptTitle, subjectName, chapterTitle });
 
   // Try pgvector first if conceptId is provided
   if (conceptId) {
@@ -91,23 +105,34 @@ export async function searchAndRankVideos(
   // Multi-source educational video search + local embedding ranking.
   // Cap to 2 queries per concept to stay well within the YouTube Data API
   // daily quota, and stop early once we have a healthy pool to rank.
-  const queries = (await generateSearchQueries(conceptTitle, subjectName)).slice(0, 2);
+  const queries = (await generateSearchQueries(conceptTitle, subjectName, chapterTitle)).slice(0, 2);
 
   const videoMap = new Map<string, any>();
 
-  for (const query of queries) {
-    if (videoMap.size >= maxRankCount * 3) break;
-    try {
-      const results = await searchEducationalVideos(query, 5);
-      for (const video of results) {
-        const key = video.videoId || video.id;
-        if (!videoMap.has(key)) {
-          videoMap.set(key, video);
+  const runQueries = async (queryList: string[]) => {
+    for (const query of queryList) {
+      if (videoMap.size >= maxRankCount * 3) break;
+      try {
+        const results = await searchEducationalVideos(query, 5);
+        for (const video of results) {
+          const key = video.videoId || video.id;
+          if (!videoMap.has(key)) {
+            videoMap.set(key, video);
+          }
         }
+      } catch (err: any) {
+        logger.error('Error fetching videos during search and rank', { query, err: err.message });
       }
-    } catch (err: any) {
-      logger.error('Error fetching videos during search and rank', { query, err: err.message });
     }
+  };
+
+  await runQueries(queries);
+  // Empty pool retry: primary queries can come back with nothing when scraping
+  // is blocked or quota is exhausted — try deterministic queries before
+  // giving up so concepts don't end up with zero videos.
+  if (videoMap.size === 0) {
+    logger.warn('Primary video queries returned empty pool, retrying with fallbacks', { conceptTitle });
+    await runQueries(fallbackQueries(conceptTitle, subjectName, chapterTitle));
   }
 
   const uniqueVideos = Array.from(videoMap.values());
@@ -116,7 +141,7 @@ export async function searchAndRankVideos(
   }
 
   try {
-    const conceptText = `${conceptTitle}. ${conceptSummary}`.slice(0, 1000);
+    const conceptText = `${conceptTitle}. ${chapterTitle ? `${chapterTitle}. ` : ''}${conceptSummary}`.slice(0, 1000);
     const conceptVector = await getEmbedding(conceptText);
     // Real topic keywords — used to stop unrelated videos from ranking just
     // because a single generic word (e.g. "lesson") appears in both titles.
@@ -171,18 +196,22 @@ export async function searchAndRankVideos(
     );
 
     // Relevance gate — drop videos that are neither semantically close nor
-    // share real topic keywords. This is the fix for "completely different
-    // video came up because a word matched in the title".
+    // share real topic keywords. A SINGLE keyword hit only survives when the
+    // video is at least loosely on topic semantically; otherwise one shared
+    // generic word ("plant", "cell", "force") would pull in unrelated videos.
     const relevant = scoredVideos.filter((v: any) => {
       if ((v.semantic ?? 0) >= MIN_SEMANTIC_SCORE) return true;
-      return (v.titleKeywordHits ?? 0) >= MIN_KEYWORD_HITS_FALLBACK;
+      if ((v.titleKeywordHits ?? 0) >= 2) return true;
+      return (v.titleKeywordHits ?? 0) >= 1 && (v.semantic ?? 0) >= MIN_SINGLE_KEYWORD_SEMANTIC;
     });
 
-    // Always prioritize Khan Academy content, then rank the rest by similarity.
+    // Rank by relevance score; curated sources get a small tie-break bonus
+    // instead of absolute priority so an off-topic Khan video can no longer
+    // outrank a clearly better match from another source.
     relevant.sort((a, b) => {
-      const aKhan = a.source === 'khan_academy' ? 0 : 1;
-      const bKhan = b.source === 'khan_academy' ? 0 : 1;
-      return aKhan - bKhan || b.score - a.score;
+      const aScore = (a.score ?? 0) + (a.source === 'khan_academy' ? KHAN_BONUS : 0);
+      const bScore = (b.score ?? 0) + (b.source === 'khan_academy' ? KHAN_BONUS : 0);
+      return bScore - aScore;
     });
 
     logger.info('Video ranking complete', {

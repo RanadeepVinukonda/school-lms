@@ -216,7 +216,7 @@ Concept context: ${conceptTitle} Chapter: ${chapterTitle} Source: ${contextText.
       if (m) cleaned = m[1];
       return JSON.parse(cleaned);
     })(),
-    searchAndRankVideos(conceptTitle, '', subjectName, 1, conceptId),
+    searchAndRankVideos(conceptTitle, '', subjectName, 3, conceptId, chapterTitle),
     matchAndRankResources(conceptTitle, '', 3),
     (async () => { const text = `${conceptTitle}. ${contextText.slice(0, 500)}`.slice(0, 1000); return getEmbedding(text); })(),
   ]);
