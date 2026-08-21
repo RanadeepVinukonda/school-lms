@@ -5,3 +5,4 @@
 !docker-compose.cloud.yml
 !nginx-backend.conf
 !vercel.json.cloud
+!SERVER_DEPLOYMENT.md
