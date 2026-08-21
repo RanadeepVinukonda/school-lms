@@ -35,7 +35,7 @@ async function fetchAndCacheCsrfToken(): Promise<string | null> {
     try {
       const response = await axios.get<{ success: boolean; data: { csrfToken: string } }>(
         `${API_BASE_URL}/csrf-token`,
-        { withCredentials: true, timeout: 5000 }
+        { withCredentials: true, timeout: 30000 }
       );
       const bodyToken = response.data?.data?.csrfToken;
       if (bodyToken) {
@@ -96,6 +96,22 @@ function isTokenExpired(token: string): boolean {
   return (payload.exp as number) * 1000 + 60 * 1000 < Date.now();
 }
 
+async function postRefreshWithRetry(refreshToken: string) {
+  try {
+    return await api.post('/auth/refresh', { refresh_token: refreshToken }, { timeout: 90000 });
+  } catch (err) {
+    // One retry for transient failures — Render free tier cold starts (and
+    // deploys) can exceed short timeouts; the first failure wakes the instance.
+    const code = (err as any)?.code;
+    const status = (err as any)?.response?.status;
+    if (code === 'ECONNABORTED' || !status || status >= 500) {
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      return await api.post('/auth/refresh', { refresh_token: refreshToken }, { timeout: 90000 });
+    }
+    throw err;
+  }
+}
+
 async function refreshViaBackend(): Promise<string | null> {
   const { data: { session } } = await supabase.auth.getSession();
   const storeState = useAuthStore.getState();
@@ -104,7 +120,7 @@ async function refreshViaBackend(): Promise<string | null> {
   const refreshToken = session?.refresh_token || storeState.refreshToken;
   if (!refreshToken) return null;
 
-  const refreshRes = await api.post('/auth/refresh', { refresh_token: refreshToken }, { timeout: 5000 });
+  const refreshRes = await postRefreshWithRetry(refreshToken);
   const newToken = refreshRes.data?.data?.token;
   if (!newToken) return null;
 
