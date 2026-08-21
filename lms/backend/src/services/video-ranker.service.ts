@@ -12,6 +12,9 @@ const MIN_SEMANTIC_SCORE = 0.28;
 // A video kept on a single title-keyword hit must be at least loosely on
 // topic semantically — one shared word alone is not enough.
 const MIN_SINGLE_KEYWORD_SEMANTIC = 0.2;
+// Khan Academy only claims the priority slot on a strong match: clearly
+// on-topic semantically, or the title names at least two concept keywords.
+const KHAN_PRIORITY_SEMANTIC = 0.35;
 // Tie-break bonus for curated sources (Khan Academy) applied after relevance.
 const KHAN_BONUS = 0.05;
 // Boost added per distinct concept keyword found in the video title. Applied
@@ -205,23 +208,30 @@ export async function searchAndRankVideos(
       return (v.titleKeywordHits ?? 0) >= 1 && (v.semantic ?? 0) >= MIN_SINGLE_KEYWORD_SEMANTIC;
     });
 
-    // Ranking policy: Khan Academy is the first choice, but only when it
-    // actually has a RELEVANT video — otherwise rank the remaining sources
-    // (mostly YouTube) purely by relevance score.
+    // Ranking policy: Khan Academy is the first choice — but ONLY on a STRONG
+    // match (clearly about THIS concept). A loosely-related Khan video (e.g.
+    // covering an earlier/different topic that merely shares a word) would
+    // otherwise hijack the priority slot; those compete normally by score
+    // against the YouTube results instead.
     const byScoreDesc = (a: any, b: any) =>
       ((b.score ?? 0) + (b.source === 'khan_academy' ? KHAN_BONUS : 0)) -
       ((a.score ?? 0) + (a.source === 'khan_academy' ? KHAN_BONUS : 0));
-    const khanRelevant = relevant.filter((v: any) => v.source === 'khan_academy').sort(byScoreDesc);
-    const othersRelevant = relevant.filter((v: any) => v.source !== 'khan_academy').sort(byScoreDesc);
-    const ordered = khanRelevant.length > 0
-      ? [...khanRelevant, ...othersRelevant]
-      : othersRelevant;
+    const khanPriority = relevant
+      .filter((v: any) =>
+        v.source === 'khan_academy' &&
+        ((v.semantic ?? 0) >= KHAN_PRIORITY_SEMANTIC || (v.titleKeywordHits ?? 0) >= 2))
+      .sort(byScoreDesc);
+    const khanPriorityIds = new Set(khanPriority.map((v: any) => v.id));
+    const restRanked = relevant.filter((v: any) => !khanPriorityIds.has(v.id)).sort(byScoreDesc);
+    const ordered = khanPriority.length > 0
+      ? [...khanPriority, ...restRanked]
+      : restRanked;
 
     logger.info('Video ranking complete', {
       conceptTitle,
       totalScored: scoredVideos.length,
       keptAfterRelevance: relevant.length,
-      khanKept: khanRelevant.length,
+      khanPriority: khanPriority.length,
       topScore: ordered[0]?.score,
     });
 
