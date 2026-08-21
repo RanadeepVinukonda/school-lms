@@ -12,6 +12,7 @@ import searchRoutes from '../search.routes';
 import deviceTokenRoutes from '../device-token.routes';
 import notificationPrefsRoutes from '../notification-prefs.routes';
 import teachResourcesRoutes from '../teach-resources.routes';
+import resourceRequestRoutes from '../resource-request.routes';
 
 const router = Router();
 
@@ -28,5 +29,6 @@ router.use('/search', searchRoutes);
 router.use('/device-tokens', deviceTokenRoutes);
 router.use('/notification-preferences', notificationPrefsRoutes);
 router.use('/teach-resources', teachResourcesRoutes);
+router.use('/resource-requests', resourceRequestRoutes);
 
 export default router;
