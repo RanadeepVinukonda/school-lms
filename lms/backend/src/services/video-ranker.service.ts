@@ -205,23 +205,27 @@ export async function searchAndRankVideos(
       return (v.titleKeywordHits ?? 0) >= 1 && (v.semantic ?? 0) >= MIN_SINGLE_KEYWORD_SEMANTIC;
     });
 
-    // Rank by relevance score; curated sources get a small tie-break bonus
-    // instead of absolute priority so an off-topic Khan video can no longer
-    // outrank a clearly better match from another source.
-    relevant.sort((a, b) => {
-      const aScore = (a.score ?? 0) + (a.source === 'khan_academy' ? KHAN_BONUS : 0);
-      const bScore = (b.score ?? 0) + (b.source === 'khan_academy' ? KHAN_BONUS : 0);
-      return bScore - aScore;
-    });
+    // Ranking policy: Khan Academy is the first choice, but only when it
+    // actually has a RELEVANT video — otherwise rank the remaining sources
+    // (mostly YouTube) purely by relevance score.
+    const byScoreDesc = (a: any, b: any) =>
+      ((b.score ?? 0) + (b.source === 'khan_academy' ? KHAN_BONUS : 0)) -
+      ((a.score ?? 0) + (a.source === 'khan_academy' ? KHAN_BONUS : 0));
+    const khanRelevant = relevant.filter((v: any) => v.source === 'khan_academy').sort(byScoreDesc);
+    const othersRelevant = relevant.filter((v: any) => v.source !== 'khan_academy').sort(byScoreDesc);
+    const ordered = khanRelevant.length > 0
+      ? [...khanRelevant, ...othersRelevant]
+      : othersRelevant;
 
     logger.info('Video ranking complete', {
       conceptTitle,
       totalScored: scoredVideos.length,
       keptAfterRelevance: relevant.length,
-      topScore: relevant[0]?.score,
+      khanKept: khanRelevant.length,
+      topScore: ordered[0]?.score,
     });
 
-    return relevant.slice(0, maxRankCount);
+    return ordered.slice(0, maxRankCount);
   } catch (err) {
     logger.error('Failed to calculate vector similarity for videos, returning default ranked list', { err });
     return uniqueVideos.slice(0, maxRankCount).map((v: any) => ({ ...v, score: 0.5, embedding: [], source: v.source || 'youtube', sourceLabel: v.sourceLabel || 'YouTube' }));
