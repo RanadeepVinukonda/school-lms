@@ -256,6 +256,49 @@ export async function gradeExamAttempt(attemptId: string, graderId: string, data
   const { error } = await supabase.from('exam_attempts').update(updateData).eq('id', attemptId);
   if (error) throw new Error(`Failed to update exam_attempts: ${error.message}`);
 
+  // Write a formal grade record so teacher-graded exams count toward report
+  // cards and rankings (legacy attempts are not read by those aggregations).
+  try {
+    const { data: examRow } = await supabase
+      .from('exams')
+      .select('*')
+      .eq('id', attempt.exam_id as string)
+      .maybeSingle();
+    const exam = (examRow || {}) as Record<string, any>;
+    let subjectId: string | null = exam.subject_id || exam.subjectId || null;
+    if (!subjectId && (exam.textbook_id || exam.textbookId)) {
+      const { data: tbRow } = await supabase
+        .from('textbooks')
+        .select('subject_id')
+        .eq('id', exam.textbook_id || exam.textbookId)
+        .maybeSingle();
+      subjectId = (tbRow as any)?.subject_id || null;
+    }
+    const nowIso = new Date().toISOString();
+    const totalPoints = Number(attempt.total_points || exam.total_points || exam.totalPoints || 0);
+    const { error: gradeErr } = await supabase.from('firestore_docs').insert({
+      collection: 'grades',
+      doc_id: uuidv4(),
+      data: {
+        studentId: attempt.student_id,
+        courseId: exam.course_id || exam.courseId || null,
+        subjectId,
+        classId: attempt.class_id || exam.class_id || exam.classId || null,
+        itemName: exam.title || 'Exam',
+        score: data.score,
+        totalPoints: totalPoints || 100,
+        percentage: totalPoints > 0 ? Math.round((data.score / totalPoints) * 100) : 0,
+        gradedBy: graderId,
+        attemptId,
+        createdAt: nowIso,
+        updatedAt: nowIso,
+      },
+    });
+    if (gradeErr) logger.warn('Failed to create legacy exam grade record', { attemptId, error: gradeErr.message });
+  } catch (gradeErr) {
+    logger.warn('Failed to create legacy exam grade record', { attemptId, error: gradeErr });
+  }
+
   try {
     await createNotification({
       userId: attempt.student_id as string,

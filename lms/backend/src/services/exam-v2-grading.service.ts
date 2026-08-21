@@ -255,6 +255,42 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
   };
   await nosqlUpdate(EAV2, attemptId, result);
 
+  // Write a formal grade record so the result counts toward report cards,
+  // rankings, and recommendations (same as quiz/assignment V2 submits).
+  try {
+    let subjectId = (examData.subjectId as string) || null;
+    if (!subjectId && examData.textbookId) {
+      const { data: tbRow } = await supabase
+        .from('textbooks')
+        .select('subject_id')
+        .eq('id', examData.textbookId as string)
+        .maybeSingle();
+      subjectId = (tbRow as any)?.subject_id || null;
+    }
+    const nowIso = new Date().toISOString();
+    const { error: gradeErr } = await supabase.from('firestore_docs').insert({
+      collection: 'grades',
+      doc_id: uuidv4(),
+      data: {
+        studentId,
+        courseId: examData.courseId || null,
+        subjectId,
+        classId: examData.classId || null,
+        itemName: (examData.title as string) || 'Exam',
+        score,
+        totalPoints,
+        percentage,
+        gradedBy: 'auto',
+        attemptId,
+        createdAt: nowIso,
+        updatedAt: nowIso,
+      },
+    });
+    if (gradeErr) logger.warn('Failed to create exam grade record', { attemptId, error: gradeErr.message });
+  } catch (gradeErr) {
+    logger.warn('Failed to create exam grade record', { attemptId, error: gradeErr });
+  }
+
   logger.info('Exam V2 attempt submitted', { attemptId, studentId, score, percentage, newLevel });
 
   const allNewBadges: string[] = [];
