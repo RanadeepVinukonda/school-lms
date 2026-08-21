@@ -10,9 +10,9 @@
            ▼                              ▼
 ┌──────────────────┐          ┌──────────────────────┐
 │     Vercel CDN   │          │   Cloud Server       │
-│   (Frontend)     │          │   Nginx + Docker     │
-│  genesis-frontend│   /api   │                      │
-│  -teal.vercel.app│ ───────► │  Backend (:4000)     │
+│   (Frontend)     │          │   Nginx (LB)         │
+│  genesis-frontend│   /api   │    ↓↓↓               │
+│  -teal.vercel.app│ ───────► │  Backend x2 replicas │
 └──────────────────┘          └──────────┬───────────┘
                                          │
                                          ▼
@@ -25,20 +25,19 @@
 
 ## What You Need From Ranadeep
 
-1. **Docker image name** — e.g. `ranadeepvinukonda/genesis-backend:latest`
-2. **docker-compose.cloud.yml** — already in `deploy/`
-3. **nginx-backend.conf** — already in `deploy/`
-4. **.env file** — fill in the values (see template below)
-5. **Domain DNS** — point `api.yourdomain.com` to your server IP
+1. **3 files** from `deploy/` folder in the repo
+2. **`.env` file** with all production secrets (sent securely)
+3. **Domain DNS** — point `api.yourdomain.com` to your server IP
 
-## Quick Start (5 minutes)
+## Quick Start
 
-### 1. Install Docker
+### 1. Install Docker + Docker Compose
 ```bash
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
 # Log out and back in, then:
 docker --version
+docker compose version
 ```
 
 ### 2. Create project directory
@@ -47,33 +46,22 @@ mkdir -p /opt/genesis-lms
 cd /opt/genesis-lms
 ```
 
-### 3. Create the .env file
-```bash
-nano .env
-```
-Paste and fill in values from the template below.
+### 3. Place files
+Put these in `/opt/genesis-lms/`:
+- `docker-compose.cloud.yml`
+- `nginx-backend.conf`
+- `.env` (from Ranadeep, securely)
 
-### 4. Download compose file
+### 4. Set the version
 ```bash
-# Option A: If Ranadeep gave you the files directly
-# Place docker-compose.cloud.yml in /opt/genesis-lms/
-
-# Option B: Pull the Docker image directly
-docker pull ranadeepvinukonda/genesis-backend:latest
+# Add to .env:
+IMAGE_VERSION=v1.0.0
+BACKEND_REPLICAS=2
 ```
 
-### 5. Start the backend
+### 5. Start
 ```bash
-# If using docker-compose.cloud.yml:
 docker compose -f docker-compose.cloud.yml up -d
-
-# Or run directly:
-docker run -d \
-  --name genesis-backend \
-  --env-file .env \
-  --restart unless-stopped \
-  -p 127.0.0.1:4000:4000 \
-  ranadeepvinukonda/genesis-backend:latest
 ```
 
 ### 6. Install Nginx
@@ -85,7 +73,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-### 7. Get SSL certificate
+### 7. Get SSL
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
 # Point DNS first: api.yourdomain.com → YOUR_SERVER_IP
@@ -94,25 +82,22 @@ sudo certbot --nginx -d api.yourdomain.com
 
 ### 8. Verify
 ```bash
-# Check backend is running:
 curl http://localhost:4000/health
-
-# Check through Nginx:
 curl https://api.yourdomain.com/health
 ```
 
-## .env Template
+## .env File
 
-Copy this to `/opt/genesis-lms/.env` on the server:
+Ask Ranadeep for the `.env` file. It contains production secrets. **Never commit this file to Git.**
 
-Ask Ranadeep for the `.env` file — it contains all production secrets. **Never commit this file to Git.**
-
-The file must contain these keys (ask Ranadeep for the actual values):
+Required keys:
 ```env
 NODE_ENV=production
 PORT=4000
 FRONTEND_URL=https://genesis-frontend-teal.vercel.app
 COOKIE_SECURE=true
+IMAGE_VERSION=v1.0.0
+BACKEND_REPLICAS=2
 SUPABASE_URL=...
 SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
@@ -130,39 +115,81 @@ CRON_SECRET=...
 LOG_LEVEL=info
 ```
 
-## Updating the Backend
+## Scaling
 
-When Ranadeep pushes a new version:
-
+### Change number of replicas
 ```bash
-# Pull the new image:
-docker pull ranadeepvinukonda/genesis-backend:latest
+# Run 3 backend instances:
+BACKEND_REPLICAS=3 docker compose -f docker-compose.cloud.yml up -d
+
+# Or edit .env and restart:
+# Set BACKEND_REPLICAS=3 in .env
+docker compose -f docker-compose.cloud.yml up -d
+```
+
+### What each replica gets
+- 1 GB RAM, 1 CPU core (configurable in docker-compose.cloud.yml)
+- Nginx automatically load-balances across all replicas
+- Each replica is independent — if one crashes, others keep serving
+
+### Recommended replicas by school size
+| Users | Replicas | RAM each | Total RAM |
+|-------|----------|----------|-----------|
+| < 200 | 1 | 1 GB | 1 GB |
+| 200-500 | 2 | 1 GB | 2 GB |
+| 500-1000 | 3 | 1 GB | 3 GB |
+| 1000+ | 4-5 | 1 GB | 4-5 GB |
+
+## Versioning
+
+### When Ranadeep pushes a new version
+
+**Step 1:** Ranadeep builds and pushes a new image tag:
+```bash
+docker build -t ranadeepvinukonda/genesis-backend:v1.1.0 ...
+docker push ranadeepvinukonda/genesis-backend:v1.1.0
+```
+
+**Step 2:** You update the version and restart:
+```bash
+# Edit .env:
+IMAGE_VERSION=v1.1.0
+
+# Pull and restart:
+docker compose -f docker-compose.cloud.yml pull
+docker compose -f docker-compose.cloud.yml up -d
+```
+
+### Rollback if something breaks
+```bash
+# Edit .env:
+IMAGE_VERSION=v1.0.0
 
 # Restart:
-docker compose -f docker-compose.cloud.yml up -d --force-recreate
+docker compose -f docker-compose.cloud.yml up -d
+```
 
-# Or if running directly:
-docker stop genesis-backend && docker rm genesis-backend
-docker run -d \
-  --name genesis-backend \
-  --env-file .env \
-  --restart unless-stopped \
-  -p 127.0.0.1:4000:4000 \
-  ranadeepvinukonda/genesis-backend:latest
+## Updating the Backend
+
+```bash
+# Pull new image:
+docker compose -f docker-compose.cloud.yml pull
+
+# Restart with zero downtime (rolling update):
+docker compose -f docker-compose.cloud.yml up -d
 ```
 
 ## Troubleshooting
 
 ```bash
 # Check backend logs:
-docker logs genesis-backend --tail 50
+docker compose -f docker-compose.cloud.yml logs backend --tail 50
 
-# Check if backend is healthy:
-curl http://localhost:4000/health
+# Check all running replicas:
+docker compose -f docker-compose.cloud.yml ps
 
-# Check Nginx:
-sudo nginx -t
-sudo systemctl status nginx
+# Check which replica is handling requests:
+docker compose -f docker-compose.cloud.yml top
 
 # Restart everything:
 docker compose -f docker-compose.cloud.yml restart

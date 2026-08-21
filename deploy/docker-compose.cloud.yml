@@ -1,66 +1,58 @@
 # ===================================================================
-# Genesis LMS — Backend + Redis, production cloud docker-compose
+# Genesis LMS — Backend, production cloud docker-compose
+#
+# Supports: versioned images, multiple replicas, Nginx load balancing
 #
 # HOW TO USE:
-#   1. Copy backend.env.template near your repo and fill in values
-#      (or reuse lms/backend/.env). *.env files are NOT committed.
-#   2. Put this file at the repo root (next to lms/) so the build
-#      contexts below resolve, then:
-#        docker compose -f docker-compose.cloud.yml up -d --build
-#   3. Point Nginx (nginx-backend.conf) at backend on 127.0.0.1:4000.
+#   1. Fill in .env file (see SERVER_DEPLOYMENT.md)
+#   2. Set IMAGE_VERSION in .env or export it:
+#        export IMAGE_VERSION=v1.0.0
+#   3. Start:
+#        docker compose -f docker-compose.cloud.yml up -d
+#   4. Scale replicas:
+#        docker compose -f docker-compose.cloud.yml up -d --scale backend=3
 #
-# Frontend is deliberately NOT here — it stays on Vercel. See
-# GUIDE.md §3 for the vercel.json rewrite wiring.
+# Frontend stays on Vercel. Database stays on Supabase.
 # ===================================================================
 
 services:
   backend:
-    build:
-      context: ./lms/backend
-      dockerfile: Dockerfile
-    image: genesis-backend:latest
+    image: ranadeepvinukonda/genesis-backend:${IMAGE_VERSION:-latest}
     env_file:
-      - ./lms/backend/.env            # your filled production env (backend.env.template)
+      - .env
     environment:
       - NODE_ENV=production
       - PORT=4000
       - CRON_SECRET=${CRON_SECRET:?Set CRON_SECRET in .env}
-      - VERCEL=0                      # keep file logging on the real server
-    ports:
-      - "127.0.0.1:4000:4000"         # loopback only — Nginx is the public gate
+      - VERCEL=0
+    expose:
+      - "4000"                            # internal only — Nginx on host talks via Docker network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/health"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s               # transformers+tesseract warm-up on first boot
+      start_period: 60s
     deploy:
+      replicas: ${BACKEND_REPLICAS:-2}
       resources:
         limits:
-          memory: 2G                  # pdf-parse + transformers + OCR are heavy
-          cpus: '2.0'
-    stop_grace_period: 30s            # graceful shutdown (PG pool + scheduler drain)
+          memory: 1G
+          cpus: '1.0'
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    stop_grace_period: 30s
+    networks:
+      - genesis
     logging:
       driver: json-file
       options:
         max-size: '20m'
         max-file: '3'
 
-  # Optional — app does NOT read Redis yet. Enable when you add the
-  # redis helper (GUIDE.md / ARCHITECTURE.md §5.5). Uncomment to run it.
-  # redis:
-  #   image: redis:7-alpine
-  #   command: ["redis-server", "--appendonly", "yes"]
-  #   volumes:
-  #     - redisdata:/data
-  #     - /etc/redis/redis-password.conf:/etc/redis/redis-password.conf:ro
-  #   restart: unless-stopped
-  #   logging:
-  #     driver: json-file
-  #     options:
-  #       max-size: '10m'
-  #       max-file: '2'
-
-# volumes:
-#   redisdata:
+networks:
+  genesis:
+    driver: bridge
