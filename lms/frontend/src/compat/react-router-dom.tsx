@@ -4,7 +4,7 @@
 // This shim allows all 71 existing files to import from 'react-router-dom' without changes.
 // Routes are defined in Next.js file-based routing under src/app/.
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import NextLink from 'next/link';
 import { useRouter, usePathname, useSearchParams as useNextSearchParams, useParams as useNextParams } from 'next/navigation';
 
@@ -144,15 +144,20 @@ export function useParams<T extends Record<string, string> = Record<string, stri
 
 // --- useSearchParams ---
 
-// Returns [searchParams, setSearchParams] like react-router-dom
+// Returns [searchParams, setSearchParams] like react-router-dom.
+// The navigation side effect (router.push) must happen OUTSIDE the setState
+// updater: updaters run during React's render phase, and side effects there
+// can be silently dropped under the Next.js App Router (clicks appear dead).
 export function useSearchParams(
   initial?: Record<string, string> | URLSearchParams | undefined,
 ): [URLSearchParams, (params: Record<string, string> | URLSearchParams | ((prev: URLSearchParams) => URLSearchParams)) => void] {
   const router = useRouter();
   const pathname = usePathname();
   const currentSearchParams = useNextSearchParams();
+  const urlSearchString = currentSearchParams.toString();
+
   const [state, setState] = useState<URLSearchParams>(() => {
-    const sp = new URLSearchParams(currentSearchParams.toString());
+    const sp = new URLSearchParams(urlSearchString);
     if (initial && !sp.toString()) {
       const init = initial instanceof URLSearchParams ? initial : new URLSearchParams(initial);
       init.forEach((v, k) => sp.set(k, v));
@@ -160,25 +165,36 @@ export function useSearchParams(
     return sp;
   });
 
+  // Re-sync when the URL changes externally (back/forward buttons, Link clicks).
+  useEffect(() => {
+    setState((prev) =>
+      prev.toString() === urlSearchString ? prev : new URLSearchParams(urlSearchString),
+    );
+  }, [urlSearchString]);
+
+  // Mirror of the latest state so rapid successive updates compose correctly
+  // even before React re-renders or the navigation completes.
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
   const setSearchParams = useCallback(
     (paramsOrUpdater: Record<string, string> | URLSearchParams | ((prev: URLSearchParams) => URLSearchParams)) => {
-      setState((prev) => {
-        const next = new URLSearchParams(prev);
-        if (typeof paramsOrUpdater === 'function') {
-          paramsOrUpdater(next);
-        } else {
-          // Clear existing params by recreating
-          Object.keys(Object.fromEntries(prev)).forEach((k) => prev.delete(k));
-          if (paramsOrUpdater instanceof URLSearchParams) {
-            paramsOrUpdater.forEach((v, k) => next.set(k, v));
-          } else {
-            Object.entries(paramsOrUpdater).forEach(([k, v]) => next.set(k, v));
-          }
-        }
-        const qs = next.toString();
-        router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-        return next;
-      });
+      let next: URLSearchParams;
+      if (typeof paramsOrUpdater === 'function') {
+        const base = new URLSearchParams(stateRef.current);
+        const result = paramsOrUpdater(base);
+        next = result instanceof URLSearchParams ? result : base;
+      } else if (paramsOrUpdater instanceof URLSearchParams) {
+        next = new URLSearchParams(paramsOrUpdater);
+      } else {
+        next = new URLSearchParams();
+        Object.entries(paramsOrUpdater).forEach(([k, v]) => next.set(k, v));
+      }
+      // Optimistic local update first (instant UI), then navigate.
+      stateRef.current = next;
+      setState(next);
+      const qs = next.toString();
+      router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     },
     [pathname, router],
   );
