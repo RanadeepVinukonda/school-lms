@@ -1,5 +1,4 @@
 *
-!README.md
 !.gitignore
 !backend.env.template
 !docker-compose.cloud.yml
