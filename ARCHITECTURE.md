@@ -14,7 +14,7 @@ this document explains *why the system is shaped the way it is*.
 
 Genesis is an end-to-end school management and learning platform:
 
-- **Web app** — React SPA for students, teachers, parents, and admins.
+- **Web app** — Next.js App Router for students, teachers, parents, and admins.
 - **API** — Express (TypeScript) REST backend with auth, fees/ERP, academic
   workflows, AI textbook processing, OCR, and notifications.
 - **Mobile** — the web app wrapped in a Capacitor Android shell.
@@ -40,7 +40,7 @@ Genesis is an end-to-end school management and learning platform:
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 18 + Vite 6 + Tailwind CSS, Zustand, TanStack Query, React Router |
+| Frontend | Next.js 16 (App Router) + Tailwind CSS, Zustand, TanStack Query, React Router (compatibility shim) |
 | Backend | Node 20 + Express 4 + TypeScript, Drizzle ORM, Zod validation |
 | Database | PostgreSQL via Supabase (+ `pgvector` embeddings) |
 | Auth | Supabase Auth (JWT) + MFA (TOTP), httpOnly cookies + CSRF double-submit |
@@ -63,7 +63,7 @@ Genesis is an end-to-end school management and learning platform:
 ├── deploy/               # Cloud-server templates: env, compose, nginx
 ├── lms/
 │   ├── backend/          # Express REST API (Docker port 4000, dev 3001)
-│   ├── frontend/         # React SPA (Vite) + Capacitor Android project
+│   ├── frontend/         # Next.js App Router + Capacitor Android project
 │   ├── pgbouncer/        # Optional connection pooler
 │   └── search/           # Optional Elasticsearch microservice
 ├── vercel.json           # Vercel deploy: root dir + /api rewrite
@@ -80,7 +80,7 @@ Genesis is an end-to-end school management and learning platform:
 Browser / Phone (Capacitor)
         │  https://<frontend>.vercel.app
         ▼
-Vercel (static SPA, CDN)
+Vercel (Next.js standalone, CDN)
         │  vercel.json rewrite:  /api/(.*)  →  https://api.<domain>/api/$1
         ▼
 Cloud server
@@ -92,10 +92,10 @@ Cloud server
         └── Redis (optional) ── shared cache/limits when scaling to replicas
 ```
 
-The SPA calls the **relative** `/api` path. Vercel rewrites it to the server, so
-the browser and cookies stay same-origin — session cookies, CSRF, and rate limits
-behave exactly as in development. This is a deliberate choice over cross-origin
-API calls (which would force `SameSite=None` cookie gymnastics).
+The Next.js app calls the **relative** `/api` path. Vercel rewrites it to the
+server, so the browser and cookies stay same-origin — session cookies, CSRF,
+and rate limits behave exactly as in development. This is a deliberate choice
+over cross-origin API calls (which would force `SameSite=None` cookie gymnastics).
 
 ---
 
@@ -210,21 +210,30 @@ authority.
 
 ## 7. Frontend architecture
 
-- **Entry & providers** — `src/app/App.tsx` composes providers: TanStack Query
-  (fetch cache), Zustand (auth/store), theme, i18n.
-- **Routing** — React Router. Role-based layouts (student / teacher / parent /
-  admin) with guards; lazy-loaded pages.
+- **Framework** — Next.js 16 App Router (`src/app/`). Root layout wraps all pages
+  with `ClientProviders` (TanStack Query, Zustand, theme, i18n). `force-dynamic`
+  disables static rendering (SPA behavior preserved).
+- **Routing** — File-based under `src/app/`. 111 route pages. Legacy routes use a
+  **React Router compatibility shim** (`src/compat/react-router-dom.tsx`) that
+  maps `Link`, `NavLink`, `useNavigate`, `Outlet` to Next.js equivalents. 71+ files
+  import from the shim unchanged from the Vite era.
+- **Page wrapping** — Each `src/app/**/page.tsx` wraps a legacy page component
+  in the correct layout (StudentLayout, TeacherLayout, etc.) via `PageContentProvider`.
+  Layouts render nav + `<Outlet />` which reads content from context.
 - **Data fetching** — TanStack Query everywhere; mutation invalidates query keys.
 - **State** — Zustand for client state (auth session, active school year,
   selected class). Server state stays in Query cache.
-- **Components** — `src/components/ui/` (24 primitives: buttons, cards, dialogs,
-  tables, badges), `src/components/common/` (DataFetchWrapper, SEOHead, upload,
-  notifications), feature components under `src/components/<feature>/`.
+- **Components** — `src/legacy/components/ui/` (24 primitives), `src/legacy/components/common/`
+  (DataFetchWrapper, SEOHead, upload, notifications), feature components under
+  `src/legacy/components/<feature>/`.
 - **Services** — `src/services/` are thin API clients (typed, one per domain).
+  `import.meta.env` replaced with `process.env.NEXT_PUBLIC_*`.
 - **i18n** — 5 languages via a translation hook (`useTranslation`).
-- **Mobile** — the same SPA runs inside Capacitor (`server.url` → hosted Vercel
+- **Mobile** — The same app runs inside Capacitor (`server.url` → hosted Vercel
   URL). `capacitor.config.ts` pins `allowNavigation` to the API/Supabase/Cloudinary
   domains so native WebView navigation stays on trusted origins.
+- **Splash screen** — CSS keyframe animation (bounce dots), white background,
+  dark text. Runs during initial load.
 
 Every page component renders loading / empty / error / populated states via
 `DataFetchWrapper`; accessibility (keyboard nav, focus management, aria labels)
@@ -260,8 +269,8 @@ OpenAPI spec: `GET /api-docs.json`.
 - **Frontend** — Vitest (`lms/frontend/src/__tests__/`) for components/hooks.
 - **CI** (`.github/workflows/ci.yml`) — on push/PR to `main`:
   1. Backend: `npm ci` → lint → `tsc --noEmit` → jest (with a Postgres service).
-  2. Frontend: `npm ci` → lint → `tsc --noEmit` → vitest → `npm run build`.
-  3. Docker Build: `docker build` backend + frontend images.
+  2. Frontend: `npm ci` → lint → `tsc --noEmit` → vitest → `npx next build --webpack`.
+  3. Docker Build: `docker build` backend + frontend images (standalone output).
 - **Play Store** — optional `playstore.yml` workflow (build AAB on `v*.*.*` tag,
   upload to Internal testing). See `GUIDE.md` §5.
 
@@ -279,16 +288,16 @@ tuning (`*_RATE_LIMIT_*`). Template: `lms/backend/.env.production.template`.
 
 ### Frontend env vars (baked at build time)
 
-`VITE_API_BASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`,
-`VITE_BASE_URL`, `VITE_CLOUDINARY_*`.
+`NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+`NEXT_PUBLIC_BASE_URL`, `NEXT_PUBLIC_CLOUDINARY_*`.
 
 ### Deployment surfaces
 
 | Surface | How | Docs |
 |---|---|---|
-| Web frontend | Vercel (auto-deploy on push) | `GUIDE.md` §3 |
-| Backend | Cloud server, Docker compose + nginx + certbot | `GUIDE.md` §3–4 |
-| Android | `npm run apk:release` → AAB → Play Console | `GUIDE.md` §5 |
+| Web frontend | Vercel (auto-deploy on push, Next.js standalone) | `deploy/SERVER_DEPLOYMENT.md` |
+| Backend | Cloud server, Docker compose + nginx + certbot | `deploy/SERVER_DEPLOYMENT.md` |
+| Android | Capacitor build → AAB → Play Console | `GUIDE.md` §5 |
 
 ---
 
@@ -296,6 +305,8 @@ tuning (`*_RATE_LIMIT_*`). Template: `lms/backend/.env.production.template`.
 
 | Decision | Why |
 |---|---|
+| Next.js App Router over Vite SPA | SEO-ready, standalone Docker output, file-based routing, SSR capability |
+| React Router compatibility shim | 71+ files import from react-router-dom unchanged — zero migration cost |
 | Managed Postgres + Supabase auth | Offloads the two hardest ops problems (DB + auth security) |
 | Relative `/api` base URL | Same-origin cookies; CSRF and sessions work without SameSite hacks |
 | Drizzle migrations over runtime sync | Explicit, reviewable schema changes |
@@ -304,6 +315,7 @@ tuning (`*_RATE_LIMIT_*`). Template: `lms/backend/.env.production.template`.
 | Inngest with inline fallback | Textbook pipeline works even without job infra configured |
 | Capacitor hosted webview | Web changes ship instantly; bundling is the Play-review upgrade path |
 | Read-only containers, minimal ports | Small blast radius on a single school server |
+| Versioned Docker images + replicas | Zero-downtime deploys, load balancing across Nginx |
 
 ---
 
