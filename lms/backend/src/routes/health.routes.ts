@@ -78,7 +78,7 @@ router.get('/', async (_req: Request, res: Response) => {
   res.status(statusCode).json({
     success: statusCode === 200,
     status,
-    version: '1.0.0',
+    version: '1.0.1',
     timestamp: new Date().toISOString(),
     checks: {
       database: dbOk,
