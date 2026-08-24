@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  output: 'export',
+  output: 'standalone',
   transpilePackages: ['reactflow', '@radix-ui', 'lucide-react'],
   experimental: {
     optimizePackageImports: ['lucide-react', 'date-fns'],

@@ -3,7 +3,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.school.lms',
   appName: 'Genesis',
-  webDir: 'out',
+  webDir: 'public',
   bundledWebRuntime: false,
   server: {
     url: 'https://genesis-frontend-teal.vercel.app',
