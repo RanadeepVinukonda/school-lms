@@ -1,197 +1,330 @@
 # Genesis LMS — Server Deployment Guide
 
-## Architecture
+> **For the server administrator.** This guide covers deploying the backend API to a cloud server using Docker.
+
+## Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                    USERS (Browser)                   │
-└──────────┬──────────────────────────────┬───────────┘
-           │ HTTPS                        │ HTTPS
-           ▼                              ▼
-┌──────────────────┐          ┌──────────────────────┐
-│     Vercel CDN   │          │   Cloud Server       │
-│   (Frontend)     │          │   Nginx (LB)         │
-│  genesis-frontend│   /api   │    ↓↓↓               │
-│  -teal.vercel.app│ ───────► │  Backend x2 replicas │
-└──────────────────┘          └──────────┬───────────┘
-                                         │
-                                         ▼
-                              ┌──────────────────────┐
-                              │   Supabase (Managed)  │
-                              │   PostgreSQL + Auth   │
-                              │   File Storage        │
-                              └──────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│                     USERS (Browser)                      │
+└───────────────┬──────────────────────┬───────────────────┘
+                │ HTTPS                │ HTTPS
+                ▼                      ▼
+┌───────────────────────┐   ┌─────────────────────────────┐
+│     Vercel (CDN)      │   │     Cloud Server            │
+│   Frontend App        │   │     Nginx → Backend (x2)    │
+│  genesis-frontend-    │   │     Port 4000               │
+│  teal.vercel.app      │   │                             │
+└───────────────────────┘   └─────────────────────────────┘
+                                        │
+                                        ▼
+                             ┌─────────────────────┐
+                             │   Supabase (Cloud)   │
+                             │   Database + Auth    │
+                             └─────────────────────┘
 ```
 
-## What You Need From Ranadeep
+**Your role:** Get the backend running on your cloud server. Frontend is already on Vercel (managed by Ranadeep).
 
-1. **3 files** from `deploy/` folder in the repo
-2. **`.env` file** with all production secrets (sent securely)
-3. **Domain DNS** — point `api.yourdomain.com` to your server IP
+---
 
-## Quick Start
+## Quick Checklist
 
-### 1. Install Docker + Docker Compose
+Before starting, confirm you have these from Ranadeep:
+
+- [ ] `.env` file with all production secrets (sent securely, **never over plain text**)
+- [ ] Access to this repo's `deploy/` folder (or Ranadeep sends the 3 files)
+
+Then follow these steps in order:
+
+| Step | Task | Who |
+|------|------|-----|
+| 1 | Install Docker on server | You |
+| 2 | Copy files to server | You |
+| 3 | Fill in `.env` | You + Ranadeep |
+| 4 | Start Docker containers | You |
+| 5 | Install Nginx + SSL | You |
+| 6 | Point DNS `api.YOUR-DOMAIN.com` → server IP | You |
+| 7 | Update `vercel.json` on Vercel | Ranadeep |
+| 8 | Build APK (if needed) | Ranadeep |
+
+---
+
+## Step 1 — Install Docker
+
 ```bash
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
-# Log out and back in, then:
-docker --version
-docker compose version
 ```
 
-### 2. Create project directory
+Log out and log back in, then verify:
+
+```bash
+docker --version        # Docker version 24+ or 25+
+docker compose version  # Docker Compose v2+
+```
+
+---
+
+## Step 2 — Copy Files to Server
+
+Create a directory and copy these 3 files into it:
+
 ```bash
 mkdir -p /opt/genesis-lms
 cd /opt/genesis-lms
 ```
 
-### 3. Place files
-Put these in `/opt/genesis-lms/`:
-- `docker-compose.cloud.yml`
-- `nginx-backend.conf`
-- `.env` (from Ranadeep, securely)
+**Files needed in `/opt/genesis-lms/`:**
 
-### 4. Set the version
-```bash
-# Add to .env:
+| File | Source |
+|------|--------|
+| `docker-compose.cloud.yml` | From repo `deploy/` folder |
+| `nginx-backend.conf` | From repo `deploy/` folder |
+| `.env` | Sent by Ranadeep (contains all secrets) |
+
+**Optional but recommended:** Also copy `backend.env.template` for reference.
+
+---
+
+## Step 3 — Configure `.env`
+
+Open `.env` and verify these critical values are correct:
+
+```env
+# MUST be production
+NODE_ENV=production
+
+# MUST be 4000 (matches Docker HEALTHCHECK)
+PORT=4000
+
+# Frontend URL (CORS allow-list)
+FRONTEND_URL=https://genesis-frontend-teal.vercel.app
+
+# HTTPS cookies required in production
+COOKIE_SECURE=true
+
+# Docker image version (Ranadeep will tell you which version)
 IMAGE_VERSION=v1.0.0
+
+# Number of backend replicas (start with 2)
 BACKEND_REPLICAS=2
+
+# Supabase connection string (from Ranadeep)
+DATABASE_URL=postgresql://...
+
+# Cron secret for scheduled jobs (generate with: openssl rand -hex 32)
+CRON_SECRET=...
 ```
 
-### 5. Start
+**Do NOT change:** `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CLOUDINARY_*`, `GEMINI_API_KEY` — these are pre-filled in the `.env` Ranadeep sends you.
+
+---
+
+## Step 4 — Start Backend
+
 ```bash
+cd /opt/genesis-lms
 docker compose -f docker-compose.cloud.yml up -d
 ```
 
-### 6. Install Nginx
+Verify it's running:
+
+```bash
+docker compose -f docker-compose.cloud.yml ps
+# Should show 2 backend containers with "Up" status
+
+curl http://localhost:4000/health
+# Should return: {"status":"ok","database":"connected",...}
+```
+
+**Troubleshooting:**
+
+```bash
+# If container won't start, check logs:
+docker compose -f docker-compose.cloud.yml logs backend --tail 50
+
+# Common issue: missing env var. Check .env file has all required keys.
+```
+
+---
+
+## Step 5 — Install Nginx + SSL
+
+### 5a. Install Nginx
+
 ```bash
 sudo apt update && sudo apt install -y nginx
+```
+
+### 5b. Configure Nginx
+
+```bash
+# Copy the config file
 sudo cp nginx-backend.conf /etc/nginx/sites-available/genesis-backend
+
+# Enable the site
 sudo ln -sf /etc/nginx/sites-available/genesis-backend /etc/nginx/sites-enabled/
+
+# Remove default site if it conflicts
+sudo rm -f /etc/nginx/sites-enabled/default
+
+# Test configuration
 sudo nginx -t
+
+# Reload
 sudo systemctl reload nginx
 ```
 
-### 7. Get SSL
+### 5c. Get SSL Certificate
+
+**First:** Point your DNS (see Step 6), then run:
+
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
-# Point DNS first: api.yourdomain.com → YOUR_SERVER_IP
-sudo certbot --nginx -d api.yourdomain.com
+sudo certbot --nginx -d api.YOUR-DOMAIN.com
 ```
 
-### 8. Verify
+Certbot automatically:
+- Obtains the SSL certificate
+- Updates Nginx config with SSL directives
+- Sets up auto-renewal
+
+### 5d. Verify Nginx
+
 ```bash
-curl http://localhost:4000/health
-curl https://api.yourdomain.com/health
+curl http://localhost/health
+# Should return the same health response as Step 4
 ```
 
-## .env File
+---
 
-Ask Ranadeep for the `.env` file. It contains production secrets. **Never commit this file to Git.**
+## Step 6 — Point DNS
 
-Required keys:
-```env
-NODE_ENV=production
-PORT=4000
-FRONTEND_URL=https://genesis-frontend-teal.vercel.app
-COOKIE_SECURE=true
-IMAGE_VERSION=v1.0.0
-BACKEND_REPLICAS=2
-SUPABASE_URL=...
-SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...
-SUPABASE_STORAGE_BUCKET=textbooks
-DATABASE_URL=...
-GEMINI_API_KEY=...
-AI_BASE_URL=https://openrouter.ai/api/v1/chat/completions
-AI_MODEL=gemini-3.1-flash-lite
-CLOUDINARY_CLOUD_NAME=...
-CLOUDINARY_API_KEY=...
-CLOUDINARY_API_SECRET=...
-YOUTUBE_API_KEY=...
-FIREBASE_SERVICE_ACCOUNT_KEY=...
-CRON_SECRET=...
-LOG_LEVEL=info
-```
+**Who:** You (server admin) or domain owner.
 
-## Scaling
+1. Log in to your domain registrar (BigRock, GoDaddy, etc.)
+2. Find DNS management for your domain
+3. Add this record:
 
-### Change number of replicas
+| Type | Name | Value | TTL |
+|------|------|-------|-----|
+| A | api | YOUR_SERVER_IP | 300 |
+
+**Example:** If your domain is `school-lms.com`, add:
+- Name: `api`
+- Value: `123.45.67.89` (your server's public IP)
+
+**Wait 5-10 minutes** for DNS propagation, then verify:
+
 ```bash
-# Run 3 backend instances:
-BACKEND_REPLICAS=3 docker compose -f docker-compose.cloud.yml up -d
+nslookup api.YOUR-DOMAIN.com
+# Should return your server IP
 
-# Or edit .env and restart:
-# Set BACKEND_REPLICAS=3 in .env
-docker compose -f docker-compose.cloud.yml up -d
+curl https://api.YOUR-DOMAIN.com/health
+# Should return: {"status":"ok",...}
 ```
 
-### What each replica gets
-- 1 GB RAM, 1 CPU core (configurable in docker-compose.cloud.yml)
-- Nginx automatically load-balances across all replicas
-- Each replica is independent — if one crashes, others keep serving
+---
 
-### Recommended replicas by school size
-| Users | Replicas | RAM each | Total RAM |
-|-------|----------|----------|-----------|
-| < 200 | 1 | 1 GB | 1 GB |
-| 200-500 | 2 | 1 GB | 2 GB |
-| 500-1000 | 3 | 1 GB | 3 GB |
-| 1000+ | 4-5 | 1 GB | 4-5 GB |
+## Step 7 — Update Vercel Frontend (Ranadeep's Job)
 
-## Versioning
+**This is NOT done on your server.** Ranadeep updates the frontend to point API calls to your server.
 
-### When Ranadeep pushes a new version
+Ranadeep will:
+1. Replace `vercel.json` with the version from `deploy/vercel.json.cloud`
+2. Replace `YOUR-DOMAIN.com` with your actual domain
+3. Push to trigger a new Vercel deployment
 
-**Step 1:** Ranadeep builds and pushes a new image tag:
+**You don't need to do anything here** — just confirm the health endpoint works on your server.
+
+---
+
+## Step 8 — APK Build (Ranadeep's Job)
+
+**This is NOT done on your server.** Ranadeep builds the APK locally and sends it to you for distribution.
+
+You don't need to do anything here.
+
+---
+
+## Day-to-Day Operations
+
+### Update to a new version
+
+Ranadeep will push a new Docker image tag (e.g., `v1.1.0`). You update and restart:
+
 ```bash
-docker build -t ranadeep8919/genesis-backend:v1.1.0 ...
-docker push ranadeep8919/genesis-backend:v1.1.0
-```
+cd /opt/genesis-lms
 
-**Step 2:** You update the version and restart:
-```bash
-# Edit .env:
-IMAGE_VERSION=v1.1.0
-
-# Pull and restart:
+# Update IMAGE_VERSION in .env
+# Then pull and restart:
 docker compose -f docker-compose.cloud.yml pull
 docker compose -f docker-compose.cloud.yml up -d
 ```
 
 ### Rollback if something breaks
-```bash
-# Edit .env:
-IMAGE_VERSION=v1.0.0
 
-# Restart:
+```bash
+# Set IMAGE_VERSION back to previous version in .env
 docker compose -f docker-compose.cloud.yml up -d
 ```
 
-## Updating the Backend
+### Scale replicas up/down
 
 ```bash
-# Pull new image:
-docker compose -f docker-compose.cloud.yml pull
-
-# Restart with zero downtime (rolling update):
-docker compose -f docker-compose.cloud.yml up -d
+# Run 3 backend instances instead of 2:
+BACKEND_REPLICAS=3 docker compose -f docker-compose.cloud.yml up -d
 ```
 
-## Troubleshooting
+### View logs
 
 ```bash
-# Check backend logs:
-docker compose -f docker-compose.cloud.yml logs backend --tail 50
+# Last 100 lines:
+docker compose -f docker-compose.cloud.yml logs backend --tail 100
 
-# Check all running replicas:
-docker compose -f docker-compose.cloud.yml ps
+# Follow live:
+docker compose -f docker-compose.cloud.yml logs -f backend
+```
 
-# Check which replica is handling requests:
-docker compose -f docker-compose.cloud.yml top
+### Restart everything
 
-# Restart everything:
+```bash
 docker compose -f docker-compose.cloud.yml restart
 sudo systemctl restart nginx
 ```
+
+---
+
+## Server Requirements
+
+| Resource | Minimum | Recommended |
+|----------|---------|-------------|
+| RAM | 2 GB | 4 GB |
+| CPU | 1 core | 2 cores |
+| Disk | 10 GB | 20 GB |
+| OS | Ubuntu 22.04+ | Ubuntu 24.04 LTS |
+
+---
+
+## Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| `docker: permission denied` | Run `sudo usermod -aG docker $USER` then log out/in |
+| Container exits immediately | Check logs: `docker compose -f docker-compose.cloud.yml logs backend` |
+| Health check fails | Verify `.env` has all required vars, especially `DATABASE_URL` |
+| Nginx 502 Bad Gateway | Backend not running — check `docker compose ps` |
+| SSL certificate fails | DNS not propagated yet — wait 10 min, check with `nslookup` |
+| CORS errors in browser | `FRONTEND_URL` in `.env` must match the Vercel domain exactly |
+
+---
+
+## Files Reference
+
+| File | Purpose | Location on Server |
+|------|---------|-------------------|
+| `docker-compose.cloud.yml` | Docker service definitions | `/opt/genesis-lms/` |
+| `nginx-backend.conf` | Nginx reverse proxy + load balancer | `/etc/nginx/sites-available/genesis-backend` |
+| `.env` | All production secrets | `/opt/genesis-lms/` (gitignored) |
+| `backend.env.template` | Reference for env vars | `/opt/genesis-lms/` (optional) |

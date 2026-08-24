@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  output: 'standalone',
+  output: 'export',
   transpilePackages: ['reactflow', '@radix-ui', 'lucide-react'],
   experimental: {
     optimizePackageImports: ['lucide-react', 'date-fns'],
@@ -55,14 +55,6 @@ const nextConfig = {
     }
 
     return config;
-  },
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: 'http://localhost:3001/api/:path*',
-      },
-    ];
   },
 };
 

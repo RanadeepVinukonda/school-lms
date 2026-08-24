@@ -9,7 +9,7 @@ cd "$ROOT"
 : "${ANDROID_HOME:?Set ANDROID_HOME to your Android SDK path}"
 echo "Using Android SDK: $ANDROID_HOME"
 
-echo "[1/3] Building web bundle (dist/)"
+echo "[1/3] Building web bundle (out/)"
 npx next build --webpack
 
 echo "[2/3] Syncing Capacitor (android)"

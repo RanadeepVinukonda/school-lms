@@ -5,7 +5,7 @@
       android/app/build/outputs/apk/release/app-release.apk
 
   Steps:
-    1. Build the web bundle (dist/)
+    1. Build the web bundle (out/)
     2. Sync the web assets + native plugins into the Capacitor Android project
     3. Assemble the signed release APK with the Gradle wrapper
 
@@ -77,7 +77,7 @@ Write-Host "Using Android SDK: $env:ANDROID_HOME"
 
 Push-Location $Root
 try {
-    Write-Host "`n[1/3] Building web bundle (dist/)" -ForegroundColor Cyan
+    Write-Host "`n[1/3] Building web bundle (out/)" -ForegroundColor Cyan
     & npx next build --webpack
     if ($LASTEXITCODE -ne 0) { throw 'Frontend build failed.' }
 
