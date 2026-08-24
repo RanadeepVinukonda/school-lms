@@ -14,9 +14,11 @@ COPY --from=builder /app/dist ./dist
 # OCR traineddata must be present at runtime — ocr.service resolves it via langPath
 COPY --from=builder /app/eng.traineddata ./eng.traineddata
 COPY --from=builder /app/hin.traineddata ./hin.traineddata
+RUN mkdir -p logs && chown app:app logs
 USER app
 EXPOSE 4000
 ENV NODE_ENV=production
+ENV PORT=4000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:4000/health || exit 1
 CMD ["node", "dist/index.js"]
