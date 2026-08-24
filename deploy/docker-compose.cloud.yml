@@ -17,7 +17,7 @@
 
 services:
   backend:
-    image: ranadeepvinukonda/genesis-backend:${IMAGE_VERSION:-latest}
+    image: ranadeep8919/genesis-backend:${IMAGE_VERSION:-latest}
     env_file:
       - .env
     environment:

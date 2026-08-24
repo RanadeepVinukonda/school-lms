@@ -78,7 +78,7 @@ Write-Host "Using Android SDK: $env:ANDROID_HOME"
 Push-Location $Root
 try {
     Write-Host "`n[1/3] Building web bundle (dist/)" -ForegroundColor Cyan
-    & node node_modules/vite/bin/vite.js build
+    & npx next build --webpack
     if ($LASTEXITCODE -ne 0) { throw 'Frontend build failed.' }
 
     Write-Host "`n[2/3] Syncing Capacitor (android)" -ForegroundColor Cyan

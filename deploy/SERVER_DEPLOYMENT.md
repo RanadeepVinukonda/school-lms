@@ -146,8 +146,8 @@ docker compose -f docker-compose.cloud.yml up -d
 
 **Step 1:** Ranadeep builds and pushes a new image tag:
 ```bash
-docker build -t ranadeepvinukonda/genesis-backend:v1.1.0 ...
-docker push ranadeepvinukonda/genesis-backend:v1.1.0
+docker build -t ranadeep8919/genesis-backend:v1.1.0 ...
+docker push ranadeep8919/genesis-backend:v1.1.0
 ```
 
 **Step 2:** You update the version and restart:

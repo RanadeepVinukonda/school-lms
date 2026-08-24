@@ -10,7 +10,7 @@ cd "$ROOT"
 echo "Using Android SDK: $ANDROID_HOME"
 
 echo "[1/3] Building web bundle (dist/)"
-node node_modules/vite/bin/vite.js build
+npx next build --webpack
 
 echo "[2/3] Syncing Capacitor (android)"
 npx cap sync android
