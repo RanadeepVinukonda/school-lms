@@ -1,8 +1,8 @@
 # Genesis LMS — Server Deployment Guide
 
-> **For the server administrator.** This guide covers deploying the backend API to a cloud server using Docker.
+> **For the server administrator.** One command starts everything — backend + Nginx + load balancer.
 
-## Architecture Overview
+## Architecture
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -11,9 +11,9 @@
                 │ HTTPS                │ HTTPS
                 ▼                      ▼
 ┌───────────────────────┐   ┌─────────────────────────────┐
-│     Vercel (CDN)      │   │     Cloud Server            │
+│     Vercel (CDN)      │   │     Cloud Server (Docker)   │
 │   Frontend App        │   │     Nginx → Backend (x2)    │
-│  genesis-frontend-    │   │     Port 4000               │
+│  genesis-frontend-    │   │     Ports 80 + 443          │
 │  teal.vercel.app      │   │                             │
 └───────────────────────┘   └─────────────────────────────┘
                                         │
@@ -24,33 +24,18 @@
                              └─────────────────────┘
 ```
 
-**Your role:** Get the backend running on your cloud server. Frontend is already on Vercel (managed by Ranadeep).
+---
+
+## What You Need From Ranadeep
+
+1. **4 files** from `deploy/` folder (see Step 2)
+2. **`.env` file** with all production secrets (sent securely)
 
 ---
 
-## Quick Checklist
+## Quick Start (5 minutes)
 
-Before starting, confirm you have these from Ranadeep:
-
-- [ ] `.env` file with all production secrets (sent securely, **never over plain text**)
-- [ ] Access to this repo's `deploy/` folder (or Ranadeep sends the 3 files)
-
-Then follow these steps in order:
-
-| Step | Task | Who |
-|------|------|-----|
-| 1 | Install Docker on server | You |
-| 2 | Copy files to server | You |
-| 3 | Fill in `.env` | You + Ranadeep |
-| 4 | Start Docker containers | You |
-| 5 | Install Nginx + SSL | You |
-| 6 | Point DNS `api.YOUR-DOMAIN.com` → server IP | You |
-| 7 | Update `vercel.json` on Vercel | Ranadeep |
-| 8 | Build APK (if needed) | Ranadeep |
-
----
-
-## Step 1 — Install Docker
+### Step 1 — Install Docker
 
 ```bash
 curl -fsSL https://get.docker.com | sh
@@ -64,187 +49,101 @@ docker --version        # Docker version 24+ or 25+
 docker compose version  # Docker Compose v2+
 ```
 
----
-
-## Step 2 — Copy Files to Server
-
-Create a directory and copy these 3 files into it:
+### Step 2 — Copy files to server
 
 ```bash
 mkdir -p /opt/genesis-lms
 cd /opt/genesis-lms
 ```
 
-**Files needed in `/opt/genesis-lms/`:**
+Put these 4 files in `/opt/genesis-lms/`:
 
-| File | Source |
-|------|--------|
-| `docker-compose.cloud.yml` | From repo `deploy/` folder |
-| `nginx-backend.conf` | From repo `deploy/` folder |
-| `.env` | Sent by Ranadeep (contains all secrets) |
+| File | What it does |
+|------|-------------|
+| `docker-compose.cloud.yml` | Starts Nginx + Backend containers |
+| `nginx-backend.conf` | Nginx reverse proxy + load balancer config |
+| `.env` | All production secrets (from Ranadeep) |
+| `backend.env.template` | Reference for env vars (optional) |
 
-**Optional but recommended:** Also copy `backend.env.template` for reference.
+### Step 3 — Verify `.env`
 
----
-
-## Step 3 — Configure `.env`
-
-Open `.env` and verify these critical values are correct:
+Open `.env` and check these critical values:
 
 ```env
-# MUST be production
 NODE_ENV=production
-
-# MUST be 4000 (matches Docker HEALTHCHECK)
 PORT=4000
-
-# Frontend URL (CORS allow-list)
 FRONTEND_URL=https://genesis-frontend-teal.vercel.app
-
-# HTTPS cookies required in production
 COOKIE_SECURE=true
-
-# Docker image version (Ranadeep will tell you which version)
 IMAGE_VERSION=v1.0.0
-
-# Number of backend replicas (start with 2)
 BACKEND_REPLICAS=2
-
-# Supabase connection string (from Ranadeep)
-DATABASE_URL=postgresql://...
-
-# Cron secret for scheduled jobs (generate with: openssl rand -hex 32)
-CRON_SECRET=...
 ```
 
-**Do NOT change:** `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CLOUDINARY_*`, `GEMINI_API_KEY` — these are pre-filled in the `.env` Ranadeep sends you.
-
----
-
-## Step 4 — Start Backend
+### Step 4 — Start everything
 
 ```bash
 cd /opt/genesis-lms
 docker compose -f docker-compose.cloud.yml up -d
 ```
 
-Verify it's running:
+That's it. Nginx + Backend are running.
+
+### Step 5 — Verify
 
 ```bash
+# Check containers are up:
 docker compose -f docker-compose.cloud.yml ps
-# Should show 2 backend containers with "Up" status
 
-curl http://localhost:4000/health
-# Should return: {"status":"ok","database":"connected",...}
-```
-
-**Troubleshooting:**
-
-```bash
-# If container won't start, check logs:
-docker compose -f docker-compose.cloud.yml logs backend --tail 50
-
-# Common issue: missing env var. Check .env file has all required keys.
-```
-
----
-
-## Step 5 — Install Nginx + SSL
-
-### 5a. Install Nginx
-
-```bash
-sudo apt update && sudo apt install -y nginx
-```
-
-### 5b. Configure Nginx
-
-```bash
-# Copy the config file
-sudo cp nginx-backend.conf /etc/nginx/sites-available/genesis-backend
-
-# Enable the site
-sudo ln -sf /etc/nginx/sites-available/genesis-backend /etc/nginx/sites-enabled/
-
-# Remove default site if it conflicts
-sudo rm -f /etc/nginx/sites-enabled/default
-
-# Test configuration
-sudo nginx -t
-
-# Reload
-sudo systemctl reload nginx
-```
-
-### 5c. Get SSL Certificate
-
-**First:** Point your DNS (see Step 6), then run:
-
-```bash
-sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d api.YOUR-DOMAIN.com
-```
-
-Certbot automatically:
-- Obtains the SSL certificate
-- Updates Nginx config with SSL directives
-- Sets up auto-renewal
-
-### 5d. Verify Nginx
-
-```bash
+# Health check (should return JSON with "status":"ok"):
 curl http://localhost/health
-# Should return the same health response as Step 4
 ```
 
 ---
 
-## Step 6 — Point DNS
+## SSL Certificate (Required for HTTPS)
 
-**Who:** You (server admin) or domain owner.
+### 6a. Point DNS first
 
-1. Log in to your domain registrar (BigRock, GoDaddy, etc.)
-2. Find DNS management for your domain
-3. Add this record:
+Go to your domain registrar (BigRock, GoDaddy, etc.) and add:
 
 | Type | Name | Value | TTL |
 |------|------|-------|-----|
 | A | api | YOUR_SERVER_IP | 300 |
 
-**Example:** If your domain is `school-lms.com`, add:
-- Name: `api`
-- Value: `123.45.67.89` (your server's public IP)
+**Example:** Domain `school-lms.com` → add record `api` → `123.45.67.89`
 
-**Wait 5-10 minutes** for DNS propagation, then verify:
+Wait 5-10 minutes for DNS to propagate.
+
+### 6b. Get the certificate
 
 ```bash
-nslookup api.YOUR-DOMAIN.com
-# Should return your server IP
+cd /opt/genesis-lms
 
-curl https://api.YOUR-DOMAIN.com/health
-# Should return: {"status":"ok",...}
+# Create certbot directory
+mkdir -p certbot/conf certbot/www
+
+# Get the certificate (replace email and domain)
+docker compose -f docker-compose.cloud.yml run --rm certbot certonly \
+  --webroot \
+  -w /var/www/certbot \
+  -d api.YOUR-DOMAIN.com \
+  --agree-tos \
+  -m your-email@domain.com
 ```
 
----
+### 6c. Restart with SSL
 
-## Step 7 — Update Vercel Frontend (Ranadeep's Job)
+```bash
+docker compose -f docker-compose.cloud.yml restart nginx
+```
 
-**This is NOT done on your server.** Ranadeep updates the frontend to point API calls to your server.
+### 6d. Verify HTTPS
 
-Ranadeep will:
-1. Replace `vercel.json` with the version from `deploy/vercel.json.cloud`
-2. Replace `YOUR-DOMAIN.com` with your actual domain
-3. Push to trigger a new Vercel deployment
+```bash
+curl https://api.YOUR-DOMAIN.com/health
+# Should return: {"status":"ok","database":"connected",...}
+```
 
-**You don't need to do anything here** — just confirm the health endpoint works on your server.
-
----
-
-## Step 8 — APK Build (Ranadeep's Job)
-
-**This is NOT done on your server.** Ranadeep builds the APK locally and sends it to you for distribution.
-
-You don't need to do anything here.
+**SSL auto-renews** via the certbot service built into docker-compose.
 
 ---
 
@@ -252,46 +151,53 @@ You don't need to do anything here.
 
 ### Update to a new version
 
-Ranadeep will push a new Docker image tag (e.g., `v1.1.0`). You update and restart:
+Ranadeep pushes a new Docker image (e.g., `v1.1.0`). You update:
 
 ```bash
 cd /opt/genesis-lms
 
-# Update IMAGE_VERSION in .env
-# Then pull and restart:
+# 1. Update IMAGE_VERSION in .env (or pass as env var):
+#    IMAGE_VERSION=v1.1.0
+
+# 2. Pull new image + restart (zero downtime):
 docker compose -f docker-compose.cloud.yml pull
 docker compose -f docker-compose.cloud.yml up -d
 ```
 
-### Rollback if something breaks
+### Rollback
 
 ```bash
-# Set IMAGE_VERSION back to previous version in .env
+# Set IMAGE_VERSION back to previous version in .env, then:
 docker compose -f docker-compose.cloud.yml up -d
 ```
 
-### Scale replicas up/down
+### Scale replicas
 
 ```bash
-# Run 3 backend instances instead of 2:
-BACKEND_REPLICAS=3 docker compose -f docker-compose.cloud.yml up -d
+# Run 3 backend instances:
+docker compose -f docker-compose.cloud.yml up -d --scale backend=3
+
+# Back to 2:
+docker compose -f docker-compose.cloud.yml up -d --scale backend=2
 ```
 
 ### View logs
 
 ```bash
-# Last 100 lines:
+# Backend logs (last 100 lines):
 docker compose -f docker-compose.cloud.yml logs backend --tail 100
 
+# Nginx logs:
+docker compose -f docker-compose.cloud.yml logs nginx --tail 50
+
 # Follow live:
-docker compose -f docker-compose.cloud.yml logs -f backend
+docker compose -f docker-compose.cloud.yml logs -f
 ```
 
 ### Restart everything
 
 ```bash
 docker compose -f docker-compose.cloud.yml restart
-sudo systemctl restart nginx
 ```
 
 ---
@@ -312,19 +218,37 @@ sudo systemctl restart nginx
 | Problem | Solution |
 |---------|----------|
 | `docker: permission denied` | Run `sudo usermod -aG docker $USER` then log out/in |
-| Container exits immediately | Check logs: `docker compose -f docker-compose.cloud.yml logs backend` |
-| Health check fails | Verify `.env` has all required vars, especially `DATABASE_URL` |
-| Nginx 502 Bad Gateway | Backend not running — check `docker compose ps` |
-| SSL certificate fails | DNS not propagated yet — wait 10 min, check with `nslookup` |
-| CORS errors in browser | `FRONTEND_URL` in `.env` must match the Vercel domain exactly |
+| Container exits immediately | `docker compose -f docker-compose.cloud.yml logs backend --tail 50` |
+| Health check fails | Check `.env` has all required vars, especially `DATABASE_URL` |
+| Nginx 502 Bad Gateway | Backend not running — `docker compose -f docker-compose.cloud.yml ps` |
+| SSL certificate fails | DNS not propagated — wait 10 min, check with `nslookup api.YOUR-DOMAIN.com` |
+| CORS errors in browser | `FRONTEND_URL` in `.env` must match Vercel domain exactly |
+| Port 80/443 already in use | Stop host nginx: `sudo systemctl stop nginx && sudo systemctl disable nginx` |
 
 ---
 
-## Files Reference
+## Files on Server
 
-| File | Purpose | Location on Server |
-|------|---------|-------------------|
-| `docker-compose.cloud.yml` | Docker service definitions | `/opt/genesis-lms/` |
-| `nginx-backend.conf` | Nginx reverse proxy + load balancer | `/etc/nginx/sites-available/genesis-backend` |
-| `.env` | All production secrets | `/opt/genesis-lms/` (gitignored) |
-| `backend.env.template` | Reference for env vars | `/opt/genesis-lms/` (optional) |
+```
+/opt/genesis-lms/
+├── docker-compose.cloud.yml    # Service definitions (Nginx + Backend)
+├── nginx-backend.conf          # Nginx config (auto-mounted into container)
+├── .env                        # Secrets (gitignored)
+├── backend.env.template        # Reference for env vars
+└── certbot/
+    └── conf/                   # SSL certificates (auto-created)
+```
+
+---
+
+## What Ranadeep Does (Not Your Job)
+
+These are handled by Ranadeep — you don't need to do them:
+
+| Task | When |
+|------|------|
+| Update `vercel.json` rewrites to point to your domain | After DNS is set |
+| Update `capacitor.config.ts` allowNavigation | After DNS is set |
+| Update `cors.ts` PRODUCTION_ORIGINS | After DNS is set |
+| Build APK | When needed |
+| Push new Docker image versions | When code changes |
