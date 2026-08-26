@@ -348,7 +348,7 @@ export default function TeacherTextbooksPage() {
                                 </div>
                               </CardContent>
                               <div className="px-6 py-4 bg-muted/20 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground font-semibold">
-                                {tb.status === 'processing' || tb.status === 'queued' ? (
+                                {tb.status === 'processing' ? (
                                   <Badge variant="outline" className="text-[10px] bg-blue-50/50 text-blue-600 border-blue-200 py-0 px-2 font-semibold">
                                     <Icon name="sync" className="animate-spin mr-1" size={12} /> {_('Processing')}
                                   </Badge>

@@ -76,7 +76,7 @@ export default function TeacherTextbookDetailPage() {
     // is unavailable.
     refetchInterval: (query) => {
       const tb = query.state.data as any;
-      return tb && (tb.status === 'processing' || tb.status === 'queued') ? 3000 : false;
+      return tb && tb.status === 'processing' ? 3000 : false;
     },
   });
 
@@ -372,7 +372,7 @@ export default function TeacherTextbookDetailPage() {
               </div>
 
               <div>
-                {tb.status === 'processing' || tb.status === 'queued' || tb.status === 'failed' ? (
+                {tb.status === 'processing' || tb.status === 'failed' ? (
                   renderProgressTracker(tb)
                 ) : (
                   <DataFetchWrapper data={chaptersQuery.data} isLoading={chaptersQuery.isLoading} error={chaptersQuery.error} loadingType="list">

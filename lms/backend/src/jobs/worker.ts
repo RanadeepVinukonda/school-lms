@@ -57,15 +57,13 @@ export async function runUploadPipeline(textbookId: string, storagePath: string)
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error('Supabase not configured');
 
-  // Concurrency guard: bail if already processing
-  const { data: statusCheck } = await supabase.from('textbooks').select('status').eq('id', textbookId).single();
-  if (statusCheck?.status === 'processing') {
+  // Concurrency guard: check if pipeline is actively running via processing_jobs
+  const { data: existingJob } = await supabase
+    .from('processing_jobs').select('status').eq('id', textbookId).single();
+  if (existingJob?.status === 'PROCESSING') {
     logger.warn('Pipeline already running for textbook, skipping', { textbookId });
     return;
   }
-
-  // Mark as processing now that the pipeline is actually starting
-  await supabase.from('textbooks').update({ status: 'processing', updated_at: new Date().toISOString() }).eq('id', textbookId);
 
   const { data: textbookDoc } = await supabase.from('textbooks').select('*').eq('id', textbookId).single();
   if (!textbookDoc) {

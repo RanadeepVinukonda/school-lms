@@ -9,7 +9,7 @@ export interface Textbook {
   fileUrl?: string;
   chapters: Chapter[];
   chapterCount?: number;
-  status: 'queued' | 'processing' | 'ready' | 'error' | 'failed';
+  status: 'processing' | 'ready' | 'error' | 'failed';
   processingProgress: number;
   processingStage: string;
   createdAt: string;

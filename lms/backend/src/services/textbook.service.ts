@@ -40,12 +40,12 @@ export async function createTextbook(data: {
   const now = new Date().toISOString();
   let storagePath = '';
   let pdfUrl = '';
-  let status: 'queued' | 'processing' | 'ready' | 'error' = 'ready';
+  let status: 'processing' | 'ready' | 'error' = 'ready';
 
   if (data.cloudinaryUrl && data.cloudinaryPublicId) {
     pdfUrl = data.cloudinaryUrl;
     storagePath = data.cloudinaryPublicId;
-    status = 'queued';
+    status = 'processing';
   } else if (data.pdfFilePath) {
     const key = `${textbookId}.pdf`;
     const bucket = env.SUPABASE_STORAGE_BUCKET || 'textbooks';
@@ -59,7 +59,7 @@ export async function createTextbook(data: {
     storagePath = key;
     const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(key);
     pdfUrl = urlData.publicUrl;
-    status = 'queued';
+    status = 'processing';
   }
 
   const { error: insertError } = await supabase.from('textbooks').insert({
@@ -150,7 +150,7 @@ export async function createTextbook(data: {
       logger.error('Failed to load pipeline.service', { textbookId, error: loadErr });
     }
   }
-  status = 'queued';
+  status = 'processing';
 
   logger.info('Textbook created', { textbookId, title: data.title, status });
   return {
@@ -179,14 +179,14 @@ export async function reprocessTextbook(textbookId: string, requestingTeacherId:
 
   const { error: updateProcessingError } = await supabase
     .from('textbooks')
-    .update({ status: 'queued', failure_reason: null, updated_at: new Date().toISOString() })
+    .update({ status: 'processing', failure_reason: null, updated_at: new Date().toISOString() })
     .eq('id', textbookId);
   if (updateProcessingError) throw new Error(`Failed to update textbooks: ${updateProcessingError.message}`);
 
   try {
     await addUploadJob(textbookId, doc.storage_path);
     logger.info('Textbook reprocessing triggered via Inngest', { textbookId });
-    return { textbookId, status: 'queued' };
+    return { textbookId, status: 'processing' };
   } catch {
     logger.info('Inngest unavailable for reprocess — firing inline', { textbookId });
     try {
@@ -200,6 +200,8 @@ export async function reprocessTextbook(textbookId: string, requestingTeacherId:
     } catch (loadErr) {
       logger.error('Failed to load pipeline.service for reprocess', { textbookId, error: loadErr });
     }
+    return { textbookId, status: 'processing' };
+  }
     return { textbookId, status: 'queued' };
   }
 }
