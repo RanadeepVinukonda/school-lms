@@ -64,6 +64,9 @@ export async function runUploadPipeline(textbookId: string, storagePath: string)
     return;
   }
 
+  // Mark as processing now that the pipeline is actually starting
+  await supabase.from('textbooks').update({ status: 'processing', updated_at: new Date().toISOString() }).eq('id', textbookId);
+
   const { data: textbookDoc } = await supabase.from('textbooks').select('*').eq('id', textbookId).single();
   if (!textbookDoc) {
     logger.warn('Textbook not found in DB, aborting pipeline without retry', { textbookId });

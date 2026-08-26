@@ -50,7 +50,7 @@ export default function SubjectDetailPage() {
       if (!subject) return null;
 
       const textbooks = firestoreTextbooks
-        .filter((tb) => tb.status !== 'processing' && (!authUser?.classId || tb.classId === authUser.classId))
+        .filter((tb) => tb.status !== 'processing' && tb.status !== 'queued' && (!authUser?.classId || tb.classId === authUser.classId))
         .map((tb) => ({ ...tb, chapterCount: tb.chapterCount ?? 0 }));
       const assignment = (classAssignments || []).find((a) => a.subjectId === id);
       const teacherName = assignment?.teacherName;
