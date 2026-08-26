@@ -55,12 +55,14 @@ describe('attendance.service', () => {
     mockQuery.then.mockImplementation((resolve: any) => {
       queryCallCount++;
       if (queryCallCount === 1) {
-        return resolve({ data: [], error: null }); // duplicate check
+        return resolve({ data: [{ id: 's1' }], error: null }); // enrollment validation
       } else if (queryCallCount === 2) {
-        return resolve({ data: null, error: null }); // insert record
+        return resolve({ data: [], error: null }); // duplicate check
       } else if (queryCallCount === 3) {
-        return resolve({ data: [{ id: 's1', display_name: 'John' }], error: null }); // student names
+        return resolve({ data: null, error: null }); // insert record
       } else if (queryCallCount === 4) {
+        return resolve({ data: [{ id: 's1', display_name: 'John' }], error: null }); // student names
+      } else if (queryCallCount === 5) {
         return resolve({ data: [{ id: 'p1', children_ids: ['s1'], role: 'parent' }], error: null }); // parents
       }
       return resolve({ data: [], error: null });
