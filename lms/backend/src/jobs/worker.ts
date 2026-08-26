@@ -7,6 +7,7 @@ import { matchAndRankResources } from '../services/resource-ranker.service';
 import { env } from '../config/env';
 import { logger } from '../utils/logger';
 import { detectLanguage } from '../services/ocr.service';
+import { extractTextFromScannedPDF } from '../utils/pdf-ocr';
 
 async function addTextbookLog(textbookId: string, message: string) {
   try {
@@ -100,8 +101,22 @@ export async function runUploadPipeline(textbookId: string, storagePath: string)
   }
   const hasAnyText = pageTexts.some(t => t.trim().length > 0);
   if (!hasAnyText) {
-    logger.error('PDF yielded zero readable text across all pages', { textbookId, pageCount: pageTexts.length });
-    throw new Error('PDF yielded no readable text');
+    logger.warn('PDF has no extractable text layer — falling back to OCR', { textbookId, pageCount: pageTexts.length });
+    await addTextbookLog(textbookId, 'PDF has no text layer. Running OCR on scanned pages — this may take a few minutes...');
+    try {
+      const ocrTexts = await extractTextFromScannedPDF(pdfBuffer);
+      const ocrHasText = ocrTexts.some(t => t.trim().length > 0);
+      if (ocrHasText) {
+        pageTexts.length = 0;
+        for (const t of ocrTexts) pageTexts.push(t);
+        await addTextbookLog(textbookId, `OCR complete. Extracted text from ${ocrTexts.filter(t => t.trim()).length} of ${ocrTexts.length} pages.`);
+      } else {
+        throw new Error('OCR also yielded no text — PDF may be blank or corrupt');
+      }
+    } catch (ocrErr) {
+      logger.error('OCR fallback failed', { textbookId, error: (ocrErr as Error).message });
+      throw new Error('PDF yielded no readable text (even after OCR). Ensure the PDF is not blank or corrupt.');
+    }
   }
   const emptyPages = pageTexts.filter(t => !t.trim()).length;
   if (emptyPages > 0) {
