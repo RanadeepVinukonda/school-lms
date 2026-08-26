@@ -109,7 +109,7 @@ Example:
   try {
     const response = await textbookChatCompletion({
       messages: [
-        { role: 'system', content: 'You are an educational assignment generator. Return only valid JSON.' },
+        { role: 'system', content: `You are an educational assignment generator. ${langHint} Respond ONLY in the same language as the source material. NEVER switch languages. Return only valid JSON.` },
         { role: 'user', content: prompt },
       ],
       temperature: 0.7,
@@ -181,7 +181,7 @@ Return a JSON object with a "questions" array. Each question object has:
   try {
     const response = await textbookChatCompletion({
       messages: [
-        { role: 'system', content: 'You are an educational assessment generator. Return only valid JSON.' },
+        { role: 'system', content: `You are an educational assessment generator. ${langHint} Respond ONLY in the same language as the source material. NEVER switch languages. Return only valid JSON.` },
         { role: 'user', content: prompt },
       ],
       temperature: 0.7,

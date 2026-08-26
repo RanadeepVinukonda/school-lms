@@ -132,7 +132,7 @@ Return ONLY valid JSON matching this schema (no markdown, no formatting):
 { "chapters": [{ "title": "Main chapter title (number + name, no unit prefix)", "order": 1, "summary": "Short description", "concepts": ["Sub-topic 1", "Sub-topic 2"] }] }
 Textbook content:\n${tocText}`;
     const rawResponse = await chatCompletion({
-      messages: [{ role: 'system', content: 'You respond in valid JSON only.' }, { role: 'user', content: prompt }],
+      messages: [{ role: 'system', content: `You are a professional syllabus compiler. ${langHintTOC} Respond ONLY in the same language as the textbook. NEVER switch languages. Return only valid JSON.` }, { role: 'user', content: prompt }],
       temperature: 0.3, max_tokens: 8192, jsonMode: true,
     });
     let cleaned = rawResponse.trim();
@@ -186,10 +186,15 @@ async function runConceptPipeline(jobData: { textbookId: string; chapterId: stri
   if (!supabase) throw new Error('Supabase not configured');
   const { data: allPages } = await supabase.from('raw_pages').select('text').eq('textbook_id', textbookId);
   const matchingPages = (allPages || []).filter((p) => p.text?.toLowerCase().includes(conceptTitle.toLowerCase())).slice(0, 8);
-  const contextText = matchingPages.length > 0 ? matchingPages.map((p) => p.text).join('\n') : 'Review curriculum topics.';
+  const contextText = matchingPages.length > 0 ? matchingPages.map((p) => p.text).join('\n') : '';
+
+  // Fallback: if concept matching found nothing, grab first 8 pages as context
+  const finalContext = contextText.trim()
+    ? contextText
+    : (allPages || []).slice(0, 8).map((p) => p.text).filter(Boolean).join('\n');
 
   // Detect source language from textbook pages so AI matches the book's language
-  const detectedLang = detectLanguage(contextText);
+  const detectedLang = detectLanguage(finalContext || contextText);
 
   const { data: tb } = await supabase.from('textbooks').select('subject_id').eq('id', textbookId).single();
   const subjectId = tb?.subject_id || '';
@@ -210,23 +215,21 @@ async function runConceptPipeline(jobData: { textbookId: string; chapterId: stri
     ? 'CRITICAL: The source material is in ENGLISH. Generate ALL output in English.'
     : 'CRITICAL: Match the language of each section in the source material.';
 
+  const systemLang = `You are an educational AI. ${langHint} Respond ONLY in the same language as the source material. NEVER switch languages.`;
+
   const [notesResult, questionsResult, videosResult, resourcesResult, embeddingResult] = await Promise.allSettled([
     (async () => {
-      const prompt = `${langHint}
-
-Read the source text and compile educational notes for the concept: "${conceptTitle}" (under "${chapterTitle}").
+      const prompt = `Read the source text and compile educational notes for the concept: "${conceptTitle}" (under "${chapterTitle}").
 Return ONLY valid JSON: { "summary": "", "notes": "", "keyPoints": "", "formulas": "", "examples": "", "learningObjectives": "" }
-Context Text:\n${contextText.slice(0, 15000)}`;
-      const raw = await chatCompletion({ messages: [{ role: 'system', content: 'You respond in clean JSON only.' }, { role: 'user', content: prompt }], temperature: 0.3, max_tokens: 4096, jsonMode: true });
+Context Text:\n${finalContext.slice(0, 15000)}`;
+      const raw = await chatCompletion({ messages: [{ role: 'system', content: systemLang }, { role: 'user', content: prompt }], temperature: 0.3, max_tokens: 4096, jsonMode: true });
       let cleaned = raw.trim();
       const m = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
       if (m) cleaned = m[1];
       return JSON.parse(cleaned);
     })(),
     (async () => {
-      const prompt = `${langHint}
-
-Generate a comprehensive question bank for the concept "${conceptTitle}" (from chapter "${chapterTitle}").
+      const prompt = `Generate a comprehensive question bank for the concept "${conceptTitle}" (from chapter "${chapterTitle}").
 For EACH type (mcq, true_false, fill_blank, matching, numerical, descriptive, short_answer), generate exactly 4 questions — one Easy, one Medium, one Hard, and one HOTS (Higher Order Thinking Skill).
 This means every type gets the SAME number of questions at each difficulty level.
 Requirements:
@@ -241,8 +244,8 @@ Requirements:
 - Include bloomLevel, hots (true/false), and topic fields for EVERY question.
 Return ONLY valid JSON matching this schema (no markdown, no formatting):
 { "questions": [{ "question": "Full question text", "type": "mcq", "difficulty": "easy", "options": ["A", "B", "C", "D"], "answer": "Correct answer", "explanation": "Brief explanation", "bloomLevel": "Understand", "hots": false, "topic": "sub-topic name", "passageText": null }] }
-Concept context: ${conceptTitle} Chapter: ${chapterTitle} Source: ${contextText.slice(0, 8000)}`;
-      const raw = await chatCompletion({ messages: [{ role: 'system', content: 'You respond in clean JSON only.' }, { role: 'user', content: prompt }], temperature: 0.4, max_tokens: 16384, jsonMode: true });
+Concept context: ${conceptTitle} Chapter: ${chapterTitle} Source: ${finalContext.slice(0, 8000)}`;
+      const raw = await chatCompletion({ messages: [{ role: 'system', content: systemLang }, { role: 'user', content: prompt }], temperature: 0.4, max_tokens: 16384, jsonMode: true });
       let cleaned = raw.trim();
       const m = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
       if (m) cleaned = m[1];
