@@ -1,6 +1,7 @@
 import { logger } from '../utils/logger';
 import { AppError } from '../utils/errors';
 import { textbookChatCompletion } from './ai.service';
+import { detectLanguage, cleanOCRText } from './ocr.service';
 import type { GeneratedQuestion } from './ocr.service';
 import { getSupabaseAdmin } from './supabase';
 
@@ -62,11 +63,25 @@ export async function generateAssignmentFromText(
   conceptName: string,
   count: number = 5,
 ): Promise<GeneratedAssignment> {
+  // Detect and clean language before sending to AI
+  const detectedLang = detectLanguage(extractedText);
+  const cleanText = cleanOCRText(extractedText, detectedLang);
+
+  const langHint = detectedLang === 'hi'
+    ? 'The source material is in HINDI. Generate the entire assignment in Hindi.'
+    : detectedLang === 'te'
+    ? 'The source material is in TELUGU. Generate the entire assignment in Telugu.'
+    : detectedLang === 'en'
+    ? 'The source material is in ENGLISH. Generate the entire assignment in English.'
+    : 'The source material is mixed. Match the language of each section.';
+
   const prompt = `You are an educational assignment generator. Based on the following textbook content, create a comprehensive assignment with ${count} questions.
+
+CRITICAL: ${langHint} Do NOT switch languages.
 
 Textbook content:
 """
-${extractedText.slice(0, 8000)}
+${cleanText.slice(0, 8000)}
 """
 
 Concept: ${conceptName}
@@ -130,13 +145,25 @@ export async function generateQuestionsFromText(
   conceptName: string,
   count: number = 5,
 ): Promise<GeneratedQuestion[]> {
+  // Detect and clean language before sending to AI
+  const detectedLang = detectLanguage(extractedText);
+  const cleanText = cleanOCRText(extractedText, detectedLang);
+
+  const langHint = detectedLang === 'hi'
+    ? 'The source material is in HINDI. Generate ALL questions in Hindi.'
+    : detectedLang === 'te'
+    ? 'The source material is in TELUGU. Generate ALL questions in Telugu.'
+    : detectedLang === 'en'
+    ? 'The source material is in ENGLISH. Generate ALL questions in English.'
+    : 'The source material is mixed. Match the language of each section.';
+
   const prompt = `You are an educational assessment generator. Based on the following textbook content, generate ${count} interactive assessment questions.
 
-CRITICAL: Generate all questions in the SAME LANGUAGE as the textbook content below. If the textbook is in Hindi, write questions in Hindi. If it's in English, write in English. Match the language exactly.
+CRITICAL: ${langHint} Do NOT switch languages.
 
 Textbook content:
 """
-${extractedText.slice(0, 8000)}
+${cleanText.slice(0, 8000)}
 """
 
 Concept: ${conceptName}
@@ -149,9 +176,7 @@ Return a JSON object with a "questions" array. Each question object has:
 - options: array of 4 options (only for mcq)
 - correctAnswer: the correct answer
 - explanation: brief explanation of the answer
-- difficulty: "easy" | "medium" | "hard"
-
-Remember: the questions must be in the SAME language as the textbook content provided above.`;
+- difficulty: "easy" | "medium" | "hard"`;
 
   try {
     const response = await textbookChatCompletion({

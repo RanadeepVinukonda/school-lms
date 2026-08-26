@@ -6,6 +6,7 @@ import { searchAndRankVideos } from '../services/video-ranker.service';
 import { matchAndRankResources } from '../services/resource-ranker.service';
 import { env } from '../config/env';
 import { logger } from '../utils/logger';
+import { detectLanguage } from '../services/ocr.service';
 
 async function addTextbookLog(textbookId: string, message: string) {
   try {
@@ -102,9 +103,23 @@ export async function runUploadPipeline(textbookId: string, storagePath: string)
 
   const title = textbookDoc.title || 'Textbook';
   const tocText = pageTexts.slice(0, 100).join('\n').slice(0, 120000);
+
+  // Detect source language from textbook content early — used by TOC, notes, and questions prompts
+  const allText = pageTexts.join('\n');
+  const detectedLang = detectLanguage(allText);
+
   let structure: { chapters: Array<{ title: string; order: number; summary: string; concepts: string[] }> } | null = null;
   try {
+    const langHintTOC = detectedLang === 'hi'
+      ? 'CRITICAL: The textbook is in HINDI. All chapter titles, summaries, and concepts must be in Hindi.'
+      : detectedLang === 'te'
+      ? 'CRITICAL: The textbook is in TELUGU. All chapter titles, summaries, and concepts must be in Telugu.'
+      : detectedLang === 'en'
+      ? 'CRITICAL: The textbook is in ENGLISH. All chapter titles, summaries, and concepts must be in English.'
+      : 'CRITICAL: Match the language of each chapter to the source material.';
+
     const prompt = `You are a professional syllabus compiler. Read this textbook's opening pages and generate a complete curriculum outline for "${title}".
+${langHintTOC}
 Rules:
 - Identify the actual main chapters/lessons from the table of contents — these are the top-level numbered entries.
 - DO NOT use "Unit X" as a chapter title. "Units" are groupings, not chapters.
@@ -172,6 +187,10 @@ async function runConceptPipeline(jobData: { textbookId: string; chapterId: stri
   const { data: allPages } = await supabase.from('raw_pages').select('text').eq('textbook_id', textbookId);
   const matchingPages = (allPages || []).filter((p) => p.text?.toLowerCase().includes(conceptTitle.toLowerCase())).slice(0, 8);
   const contextText = matchingPages.length > 0 ? matchingPages.map((p) => p.text).join('\n') : 'Review curriculum topics.';
+
+  // Detect source language from textbook pages so AI matches the book's language
+  const detectedLang = detectLanguage(contextText);
+
   const { data: tb } = await supabase.from('textbooks').select('subject_id').eq('id', textbookId).single();
   const subjectId = tb?.subject_id || '';
   let subjectName = 'Education';
@@ -182,9 +201,20 @@ async function runConceptPipeline(jobData: { textbookId: string; chapterId: stri
     } catch { /* fallback to default */ }
   }
 
+  // Build language hint for notes/questions prompts
+  const langHint = detectedLang === 'hi'
+    ? 'CRITICAL: The source material is in HINDI. Generate ALL output in Hindi.'
+    : detectedLang === 'te'
+    ? 'CRITICAL: The source material is in TELUGU. Generate ALL output in Telugu.'
+    : detectedLang === 'en'
+    ? 'CRITICAL: The source material is in ENGLISH. Generate ALL output in English.'
+    : 'CRITICAL: Match the language of each section in the source material.';
+
   const [notesResult, questionsResult, videosResult, resourcesResult, embeddingResult] = await Promise.allSettled([
     (async () => {
-      const prompt = `Read the source text and compile educational notes for the concept: "${conceptTitle}" (under "${chapterTitle}").
+      const prompt = `${langHint}
+
+Read the source text and compile educational notes for the concept: "${conceptTitle}" (under "${chapterTitle}").
 Return ONLY valid JSON: { "summary": "", "notes": "", "keyPoints": "", "formulas": "", "examples": "", "learningObjectives": "" }
 Context Text:\n${contextText.slice(0, 15000)}`;
       const raw = await chatCompletion({ messages: [{ role: 'system', content: 'You respond in clean JSON only.' }, { role: 'user', content: prompt }], temperature: 0.3, max_tokens: 4096, jsonMode: true });
@@ -194,7 +224,9 @@ Context Text:\n${contextText.slice(0, 15000)}`;
       return JSON.parse(cleaned);
     })(),
     (async () => {
-      const prompt = `Generate a comprehensive question bank for the concept "${conceptTitle}" (from chapter "${chapterTitle}").
+      const prompt = `${langHint}
+
+Generate a comprehensive question bank for the concept "${conceptTitle}" (from chapter "${chapterTitle}").
 For EACH type (mcq, true_false, fill_blank, matching, numerical, descriptive, short_answer), generate exactly 4 questions — one Easy, one Medium, one Hard, and one HOTS (Higher Order Thinking Skill).
 This means every type gets the SAME number of questions at each difficulty level.
 Requirements:

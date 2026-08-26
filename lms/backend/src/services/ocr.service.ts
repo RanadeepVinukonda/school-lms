@@ -28,6 +28,46 @@ import { textbookChatCompletion } from './ai.service';
 import fs from 'fs';
 import path from 'path';
 
+/**
+ * Detect the dominant language of OCR text by counting character ranges.
+ * Returns 'en', 'hi', 'te' (Telugu), or 'mixed' when no script dominates (>70% threshold).
+ */
+export function detectLanguage(text: string): 'en' | 'hi' | 'te' | 'mixed' {
+  let devanagari = 0;
+  let telugu = 0;
+  let latin = 0;
+  for (const ch of text) {
+    const code = ch.codePointAt(0)!;
+    if (code >= 0x0900 && code <= 0x097F) devanagari++;
+    else if (code >= 0x0C00 && code <= 0x0C7F) telugu++;
+    else if (code >= 0x0020 && code <= 0x007E) latin++;
+  }
+  const total = devanagari + telugu + latin;
+  if (total === 0) return 'en';
+  if (devanagari / total > 0.7) return 'hi';
+  if (telugu / total > 0.7) return 'te';
+  if (latin / total > 0.7) return 'en';
+  return 'mixed';
+}
+
+/**
+ * Strip characters from the non-dominant script so the AI doesn't get
+ * confused by OCR noise (e.g. Hindi/Telugu glyphs leaking into English math).
+ */
+export function cleanOCRText(text: string, targetLang: 'en' | 'hi' | 'te' | 'mixed'): string {
+  if (targetLang === 'mixed') return text;
+  if (targetLang === 'en') {
+    // Keep latin + common math/punctuation, drop Devanagari and Telugu noise
+    return text.replace(/[\u0900-\u097F\u0C00-\u0C7F]+/g, '').replace(/\n{3,}/g, '\n\n').trim();
+  }
+  if (targetLang === 'hi') {
+    // Keep Devanagari + spaces/newlines/digits, drop stray latin and Telugu
+    return text.replace(/[^\u0900-\u097F\s\d.,;:!?()\-+*/=<>%₹"'']/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+  }
+  // targetLang === 'te' — keep Telugu + spaces/newlines/digits, drop stray latin and Devanagari
+  return text.replace(/[^\u0C00-\u0C7F\s\d.,;:!?()\-+*/=<>%₹"'']/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+}
+
 export interface OCRBlock {
   text: string;
   bbox: { x: number; y: number; width: number; height: number };
@@ -122,7 +162,12 @@ async function getWorker() {
     // Use local .traineddata files when present so OCR works instantly on a
     // cold worker — no slow/fragile CDN download mid-request. Only request a
     // language when its file actually exists locally.
-    const langs = localDir && fs.existsSync(path.join(localDir, 'hin.traineddata')) ? 'eng+hin' : 'eng';
+    const langs = ['eng'];
+    if (localDir) {
+      if (fs.existsSync(path.join(localDir, 'hin.traineddata'))) langs.push('hin');
+      if (fs.existsSync(path.join(localDir, 'tel.traineddata'))) langs.push('tel');
+    }
+    const langStr = langs.join('+');
     const options: Record<string, unknown> = {
       logger: (m: any) => {
         if (m.status === 'loading tesseract core') logger.debug('OCR: loading core');
@@ -135,9 +180,9 @@ async function getWorker() {
       options.langPath = localDir;
       options.gzip = false; // local files are uncompressed
     }
-    worker = await T.createWorker(langs, 3, options);
+    worker = await T.createWorker(langStr, 3, options);
     await worker.setParameters({ tessedit_pageseg_mode: T.PSM.AUTO });
-    logger.info('OCR worker created (LSTM+Legacy, PSM AUTO)', { langs, langPath: localDir || 'cdn' });
+    logger.info('OCR worker created (LSTM+Legacy, PSM AUTO)', { langs: langStr, langPath: localDir || 'cdn' });
   }
   return worker;
 }
@@ -152,11 +197,25 @@ export async function processChatMessage(
     extractedText = results.map((r) => r.text).filter(Boolean).join('\n\n---\n\n');
   }
 
+  // Detect dominant language and strip OCR noise from the other script
+  const detectedLang = detectLanguage(extractedText);
+  if (extractedText) {
+    extractedText = cleanOCRText(extractedText, detectedLang);
+  }
+
+  const langHint = detectedLang === 'hi'
+    ? 'The source material is in HINDI. Generate ALL questions and responses in Hindi.'
+    : detectedLang === 'te'
+    ? 'The source material is in TELUGU. Generate ALL questions and responses in Telugu.'
+    : detectedLang === 'en'
+    ? 'The source material is in ENGLISH. Generate ALL questions and responses in English.'
+    : 'The source material is mixed language. Match the language of each section.';
+
   const systemPrompt = `You are a friendly AI teaching assistant for a school on Genesis. Respond conversationally and naturally — like a real tutor.
 
 For general questions and chat, just give a helpful answer in plain text.
 
-CRITICAL LANGUAGE RULE: If extracted textbook text is provided, ALWAYS generate questions and responses in the SAME LANGUAGE as that text. Detect the language from the extracted content and use it consistently.
+CRITICAL LANGUAGE RULE: ${langHint} Do NOT switch to a different language under any circumstance.
 
 Only use structured JSON when the user explicitly asks for:
 - "quiz" → {"action":"quiz","data":{"questions":[{"id":"q1","type":"mcq","question":"Full question text here","options":["A","B","C","D"],"correctAnswer":"A","explanation":"...","difficulty":"easy","points":1}]}}
@@ -167,7 +226,7 @@ RULE FOR EVERY QUESTION: The "question" field MUST contain the complete, real qu
 
 Support all question types: mcq, true_false, short_answer, and matching. When the user asks for matching questions, generate them with options in "Left - Right" format.
 
-Extracted text from images (if any) is below. Use it as context. Remember: write questions in the same language as the extracted text.`;
+Extracted text from images (if any) is below. Use it as context.`;
 
   const userContent = imageBuffers.length > 0
     ? `Extracted text from uploaded images:\n"""\n${extractedText.slice(0, 8000)}\n"""\n\nTeacher's message: ${messages[messages.length - 1]?.content || ''}`
