@@ -40,7 +40,7 @@ export interface IGradeService {
 export interface IAttendanceService {
   markAttendance(data: Record<string, unknown>): Promise<AttendanceDTO>;
   getClassAttendance(classId: string, date: string, schoolId?: string): Promise<AttendanceDTO[]>;
-  getStudentAttendance(studentId: string, schoolId?: string): Promise<AttendanceDTO[]>;
+  getStudentAttendance(studentId: string, limit?: number, offset?: number): Promise<AttendanceDTO[]>;
   getAttendanceReport(classId: string, startDate: string, endDate: string, schoolId?: string): Promise<AttendanceReportDTO>;
   exportAttendanceCSV(classId: string, startDate: string, endDate: string, schoolId?: string): Promise<string>;
 }
@@ -48,7 +48,7 @@ export interface IAttendanceService {
 export interface IFeeService {
   createFeeSchedule(data: Record<string, unknown>): Promise<FeeStructureDTO>;
   listFeeSchedules(schoolId?: string, academicYear?: string, classId?: string): Promise<FeeStructureDTO[]>;
-  getFeeSchedule(id: string): Promise<FeeStructureDTO | null>;
+  getFeeSchedule(id: string, schoolId?: string): Promise<FeeStructureDTO | null>;
   recordPayment(data: Record<string, unknown>): Promise<FeePaymentDTO>;
   getStudentPayments(studentId: string, schoolId?: string): Promise<FeePaymentDTO[]>;
   getOutstandingReport(schoolId?: string): Promise<OutstandingFeeReportDTO[]>;

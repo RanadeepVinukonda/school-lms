@@ -40,6 +40,19 @@ app.use(nonce);
 app.use(securityHeaders);
 app.use(cors(corsOptions));
 
+// Strip prototype-pollution keys from request body before JSON parsing
+app.use((req, _res, next) => {
+  if (req.body && typeof req.body === 'object') {
+    const dangerousKeys = ['__proto__', 'constructor', 'prototype'];
+    for (const key of dangerousKeys) {
+      if (key in req.body) {
+        delete (req.body as Record<string, unknown>)[key];
+      }
+    }
+  }
+  next();
+});
+
 app.use('/api/inngest', serve({ client: inngest, functions: [textbookPipeline] }));
 
 app.use(express.json({ limit: '1mb' }));

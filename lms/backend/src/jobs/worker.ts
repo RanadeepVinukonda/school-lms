@@ -55,6 +55,14 @@ export async function runUploadPipeline(textbookId: string, storagePath: string)
   logger.info('runUploadPipeline: Starting PDF extraction and TOC planning', { textbookId });
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error('Supabase not configured');
+
+  // Concurrency guard: bail if already processing
+  const { data: statusCheck } = await supabase.from('textbooks').select('status').eq('id', textbookId).single();
+  if (statusCheck?.status === 'processing') {
+    logger.warn('Pipeline already running for textbook, skipping', { textbookId });
+    return;
+  }
+
   const { data: textbookDoc } = await supabase.from('textbooks').select('*').eq('id', textbookId).single();
   if (!textbookDoc) {
     logger.warn('Textbook not found in DB, aborting pipeline without retry', { textbookId });
@@ -90,7 +98,16 @@ export async function runUploadPipeline(textbookId: string, storagePath: string)
   } finally {
     await parser.destroy();
   }
-  if (pageTexts.length === 0 || pageTexts.every(t => !t.trim())) throw new Error('PDF yielded no readable text');
+  const hasAnyText = pageTexts.some(t => t.trim().length > 0);
+  if (!hasAnyText) {
+    logger.error('PDF yielded zero readable text across all pages', { textbookId, pageCount: pageTexts.length });
+    throw new Error('PDF yielded no readable text');
+  }
+  const emptyPages = pageTexts.filter(t => !t.trim()).length;
+  if (emptyPages > 0) {
+    logger.warn('Some PDF pages had no text', { textbookId, emptyPages, totalPages: pageTexts.length });
+    await addTextbookLog(textbookId, `[Warning] ${emptyPages} of ${pageTexts.length} pages had no extractable text.`);
+  }
   await addTextbookLog(textbookId, `PDF parsed successfully. Total pages: ${pageTexts.length}.`);
   await updateJobProgress(textbookId, 10, 'extract_text');
   await supabase.from('raw_pages').delete().eq('textbook_id', textbookId);
@@ -171,7 +188,12 @@ Textbook content:\n${tocText}`;
       const { data: concepts } = await supabase.from('concepts').select('id, title').eq('chapter_id', chap.id);
       if (concepts) {
         for (const conc of concepts) {
-          await runConceptPipeline({ textbookId, chapterId: chap.id, conceptId: conc.id, conceptTitle: conc.title, chapterTitle: chap.title });
+          try {
+            await runConceptPipeline({ textbookId, chapterId: chap.id, conceptId: conc.id, conceptTitle: conc.title, chapterTitle: chap.title });
+          } catch (err) {
+            logger.error('Concept pipeline failed', { textbookId, conceptId: conc.id, error: err instanceof Error ? err.message : String(err) });
+            await addTextbookLog(textbookId, `[Error] Concept "${conc.title}" failed: ${err instanceof Error ? err.message : String(err)}`);
+          }
         }
       }
     }

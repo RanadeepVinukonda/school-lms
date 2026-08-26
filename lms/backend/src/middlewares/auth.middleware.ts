@@ -55,21 +55,32 @@ async function _authenticate(req: Request, _res: Response, next: NextFunction): 
 
     const { data: profile } = await supabase
       .from('users')
-      .select('role, display_name, class_ids, class_id, children_ids, school_id')
+      .select('role, display_name, class_ids, class_id, children_ids, school_id, deleted_at, is_active')
       .eq('id', user.id)
       .single();
 
-    const role = (profile?.role as string) || 'student';
+    if (!profile) {
+      throw new UnauthorizedError('User profile not found');
+    }
+
+    if (profile.deleted_at) {
+      throw new UnauthorizedError('Account has been deleted');
+    }
+    if (profile.is_active === false) {
+      throw new UnauthorizedError('Account is deactivated');
+    }
+
+    const role = (profile.role as string) || 'student';
 
     req.user = {
       uid: user.id,
       email: user.email || '',
       role,
-      name: profile?.display_name as string || user.email?.split('@')[0] || 'User',
-      classIds: profile?.class_ids || [],
-      class_id: profile?.class_id as string || '',
-      children_ids: profile?.children_ids as string[] || [],
-      school_id: profile?.school_id as string || (user.app_metadata?.school_id as string) || '',
+      name: profile.display_name as string || user.email?.split('@')[0] || 'User',
+      classIds: profile.class_ids || [],
+      class_id: profile.class_id as string || '',
+      children_ids: profile.children_ids as string[] || [],
+      school_id: profile.school_id as string || (user.app_metadata?.school_id as string) || '',
     };
 
     next();

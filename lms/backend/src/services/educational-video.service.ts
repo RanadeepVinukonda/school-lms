@@ -5,6 +5,49 @@ import { tokenize, countKeywordHits } from '../utils/relevance';
 const KA_GRAPHQL = 'https://www.khanacademy.org/api/internal/graphql';
 const WM_API = 'https://commons.wikimedia.org/w/api.php';
 
+// Non-educational content blacklists — channels and title patterns that are
+// entertainment, music, gaming, news, or otherwise not classroom-appropriate.
+const NON_EDUCATIONAL_CHANNELS = new Set([
+  'mrbeast', 'pewdiepie', 'markiplier', 'jacksepticeye', 'dantdm',
+  'logan paul', 'jake paul', 'kylie jenner', 'kim kardashian',
+  'eminem', 'drake', 'ariana grande', 'justin bieber', 'taylor swift',
+  'bts', 'blackpink', 'bad bunny', 'shakira', 'rihanna',
+]);
+
+const NON_EDUCATIONAL_TITLE_PATTERNS = [
+  /\b(song|music video|lyrics?|official video|remix|mv|album)\b/i,
+  /\b(vlog|prank|challenge|reaction|unboxing|mukbang|asmr)\b/i,
+  /\b(gaming|gameplay|let's play|fortnite|minecraft|gta)\b/i,
+  /\b(news|breaking|trump|biden|election|celebrity|gossip)\b/i,
+  /\b(funny|comedy|stand[- ]?up|roast|diss track)\b/i,
+  /\b(motivational|inspirational|self[- ]?help|hustle)\b/i,
+  /\b(beat|instrumental|acoustic|live performance|concert)\b/i,
+];
+
+/** Returns true if the video looks educational and classroom-safe. */
+function isEducationalContent(video: { title: string; channelName?: string; description?: string }): boolean {
+  const channel = (video.channelName || '').toLowerCase();
+
+  // Block known non-educational channels
+  if (NON_EDUCATIONAL_CHANNELS.has(channel)) return false;
+
+  // Block videos matching non-educational title patterns
+  for (const pattern of NON_EDUCATIONAL_TITLE_PATTERNS) {
+    if (pattern.test(video.title)) return false;
+  }
+
+  return true;
+}
+
+/** Ensure search queries always bias toward educational content. */
+function ensureEducationalQuery(query: string): string {
+  const lower = query.toLowerCase();
+  const educationalTerms = ['tutorial', 'explained', 'lesson', 'lecture', 'educational', 'learn', 'class', 'study', 'concept', 'definition', 'examples'];
+  const hasEduTerm = educationalTerms.some((t) => lower.includes(t));
+  if (hasEduTerm) return query;
+  return `${query} educational tutorial`;
+}
+
 interface VideoResult {
   id: string;
   source: 'khan_academy' | 'wikimedia' | 'youtube';
@@ -161,12 +204,18 @@ async function searchWikimedia(query: string, maxResults: number): Promise<Video
 }
 
 async function searchYouTube(query: string, maxResults: number): Promise<VideoResult[]> {
+  const eduQuery = ensureEducationalQuery(query);
+  // Fetch extra to compensate for educational filter removing non-relevant results
+  const fetchCount = maxResults * 3;
+
   // yt-search first (free); the official YouTube Data API is the rescue path
   // when scraping is blocked, so we do not spend daily API quota unnecessarily.
   const ytSearch = require('yt-search');
   try {
-    const r = await ytSearch(query);
-    const videos = (r.videos || []).slice(0, maxResults);
+    const r = await ytSearch(eduQuery);
+    const videos = (r.videos || [])
+      .filter((v: any) => isEducationalContent({ title: v.title, channelName: v.author?.name }))
+      .slice(0, maxResults);
 
     if (videos.length > 0) {
       return videos.map((v: any, i: number) => ({
@@ -184,16 +233,19 @@ async function searchYouTube(query: string, maxResults: number): Promise<VideoRe
         relevance: 1.0 - i * 0.15,
       }));
     }
-    logger.warn('yt-search returned no results; falling back to YouTube Data API', { query });
+    logger.warn('yt-search returned no educational results; falling back to YouTube Data API', { query: eduQuery });
   } catch (err) {
-    logger.warn('YouTube search failed; falling back to YouTube Data API', { query, error: (err as Error).message });
+    logger.warn('YouTube search failed; falling back to YouTube Data API', { query: eduQuery, error: (err as Error).message });
   }
 
   try {
-    const apiResults = await youtubeApiSearch({ query, maxResults });
-    return apiResults.map((v) => fromApiVideo(v, 'youtube', 'YouTube'));
+    const apiResults = await youtubeApiSearch({ query: eduQuery, maxResults: fetchCount });
+    return apiResults
+      .filter((v) => isEducationalContent({ title: v.title, channelName: v.channelTitle }))
+      .slice(0, maxResults)
+      .map((v) => fromApiVideo(v, 'youtube', 'YouTube'));
   } catch (err) {
-    logger.warn('YouTube Data API search failed', { query, error: (err as Error).message });
+    logger.warn('YouTube Data API search failed', { query: eduQuery, error: (err as Error).message });
     return [];
   }
 }
@@ -245,6 +297,10 @@ export async function searchEducationalVideos(
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
+  }).filter((v) => {
+    // Final safety net: only keep educational content across all sources
+    if (v.source === 'khan_academy' || v.source === 'wikimedia') return true;
+    return isEducationalContent({ title: v.title, channelName: v.channelName });
   });
 
   const ranked = unique.slice(0, maxResults).map((v, i) => ({

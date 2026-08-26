@@ -57,7 +57,7 @@ router.post('/', authenticate, requireRole('teacher', 'admin'), (req, _res, next
 }, asyncHandler(examV2Controller.createExam));
 router.post('/:examId/release', authenticate, requireRole('teacher', 'admin'), validate(releaseExamSchema), asyncHandler(examV2Controller.releaseExam));
 router.post('/:examId/start', authenticate, requireRole('student'), validate(startAttemptSchema), asyncHandler(examV2Controller.startAttempt));
-router.post('/attempts/:attemptId/submit', authenticate, validate(submitAttemptSchema), asyncHandler(examV2Controller.submitAttempt));
+router.post('/attempts/:attemptId/submit', authenticate, requireRole('student'), validate(submitAttemptSchema), asyncHandler(examV2Controller.submitAttempt));
 router.post('/attempts/:attemptId/logs', authenticate, validate(logProctoringSchema), asyncHandler(examV2Controller.logProctoringEvent));
 router.get('/exams/:examId/students/:studentId/attempt', authenticate, asyncHandler(examV2Controller.getStudentAttempt));
 router.get('/attempts/:attemptId/logs', authenticate, asyncHandler(examV2Controller.getProctoringLogs));

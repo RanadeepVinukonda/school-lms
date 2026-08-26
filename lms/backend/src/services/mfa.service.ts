@@ -1,5 +1,34 @@
 import speakeasy from 'speakeasy';
+import crypto from 'crypto';
 import { getSupabaseAdmin } from './supabase';
+
+const ALGORITHM = 'aes-256-gcm';
+
+function getKey(): Buffer {
+  const raw = process.env.MFA_ENCRYPTION_KEY;
+  if (!raw) throw new Error('MFA_ENCRYPTION_KEY not set');
+  return Buffer.from(raw, 'hex');
+}
+
+function encryptSecret(plaintext: string): string {
+  const key = getKey();
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+  const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return `${iv.toString('hex')}:${encrypted.toString('hex')}:${tag.toString('hex')}`;
+}
+
+function decryptSecret(ciphertext: string): string {
+  const key = getKey();
+  const [ivHex, encHex, tagHex] = ciphertext.split(':');
+  const iv = Buffer.from(ivHex, 'hex');
+  const encrypted = Buffer.from(encHex, 'hex');
+  const tag = Buffer.from(tagHex, 'hex');
+  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+  decipher.setAuthTag(tag);
+  return decipher.update(encrypted, undefined, 'utf8') + decipher.final('utf8');
+}
 
 export interface MfaSetup {
   secret: string;
@@ -11,9 +40,10 @@ export async function setupMfa(userId: string): Promise<MfaSetup> {
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error('Supabase not configured');
 
+  const encryptedSecret = encryptSecret(secret.base32!);
   const { error } = await supabase.from('user_mfa').upsert({
     user_id: userId,
-    secret: secret.base32!,
+    secret: encryptedSecret,
     verified: false,
     created_at: new Date().toISOString(),
   }, { onConflict: 'user_id' });
@@ -38,8 +68,9 @@ export async function verifyMfa(userId: string, token: string): Promise<boolean>
 
   if (!mfa) return false;
 
+  const decrypted = mfa.secret.includes(':') ? decryptSecret(mfa.secret) : mfa.secret;
   const verified = speakeasy.totp.verify({
-    secret: mfa.secret,
+    secret: decrypted,
     encoding: 'base32',
     token,
     window: 1,

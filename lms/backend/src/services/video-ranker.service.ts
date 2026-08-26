@@ -29,7 +29,7 @@ async function generateSearchQueries(conceptTitle: string, subjectName: string, 
       messages: [
         {
           role: 'system',
-          content: 'You are an educational assistant. Output 4 distinct, highly relevant educational video search queries for a student trying to learn the concept. Queries MUST be about the specific concept topic, not the chapter or subject in general. Output ONLY as a raw JSON string array, like: ["query 1", "query 2"]',
+          content: 'You are an educational assistant. Output 4 distinct, highly relevant educational video search queries for a student trying to learn the concept. Every query MUST end with "educational tutorial" or include words like "lesson", "explained", "lecture", "class". NEVER output music, entertainment, news, or vlog queries. Queries MUST be about the specific concept topic, not the chapter or subject in general. Output ONLY as a raw JSON string array, like: ["query 1", "query 2"]',
         },
         {
           role: 'user',

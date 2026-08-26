@@ -97,7 +97,7 @@ export async function geminiChatCompletion(
           signal: controller.signal,
         }),
         'Gemini',
-        MAX_RETRIES + 1,
+        1,
       ) as {
         candidates?: Array<{
           content?: { parts?: Array<{ text?: string }> };

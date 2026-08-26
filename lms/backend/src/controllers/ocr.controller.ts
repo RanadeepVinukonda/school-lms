@@ -31,6 +31,9 @@ export async function scanMultipleImages(req: Request, res: Response) {
   if (!files || files.length === 0) {
     throw new ValidationError('No images provided. Upload at least one image.');
   }
+  if (files.length > 10) {
+    throw new ValidationError('Too many images. Maximum is 10 per batch.');
+  }
   for (const f of files) {
     if (f.buffer.length > 10 * 1024 * 1024) {
       throw new AppError(400, `Image ${f.originalname} is too large. Maximum size is 10MB.`);

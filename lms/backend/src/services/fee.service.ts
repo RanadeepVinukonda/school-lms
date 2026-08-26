@@ -100,10 +100,15 @@ export async function listFeeSchedules(
 }
 
 /**
- * Get a single fee schedule by id.
+ * Get a single fee schedule by id, scoped to a school.
  */
-export async function getFeeSchedule(id: string): Promise<FeeStructureRecord | null> {
-  return feeBase.findById(id);
+export async function getFeeSchedule(id: string, schoolId?: string): Promise<FeeStructureRecord | null> {
+  const record = await feeBase.findById(id);
+  if (!record) return null;
+  if (schoolId && record.school_id && record.school_id !== schoolId) {
+    throw new ValidationError('Fee schedule not found in this school');
+  }
+  return record;
 }
 
 /**
@@ -118,8 +123,16 @@ export async function updateFeeSchedule(
     classId?: string;
     academicYear?: string;
     description?: string;
-  }
+  },
+  schoolId?: string,
 ): Promise<FeeStructureRecord> {
+  if (schoolId) {
+    const existing = await feeBase.findById(id);
+    if (!existing) throw new ValidationError('Fee schedule not found');
+    if (existing.school_id && existing.school_id !== schoolId) {
+      throw new ValidationError('Fee schedule not found in this school');
+    }
+  }
   const result = await feeBase.update(id, {
     ...(data.name !== undefined ? { name: data.name } : {}),
     ...(data.amount !== undefined ? { amount: data.amount } : {}),
@@ -136,7 +149,14 @@ export async function updateFeeSchedule(
  * Delete a fee schedule.
  * Refuses to delete schedules that already have payments recorded against them.
  */
-export async function deleteFeeSchedule(id: string): Promise<void> {
+export async function deleteFeeSchedule(id: string, schoolId?: string): Promise<void> {
+  if (schoolId) {
+    const existing = await feeBase.findById(id);
+    if (!existing) throw new ValidationError('Fee schedule not found');
+    if (existing.school_id && existing.school_id !== schoolId) {
+      throw new ValidationError('Fee schedule not found in this school');
+    }
+  }
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error('Supabase admin client unavailable');
   const { count, error } = await supabase

@@ -11,10 +11,15 @@ export async function createConversation(data: {
   title?: string;
   type: string;
   metadata?: { classId?: string; courseId?: string };
+  callerUid?: string;
 }) {
   const supabase = getSupabaseClient()!;
   const conversationId = uuidv4();
   const now = new Date().toISOString();
+
+  if (data.callerUid && !data.participants.includes(data.callerUid)) {
+    data.participants.push(data.callerUid);
+  }
 
   const conversation = {
     id: conversationId,

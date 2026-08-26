@@ -32,17 +32,20 @@ export async function listFeeSchedules(req: Request, res: Response) {
 }
 
 export async function getFeeSchedule(req: Request, res: Response) {
-  const result = await feeService.getFeeSchedule(req.params.id);
+  const user = requireUser(req);
+  const result = await feeService.getFeeSchedule(req.params.id, user.school_id);
   sendSuccess(res, result);
 }
 
 export async function updateFeeSchedule(req: Request, res: Response) {
-  const result = await feeService.updateFeeSchedule(req.params.id, req.body);
+  const user = requireUser(req);
+  const result = await feeService.updateFeeSchedule(req.params.id, req.body, user.school_id);
   sendSuccess(res, result, 'Fee schedule updated');
 }
 
 export async function deleteFeeSchedule(req: Request, res: Response) {
-  await feeService.deleteFeeSchedule(req.params.id);
+  const user = requireUser(req);
+  await feeService.deleteFeeSchedule(req.params.id, user.school_id);
   sendSuccess(res, null, 'Fee schedule deleted');
 }
 

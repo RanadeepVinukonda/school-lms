@@ -18,7 +18,9 @@ export async function getClassAttendance(req: Request, res: Response) {
 }
 
 export async function getStudentAttendance(req: Request, res: Response) {
-  const result = await attendanceService.getStudentAttendance(req.params.studentId);
+  const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 365, 1), 1000);
+  const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+  const result = await attendanceService.getStudentAttendance(req.params.studentId, limit, offset);
   sendSuccess(res, result);
 }
 

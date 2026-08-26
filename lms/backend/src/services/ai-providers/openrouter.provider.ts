@@ -63,7 +63,7 @@ export async function openaiChatCompletion(
           signal: controller.signal,
         }),
         'OpenAI',
-        MAX_RETRIES + 1,
+        1,
       ) as ChatResponse;
       clearTimeout(timer);
 
@@ -165,7 +165,7 @@ export async function textbookChatCompletion(params: {
           method: 'POST', headers, body: JSON.stringify(payload), signal: controller.signal,
         }),
         'Textbook AI',
-        MAX_RETRIES + 1,
+        1,
       ) as ChatResponse;
       clearTimeout(timer);
 

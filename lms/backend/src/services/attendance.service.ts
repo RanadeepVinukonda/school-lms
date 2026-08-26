@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from './supabase';
 import { logger } from '../utils/logger';
+import { AppError } from '../utils/errors';
 import { createBulkNotifications } from './notification.service';
 import { getCurrentAcademicYear } from './academic-year.service';
 
@@ -45,6 +46,16 @@ export async function markAttendance(data: {
   const records: AttendanceRecord[] = [];
   const supabase = getSupabaseAdmin();
   const now = new Date().toISOString();
+
+  // Validate all studentIds belong to the specified classId
+  const { data: enrolledStudents, error: enrollErr } = await supabase
+    .from('users').select('id').eq('role', 'student').eq('class_id', data.classId).in('id', data.studentIds);
+  if (enrollErr) throw enrollErr;
+  const enrolledIds = new Set((enrolledStudents || []).map((s: any) => s.id));
+  const invalidIds = data.studentIds.filter((id) => !enrolledIds.has(id));
+  if (invalidIds.length > 0) {
+    throw new AppError(400, `These students are not enrolled in class ${data.classId}: ${invalidIds.join(', ')}`);
+  }
 
   // Duplicate guard — check if any student already has attendance for this date
   const { data: existingRows, error: existingError } = await supabase
@@ -123,13 +134,11 @@ export async function getClassAttendance(classId: string, date?: string): Promis
 }
 
 /** Get attendance records for a student, sorted by date descending. */
-export async function getStudentAttendance(studentId: string): Promise<AttendanceRecord[]> {
+export async function getStudentAttendance(studentId: string, limit = 365, offset = 0): Promise<AttendanceRecord[]> {
   const supabase = getSupabaseAdmin();
-  const { data: rows, error } = await supabase.from('attendance').select('*').eq('student_id', studentId);
+  const { data: rows, error } = await supabase.from('attendance').select('*').eq('student_id', studentId).order('date', { ascending: false }).range(offset, offset + limit - 1);
   if (error) throw error;
-  const records = (rows || []).map(toAttendanceResponse);
-  records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  return records;
+  return (rows || []).map(toAttendanceResponse);
 }
 
 /** Get summary report for a class, using total working days as denominator. */

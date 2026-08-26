@@ -47,7 +47,8 @@ Return a JSON object with the matched concept id and name:
       max_tokens: 256,
     });
 
-    const parsed = JSON.parse(response);
+    let parsed: any;
+    try { parsed = JSON.parse(response); } catch { return null; }
     if (parsed.conceptId && parsed.conceptName) {
       return { conceptId: parsed.conceptId, conceptName: parsed.conceptName };
     }

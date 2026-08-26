@@ -22,7 +22,8 @@ export const STOP_WORDS = new Set([
 export function tokenize(text: string): string[] {
   return text
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
+    // Keep Latin, Devanagari (0900-097F), Telugu (0C00-0C7F), and digits
+    .replace(/[^a-z0-9\u0900-\u097F\u0C00-\u0C7F]+/g, ' ')
     .split(' ')
     .map((w) => w.trim())
     .filter((w) => w.length >= 3 && !STOP_WORDS.has(w));

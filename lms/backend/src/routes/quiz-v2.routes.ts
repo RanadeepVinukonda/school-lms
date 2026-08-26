@@ -28,7 +28,11 @@ const republishQuizSchema = z.object({}).passthrough();
 const startAttemptSchema = z.object({}).passthrough();
 
 const submitAttemptSchema = z.object({
-  answers: z.any(),
+  answers: z.array(z.object({
+    questionId: z.string(),
+    selectedOptionId: z.string().optional(),
+    textAnswer: z.string().optional(),
+  })),
 }).passthrough();
 
 const releaseGradesSchema = z.object({
@@ -42,7 +46,7 @@ router.post('/:quizId/republish', authenticate, requireRole('teacher', 'admin'),
 router.delete('/:quizId', authenticate, requireRole('teacher', 'admin'), asyncHandler(quizV2Controller.deleteQuiz));
 router.post('/:quizId/start', authenticate, requireRole('student'), validate(startAttemptSchema), asyncHandler(quizV2Controller.startAttempt));
 router.get('/attempts/my', authenticate, asyncHandler(quizV2Controller.getMyAttempts));
-router.post('/attempts/:attemptId/submit', authenticate, validate(submitAttemptSchema), asyncHandler(quizV2Controller.submitAttempt));
+router.post('/attempts/:attemptId/submit', authenticate, requireRole('student'), validate(submitAttemptSchema), asyncHandler(quizV2Controller.submitAttempt));
 router.put('/:quizId/grades', authenticate, requireRole('teacher', 'admin'), validate(releaseGradesSchema), asyncHandler(quizV2Controller.releaseGrades));
 router.get('/:quizId/results', authenticate, asyncHandler(quizV2Controller.getResults));
 router.get('/class/:classId', authenticate, asyncHandler(quizV2Controller.listForClass));
