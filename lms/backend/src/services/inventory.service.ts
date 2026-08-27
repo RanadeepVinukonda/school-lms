@@ -86,28 +86,21 @@ export async function getItemById(id: string) {
 
 export async function updateItem(id: string, data: { name?: string; category_id?: string; quantity?: number; unit?: string; reorder_level?: number; supplier_id?: string; version?: number }) {
   const supabase = getSupabaseAdmin(); if (!supabase) return null;
-  const version = data.version;
-  if (version === undefined) throw new Error('Version is required for concurrent updates');
-
-  const { data: current } = await supabase.from('inventory_items').select('version').eq('id', id).maybeSingle();
-  if (!current) throw new Error('Inventory item not found');
-  if (current.version !== version) throw new Error('Concurrent modification detected. Please retry.');
-
+  const { version: _version, ...updates } = data;
   const { data: result, error } = await supabase
     .from('inventory_items')
-    .update({ ...data, version: version + 1 })
+    .update(updates)
     .eq('id', id)
-    .eq('version', version)
     .select()
     .single();
   if (error) throw new Error(`Failed to update item: ${error.message}`);
-  if (!result) throw new Error('Concurrent modification detected. Please retry.');
+  if (!result) throw new Error('Inventory item not found');
   return result;
 }
 
 export async function deleteItem(id: string) {
   const supabase = getSupabaseAdmin(); if (!supabase) return;
-  const { error } = await supabase.from('inventory_items').update({ deleted_at: new Date().toISOString() }).eq('id', id);
+  const { error } = await supabase.from('inventory_items').delete().eq('id', id);
   if (error) throw new Error(`Failed to delete item: ${error.message}`);
 }
 
@@ -121,13 +114,12 @@ export async function logUsage(schoolId: string, actionBy: string, data: { item_
 
       const updateResult = await client.query(
         `WITH current_item AS (
-           SELECT version, quantity FROM inventory_items WHERE id = $1 AND deleted_at IS NULL
+           SELECT quantity FROM inventory_items WHERE id = $1
          )
          UPDATE inventory_items
-         SET quantity = current_item.quantity - $2, version = current_item.version + 1
+         SET quantity = current_item.quantity - $2
          FROM current_item
          WHERE inventory_items.id = $1
-           AND inventory_items.version = current_item.version
            AND current_item.quantity >= $2`,
         [data.item_id, data.quantity_changed]
       );
