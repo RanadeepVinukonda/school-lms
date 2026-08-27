@@ -255,12 +255,7 @@ export async function updateUser(uid: string, data: {
   const { exists, data: existing } = await getUserDoc(uid);
   if (!exists || !existing) throw new NotFoundError('User not found');
 
-  const currentVersion = (existing as Record<string, unknown>).version as number ?? 0;
-  if (data.version !== undefined && data.version !== currentVersion) {
-    throw new Error('Concurrent modification detected. Please retry.');
-  }
-
-  const updateData: Record<string, unknown> = { updated_at: new Date().toISOString(), version: currentVersion + 1 };
+  const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (data.displayName) updateData.display_name = data.displayName;
   if (data.email) updateData.email = data.email;
   if (data.phoneNumber !== undefined) updateData.phone_number = data.phoneNumber;
@@ -309,7 +304,7 @@ export async function updateUser(uid: string, data: {
     });
   }
 
-  const { error: updErr } = await supabase.from('users').update(updateData).eq('id', uid).eq('version', currentVersion);
+  const { error: updErr } = await supabase.from('users').update(updateData).eq('id', uid);
   if (updErr) throw updErr;
 
   const { data: updated } = await supabase.from('users').select('*').eq('id', uid).maybeSingle();
@@ -355,18 +350,13 @@ export async function updateProfile(uid: string, data: {
   const { exists, data: existing } = await getUserDoc(uid);
   if (!exists || !existing) throw new NotFoundError('User not found');
 
-  const currentVersion = (existing as Record<string, unknown>).version as number ?? 0;
-  if (data.version !== undefined && data.version !== currentVersion) {
-    throw new Error('Concurrent modification detected. Please retry.');
-  }
-
-  const updateData: Record<string, unknown> = { updated_at: new Date().toISOString(), version: currentVersion + 1 };
+  const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (data.displayName) updateData.display_name = data.displayName;
   if (data.phoneNumber !== undefined) updateData.phone_number = data.phoneNumber;
   if (data.photoURL !== undefined) updateData.photo_url = data.photoURL;
   if (data.language !== undefined) updateData.language = data.language;
 
-  const { error } = await supabase.from('users').update(updateData).eq('id', uid).eq('version', currentVersion);
+  const { error } = await supabase.from('users').update(updateData).eq('id', uid);
   if (error) throw new Error(`Failed to update user profile: ${error.message}`);
   userCache.invalidate(uid);
   const { data: updated } = await supabase.from('users').select('*').eq('id', uid).maybeSingle();
