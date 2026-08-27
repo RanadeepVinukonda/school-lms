@@ -183,8 +183,8 @@ export async function getCurrentAcademicYear(): Promise<{
 
 /**
  * Promote all students to the next class and graduate the highest class students.
- * - Each student moves from Class N to Class N+1
- * - Students in the highest class are marked as graduated (role → 'alumni')
+ * - Each student moves from Class N to Class N+1 (grade is derived from their class, not a users column)
+ * - Students in the highest class are marked as graduated (is_active → false)
  * - All classes get updated academic_year
  */
 export async function promoteAllStudents(): Promise<{ promoted: number; graduated: number }> {
@@ -211,21 +211,35 @@ export async function promoteAllStudents(): Promise<{ promoted: number; graduate
     gradeToClass[g] = cls.id;
   }
 
-  // 4. For each student, promote or graduate
+  // 4. Map classId → its grade so we can resolve each student's current grade
+  const classToGrade: Record<string, number> = {};
+  for (const cls of classes) {
+    const g = Number(cls.grade) || 0;
+    if (cls.id) classToGrade[cls.id] = g;
+  }
+
+  // 5. For each student, promote or graduate
   const { data: students, error: stuErr } = await supabase
     .from('users')
-    .select('id, class_id, role, grade')
+    .select('id, class_id, role')
     .eq('role', 'student');
   if (stuErr) throw new Error('Failed to fetch students: ' + stuErr.message);
 
   for (const student of students || []) {
-    const currentGrade = Number(student.grade) || 0;
+    // Grade is derived from the student's class (there is no grade column on users)
+    const currentGrade = classToGrade[student.class_id as string] ?? 0;
 
     if (currentGrade >= maxGrade) {
-      // Graduate: mark as alumni
+      // Graduate: deactivate and clear class membership
       const { error } = await supabase
         .from('users')
-        .update({ role: 'alumni', updated_at: new Date().toISOString() })
+        .update({
+          is_active: false,
+          class_id: null,
+          class_ids: [],
+          academic_year: newYear,
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', student.id);
       if (!error) graduated++;
     } else {
@@ -237,7 +251,7 @@ export async function promoteAllStudents(): Promise<{ promoted: number; graduate
           .from('users')
           .update({
             class_id: nextClassId,
-            grade: nextGrade,
+            class_ids: [nextClassId],
             academic_year: newYear,
             updated_at: new Date().toISOString(),
           })
@@ -247,7 +261,7 @@ export async function promoteAllStudents(): Promise<{ promoted: number; graduate
     }
   }
 
-  // 5. Update all classes' academic_year to new year
+  // 6. Update all classes' academic_year to new year
   await supabase
     .from('classes')
     .update({ academic_year: newYear, updated_at: new Date().toISOString() })
