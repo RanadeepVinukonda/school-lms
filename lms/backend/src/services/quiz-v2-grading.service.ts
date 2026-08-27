@@ -22,9 +22,9 @@ export async function getQuizResults(quizId: string, studentId: string) {
     curr.percentage > best.percentage ? curr : best
   );
 
-  const quizQuestionsMap: Record<string, { correctAnswer: string; explanation: string; difficulty: string }> = {};
+  const quizQuestionsMap: Record<string, { correctAnswer: string; explanation: string; difficulty: string; points: number }> = {};
   for (const q of ((quizData.questions as any[]) || [])) {
-    quizQuestionsMap[q.id] = { correctAnswer: q.correctAnswer || '', explanation: q.explanation || '', difficulty: q.difficulty || 'medium' };
+    quizQuestionsMap[q.id] = { correctAnswer: q.correctAnswer || '', explanation: q.explanation || '', difficulty: q.difficulty || 'medium', points: (q.points as number) || 1 };
   }
 
   const results = [best].map((data: any) => {
@@ -45,7 +45,7 @@ export async function getQuizResults(quizId: string, studentId: string) {
     const answers = (data.answers || []).map((a: any) => {
       if (a.skipped) {
         const pointVal = quizQuestionsMap[a.questionId]
-          ? (POINTS_BY_DIFFICULTY[quizQuestionsMap[a.questionId].difficulty] || 1)
+          ? (quizQuestionsMap[a.questionId].points || POINTS_BY_DIFFICULTY[quizQuestionsMap[a.questionId].difficulty] || 1)
           : 1;
         regradedTotal -= pointVal;
         return { ...a, correctAnswer: a.correctAnswer || quizQuestionsMap[a.questionId]?.correctAnswer || '' };
@@ -54,7 +54,7 @@ export async function getQuizResults(quizId: string, studentId: string) {
         const q = quizQuestionsMap[a.questionId];
         const normalize = (v: unknown) => v?.toString().toLowerCase().trim() || '';
         const isCorrect = normalize(a.answer) === normalize(q.correctAnswer);
-        const pointsEarned = isCorrect ? (POINTS_BY_DIFFICULTY[q.difficulty] || 1) : 0;
+        const pointsEarned = isCorrect ? (q.points || POINTS_BY_DIFFICULTY[q.difficulty] || 1) : 0;
         regradedScore += pointsEarned;
         return { ...a, correctAnswer: q.correctAnswer, explanation: a.explanation || q.explanation, isCorrect, pointsEarned };
       }

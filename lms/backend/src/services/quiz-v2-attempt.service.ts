@@ -95,7 +95,7 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
   const attempt: Record<string, unknown> = {
     id: attemptId, quizId, studentId, startedAt: now, submittedAt: null,
     answers: [], score: null,
-    totalPoints: selected.reduce((sum, q) => sum + (POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1), 0),
+    totalPoints: selected.reduce((sum, q) => sum + ((q.points as number) || POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1), 0),
     percentage: null, passed: null, timeSpent: 0,
     status: 'in_progress', selectedModels, level: studentLevel,
   };

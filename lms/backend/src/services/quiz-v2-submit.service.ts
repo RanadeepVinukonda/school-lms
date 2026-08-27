@@ -179,7 +179,7 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
       isCorrect = answer.answer.toString().trim().length > 5;
     }
 
-    const pointsEarned = isCorrect ? (POINTS_BY_DIFFICULTY[question.difficulty || 'medium'] || 1) : 0;
+    const pointsEarned = isCorrect ? ((question.points as number) || POINTS_BY_DIFFICULTY[question.difficulty || 'medium'] || 1) : 0;
     if (isCorrect) score += pointsEarned;
 
     return {
@@ -198,7 +198,7 @@ export async function submitQuizAttempt(attemptId: string, studentId: string, da
     const skippedIds = new Set(gradedAnswers.filter((a) => a.skipped).map((a) => a.questionId));
     const skippedPointValues = questionBank
       .filter((q) => skippedIds.has(q.id))
-      .reduce((sum, q) => sum + (POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1), 0);
+      .reduce((sum, q) => sum + ((q.points as number) || POINTS_BY_DIFFICULTY[q.difficulty || 'medium'] || 1), 0);
     totalPoints = Math.max(totalPoints - skippedPointValues, 0);
   }
 
