@@ -9,7 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { schoolAnalyticsService } from '@/services/schoolAnalyticsService';
 
 function BarChart({ data, labelKey, valueKey, color = 'bg-primary', maxValue }: { data: Record<string, number | string>[]; labelKey: string; valueKey: string; color?: string; maxValue?: number }) {
-  const max = maxValue || Math.max(...data.map((d) => Number(d[valueKey])), 1);
+  const max = maxValue || 100;
   return (
     <div className="space-y-2">
       {data.map((item, i) => (
@@ -17,11 +17,8 @@ function BarChart({ data, labelKey, valueKey, color = 'bg-primary', maxValue }: 
           <span className="text-label-xs sm:text-label-sm font-medium w-20 sm:w-32 truncate shrink-0 text-right">{item[labelKey]}</span>
           <div className="flex-1 h-6 rounded-full bg-muted/40 overflow-hidden">
             <div
-
-
-
               className={`h-full rounded-full ${color} flex items-center justify-end pr-2 text-[10px] text-white font-bold`}
-              style={{ minWidth: Number(item[valueKey]) > 0 ? '2rem' : '0' }}
+              style={{ width: `${Math.min(Math.max(Number(item[valueKey]) / max * 100, Number(item[valueKey]) > 0 ? 6 : 0), 100)}%` }}
             >
               {item[valueKey]}%
             </div>
@@ -287,7 +284,6 @@ export default function AdminSchoolAnalyticsPage() {
                         ) : (
                           <div className="space-y-3">
                             {(() => {
-                              const maxVal = Math.max(...trendData.map((x) => x.averageScore), 1);
                               return trendData.map((t, i) => {
                                 const date = new Date(t.month + '-02T00:00:00');
                                 const label = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -300,11 +296,8 @@ export default function AdminSchoolAnalyticsPage() {
                                     <span className="text-label-sm font-medium w-24 shrink-0 text-right">{label}</span>
                                     <div className="flex-1 h-7 rounded-full bg-muted/40 overflow-hidden">
                                       <div
-
-
-
                                         className="h-full rounded-full bg-primary flex items-center justify-end pr-2 text-[11px] text-white font-bold"
-                                        style={{ minWidth: pct > 0 ? '2.5rem' : '0' }}
+                                        style={{ width: `${Math.min(Math.max(pct, pct > 0 ? 6 : 0), 100)}%` }}
                                       >
                                         {pct}%
                                       </div>
