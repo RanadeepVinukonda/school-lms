@@ -3,6 +3,7 @@ import { NotFoundError, ConflictError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { env } from '../config/env';
 import { addUploadJob } from '../jobs/queue';
+import { markTextbookStage } from './textbook-cleanup.service';
 import crypto from 'crypto';
 
 function generateId(): string {
@@ -157,6 +158,11 @@ export async function createTextbook(data: {
   status = 'processing';
 
   logger.info('Textbook created', { textbookId, title: data.title, status });
+
+  if (storagePath && pdfUrl) {
+    await markTextbookStage(textbookId, 'uploaded');
+  }
+
   return {
     id: textbookId, title: data.title, subjectId: data.subjectId, classId: data.classId,
     teacherId: data.teacherId, description: data.description || '', coverImage: data.coverImage || '',

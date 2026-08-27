@@ -4,6 +4,7 @@ import { checkUpcomingDeadlines } from './sendReminders.job';
 import { cleanupExpiredData, cleanupSoftDeletedRecords } from './cleanupExpired.job';
 import { generateWeeklyReport, generateMonthlyReport } from './generateReports.job';
 import { cleanupIdempotencyKeys } from './cleanup-idempotency.job';
+import { retryPendingPdfCleanups } from '../services/textbook-cleanup.service';
 import { getSupabaseAdmin } from '../services/supabase';
 import { TransactionManager } from '../database/transaction-manager';
 
@@ -140,7 +141,11 @@ export async function startScheduler(): Promise<void> {
     cleanupIdempotencyKeys().catch(err => logger.error('idempotencyCleanup failed', err));
   }, 6 * 60 * 60 * 1000));
 
-  logger.info('Scheduler started with 7 setInterval timers');
+  timers.set('pdfCleanupRetry', setInterval(() => {
+    retryPendingPdfCleanups().catch(err => logger.error('pdfCleanupRetry failed', err));
+  }, 60 * 60 * 1000));
+
+  logger.info('Scheduler started with 8 setInterval timers');
 }
 
 export async function stopScheduler(): Promise<void> {

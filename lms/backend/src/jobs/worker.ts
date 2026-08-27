@@ -8,6 +8,7 @@ import { env } from '../config/env';
 import { logger } from '../utils/logger';
 import { detectLanguage } from '../services/ocr.service';
 import { extractTextFromScannedPDF } from '../utils/pdf-ocr';
+import { markTextbookStage, maybeCleanupPdfAfterPersist } from '../services/textbook-cleanup.service';
 
 type Language = 'en' | 'hi' | 'te';
 
@@ -74,6 +75,13 @@ async function updateJobProgress(
   }, { onConflict: 'id', ignoreDuplicates: false });
   if (status === 'COMPLETED') {
     await supabase.from('textbooks').update({ status: 'ready', updated_at: now, failure_reason: null }).eq('id', textbookId);
+    // All derived content has been persisted — safe to delete the source PDF.
+    try {
+      await markTextbookStage(textbookId, 'persisted');
+      await maybeCleanupPdfAfterPersist(textbookId);
+    } catch (err) {
+      logger.warn('PDF cleanup after persistence failed', { textbookId, err });
+    }
   } else if (status === 'FAILED') {
     await supabase.from('textbooks').update({ status: 'failed', failure_reason: error || 'Unknown pipeline failure', updated_at: now }).eq('id', textbookId);
   } else {
@@ -103,6 +111,8 @@ export async function runUploadPipeline(textbookId: string, storagePath: string)
   }
   const pdfUrl = textbookDoc.pdf_url;
   if (!pdfUrl) throw new Error('PDF URL not found');
+
+  await markTextbookStage(textbookId, 'parsing');
 
   await supabase.from('textbooks').update({ logs: [], completed_concepts: 0, updated_at: new Date().toISOString() }).eq('id', textbookId);
   await addTextbookLog(textbookId, "Downloading textbook PDF from storage...");
@@ -162,6 +172,7 @@ export async function runUploadPipeline(textbookId: string, storagePath: string)
   for (let i = 0; i < pageRows.length; i += 100) {
     await supabase.from('raw_pages').insert(pageRows.slice(i, i + 100));
   }
+  await markTextbookStage(textbookId, 'extraction_complete');
   await updateJobProgress(textbookId, 15, 'chapters');
   await addTextbookLog(textbookId, "Analyzing syllabus layout and extracting Table of Contents (TOC) with Gemini AI...");
 
@@ -252,6 +263,29 @@ Textbook content:\n${tocText}`;
     }
   }
   logger.info('Upload pipeline complete', { textbookId, totalConcepts });
+
+  // Safety net: if the COMPLETED branch never fired (e.g. a textbook with zero
+  // concepts), still mark persisted and clean up the source PDF once all
+  // derived content has actually been stored.
+  if (totalConcepts === 0) {
+    const { data: compRow } = await supabase
+      .from('textbooks')
+      .select('completed_concepts')
+      .eq('id', textbookId)
+      .single();
+    if (!compRow || (compRow.completed_concepts ?? 0) >= totalConcepts) {
+      await supabase
+        .from('textbooks')
+        .update({ status: 'ready', updated_at: new Date().toISOString(), failure_reason: null })
+        .eq('id', textbookId);
+      try {
+        await markTextbookStage(textbookId, 'persisted');
+        await maybeCleanupPdfAfterPersist(textbookId);
+      } catch (err) {
+        logger.warn('PDF cleanup after zero-concept pipeline failed', { textbookId, err });
+      }
+    }
+  }
 }
 
 async function runConceptPipeline(jobData: { textbookId: string; chapterId: string; conceptId: string; conceptTitle: string; chapterTitle: string }) {
