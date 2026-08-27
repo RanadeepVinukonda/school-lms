@@ -1,9 +1,13 @@
-import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from './supabase';
 import { NotFoundError, ConflictError, ForbiddenError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { env } from '../config/env';
 import { addUploadJob } from '../jobs/queue';
+import crypto from 'crypto';
+
+function generateId(): string {
+  return crypto.randomUUID();
+}
 
 export async function createTextbook(data: {
   title: string;
@@ -36,7 +40,7 @@ export async function createTextbook(data: {
     }
   }
 
-  const textbookId = uuidv4();
+  const textbookId = generateId();
   const now = new Date().toISOString();
   let storagePath = '';
   let pdfUrl = '';
@@ -201,8 +205,6 @@ export async function reprocessTextbook(textbookId: string, requestingTeacherId:
       logger.error('Failed to load pipeline.service for reprocess', { textbookId, error: loadErr });
     }
     return { textbookId, status: 'processing' };
-  }
-    return { textbookId, status: 'queued' };
   }
 }
 

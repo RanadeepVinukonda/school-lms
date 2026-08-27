@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 import { getSupabaseAdmin } from '../services/supabase';
 import { chatCompletion } from '../services/ai.service';
 import { getEmbedding } from '../services/transformers.service';
@@ -185,11 +185,11 @@ Textbook content:\n${tocText}`;
   let totalConcepts = 0;
   for (let chIdx = 0; chIdx < structure.chapters.length; chIdx++) {
     const chap = structure.chapters[chIdx];
-    const chapterId = uuidv4();
+    const chapterId = crypto.randomUUID();
     chapterRows.push({ id: chapterId, textbook_id: textbookId, title: chap.title, order: chIdx + 1, summary: chap.summary || '' });
     for (let cIdx = 0; cIdx < chap.concepts.length; cIdx++) {
       totalConcepts++;
-      conceptRows.push({ id: uuidv4(), chapter_id: chapterId, textbook_id: textbookId, title: chap.concepts[cIdx], order: cIdx + 1 });
+      conceptRows.push({ id: crypto.randomUUID(), chapter_id: chapterId, textbook_id: textbookId, title: chap.concepts[cIdx], order: cIdx + 1 });
     }
   }
   if (chapterRows.length > 0) await supabase.from('chapters').insert(chapterRows);
@@ -309,7 +309,7 @@ Concept context: ${conceptTitle} Chapter: ${chapterTitle} Source: ${finalContext
 
   if (questionsResult.status === 'fulfilled' && questionsResult.value?.questions) {
     const questionRows = questionsResult.value.questions.map((q: any) => ({
-      id: uuidv4(), concept_id: conceptId, textbook_id: textbookId, chapter_id: chapterId,
+      id: crypto.randomUUID(), concept_id: conceptId, textbook_id: textbookId, chapter_id: chapterId,
       question: q.question, type: q.type || 'mcq', difficulty: q.difficulty || 'medium',
       options: Array.isArray(q.options) ? q.options : null, answer: q.answer || '',
       explanation: q.explanation || '', passage_text: q.passageText || null,
@@ -323,7 +323,7 @@ Concept context: ${conceptTitle} Chapter: ${chapterTitle} Source: ${finalContext
   if (videosResult.status === 'fulfilled' && Array.isArray(videosResult.value)) {
     const topVideos = videosResult.value;
     const videoRows = topVideos.map((video: any) => ({
-      id: uuidv4(), concept_id: conceptId, textbook_id: textbookId, chapter_id: chapterId,
+      id: crypto.randomUUID(), concept_id: conceptId, textbook_id: textbookId, chapter_id: chapterId,
       video_id: video.videoId || video.youtubeId || video.video_id || video.id,
       title: video.title, description: video.description,
       channel: video.channelName, thumbnail: video.thumbnail, duration: video.duration,
@@ -344,7 +344,7 @@ Concept context: ${conceptTitle} Chapter: ${chapterTitle} Source: ${finalContext
 
   if (resourcesResult.status === 'fulfilled' && Array.isArray(resourcesResult.value)) {
     const resourceRows = resourcesResult.value.map((r: any) => ({
-      id: uuidv4(), concept_id: conceptId, textbook_id: textbookId, chapter_id: chapterId,
+      id: crypto.randomUUID(), concept_id: conceptId, textbook_id: textbookId, chapter_id: chapterId,
       title: r.title, url: r.url, source: r.source, description: r.description,
       score: r.score || 1.0, embedding: r.embedding || null, created_at: new Date().toISOString(),
     }));

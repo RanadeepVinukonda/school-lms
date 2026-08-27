@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 import { getSupabaseAdmin } from '../services/supabase';
 import { logger } from '../utils/logger';
 
@@ -12,7 +12,7 @@ export async function generateWeeklyReport() {
 
   const reportData = await gatherReportData(startDate, endDate);
   const report = {
-    id: uuidv4(),
+    id: crypto.randomUUID(),
     type: 'weekly' as ReportType,
     periodStart: startDate,
     periodEnd: endDate,
@@ -40,7 +40,7 @@ export async function generateMonthlyReport() {
 
   const reportData = await gatherReportData(startDate, endDate);
   const report = {
-    id: uuidv4(),
+    id: crypto.randomUUID(),
     type: 'monthly' as ReportType,
     periodStart: startDate,
     periodEnd: endDate,
