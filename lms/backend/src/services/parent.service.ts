@@ -386,11 +386,47 @@ export async function getYearlyReport(studentId: string, academicYear: string): 
   const attendancePercentage = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0;
 
   const { data: conceptMastery } = await supabase.from('concept_mastery')
-    .select('concept_id, concept_title, mastery_score')
+    .select('concept_id, mastery_score')
     .eq('student_id', studentId)
     .lt('mastery_score', 0.7)
     .order('mastery_score')
     .limit(5);
+
+  const weakConceptRows = conceptMastery || [];
+  let metaByConcept: Record<string, { title: string; subjectName: string }> = {};
+  if (weakConceptRows.length > 0) {
+    const conceptIds = weakConceptRows.map((c: any) => c.concept_id);
+    const { data: conceptRows } = await supabase
+      .from('concepts')
+      .select('id, title, textbook_id')
+      .in('id', conceptIds);
+    const textbookIds = Array.from(new Set((conceptRows || []).map((r: any) => r.textbook_id)));
+    let textbookSubject: Record<string, string> = {};
+    if (textbookIds.length > 0) {
+      const { data: textbookRows } = await supabase
+        .from('textbooks')
+        .select('id, subject_id')
+        .in('id', textbookIds);
+      const subjectIds = Array.from(new Set((textbookRows || []).map((r: any) => r.subject_id)));
+      let subjectNameById: Record<string, string> = {};
+      if (subjectIds.length > 0) {
+        const { data: subjectRows } = await supabase
+          .from('subjects')
+          .select('id, name')
+          .in('id', subjectIds);
+        subjectNameById = Object.fromEntries(
+          (subjectRows || []).map((r: any) => [r.id, r.name]),
+        );
+      }
+      textbookSubject = Object.fromEntries(
+        (textbookRows || []).map((r: any) => [r.id, subjectNameById[r.subject_id] || '']),
+      );
+    }
+    metaByConcept = Object.fromEntries(
+      (conceptRows || []).map((r: any) => [r.id,
+        { title: r.title || 'Unknown', subjectName: textbookSubject[r.textbook_id] || '' }]),
+    );
+  }
 
   const { data: gamification } = await supabase.from('firestore_docs')
     .select('data')
@@ -410,9 +446,10 @@ export async function getYearlyReport(studentId: string, academicYear: string): 
     letterGrade: getLetterGrade(overallPercentage),
     subjects,
     attendance: { totalDays, presentDays, percentage: attendancePercentage },
-    weakConcepts: (conceptMastery || []).map(c => ({
+    weakConcepts: weakConceptRows.map(c => ({
       conceptId: c.concept_id,
-      name: c.concept_title || 'Unknown',
+      name: metaByConcept[c.concept_id]?.title || 'Unknown',
+      subjectName: metaByConcept[c.concept_id]?.subjectName || '',
       masteryScore: Math.round(c.mastery_score * 100),
     })),
     gamification: {

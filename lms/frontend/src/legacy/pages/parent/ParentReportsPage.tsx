@@ -124,7 +124,7 @@ export default function ParentReportsPage() {
                                   {r.globalRank != null ? `#${r.globalRank}` : '-'}
                                   <span className="text-label-xs text-muted-foreground font-normal"> / {r.totalStudents || '—'}</span>
                                 </p>
-                                <p className="text-label-xs text-muted-foreground mt-0.5">Global Rank</p>
+                                <p className="text-label-xs text-muted-foreground mt-0.5">School Rank</p>
                               </div>
                             </div>
                             <div className="mt-3 flex items-center justify-center gap-4 text-sm text-muted-foreground">
@@ -182,7 +182,10 @@ export default function ParentReportsPage() {
                                 {r.weakConcepts.map((c: any, i: number) => (
                                   <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-error-container/10 border border-error-container/30">
                                     <Icon name="warning" size={16} className="text-error shrink-0" />
-                                    <p className="text-sm flex-1">{c.name}</p>
+                                    <p className="text-sm flex-1">
+                                      {c.subjectName && <span className="font-semibold text-muted-foreground">{c.subjectName}: </span>}
+                                      {c.name}
+                                    </p>
                                     <span className="text-xs font-mono text-muted-foreground">{c.masteryScore}%</span>
                                   </div>
                                 ))}

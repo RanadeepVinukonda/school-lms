@@ -288,7 +288,7 @@ export async function getRecommendations(req: Request, res: Response) {
         const conceptRecs = await getAdaptiveRecommendations(childId, stu.school_id as string);
         for (const cr of conceptRecs) {
           recs.push({
-            area: `Concept: ${cr.conceptTitle || cr.conceptId}`,
+            area: `Concept: ${cr.subjectName ? `${cr.subjectName} - ` : ''}${cr.conceptTitle || cr.conceptId}`,
             suggestion: cr.reason,
             priority: cr.priority > 50 ? 'high' as const : cr.priority > 20 ? 'medium' as const : 'low' as const,
           });
