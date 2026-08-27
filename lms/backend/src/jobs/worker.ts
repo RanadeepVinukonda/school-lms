@@ -9,6 +9,37 @@ import { logger } from '../utils/logger';
 import { detectLanguage } from '../services/ocr.service';
 import { extractTextFromScannedPDF } from '../utils/pdf-ocr';
 
+type Language = 'en' | 'hi' | 'te';
+
+/**
+ * Resolve the content language for a textbook by combining the subject name
+ * (most reliable for regional-language subjects like Telugu/Hindi) with the
+ * script-based language detected from the PDF text. Subject name takes
+ * precedence so a Telugu subject is always generated in Telugu even if the
+ * PDF's text layer is English.
+ */
+export function resolveLanguage(detectedLang: 'en' | 'hi' | 'te' | 'mixed', subjectName: string): Language {
+  const subj = (subjectName || '').toLowerCase();
+  if (subj.includes('telugu')) return 'te';
+  if (subj.includes('hindi')) return 'hi';
+  if (subj.includes('english')) return 'en';
+  // Fall back to script detection for non-language subjects (Math, Science, etc.)
+  return detectedLang === 'hi' ? 'hi' : detectedLang === 'te' ? 'te' : 'en';
+}
+
+async function resolveSubjectName(textbookId: string): Promise<string> {
+  const supabase = getSupabaseAdmin();
+  try {
+    const { data: tb } = await supabase.from('textbooks').select('subject_id').eq('id', textbookId).single();
+    const subjectId = tb?.subject_id;
+    if (!subjectId) return '';
+    const { data: subj } = await supabase.from('subjects').select('name').eq('id', subjectId).maybeSingle();
+    return ((subj as Record<string, unknown> | null)?.name as string) || '';
+  } catch {
+    return '';
+  }
+}
+
 async function addTextbookLog(textbookId: string, message: string) {
   try {
     const supabase = getSupabaseAdmin();
@@ -141,13 +172,19 @@ export async function runUploadPipeline(textbookId: string, storagePath: string)
   const allText = pageTexts.join('\n');
   const detectedLang = detectLanguage(allText);
 
+  // Resolve the language of the subject (e.g. "Telugu", "Hindi") when available.
+  // This overrides script detection so regional-language subjects are generated
+  // in their own language even if the PDF's text layer is in English.
+  const tocSubjectName = await resolveSubjectName(textbookId);
+  const contentLang = resolveLanguage(detectedLang, tocSubjectName);
+
   let structure: { chapters: Array<{ title: string; order: number; summary: string; concepts: string[] }> } | null = null;
   try {
-    const langHintTOC = detectedLang === 'hi'
+    const langHintTOC = contentLang === 'hi'
       ? 'CRITICAL: The textbook is in HINDI. All chapter titles, summaries, and concepts must be in Hindi.'
-      : detectedLang === 'te'
+      : contentLang === 'te'
       ? 'CRITICAL: The textbook is in TELUGU. All chapter titles, summaries, and concepts must be in Telugu.'
-      : detectedLang === 'en'
+      : contentLang === 'en'
       ? 'CRITICAL: The textbook is in ENGLISH. All chapter titles, summaries, and concepts must be in English.'
       : 'CRITICAL: Match the language of each chapter to the source material.';
 
@@ -244,12 +281,16 @@ async function runConceptPipeline(jobData: { textbookId: string; chapterId: stri
     } catch { /* fallback to default */ }
   }
 
+  // Override with subject-based language so regional-language subjects get content
+  // in their own language regardless of script detection result.
+  const contentLang = resolveLanguage(detectedLang, subjectName);
+
   // Build language hint for notes/questions prompts
-  const langHint = detectedLang === 'hi'
+  const langHint = contentLang === 'hi'
     ? 'CRITICAL: The source material is in HINDI. Generate ALL output in Hindi.'
-    : detectedLang === 'te'
+    : contentLang === 'te'
     ? 'CRITICAL: The source material is in TELUGU. Generate ALL output in Telugu.'
-    : detectedLang === 'en'
+    : contentLang === 'en'
     ? 'CRITICAL: The source material is in ENGLISH. Generate ALL output in English.'
     : 'CRITICAL: Match the language of each section in the source material.';
 
