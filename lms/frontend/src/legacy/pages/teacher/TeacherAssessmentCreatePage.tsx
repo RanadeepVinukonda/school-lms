@@ -22,6 +22,10 @@ import { getTextbooksBySubject, getChaptersForTextbook, getConceptsForChapter } 
 import { getStudentsByClass } from '@/services/dataService';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
+function Req() {
+  return <span className="text-destructive" aria-hidden="true"> {'*'}</span>;
+}
+
 interface TeacherAssignment {
   id: string;
   classId: string;
@@ -807,7 +811,7 @@ export default function TeacherAssessmentCreatePage() {
               </div>
 
               <div>
-                  <Label className="mb-2 block">{_('Class')}</Label>
+                  <Label className="mb-2 block">{_('Class')}<Req /></Label>
                 <select
                   value={selectedClassId}
                   onChange={(e) => {
@@ -858,7 +862,7 @@ export default function TeacherAssessmentCreatePage() {
 
               {selectedAssignment && (
                 <div>
-                  <Label className="mb-2 block">{_('Textbook')}</Label>
+                  <Label className="mb-2 block">{_('Textbook')}<Req /></Label>
                   {textbooksLoading ? (
                     <Skeleton className="h-10 w-full" />
                   ) : textbookList.length === 0 ? (
@@ -884,7 +888,7 @@ export default function TeacherAssessmentCreatePage() {
 
               {selectedTextbookId && (
                 <div>
-                  <Label className="mb-2 block">{_('Chapter')}</Label>
+                  <Label className="mb-2 block">{_('Chapter')}<Req /></Label>
                   {chaptersLoading ? (
                     <Skeleton className="h-10 w-full" />
                   ) : chapterList.length === 0 ? (
@@ -909,7 +913,7 @@ export default function TeacherAssessmentCreatePage() {
 
               {selectedChapterId && (
                 <div>
-                  <Label className="mb-2 block">{_('Concept')}</Label>
+                  <Label className="mb-2 block">{_('Concept')}<Req /></Label>
                   {conceptsLoading ? (
                     <Skeleton className="h-10 w-full" />
                   ) : conceptList.length === 0 ? (
@@ -1032,7 +1036,7 @@ export default function TeacherAssessmentCreatePage() {
               {assessmentType === 'quiz' ? (
                 <div className="space-y-5">
                   <div>
-                    <Label htmlFor="quiz-title" className="mb-2 block">{_('Quiz Title')}</Label>
+                    <Label htmlFor="quiz-title" className="mb-2 block">{_('Quiz Title')}<Req /></Label>
                     <Input
                       id="quiz-title"
                       value={quizTitle}
@@ -1064,7 +1068,7 @@ export default function TeacherAssessmentCreatePage() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="quiz-question-count" className="mb-2 block">{_('Question Count')}</Label>
+                      <Label htmlFor="quiz-question-count" className="mb-2 block">{_('Question Count')}<Req /></Label>
                       <Input
                         id="quiz-question-count"
                         type="number"
@@ -1107,7 +1111,7 @@ export default function TeacherAssessmentCreatePage() {
                   </div>
 
                   <div>
-                    <Label className="mb-2 block">{_('Available Question Types')}</Label>
+                    <Label className="mb-2 block">{_('Available Question Types')}<Req /></Label>
                     {selectedChapterId && (
                       <div className="flex flex-wrap gap-2 mb-3">
                         {Object.entries(diffCountMap).map(([d, c]) => (
@@ -1450,7 +1454,7 @@ export default function TeacherAssessmentCreatePage() {
               ) : (
                 <div className="space-y-5">
                   <div>
-                    <Label htmlFor="assignment-title" className="mb-2 block">{_('Assignment Title')}</Label>
+                    <Label htmlFor="assignment-title" className="mb-2 block">{_('Assignment Title')}<Req /></Label>
                     <Input
                       id="assignment-title"
                       value={assignmentTitle}
@@ -1483,7 +1487,7 @@ export default function TeacherAssessmentCreatePage() {
 
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <Label className="text-title-sm">{_('Questions')}</Label>
+                      <Label className="text-title-sm">{_('Questions')}<Req /></Label>
                       <Button variant="outline" size="sm" onClick={addAssignmentQuestion}>
                         <Icon name="add" size={14} className="mr-1" />
                         {_('Add Question')}
@@ -1510,7 +1514,7 @@ export default function TeacherAssessmentCreatePage() {
                             </div>
 
                             <div>
-                              <Label className="mb-1 block text-label-xs">{_('Question Text')}</Label>
+                              <Label className="mb-1 block text-label-xs">{_('Question Text')}<Req /></Label>
                               <Input
                                 value={question.text}
                                 onChange={(e) => updateAssignmentQuestion(question.id, 'text', e.target.value)}
