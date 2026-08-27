@@ -32,6 +32,9 @@ const submitAttemptSchema = z.object({
     questionId: z.string(),
     selectedOptionId: z.string().optional(),
     textAnswer: z.string().optional(),
+    answer: z.union([z.string(), z.array(z.string())]).optional(),
+    timeSpent: z.number().optional(),
+    skipped: z.boolean().optional(),
   })),
 }).passthrough();
 

@@ -63,7 +63,7 @@ export async function startQuizAttempt(quizId: string, studentId: string, select
       id: r.id, type: r.type || 'short_answer',
       difficulty: (r.difficulty as import('./ai-level.service').Difficulty) || 'medium',
       text: (r.text || r.question || fallbackText(r.type, r.options)) as string, options: r.options as string[] | undefined,
-      correctAnswer: (r.correct_answer || r.correctAnswer || '') as string, explanation: (r.explanation || '') as string,
+      correctAnswer: (r.correct_answer || r.correctAnswer || r.answer || '') as string, explanation: (r.explanation || '') as string,
       points: r.points || 1,
     }));
   } else {
