@@ -9,12 +9,12 @@ import {
 } from '../services/school-analytics/reliability-scoring';
 
 describe('computeReliability', () => {
-  it('shrinks a single high exam toward the reference (95% over 1 exam vs ref 90 => ~90.8)', () => {
+  it('shrinks a single high exam toward the reference (95% over 1 exam vs ref 90 => 90)', () => {
     const r = computeReliability({ totalScore: 95, examCount: 1 }, 90);
     expect(r.rawAverage).toBe(95);
     expect(r.examCount).toBe(1);
-    // (5/6)*90 + (1/6)*95 = 75 + 15.833 = 90.833 -> 91
-    expect(r.adjustedScore).toBe(91);
+    // (10/11)*90 + (1/11)*95 = 81.82 + 8.64 = 90.45 -> 90 (heavily shrunk with k=10)
+    expect(r.adjustedScore).toBe(90);
     expect(r.hasNoData).toBe(false);
   });
 
@@ -24,11 +24,11 @@ describe('computeReliability', () => {
     expect(r.adjustedScore).toBe(90);
   });
 
-  it('ranks the 95%/1-exam group above the 90%/10-exam group but only slightly (k=5)', () => {
+  it('at k=10 the 95%/1-exam group ties the 90%/10-exam group on adjusted score, so raw average decides', () => {
     const a = computeReliability({ totalScore: 95, examCount: 1 }, 90).adjustedScore;
     const b = computeReliability({ totalScore: 900, examCount: 10 }, 90).adjustedScore;
-    expect(a).toBeGreaterThan(b);
-    expect(a - b).toBe(1);
+    expect(a).toBe(b);
+    expect(a).toBe(90);
   });
 
   it('returns zeroed, no-data result when there are no exams', () => {
@@ -43,8 +43,8 @@ describe('computeReliability', () => {
     // One scored record at 70%, shrunk toward ref 60.
     const r = computeReliability({ totalScore: 70, examCount: 1 }, 60);
     expect(r.examCount).toBe(1);
-    // (5/6)*60 + (1/6)*70 = 50 + 11.667 = 61.667 -> 62
-    expect(r.adjustedScore).toBe(62);
+    // (10/11)*60 + (1/11)*70 = 54.55 + 6.36 = 60.91 -> 61
+    expect(r.adjustedScore).toBe(61);
   });
 
   it('handles different max marks by using already-normalized percentages', () => {
@@ -55,14 +55,14 @@ describe('computeReliability', () => {
 
   it('rounds to whole integers', () => {
     const r = computeReliability({ totalScore: 50, examCount: 1 }, 66);
-    // (5/6)*66 + (1/6)*50 = 55 + 8.333 = 63.333 -> 63
-    expect(r.adjustedScore).toBe(63);
+    // (10/11)*66 + (1/11)*50 = 60 + 4.545 = 64.545 -> 65
+    expect(r.adjustedScore).toBe(65);
   });
 
   it('respects a custom reliability constant k', () => {
     const config: ReliabilityConfig = { k: 1, thresholds: DEFAULT_RELIABILITY_CONFIG.thresholds };
     const withK1 = computeReliability({ totalScore: 95, examCount: 1 }, 90, config);
-    // (1/2)*90 + (1/2)*95 = 92.5 -> 93 (less shrinkage than k=5 -> 91)
+    // (1/2)*95 + (1/2)*90 = 92.5 -> 93 (far less shrinkage than the default k)
     expect(withK1.adjustedScore).toBe(93);
     const defaultR = computeReliability({ totalScore: 95, examCount: 1 }, 90);
     expect(withK1.adjustedScore).toBeGreaterThan(defaultR.adjustedScore);
@@ -127,12 +127,15 @@ describe('applyRanks', () => {
     expect(ranked[1].rank).toBe(2);
   });
 
-  it('computes the documented k=5 example end to end', () => {
+  it('compresses the k-example gap end to end at the default k', () => {
     const ref = 90;
     const a = { id: 'A', reliability: computeReliability({ totalScore: 95, examCount: 1 }, ref) };
     const b = { id: 'B', reliability: computeReliability({ totalScore: 9 * 100, examCount: 10 }, ref) };
     const [first, second] = applyRanks([a, b]);
+    // At k=10 both adjusted scores round to 90 (tie); A keeps the top slot only
+    // via the higher raw average tiebreak.
     expect(first.id).toBe('A');
-    expect(first.reliability.adjustedScore - second.reliability.adjustedScore).toBe(1);
+    expect(first.reliability.adjustedScore).toBe(second.reliability.adjustedScore);
+    expect(first.reliability.rawAverage).toBeGreaterThan(second.reliability.rawAverage);
   });
 });

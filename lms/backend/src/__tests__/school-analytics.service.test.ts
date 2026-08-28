@@ -124,9 +124,9 @@ describe('grade comparison', () => {
     expect(grade6.confidence).toBe('Low confidence');
 
     // School reference = (95+90+60)/3 = 81.67
-    // grade5 avg 92.5 -> adjusted 85 ; grade6 avg 60 -> adjusted 78
-    expect(grade5.adjustedScore).toBe(85);
-    expect(grade6.adjustedScore).toBe(78);
+    // grade5 avg 92.5 -> adjusted 83 ; grade6 avg 60 -> adjusted 80 (k=10)
+    expect(grade5.adjustedScore).toBe(83);
+    expect(grade6.adjustedScore).toBe(80);
 
     // Sorting by adjusted score
     expect(grade5.rank).toBe(1);
@@ -185,7 +185,7 @@ describe('student comparison', () => {
     expect(s2.examCount).toBe(1);
 
     // grade ref = (95+90+60)/3 = 81.67
-    // s1 avg 77.5 -> adjusted 80 ; s2 avg 90 -> adjusted 83
+    // s1 avg 77.5 -> adjusted 81 ; s2 avg 90 -> adjusted 82 (k=10)
     expect(s2.adjustedScore).toBeGreaterThan(s1.adjustedScore);
     expect(s2.rank).toBe(1);
     expect(s1.rank).toBe(2);

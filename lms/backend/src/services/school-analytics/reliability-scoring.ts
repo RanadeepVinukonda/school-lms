@@ -9,7 +9,7 @@
  *   adjusted = (n / (n + k)) * avg + (k / (n + k)) * referenceAvg
  *
  * - n = number of valid exams (contributing percentage records)
- * - k = reliability constant (configurable, default 5)
+ * - k = reliability constant (configurable, default 10)
  * - referenceAvg = average of the relevant population (school / grade / all)
  *
  * With few exams the adjusted score stays close to the reference average;
@@ -17,11 +17,12 @@
  * a single perfect exam from outranking a group with a large, reliable body
  * of work.
  *
- * Example (k = 5):
- *   A: 95% over 1 exam  -> 5/6 * 90 + 1/6 * 95 = 90.8
- *   B: 90% over 10 exams-> 10/15 * 90 + 5/15 * 90 = 90.0
- * A still edges out B because its average is farther from the population mean,
- * but the gap is heavily compressed by A's thin evidence base.
+ * Example (k = 10, reference = 90):
+ *   A: 95% over 1 exam  -> 10/11 * 90 + 1/11 * 95 = 90.45 (rounds to 90)
+ *   B: 90% over 10 exams-> 10/20 * 90 + 10/20 * 90 = 90.00
+ * A's thin evidence is dragged down so far that its adjusted score ties B's
+ * rock-solid 90; A only keeps the top slot via the raw-average tiebreak. Using
+ * a higher k pulls low-exam groups even harder toward the reference average.
  */
 
 export interface ReliabilityConfig {
@@ -36,7 +37,7 @@ export interface ReliabilityConfig {
 
 /** Default reliability configuration. */
 export const DEFAULT_RELIABILITY_CONFIG: ReliabilityConfig = {
-  k: 5,
+  k: 10,
   thresholds: [
     { label: 'Low confidence', min: 0, max: 1 },
     { label: 'Moderate confidence', min: 2, max: 4 },
