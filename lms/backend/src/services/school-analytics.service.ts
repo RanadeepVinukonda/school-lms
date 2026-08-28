@@ -113,7 +113,12 @@ async function loadClassMeta(supabase: any): Promise<{ nameMap: Map<string, stri
       nameMap.set(c.id, `${c.name || ''}${section}`.trim() || c.code || c.id);
       gradeMap.set(c.id, grade);
       if (sectionRaw) sectionMap.set(c.id, String(sectionRaw));
+      continue;
     }
+    // Also merge any fields the firestore_docs doc may be missing (e.g. section).
+    const grade = c.grade != null ? String(c.grade) : '';
+    if (!gradeMap.get(c.id) && grade) gradeMap.set(c.id, grade);
+    if (!sectionMap.get(c.id) && c.section) sectionMap.set(c.id, String(c.section));
   }
 
   return { nameMap, gradeMap, sectionMap };
