@@ -9,6 +9,7 @@ const router = Router();
 router.get('/grade-comparison', authenticate, requireRole('admin'), asyncHandler(schoolAnalyticsController.getGradeComparison));
 router.get('/teacher-comparison', authenticate, requireRole('admin'), asyncHandler(schoolAnalyticsController.getTeacherComparison));
 router.get('/class-comparison', authenticate, requireRole('admin'), asyncHandler(schoolAnalyticsController.getClassComparison));
+router.get('/student-comparison', authenticate, requireRole('admin'), asyncHandler(schoolAnalyticsController.getStudentComparison));
 router.get('/overview', authenticate, requireRole('admin'), asyncHandler(schoolAnalyticsController.getSchoolOverview));
 router.get('/trends', authenticate, requireRole('admin'), asyncHandler(schoolAnalyticsController.getPerformanceTrends));
 

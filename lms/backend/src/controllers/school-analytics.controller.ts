@@ -21,6 +21,12 @@ export async function getClassComparison(req: Request, res: Response) {
   sendSuccess(res, result);
 }
 
+export async function getStudentComparison(req: Request, res: Response) {
+  if (!req.user) throw new ValidationError('Authentication required');
+  const result = await schoolAnalyticsService.getStudentComparison(req.user.school_id);
+  sendSuccess(res, result);
+}
+
 export async function getSchoolOverview(_req: Request, res: Response) {
   const result = await schoolAnalyticsService.getSchoolOverview();
   sendSuccess(res, result);

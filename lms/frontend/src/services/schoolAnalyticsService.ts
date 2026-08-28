@@ -4,6 +4,11 @@ import type { ApiResponse } from '@/types';
 export interface GradeComparisonItem {
   grade: string;
   averageScore: number;
+  rawAverage: number;
+  adjustedScore: number;
+  confidence: string;
+  examCount: number;
+  rank: number;
   studentCount: number;
   totalPoints: number;
 }
@@ -12,6 +17,11 @@ export interface TeacherComparisonItem {
   teacherId: string;
   teacherName: string;
   averageScore: number;
+  rawAverage: number;
+  adjustedScore: number;
+  confidence: string;
+  examCount: number;
+  rank: number;
   studentCount: number;
   classCount: number;
 }
@@ -21,7 +31,25 @@ export interface ClassComparisonItem {
   className: string;
   grade: string;
   averageScore: number;
+  rawAverage: number;
+  adjustedScore: number;
+  confidence: string;
+  examCount: number;
+  rank: number;
   studentCount: number;
+}
+
+export interface StudentComparisonItem {
+  studentId: string;
+  studentName: string;
+  className: string;
+  grade: string;
+  averageScore: number;
+  rawAverage: number;
+  adjustedScore: number;
+  confidence: string;
+  examCount: number;
+  rank: number;
 }
 
 export interface SchoolOverview {
@@ -52,6 +80,11 @@ export const schoolAnalyticsService = {
 
   async getClassComparison() {
     const response = await api.get<ApiResponse<ClassComparisonItem[]>>('/school-analytics/class-comparison');
+    return response.data;
+  },
+
+  async getStudentComparison() {
+    const response = await api.get<ApiResponse<StudentComparisonItem[]>>('/school-analytics/student-comparison');
     return response.data;
   },
 
