@@ -113,8 +113,9 @@ describe('grade comparison', () => {
     const result: any[] = await getGradeComparison();
     expect(result.length).toBe(2);
 
-    const grade5 = result.find((g) => g.grade === '5')!;
-    const grade6 = result.find((g) => g.grade === '6')!;
+    // Grade labels keep the section: class c1 = grade "5" section "A", class c2 = grade "6" section "B"
+    const grade5 = result.find((g) => g.grade === '5 A')!;
+    const grade6 = result.find((g) => g.grade === '6 B')!;
 
     // grade5: 2 records (95+90) across 1 distinct exam; grade6: 1 record across 1 exam
     expect(grade5.examCount).toBe(1);

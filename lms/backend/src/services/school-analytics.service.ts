@@ -84,9 +84,10 @@ async function loadAssessments(supabase: any): Promise<LoadedAssessments> {
   return { metaById, records };
 }
 
-async function loadClassMeta(supabase: any): Promise<{ nameMap: Map<string, string>; gradeMap: Map<string, string> }> {
+async function loadClassMeta(supabase: any): Promise<{ nameMap: Map<string, string>; gradeMap: Map<string, string>; sectionMap: Map<string, string> }> {
   const nameMap = new Map<string, string>();
   const gradeMap = new Map<string, string>();
+  const sectionMap = new Map<string, string>();
 
   const { data: fsClasses } = await supabase
     .from('firestore_docs')
@@ -95,23 +96,27 @@ async function loadClassMeta(supabase: any): Promise<{ nameMap: Map<string, stri
   for (const c of (fsClasses || [])) {
     const d = c.data || {};
     const name = d.name || d.className || '';
-    const section = d.section ? ` ${d.section}` : '';
+    const sectionRaw = d.section || '';
+    const section = sectionRaw ? ` ${sectionRaw}` : '';
     const code = d.code || '';
     nameMap.set(c.doc_id, `${name}${section}`.trim() || code || c.doc_id);
     gradeMap.set(c.doc_id, d.grade || d.gradeLevel || '');
+    if (sectionRaw) sectionMap.set(c.doc_id, String(sectionRaw));
   }
 
   const { data: viewClasses } = await supabase.from('classes').select('id, name, grade, section, code');
   for (const c of (viewClasses || [])) {
     if (!nameMap.has(c.id)) {
-      const section = c.section ? ` ${c.section}` : '';
+      const sectionRaw = c.section || '';
+      const section = sectionRaw ? ` ${sectionRaw}` : '';
       const grade = c.grade != null ? String(c.grade) : '';
       nameMap.set(c.id, `${c.name || ''}${section}`.trim() || c.code || c.id);
       gradeMap.set(c.id, grade);
+      if (sectionRaw) sectionMap.set(c.id, String(sectionRaw));
     }
   }
 
-  return { nameMap, gradeMap };
+  return { nameMap, gradeMap, sectionMap };
 }
 
 /** Wrapper so async loaders match the shape used by callers. */
@@ -122,7 +127,7 @@ async function loadMeta(supabase: any) {
 export async function getGradeComparison(_schoolId?: string, config: ReliabilityConfig = DEFAULT_RELIABILITY_CONFIG) {
   const supabase = getSupabaseAdmin(); if (!supabase) return [];
 
-  const [{ nameMap, gradeMap }, { records }] = await Promise.all([
+  const [{ nameMap, gradeMap, sectionMap }, { records }] = await Promise.all([
     loadMeta(supabase),
     loadAssessments(supabase),
   ]);
@@ -140,13 +145,18 @@ export async function getGradeComparison(_schoolId?: string, config: Reliability
     c.exams.add(r.assessmentId);
   }
 
+  // Grade label keeps the section beside the grade number (e.g. "5 A").
+  function gradeLabel(classId: string): string {
+    const rawGrade = gradeMap.get(classId);
+    const grade = rawGrade && rawGrade.trim ? rawGrade.trim() : '';
+    const section = sectionMap.get(classId) || '';
+    const basis = grade || nameMap.get(classId) || classId;
+    return section ? `${basis} ${section}`.trim() : basis;
+  }
+
   const gradeAgg: Record<string, { totalScore: number; totalPoints: number; count: number; studentCount: number; examCount: number }> = {};
   for (const [classId, data] of Object.entries(classAgg)) {
-    const rawGrade = gradeMap.get(classId);
-    const rawName = nameMap.get(classId);
-    const grade = rawGrade && rawGrade.trim ? rawGrade.trim() : '';
-    const name = rawName && rawName.trim ? rawName.trim() : '';
-    const gradeKey = grade || name || classId;
+    const gradeKey = gradeLabel(classId);
     if (!gradeAgg[gradeKey]) gradeAgg[gradeKey] = { totalScore: 0, totalPoints: 0, count: 0, studentCount: 0, examCount: 0 };
     const g = gradeAgg[gradeKey];
     g.totalScore += data.totalScore;
