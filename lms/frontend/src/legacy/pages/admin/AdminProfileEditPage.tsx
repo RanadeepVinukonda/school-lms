@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,11 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Icon } from '@/components/ui/Icon';
 import { getInitials } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
-import { uploadProfileImage } from '@/services/avatarService';
 import { getUser, updateUser } from '@/services/dataService';
 import { ROUTES } from '@/lib/constants';
 
@@ -23,8 +22,6 @@ export default function AdminProfileEditPage() {
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     displayName: '',
     email: '',
@@ -33,7 +30,6 @@ export default function AdminProfileEditPage() {
     address: '',
   });
 
-  const [avatarPreview, setAvatarPreview] = useState('');
   const { data: userDoc, isLoading: loadingProfile } = useQuery({
     queryKey: ['admin-profile-edit', user?.id],
     queryFn: () => (user?.id ? getUser(user.id) : null),
@@ -49,7 +45,6 @@ export default function AdminProfileEditPage() {
         bio: userDoc.bio || '',
         address: userDoc.address || '',
       });
-      setAvatarPreview(userDoc.photoURL || '');
     }
   }, [userDoc]);
 
@@ -57,29 +52,12 @@ export default function AdminProfileEditPage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const url = await uploadProfileImage(user?.id || 'temp', file);
-      setAvatarPreview(url);
-      toast.success('Avatar uploaded');
-    } catch {
-      toast.error('Avatar upload failed. Check Supabase Storage bucket.');
-    } finally {
-      setUploading(false);
-    }
-  };
-
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error('Not authenticated');
       const data: Record<string, unknown> = { ...form };
-      if (avatarPreview) data.photoURL = avatarPreview;
       await updateUser(user.id, data);
-      const { photoURL, ...rest } = data;
-      setUser({ ...user, ...rest, avatar: (photoURL as string | undefined) || user.avatar } as typeof user);
+      setUser({ ...user, ...data } as typeof user);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-profile-edit', user?.id] });
@@ -111,14 +89,8 @@ export default function AdminProfileEditPage() {
             <CardContent className="p-5 space-y-6">
               <div className="flex flex-col items-center gap-3">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src={avatarPreview} alt={form.displayName} />
                   <AvatarFallback className="text-2xl bg-primary-container text-primary">{getInitials(form.displayName)}</AvatarFallback>
                 </Avatar>
-                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
-                <Button variant="outline" size="sm" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
-                  <Icon name="camera_alt" size={15} className="mr-1" />
-                  {uploading ? 'Uploading...' : 'Change Photo'}
-                </Button>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

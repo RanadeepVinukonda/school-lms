@@ -7,7 +7,7 @@ export async function getUploadSignature(req: Request, res: Response) {
   const timestamp = Math.round(Date.now() / 1000);
   const folder = (req.query.folder as string) || 'textbooks';
 
-  const allowedFolders = ['textbooks', 'avatars', 'assignments', 'textbook-covers'];
+  const allowedFolders = ['textbooks', 'assignments', 'textbook-covers'];
   if (!allowedFolders.includes(folder)) {
     sendError(res, 'Invalid upload folder', 400);
     return;
