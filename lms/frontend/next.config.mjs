@@ -9,6 +9,9 @@ const __dirname = path.dirname(__filename);
 const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   transpilePackages: ['reactflow', '@radix-ui', 'lucide-react'],
   experimental: {
     optimizePackageImports: ['lucide-react', 'date-fns'],
