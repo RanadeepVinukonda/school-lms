@@ -16,6 +16,7 @@
  */
 
 import { consumeBackPress } from './backHandler';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 
 let routerModule: Promise<{ router: typeof import('@/app/router').router }> | null = null;
 function getRouter(): Promise<{ router: typeof import('@/app/router').router }> {
@@ -25,9 +26,15 @@ function getRouter(): Promise<{ router: typeof import('@/app/router').router }> 
   return routerModule;
 }
 
-async function isNativeAsync(): Promise<boolean> {
+/**
+ * Statically imported Capacitor core: the native bridge injects the global
+ * before the page loads, so this is always truthful inside the APK. (Dynamic
+ * `import('@capacitor/core')` was unreliable here — if its webpack chunk failed
+ * to load in the WebView the app silently thought it was on web and skipped the
+ * native file chooser.)
+ */
+function isNative(): boolean {
   try {
-    const { Capacitor } = await import('@capacitor/core');
     return Capacitor.isNativePlatform();
   } catch {
     return false;
@@ -157,7 +164,7 @@ function watchBackButton() {
 
 /** Call once from the app bootstrap (no-op on web). */
 export async function initNativeBridge(): Promise<void> {
-  if (!(await isNativeAsync())) return;
+  if (!isNative()) return;
   try {
     const { SplashScreen } = await import('@capacitor/splash-screen');
     await SplashScreen.hide();
@@ -168,7 +175,6 @@ export async function initNativeBridge(): Promise<void> {
   watchNetwork();
   watchDeepLinks();
   watchBackButton();
-  const { Capacitor } = await import('@capacitor/core');
   if (Capacitor.getPlatform() === 'android') {
     document.documentElement.classList.add('genesis-native');
   }
@@ -176,7 +182,7 @@ export async function initNativeBridge(): Promise<void> {
 
 /** Native share sheet (falls back to the Web Share API, then no-op). */
 export async function nativeShare(payload: { title?: string; text?: string; url?: string }): Promise<void> {
-  if (!(await isNativeAsync())) {
+  if (!isNative()) {
     if (navigator.share) {
       await navigator.share(payload as ShareData);
     }
@@ -223,10 +229,9 @@ export async function exportFileOnNative(
   filename: string,
   mimeType = 'text/csv',
 ): Promise<'excel' | 'shared' | 'dismissed' | 'failed' | 'unsupported'> {
-  if (!(await isNativeAsync())) return 'unsupported';
+  if (!isNative()) return 'unsupported';
 
   try {
-    const { registerPlugin } = await import('@capacitor/core');
     const FileShare = registerPlugin<{
       open: (opts: { filename: string; mimeType: string; content: string }) => Promise<{ status: string }>;
     }>('FileShare');
@@ -239,7 +244,10 @@ export async function exportFileOnNative(
     const message = e?.message || '';
     // Old APK without the FileShare plugin → let the caller use the browser
     // download path instead of a confusing error toast.
-    if (/not registered|unimplemented/i.test(code + message)) return 'unsupported';
+    if (/not registered|unimplemented/i.test(code + message)) {
+      console.warn('[native] FileShare unavailable:', code, message);
+      return 'unsupported';
+    }
     // The plugin resolves as soon as the chooser opens, so a rejection is
     // always a real failure (never a user cancel) — no "dismissed" path.
     return 'failed';
@@ -256,10 +264,9 @@ export async function savePdfToDownloads(
   blob: Blob,
   filename: string,
 ): Promise<'saved' | 'failed' | 'unsupported'> {
-  if (!(await isNativeAsync())) return 'unsupported';
+  if (!isNative()) return 'unsupported';
 
   try {
-    const { registerPlugin } = await import('@capacitor/core');
     const FileShare = registerPlugin<{
       saveToDownloads: (opts: { filename: string; content: string }) => Promise<{ status: string }>;
     }>('FileShare');
@@ -277,7 +284,7 @@ export async function savePdfToDownloads(
 
 /** Open a URL in an in-app browser on native; new tab on web. */
 export async function openExternal(url: string): Promise<void> {
-  if (!(await isNativeAsync())) {
+  if (!isNative()) {
     window.open(url, '_blank', 'noopener,noreferrer');
     return;
   }
