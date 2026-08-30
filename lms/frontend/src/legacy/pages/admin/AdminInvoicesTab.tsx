@@ -10,6 +10,7 @@ import { Icon } from '@/components/ui/Icon';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { feeService, type InvoiceComputed, type InvoicePreviewData } from '@/services/feeService';
+import { exportFileOnNative } from '@/lib/native';
 
 interface InvoicesTabProps {
   students: Array<Record<string, any>>;
@@ -35,6 +36,7 @@ export default function AdminInvoicesTab({ students }: InvoicesTabProps) {
   }>({ studentId: '', feeScheduleId: '', discount: 0, paymentMethod: '', transactionId: '' });
   const [deleteConfirm, setDeleteConfirm] = useState<InvoiceComputed | null>(null);
   const [createdInvoice, setCreatedInvoice] = useState<InvoiceComputed | null>(null);
+  const [pdfBusy, setPdfBusy] = useState<string | null>(null);
 
   const selectedStudent = useMemo(
     () => students.find((s) => s.id === form.studentId) || null,
@@ -105,9 +107,60 @@ export default function AdminInvoicesTab({ students }: InvoicesTabProps) {
     return { feeAmount, previousDue, discount, total, balance };
   }, [previewData, form.feeScheduleId, form.discount]);
 
-  const openPdf = useCallback((id: string, inline: boolean) => {
-    window.open(feeService.invoicePdfUrl(id, inline), '_blank');
+  const fetchPdfBlob = useCallback(async (id: string, inline: boolean) => {
+    const blob = await feeService.getInvoicePdf(id, inline);
+    if (blob.type && blob.type.includes('json')) {
+      const text = await blob.text();
+      let msg = 'Failed to load PDF';
+      try {
+        const parsed = JSON.parse(text);
+        msg = parsed?.error?.message || parsed?.message || msg;
+      } catch { /* keep default */ }
+      throw new Error(msg);
+    }
+    return blob;
   }, []);
+
+  const triggerDownload = useCallback((blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, []);
+
+  const openInvoicePdf = useCallback(async (id: string, inline: boolean, label: string) => {
+    setPdfBusy(id);
+    try {
+      const blob = await fetchPdfBlob(id, inline);
+      const filename = `${label || 'Invoice'}.pdf`;
+      const native = await exportFileOnNative(blob, filename, 'application/pdf');
+      if (native !== 'unsupported') {
+        if (native === 'failed') toast.error('No app available to open the PDF on this device');
+        else if (native === 'dismissed') toast.info('Invoice export cancelled');
+        else if (!inline) toast.success('Invoice PDF ready — choose an app to open it');
+        return;
+      }
+      if (inline) {
+        const url = URL.createObjectURL(blob);
+        const win = window.open(url, '_blank');
+        if (win) {
+          win.onload = () => { try { win.focus(); win.print(); } catch { /* ignore */ } };
+        }
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      } else {
+        triggerDownload(blob, filename);
+        toast.success('Invoice PDF downloaded');
+      }
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to load PDF');
+    } finally {
+      setPdfBusy(null);
+    }
+  }, [fetchPdfBlob, triggerDownload]);
 
   const selectStudent = useCallback((s: Record<string, any>) => {
     setForm({ studentId: s.id, feeScheduleId: '', discount: 0, paymentMethod: '', transactionId: '' });
@@ -255,10 +308,10 @@ export default function AdminInvoicesTab({ students }: InvoicesTabProps) {
               </Button>
               {createdInvoice && (
                 <>
-                  <Button variant="outline" onClick={() => openPdf(createdInvoice.invoice.id, true)}>
+                  <Button variant="outline" loading={pdfBusy === createdInvoice.invoice.id} disabled={!!pdfBusy} onClick={() => openInvoicePdf(createdInvoice.invoice.id, true, 'Invoice_' + createdInvoice.invoice.invoice_number)}>
                     <Icon name="print" size={16} className="mr-1.5" /> Print
                   </Button>
-                  <Button variant="outline" onClick={() => openPdf(createdInvoice.invoice.id, false)}>
+                  <Button variant="outline" loading={pdfBusy === createdInvoice.invoice.id} disabled={!!pdfBusy} onClick={() => openInvoicePdf(createdInvoice.invoice.id, false, 'Invoice_' + createdInvoice.invoice.invoice_number)}>
                     <Icon name="download" size={16} className="mr-1.5" /> Download PDF
                   </Button>
                   <Button variant="ghost" onClick={resetForm}>New Invoice</Button>
@@ -328,10 +381,10 @@ export default function AdminInvoicesTab({ students }: InvoicesTabProps) {
                           <td className="px-4 py-3">{statusBadge(inv.paymentStatus)}</td>
                           <td className="px-4 py-3">
                             <div className="flex items-center justify-end gap-1">
-                              <Button variant="ghost" size="icon-sm" title="Print" onClick={() => openPdf(inv.invoice.id, true)}>
+                              <Button variant="ghost" size="icon-sm" title="Print" loading={pdfBusy === inv.invoice.id} disabled={!!pdfBusy} onClick={() => openInvoicePdf(inv.invoice.id, true, 'Invoice_' + inv.invoice.invoice_number)}>
                                 <Icon name="print" size={16} />
                               </Button>
-                              <Button variant="ghost" size="icon-sm" title="Download PDF" onClick={() => openPdf(inv.invoice.id, false)}>
+                              <Button variant="ghost" size="icon-sm" title="Download PDF" loading={pdfBusy === inv.invoice.id} disabled={!!pdfBusy} onClick={() => openInvoicePdf(inv.invoice.id, false, 'Invoice_' + inv.invoice.invoice_number)}>
                                 <Icon name="download" size={16} />
                               </Button>
                               <Button variant="ghost" size="icon-sm" title="Delete" onClick={() => setDeleteConfirm(inv)}>

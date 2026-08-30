@@ -144,7 +144,11 @@ export const feeService = {
     return response.data;
   },
 
-  invoicePdfUrl(id: string, inline = false) {
-    return `/api/fee/invoices/${id}/pdf${inline ? '?inline=1' : ''}`;
+  async getInvoicePdf(id: string, inline = false): Promise<Blob> {
+    const response = await api.get(`/fee/invoices/${id}/pdf`, {
+      params: inline ? { inline: 1 } : undefined,
+      responseType: 'blob',
+    });
+    return response.data as Blob;
   },
 };
