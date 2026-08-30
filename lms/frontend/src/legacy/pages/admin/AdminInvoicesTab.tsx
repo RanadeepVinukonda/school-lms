@@ -135,7 +135,22 @@ export default function AdminInvoicesTab({ students }: InvoicesTabProps) {
   const openInvoicePdf = useCallback(async (id: string, inline: boolean, label: string) => {
     setPdfBusy(id);
     try {
-      const blob = await fetchPdfBlob(id, inline);
+      let blob: Blob | null = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        if (attempt > 0) await new Promise((r) => setTimeout(r, 800));
+        try {
+          blob = await fetchPdfBlob(id, inline);
+          break;
+        } catch (e: any) {
+          const status = (e as any)?.status || (e as any)?.response?.status || (e as any)?.response?.statusCode;
+          // Retry once on 401 — the api interceptor refreshes the token on the
+          // first failure, so the retry picks up the fresh token.
+          if (status === 401 && attempt === 0) continue;
+          throw e;
+        }
+      }
+      if (!blob) throw new Error('Failed to load PDF');
+
       const filename = `${label || 'Invoice'}.pdf`;
       const native = await exportFileOnNative(blob, filename, 'application/pdf');
       if (native !== 'unsupported') {
@@ -156,7 +171,11 @@ export default function AdminInvoicesTab({ students }: InvoicesTabProps) {
         toast.success('Invoice PDF downloaded');
       }
     } catch (err: any) {
-      toast.error(err?.message || 'Failed to load PDF');
+      const status = (err as any)?.status || (err as any)?.response?.status;
+      const msg = status === 401
+        ? 'Your session expired. Re-login and try again.'
+        : (err?.message || 'Failed to load PDF');
+      toast.error(`${msg}${status ? ` (${status})` : ''}`);
     } finally {
       setPdfBusy(null);
     }
