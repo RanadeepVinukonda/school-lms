@@ -10,7 +10,7 @@ import { Icon } from '@/components/ui/Icon';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { feeService, type InvoiceComputed, type InvoicePreviewData } from '@/services/feeService';
-import { exportFileOnNative, savePdfToDownloads } from '@/lib/native';
+import { exportFileOnNative } from '@/lib/native';
 
 interface InvoicesTabProps {
   students: Array<Record<string, any>>;
@@ -171,22 +171,13 @@ export default function AdminInvoicesTab({ students }: InvoicesTabProps) {
         return;
       }
 
-      // Download: on native save straight into the device Downloads folder; on
-      // web fall back to the browser download.
-      const nativeSave = await savePdfToDownloads(blob, filename);
-      if (nativeSave === 'saved') {
-        toast.success('PDF saved to Downloads');
-        return;
-      }
-      if (nativeSave === 'failed') {
-        // Old APK or storage permission denied — fall back to share/Open With.
-        const native = await exportFileOnNative(blob, filename, 'application/pdf');
-        if (native === 'unsupported') {
-          triggerDownload(blob, filename);
-          toast.success('Invoice PDF downloaded');
-        } else if (native === 'failed') {
-          toast.error('Could not save the PDF on this device');
-        }
+      // Download: on native, ask which app to open the PDF with (PDF reader,
+      // browser, etc.) then open it there; on web fall back to the browser
+      // download.
+      const native = await exportFileOnNative(blob, filename, 'application/pdf');
+      if (native !== 'unsupported') {
+        if (native === 'failed') toast.error('No app available to open the PDF on this device');
+        else if (native === 'dismissed') toast.info('Invoice export cancelled');
         return;
       }
       triggerDownload(blob, filename);
