@@ -246,6 +246,35 @@ export async function exportFileOnNative(
   }
 }
 
+/**
+ * Save a PDF blob straight into the device's public Downloads folder (native
+ * only). Returns 'saved' on success, 'unsupported' when running on web (caller
+ * falls back to the browser download), or 'failed' when the native write
+ * errored or storage permission was denied.
+ */
+export async function savePdfToDownloads(
+  blob: Blob,
+  filename: string,
+): Promise<'saved' | 'failed' | 'unsupported'> {
+  if (!(await isNativeAsync())) return 'unsupported';
+
+  try {
+    const { registerPlugin } = await import('@capacitor/core');
+    const FileShare = registerPlugin<{
+      saveToDownloads: (opts: { filename: string; content: string }) => Promise<{ status: string }>;
+    }>('FileShare');
+    const content = await blobToBase64(blob);
+    const result = await FileShare.saveToDownloads({ filename, content });
+    return result?.status === 'saved' ? 'saved' : 'failed';
+  } catch (err) {
+    const e = err as { code?: string; message?: string } | null;
+    const code = e?.code || '';
+    const message = e?.message || '';
+    if (/not registered|unimplemented/i.test(code + message)) return 'unsupported';
+    return 'failed';
+  }
+}
+
 /** Open a URL in an in-app browser on native; new tab on web. */
 export async function openExternal(url: string): Promise<void> {
   if (!(await isNativeAsync())) {
