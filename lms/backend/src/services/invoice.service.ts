@@ -208,7 +208,7 @@ export async function computeInvoice(invoice: InvoiceRow): Promise<InvoiceComput
 
   const { data: student } = await supabase
     .from('users')
-    .select('id, display_name, email, phone_number, class_id, class_ids, student_id, roll_no, address, gender')
+    .select('id, display_name, email, phone_number, class_id, class_ids, student_id, roll_no, gender')
     .eq('id', invoice.student_id)
     .maybeSingle();
 
@@ -389,7 +389,7 @@ export async function getInvoicePreviewData(studentId: string, schoolId?: string
 
   const { data: student } = await supabase
     .from('users')
-    .select('id, display_name, email, phone_number, class_id, class_ids, student_id, roll_no, address, gender')
+    .select('id, display_name, email, phone_number, class_id, class_ids, student_id, roll_no, gender')
     .eq('id', studentId)
     .maybeSingle();
   if (!student) throw new NotFoundError('Student not found');
