@@ -10,7 +10,7 @@ import { Icon } from '@/components/ui/Icon';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { feeService, type InvoiceComputed, type InvoicePreviewData } from '@/services/feeService';
-import { exportFileOnNative } from '@/lib/native';
+import { exportFileOnNative, consumeLastFileShareFailure } from '@/lib/native';
 
 interface InvoicesTabProps {
   students: Array<Record<string, any>>;
@@ -157,9 +157,22 @@ export default function AdminInvoicesTab({ students }: InvoicesTabProps) {
         // Print: hand it to the Open With / share chooser on native (web):
         // open a new tab and trigger the browser print dialog.
         const native = await exportFileOnNative(blob, filename, 'application/pdf');
-        if (native !== 'unsupported') {
-          if (native === 'failed') toast.error('No app available to open the PDF on this device');
-          else if (native === 'dismissed') toast.info('Invoice export cancelled');
+        if (native === 'failed') {
+          const detail = consumeLastFileShareFailure();
+          toast.error(detail ? `Could not open the PDF (${detail})` : 'No app available to open the PDF on this device');
+          return;
+        }
+        if (native === 'dismissed') {
+          toast.info('Invoice export cancelled');
+          return;
+        }
+        if (native === 'unsupported') {
+          const detail = consumeLastFileShareFailure();
+          if (detail) {
+            toast.error(`Unable to use the file plugin on this device: ${detail}`);
+            return;
+          }
+        } else {
           return;
         }
         const url = URL.createObjectURL(blob);
@@ -175,9 +188,25 @@ export default function AdminInvoicesTab({ students }: InvoicesTabProps) {
       // browser, etc.) then open it there; on web fall back to the browser
       // download.
       const native = await exportFileOnNative(blob, filename, 'application/pdf');
-      if (native !== 'unsupported') {
-        if (native === 'failed') toast.error('No app available to open the PDF on this device');
-        else if (native === 'dismissed') toast.info('Invoice export cancelled');
+      if (native === 'failed') {
+        const detail = consumeLastFileShareFailure();
+        toast.error(detail ? `Could not open the PDF (${detail})` : 'No app available to open the PDF on this device');
+        return;
+      }
+      if (native === 'dismissed') {
+        toast.info('Invoice export cancelled');
+        return;
+      }
+      if (native === 'unsupported') {
+        const detail = consumeLastFileShareFailure();
+        // A recorded failure here means the app IS native but the FileShare
+        // bridge call failed (e.g. an outdated APK). Surface it instead of the
+        // generic "downloaded" toast so the cause is obvious.
+        if (detail) {
+          toast.error(`Unable to use the file plugin: ${detail}`);
+          return;
+        }
+      } else {
         return;
       }
       triggerDownload(blob, filename);

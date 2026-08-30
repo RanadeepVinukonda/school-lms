@@ -209,6 +209,15 @@ function blobToBase64(blob: Blob): Promise<string> {
   });
 }
 
+let lastFileShareFailure: string | null = null;
+
+/** Debug aid: read (and clear) the last FileShare native-bridge failure reason. */
+export function consumeLastFileShareFailure(): string | null {
+  const v = lastFileShareFailure;
+  lastFileShareFailure = null;
+  return v;
+}
+
 /**
  * Export a file (CSV/PDF) on native platforms.
  *
@@ -242,6 +251,7 @@ export async function exportFileOnNative(
     const e = err as { code?: string; message?: string } | null;
     const code = e?.code || '';
     const message = e?.message || '';
+    lastFileShareFailure = code ? `${code}: ${message}` : message || String(err || 'unknown');
     // Old APK without the FileShare plugin → let the caller use the browser
     // download path instead of a confusing error toast.
     if (/not registered|unimplemented/i.test(code + message)) {
