@@ -14,6 +14,7 @@ import { feeService } from '@/services/feeService';
 import { getAllUsers } from '@/services/dataService';
 import { useClasses } from '@/hooks/useClasses';
 import ClassSelect from '@/components/common/ClassSelect';
+import AdminInvoicesTab from './AdminInvoicesTab';
 
 function OutstandingRow({ item }: { item: any }) {
   const [expanded, setExpanded] = useState(false);
@@ -157,6 +158,7 @@ export default function AdminFeePage() {
             <TabsTrigger value="schedules">Fee Schedules</TabsTrigger>
             <TabsTrigger value="payments">Record Payment</TabsTrigger>
             <TabsTrigger value="outstanding">Outstanding Report</TabsTrigger>
+            <TabsTrigger value="invoices">Invoices</TabsTrigger>
           </TabsList>
 
           <TabsContent value="schedules" className="space-y-6">
@@ -409,6 +411,10 @@ export default function AdminFeePage() {
                 </Card>
               )}
             </DataFetchWrapper>
+          </TabsContent>
+
+          <TabsContent value="invoices" className="space-y-6">
+            <AdminInvoicesTab students={students} />
           </TabsContent>
         </Tabs>
       </div>
