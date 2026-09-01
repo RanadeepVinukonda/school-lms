@@ -211,6 +211,21 @@ function blobToBase64(blob: Blob): Promise<string> {
 
 let lastFileShareFailure: string | null = null;
 
+/**
+ * Race a promise against a timeout so a stalled native-bridge call can never
+ * leave the UI buffering forever. Rejects with `message` if `p` does not
+ * settle in `ms`; whichever wins clears the timer.
+ */
+function withTimeout<T>(p: Promise<T>, ms: number, message: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(message)), ms);
+    p.then(
+      (v) => { clearTimeout(timer); resolve(v); },
+      (e) => { clearTimeout(timer); reject(e); },
+    );
+  });
+}
+
 /** Debug aid: read (and clear) the last FileShare native-bridge failure reason. */
 export function consumeLastFileShareFailure(): string | null {
   const v = lastFileShareFailure;
@@ -245,7 +260,11 @@ export async function exportFileOnNative(
       open: (opts: { filename: string; mimeType: string; content: string }) => Promise<{ status: string }>;
     }>('FileShare');
     const content = await blobToBase64(blob);
-    const result = await FileShare.open({ filename, mimeType, content });
+    const result = await withTimeout(
+      FileShare.open({ filename, mimeType, content }),
+      20000,
+      'Your device did not respond (native bridge timeout). Try again — if this repeats, reinstall the latest Genesis app.',
+    );
     return result?.status === 'excel' ? 'excel' : 'shared';
   } catch (err) {
     const e = err as { code?: string; message?: string } | null;
@@ -281,7 +300,11 @@ export async function savePdfToDownloads(
       saveToDownloads: (opts: { filename: string; content: string }) => Promise<{ status: string }>;
     }>('FileShare');
     const content = await blobToBase64(blob);
-    const result = await FileShare.saveToDownloads({ filename, content });
+    const result = await withTimeout(
+      FileShare.saveToDownloads({ filename, content }),
+      20000,
+      'Your device did not respond (native bridge timeout). Try again — if this repeats, reinstall the latest Genesis app.',
+    );
     return result?.status === 'saved' ? 'saved' : 'failed';
   } catch (err) {
     const e = err as { code?: string; message?: string } | null;
