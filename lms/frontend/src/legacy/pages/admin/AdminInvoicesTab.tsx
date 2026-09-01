@@ -10,7 +10,8 @@ import { Icon } from '@/components/ui/Icon';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { feeService, type InvoiceComputed, type InvoicePreviewData } from '@/services/feeService';
-import { exportFileOnNative, consumeLastFileShareFailure } from '@/lib/native';
+import { exportFileOnNative, consumeLastFileShareFailure, isNative, openPdfViaNative } from '@/lib/native';
+import { API_BASE_URL } from '@/lib/constants';
 
 interface InvoicesTabProps {
   students: Array<Record<string, any>>;
@@ -133,8 +134,26 @@ export default function AdminInvoicesTab({ students }: InvoicesTabProps) {
   }, []);
 
   const openInvoicePdf = useCallback(async (id: string, inline: boolean, label: string) => {
+    if (pdfBusy) return;
     setPdfBusy(id);
     try {
+      const filename = `${label || 'Invoice'}.pdf`;
+
+      // Android APK: let the native side fetch the authenticated PDF URL
+      // itself (using the page's bearer token), write it to disk, verify it is
+      // a complete PDF and open the system "Open With" chooser. The heavy file
+      // bytes never cross the JS bridge, so large invoices can't time out.
+      if (isNative()) {
+        const pdfUrl = new URL(`${API_BASE_URL}/fee/invoices/${id}/pdf`, window.location.origin);
+        if (inline) pdfUrl.searchParams.set('inline', '1');
+        const native = await openPdfViaNative(pdfUrl.toString(), filename);
+        if (native === 'failed') {
+          const detail = consumeLastFileShareFailure();
+          toast.error(detail ? `Could not open the PDF (${detail})` : 'No app available to open the PDF on this device');
+        }
+        return;
+      }
+
       let blob: Blob | null = null;
       for (let attempt = 0; attempt < 2; attempt++) {
         if (attempt > 0) await new Promise((r) => setTimeout(r, 800));
@@ -150,8 +169,6 @@ export default function AdminInvoicesTab({ students }: InvoicesTabProps) {
         }
       }
       if (!blob) throw new Error('Failed to load PDF');
-
-      const filename = `${label || 'Invoice'}.pdf`;
 
       if (inline) {
         // Print: hand it to the Open With / share chooser on native (web):
@@ -220,7 +237,7 @@ export default function AdminInvoicesTab({ students }: InvoicesTabProps) {
     } finally {
       setPdfBusy(null);
     }
-  }, [fetchPdfBlob, triggerDownload]);
+  }, [fetchPdfBlob, triggerDownload, pdfBusy]);
 
   const selectStudent = useCallback((s: Record<string, any>) => {
     setForm({ studentId: s.id, feeScheduleId: '', discount: 0, paymentMethod: '', transactionId: '' });

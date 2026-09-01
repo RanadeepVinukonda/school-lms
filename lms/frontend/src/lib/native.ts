@@ -33,7 +33,7 @@ function getRouter(): Promise<{ router: typeof import('@/app/router').router }> 
  * to load in the WebView the app silently thought it was on web and skipped the
  * native file chooser.)
  */
-function isNative(): boolean {
+export function isNative(): boolean {
   try {
     return Capacitor.isNativePlatform();
   } catch {
@@ -193,6 +193,46 @@ export async function nativeShare(payload: { title?: string; text?: string; url?
     await Share.share({ title: payload.title, text: payload.text, url: payload.url });
   } catch {
     /* user dismissed or share unavailable */
+  }
+}
+
+/**
+ * Open a server-side PDF (e.g. an invoice) on native platforms.
+ *
+ * Instead of shipping the whole PDF bytes from the page to the native bridge
+ * (base64 over `postMessage` — silently dropped for large payloads, which is
+ * what caused the "native bridge timeout"), the native side downloads the file
+ * ITSELF from the authenticated URL using the same bearer token the page uses,
+ * streams it to disk, verifies it is a complete "%PDF" file and only then
+ * opens the system "Open With" chooser. The bridge message is tiny.
+ *
+ * Returns 'shared' when the chooser was shown, 'failed' with a recorded
+ * reason, or 'unsupported' on web (caller keeps the normal browser path).
+ */
+export async function openPdfViaNative(
+  url: string,
+  filename: string,
+): Promise<'unsupported' | 'shared' | 'failed'> {
+  if (!isNative()) return 'unsupported';
+
+  try {
+    const { getAccessToken } = await import('@/services/api');
+    const authToken = (await getAccessToken()) || '';
+    const FileShare = registerPlugin<{
+      openRemote: (opts: { url: string; filename: string; authToken: string }) => Promise<{ status: string }>;
+    }>('FileShare');
+    const result = await withTimeout(
+      FileShare.openRemote({ url, filename, authToken }),
+      30000,
+      'Your device did not respond. If this repeats, reinstall the latest Genesis app.',
+    );
+    return result?.status === 'shared' ? 'shared' : 'failed';
+  } catch (err) {
+    const e = err as { code?: string; message?: string } | null;
+    const code = e?.code || '';
+    const message = e?.message || '';
+    lastFileShareFailure = code ? `${code}: ${message}` : message || String(err || 'unknown');
+    return 'failed';
   }
 }
 

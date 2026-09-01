@@ -139,7 +139,7 @@ async function refreshViaBackend(): Promise<string | null> {
   return newToken;
 }
 
-async function getAccessToken(): Promise<string | null> {
+export async function getAccessToken(): Promise<string | null> {
   // Use cached token if still valid
   if (cachedToken && !isTokenExpired(cachedToken)) return cachedToken;
 

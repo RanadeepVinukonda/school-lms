@@ -13,7 +13,7 @@ SplashScreen.preventAutoHideAsync();
 // even after Vercel deployed the fix. Bumping this tag per APK release forces a
 // full re-fetch, and cacheMode=LOAD_NO_CACHE below makes the WebView never read
 // an HTTP-cached copy at all. Bump this whenever you ship a new APK.
-const BUILD_TAG = '20260904-2';
+const BUILD_TAG = '20260904-3';
 const WEBSITE_URL = `https://genesis-frontend-teal.vercel.app/?v=${BUILD_TAG}`;
 
 // The web app registers a service worker (see service-worker.js) that serves
@@ -76,11 +76,23 @@ const OPEN_WITH_SHIM = `
     C.getPlatform = function () { return 'android'; };
     C.getConfig = C.getConfig || function () { return {}; };
     C.PluginHeaders = C.PluginHeaders || [];
-    if (!C.PluginHeaders.some(function (h) { return h.name === 'FileShare'; })) {
-      C.PluginHeaders.push({
-        name: 'FileShare',
-        methods: [{ name: 'open', rtype: 'promise' }]
-      });
+    // Keep the FileShare plugin descriptor complete: both the base64 'open'
+    // method (client-generated CSV etc.) and the new 'openRemote' method
+    // (native-side PDF download — the reliable invoice path).
+    var fsHeader = null;
+    for (var i = 0; i < C.PluginHeaders.length; i++) {
+      if (C.PluginHeaders[i].name === 'FileShare') { fsHeader = C.PluginHeaders[i]; break; }
+    }
+    if (!fsHeader) {
+      fsHeader = { name: 'FileShare', methods: [] };
+      C.PluginHeaders.push(fsHeader);
+    }
+    if (!fsHeader.methods) fsHeader.methods = [];
+    if (!fsHeader.methods.some(function (m) { return m.name === 'open'; })) {
+      fsHeader.methods.push({ name: 'open', rtype: 'promise' });
+    }
+    if (!fsHeader.methods.some(function (m) { return m.name === 'openRemote'; })) {
+      fsHeader.methods.push({ name: 'openRemote', rtype: 'promise' });
     }
     if (!C.nativePromise) {
       C.nativePromise = function (pluginName, methodName, options) {
@@ -194,25 +206,37 @@ export default function App() {
     // Any bridged call we cannot fully service must reject its pending promise
     // immediately. A swallowed call leaves the web app's button "buffering"
     // forever with no file and no error, which is exactly what was reported.
-    if (data.plugin !== 'FileShare' || data.method !== 'open') {
+    if (data.plugin !== 'FileShare' || (data.method !== 'open' && data.method !== 'openRemote')) {
       rejectFs('Unsupported native call: ' + data.plugin + '.' + data.method);
       return;
     }
     const opts = (data.options || {}) as Record<string, string>;
     try {
       const mod = (NativeModules as any).GenesisOpenWith;
-      if (!mod || typeof mod.openFile !== 'function') {
+      if (!mod || typeof mod.openFile !== 'function' || typeof mod.openRemote !== 'function') {
         console.error('[genesis] NativeModules.GenesisOpenWith is missing in this build');
         rejectFs('FileShare module is not available in this app build');
         return;
       }
-      mod.openFile(
-        String(opts.filename || 'file'),
-        String(opts.mimeType || 'application/pdf'),
-        String(opts.content || ''),
-        (result: any) => settleFs(callId, 'resolve', JSON.stringify(result || { status: 'shared' })),
-        (error: any) => rejectFs(String((error && error.message) || error)),
-      );
+      if (data.method === 'openRemote') {
+        // Reliable PDF path: native downloads the authenticated URL itself,
+        // verifies it, writes it, then opens the system chooser.
+        mod.openRemote(
+          String(opts.url || ''),
+          String(opts.filename || 'file'),
+          String(opts.authToken || ''),
+          (result: any) => settleFs(callId, 'resolve', JSON.stringify(result || { status: 'shared' })),
+          (error: any) => rejectFs(String((error && error.message) || error)),
+        );
+      } else {
+        mod.openFile(
+          String(opts.filename || 'file'),
+          String(opts.mimeType || 'application/pdf'),
+          String(opts.content || ''),
+          (result: any) => settleFs(callId, 'resolve', JSON.stringify(result || { status: 'shared' })),
+          (error: any) => rejectFs(String((error && error.message) || error)),
+        );
+      }
     } catch (err: any) {
       console.error('[genesis] FileShare call threw:', String((err && err.message) || err));
       rejectFs('FileShare call failed: ' + String((err && err.message) || err));
