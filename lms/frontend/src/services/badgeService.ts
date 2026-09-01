@@ -3,10 +3,15 @@
  * which falls back to ShortcutBadger on Android (launcher dependent). All calls
  * are no-ops on non-native platforms.
  *
- * NOTE: the badge plugin must never be invoked on web — calling methods on the
- * unregistered Badge proxy throws "Badge.then() is not implemented on web". The
- * platform gate below is therefore strict (Android/iOS native only) and every
- * public method is safe to call from any platform.
+ * NOTE: the badge plugin must never be invoked on a platform where its native
+ * implementation is not actually present. Calling methods on the unregistered
+ * Badge proxy throws "Badge.then() is not implemented on web". This happens on
+ * plain web AND inside the Android app's React-Native WebView: the Open-With
+ * shim forces Capacitor.isNativePlatform() to return true (needed so the web
+ * app's FileShare path routes to native), which would otherwise unlock the badge
+ * path — but the WebView has no native Badge bridge, so actually invoking the
+ * plugin throws. The gate below therefore also checks that the Badge native
+ * plugin is truly available, not merely that the platform is reported native.
  */
 
 import { Capacitor } from '@capacitor/core';
@@ -30,12 +35,22 @@ async function getBadge(): Promise<any | null> {
 }
 
 /**
- * True only on native platforms where the launcher badge plugin actually runs.
- * Guards the dynamic import so Badge is never touched on web.
+ * True only when the Badge plugin is genuinely available to run:
+ *  - it must be a native platform, AND
+ *  - the Badge plugin must be registered/available on it.
+ *
+ * The plugin is available only inside a real Capacitor native app (it is
+ * reported there via the native plugin set). In a plain web browser this is
+ * false because isNativePlatform() is false. Inside the Android app's
+ * React-Native WebView, isNativePlatform() is faked true by the Open-With
+ * shim, but isPluginAvailable('Badge') is still false because no native Badge
+ * bridge exists there — so the plugin is never invoked and the "not
+ * implemented on web" error cannot happen.
  */
 export function isBadgeSupported(): boolean {
   try {
-    return Capacitor.isNativePlatform();
+    if (!Capacitor.isNativePlatform()) return false;
+    return Capacitor.isPluginAvailable('Badge');
   } catch {
     return false;
   }
