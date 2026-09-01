@@ -1,4 +1,4 @@
-const CACHE_NAME = 'genesis-lms-v3';
+const CACHE_NAME = 'genesis-lms-v4';
 const STATIC_ASSETS = ['/', '/index.html'];
 
 self.addEventListener('install', (e) => {
@@ -94,18 +94,31 @@ self.addEventListener('fetch', (e) => {
   }
 
   e.respondWith(
-    caches.match(e.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(e.request).then((res) => {
-        if (res.ok && (e.request.mode === 'navigate' || e.request.destination === 'document')) {
+    // Network-first for everything so new deployments are picked up
+    // immediately. Previously this was cache-first, which served stale JS
+    // chunks forever and kept old (buggy) builds running long after a deploy —
+    // including inside the Android APK's WebView. Fall back to cache only when
+    // offline so the app shell still works.
+    fetch(e.request)
+      .then((res) => {
+        if (
+          res.ok &&
+          (e.request.destination === 'script' ||
+            e.request.destination === 'style' ||
+            e.request.destination === 'font' ||
+            e.request.destination === 'image')
+        ) {
           const clone = res.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
         }
         return res;
-      }).catch(() => {
-        if (e.request.mode === 'navigate') return caches.match('/');
-        return new Response('', { status: 503 });
-      });
-    })
+      })
+      .catch(() =>
+        caches.match(e.request).then((cached) => {
+          if (cached) return cached;
+          if (e.request.mode === 'navigate') return caches.match('/');
+          return new Response('', { status: 503 });
+        })
+      )
   );
 });
