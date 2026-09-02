@@ -221,10 +221,15 @@ export default function App() {
       if (data.method === 'openRemote') {
         // Reliable PDF path: native downloads the authenticated URL itself,
         // verifies it, writes it, then opens the system chooser.
+        // The RN bridge wraps @ReactMethod+Promise calls in a JS Promise
+        // automatically — do NOT pass explicit success/error callbacks as
+        // extra arguments; the bridge counts them as data args and rejects
+        // with "expected argument count: 3" when it sees 5 instead of 3.
         mod.openRemote(
           String(opts.url || ''),
           String(opts.filename || 'file'),
           String(opts.authToken || ''),
+        ).then(
           (result: any) => settleFs(callId, 'resolve', JSON.stringify(result || { status: 'shared' })),
           (error: any) => rejectFs(String((error && error.message) || error)),
         );
@@ -233,6 +238,7 @@ export default function App() {
           String(opts.filename || 'file'),
           String(opts.mimeType || 'application/pdf'),
           String(opts.content || ''),
+        ).then(
           (result: any) => settleFs(callId, 'resolve', JSON.stringify(result || { status: 'shared' })),
           (error: any) => rejectFs(String((error && error.message) || error)),
         );
