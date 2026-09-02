@@ -215,34 +215,50 @@ export async function openPdfViaNative(
 ): Promise<'unsupported' | 'shared' | 'failed'> {
   if (!isNative()) return 'unsupported';
 
-  try {
-    const { getAccessToken } = await import('@/services/api');
-    const authToken = (await getAccessToken()) || '';
-    const FileShare = registerPlugin<{
-      openRemote: (opts: { url: string; filename: string; authToken: string }) => Promise<{ status: string }>;
-    }>('FileShare');
-    const result = await withTimeout(
-      FileShare.openRemote({ url, filename, authToken }),
-      30000,
-      'Your device did not respond. If this repeats, reinstall the latest Genesis app.',
-    );
-    return result?.status === 'shared' ? 'shared' : 'failed';
-  } catch (err) {
-    const e = err as { code?: string; message?: string } | null;
-    const code = e?.code || '';
-    const message = e?.message || '';
-    // The FileShare plugin has no implementation on this platform (plain
-    // browser or a WebView without the native bridge → Capacitor's
-    // "UNIMPLEMENTED" / "not registered"). That is not a device failure —
-    // fall back to the normal browser path instead of exposing a raw bridge
-    // error ("FileShare.openRemote() is not implemented on web") to the user.
-    if (/not registered|unimplemented|no web implementation/i.test(code + message)) {
-      console.warn('[native] FileShare.openRemote unavailable:', code, message);
-      return 'unsupported';
+  // One retry, allowed only for a stale session (native 401 → the bearer token
+  // the page handed over no longer works). getAccessToken() refreshes an
+  // expired token, so the retry picks up a fresh one.
+  const maxAttempts = 2;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const { getAccessToken } = await import('@/services/api');
+      const authToken = (await getAccessToken()) || '';
+      const FileShare = registerPlugin<{
+        openRemote: (opts: { url: string; filename: string; authToken: string }) => Promise<{ status: string }>;
+      }>('FileShare');
+      const result = await withTimeout(
+        FileShare.openRemote({ url, filename, authToken }),
+        // Generous watchdog: native now streams the download on its own thread
+        // (no WebView-freeze risk) and the backend can take well over 30s to
+        // render a PDF from a cold free-tier node. This only trips if the
+        // bridge itself is dead — not to race slow server responses.
+        150000,
+        'Your device did not respond. If this repeats, reinstall the latest Genesis app.',
+      );
+      return result?.status === 'shared' ? 'shared' : 'failed';
+    } catch (err) {
+      const e = err as { code?: string; message?: string } | null;
+      const code = e?.code || '';
+      const message = e?.message || '';
+      // The FileShare plugin has no implementation on this platform (plain
+      // browser or a WebView without the native bridge → Capacitor's
+      // "UNIMPLEMENTED" / "not registered"). That is not a device failure —
+      // fall back to the normal browser path instead of exposing a raw bridge
+      // error ("FileShare.openRemote() is not implemented on web") to the user.
+      if (/not registered|unimplemented|no web implementation/i.test(code + message)) {
+        console.warn('[native] FileShare.openRemote unavailable:', code, message);
+        return 'unsupported';
+      }
+      if (/unauthorized|401|session expired/i.test(code + message) && attempt < maxAttempts - 1) {
+        console.warn('[native] FileShare.openRemote unauthorized — refreshing token and retrying');
+        continue;
+      }
+      lastFileShareFailure = code ? `${code}: ${message}` : message || String(err || 'unknown');
+      return 'failed';
     }
-    lastFileShareFailure = code ? `${code}: ${message}` : message || String(err || 'unknown');
-    return 'failed';
   }
+  lastFileShareFailure = 'Unable to open the PDF after retrying. Please try again.';
+  return 'failed';
 }
 
 /**
@@ -330,7 +346,7 @@ export async function exportFileOnNative(
     const content = await blobToBase64(blob);
     const result = await withTimeout(
       FileShare.open({ filename, mimeType, content }),
-      20000,
+      90000,
       'Your device did not respond (native bridge timeout). Try again — if this repeats, reinstall the latest Genesis app.',
     );
     return result?.status === 'excel' ? 'excel' : 'shared';
@@ -370,7 +386,7 @@ export async function savePdfToDownloads(
     const content = await blobToBase64(blob);
     const result = await withTimeout(
       FileShare.saveToDownloads({ filename, content }),
-      20000,
+      90000,
       'Your device did not respond (native bridge timeout). Try again — if this repeats, reinstall the latest Genesis app.',
     );
     return result?.status === 'saved' ? 'saved' : 'failed';
