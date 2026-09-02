@@ -10,7 +10,7 @@ import { Icon } from '@/components/ui/Icon';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { feeService, type InvoiceComputed, type InvoicePreviewData } from '@/services/feeService';
-import { exportFileOnNative, consumeLastFileShareFailure, isNative, openPdfViaNative } from '@/lib/native';
+import { exportFileOnNative, consumeLastFileShareFailure, downloadBlobInBrowser, isNative, openPdfViaNative } from '@/lib/native';
 import { API_BASE_URL } from '@/lib/constants';
 
 interface InvoicesTabProps {
@@ -122,17 +122,6 @@ export default function AdminInvoicesTab({ students }: InvoicesTabProps) {
     return blob;
   }, []);
 
-  const triggerDownload = useCallback((blob: Blob, filename: string) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }, []);
-
   const openInvoicePdf = useCallback(async (id: string, inline: boolean, label: string) => {
     if (pdfBusy) return;
     setPdfBusy(id);
@@ -150,8 +139,12 @@ export default function AdminInvoicesTab({ students }: InvoicesTabProps) {
         if (native === 'failed') {
           const detail = consumeLastFileShareFailure();
           toast.error(detail ? `Could not open the PDF (${detail})` : 'No app available to open the PDF on this device');
+          return;
         }
-        return;
+        if (native !== 'unsupported') return;
+        // FileShare.openRemote has no implementation here (plain browser, or a
+        // WebView without the native bridge) → fall through to the browser
+        // path below so the action still works instead of showing a bridge error.
       }
 
       let blob: Blob | null = null;
@@ -226,7 +219,7 @@ export default function AdminInvoicesTab({ students }: InvoicesTabProps) {
       } else {
         return;
       }
-      triggerDownload(blob, filename);
+      downloadBlobInBrowser(blob, filename);
       toast.success('Invoice PDF downloaded');
     } catch (err: any) {
       const status = (err as any)?.status || (err as any)?.response?.status;
@@ -237,7 +230,7 @@ export default function AdminInvoicesTab({ students }: InvoicesTabProps) {
     } finally {
       setPdfBusy(null);
     }
-  }, [fetchPdfBlob, triggerDownload, pdfBusy]);
+  }, [fetchPdfBlob, pdfBusy]);
 
   const selectStudent = useCallback((s: Record<string, any>) => {
     setForm({ studentId: s.id, feeScheduleId: '', discount: 0, paymentMethod: '', transactionId: '' });

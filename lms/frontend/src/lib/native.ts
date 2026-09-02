@@ -231,9 +231,37 @@ export async function openPdfViaNative(
     const e = err as { code?: string; message?: string } | null;
     const code = e?.code || '';
     const message = e?.message || '';
+    // The FileShare plugin has no implementation on this platform (plain
+    // browser or a WebView without the native bridge → Capacitor's
+    // "UNIMPLEMENTED" / "not registered"). That is not a device failure —
+    // fall back to the normal browser path instead of exposing a raw bridge
+    // error ("FileShare.openRemote() is not implemented on web") to the user.
+    if (/not registered|unimplemented|no web implementation/i.test(code + message)) {
+      console.warn('[native] FileShare.openRemote unavailable:', code, message);
+      return 'unsupported';
+    }
     lastFileShareFailure = code ? `${code}: ${message}` : message || String(err || 'unknown');
     return 'failed';
   }
+}
+
+/**
+ * Browser download of an in-memory blob with a meaningful filename (the Web
+ * implementation of "save this file"). Uses an anchor with a `download`
+ * attribute so the browser saves the file under `filename` — never "blob",
+ * "download" or "undefined" — instead of navigating to it.
+ */
+export function downloadBlobInBrowser(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  // The browser resolves the blob URL synchronously on click; revoking shortly
+  // after keeps memory pressure low without killing the in-flight download.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /** Base64-encode a blob (safe, charset-proof transport for the native bridge). */
