@@ -61,6 +61,7 @@ export default function AdminProfileEditPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-profile-edit', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['admin-settings-data'] });
       queryClient.invalidateQueries({ queryKey: ['admin-users-stats'] });
       toast.success('Profile updated');
       navigate(ADMIN_SETTINGS_PROFILE);

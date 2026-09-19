@@ -63,6 +63,7 @@ export default function StudentProfileEditPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['student-profile-edit', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['student-profile', user?.id] });
       toast.success(_('Profile updated'));
       navigate(ROUTES.STUDENT_PROFILE);
     },

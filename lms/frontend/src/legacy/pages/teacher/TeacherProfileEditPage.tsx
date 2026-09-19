@@ -61,6 +61,7 @@ export default function TeacherProfileEditPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teacher-profile-edit', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['teacher-profile', user?.id] });
       toast.success(_('Profile updated'));
       navigate(ROUTES.TEACHER_PROFILE);
     },

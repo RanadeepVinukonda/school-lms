@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Icon } from '@/components/ui/Icon';
 import { getInitials } from '@/lib/utils';
@@ -25,6 +26,8 @@ export default function ParentProfileEditPage() {
     displayName: '',
     email: '',
     phone: '',
+    bio: '',
+    address: '',
   });
 
   const { data: userDoc, isLoading: loadingProfile } = useQuery({
@@ -39,6 +42,8 @@ export default function ParentProfileEditPage() {
         displayName: userDoc.displayName || '',
         email: userDoc.email || '',
         phone: userDoc.phone || '',
+        bio: userDoc.bio || '',
+        address: userDoc.address || '',
       });
     }
   }, [userDoc]);
@@ -102,6 +107,16 @@ export default function ParentProfileEditPage() {
                   <Label className="text-label-sm">{_('Phone')}</Label>
                   <Input value={form.phone} onChange={(e) => handleChange('phone', e.target.value)} placeholder={_('+1 555 123 4567')} />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-label-sm">{_('Bio')}</Label>
+                <Textarea value={form.bio} onChange={(e) => handleChange('bio', e.target.value)} rows={3} placeholder={_('Tell us about yourself...')} />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-label-sm">{_('Address')}</Label>
+                <Input value={form.address} onChange={(e) => handleChange('address', e.target.value)} placeholder={_('Your address')} />
               </div>
 
               <div className="flex gap-3 pt-2">
