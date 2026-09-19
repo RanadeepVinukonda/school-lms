@@ -48,7 +48,11 @@ export default function StudentProfilePage() {
     enabled: !!authUser,
   });
 
-  useRealtimeInvalidation([{ table: 'profiles', queryKey: ['student-profile', authUser?.id ?? ''] }]);
+  useRealtimeInvalidation([
+    { table: 'grades', queryKey: ['student-profile', authUser?.id ?? ''] },
+    { table: 'firestore_docs', queryKey: ['student-profile', authUser?.id ?? ''] },
+    { table: 'users', queryKey: ['student-profile', authUser?.id ?? ''] },
+  ]);
 
   return (
     <>

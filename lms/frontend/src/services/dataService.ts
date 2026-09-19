@@ -219,25 +219,103 @@ export interface AttemptEntry {
   createdAt: string;
 }
 
-/** Fetch grades for a specific student. */
+/** Compute a percentage from any grade shape (percentage field or score/max). */
+export function gradePercentage(g: Record<string, unknown>): number {
+  if (g.percentage != null && !Number.isNaN(Number(g.percentage))) return Number(g.percentage);
+  const points = Number(g.totalPoints ?? g.total_points ?? g.maxScore ?? g.max_score ?? 0);
+  const score = Number(g.score ?? 0);
+  return points > 0 ? Math.round((score / points) * 100) : 0;
+}
+
+/** Fetch grades for a specific student from BOTH stores (mirrors the backend
+ *  parent.service fetchGradesForStudent):
+ *   - firestore_docs collection 'grades' (auto-graded quizzes/assignments)
+ *   - physical `grades` table (teacher gradebook)
+ *  Falls back to graded attempts when no formal grade records exist. */
 export async function getGradesByStudent(studentId: string): Promise<GradeEntry[]> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (supabaseUrl && supabaseKey) {
-    try {
-      const session = await supabase.auth.getSession();
-      const token = session?.data?.session?.access_token;
-      if (token) {
-        const res = await fetch(`${supabaseUrl}/rest/v1/grades?student_id=eq.${encodeURIComponent(studentId)}&select=*`, {
-          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
-        });
-        if (res.ok) return (await res.json()) as unknown as GradeEntry[];
-      }
-    } catch { /* fall through */ }
+  const grades: GradeEntry[] = [];
+
+  const { data: docs, error: docsErr } = await supabase
+    .from('firestore_docs')
+    .select('data')
+    .eq('collection', 'grades')
+    .filter('data->>studentId', 'eq', studentId)
+    .limit(500);
+  if (docsErr) throw docsErr;
+  for (const row of docs || []) {
+    const g = (row?.data || {}) as Record<string, unknown>;
+    grades.push({
+      id: (g.id as string) || `${studentId}_${(g.subjectId as string) || ''}_${(g.itemName as string) || ''}_${g.score as number}_${(g.createdAt as string) || ''}`,
+      studentId,
+      courseId: (g.courseId as string) || undefined,
+      subjectId: (g.subjectId as string) || undefined,
+      classId: (g.classId as string) || undefined,
+      itemName: (g.itemName as string) || (g.title as string) || 'Assessment',
+      score: Number(g.score ?? 0),
+      totalPoints: Number(g.totalPoints ?? g.maxScore ?? g.max_score ?? 100),
+      percentage: gradePercentage(g),
+      createdAt: (g.createdAt as string) || '',
+    });
   }
-  const { data, error } = await supabase.from(GRADES_COLLECTION).select('*').eq('student_id', studentId);
-  if (error) throw error;
-  return (data || []) as unknown as GradeEntry[];
+
+  const { data: tableRows, error: tableErr } = await supabase
+    .from(GRADES_COLLECTION)
+    .select('*')
+    .eq('student_id', studentId)
+    .limit(500);
+  if (tableErr) throw tableErr;
+  for (const row of tableRows || []) {
+    const g = (row || {}) as Record<string, unknown>;
+    grades.push({
+      id: (g.id as string) || `${studentId}_${(g.subject_id as string) || ''}_${(g.item_name as string) || ''}_${g.score as number}_${(g.created_at as string) || ''}`,
+      studentId,
+      courseId: (g.course_id as string) || (g.courseId as string) || undefined,
+      subjectId: (g.subject_id as string) || (g.subjectId as string) || undefined,
+      classId: (g.class_id as string) || (g.classId as string) || undefined,
+      itemName: (g.item_name as string) || (g.itemName as string) || (g.comments as string) || 'Assessment',
+      score: Number(g.score ?? 0),
+      totalPoints: Number(g.total_points ?? g.totalPoints ?? g.max_score ?? g.maxScore ?? 100),
+      percentage: gradePercentage(g),
+      createdAt: (g.created_at as string) || (g.createdAt as string) || '',
+    });
+  }
+
+  const seen = new Set<string>();
+  const deduped: GradeEntry[] = [];
+  for (const gr of grades) {
+    const key = [gr.studentId, gr.subjectId || '', gr.courseId || '', gr.itemName || '', gr.score, gr.totalPoints].join('|');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(gr);
+  }
+
+  if (deduped.length > 0) return deduped;
+
+  const attempts: GradeEntry[] = [];
+  for (const collection of ['quizAttemptV2', 'assignmentSubmissionV2', 'examAttemptV2'] as const) {
+    const { data: rows, error: attemptErr } = await supabase
+      .from('firestore_docs')
+      .select('data')
+      .eq('collection', collection)
+      .filter('data->>studentId', 'eq', studentId)
+      .limit(200);
+    if (attemptErr) continue;
+    for (const row of rows || []) {
+      const a = (row?.data || {}) as Record<string, unknown>;
+      attempts.push({
+        id: (a.id as string) || `${studentId}_${collection}_${(a.startedAt as string) || (a.submittedAt as string) || ''}`,
+        studentId,
+        subjectId: (a.subjectId as string) || undefined,
+        classId: (a.classId as string) || undefined,
+        itemName: (a.itemName as string) || (a.title as string) || collection.replace('V2', '').replace(/([A-Z])/g, ' $1').trim(),
+        score: Number(a.score ?? 0),
+        totalPoints: Number(a.totalPoints ?? 100),
+        percentage: gradePercentage(a),
+        createdAt: (a.submittedAt as string) || (a.startedAt as string) || '',
+      });
+    }
+  }
+  return attempts;
 }
 
 /** Fetch completed quiz attempts for a student from firestore_docs. */
