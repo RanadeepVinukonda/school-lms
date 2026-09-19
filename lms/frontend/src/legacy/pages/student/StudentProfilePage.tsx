@@ -39,9 +39,9 @@ export default function StudentProfilePage() {
         .filter((s): s is NonNullable<typeof s> => s !== null);
       const enrichedGrades = grades
         .map((g) => ({ ...g, subject: g.subjectId ? (subjectMap.get(g.subjectId)?.name ?? 'Unknown') : 'Unknown' }));
-      const avgPercentage = enrichedGrades.length > 0
-        ? enrichedGrades.reduce((sum, g) => sum + g.percentage, 0) / enrichedGrades.length
-        : 0;
+      const totalScore = enrichedGrades.reduce((sum, g) => sum + (g.score || 0), 0);
+      const totalPoints = enrichedGrades.reduce((sum, g) => sum + (g.totalPoints || 0), 0);
+      const avgPercentage = totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0;
 
       return { user, subjects: studentSubjects, grades: enrichedGrades, avgPercentage, totalSubjects: studentSubjects.length, className: classDoc?.name ?? null, classGrade: classDoc?.grade ?? null };
     },
