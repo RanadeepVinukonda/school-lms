@@ -1,9 +1,13 @@
 package com.school.lms;
 
 import android.content.ClipData;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.util.Base64;
 
 import androidx.core.content.FileProvider;
@@ -16,6 +20,7 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -129,9 +134,14 @@ public class FileSharePlugin extends Plugin {
 
             PackageManager pm = getContext().getPackageManager();
 
-            // 1) Prefer Excel / Microsoft 365 — the CSV opens as a spreadsheet
-            //    directly, no chooser in between.
-            if (openInExcel(uri, mimeType)) {
+            // 1) Prefer Excel / Microsoft 365 — but only for spreadsheets.
+            //    A PDF handed to Microsoft 365 would open silently inside that
+            //    app and skip the "Open with" chooser the user expects.
+            boolean isSpreadsheet = mimeType != null
+                    && (mimeType.toLowerCase().contains("csv")
+                    || mimeType.toLowerCase().contains("excel")
+                    || mimeType.toLowerCase().contains("spreadsheet"));
+            if (isSpreadsheet && openInExcel(uri, mimeType)) {
                 call.resolve(new JSObject().put("status", "excel"));
                 return;
             }
@@ -171,6 +181,97 @@ public class FileSharePlugin extends Plugin {
             call.reject("No app available to open or share this file", "NO_HANDLER");
         } catch (Exception e) {
             call.reject("EXPORT_FAILED", "Failed to export file: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Save a file (base64 payload) straight into the device's public Downloads
+     * folder so the user can find it in the Files / Downloads app immediately.
+     *
+     *  - Android 10+ (API 29+): MediaStore.Downloads — no storage permission needed.
+     *  - Android 7-9 (API 24-28): legacy public Downloads dir. WRITE_EXTERNAL_STORAGE is
+     *    a runtime permission on those versions; if it isn't granted the call is rejected
+     *    with a clear message (these API levels are deprecated/essentially obsolete).
+     */
+    @PluginMethod
+    public void saveToDownloads(PluginCall call) {
+        String filename = call.getString("filename");
+        String content = call.getString("content"); // base64 payload
+
+        if (filename == null || filename.trim().isEmpty()) {
+            call.reject("filename is required");
+            return;
+        }
+        if (content == null || content.isEmpty()) {
+            call.reject("content is required");
+            return;
+        }
+        if (getActivity() == null) {
+            call.reject("No activity available", "ACTIVITY_MISSING");
+            return;
+        }
+
+        String safeName = filename.replaceAll("[^a-zA-Z0-9._-]", "_");
+
+        try {
+            byte[] data = Base64.decode(content, Base64.DEFAULT);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // MediaStore.Downloads (API 29+) — no permission required.
+                ContentValues values = new ContentValues();
+                values.put(MediaStore.Downloads.DISPLAY_NAME, safeName);
+                values.put(MediaStore.Downloads.MIME_TYPE, "application/pdf");
+                values.put(MediaStore.Downloads.IS_PENDING, 1);
+                Uri collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI;
+                Uri item = getContext().getContentResolver().insert(collection, values);
+                if (item == null) {
+                    call.reject("Could not create download entry", "EXPORT_FAILED");
+                    return;
+                }
+                try (OutputStream os = getContext().getContentResolver().openOutputStream(item)) {
+                    if (os == null) {
+                        call.reject("Could not open output stream", "EXPORT_FAILED");
+                        return;
+                    }
+                    os.write(data);
+                }
+                values.clear();
+                values.put(MediaStore.Downloads.IS_PENDING, 0);
+                getContext().getContentResolver().update(item, values, null, null);
+
+                call.resolve(new JSObject().put("status", "saved").put("path", item.toString()));
+            } else {
+                // Legacy (API 24-28).
+                if (getContext().checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        != PackageManager.PERMISSION_GRANTED) {
+                    call.reject("Storage permission is required to save to Downloads", "PERMISSION_DENIED");
+                    return;
+                }
+                writeLegacyDownloads(call, safeName, data);
+            }
+        } catch (Exception e) {
+            call.reject("EXPORT_FAILED", "Failed to save file: " + e.getMessage(), e);
+        }
+    }
+
+    private void writeLegacyDownloads(PluginCall call, String safeName, byte[] data) {
+        try {
+            File downloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            if (downloads == null) {
+                call.reject("Downloads directory unavailable", "EXPORT_FAILED");
+                return;
+            }
+            if (!downloads.exists() && !downloads.mkdirs()) {
+                call.reject("Could not create Downloads directory", "EXPORT_FAILED");
+                return;
+            }
+            File file = new File(downloads, safeName);
+            try (FileOutputStream fos = new FileOutputStream(file)) {
+                fos.write(data);
+            }
+            call.resolve(new JSObject().put("status", "saved").put("path", file.getAbsolutePath()));
+        } catch (Exception e) {
+            call.reject("EXPORT_FAILED", "Failed to save file: " + e.getMessage(), e);
         }
     }
 }
