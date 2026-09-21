@@ -9,6 +9,7 @@
     "start": "node dist/index.js",
     "lint": "eslint src/",
     "db:cleanup": "tsx src/scripts/cleanupDemoData.ts",
+    "db:seed": "tsx src/scripts/seed.ts",
     "test": "jest --forceExit",
     "test:coverage": "jest --coverage",
     "test:watch": "jest --watch",
