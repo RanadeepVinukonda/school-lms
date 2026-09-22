@@ -32,6 +32,25 @@ const PASSWORD = 'student123';   // all students / parents
 const TEACHER_PASSWORD = 'teacher123';
 const ADMIN_PASSWORD = 'admin123';
 
+// ─── Auth user lookup helper ────────────────────────────────────────
+// listUsers({ filter }) does substring matching — build exact-match map instead.
+let _authUserMap: Map<string, string> | null = null;
+async function getAuthUserByEmail(email: string): Promise<string | null> {
+  if (!_authUserMap) {
+    _authUserMap = new Map();
+    let page = 1;
+    while (true) {
+      const { data } = await sb.auth.admin.listUsers({ page, perPage: 100 });
+      for (const u of data?.users || []) {
+        if (u.email) _authUserMap.set(u.email.toLowerCase(), u.id);
+      }
+      if (!data?.users || data.users.length < 100) break;
+      page++;
+    }
+  }
+  return _authUserMap.get(email.toLowerCase()) || null;
+}
+
 // ─── Deterministic UUID helper ──────────────────────────────────────
 // Simple v5-like: hash a namespace + value to get a repeatable UUID.
 function detUuid(namespace: string, value: string): string {
@@ -323,9 +342,9 @@ async function seed() {
     const id = detUuid('teacher', t.email);
     teacherIds.push(id);
 
-    // Check if auth user exists
-    const { data: existingUser } = await sb.auth.admin.listUsers({ filter: t.email });
-    if (existingUser?.users?.length === 0) {
+    // Check if auth user exists (exact match)
+    const existingAuthId = await getAuthUserByEmail(t.email);
+    if (!existingAuthId) {
       const { data: authData, error: authErr } = await sb.auth.admin.createUser({
         email: t.email,
         password: TEACHER_PASSWORD,
@@ -345,7 +364,6 @@ async function seed() {
         display_name: `${t.firstName} ${t.lastName}`,
         role: 'teacher',
         phone_number: t.phone,
-        phone: t.phone,
         gender: t.gender,
         is_active: true,
         school_id: SCHOOL_ID,
@@ -357,9 +375,29 @@ async function seed() {
         console.log(`  ✓ ${t.firstName} ${t.lastName} (${t.email})`);
       }
     } else {
-      const authId = existingUser!.users[0].id;
-      teacherIds[teacherIds.length - 1] = authId;
-      console.log(`  · ${t.firstName} ${t.lastName} (exists)`);
+      teacherIds[teacherIds.length - 1] = existingAuthId;
+      // Ensure profile exists in users table
+      const { data: existingProfile } = await sb.from('users').select('id').eq('id', existingAuthId).maybeSingle();
+      if (!existingProfile) {
+        const { error: profileErr } = await sb.from('users').insert({
+          id: existingAuthId,
+          email: t.email,
+          display_name: `${t.firstName} ${t.lastName}`,
+          role: 'teacher',
+          phone_number: t.phone,
+          gender: t.gender,
+          is_active: true,
+          school_id: SCHOOL_ID,
+          password: TEACHER_PASSWORD,
+        });
+        if (profileErr && !profileErr.message?.includes('duplicate')) {
+          console.error(`  Error backfilling profile for ${t.email}:`, profileErr.message);
+        } else {
+          console.log(`  ✓ ${t.firstName} ${t.lastName} (profile created)`);
+        }
+      } else {
+        console.log(`  · ${t.firstName} ${t.lastName} (exists)`);
+      }
     }
   }
 
@@ -376,8 +414,8 @@ async function seed() {
     const email = `${studentIdStr}@school.edu`;
     const id = detUuid('student', email);
 
-    const { data: existingUser } = await sb.auth.admin.listUsers({ filter: email });
-    if (existingUser?.users?.length === 0) {
+    const existingAuthId = await getAuthUserByEmail(email);
+    if (!existingAuthId) {
       const { data: authData, error: authErr } = await sb.auth.admin.createUser({
         email,
         password: PASSWORD,
@@ -412,10 +450,6 @@ async function seed() {
         is_active: true,
         school_id: SCHOOL_ID,
         password: PASSWORD,
-        date_of_birth: `${birthYear}-${birthMonth}-${birthDay}`,
-        phone: '',
-        bio: '',
-        address: '',
       });
       if (profileErr && !profileErr.message?.includes('duplicate')) {
         console.error(`  Error creating profile for ${email}:`, profileErr.message);
@@ -424,9 +458,38 @@ async function seed() {
         if (studentCount % 10 === 0) console.log(`  ... ${studentCount} students created`);
       }
     } else {
-      const authId = existingUser!.users[0].id;
-      studentIds.push(authId);
-      console.log(`  · ${s.first} ${s.last} (exists)`);
+      studentIds.push(existingAuthId);
+      // Ensure profile exists in users table
+      const { data: existingProfile } = await sb.from('users').select('id').eq('id', existingAuthId).maybeSingle();
+      if (!existingProfile) {
+        const assignment = studentAssignments.find((a) => a.studentIdx === i);
+        const classId = assignment !== undefined ? classIds[assignment.classIdx] : null;
+        const birthYear = 2014 - parseInt(CLASS_GRADES[assignment?.classIdx ?? 0]?.grade ?? '1') + 1;
+        const birthMonth = String(Math.floor(seededRandom(i * 7)() * 12) + 1).padStart(2, '0');
+        const birthDay = String(Math.floor(seededRandom(i * 13)() * 28) + 1).padStart(2, '0');
+        const { error: profileErr } = await sb.from('users').insert({
+          id: existingAuthId,
+          email,
+          display_name: `${s.first} ${s.last}`,
+          role: 'student',
+          student_id: studentIdStr,
+          roll_no: rollNo,
+          class_id: classId,
+          gender: s.gender,
+          academic_year: ACADEMIC_YEAR,
+          is_active: true,
+          school_id: SCHOOL_ID,
+          password: PASSWORD,
+        });
+        if (profileErr && !profileErr.message?.includes('duplicate')) {
+          console.error(`  Error backfilling profile for ${email}:`, profileErr.message);
+        } else {
+          console.log(`  ✓ ${s.first} ${s.last} (profile created)`);
+          studentCount++;
+        }
+      } else {
+        console.log(`  · ${s.first} ${s.last} (exists)`);
+      }
     }
   }
   console.log(`  ✓ ${studentCount} new students created (${studentIds.length} total)`);
@@ -448,8 +511,8 @@ async function seed() {
       childrenIds.push(studentIds[(childStart + c) % studentIds.length]);
     }
 
-    const { data: existingUser } = await sb.auth.admin.listUsers({ filter: email });
-    if (existingUser?.users?.length === 0) {
+    const existingAuthId = await getAuthUserByEmail(email);
+    if (!existingAuthId) {
       const { data: authData, error: authErr } = await sb.auth.admin.createUser({
         email,
         password: PASSWORD,
@@ -474,7 +537,6 @@ async function seed() {
         school_id: SCHOOL_ID,
         password: PASSWORD,
         children_ids: childrenIds,
-        phone: `+91-98765433${String(i + 10).padStart(2, '0')}`,
       });
       if (profileErr && !profileErr.message?.includes('duplicate')) {
         console.error(`  Error creating profile for ${email}:`, profileErr.message);
@@ -483,9 +545,30 @@ async function seed() {
         console.log(`  ✓ ${p.first} ${p.last} → children: ${childrenIds.length}`);
       }
     } else {
-      const authId = existingUser!.users[0].id;
-      parentIds.push(authId);
-      console.log(`  · ${p.first} ${p.last} (exists)`);
+      parentIds.push(existingAuthId);
+      // Ensure profile exists in users table
+      const { data: existingProfile } = await sb.from('users').select('id').eq('id', existingAuthId).maybeSingle();
+      if (!existingProfile) {
+        const { error: profileErr } = await sb.from('users').insert({
+          id: existingAuthId,
+          email,
+          display_name: `${p.first} ${p.last}`,
+          role: 'parent',
+          gender: p.gender,
+          is_active: true,
+          school_id: SCHOOL_ID,
+          password: PASSWORD,
+          children_ids: childrenIds,
+        });
+        if (profileErr && !profileErr.message?.includes('duplicate')) {
+          console.error(`  Error backfilling profile for ${email}:`, profileErr.message);
+        } else {
+          console.log(`  ✓ ${p.first} ${p.last} (profile created)`);
+          parentCount++;
+        }
+      } else {
+        console.log(`  · ${p.first} ${p.last} (exists)`);
+      }
     }
   }
   console.log(`  ✓ ${parentCount} new parents created`);
