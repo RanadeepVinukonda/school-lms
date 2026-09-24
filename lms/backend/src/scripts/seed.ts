@@ -612,7 +612,6 @@ async function seed() {
           class_id: classIds[ci],
           subject_id: subjectId,
           status: 'active',
-          school_id: SCHOOL_ID,
         });
 
         tcsDocRows.push({
@@ -831,10 +830,14 @@ async function seed() {
 
   let examCount = 0;
   let gradeCount = 0;
+  let examV2Count = 0;
+  let examAttemptCount = 0;
   const gradeRng = seededRandom(456);
   const gradeRows: any[] = [];
   const gradeDocRows: any[] = [];
   const examRows: any[] = [];
+  const examV2Rows: any[] = [];
+  const examAttemptRows: any[] = [];
 
   // Pre-fetch teacher assignments into a map
   console.log('  Pre-fetching teacher assignments...');
@@ -879,6 +882,23 @@ async function seed() {
         });
 
         const gradedBy = teacherMap.get(`${classIds[ci]}-${subjectIds[si]}`) || teacherIds[0];
+
+        examV2Rows.push({
+          collection: 'examV2',
+          doc_id: examId,
+          data: {
+            id: examId,
+            title: `${SUBJECTS[si].name} - ${exam.title}`,
+            classId: classIds[ci],
+            teacherId: gradedBy,
+            subjectId: subjectIds[si],
+            totalPoints: 100,
+            scheduled_at: '2026-09-20T09:00:00.000Z',
+            duration: 60,
+          },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
 
         for (const studentId of studentIdsForClass) {
           const gradeId = detUuid('grade', `${studentId}-${examId}`);
@@ -928,6 +948,23 @@ async function seed() {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           });
+
+          examAttemptRows.push({
+            collection: 'examAttemptV2',
+            doc_id: detUuid('exam-attempt', `${studentId}-${examId}`),
+            data: {
+              studentId,
+              examId,
+              score,
+              totalPoints,
+              percentage,
+              status: 'submitted',
+              gradedBy,
+              submittedAt: new Date(Date.now() - Math.floor(Math.random() * 14) * 86400000).toISOString(),
+            },
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
         }
       }
     }
@@ -958,8 +995,25 @@ async function seed() {
     await sb.from('firestore_docs').upsert(batch, { onConflict: 'collection,doc_id', ignoreDuplicates: true });
   }
 
+  // Batch insert examV2 metadata + examAttemptV2 attempts into firestore_docs
+  console.log('  Batch inserting examV2 metadata + attempts...');
+  for (let i = 0; i < examV2Rows.length; i += 500) {
+    const batch = examV2Rows.slice(i, i + 500);
+    const { error } = await sb.from('firestore_docs').upsert(batch, { onConflict: 'collection,doc_id', ignoreDuplicates: true });
+    if (!error) examV2Count += batch.length;
+    else console.error(`  examV2 batch error:`, error.message);
+  }
+  for (let i = 0; i < examAttemptRows.length; i += 500) {
+    const batch = examAttemptRows.slice(i, i + 500);
+    const { error } = await sb.from('firestore_docs').upsert(batch, { onConflict: 'collection,doc_id', ignoreDuplicates: true });
+    if (!error) examAttemptCount += batch.length;
+    else console.error(`  examAttempt batch error:`, error.message);
+  }
+
   console.log(`  ✓ ${examCount} exams created`);
   console.log(`  ✓ ${gradeCount} grades created`);
+  console.log(`  ✓ ${examV2Count} examV2 docs created`);
+  console.log(`  ✓ ${examAttemptCount} examAttemptV2 attempts created`);
 
   // ── 12. Quiz attempts (firestore_docs) ──────────────────────────
   console.log('\n12. Creating quiz attempt records...');
@@ -1052,6 +1106,8 @@ async function seed() {
   console.log(`Fee payments: ${feePayCount}`);
   console.log(`Exams: ${examCount}`);
   console.log(`Grades: ${gradeCount}`);
+  console.log(`ExamV2 docs: ${examV2Count}`);
+  console.log(`ExamAttemptV2 attempts: ${examAttemptCount}`);
   console.log(`Quiz attempts: ${quizAttemptCount}`);
   console.log(`Notifications: ${notifCount}`);
   console.log('\nLogin credentials:');

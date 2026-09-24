@@ -35,21 +35,39 @@ const ASSESSMENT_COLLECTIONS = [
  * normalize the valid percentage records for downstream grouping.
  */
 async function loadAssessments(supabase: any): Promise<LoadedAssessments> {
-  const [quizRes, examRes, assignRes] = await Promise.all([
-    supabase.from('firestore_docs').select('doc_id, data').eq('collection', 'quizV2'),
-    supabase.from('firestore_docs').select('doc_id, data').eq('collection', 'examV2'),
-    supabase.from('firestore_docs').select('doc_id, data').eq('collection', 'assignmentV2'),
+  async function fetchAll(collection: string, columns = 'doc_id, data') {
+    const all: any[] = [];
+    const PAGE = 1000;
+    let start = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from('firestore_docs')
+        .select(columns)
+        .eq('collection', collection)
+        .range(start, start + PAGE - 1);
+      if (error) break;
+      all.push(...(data || []));
+      if (!data || data.length < PAGE) break;
+      start += PAGE;
+    }
+    return all;
+  }
+
+  const [quizDocs, examDocs, assignDocs] = await Promise.all([
+    fetchAll('quizV2'),
+    fetchAll('examV2'),
+    fetchAll('assignmentV2'),
   ]);
 
-  const [quizAttemptRes, examAttemptRes, submitRes] = await Promise.all([
-    supabase.from('firestore_docs').select('data').eq('collection', 'quizAttemptV2'),
-    supabase.from('firestore_docs').select('data').eq('collection', 'examAttemptV2'),
-    supabase.from('firestore_docs').select('data').eq('collection', 'assignmentSubmissionV2'),
+  const [quizAttemptDocs, examAttemptDocs, submitDocs] = await Promise.all([
+    fetchAll('quizAttemptV2', 'data'),
+    fetchAll('examAttemptV2', 'data'),
+    fetchAll('assignmentSubmissionV2', 'data'),
   ]);
 
   const metaById = new Map<string, { classId: string; teacherId: string }>();
-  for (const res of [quizRes, examRes, assignRes]) {
-    for (const d of res.data || []) {
+  for (const docs of [quizDocs, examDocs, assignDocs]) {
+    for (const d of docs || []) {
       const data = d.data || {};
       metaById.set(d.doc_id, {
         classId: data.classId || data.class_id || '',
@@ -59,12 +77,12 @@ async function loadAssessments(supabase: any): Promise<LoadedAssessments> {
   }
 
   const records: LoadedAssessments['records'] = [];
-  const attemptArrays: { data: any[] }[] = [quizAttemptRes, examAttemptRes, submitRes];
+  const attemptArrays = [quizAttemptDocs, examAttemptDocs, submitDocs];
   const idFields = ASSESSMENT_COLLECTIONS.map((c) => c.idField);
 
-  attemptArrays.forEach((res, index) => {
+  attemptArrays.forEach((docs, index) => {
     const idField = idFields[index];
-    for (const a of res.data || []) {
+    for (const a of docs || []) {
       const pct = a.data?.percentage;
       if (pct == null) continue;
       const assessmentId = a.data?.[idField];
