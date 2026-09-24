@@ -3,8 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { SEOHead } from '@/components/common/SEOHead';
 import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { Icon } from '@/components/ui/Icon';
 import { PerformanceLogoBadge } from '@/components/common/PerformanceLogoBadge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -28,39 +26,6 @@ function BarChart({ data, labelKey, valueKey, color = 'bg-primary', maxValue }: 
         </div>
       ))}
     </div>
-  );
-}
-
-function confidenceVariant(confidence: string): 'success' | 'warning' | 'info' | 'secondary' {
-  const c = (confidence || '').toLowerCase();
-  if (c.includes('good')) return 'success';
-  if (c.includes('moderate')) return 'warning';
-  if (c.includes('low') || c.includes('no data')) return 'secondary';
-  return 'info';
-}
-
-function ConfidenceBadge({ confidence }: { confidence?: string }) {
-  const value = confidence || 'No data';
-  return <Badge variant={confidenceVariant(value)}>{value}</Badge>;
-}
-
-function AdjustedScoreHeader() {
-  return (
-    <span className="inline-flex items-center gap-1">
-      Adjusted
-      <TooltipProvider delayDuration={100}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="inline-flex cursor-help text-muted-foreground" role="img" aria-label="About adjusted score">
-              <Icon name="info" size={16} weight={500} />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-xs">
-            Exam-count-aware score. Averages are adjusted toward the population average so groups with few exams are not overrated. Higher adjusted score ranks higher.
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </span>
   );
 }
 
@@ -135,17 +100,17 @@ export default function AdminSchoolAnalyticsPage() {
 
   const gradeBest = useMemo(() => {
     if (!gradeData || gradeData.length === 0) return null;
-    return [...gradeData].sort((a, b) => (b.adjustedScore ?? b.averageScore) - (a.adjustedScore ?? a.averageScore))[0];
+    return [...gradeData].sort((a, b) => (b.averageScore ?? b.rawAverage ?? 0) - (a.averageScore ?? a.rawAverage ?? 0))[0];
   }, [gradeData]);
 
   const classBest = useMemo(() => {
     if (!classData || classData.length === 0) return null;
-    return [...classData].sort((a, b) => (b.adjustedScore ?? b.averageScore) - (a.adjustedScore ?? a.averageScore))[0];
+    return [...classData].sort((a, b) => (b.averageScore ?? b.rawAverage ?? 0) - (a.averageScore ?? a.rawAverage ?? 0))[0];
   }, [classData]);
 
   const studentBest = useMemo(() => {
     if (!studentData || studentData.length === 0) return null;
-    return [...studentData].sort((a, b) => (b.adjustedScore ?? b.averageScore) - (a.adjustedScore ?? a.averageScore))[0];
+    return [...studentData].sort((a, b) => (b.averageScore ?? b.rawAverage ?? 0) - (a.averageScore ?? a.rawAverage ?? 0))[0];
   }, [studentData]);
 
   return (
@@ -243,42 +208,36 @@ export default function AdminSchoolAnalyticsPage() {
                                   <Icon name="emoji_events" size={20} className="text-primary" />
                                 </div>
                                 <div>
-                                  <p className="text-label-xs text-muted-foreground">Best Performing Grade (adjusted)</p>
+                                  <p className="text-label-xs text-muted-foreground">Best Performing Grade</p>
                                   <p className="text-title-sm font-bold">{gradeBest.grade}
-                                    <span className="text-muted-foreground font-normal"> · {gradeBest.adjustedScore ?? gradeBest.averageScore} adjusted, {gradeBest.examCount ?? 0} exams</span>
+                                    <span className="text-muted-foreground font-normal"> · {gradeBest.averageScore ?? gradeBest.rawAverage ?? 0}% avg, {gradeBest.examCount ?? 0} exams</span>
                                   </p>
                                 </div>
                               </div>
                             )}
-                            <div className="mt-6 border-t border-border/40 pt-4">
-                              <div className="overflow-x-auto">
-                                <table className="w-full text-left text-title-sm">
-                                  <thead>
-                                    <tr className="text-label-sm text-muted-foreground uppercase tracking-wider">
-                                      <th className="pb-2 font-bold">Rank</th>
-                                      <th className="pb-2 font-bold">Grade</th>
-                                      <th className="pb-2 font-bold text-right">Avg Score</th>
-                                      <th className="pb-2 font-bold text-right">Exams</th>
-                                      <th className="pb-2 font-bold text-right"><AdjustedScoreHeader /></th>
-                                      <th className="pb-2 font-bold">Confidence</th>
-                                      <th className="pb-2 font-bold text-right">Students</th>
+                            <div className="rounded-xl border border-border/60 overflow-x-auto">
+                              <table className="w-full text-left">
+                                <thead>
+                                  <tr className="border-b border-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
+                                    <th className="px-4 py-3">Rank</th>
+                                    <th className="px-4 py-3">Grade</th>
+                                    <th className="px-4 py-3 text-right">Avg Score</th>
+                                    <th className="px-4 py-3 text-right">Exams</th>
+                                    <th className="px-4 py-3 text-right whitespace-nowrap">Students</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-border/40 text-title-sm">
+                                  {gradeData.map((g) => (
+                                    <tr key={g.grade} className="hover:bg-muted/20 transition-colors">
+                                      <td className="px-4 py-3"><RankChip rank={g.rank ?? 0} /></td>
+                                      <td className="px-4 py-3 font-semibold whitespace-nowrap">{g.grade}</td>
+                                      <td className="px-4 py-3 text-right font-mono font-bold">{g.averageScore ?? g.rawAverage ?? 0}%</td>
+                                      <td className="px-4 py-3 text-right text-muted-foreground">{g.examCount ?? 0}</td>
+                                      <td className="px-4 py-3 text-right text-muted-foreground">{g.studentCount}</td>
                                     </tr>
-                                  </thead>
-                                  <tbody className="divide-y divide-border/40">
-                                    {gradeData.map((g) => (
-                                      <tr key={g.grade} className="hover:bg-muted/20">
-                                        <td className="py-2"><RankChip rank={g.rank ?? 0} /></td>
-                                        <td className="py-2 font-semibold">{g.grade}</td>
-                                        <td className="py-2 font-mono text-right">{g.averageScore ?? g.rawAverage ?? 0}%</td>
-                                        <td className="py-2 text-right text-muted-foreground">{g.examCount ?? 0}</td>
-                                        <td className="py-2 font-mono text-right font-bold text-primary">{g.adjustedScore ?? 0}</td>
-                                        <td className="py-2"><ConfidenceBadge confidence={g.confidence} /></td>
-                                        <td className="py-2 text-right text-muted-foreground">{g.studentCount}</td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
+                                  ))}
+                                </tbody>
                               </table>
-                              </div>
                             </div>
                           </>
                         )}
@@ -297,37 +256,31 @@ export default function AdminSchoolAnalyticsPage() {
                         ) : (
                           <>
                             <BarChart data={teacherData as any} labelKey="teacherName" valueKey="averageScore" color="bg-secondary" />
-                            <div className="mt-6 border-t border-border/40 pt-4">
-                              <div className="overflow-x-auto">
-                                <table className="w-full text-left text-title-sm">
-                                  <thead>
-                                    <tr className="text-label-sm text-muted-foreground uppercase tracking-wider">
-                                      <th className="pb-2 font-bold">Rank</th>
-                                      <th className="pb-2 font-bold">Teacher</th>
-                                      <th className="pb-2 font-bold text-right">Avg Score</th>
-                                      <th className="pb-2 font-bold text-right">Exams</th>
-                                      <th className="pb-2 font-bold text-right"><AdjustedScoreHeader /></th>
-                                      <th className="pb-2 font-bold">Confidence</th>
-                                      <th className="pb-2 font-bold text-right">Classes</th>
-                                      <th className="pb-2 font-bold text-right">Students</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="divide-y divide-border/40">
-                                  {teacherData.map((t) => (
-                                    <tr key={t.teacherId} className="hover:bg-muted/20">
-                                      <td className="py-2"><RankChip rank={t.rank ?? 0} /></td>
-                                      <td className="py-2 font-semibold">{t.teacherName}</td>
-                                      <td className="py-2 font-mono text-right">{t.averageScore ?? t.rawAverage ?? 0}%</td>
-                                      <td className="py-2 text-right text-muted-foreground">{t.examCount ?? 0}</td>
-                                      <td className="py-2 font-mono text-right font-bold text-primary">{t.adjustedScore ?? 0}</td>
-                                      <td className="py-2"><ConfidenceBadge confidence={t.confidence} /></td>
-                                      <td className="py-2 text-right text-muted-foreground">{t.classCount ?? 0}</td>
-                                      <td className="py-2 text-right text-muted-foreground">{t.studentCount ?? 0}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
+                            <div className="rounded-xl border border-border/60 overflow-x-auto">
+                              <table className="w-full text-left">
+                                <thead>
+                                  <tr className="border-b border-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
+                                    <th className="px-4 py-3">Rank</th>
+                                    <th className="px-4 py-3">Teacher</th>
+                                    <th className="px-4 py-3 text-right">Avg Score</th>
+                                    <th className="px-4 py-3 text-right">Exams</th>
+                                    <th className="px-4 py-3 text-right whitespace-nowrap">Classes</th>
+                                    <th className="px-4 py-3 text-right whitespace-nowrap">Students</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-border/40 text-title-sm">
+                                {teacherData.map((t) => (
+                                  <tr key={t.teacherId} className="hover:bg-muted/20 transition-colors">
+                                    <td className="px-4 py-3"><RankChip rank={t.rank ?? 0} /></td>
+                                    <td className="px-4 py-3 font-semibold whitespace-nowrap">{t.teacherName}</td>
+                                    <td className="px-4 py-3 text-right font-mono font-bold">{t.averageScore ?? t.rawAverage ?? 0}%</td>
+                                    <td className="px-4 py-3 text-right text-muted-foreground">{t.examCount ?? 0}</td>
+                                    <td className="px-4 py-3 text-right text-muted-foreground">{t.classCount ?? 0}</td>
+                                    <td className="px-4 py-3 text-right text-muted-foreground">{t.studentCount ?? 0}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
                           </div>
                           </>
                         )}
@@ -351,24 +304,22 @@ export default function AdminSchoolAnalyticsPage() {
                                   <Icon name="emoji_events" size={20} className="text-warning" />
                                 </div>
                                 <div>
-                                  <p className="text-label-xs text-muted-foreground">Best Performing Class (adjusted)</p>
+                                  <p className="text-label-xs text-muted-foreground">Best Performing Class</p>
                                   <p className="text-title-sm font-bold">{classBest.className}
-                                    <span className="text-muted-foreground font-normal"> · {classBest.adjustedScore ?? classBest.averageScore} adjusted, {classBest.examCount ?? 0} exams</span>
+                                    <span className="text-muted-foreground font-normal"> · {classBest.averageScore ?? classBest.rawAverage ?? 0}% avg, {classBest.examCount ?? 0} exams</span>
                                   </p>
                                 </div>
                               </div>
                             )}
-                            <div className="border border-border/60 rounded-xl overflow-x-auto">
+                            <div className="rounded-xl border border-border/60 overflow-x-auto">
                               <table className="w-full text-left">
                                 <thead>
-                                  <tr className="border-b border-b-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
+                                  <tr className="border-b border-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
                                     <th className="px-4 py-3">Rank</th>
-                                    <th className="px-4 py-3">Class</th>
+                                    <th className="px-4 py-3 whitespace-nowrap">Class</th>
                                     <th className="px-4 py-3">Grade</th>
-                                    <th className="px-4 py-3 text-right">Avg Score</th>
+                                    <th className="px-4 py-3 text-right whitespace-nowrap">Avg Score</th>
                                     <th className="px-4 py-3 text-right">Exams</th>
-                                    <th className="px-4 py-3 text-right"><AdjustedScoreHeader /></th>
-                                    <th className="px-4 py-3">Confidence</th>
                                     <th className="px-4 py-3 text-right">Students</th>
                                   </tr>
                                 </thead>
@@ -378,12 +329,10 @@ export default function AdminSchoolAnalyticsPage() {
                                       <td className="px-4 py-3">
                                         <RankChip rank={c.rank ?? i + 1} />
                                       </td>
-                                      <td className="px-4 py-3 font-semibold">{c.className}</td>
+                                      <td className="px-4 py-3 font-semibold whitespace-nowrap">{c.className}</td>
                                       <td className="px-4 py-3 text-muted-foreground">{c.grade || '-'}</td>
                                       <td className="px-4 py-3 text-right font-mono font-bold">{c.averageScore ?? c.rawAverage ?? 0}%</td>
                                       <td className="px-4 py-3 text-right text-muted-foreground">{c.examCount ?? 0}</td>
-                                      <td className="px-4 py-3 text-right font-mono font-bold text-primary">{c.adjustedScore ?? 0}</td>
-                                      <td className="px-4 py-3"><ConfidenceBadge confidence={c.confidence} /></td>
                                       <td className="px-4 py-3 text-right text-muted-foreground">{c.studentCount ?? 0}</td>
                                     </tr>
                                   ))}
@@ -412,25 +361,22 @@ export default function AdminSchoolAnalyticsPage() {
                                   <Icon name="emoji_events" size={20} className="text-primary" />
                                 </div>
                                 <div>
-                                  <p className="text-label-xs text-muted-foreground">Best Performing Student (adjusted)</p>
+                                  <p className="text-label-xs text-muted-foreground">Best Performing Student</p>
                                   <p className="text-title-sm font-bold">{studentBest.studentName}
-                                    <span className="text-muted-foreground font-normal"> · {studentBest.adjustedScore ?? studentBest.averageScore} adjusted, {studentBest.examCount ?? 0} exams</span>
+                                    <span className="text-muted-foreground font-normal"> · {studentBest.averageScore ?? studentBest.rawAverage ?? 0}% avg, {studentBest.examCount ?? 0} exams</span>
                                   </p>
                                 </div>
                               </div>
                             )}
-                            <div className="border border-border/60 rounded-xl overflow-x-auto">
+                            <div className="rounded-xl border border-border/60 overflow-x-auto">
                               <table className="w-full text-left">
                                 <thead>
-                                  <tr className="border-b border-b-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
+                                  <tr className="border-b border-border/60 bg-muted/30 text-label-sm font-bold text-muted-foreground uppercase tracking-wider">
                                     <th className="px-4 py-3">Rank</th>
-                                    <th className="px-4 py-3">Student</th>
-                                    <th className="px-4 py-3">Class</th>
-                                    <th className="px-4 py-3">Grade</th>
-                                    <th className="px-4 py-3 text-right">Avg Score</th>
+                                    <th className="px-4 py-3 whitespace-nowrap">Student</th>
+                                    <th className="px-4 py-3 whitespace-nowrap">Class</th>
+                                    <th className="px-4 py-3 text-right whitespace-nowrap">Avg Score</th>
                                     <th className="px-4 py-3 text-right">Exams</th>
-                                    <th className="px-4 py-3 text-right"><AdjustedScoreHeader /></th>
-                                    <th className="px-4 py-3">Confidence</th>
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border/40 text-title-sm">
@@ -439,13 +385,10 @@ export default function AdminSchoolAnalyticsPage() {
                                       <td className="px-4 py-3">
                                         <RankChip rank={s.rank ?? i + 1} />
                                       </td>
-                                      <td className="px-4 py-3 font-semibold">{s.studentName}</td>
-                                      <td className="px-4 py-3 text-muted-foreground">{s.className || '-'}</td>
-                                      <td className="px-4 py-3 text-muted-foreground">{s.grade || '-'}</td>
+                                      <td className="px-4 py-3 font-semibold whitespace-nowrap">{s.studentName}</td>
+                                      <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{s.className || '-'}{s.grade ? ` (${s.grade})` : ''}</td>
                                       <td className="px-4 py-3 text-right font-mono font-bold">{s.averageScore ?? s.rawAverage ?? 0}%</td>
                                       <td className="px-4 py-3 text-right text-muted-foreground">{s.examCount ?? 0}</td>
-                                      <td className="px-4 py-3 text-right font-mono font-bold text-primary">{s.adjustedScore ?? 0}</td>
-                                      <td className="px-4 py-3"><ConfidenceBadge confidence={s.confidence} /></td>
                                     </tr>
                                   ))}
                                 </tbody>
