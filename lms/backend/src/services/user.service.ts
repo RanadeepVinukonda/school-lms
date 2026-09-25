@@ -7,7 +7,16 @@ import { parsePagination } from '../utils/pagination';
 import { generateStudentId } from '../utils/studentIdGenerator.js';
 import { generatePassword } from '../utils/passwordGenerator.js';
 import { createNotification, createBulkNotifications } from './notification.service';
+import { passwordResetService } from './password-reset.service';
 import { userCache } from '../utils/cache';
+
+async function notifyPasswordReset(email: string): Promise<void> {
+  try {
+    await passwordResetService.requestPasswordReset(email);
+  } catch (err: any) {
+    logger.warn('Failed to send reset email after user creation', { email, error: err.message });
+  }
+}
 
 export async function getUserDoc(uid: string) {
   const { data, error } = await getSupabaseAdmin().from('users').select('*').eq('id', uid).maybeSingle();
@@ -142,11 +151,16 @@ export async function createUser(data: {
         const { error: rpcErr } = await supabase.rpc('increment_student_count', { class_id: data.classId!, delta: 1 });
         if (rpcErr) logger.warn('increment_student_count RPC failed', { classId: data.classId, error: rpcErr.message });
       }
+      if (data.email && !data.password) {
+        await notifyPasswordReset(data.email);
+        return { ...stripPw(userData2), email: data.email, generatedPassword: '' };
+      }
       return { ...stripPw(userData2), generatedPassword: data.password || '' };
     }
   }
 
   let authUser: Awaited<ReturnType<typeof createAuthUser>>;
+  const useEmailReset = Boolean(data.email && !data.password);
   const autoPassword = data.password || generatePassword();
   try {
     authUser = await createAuthUser({
@@ -186,9 +200,13 @@ export async function createUser(data: {
         };
         const { error: upsertErr } = await supabase.from('users').upsert(userData, { onConflict: 'id' });
         if (upsertErr) throw upsertErr;
-        logger.info('User recovered (auth existed, DB row created)', { uid: authUser.id, phone: data.phone, role: data.role });
+logger.info('User recovered (auth existed, DB row created)', { uid: authUser.id, phone: data.phone, role: data.role });
+  if (data.email && !data.password) {
+    await notifyPasswordReset(data.email);
+    return { ...stripPw(userData), email: data.email, generatedPassword: '' };
+  }
   return { ...stripPw(userData), generatedPassword: autoPassword };
-      }
+    }
     }
     if (err.message?.toLowerCase().includes('supabase') || err.message?.toLowerCase().includes('not configured')) {
       throw new ValidationError(`Auth service unavailable: ${err.message}`);
@@ -241,6 +259,10 @@ export async function createUser(data: {
     logger.warn('Failed to send welcome notification', { uid: authUser.uid, role: data.role, error: err });
   }
 
+  if (useEmailReset && data.email) {
+    await notifyPasswordReset(data.email);
+    return { ...stripPw(userData), email: data.email, generatedPassword: '' };
+  }
   return { ...stripPw(userData), generatedPassword: autoPassword };
 }
 

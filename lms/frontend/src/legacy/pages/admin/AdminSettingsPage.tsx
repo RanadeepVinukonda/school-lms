@@ -169,11 +169,9 @@ export default function AdminSettingsPage() {
 
   // Parent Registration
   const [showCreateParent, setShowCreateParent] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [parentForm, setParentForm] = useState({
     displayName: '',
     email: '',
-    password: '',
     phone: '',
     address: '',
     relationship: '',
@@ -205,7 +203,6 @@ export default function AdminSettingsPage() {
       const body = {
         displayName: parentForm.displayName,
         email: parentForm.email,
-        password: parentForm.password,
         role: 'parent',
         phone: parentForm.phone || undefined,
         address: parentForm.address,
@@ -225,10 +222,10 @@ export default function AdminSettingsPage() {
     },
     onSuccess: () => {
       setShowCreateParent(false);
-      setParentForm({ displayName: '', email: '', password: '', phone: '', address: '', relationship: '', selectedStudentIds: [] });
+      setParentForm({ displayName: '', email: '', phone: '', address: '', relationship: '', selectedStudentIds: [] });
       queryClient.invalidateQueries({ queryKey: ['admin-users-stats'] });
       invalidateClasses(queryClient);
-      toast.success('Parent account created');
+      toast.success('Parent created — reset email sent to their address');
     },
     onError: (err: any) => {
       const msg = err?.response?.data?.error?.message || err?.response?.data?.message || err?.message || 'Failed to create parent';
@@ -711,15 +708,7 @@ export default function AdminSettingsPage() {
             <div className="space-y-2">
               <Label>Email *</Label>
               <Input type="email" placeholder="parent@school.edu" value={parentForm.email} onChange={(e) => setParentForm((f) => ({ ...f, email: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label>Password *</Label>
-              <div className="relative">
-                <Input type={showPassword ? 'text' : 'password'} placeholder="Min 8 characters" value={parentForm.password} onChange={(e) => setParentForm((f) => ({ ...f, password: e.target.value }))} className="pr-12" />
-                <button type="button" onClick={() => setShowPassword((p) => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" aria-label={showPassword ? 'Hide password' : 'Show password'} tabIndex={-1}>
-                  <Icon name={showPassword ? 'visibility_off' : 'visibility'} size={20} />
-                </button>
-              </div>
+              <p className="text-label-xs text-muted-foreground">A password reset link will be sent to this email.</p>
             </div>
             <div className="space-y-2">
               <Label>Phone Number</Label>
@@ -780,7 +769,7 @@ export default function AdminSettingsPage() {
                 <p className="text-label-xs text-muted-foreground">{parentForm.selectedStudentIds.length} student(s) selected</p>
               )}
             </div>
-            <Button className="w-full mt-2" onClick={() => createParentMutation.mutate()} disabled={!parentForm.displayName || !parentForm.email || !parentForm.password || parentForm.selectedStudentIds.length === 0 || createParentMutation.isPending}>
+            <Button className="w-full mt-2" onClick={() => createParentMutation.mutate()} disabled={!parentForm.displayName || !parentForm.email || parentForm.selectedStudentIds.length === 0 || createParentMutation.isPending}>
               {createParentMutation.isPending ? 'Registering...' : 'Register Parent'}
             </Button>
           </div>

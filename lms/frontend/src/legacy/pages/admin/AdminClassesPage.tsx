@@ -565,7 +565,7 @@ export default function AdminClassesPage() {
 // INLINE REGISTER STUDENT FOR A CLASS
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [addStudentClassId, setAddStudentClassId] = useState('');
-  const [studentForm, setStudentForm] = useState({ displayName: '', phone: '', rollNo: '', gender: '' });
+  const [studentForm, setStudentForm] = useState({ displayName: '', email: '', phone: '', rollNo: '', gender: '' });
   const [studentRegisterLoading, setStudentRegisterLoading] = useState(false);
   const getNextRollNo = (classId: string) => {
     const classStudents = users.filter((u: UserDoc) => hasRole(u.role, 'student') && u.classId === classId);
@@ -580,6 +580,7 @@ export default function AdminClassesPage() {
     const nextRoll = getNextRollNo(cls.id);
     setStudentForm({
       displayName: '',
+      email: '',
       phone: '',
       rollNo: String(nextRoll),
       gender: '',
@@ -588,14 +589,15 @@ export default function AdminClassesPage() {
   };
 
   const handleRegisterStudent = async () => {
-    if (!studentForm.displayName || !studentForm.rollNo) {
-      toast.error('Please enter name and roll number');
+    if (!studentForm.displayName || !studentForm.email || !studentForm.rollNo) {
+      toast.error('Please enter name, email and roll number');
       return;
     }
     setStudentRegisterLoading(true);
     try {
       const res = await userService.create({
         displayName: studentForm.displayName,
+        email: studentForm.email.trim(),
         phone: studentForm.phone.trim() || undefined,
         role: 'student',
         classId: addStudentClassId,
@@ -606,13 +608,13 @@ export default function AdminClassesPage() {
       const studentData = res.data as any;
       setCreatedCredentials({
         displayName: studentData.displayName,
-        email: (studentData as any).phone_number || studentData.phoneNumber || studentData.email,
-        generatedPassword: studentData.generatedPassword,
+        email: studentData.email || studentForm.email.trim(),
         studentId: studentData.studentId,
       });
 
       setShowAddStudent(false);
-      toast.success(`Student ${studentForm.displayName} registered`);
+      setStudentForm({ displayName: '', email: '', phone: '', rollNo: '', gender: '' });
+      toast.success(`Student ${studentForm.displayName} registered — reset email sent to ${studentForm.email.trim()}`);
       refetchUsers();
       refetchClasses();
       invalidateClasses(queryClient);
@@ -657,7 +659,7 @@ export default function AdminClassesPage() {
   // -------------------------------------------------------------
   const [teacherSearch, setTeacherSearch] = useState('');
   const [showCreateTeacher, setShowCreateTeacher] = useState(false);
-  const [teacherForm, setTeacherForm] = useState({ displayName: '', phone: '' });
+  const [teacherForm, setTeacherForm] = useState({ displayName: '', email: '', phone: '' });
   const [teacherRegisterLoading, setTeacherRegisterLoading] = useState(false);
   const [userDeleteTarget, setUserDeleteTarget] = useState<UserDoc | null>(null);
   const [userDeleteLoading, setUserDeleteLoading] = useState(false);
@@ -672,14 +674,15 @@ export default function AdminClassesPage() {
   }, [teachers, teacherSearch]);
 
   const handleCreateTeacher = async () => {
-    if (!teacherForm.displayName) {
-      toast.error('Please enter teacher name');
+    if (!teacherForm.displayName || !teacherForm.email) {
+      toast.error('Please enter teacher name and email');
       return;
     }
     setTeacherRegisterLoading(true);
     try {
       const res = await userService.create({
         displayName: teacherForm.displayName,
+        email: teacherForm.email.trim(),
         phone: teacherForm.phone.trim() || undefined,
         role: 'teacher',
       });
@@ -687,17 +690,12 @@ export default function AdminClassesPage() {
       const teacherData = res.data as any;
       setCreatedCredentials({
         displayName: teacherData.displayName,
-        email: teacherData.phone_number || teacherData.phoneNumber || teacherData.email,
-        generatedPassword: teacherData.generatedPassword,
+        email: teacherData.email || teacherForm.email.trim(),
       });
 
       setShowCreateTeacher(false);
-      setTeacherForm({ displayName: '', phone: '' });
-      if (!teacherData.generatedPassword) {
-        toast.success('Teacher exists — account reused');
-      } else {
-        toast.success('Teacher registered successfully');
-      }
+      setTeacherForm({ displayName: '', email: '', phone: '' });
+      toast.success(`Teacher registered — reset email sent to ${teacherForm.email.trim()}`);
       refetchUsers();
     } catch (err: any) {
       toast.error(err.message || 'Failed to create teacher');
@@ -1503,6 +1501,11 @@ export default function AdminClassesPage() {
               <Input placeholder="John Doe" value={studentForm.displayName} onChange={(e) => setStudentForm((f) => ({ ...f, displayName: e.target.value }))} />
             </div>
             <div className="space-y-2">
+              <Label>Email</Label>
+              <Input type="email" placeholder="student@example.com" value={studentForm.email} onChange={(e) => setStudentForm((f) => ({ ...f, email: e.target.value }))} />
+              <p className="text-label-xs text-muted-foreground">A password reset link will be sent to this email.</p>
+            </div>
+            <div className="space-y-2">
               <Label>Roll Number</Label>
               <Input type="number" value={studentForm.rollNo} onChange={(e) => setStudentForm((f) => ({ ...f, rollNo: e.target.value }))} />
             </div>
@@ -1519,7 +1522,7 @@ export default function AdminClassesPage() {
                 onChange={(v: string) => setStudentForm((f) => ({ ...f, gender: v }))}
               />
             </div>
-            <Button className="w-full" onClick={handleRegisterStudent} disabled={studentRegisterLoading || !studentForm.displayName || !studentForm.gender}>
+            <Button className="w-full" onClick={handleRegisterStudent} disabled={studentRegisterLoading || !studentForm.displayName || !studentForm.email || !studentForm.gender}>
               {studentRegisterLoading ? 'Registering...' : 'Register Student'}
             </Button>
           </div>
@@ -1527,7 +1530,7 @@ export default function AdminClassesPage() {
       </Dialog>
 
       {/* REGISTER TEACHER DIALOG */}
-      <Dialog open={showCreateTeacher} onOpenChange={(o) => { if (!o) { setShowCreateTeacher(false); setTeacherForm({ displayName: '', phone: '' }); } }}>
+      <Dialog open={showCreateTeacher} onOpenChange={(o) => { if (!o) { setShowCreateTeacher(false); setTeacherForm({ displayName: '', email: '', phone: '' }); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Register Teacher</DialogTitle>
@@ -1538,7 +1541,12 @@ export default function AdminClassesPage() {
               <Label>Teacher Name</Label>
               <Input placeholder="Jane Doe" value={teacherForm.displayName} onChange={(e) => setTeacherForm((f) => ({ ...f, displayName: e.target.value }))} />
             </div>
-            <Button className="w-full" onClick={handleCreateTeacher} disabled={teacherRegisterLoading || !teacherForm.displayName}>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input type="email" placeholder="teacher@example.com" value={teacherForm.email} onChange={(e) => setTeacherForm((f) => ({ ...f, email: e.target.value }))} />
+              <p className="text-label-xs text-muted-foreground">A password reset link will be sent to this email.</p>
+            </div>
+            <Button className="w-full" onClick={handleCreateTeacher} disabled={teacherRegisterLoading || !teacherForm.displayName || !teacherForm.email}>
               {teacherRegisterLoading ? 'Registering...' : 'Register Teacher'}
             </Button>
           </div>
@@ -1645,15 +1653,19 @@ export default function AdminClassesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* CREDENTIALS DIALOG */}
+      {/* CREDENTIALS / RESET-EMAIL DIALOG */}
       <Dialog open={!!createdCredentials} onOpenChange={(o) => { if (!o) setCreatedCredentials(null); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-success">
-              <Icon name="check_circle" size={24} />
-              Credentials Generated
+              <Icon name={createdCredentials?.generatedPassword ? "check_circle" : "mail"} size={24} />
+              {createdCredentials?.generatedPassword ? 'Credentials Generated' : 'Reset Link Sent'}
             </DialogTitle>
-            <DialogDescription>Please copy these credentials. This is the only time the password is shown.</DialogDescription>
+            <DialogDescription>
+              {createdCredentials?.generatedPassword
+                ? 'Please copy these credentials. This is the only time the password is shown.'
+                : 'A password reset email has been sent to the user. They can set their own password from the link.'}
+            </DialogDescription>
           </DialogHeader>
           {createdCredentials && (
             <div className="space-y-4 bg-muted/40 p-4 rounded-lg border border-border font-mono text-sm">
@@ -1690,11 +1702,11 @@ export default function AdminClassesPage() {
                 if (createdCredentials.email) parts.push(`Email: ${createdCredentials.email}`);
                 if (createdCredentials.generatedPassword) parts.push(`Password: ${createdCredentials.generatedPassword}`);
                 navigator.clipboard.writeText(parts.join('\n'));
-                toast.success('Credentials copied to clipboard');
+                toast.success(createdCredentials.generatedPassword ? 'Credentials copied to clipboard' : 'Email copied to clipboard');
               }
             }}>
               <Icon name="content_copy" size={16} className="mr-2" />
-              Copy Credentials
+              {createdCredentials?.generatedPassword ? 'Copy Credentials' : 'Copy Email'}
             </Button>
             <Button className="flex-1" onClick={() => setCreatedCredentials(null)}>Done</Button>
           </DialogFooter>
