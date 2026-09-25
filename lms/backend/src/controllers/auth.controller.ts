@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as authService from '../services/auth.service';
+import { passwordResetService } from '../services/password-reset.service';
 import { sendSuccess } from '../utils/response';
 import { env } from '../config/env';
 import { getSupabaseAdmin } from '../services/supabase';
@@ -92,4 +93,22 @@ export async function getSession(req: Request, res: Response) {
   } catch {
     sendSuccess(res, null, 'No session');
   }
+}
+
+export async function forgotPassword(req: Request, res: Response) {
+  const { email } = req.body;
+  await passwordResetService.requestPasswordReset(email);
+  sendSuccess(res, null, 'If an account exists for that email, a reset link has been sent.');
+}
+
+export async function verifyResetToken(req: Request, res: Response) {
+  const { token } = req.body;
+  const result = await passwordResetService.verifyResetToken(token);
+  sendSuccess(res, result, 'Reset token is valid');
+}
+
+export async function resetPassword(req: Request, res: Response) {
+  const { token, password } = req.body;
+  await passwordResetService.confirmPasswordReset(token, password);
+  sendSuccess(res, null, 'Password updated successfully');
 }

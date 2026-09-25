@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,48 +19,22 @@ import {
   type ResetPasswordFormData,
 } from '@/features/auth/schemas/authSchemas';
 import { ROUTES } from '@/lib/constants';
-import { useMutation } from '@tanstack/react-query';
-import { supabase } from '@/supabase/config';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { authService } from '@/services/authService';
 import { toast } from 'sonner';
 
 export default function ResetPasswordForm() {
-  const [recoveryState, setRecoveryState] = useState<'loading' | 'valid' | 'invalid'>('loading');
-  const [uid, setUid] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token') || '';
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    let subscription: { unsubscribe: () => void } | null = null;
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (cancelled) return;
-      if (session) {
-        setUid(session.user.id);
-        setRecoveryState('valid');
-        return;
-      }
-      const { data } = supabase.auth.onAuthStateChange((event, session) => {
-        if (cancelled) return;
-        if ((event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') && session) {
-          setUid(session.user.id);
-          setRecoveryState('valid');
-          subscription?.unsubscribe();
-        }
-      });
-      subscription = data.subscription;
-      setTimeout(() => {
-        if (cancelled) return;
-        setRecoveryState((s) => (s === 'loading' ? 'invalid' : s));
-        subscription?.unsubscribe();
-      }, 15000);
-    });
-
-    return () => {
-      cancelled = true;
-      subscription?.unsubscribe();
-    };
-  }, []);
+  const tokenQuery = useQuery({
+    queryKey: ['verify-reset-token', token],
+    queryFn: () => authService.verifyResetToken(token),
+    enabled: token.length > 0,
+    retry: false,
+  });
 
   const {
     register,
@@ -73,9 +47,8 @@ export default function ResetPasswordForm() {
 
   const mutation = useMutation({
     mutationFn: async (data: ResetPasswordFormData) => {
-      if (!uid) throw new Error('Session expired. Please request a new reset link.');
-      const { error } = await supabase.auth.updateUser({ password: data.password });
-      if (error) throw error;
+      if (!token) throw new Error('Missing reset token. Please request a new reset link.');
+      await authService.resetPassword(token, data.password);
     },
     onSuccess: () => {
       toast.success('Password has been reset successfully');
@@ -89,26 +62,18 @@ export default function ResetPasswordForm() {
     mutation.mutate(data);
   }
 
-  if (recoveryState === 'loading') {
-    return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="text-center">Checking reset link...</CardTitle>
-          <CardDescription className="text-center">
-            Please wait while we verify your reset link.
-          </CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
+  const isValid = token.length > 0 && tokenQuery.isSuccess;
+  const isInvalid = token.length === 0 || tokenQuery.isError;
 
-  if (recoveryState === 'invalid') {
+  if (isInvalid) {
     return (
       <Card className="w-full">
         <CardHeader>
           <CardTitle className="text-center">Invalid Reset Link</CardTitle>
           <CardDescription className="text-center">
-            This password reset link is invalid or has expired.
+            {token.length === 0
+              ? 'This password reset link is missing a token. Please use the link from your email.'
+              : 'This password reset link is invalid or has expired.'}
           </CardDescription>
         </CardHeader>
         <CardFooter className="justify-center">
@@ -123,7 +88,20 @@ export default function ResetPasswordForm() {
     );
   }
 
-  if (mutation.isSuccess) {
+  if (tokenQuery.isLoading || (tokenQuery.fetchStatus === 'fetching' && !tokenQuery.isSuccess)) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="text-center">Checking reset link...</CardTitle>
+          <CardDescription className="text-center">
+            Please wait while we verify your reset link.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  if (mutation.isSuccess && isValid) {
     return (
       <Card className="w-full">
         <CardHeader>

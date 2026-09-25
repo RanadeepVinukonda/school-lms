@@ -46,6 +46,8 @@ const CSRF_EXEMPT_PATHS = new Set([
   '/api/auth/reset-password',
   '/auth/reset-with-token',
   '/api/auth/reset-with-token',
+  '/auth/verify-reset-token',
+  '/api/auth/verify-reset-token',
   '/auth/verify-token',
   '/api/auth/verify-token',
 ]);

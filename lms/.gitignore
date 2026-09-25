@@ -8,6 +8,9 @@ dist/
 # Build/artifact caches
 graphify-out/
 
+# Backups (contain live DB data / seed snapshots — never commit)
+backend/backups/
+
 # Windows artifacts
 nul
 

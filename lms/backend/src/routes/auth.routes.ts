@@ -4,7 +4,7 @@ import * as authController from '../controllers/auth.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/validate.middleware';
 import { authRateLimit } from '../middlewares/rateLimit.middleware';
-import { updateProfileSchema } from '../validators/auth.validator';
+import { updateProfileSchema, forgotPasswordSchema, resetPasswordSchema, verifyResetTokenSchema } from '../validators/auth.validator';
 import { asyncHandler } from '../middlewares/asyncHandler';
 
 const router = Router();
@@ -24,5 +24,8 @@ router.post('/refresh', validate(refreshTokenSchema), asyncHandler(authControlle
 router.post('/logout', authenticate, asyncHandler(authController.logout));
 router.get('/session', asyncHandler(authController.getSession));
 router.put('/profile', authenticate, validate(updateProfileSchema), asyncHandler(authController.updateProfile));
+router.post('/forgot-password', validate(forgotPasswordSchema), asyncHandler(authController.forgotPassword));
+router.post('/reset-password', validate(resetPasswordSchema), asyncHandler(authController.resetPassword));
+router.post('/verify-reset-token', validate(verifyResetTokenSchema), asyncHandler(authController.verifyResetToken));
 
 export default router;

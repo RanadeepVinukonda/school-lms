@@ -32,9 +32,15 @@ export const authService = {
     return response.data;
   },
 
-  /** Reset password using user uid and new password. */
-  async resetPassword(uid: string, newPassword: string) {
-    const response = await api.post<ApiResponse<null>>('/auth/reset-password', { uid, newPassword });
+  /** Validate a password reset token. */
+  async verifyResetToken(token: string) {
+    const response = await api.post<ApiResponse<{ uid: string }>>('/auth/verify-reset-token', { token });
+    return response.data;
+  },
+
+  /** Reset password using a reset token and the new password. */
+  async resetPassword(token: string, newPassword: string) {
+    const response = await api.post<ApiResponse<null>>('/auth/reset-password', { token, newPassword });
     return response.data;
   },
 
