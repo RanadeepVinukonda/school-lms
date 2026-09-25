@@ -3,10 +3,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Eye, EyeOff } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { ROUTES } from '@/lib/constants';
 import { SEOHead } from '@/components/common/SEOHead';
 import { useLogin } from '@/features/auth/hooks/useLogin';
 
@@ -85,6 +87,14 @@ export default function LoginPage() {
             </Button>
           </form>
         </CardContent>
+        <CardFooter className="justify-center pb-6">
+          <Link
+            to={ROUTES.FORGOT_PASSWORD}
+            className="text-title-sm font-medium text-primary hover:underline"
+          >
+            Forgot password?
+          </Link>
+        </CardFooter>
       </Card>
     </>
   );
