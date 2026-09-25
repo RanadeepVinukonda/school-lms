@@ -60,7 +60,6 @@ async function main() {
   ];
 
   for (const { table, column } of userChildren) {
-    let via = `${column} IN seedIds`;
     // fee_payments/notifications also carry detUuid ids — delete exactly those
     // plus any row whose user ref is a seed user (keeps legacy rows).
     const rows = await sql(pool, `SELECT id FROM "${table}" WHERE "${column}"::text = ANY($1::text[])`, [seedIds]);

@@ -9,7 +9,6 @@
 
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-import { v4 as uuid } from 'uuid';
 
 dotenv.config({ path: __dirname + '/../../.env' });
 
@@ -433,9 +432,6 @@ async function seed() {
       // Find class assignment
       const assignment = studentAssignments.find((a) => a.studentIdx === i);
       const classId = assignment !== undefined ? classIds[assignment.classIdx] : null;
-      const birthYear = 2014 - parseInt(CLASS_GRADES[assignment?.classIdx ?? 0]?.grade ?? '1') + 1;
-      const birthMonth = String(Math.floor(Math.random() * 12) + 1).padStart(2, '0');
-      const birthDay = String(Math.floor(Math.random() * 28) + 1).padStart(2, '0');
 
       const { error: profileErr } = await sb.from('users').insert({
         id: actualId,
@@ -464,9 +460,6 @@ async function seed() {
       if (!existingProfile) {
         const assignment = studentAssignments.find((a) => a.studentIdx === i);
         const classId = assignment !== undefined ? classIds[assignment.classIdx] : null;
-        const birthYear = 2014 - parseInt(CLASS_GRADES[assignment?.classIdx ?? 0]?.grade ?? '1') + 1;
-        const birthMonth = String(Math.floor(seededRandom(i * 7)() * 12) + 1).padStart(2, '0');
-        const birthDay = String(Math.floor(seededRandom(i * 13)() * 28) + 1).padStart(2, '0');
         const { error: profileErr } = await sb.from('users').insert({
           id: existingAuthId,
           email,
