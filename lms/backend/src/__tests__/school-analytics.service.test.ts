@@ -25,11 +25,16 @@ function buildMockSupabase(opts: {
   return {
     from: jest.fn((table: string) => {
       if (table === 'firestore_docs') {
+        // shared loader paginates: .eq('collection', X).range(start, end)
+        const page = (value: string, start = 0, end = Number.MAX_SAFE_INTEGER) =>
+          resolvable((firestore[value] || []).slice(start, end + 1));
         return {
           select: () => ({
             eq: (field: string, value: string) => {
-              if (field === 'collection') return resolvable(firestore[value] || []);
-              return resolvable([]);
+              if (field !== 'collection') return resolvable([]);
+              return Object.assign(resolvable(firestore[value] || []), {
+                range: (s: number, e: number) => page(value, s, e),
+              });
             },
           }),
         };

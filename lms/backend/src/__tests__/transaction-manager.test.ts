@@ -13,24 +13,28 @@ describe('TransactionManager rollback', () => {
     if (!origUrl) return;
     const { TransactionManager } = await import('../database/transaction-manager');
 
+    // Use a whitelisted table name (validateTableName rejects non-whitelisted
+    // tables) and a real table so the TransactionManager pool can see it.
+    const TABLE = 'audit_logs';
+
     const pool = new Pool({ connectionString: origUrl });
     const client = await pool.connect();
-    await client.query('CREATE TEMP TABLE tx_test (id text primary key, val int)');
+    await client.query(`CREATE TABLE ${TABLE} (id text primary key, val int)`);
     client.release();
 
     const tm = new TransactionManager();
     const tx = tm.runTransaction(async (t) => {
-      t.set('tx_test', 'row1', { id: 'row1', val: 1 });
-      t.set('tx_test', 'row2', { id: 'row2', val: 2 });
+      t.set(TABLE, 'row1', { id: 'row1', val: 1 });
+      t.set(TABLE, 'row2', { id: 'row2', val: 2 });
       throw new Error('simulated crash');
     });
 
     await expect(tx).rejects.toThrow('simulated crash');
 
-    const { rows } = await pool.query('SELECT * FROM tx_test');
+    const { rows } = await pool.query(`SELECT * FROM ${TABLE}`);
     expect(rows.length).toBe(0);
 
-    await pool.query('DROP TABLE IF EXISTS tx_test');
+    await pool.query(`DROP TABLE IF EXISTS ${TABLE}`);
     await pool.end();
   });
 });
