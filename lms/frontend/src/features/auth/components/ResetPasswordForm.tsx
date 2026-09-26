@@ -51,7 +51,7 @@ export default function ResetPasswordForm() {
       await authService.resetPassword(token, data.password);
     },
     onSuccess: () => {
-      toast.success('Password has been reset successfully');
+      toast.success('Thank you — password reset done. Please log in to the Genesis app.');
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to reset password');
@@ -75,17 +75,17 @@ export default function ResetPasswordForm() {
             <div className="rounded-full bg-success/10 p-3">
               <ShieldCheck className="h-6 w-6 text-success" />
             </div>
-            <CardTitle>Password reset successful</CardTitle>
+            <CardTitle>Thank you — password reset complete</CardTitle>
             <CardDescription>
-              Your password has been updated successfully. Sign in with your new
-              password to continue.
+              Thank you. Your password has been reset successfully. Please log
+              in to the Genesis app using your new password.
             </CardDescription>
           </div>
         </CardHeader>
         <CardFooter className="justify-center">
-          <Button asChild>
-            <Link to={ROUTES.LOGIN}>Sign in with new password</Link>
-          </Button>
+          <p className="text-sm text-muted-foreground">
+            You can close this page and log in to the Genesis app.
+          </p>
         </CardFooter>
       </Card>
     );
