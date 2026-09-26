@@ -36,6 +36,7 @@ export const passwordResetService = {
         await sendPasswordResetEmail(email, publicResetUrl(token));
       } catch (err: any) {
         logger.error('Password reset email failed', { error: err.message });
+        throw err;
       }
     }
 

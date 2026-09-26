@@ -78,10 +78,12 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string): Prom
     });
     if (error) {
       logger.error('Failed to send password reset email', { to, error });
+      throw new Error(`Resend send failed: ${error.message}`);
     } else {
       logger.info('Password reset email sent', { to });
     }
   } catch (err: any) {
     logger.error('Password reset email threw', { to, error: err.message });
+    if (err.message) throw err;
   }
 }

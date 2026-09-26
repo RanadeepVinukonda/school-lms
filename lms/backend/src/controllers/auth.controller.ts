@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import * as authService from '../services/auth.service';
 import { passwordResetService } from '../services/password-reset.service';
-import { sendSuccess } from '../utils/response';
+import { sendSuccess, sendError } from '../utils/response';
+import { logger } from '../utils/logger';
 import { env } from '../config/env';
 import { getSupabaseAdmin } from '../services/supabase';
 import { requireUser } from '../types/common';
@@ -97,8 +98,14 @@ export async function getSession(req: Request, res: Response) {
 
 export async function forgotPassword(req: Request, res: Response) {
   const { email } = req.body;
-  await passwordResetService.requestPasswordReset(email);
-  sendSuccess(res, null, 'If an account exists for that email, a reset link has been sent.');
+  try {
+    await passwordResetService.requestPasswordReset(email);
+    sendSuccess(res, null, 'If an account exists for that email, a reset link has been sent.');
+  } catch (err: any) {
+    logger.error('Forgot-password failed', { email, error: err.message });
+    sendError(res, `Reset email could not be sent: ${err.message}`);
+    return;
+  }
 }
 
 export async function verifyResetToken(req: Request, res: Response) {
