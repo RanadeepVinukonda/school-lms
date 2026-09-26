@@ -10,7 +10,10 @@ function getClient(): Resend | null {
   return client;
 }
 
-const FROM_EMAIL = env.RESEND_FROM_EMAIL || 'EduAlt <noreply@edualttech.com>';
+// RESEND_FROM_EMAIL is validated as a bare email (z.string().email()), so the
+// display name is applied here rather than in the env var.
+const SENDER_NAME = 'Genesis LMS';
+const FROM_EMAIL = `${SENDER_NAME} <${env.RESEND_FROM_EMAIL || 'noreply@genesiseduschool.online'}>`;
 
 export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<void> {
   const resend = getClient();
