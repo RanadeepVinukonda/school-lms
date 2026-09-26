@@ -62,8 +62,34 @@ export default function ResetPasswordForm() {
     mutation.mutate(data);
   }
 
-  const isValid = token.length > 0 && tokenQuery.isSuccess;
   const isInvalid = token.length === 0 || tokenQuery.isError;
+
+  // Success must win over the invalid state: the reset token is single-use and
+  // is consumed the moment the password changes, so a refetch of the verify
+  // query fails and would otherwise replace this screen with "Invalid link".
+  if (mutation.isSuccess) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <div className="flex flex-col items-center py-4 text-center space-y-3">
+            <div className="rounded-full bg-success/10 p-3">
+              <ShieldCheck className="h-6 w-6 text-success" />
+            </div>
+            <CardTitle>Password reset successful</CardTitle>
+            <CardDescription>
+              Your password has been updated successfully. Sign in with your new
+              password to continue.
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardFooter className="justify-center">
+          <Button asChild>
+            <Link to={ROUTES.LOGIN}>Sign in with new password</Link>
+          </Button>
+        </CardFooter>
+      </Card>
+    );
+  }
 
   if (isInvalid) {
     return (
@@ -97,29 +123,6 @@ export default function ResetPasswordForm() {
             Please wait while we verify your reset link.
           </CardDescription>
         </CardHeader>
-      </Card>
-    );
-  }
-
-  if (mutation.isSuccess && isValid) {
-    return (
-      <Card className="w-full">
-        <CardHeader>
-          <div className="flex flex-col items-center py-4 text-center space-y-3">
-            <div className="rounded-full bg-success/10 p-3">
-              <ShieldCheck className="h-6 w-6 text-success" />
-            </div>
-            <CardTitle>Password reset successful</CardTitle>
-            <CardDescription>
-              Your password has been updated successfully.
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardFooter className="justify-center">
-          <Button asChild>
-            <Link to={ROUTES.LOGIN}>Sign in with new password</Link>
-          </Button>
-        </CardFooter>
       </Card>
     );
   }
