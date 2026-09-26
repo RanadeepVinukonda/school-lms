@@ -10,7 +10,7 @@ function getClient(): Resend | null {
   return client;
 }
 
-const FROM_EMAIL = env.RESEND_FROM_EMAIL || 'School LMS <noreply@school-lms.com>';
+const FROM_EMAIL = env.RESEND_FROM_EMAIL || 'Genesis LMS <noreply@genesiseduschool.online>';
 
 export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<void> {
   const resend = getClient();
