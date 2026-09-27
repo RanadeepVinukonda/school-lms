@@ -22,7 +22,7 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string): Prom
     return;
   }
 
-  const subject = 'Reset your School LMS password';
+  const subject = 'Reset your School LMS password (check spam folder if not found)';
   const html = `
     <!DOCTYPE html>
     <html lang="en">
@@ -41,6 +41,17 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string): Prom
                     <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 20px;">
                       We received a request to reset the password for your School LMS account.
                     </p>
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
+                      <tr>
+                        <td style="background:#fef3c7;border-left:4px solid #f59e0b;padding:12px 16px;border-radius:6px;">
+                          <p style="color:#78350f;font-size:14px;line-height:1.5;margin:0;">
+                            <strong>Not seeing this email?</strong> It may already be in your
+                            <strong>spam or junk folder</strong>. Please check there, and mark it as
+                            &ldquo;Not spam&rdquo; so future emails reach your inbox.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
                     <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 24px;">
                       Click the button below to choose a new password. This link is valid for
                       <strong>60 minutes</strong> and can only be used once.
@@ -61,6 +72,8 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string): Prom
                     <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
                     <p style="color:#9ca3af;font-size:12px;line-height:1.5;margin:0;">
                       School LMS &middot; For security, this link expires in 60 minutes.
+                      If this email landed in your spam or junk folder, please mark it as
+                      &ldquo;Not spam&rdquo; so future messages reach your inbox.
                     </p>
                   </td>
                 </tr>
