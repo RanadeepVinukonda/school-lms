@@ -17,7 +17,11 @@ import { createClient } from '@supabase/supabase-js';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'alrihabchandhinimohammed@gmail.com').trim();
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || '').trim();
+if (!ADMIN_EMAIL) {
+  console.error('ADMIN_EMAIL is required (no default account is seeded).');
+  process.exit(1);
+}
 const SCHOOL_ID = '00000000-0000-0000-0000-000000000001';
 
 function generatePassword(): string {

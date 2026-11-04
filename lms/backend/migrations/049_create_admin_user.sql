@@ -1,5 +1,8 @@
--- Migration 049: Create admin user (admin@school.edu / admin123)
+-- Migration 049: Create admin user
 -- Run AFTER migration 048 in Supabase SQL Editor.
+-- No credentials are seeded. Provide them with:
+--   SET app.admin_email = '...'; SET app.admin_password = '...';
+-- or create the admin with backend/src/scripts/createAdmin.ts.
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
@@ -12,8 +15,15 @@ DO $$
 DECLARE
   _uid UUID := gen_random_uuid();
   _now TIMESTAMPTZ := now();
+  _email TEXT := current_setting('app.admin_email', true);
+  _password TEXT := current_setting('app.admin_password', true);
 BEGIN
-  IF EXISTS (SELECT 1 FROM auth.users WHERE email = 'admin@school.edu') THEN
+  IF _email IS NULL OR _email = '' OR _password IS NULL OR _password = '' THEN
+    RAISE NOTICE 'Skipping admin creation: set app.admin_email and app.admin_password';
+    RETURN;
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM auth.users WHERE email = _email) THEN
     RAISE NOTICE 'Admin user already exists in auth.users';
     RETURN;
   END IF;
@@ -24,8 +34,8 @@ BEGIN
     role, aud, confirmation_token, recovery_token, is_super_admin
   ) VALUES (
     _uid, '00000000-0000-0000-0000-000000000000',
-    'admin@school.edu',
-    crypt('admin123', gen_salt('bf')),
+    _email,
+    crypt(_password, gen_salt('bf')),
     _now,
     '{"provider":"email","providers":["email"]}',
     '{"display_name":"Admin"}',
@@ -38,10 +48,10 @@ BEGIN
     id, email, display_name, role, is_active,
     phone_number, photo_url, class_ids, created_at, updated_at
   ) VALUES (
-    _uid, 'admin@school.edu', 'Admin', 'super_admin', true,
+    _uid, _email, 'Admin', 'super_admin', true,
     '', '', '{}', _now, _now
   );
 
-  RAISE NOTICE 'Admin user created: admin@school.edu / admin123 (UID: %)', _uid;
+  RAISE NOTICE 'Admin user created (UID: %)', _uid;
 END;
 $$;

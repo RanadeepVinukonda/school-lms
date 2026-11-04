@@ -1,6 +1,6 @@
 -- Migration 048: Rebuild all document-store VIEWs with snake_case column aliases
 -- Matches application code that uses snake_case for Supabase queries.
--- Also creates admin user (admin@school.edu / admin123).
+-- Admin creation (if any) is configured by the operator, not seeded here.
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- PART 1: Rebuild classes VIEW with snake_case aliases
