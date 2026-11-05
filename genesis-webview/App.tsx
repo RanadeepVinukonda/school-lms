@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState, useMemo, useEffect } from 'react';
-import { StyleSheet, View, Text, ActivityIndicator, StatusBar, TouchableOpacity, NativeModules } from 'react-native';
+import { StyleSheet, View, Text, ActivityIndicator, StatusBar, TouchableOpacity, NativeModules, DeviceEventEmitter, PermissionsAndroid, Platform } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
@@ -13,8 +13,59 @@ SplashScreen.preventAutoHideAsync();
 // even after Vercel deployed the fix. Bumping this tag per APK release forces a
 // full re-fetch, and cacheMode=LOAD_NO_CACHE below makes the WebView never read
 // an HTTP-cached copy at all. Bump this whenever you ship a new APK.
-const BUILD_TAG = '20261105-2';
+const BUILD_TAG = '20261105-3';
 const WEBSITE_URL = `https://genesis-frontend-teal.vercel.app/?v=${BUILD_TAG}`;
+
+// Native FCM token/permission bridge. The web app checks for
+// window.GenesisNativePush and, when present, registers this Android token with
+// the backend instead of attempting unsupported Web Push inside the WebView.
+const NATIVE_PUSH_BRIDGE_JS = `
+(function () {
+  if (window.GenesisNativePush) return;
+  var waiters = [];
+  window.GenesisNativePush = {
+    platform: 'android',
+    token: null,
+    permission: 'unknown',
+    lastAction: null,
+    getToken: function () {
+      var self = this;
+      if (self.token) return Promise.resolve(self.token);
+      return new Promise(function (resolve) {
+        var settled = false;
+        var finish = function (token) {
+          if (settled) return;
+          settled = true;
+          resolve(token);
+        };
+        waiters.push(finish);
+        setTimeout(function () { finish(null); }, 15000);
+      });
+    },
+    _setToken: function (token) {
+      this.token = token || null;
+      var pending = waiters.splice(0);
+      pending.forEach(function (resolve) { try { resolve(this.token); } catch (e) {} }, this);
+    },
+    _setPermission: function (permission) {
+      this.permission = permission || 'unknown';
+    },
+    _setAction: function (link) {
+      if (!link) return;
+      this.lastAction = link;
+      try {
+        window.dispatchEvent(new CustomEvent('genesis:native-push-action', { detail: { link: link } }));
+      } catch (e) {}
+    },
+    _takeAction: function () {
+      var link = this.lastAction;
+      this.lastAction = null;
+      return link;
+    }
+  };
+})();
+true;
+`;
 
 // The web app registers a service worker (see service-worker.js) that serves
 // JS chunks CACHE-FIRST. Once a stale (pre-fix) chunk is in the SW cache it is
@@ -160,20 +211,112 @@ export default function App() {
   const webViewRef = useRef<WebView>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pushToken, setPushToken] = useState<string | null>(null);
+  const pushTokenRef = useRef<string | null>(null);
+  const pendingPushActionRef = useRef<string | null>(null);
 
-  const injectedJs = useMemo(() => ERROR_CAPTURE_JS, []);
+  const injectedJs = useMemo(() => ERROR_CAPTURE_JS + '\n' + NATIVE_PUSH_BRIDGE_JS, []);
   // Post-load JS: bust the stale service-worker cache first (so fixed chunks
   // are fetched on the reload), then re-assert the Open-With Capacitor bridge.
   const postLoadJs = useMemo(() => SW_CACHE_CLEAR_JS + '\n' + OPEN_WITH_SHIM, []);
 
+  const injectPushToken = useCallback((token: string) => {
+    const script = `(function(){try{if(window.GenesisNativePush){window.GenesisNativePush._setToken(${JSON.stringify(token)});}}catch(e){}})(); true;`;
+    try {
+      webViewRef.current?.injectJavaScript(script);
+    } catch {}
+  }, []);
+
+  const injectPushAction = useCallback((link: string) => {
+    const script = `(function(){try{if(window.GenesisNativePush){window.GenesisNativePush._setAction(${JSON.stringify(link)});}}catch(e){}})(); true;`;
+    try {
+      webViewRef.current?.injectJavaScript(script);
+    } catch {}
+  }, []);
+
+  const injectPushPermission = useCallback((permission: 'granted' | 'denied' | 'default') => {
+    const script = `(function(){try{if(window.GenesisNativePush){window.GenesisNativePush._setPermission(${JSON.stringify(permission)});}}catch(e){}})(); true;`;
+    try {
+      webViewRef.current?.injectJavaScript(script);
+    } catch {}
+  }, []);
+
   const onLoadEnd = useCallback(() => {
     setLoading(false);
     SplashScreen.hideAsync();
-  }, []);
+    if (pushTokenRef.current) injectPushToken(pushTokenRef.current);
+    const action = pendingPushActionRef.current;
+    if (action) {
+      pendingPushActionRef.current = null;
+      injectPushAction(action);
+    }
+  }, [injectPushToken, injectPushAction]);
 
   const onError = useCallback(() => {
     setLoading(false);
     SplashScreen.hideAsync();
+  }, []);
+
+  useEffect(() => {
+    pushTokenRef.current = pushToken;
+    if (pushToken) injectPushToken(pushToken);
+  }, [pushToken, injectPushToken]);
+
+  useEffect(() => {
+    let active = true;
+    const push = (NativeModules as any).GenesisPush;
+    if (!push) {
+      console.warn('[genesis] NativeModules.GenesisPush is missing in this build');
+      return;
+    }
+
+    (async () => {
+      try {
+        const granted = await push.requestNotificationPermission();
+        if (active) injectPushPermission(granted ? 'granted' : 'denied');
+      } catch {
+        if (active) injectPushPermission('default');
+      }
+      try {
+        const token = await push.getToken();
+        if (active && token) setPushToken(String(token));
+      } catch (err: any) {
+        console.warn('[genesis] FCM token unavailable:', String((err && err.message) || err));
+      }
+      try {
+        const link = await push.getInitialLink();
+        if (active && link) {
+          pendingPushActionRef.current = String(link);
+          injectPushAction(String(link));
+        }
+      } catch {}
+    })();
+
+    const tokenSub = DeviceEventEmitter.addListener('GenesisPushToken', (token: string) => {
+      if (active && token) setPushToken(String(token));
+    });
+    const actionSub = DeviceEventEmitter.addListener('GenesisPushAction', (link: string) => {
+      if (!active || !link) return;
+      pendingPushActionRef.current = String(link);
+      injectPushAction(String(link));
+    });
+
+    return () => {
+      active = false;
+      tokenSub.remove();
+      actionSub.remove();
+    };
+  }, [injectPushAction, injectPushPermission]);
+
+  // Ask for camera once so OCR camera access is listed in Android app info and
+  // the WebView's runtime permission grant can persist.
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    (async () => {
+      try {
+        await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.CAMERA);
+      } catch {}
+    })();
   }, []);
 
   // Settle (resolve/reject) a bridged FileShare call inside the WebView so the

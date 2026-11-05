@@ -13,6 +13,7 @@ import {
   deregisterToken,
   savePendingDeepLink,
   takePendingDeepLink,
+  isGenesisNativePlatform,
 } from '@/services/fcmService';
 import { ensureNotificationChannels } from '@/services/notificationChannels';
 import { syncBadge } from '@/services/badgeService';
@@ -89,7 +90,7 @@ export function usePushNotifications(autoRequest = false) {
     let unsub: (() => void) | undefined;
     onForegroundMessage((payload) => {
       if (!payload.title && !payload.body) return;
-      if (Capacitor.isNativePlatform()) return;
+      if (isGenesisNativePlatform() || Capacitor.isNativePlatform()) return;
       const data = payload.data || {};
       const target = resolveDeepLink(data);
       const hasLink = Boolean(data?.link || data?.url || data?.type);

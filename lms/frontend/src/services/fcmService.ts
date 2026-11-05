@@ -11,6 +11,43 @@ const PENDING_LINK_KEY = 'lms_pending_deep_link';
 
 let nativeListenerReady: Promise<boolean> | null = null;
 
+/**
+ * The Genesis Android WebView injects this bridge before the page loads. Web
+ * Push is not available inside an Android WebView, so when the bridge is present
+ * we register the native FCM token instead of attempting web Firebase messaging.
+ */
+interface GenesisNativePushBridge {
+  platform?: string;
+  token?: string | null;
+  permission?: string;
+  lastAction?: string | null;
+  getToken?: () => Promise<string | null>;
+  _takeAction?: () => string | null;
+}
+
+function getGenesisNativePush(): GenesisNativePushBridge | null {
+  if (typeof window === 'undefined') return null;
+  return (window as unknown as { GenesisNativePush?: GenesisNativePushBridge })
+    .GenesisNativePush ?? null;
+}
+
+export function isGenesisNativePlatform(): boolean {
+  return !!getGenesisNativePush();
+}
+
+async function getGenesisNativeToken(): Promise<string | null> {
+  const bridge = getGenesisNativePush();
+  if (!bridge) return null;
+  if (bridge.permission === 'denied') return null;
+  if (bridge.token) return bridge.token;
+  if (typeof bridge.getToken !== 'function') return null;
+  try {
+    return await bridge.getToken();
+  } catch {
+    return null;
+  }
+}
+
 async function isNativePlatform(): Promise<boolean> {
   try {
     const { Capacitor } = await import('@capacitor/core');
@@ -126,7 +163,7 @@ function ensureNativeTokenListener(): Promise<boolean> {
 export async function flushPendingPushToken(): Promise<void> {
   const pending = getPendingToken();
   if (!pending) return;
-  if (await isNativePlatform()) {
+  if (isGenesisNativePlatform() || (await isNativePlatform())) {
     await postToken(pending, 'android');
   } else {
     await postToken(pending, 'web');
@@ -183,8 +220,20 @@ async function requestNativePermission(): Promise<string | null> {
   }
 }
 
+async function requestGenesisNativePermission(): Promise<string | null> {
+  if (currentToken) return currentToken;
+  const token = await getGenesisNativeToken();
+  if (!token) return null;
+  currentToken = token;
+  await postToken(token, 'android');
+  return token;
+}
+
 export async function requestPermission(): Promise<string | null> {
   if (currentToken) return currentToken;
+  if (isGenesisNativePlatform()) {
+    return requestGenesisNativePermission();
+  }
   if (await isNativePlatform()) {
     return requestNativePermission();
   }
@@ -257,6 +306,9 @@ export function takePendingDeepLink(): string | null {
 export async function onForegroundMessage(
   handler: (payload: { title?: string; body?: string; data?: Record<string, unknown>; notification?: any }) => void,
 ): Promise<() => void> {
+  // The Genesis FCM service renders the heads-up notification natively in every
+  // app state, so the web layer must not try to initialise Web Push.
+  if (isGenesisNativePlatform()) return () => {};
   if (await isNativePlatform()) {
     try {
       const { PushNotifications } = await import('@capacitor/push-notifications');
@@ -295,6 +347,19 @@ export async function onForegroundMessage(
 export async function onNativePushAction(
   handler: (data: Record<string, unknown>) => void,
 ): Promise<() => void> {
+  const genesisBridge = getGenesisNativePush();
+  if (genesisBridge) {
+    const pending = genesisBridge._takeAction?.();
+    if (pending) handler({ link: pending });
+    const listener = (event: Event) => {
+      const detail = (event as CustomEvent<Record<string, unknown>>).detail;
+      if (!detail || typeof detail !== 'object') return;
+      genesisBridge._takeAction?.();
+      handler(detail);
+    };
+    window.addEventListener('genesis:native-push-action', listener);
+    return () => window.removeEventListener('genesis:native-push-action', listener);
+  }
   if (!(await isNativePlatform())) return () => {};
   try {
     const { PushNotifications } = await import('@capacitor/push-notifications');
