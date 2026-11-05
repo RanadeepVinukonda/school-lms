@@ -169,6 +169,8 @@ export async function pushQuiz(req: Request, res: Response) {
     title: req.body.title || req.body.data?.title || `Quiz from OCR - ${new Date().toLocaleDateString()}`,
     conceptName: req.body.conceptName || req.body.data?.conceptName || null,
     chapterName: req.body.chapterName || req.body.data?.chapterName || null,
+    conceptTitle: req.body.conceptTitle || req.body.conceptName || req.body.data?.conceptTitle || req.body.data?.conceptName || null,
+    chapterTitle: req.body.chapterTitle || req.body.chapterName || req.body.data?.chapterTitle || req.body.data?.chapterName || null,
     description: req.body.description || req.body.data?.description || '',
     classId,
     subjectId: subjectId || null,

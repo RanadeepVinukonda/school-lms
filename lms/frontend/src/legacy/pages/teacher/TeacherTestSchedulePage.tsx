@@ -277,7 +277,7 @@ export default function TeacherTestSchedulePage() {
                               <div className="text-label-xs text-muted-foreground line-clamp-1">{exam.description}</div>
                             </td>
                             <td className="px-4 py-3 text-label-sm text-muted-foreground">
-                              {exam.chapterTitle || exam.chapterId || '-'}
+                              {exam.chapterTitle || exam.chapterName || exam.chapterId || '-'}
                             </td>
                             <td className="px-4 py-3 text-center">
                               <Badge variant={exam.releasedAt ? 'success' : 'secondary'} className="text-[10px] capitalize">
@@ -349,10 +349,10 @@ export default function TeacherTestSchedulePage() {
                               <div className="text-label-xs text-muted-foreground line-clamp-1">{quiz.description}</div>
                             </td>
                             <td className="px-4 py-3 text-label-sm text-muted-foreground">
-                              {quiz.chapterTitle || quiz.chapterId || '-'}
+                              {quiz.chapterTitle || quiz.chapterName || quiz.chapterId || '-'}
                             </td>
                             <td className="px-4 py-3 text-label-sm text-muted-foreground">
-                              {quiz.conceptTitle || quiz.conceptId || '-'}
+                              {quiz.conceptTitle || quiz.conceptName || quiz.conceptId || '-'}
                             </td>
                             <td className="px-4 py-3 text-center">
                               <Badge variant={isRepublished ? 'success' : isReleased ? 'success' : 'secondary'} className="text-[10px] capitalize">
@@ -426,10 +426,10 @@ export default function TeacherTestSchedulePage() {
                               <div className="text-label-xs text-muted-foreground line-clamp-1">{as.description}</div>
                             </td>
                             <td className="px-4 py-3 text-label-sm text-muted-foreground">
-                              {as.chapterTitle || as.chapterId || '-'}
+                              {as.chapterTitle || as.chapterName || as.chapterId || '-'}
                             </td>
                             <td className="px-4 py-3 text-label-sm text-muted-foreground">
-                              {as.conceptTitle || as.conceptId || '-'}
+                              {as.conceptTitle || as.conceptName || as.conceptId || '-'}
                             </td>
                             <td className="px-4 py-3 text-center">
                               <Badge variant={as.releasedAt ? 'success' : 'secondary'} className="text-[10px] capitalize">
