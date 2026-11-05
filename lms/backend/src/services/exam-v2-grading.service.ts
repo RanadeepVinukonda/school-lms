@@ -176,7 +176,10 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
     id: string;
     type: string;
     difficulty?: Difficulty;
+    questionText?: string;
+    options?: unknown;
     correctAnswer: string;
+    explanation?: string;
     points: number;
   }> = [];
 
@@ -185,7 +188,10 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
       id: q.id,
       type: q.type,
       difficulty: q.difficulty as Difficulty | undefined,
+      questionText: q.text || q.question || q.questionText || '',
+      options: q.options,
       correctAnswer: q.correctAnswer || '',
+      explanation: q.explanation || '',
       points: q.points || 1,
     }));
   } else {
@@ -197,7 +203,10 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
           id: q.id,
           type: q.type,
           difficulty: q.difficulty,
+          questionText: q.question_text || q.questionText || q.text || q.question || '',
+          options: q.options,
           correctAnswer: q.correct_answer || q.correctAnswer || q.answer || '',
+          explanation: q.explanation || '',
           points: q.points || 1,
         });
       }
@@ -208,7 +217,15 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
   const gradedAnswers: Array<Record<string, unknown>> = data.answers.map((answer) => {
     const question = allQuestionBank.find((q) => q.id === answer.questionId);
     if (!question) {
-      return { questionId: answer.questionId, answer: answer.answer, isCorrect: false, pointsEarned: 0, timeSpent: answer.timeSpent || 0 };
+      const stored = (storedQuestions || []).find((q: any) => q.id === answer.questionId);
+      return {
+        questionId: answer.questionId,
+        questionText: stored?.text || stored?.question || stored?.questionText || '',
+        answer: answer.answer,
+        isCorrect: false,
+        pointsEarned: 0,
+        timeSpent: answer.timeSpent || 0,
+      };
     }
 
     let isCorrect = false;
@@ -220,7 +237,17 @@ export async function submitExamAttempt(attemptId: string, studentId: string, da
 
     const pointsEarned = isCorrect ? (question.points || POINTS_BY_DIFFICULTY[question.difficulty || 'medium'] || 1) : 0;
     if (isCorrect) score += pointsEarned;
-    return { questionId: answer.questionId, answer: answer.answer, isCorrect, pointsEarned, timeSpent: answer.timeSpent || 0 };
+    return {
+      questionId: answer.questionId,
+      questionText: question.questionText || '',
+      options: question.options,
+      answer: answer.answer,
+      isCorrect,
+      pointsEarned,
+      correctAnswer: question.correctAnswer,
+      explanation: question.explanation || '',
+      timeSpent: answer.timeSpent || 0,
+    };
   });
 
   const timeSpent = data.answers.reduce((sum, a) => sum + (a.timeSpent || 0), 0);

@@ -267,7 +267,7 @@ export default function QuizAttemptPage() {
                     const correct = isAnswerCorrect(question, answers[question.id]);
                     return (
                     <div key={question.id} className={cn('p-3 rounded-lg text-body-md', correct ? 'bg-emerald-500/5 border border-emerald-500/20' : 'bg-destructive/5 border border-destructive/20')}>
-                      <p className="font-medium mb-1">Q{i + 1}. {question.text}</p>
+                      <p className="font-medium mb-1">Q{i + 1}. {question.text || (question as any).questionText || (question as any).question || ''}</p>
                       <p className="text-label-xs text-muted-foreground">{_('Your answer:')} {answers[question.id] || _('Not answered')}</p>
                       {!correct && (
                         <p className="text-label-xs text-emerald-500">{_('Correct:')} {formatCorrectAnswer(question)}</p>

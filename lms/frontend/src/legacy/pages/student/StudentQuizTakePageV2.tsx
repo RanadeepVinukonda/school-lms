@@ -780,10 +780,13 @@ export default function StudentQuizTakePageV2() {
                 <CardContent className="space-y-4">
                   {result.answers.map((a, i) => {
                     const isSkipped = a.skipped;
+                    const questionText = a.questionText
+                      || attempt?.questions?.find((q) => q.id === a.questionId)?.text
+                      || assessmentInfo?.questions?.find((q) => q.id === a.questionId)?.text;
                     return (
                     <div key={a.questionId} className={cn('p-4 rounded-lg border', isSkipped ? 'bg-warning/5 border-warning/20' : a.isCorrect ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-destructive/5 border-destructive/20')}>
                       <div className="flex items-start justify-between gap-2">
-                        <p className="font-medium text-sm flex-1">{i + 1}. {a.questionText || _(`Question ${i + 1}`)}</p>
+                        <p className="font-medium text-sm flex-1">{i + 1}. {questionText || _(`Question ${i + 1}`)}</p>
                         <Badge variant={isSkipped ? 'warning' : a.isCorrect ? 'success' : 'destructive'} className="shrink-0">{isSkipped ? _('Skipped') : a.isCorrect ? _('Correct') : _('Incorrect')}</Badge>
                       </div>
                       {!isSkipped && (
