@@ -4,6 +4,7 @@ import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/lib/constants';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Icon } from '@/components/ui/Icon';
+import { BackButton } from '@/components/layout/BackButton';
 
 const navItems = [
   { label: 'Home', href: ROUTES.K2_DASHBOARD, icon: 'home' },
@@ -35,6 +36,7 @@ export default function K2Layout() {
       <header className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 px-4 pb-4 pt-[calc(env(safe-area-inset-top)+1rem)] shadow-lg relative">
         <div className="flex items-center justify-between max-w-6xl mx-auto">
           <div className="flex items-center gap-3">
+            <BackButton className="text-white hover:bg-white/10" />
             <span className="text-4xl">🦁</span>
             <div>
               <h1 className="text-2xl font-bold text-white drop-shadow-md">Genesis Kids</h1>

@@ -16,6 +16,7 @@
  */
 
 import { consumeBackPress } from './backHandler';
+import { requestBack } from './backNavigation';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 
 let routerModule: Promise<{ router: typeof import('@/app/router').router }> | null = null;
@@ -151,6 +152,9 @@ function watchBackButton() {
   import('@capacitor/app').then(({ App }) => {
     App.addListener('backButton', (event: { canGoBack: boolean }) => {
       if (consumeBackPress()) {
+        return;
+      }
+      if (requestBack()) {
         return;
       }
       if (event.canGoBack) {

@@ -8,6 +8,7 @@ import { ActiveAcademicYearProvider } from '@/context/ActiveAcademicYearContext'
 import { setupChunkReload } from '@/lib/lazyRetry';
 import { initNativeBridge } from '@/lib/native';
 import SplashScreen from '@/components/common/SplashScreen';
+import { NavigationBridge } from '@/components/layout/BackButton';
 import UploadProgressBanner from '@/components/textbook/UploadProgressBanner';
 import { PWAInstallPrompt } from '@/components/common/PWAInstallPrompt';
 import { OfflineStatusBar } from '@/components/common/OfflineStatusBar';
@@ -72,6 +73,7 @@ export default function ClientProviders({ children }: { children: React.ReactNod
           <ActiveAcademicYearProvider>
             <AuthGate>
               <BootstrapEffects />
+              <NavigationBridge />
               <SplashScreen isLoading={showSplash} onFinish={() => setShowSplash(false)} />
               <OfflineStatusBar />
               <UploadProgressBanner />

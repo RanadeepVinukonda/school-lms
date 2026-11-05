@@ -14,6 +14,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { UserAvatar } from '@/components/layout/UserAvatar';
+import { BackButton } from '@/components/layout/BackButton';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useDrawerSwipeLeft } from '@/hooks/useDrawerSwipeLeft';
@@ -173,6 +174,7 @@ export function AdminLayout() {
       >
         {/* Top app bar */}
         <header className="sticky top-0 z-40 flex items-center gap-2 sm:gap-4 border-b border-outline-variant bg-surface/85 backdrop-blur-md px-3 sm:px-4 h-[calc(env(safe-area-inset-top)+3.5rem)] pt-[calc(env(safe-area-inset-top)+0.5rem)] sm:pt-[env(safe-area-inset-top)] relative">
+          <BackButton />
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden text-on-surface shrink-0" aria-label="Menu">
