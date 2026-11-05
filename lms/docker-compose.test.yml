@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  test-db:
+    image: postgres:16-alpine
+    container_name: school-lms-test-db
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: school_lms_test
+    ports:
+      - '5433:5432'
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U test -d school_lms_test']
+      interval: 2s
+      timeout: 5s
+      retries: 10
+    mem_limit: 256m
+    cpus: '0.5'
+
+  test-redis:
+    image: redis:7-alpine
+    container_name: school-lms-test-redis
+    ports:
+      - '6380:6379'
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 2s
+      timeout: 5s
+      retries: 10
+    mem_limit: 64m
+    cpus: '0.25'

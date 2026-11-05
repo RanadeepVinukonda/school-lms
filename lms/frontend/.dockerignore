@@ -1,0 +1,11 @@
+node_modules/
+.git/
+.gitignore
+*.md
+Dockerfile
+.dockerignore
+e2e/
+playwright.config.ts
+.env.local
+.env.vercel
+*.log

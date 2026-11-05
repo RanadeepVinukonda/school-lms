@@ -1,0 +1,1 @@
+ALTER TABLE concept_questions ADD COLUMN IF NOT EXISTS language VARCHAR(10) DEFAULT 'en';

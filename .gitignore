@@ -1,0 +1,63 @@
+# ---- Dependencies ----------------------------------------------------
+node_modules/
+
+# ---- Build output ----------------------------------------------------
+dist/
+coverage/
+coverage-report/
+tsc_out.txt
+tsc-output.txt
+*.tsbuildinfo
+*.apk
+dist-apk/
+
+# ---- Environment & secrets (NEVER commit real values) ---------------
+**/.env
+**/.env.local
+**/.env.vercel
+**/.env.*.local
+*_env.env
+.env.production
+
+# ---- Logs ------------------------------------------------------------
+*.log
+
+# ---- Editor / OS -----------------------------------------------------
+.DS_Store
+.vscode/
+.idea/
+.kiro/
+.kilo/
+.agent/
+
+# ---- Agent scratch ---------------------------------------------------
+.amazonq/
+.claude/
+.codex/
+.gemini/
+.kilocode/
+.opencode/
+.agent/
+graphify-out/
+openspec/
+mempalace.yaml
+entities.json
+lms-flowchart.html
+skills-lock.json
+scratch/
+archive/
+_ignore_this/
+
+# ---- Vercel ----------------------------------------------------------
+.vercel/
+
+# ---- Expo / native ---------------------------------------------------
+.expo/
+ios/
+android/
+
+# ---- Monorepo lock files (stale roots) --------------------------------
+# Real lock files that npm ci needs are tracked:
+#   lms/backend/package-lock.json, lms/frontend/package-lock.json
+lms/package-lock.json
+package-lock.json

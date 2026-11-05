@@ -1,0 +1,121 @@
+import { Request, Response } from 'express';
+import * as authService from '../services/auth.service';
+import { passwordResetService } from '../services/password-reset.service';
+import { sendSuccess, sendError } from '../utils/response';
+import { logger } from '../utils/logger';
+import { env } from '../config/env';
+import { getSupabaseAdmin } from '../services/supabase';
+import { requireUser } from '../types/common';
+
+function parseCookies(cookieHeader?: string): Record<string, string> {
+  const cookies: Record<string, string> = {};
+  if (!cookieHeader) return cookies;
+  for (const part of cookieHeader.split(';')) {
+    const idx = part.indexOf('=');
+    if (idx > 0) {
+      const key = part.substring(0, idx).trim();
+      const val = part.substring(idx + 1).trim();
+      if (key) cookies[key] = val;
+    }
+  }
+  return cookies;
+}
+
+export async function getProfile(req: Request, res: Response) {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  const user = requireUser(req);
+  const result = await authService.getUserProfile(user.uid);
+  sendSuccess(res, result);
+}
+
+export async function updateProfile(req: Request, res: Response) {
+  const user = requireUser(req);
+  const result = await authService.updateUserProfile(user.uid, req.body);
+  sendSuccess(res, result, 'Profile updated');
+}
+
+export async function verifyToken(_req: Request, res: Response) {
+  sendSuccess(res, { valid: true });
+}
+
+export async function logout(req: Request, res: Response) {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split('Bearer ')[1];
+    if (token) {
+      await authService.logout(token);
+    }
+  }
+  res.clearCookie('token', { path: '/', ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}) });
+  sendSuccess(res, null, 'Logged out successfully');
+}
+
+export async function refresh(req: Request, res: Response) {
+  const refresh_token = req.body.refresh_token || req.body.refreshToken;
+  const result = await authService.refreshToken(refresh_token);
+
+  const maxAge = 7 * 24 * 60 * 60 * 1000;
+  res.cookie('token', result.token, {
+    httpOnly: true,
+    secure: env.COOKIE_SECURE,
+    sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax',
+    path: '/',
+    maxAge,
+    ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
+  });
+
+  sendSuccess(res, result, 'Token refreshed');
+}
+
+export async function getSession(req: Request, res: Response) {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  const cookies = parseCookies(req.headers.cookie);
+  const token = cookies.token;
+  if (!token) {
+    sendSuccess(res, null, 'No session');
+    return;
+  }
+
+  try {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      sendSuccess(res, null, 'No session');
+      return;
+    }
+
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user?.id) {
+      sendSuccess(res, null, 'No session');
+      return;
+    }
+
+    const profile = await authService.verifyUserToken(user.id);
+    sendSuccess(res, { user: profile, uid: user.id });
+  } catch {
+    sendSuccess(res, null, 'No session');
+  }
+}
+
+export async function forgotPassword(req: Request, res: Response) {
+  const { email } = req.body;
+  try {
+    await passwordResetService.requestPasswordReset(email);
+    sendSuccess(res, null, 'If an account exists for that email, a reset link has been sent.');
+  } catch (err: any) {
+    logger.error('Forgot-password failed', { email, error: err.message });
+    sendError(res, `Reset email could not be sent: ${err.message}`);
+    return;
+  }
+}
+
+export async function verifyResetToken(req: Request, res: Response) {
+  const { token } = req.body;
+  const result = await passwordResetService.verifyResetToken(token);
+  sendSuccess(res, result, 'Reset token is valid');
+}
+
+export async function resetPassword(req: Request, res: Response) {
+  const { token, password } = req.body;
+  await passwordResetService.confirmPasswordReset(token, password);
+  sendSuccess(res, null, 'Password updated successfully');
+}

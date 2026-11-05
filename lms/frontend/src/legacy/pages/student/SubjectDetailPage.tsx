@@ -1,0 +1,347 @@
+import { Link, useParams } from 'react-router-dom';
+import { SEOHead } from '@/components/common/SEOHead';
+import { DataFetchWrapper } from '@/components/common/DataFetchWrapper';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Icon } from '@/components/ui/Icon';
+import { useQuery } from '@tanstack/react-query';
+import { getTextbooksBySubject, getChaptersForTextbook } from '@/services/textbookService';
+import { getSubject, getGradesByStudent } from '@/services/dataService';
+import { teacherClassSubjectService } from '@/services/teacherClassSubjectService';
+import { supabase } from '@/supabase/config';
+import { useAuthStore } from '@/store/authStore';
+import { ROUTES } from '@/lib/constants';
+import type { Textbook } from '@/types/textbook';
+
+interface TextbookDetails {
+  id: string;
+  title: string;
+  chapters: Array<{ id: string; title: string; concepts: Array<{ id: string; title: string }> }>;
+}
+
+interface DashboardData {
+  subject: NonNullable<Awaited<ReturnType<typeof getSubject>>>;
+  teacherName?: string;
+  currentChapter: { textbookId: string; textbookTitle: string; id: string; title: string; order: number; conceptCount: number } | null;
+  recentGrade: { itemName: string; score: number; maxScore: number; percentage: number; gradedAt: string } | null;
+  textbooks: Array<Textbook & { chapterCount: number }>;
+  textbookDetails: TextbookDetails[];
+}
+
+export default function SubjectDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const authUser = useAuthStore((s) => s.user);
+  const { data, isLoading, isError, error, refetch } = useQuery<DashboardData | null>({
+    queryKey: ['subject-detail', id, authUser?.id],
+    queryFn: async () => {
+      if (!id) return null;
+      const studentId = authUser?.id;
+      if (!studentId) return null;
+
+      const [subject, firestoreTextbooks, grades, classAssignments] = await Promise.all([
+        getSubject(id),
+        getTextbooksBySubject(id),
+        studentId ? getGradesByStudent(studentId) : Promise.resolve([]),
+        authUser?.classId ? teacherClassSubjectService.getClassAssignments(authUser.classId).catch(() => []) : Promise.resolve([]),
+      ]);
+
+      if (!subject) return null;
+
+      const textbooks = firestoreTextbooks
+        .filter((tb) => tb.status !== 'processing' && (!authUser?.classId || tb.classId === authUser.classId))
+        .map((tb) => ({ ...tb, chapterCount: tb.chapterCount ?? 0 }));
+      const assignment = (classAssignments || []).find((a) => a.subjectId === id);
+      const teacherName = assignment?.teacherName;
+      const textbookDetails: TextbookDetails[] = await Promise.all(
+        textbooks.map(async (tb) => {
+          const chapters = await getChaptersForTextbook(tb.id);
+          const withConcepts = await Promise.all(
+            chapters.map(async (ch) => {
+              const { data: concepts } = await supabase
+                .from('concepts').select('id, title').eq('chapter_id', ch.id).order('order');
+              return { id: ch.id, title: ch.title, concepts: (concepts || []) as Array<{ id: string; title: string }> };
+            })
+          );
+          return { id: tb.id, title: tb.title, chapters: withConcepts };
+        })
+      );
+      const firstTb = textbooks[0];
+      let currentChapter: { textbookId: string; textbookTitle: string; id: string; title: string; order: number; conceptCount: number } | null = null;
+      if (firstTb) {
+        const chapters = await getChaptersForTextbook(firstTb.id);
+        const firstCh = chapters[0];
+        if (firstCh) {
+          currentChapter = {
+            textbookId: firstTb.id,
+            textbookTitle: firstTb.title,
+            id: firstCh.id,
+            title: firstCh.title,
+            order: firstCh.order as number,
+            conceptCount: 0,
+          };
+        }
+      }
+      const recentGrade = grades
+        .filter((g) => g.subjectId === id)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] ?? null;
+
+      return {
+        subject,
+        teacherName,
+        currentChapter,
+        recentGrade: recentGrade ? { itemName: recentGrade.itemName ?? 'Assessment', score: recentGrade.score, maxScore: recentGrade.totalPoints, percentage: recentGrade.percentage, gradedAt: recentGrade.createdAt } : null,
+        textbooks,
+        textbookDetails,
+      };
+    },
+    enabled: !!id && !!authUser?.id,
+  });
+
+  return (
+    <>
+      <SEOHead title={data?.subject?.name ?? 'Subject'} description={`${data?.subject?.name ?? 'Subject'} overview`} />
+      <div
+
+
+
+        className="sm:p-6 p-4 max-w-6xl mx-auto pb-32 space-y-16"
+      >
+        <div>
+          <Button variant="ghost" size="sm" asChild className="mb-1">
+            <Link to={ROUTES.STUDENT_SUBJECTS} className="gap-2">
+              <Icon name="arrow_back" size={16} /> Back to Subjects
+            </Link>
+          </Button>
+        </div>
+        <DataFetchWrapper data={data} isLoading={isLoading} error={isError ? error ?? new Error('Failed to load subject') : null}
+          loadingType="detail" emptyMessage="Subject not found" emptyIcon={<Icon name="menu_book" size={32} />}
+          emptyAction={<Button asChild><Link to={ROUTES.STUDENT_SUBJECTS}><Icon name="arrow_back" size={16} className="mr-2" /> Back to Subjects</Link></Button>}
+          onRetry={() => refetch()} errorTitle="Failed to load subject"
+        >
+          {(d) => (
+            <div className="space-y-16">
+              {/* Banner */}
+              <div>
+                <Card className="overflow-hidden border-0">
+                  <div className="relative p-6 pb-12" style={{ background: `linear-gradient(135deg, ${d.subject.color}33 0%, transparent 100%)` }}>
+                    <div className="absolute inset-0" style={{ backgroundColor: d.subject.color, opacity: 0.06 }} />
+                    <div className="relative z-10 flex items-start gap-5">
+                      <div className="h-16 w-16 rounded-2xl flex items-center justify-center shadow-lg shrink-0" style={{ backgroundColor: d.subject.color }}>
+                        <Icon name={d.subject.icon ?? 'school'} size={32} className="text-white" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h1 className="text-headline-sm md:text-headline-md font-bold tracking-tight" style={{ color: d.subject.color }}>{d.subject.name}</h1>
+                        <p className="text-body-md text-muted-foreground">{d.subject.code}</p>
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {d.subject.category && <Badge variant="secondary" className="text-[10px]">{d.subject.category}</Badge>}
+                          {d.teacherName && (
+                            <Badge variant="outline" className="text-[10px] gap-1">
+                              <Icon name="person" size={12} /> Teacher: {d.teacherName}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Info grid */}
+              <div>
+                <div className="mb-6">
+                  <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">OVERVIEW</p>
+                  <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">Quick Stats</h2>
+                </div>
+                <div
+
+
+
+
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                >
+                  <div>
+                    <Card className="overflow-hidden border-border/60">
+                      <div className="h-1.5" style={{ backgroundColor: d.subject.color }} />
+                      <CardContent className="p-5">
+                        <p className="text-label-sm font-medium flex items-center gap-2 mb-2"><Icon name="auto_stories" size={16} className="text-muted-foreground" /> Current Chapter</p>
+                        {d.currentChapter ? (
+                          <Link to={ROUTES.STUDENT_TEXTBOOK(d.currentChapter.textbookId)} className="block group">
+                            <p className="font-semibold group-hover:underline truncate">{d.currentChapter.title}</p>
+                            <p className="text-body-sm text-muted-foreground">{d.currentChapter.textbookTitle}</p>
+                          </Link>
+                        ) : <p className="text-body-sm text-muted-foreground">No chapters yet</p>}
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <div>
+                    <Card className="overflow-hidden border-border/60">
+                      <div className="h-1.5" style={{ backgroundColor: d.subject.color }} />
+                      <CardContent className="p-5">
+                        <p className="text-label-sm font-medium flex items-center gap-2 mb-2"><Icon name="auto_stories" size={16} className="text-muted-foreground" /> Textbooks</p>
+                        <p className="font-semibold text-title-md">{d.textbooks.length} available</p>
+                        <p className="text-body-sm text-muted-foreground">{d.textbooks.reduce((s, t) => s + t.chapterCount, 0)} total chapters</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <div>
+                    <Card className="overflow-hidden border-border/60">
+                      <div className="h-1.5" style={{ backgroundColor: d.subject.color }} />
+                      <CardContent className="p-5">
+                        <p className="text-label-sm font-medium flex items-center gap-2 mb-2"><Icon name="assignment" size={16} className="text-muted-foreground" /> Upcoming Assignment</p>
+                        <p className="text-body-sm text-muted-foreground">No pending assignments</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <div>
+                    <Card className="overflow-hidden border-border/60">
+                      <div className="h-1.5" style={{ backgroundColor: d.subject.color }} />
+                      <CardContent className="p-5">
+                        <p className="text-label-sm font-medium flex items-center gap-2 mb-2"><Icon name="fact_check" size={16} className="text-muted-foreground" /> Upcoming Exam</p>
+                        <p className="text-body-sm text-muted-foreground">No exams scheduled</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <div>
+                    <Card className="overflow-hidden border-border/60 sm:col-span-2">
+                      <div className="h-1.5" style={{ backgroundColor: d.subject.color }} />
+                      <CardContent className="p-5">
+                        <p className="text-label-sm font-medium flex items-center gap-2 mb-2"><Icon name="grading" size={16} className="text-muted-foreground" /> Recent Grade</p>
+                        {d.recentGrade ? (
+                          <div className="flex items-center justify-between">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold truncate">{d.recentGrade.itemName}</p>
+                              <p className="text-body-xs text-muted-foreground">{new Date(d.recentGrade.gradedAt).toLocaleDateString()}</p>
+                            </div>
+                            <div className="text-right shrink-0 ml-4">
+                              <p className={`text-lg font-bold ${d.recentGrade.percentage >= 70 ? 'text-success' : 'text-destructive'}`}>
+                                {d.recentGrade.score}/{d.recentGrade.maxScore}
+                              </p>
+                              <p className="text-body-xs text-muted-foreground">{d.recentGrade.percentage}%</p>
+                            </div>
+                          </div>
+                        ) : <p className="text-body-sm text-muted-foreground">No grades yet</p>}
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </div>
+
+              {/* Textbooks section */}
+              <div>
+                <div className="mb-6">
+                  <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">MATERIALS</p>
+                  <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">Textbooks</h2>
+                </div>
+                {d.textbooks.length === 0 ? (
+                  <Card className="border-border/60">
+                    <CardContent className="flex flex-col items-center gap-3 py-10">
+                      <Icon name="auto_stories" size={40} className="text-muted-foreground/50" />
+                      <p className="text-body-md text-muted-foreground">No textbooks available yet for this subject.</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div
+
+
+
+
+                    className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                  >
+                    {d.textbooks.map((tb, idx) => (
+                      <div key={tb.id}>
+                        <Link to={ROUTES.STUDENT_TEXTBOOK(tb.id)} className="block h-full">
+                          <Card className="h-full border-border/60 hover:-translate-y-1 transition-all duration-200 overflow-hidden">
+                            <div className="h-2" style={{ backgroundColor: d.subject.color }} />
+                            <CardContent className="p-5 flex flex-col gap-3">
+                              <div className="flex items-center gap-3">
+                                <div className="h-12 w-12 rounded-xl flex items-center justify-center shadow-md" style={{ backgroundColor: `${d.subject.color}18` }}>
+                                  <Icon name="auto_stories" size={24} style={{ color: d.subject.color }} />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="font-semibold truncate">{tb.title}</p>
+                                  <p className="text-body-sm text-muted-foreground">{d.subject.code}</p>
+                                </div>
+                              </div>
+                              {tb.description && <p className="text-body-sm text-muted-foreground line-clamp-2">{tb.description}</p>}
+                              <p className="text-body-sm text-muted-foreground flex items-center gap-1">
+                                <Icon name="auto_stories" size={14} /> {tb.chapterCount} {tb.chapterCount === 1 ? 'chapter' : 'chapters'}
+                              </p>
+                            </CardContent>
+                          </Card>
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Chapters & Concepts (read-only) */}
+              <div>
+                <div className="mb-6">
+                  <p className="text-label-sm font-semibold text-tertiary uppercase tracking-[0.2em] mb-2">CURRICULUM</p>
+                  <h2 className="text-headline-sm md:text-headline-md font-bold tracking-tight">Chapters &amp; Concepts</h2>
+                </div>
+                {d.textbookDetails.length === 0 ? (
+                  <Card className="border-border/60">
+                    <CardContent className="flex flex-col items-center gap-3 py-10">
+                      <Icon name="account_tree" size={40} className="text-muted-foreground/50" />
+                      <p className="text-body-md text-muted-foreground">No chapters uploaded yet by your teacher.</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="space-y-4">
+                    {d.textbookDetails.map((tb) => (
+                      <Card key={tb.id} className="border-border/60 overflow-hidden">
+                        <div className="h-1.5" style={{ backgroundColor: d.subject.color }} />
+                        <CardContent className="p-5">
+                          <p className="font-semibold flex items-center gap-2 mb-4">
+                            <Icon name="auto_stories" size={18} style={{ color: d.subject.color }} /> {tb.title}
+                          </p>
+                          <div className="space-y-3">
+                            {tb.chapters.map((ch) => (
+                              <div key={ch.id} className="rounded-lg border border-border/60 p-3">
+                                <p className="text-body-md font-medium flex items-center gap-2">
+                                  <Icon name="menu_book" size={15} className="text-muted-foreground" /> {ch.title}
+                                </p>
+                                {ch.concepts.length > 0 && (
+                                  <div className="flex flex-wrap gap-1.5 mt-2 pl-6">
+                                    {ch.concepts.map((c) => (
+                                      <span key={c.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-label-sm text-muted-foreground">
+                                        <Icon name="psychology" size={12} /> {c.title}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Quick actions */}
+              <div>
+                <div className="flex flex-wrap gap-3">
+                  {d.textbooks.length > 0 && (
+                    <Button variant="outline" asChild className="gap-2">
+                      <Link to={ROUTES.STUDENT_TEXTBOOK(d.textbooks[0].id)}><Icon name="menu_book" size={18} /> View Textbooks</Link>
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </DataFetchWrapper>
+      </div>
+    </>
+  );
+}

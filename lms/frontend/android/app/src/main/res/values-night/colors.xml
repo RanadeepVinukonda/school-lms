@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Splash background (dark theme) matching the Genesis splash (primary navy). -->
+    <color name="splash_background">#233661</color>
+</resources>

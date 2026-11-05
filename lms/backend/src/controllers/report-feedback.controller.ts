@@ -1,0 +1,41 @@
+import { Request, Response } from 'express';
+import * as reportFeedbackService from '../services/report-feedback.service';
+import { sendSuccess } from '../utils/response';
+import { ValidationError } from '../utils/errors';
+
+export async function createReport(req: Request, res: Response) {
+  if (!req.user) throw new ValidationError('Authentication required');
+  if (!req.body.classId) throw new ValidationError('Class is required');
+  const result = await reportFeedbackService.createReport({
+    userId: req.user.uid,
+    userName: req.body.userName,
+    userRole: req.body.userRole,
+    classId: req.body.classId,
+    className: req.body.className,
+    title: req.body.title,
+    description: req.body.description,
+    category: req.body.category,
+    priority: req.body.priority,
+  });
+  sendSuccess(res, result, 'Report submitted successfully');
+}
+
+export async function getReports(req: Request, res: Response) {
+  const result = await reportFeedbackService.getReports(req.query as Record<string, unknown>);
+  sendSuccess(res, result);
+}
+
+export async function getReportById(req: Request, res: Response) {
+  const result = await reportFeedbackService.getReportById(req.params.id);
+  sendSuccess(res, result);
+}
+
+export async function updateReportStatus(req: Request, res: Response) {
+  await reportFeedbackService.updateReportStatus(req.params.id, req.body);
+  sendSuccess(res, null, 'Report updated');
+}
+
+export async function getReportStats(_req: Request, res: Response) {
+  const result = await reportFeedbackService.getReportStats();
+  sendSuccess(res, result);
+}

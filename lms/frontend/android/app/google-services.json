@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "723102095387",
+    "project_id": "school-ca94b",
+    "storage_bucket": "school-ca94b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:723102095387:android:809458c30dbb0ab06440be",
+        "android_client_info": {
+          "package_name": "com.school.lms"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "723102095387-0ir550lvtlta4v5ood15j4v91dksal2j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAIMepY2hrU66QET2Eji5za25lJHTgt5ac"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "723102095387-0ir550lvtlta4v5ood15j4v91dksal2j.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

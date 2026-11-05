@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://school-ca94b.web.app/auth/login</loc><priority>0.8</priority></url>
+  <url><loc>https://school-ca94b.web.app/auth/register</loc><priority>0.8</priority></url>
+  <url><loc>https://school-ca94b.web.app/dashboard/student</loc><priority>1.0</priority></url>
+  <url><loc>https://school-ca94b.web.app/dashboard/teacher</loc><priority>1.0</priority></url>
+  <url><loc>https://school-ca94b.web.app/dashboard/admin</loc><priority>1.0</priority></url>
+  <url><loc>https://school-ca94b.web.app/courses</loc><priority>0.9</priority></url>
+  <url><loc>https://school-ca94b.web.app/grades</loc><priority>0.7</priority></url>
+  <url><loc>https://school-ca94b.web.app/messages</loc><priority>0.6</priority></url>
+  <url><loc>https://school-ca94b.web.app/notifications</loc><priority>0.5</priority></url>
+  <url><loc>https://school-ca94b.web.app/profile</loc><priority>0.6</priority></url>
+</urlset>

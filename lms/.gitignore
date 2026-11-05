@@ -1,0 +1,22 @@
+﻿node_modules/
+dist/
+.env
+.env.local
+.vercel
+*.log
+
+# Build/artifact caches
+graphify-out/
+
+# Backups (contain live DB data / seed snapshots — never commit)
+backend/backups/
+
+# Windows artifacts
+nul
+
+# Local environment overrides
+.env.vercel
+
+# Local tooling
+mempalace.yaml
+nul
