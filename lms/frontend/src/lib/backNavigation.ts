@@ -9,6 +9,15 @@ type Rule = {
   target: (match: RegExpExecArray) => BackTarget;
 };
 
+const HUB_PARENTS: Record<string, string> = {
+  '/admin/fee': '/admin/erp',
+  '/admin/timetable': '/admin/erp',
+  '/admin/attendance': '/admin/erp',
+  '/admin/noticeboard': '/admin/erp',
+  '/admin/hr': '/admin/erp',
+  '/admin/classroom': '/admin/erp',
+};
+
 const RULES: Rule[] = [
   {
     pattern: /^\/assignments\/[^/]+$/,
@@ -78,6 +87,9 @@ export function getBackTarget(pathname: string): BackTarget | null {
     const match = rule.pattern.exec(path);
     if (match) return rule.target(match);
   }
+
+  const hubParent = HUB_PARENTS[path];
+  if (hubParent) return { type: 'path', path: hubParent };
 
   const segments = path.split('/').filter(Boolean);
   if (segments.length < 3) return null;

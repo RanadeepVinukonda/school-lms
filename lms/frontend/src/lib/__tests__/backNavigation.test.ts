@@ -5,7 +5,8 @@ describe('getBackTarget', () => {
   it('does not add back navigation to parent pages', () => {
     expect(getBackTarget('/student/dashboard')).toBeNull();
     expect(getBackTarget('/teacher/textbooks')).toBeNull();
-    expect(getBackTarget('/admin/hr')).toBeNull();
+    expect(getBackTarget('/admin/erp')).toBeNull();
+    expect(getBackTarget('/admin/dashboard')).toBeNull();
     expect(getBackTarget('/notifications')).toBeNull();
   });
 
@@ -14,6 +15,15 @@ describe('getBackTarget', () => {
     expect(getBackTarget('/teacher/textbooks/upload')).toEqual({ type: 'path', path: '/teacher/textbooks' });
     expect(getBackTarget('/admin/hr/leaves')).toEqual({ type: 'path', path: '/admin/hr' });
     expect(getBackTarget('/k2/flashcards/animals')).toEqual({ type: 'path', path: '/k2/flashcards' });
+  });
+
+  it('maps ERP module pages back to the ERP dashboard', () => {
+    expect(getBackTarget('/admin/fee')).toEqual({ type: 'path', path: '/admin/erp' });
+    expect(getBackTarget('/admin/timetable')).toEqual({ type: 'path', path: '/admin/erp' });
+    expect(getBackTarget('/admin/attendance')).toEqual({ type: 'path', path: '/admin/erp' });
+    expect(getBackTarget('/admin/noticeboard')).toEqual({ type: 'path', path: '/admin/erp' });
+    expect(getBackTarget('/admin/hr')).toEqual({ type: 'path', path: '/admin/erp' });
+    expect(getBackTarget('/admin/classroom')).toEqual({ type: 'path', path: '/admin/erp' });
   });
 
   it('maps detail routes to their logical parent', () => {
