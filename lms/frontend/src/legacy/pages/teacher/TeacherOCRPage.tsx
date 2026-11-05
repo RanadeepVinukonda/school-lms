@@ -45,10 +45,12 @@ function normalizeQuestions(raw: any[]): any[] {
   });
 }
 
-function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, meta: { title: string; subjectId: string; questions: any[]; studentIds: string[] }) => Promise<void> }) {
+function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, meta: { title: string; subjectId: string; questions: any[]; studentIds: string[]; conceptName: string; chapterName: string }) => Promise<void> }) {
   const { _ } = useTranslation();
   const [selectedClass, setSelectedClass] = useState('');
   const [testName, setTestName] = useState('');
+  const [conceptName, setConceptName] = useState('');
+  const [chapterName, setChapterName] = useState('');
   const [subjectId, setSubjectId] = useState('');
   const [pushMode, setPushMode] = useState<'class' | 'students'>('class');
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
@@ -101,11 +103,13 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
     setSelectedStudentIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
-  const pushDisabled = !selectedClass || !subjectId || !testName.trim() || (pushMode === 'students' && selectedStudentIds.length === 0) || pushing;
+  const pushDisabled = !selectedClass || !subjectId || !testName.trim() || !conceptName.trim() || !chapterName.trim() || (pushMode === 'students' && selectedStudentIds.length === 0) || pushing;
   const handlePush = () => {
     setPushing(true);
     onPush(data, selectedClass, {
       title: testName,
+      conceptName: conceptName.trim(),
+      chapterName: chapterName.trim(),
       subjectId,
       questions: questions.map((q) => ({
         id: q.id,
@@ -182,6 +186,16 @@ function QuizView({ data, onPush }: { data: any; onPush: (d: any, cls: string, m
           placeholder={_('Test name (e.g. Polynomials Quiz)')}
           value={testName}
           onChange={(e) => setTestName(e.target.value)}
+        />
+        <Input
+          placeholder={_('Concept name (e.g. Factorisation)')}
+          value={conceptName}
+          onChange={(e) => setConceptName(e.target.value)}
+        />
+        <Input
+          placeholder={_('Chapter name (e.g. Chapter 2 - Polynomials)')}
+          value={chapterName}
+          onChange={(e) => setChapterName(e.target.value)}
         />
         <div className="flex flex-wrap items-center gap-2">
           <Select value={selectedClass} onValueChange={(v) => { setSelectedClass(v); setSubjectId(''); setSelectedStudentIds([]); }}>
@@ -410,7 +424,7 @@ export default function TeacherOCRPage() {
     }
   }, []);
 
-  const handlePushQuiz = useCallback(async (data: any, classId: string, meta: { title: string; subjectId: string; questions?: any[]; studentIds?: string[] }) => {
+  const handlePushQuiz = useCallback(async (data: any, classId: string, meta: { title: string; subjectId: string; questions?: any[]; studentIds?: string[]; conceptName?: string; chapterName?: string }) => {
     setMessages((prev) => [...prev, { role: 'assistant', content: `⏳ Pushing quiz...` }]);
     try {
       const result = await pushQuiz(data, classId, meta);

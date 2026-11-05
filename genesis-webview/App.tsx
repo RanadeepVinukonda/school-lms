@@ -13,7 +13,7 @@ SplashScreen.preventAutoHideAsync();
 // even after Vercel deployed the fix. Bumping this tag per APK release forces a
 // full re-fetch, and cacheMode=LOAD_NO_CACHE below makes the WebView never read
 // an HTTP-cached copy at all. Bump this whenever you ship a new APK.
-const BUILD_TAG = '20261105-3';
+const BUILD_TAG = '20261105-5';
 const WEBSITE_URL = `https://genesis-frontend-teal.vercel.app/?v=${BUILD_TAG}`;
 
 // Native FCM token/permission bridge. The web app checks for

@@ -167,6 +167,8 @@ export async function pushQuiz(req: Request, res: Response) {
   const doc = {
     id,
     title: req.body.title || req.body.data?.title || `Quiz from OCR - ${new Date().toLocaleDateString()}`,
+    conceptName: req.body.conceptName || req.body.data?.conceptName || null,
+    chapterName: req.body.chapterName || req.body.data?.chapterName || null,
     description: req.body.description || req.body.data?.description || '',
     classId,
     subjectId: subjectId || null,
