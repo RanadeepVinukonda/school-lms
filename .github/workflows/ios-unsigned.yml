@@ -1,0 +1,69 @@
+name: iOS unsigned IPA
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/ios-unsigned.yml
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: genesis-webview
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: genesis-webview/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate iOS project
+        run: npx expo prebuild --platform ios --no-install
+
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install --repo-update
+
+      - name: Build unsigned app
+        run: |
+          xcodebuild \
+            -workspace ios/Genesis.xcworkspace \
+            -scheme Genesis \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath ios/build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package IPA
+        run: |
+          mkdir -p Payload
+          cp -R ios/build/Build/Products/Release-iphoneos/Genesis.app Payload/
+          zip -r Genesis-unsigned.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Genesis-unsigned-ipa
+          path: genesis-webview/Genesis-unsigned.ipa
+          retention-days: 14
+
+      - name: Publish download
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ios-unsigned
+          name: iOS unsigned IPA
+          body: Unsigned iOS build for sideloading with a free Apple ID (expires after 7 days).
+          files: genesis-webview/Genesis-unsigned.ipa
