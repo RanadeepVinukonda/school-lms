@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - .github/workflows/ios-unsigned.yml
+      - genesis-webview/**
 
 permissions:
   contents: write

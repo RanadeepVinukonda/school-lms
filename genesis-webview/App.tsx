@@ -3,6 +3,8 @@ import { StyleSheet, View, Text, ActivityIndicator, StatusBar, TouchableOpacity,
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -13,7 +15,7 @@ SplashScreen.preventAutoHideAsync();
 // even after Vercel deployed the fix. Bumping this tag per APK release forces a
 // full re-fetch, and cacheMode=LOAD_NO_CACHE below makes the WebView never read
 // an HTTP-cached copy at all. Bump this whenever you ship a new APK.
-const BUILD_TAG = '20261106-1';
+const BUILD_TAG = '20261106-2';
 const WEBSITE_URL = `https://genesis-frontend-teal.vercel.app/?v=${BUILD_TAG}`;
 
 // Native FCM token/permission bridge. The web app checks for
@@ -124,7 +126,7 @@ const OPEN_WITH_SHIM = `
   function ensure() {
     var C = window.Capacitor = window.Capacitor || {};
     C.isNativePlatform = function () { return true; };
-    C.getPlatform = function () { return 'android'; };
+    C.getPlatform = function () { return '${Platform.OS}'; };
     C.getConfig = C.getConfig || function () { return {}; };
     C.PluginHeaders = C.PluginHeaders || [];
     // Keep the FileShare plugin descriptor complete: both the base64 'open'
@@ -207,6 +209,62 @@ const ERROR_CAPTURE_JS = `
 true;
 `;
 
+function mimeTypeFor(filename: string): string {
+  const ext = (filename.split('.').pop() || '').toLowerCase();
+  switch (ext) {
+    case 'pdf': return 'application/pdf';
+    case 'csv': return 'text/csv';
+    case 'xls': return 'application/vnd.ms-excel';
+    case 'xlsx': return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    case 'png': return 'image/png';
+    case 'jpg':
+    case 'jpeg': return 'image/jpeg';
+    default: return 'application/octet-stream';
+  }
+}
+
+function utiForMime(mimeType: string): string | undefined {
+  if (mimeType === 'application/pdf') return 'com.adobe.pdf';
+  if (mimeType === 'text/csv') return 'public.comma-separated-values-text';
+  if (mimeType.startsWith('image/')) return 'public.image';
+  return undefined;
+}
+
+async function shareIosFile(filename: string, mimeType: string, uri: string) {
+  if (!(await Sharing.isAvailableAsync())) {
+    throw new Error('Sharing is not available on this device');
+  }
+  await Sharing.shareAsync(uri, {
+    mimeType,
+    dialogTitle: filename,
+    UTI: utiForMime(mimeType),
+  });
+  return { status: 'shared' as const };
+}
+
+async function shareIosBase64(filename: string, mimeType: string, content: string) {
+  const safeName = filename.replace(/[\\/:*?"<>|]/g, '_') || 'file';
+  const dir = FileSystem.cacheDirectory || FileSystem.documentDirectory;
+  if (!dir) throw new Error('No writable directory available');
+  const uri = `${dir}${safeName}`;
+  await FileSystem.writeAsStringAsync(uri, content, { encoding: FileSystem.EncodingType.Base64 });
+  return shareIosFile(safeName, mimeType, uri);
+}
+
+async function shareIosRemote(url: string, filename: string, authToken: string) {
+  const safeName = filename.replace(/[\\/:*?"<>|]/g, '_') || 'file';
+  const dir = FileSystem.cacheDirectory || FileSystem.documentDirectory;
+  if (!dir) throw new Error('No writable directory available');
+  const uri = `${dir}${safeName}`;
+  const result = await FileSystem.downloadAsync(url, uri, {
+    headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+  });
+  if (result.status < 200 || result.status >= 300) {
+    throw new Error(`Download failed (HTTP ${result.status})`);
+  }
+  return shareIosFile(safeName, mimeTypeFor(safeName), uri);
+}
+
 export default function App() {
   const webViewRef = useRef<WebView>(null);
   const [loading, setLoading] = useState(true);
@@ -215,7 +273,10 @@ export default function App() {
   const pushTokenRef = useRef<string | null>(null);
   const pendingPushActionRef = useRef<string | null>(null);
 
-  const injectedJs = useMemo(() => ERROR_CAPTURE_JS + '\n' + NATIVE_PUSH_BRIDGE_JS, []);
+  const injectedJs = useMemo(
+    () => ERROR_CAPTURE_JS + '\n' + (Platform.OS === 'android' ? NATIVE_PUSH_BRIDGE_JS : ''),
+    [],
+  );
   // Post-load JS: bust the stale service-worker cache first (so fixed chunks
   // are fetched on the reload), then re-assert the Open-With Capacitor bridge.
   const postLoadJs = useMemo(() => SW_CACHE_CLEAR_JS + '\n' + OPEN_WITH_SHIM, []);
@@ -263,6 +324,7 @@ export default function App() {
   }, [pushToken, injectPushToken]);
 
   useEffect(() => {
+    if (Platform.OS !== 'android') return;
     let active = true;
     const push = (NativeModules as any).GenesisPush;
     if (!push) {
@@ -349,11 +411,29 @@ export default function App() {
     // Any bridged call we cannot fully service must reject its pending promise
     // immediately. A swallowed call leaves the web app's button "buffering"
     // forever with no file and no error, which is exactly what was reported.
-    if (data.plugin !== 'FileShare' || (data.method !== 'open' && data.method !== 'openRemote')) {
+    if (
+      data.plugin !== 'FileShare' ||
+      (data.method !== 'open' && data.method !== 'openRemote' && data.method !== 'saveToDownloads')
+    ) {
       rejectFs('Unsupported native call: ' + data.plugin + '.' + data.method);
       return;
     }
     const opts = (data.options || {}) as Record<string, string>;
+
+    if (Platform.OS === 'ios') {
+      const filename = String(opts.filename || 'file');
+      const task = data.method === 'openRemote'
+        ? shareIosRemote(String(opts.url || ''), filename, String(opts.authToken || ''))
+        : data.method === 'saveToDownloads'
+          ? shareIosBase64(filename, mimeTypeFor(filename), String(opts.content || '')).then(() => ({ status: 'saved' as const }))
+          : shareIosBase64(filename, String(opts.mimeType || mimeTypeFor(filename)), String(opts.content || ''));
+      task.then(
+        (result) => settleFs(callId, 'resolve', JSON.stringify(result)),
+        (error: any) => rejectFs(String((error && error.message) || error)),
+      );
+      return;
+    }
+
     try {
       const mod = (NativeModules as any).GenesisOpenWith;
       if (!mod || typeof mod.openFile !== 'function' || typeof mod.openRemote !== 'function') {
