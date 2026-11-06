@@ -1,1 +1,27 @@
-{   "cli": {     "version": ">= 20.5.0",     "appVersionSource": "remote"   },   "build": {     "preview": {       "distribution": "internal",       "android": {         "buildType": "apk",         "gradleCommand": ":app:assembleRelease"       }     },     "production": {       "autoIncrement": true     }   },   "submit": {     "production": {}   } }
+{
+  "cli": {
+    "version": ">= 20.5.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
+      }
+    },
+    "simulator": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "production": {
+      "autoIncrement": true
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

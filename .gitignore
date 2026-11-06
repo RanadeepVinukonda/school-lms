@@ -61,3 +61,4 @@ android/
 #   lms/backend/package-lock.json, lms/frontend/package-lock.json
 lms/package-lock.json
 package-lock.json
+!genesis-webview/package-lock.json
