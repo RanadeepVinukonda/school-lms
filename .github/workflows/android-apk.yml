@@ -67,10 +67,11 @@ jobs:
             echo "keyPassword=$KEY_PASSWORD"
           } > android/keystore.properties
 
+      - name: Set version code
+        run: echo "GENESIS_VERSION_CODE=$((10000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+
       - name: Build release APK
         working-directory: genesis-webview/android
-        env:
-          GENESIS_VERSION_CODE: ${{ 10000 + github.run_number }}
         run: |
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon
