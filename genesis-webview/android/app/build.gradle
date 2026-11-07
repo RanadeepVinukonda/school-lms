@@ -81,6 +81,19 @@ def enableMinifyInReleaseBuilds = (findProperty('android.enableMinifyInReleaseBu
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+def releaseStorePassword = keystoreProperties.getProperty("storePassword") ?: System.getenv("GENESIS_STORE_PASSWORD")
+def releaseKeyAlias = keystoreProperties.getProperty("keyAlias") ?: System.getenv("GENESIS_KEY_ALIAS") ?: "genesis"
+def releaseKeyPassword = keystoreProperties.getProperty("keyPassword") ?: System.getenv("GENESIS_KEY_PASSWORD")
+def releaseStoreFile = keystoreProperties.getProperty("storeFile") ?: System.getenv("GENESIS_KEYSTORE_FILE") ?: "genesis-release.keystore"
+def appVersionCode = (System.getenv("GENESIS_VERSION_CODE") ?: "16").toInteger()
+def appVersionName = System.getenv("GENESIS_VERSION_NAME") ?: "1.2.9"
+
 android {
     ndkVersion rootProject.ext.ndkVersion
 
@@ -92,8 +105,8 @@ android {
         applicationId "com.genesis"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 16
-        versionName "1.2.9"
+        versionCode appVersionCode
+        versionName appVersionName
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
@@ -105,10 +118,10 @@ android {
             keyPassword 'android'
         }
         release {
-            storeFile file('genesis-release.keystore')
-            storePassword 'genesis123'
-            keyAlias 'genesis'
-            keyPassword 'genesis123'
+            storeFile file(releaseStoreFile)
+            storePassword releaseStorePassword
+            keyAlias releaseKeyAlias
+            keyPassword releaseKeyPassword
         }
     }
     buildTypes {

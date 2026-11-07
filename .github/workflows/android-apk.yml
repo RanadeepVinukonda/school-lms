@@ -1,0 +1,96 @@
+name: Android signed APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/android-apk.yml
+      - genesis-webview/**
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: genesis-webview
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: genesis-webview/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate signing secrets
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.GENESIS_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.GENESIS_KEY_PASSWORD }}
+        run: |
+          missing=0
+          if [ -z "$KEYSTORE_BASE64" ]; then echo "::error::ANDROID_KEYSTORE_BASE64 is not set"; missing=1; fi
+          if [ -z "$STORE_PASSWORD" ]; then echo "::error::GENESIS_STORE_PASSWORD is not set"; missing=1; fi
+          if [ -z "$KEY_PASSWORD" ]; then echo "::error::GENESIS_KEY_PASSWORD is not set"; missing=1; fi
+          exit $missing
+
+      - name: Configure signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.GENESIS_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.GENESIS_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.GENESIS_KEY_PASSWORD }}
+        run: |
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > android/app/genesis-release.keystore
+          {
+            echo "storeFile=genesis-release.keystore"
+            echo "storePassword=$STORE_PASSWORD"
+            echo "keyAlias=${KEY_ALIAS:-genesis}"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > android/keystore.properties
+
+      - name: Build release APK
+        working-directory: genesis-webview/android
+        env:
+          GENESIS_VERSION_CODE: ${{ 10000 + github.run_number }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Name APK
+        run: |
+          VERSION=$(node -p "require('./app.json').expo.version")
+          cp android/app/build/outputs/apk/release/app-release.apk "Genesis-${VERSION}.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Genesis-android-apk
+          path: genesis-webview/Genesis-*.apk
+          retention-days: 14
+
+      - name: Publish download
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          name: Android signed APK
+          body: Signed Android APK built from the latest genesis-webview source.
+          files: genesis-webview/Genesis-*.apk
+          overwrite_files: true

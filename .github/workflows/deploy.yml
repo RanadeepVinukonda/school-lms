@@ -81,11 +81,32 @@ jobs:
   render:
     name: Deploy to Render
     runs-on: ubuntu-latest
-    needs: ci
+    needs: [ci, docker-hub]
     if: github.event_name == 'push'
     steps:
       - name: Trigger Render deploy
-        run: curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+            echo "::error::RENDER_DEPLOY_HOOK is not set"
+            exit 1
+          fi
+          curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
+
+      - name: Wait for Render health
+        env:
+          HEALTH_URL: ${{ secrets.RENDER_HEALTH_URL || 'https://school-lms-api-b8cn.onrender.com/health' }}
+        run: |
+          for attempt in $(seq 1 60); do
+            if curl -fsS --max-time 10 "$HEALTH_URL" > /dev/null; then
+              echo "Healthy after $((attempt * 10))s"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::Render health check failed after 10 minutes"
+          exit 1
 
   cloud-server:
     name: Deploy to Cloud Server
