@@ -17,7 +17,7 @@ let schedulerIsLeader = false;
 let schedulerHeartbeat: ReturnType<typeof setInterval> | null = null;
 
 async function renewSchedulerLease(): Promise<boolean> {
-  const result = await getConnectionPool().query<{ instance_id: string }>(
+  const result = await getConnectionPool().query(
     `INSERT INTO scheduler_leader (id, instance_id, expires_at, updated_at)
      VALUES (1, $1, NOW() + INTERVAL '${SCHEDULER_LEASE_SECONDS} seconds', NOW())
      ON CONFLICT (id) DO UPDATE
